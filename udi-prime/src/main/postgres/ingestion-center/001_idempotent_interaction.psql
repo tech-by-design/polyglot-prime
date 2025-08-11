@@ -5746,6 +5746,7 @@ register_interaction_fhir_request -  This function handles the registration of F
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, json);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, jsonb);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, jsonb, text);
 
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_fhir_request(
