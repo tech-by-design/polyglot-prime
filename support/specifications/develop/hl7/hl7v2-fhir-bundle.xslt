@@ -143,14 +143,14 @@
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
           "profile": ["<xsl:value-of select='$patientMetaProfileUrlFull'/>"]
         }
-        <xsl:if test="//PID/PID.15">
-		  ,"language": 
-				"<xsl:choose>
-					<xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when>
-					<xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise>
-				</xsl:choose>"
+        <!-- <xsl:if test="//PID/PID.15"> -->
+		  <!-- ,"language":  -->
+				<!-- "<xsl:choose> -->
+					<!-- <xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when> -->
+					<!-- <xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise> -->
+				<!-- </xsl:choose>" -->
 
-		</xsl:if>
+		<!-- </xsl:if> -->
 
         <!--If there is Official Name, print it, otherwise print first occuring name-->
         <xsl:if test="//PID/PID.5/PID.5.1">
@@ -510,24 +510,24 @@
 		  ]
 		</xsl:if>
       
-      <xsl:if test="//PID/PID.15">
-		  ,"communication": [
-			{
-			  "language": {
-				"coding": [
-				  {
-					"system": "urn:ietf:bcp:47",
-					"code": "<xsl:choose>
-							   <xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when>
-							   <xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise>
-							 </xsl:choose>"
-				  }
-				]
-			  },
-			  "preferred": true
-			}
-		  ]
-		</xsl:if>    
+      <!-- <xsl:if test="//PID/PID.15"> -->
+		  <!-- ,"communication": [ -->
+			<!-- { -->
+			  <!-- "language": { -->
+				<!-- "coding": [ -->
+				  <!-- { -->
+					<!-- "system": "urn:ietf:bcp:47", -->
+					<!-- "code": "<xsl:choose> -->
+							   <!-- <xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when> -->
+							   <!-- <xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise> -->
+							 <!-- </xsl:choose>" -->
+				  <!-- } -->
+				<!-- ] -->
+			  <!-- }, -->
+			  <!-- "preferred": true -->
+			<!-- } -->
+		  <!-- ] -->
+		<!-- </xsl:if>     -->
     }
     , "request" : {
         "method" : "POST",
@@ -1269,11 +1269,11 @@
 <!-- Grouper Observation from HL7 OBX Template -->
 <xsl:template name="GrouperObservationFromOBR">
   <!-- Loop through each OBR (i.e., one screening panel per OBR) -->
-  <xsl:for-each select="//OBR[OBR.4/OBR.4.1 = '96777-8' or OBR.4/OBR.4.1 = '97023-6' or OBR.4/OBR.4.1 = 'NYSAHCHRSN' or OBR.4/OBR.4.1 = 'NYS-AHC-HRSN']">
-    <xsl:variable name="screeningCode" select="OBR.4/OBR.4.1"/>
-    <xsl:variable name="screeningDisplay" select="OBR.4/OBR.4.2"/>
+  <xsl:for-each select="//OBR[substring-before(OBR.26, '&amp;') = '96777-8' or substring-before(OBR.26, '&amp;') = '97023-6' or substring-before(OBR.26, '&amp;') = 'NYSAHCHRSN' or substring-before(OBR.26, '&amp;') = 'NYS-AHC-HRSN']">
+    <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
+    <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/>
 	  
-	  <xsl:variable name="obrCode" select="OBR.4/OBR.4.1"/>
+	  <xsl:variable name="obrCode" select="substring-before(OBR.26, '&amp;')"/>
 	  <xsl:variable name="grouperObservationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
               <xsl:with-param name="prefixString" select="$obrCode"/>

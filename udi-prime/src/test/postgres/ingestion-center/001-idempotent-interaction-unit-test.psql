@@ -1,5 +1,6 @@
 /*pgTap function to test register_interaction_http_request function*/
 
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_requests(text);
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_requests(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text
@@ -20,6 +21,7 @@ DECLARE
 	v_csv_qe_admin_data_payload_text TEXT;
 	v_source_hub_interaction_id TEXT;
 	v_group_hub_interaction_id TEXT;
+	v_techbd_version_number TEXT := 'v 0.654.0';
 
 BEGIN  
     -- Check if the table 'pgtap_fixtures_json' exists
@@ -35,41 +37,49 @@ BEGIN
     -- Check existence of required functions     
     -- Check function: register_interaction_nexus_ingestion
 	RETURN NEXT has_function(schema_name, 'register_interaction_nexus_ingestion',
-	    ARRAY['text', 'text', 'text', 'bytea', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'timestamptz', 'text'],
+	    ARRAY['text', 'text', 'text', 'bytea', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'timestamptz', 'text', 'text'],
 	    'Function register_interaction_nexus_ingestion exists'
 	);
 	
 	-- Check function: register_interaction_fhir_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_fhir_request',
-	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'jsonb'],
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text'],
 	    'Function register_interaction_fhir_request exists'
 	);
 	
 	-- Check function: register_interaction_ccda_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_ccda_request',
-	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
 	    'Function register_interaction_ccda_request exists'
 	);
 	
 	-- Check function: register_interaction_csv_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_csv_request',
-	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
 	    'Function register_interaction_csv_request exists'
 	);
 
 	-- Check function: register_user_interaction
 	RETURN NEXT has_function(schema_name, 'register_user_interaction',
-	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz'], 
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz', 'text'], 
 		'Function register_user_interaction exists'
 	);   
     
     RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');  
-    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb'], 'Function sat_interaction_fhir_request_upserted exists');
-   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 
+    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
-	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'],
+	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
         'Function sat_interaction_ccda_request_upserted exists'
     );
+	RETURN NEXT has_function('techbd_udi_ingress', 'register_interaction_hl7_request',
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    'Function register_interaction_hl7_request exists'
+	);
+	RETURN NEXT has_function('techbd_udi_ingress', 'sat_interaction_hl7_request_upserted',
+	    ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
+	    'Function sat_interaction_hl7_request_upserted exists'
+	);
 
 	-- Check existence of required tables   
 	RETURN NEXT has_table(schema_name, 'hub_nexus_interaction', 'The table techbd_udi_ingress.hub_nexus_interaction should exist.');
@@ -77,7 +87,7 @@ BEGIN
 	RETURN NEXT has_pk(schema_name, 'sat_nexus_interaction_ingestion', 'The table techbd_udi_ingress.sat_nexus_interaction_ingestion should have a primary key.');
     RETURN NEXT col_is_fk(schema_name::name, 'sat_nexus_interaction_ingestion'::name, 'hub_nexus_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_nexus_interaction_id should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_nexus_interaction_ingestion',
-	    ARRAY['sat_nexus_interaction_ingestion_id', 'hub_nexus_interaction_id', 'tenant_id', 'request_uri', 'request_url', 'nature', 'content_type', 'payload_hash', 'payload_size', 'original_file_name', 'from_state', 'to_state', 'user_agent', 'client_ip_address', 'additional_details', 'general_errors', 'elaboration', 'created_at', 'created_by', 'provenance', 'payload'],
+	    ARRAY['sat_nexus_interaction_ingestion_id', 'hub_nexus_interaction_id', 'tenant_id', 'request_uri', 'request_url', 'nature', 'content_type', 'payload_hash', 'payload_size', 'original_file_name', 'from_state', 'to_state', 'user_agent', 'client_ip_address', 'additional_details', 'general_errors', 'elaboration', 'created_at', 'created_by', 'provenance', 'payload', 'techbd_version_number'],
 	    'The columns of techbd_udi_ingress.sat_nexus_interaction_ingestion should match the expected structure.'
 	);
 	RETURN NEXT has_table(schema_name, 'link_nexus_interaction', 'The table techbd_udi_ingress.link_nexus_interaction should exist.');
@@ -95,7 +105,7 @@ BEGIN
 			'state_transition_reason', 'outbound_http_message', 'error_message', 'issues_count', 'bundle_id', 'bundle_session_id', 'bundle_last_updated', 'organization_id', 
 			'organization_name', 'patient_id', 'patient_mrn', 'resource_type_set', 'validation_initiated_at', 'validation_completed_at', 'interaction_start_time', 'interaction_end_time', 
 			'validation_engine', 'ig_version', 'profile_url', 'passed', 'medicaid_cin', 'elaboration', 'created_at', 'created_by', 'provenance', 'techbd_disposition_action', 'patient_mrn_source_system', 
-			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details'],
+			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details', 'techbd_version_number'],
         'The columns of techbd_udi_ingress.sat_interaction_fhir_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -107,7 +117,7 @@ BEGIN
         'The foreign key from sat_interaction_http_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_http_request',
         ARRAY['sat_interaction_http_request_id', 'hub_interaction_id', 'nature', 'content_type', 'payload', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 
-			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source'],
+			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number'],
         'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -119,7 +129,7 @@ BEGIN
         'The foreign key from sat_interaction_user.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
         ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
-			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash'],
+			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number'],
         'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 	
@@ -133,7 +143,7 @@ BEGIN
             'screening_observation_data_payload_text', 'screening_profile_data_payload_text',
             'demographic_data_payload_text', 'qe_admin_data_payload_text',
             'screening_observation_data_file_name', 'screening_profile_data_file_name',
-            'demographic_data_file_name', 'qe_admin_data_file_name', 'zip_file_hub_interaction_id'],
+            'demographic_data_file_name', 'qe_admin_data_file_name', 'zip_file_hub_interaction_id', 'techbd_version_number'],
         'The columns of techbd_udi_ingress.sat_interaction_flat_file_csv_request should match the expected structure.'
     );
   
@@ -147,7 +157,7 @@ BEGIN
         ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
-            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors'],
+            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors', 'techbd_version_number'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');   
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
@@ -157,9 +167,19 @@ BEGIN
     RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
         ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
-			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance'],
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name'],
         'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
     );
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_hl7_request', 'The table techbd_udi_ingress.sat_interaction_hl7_request should exist.');
+	RETURN NEXT has_pk(schema_name, 'sat_interaction_hl7_request', 'The table techbd_udi_ingress.sat_interaction_hl7_request should have a primary key.');
+	RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_hl7_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_hl7_request',
+	    ARRAY['sat_interaction_hl7_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 
+	        'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 
+	        'created_by', 'provenance', 'hl7_payload_text', 'origin', 'techbd_version_number', 'file_name'],
+	    'The columns of techbd_udi_ingress.sat_interaction_hl7_request should match the expected structure.'
+	);
 
 
 	/*=================== Testing with Nexus Interaction ========================*/
@@ -183,7 +203,8 @@ BEGIN
 	    p_general_errors           => NULL,
 	    p_elaboration              => '{"key" : "elaboration"}',
 	    p_created_by               => CURRENT_USER,
-	    p_provenance               => 'S3'
+	    p_provenance               => 'S3',
+		p_techbd_version_number    => v_techbd_version_number
 	);
 
 	RETURN NEXT ok(
@@ -194,7 +215,8 @@ BEGIN
         
 	RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_nexus_interaction_ingestion hub_intr
-                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id),
+                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id
+					 AND techbd_version_number = v_techbd_version_number),
             'Nexus - Successfully inserted into the table sat_nexus_interaction_ingestion'
 	);
 
@@ -238,7 +260,8 @@ BEGIN
 							    "X-Observability-Metric-Interaction-Start-Time": "2025-06-19T04:22:50.833643177Z",
 								"X-Observability-Metric-Interaction-Finish-Time": "2025-06-23T07:38:26.389583933Z"
 							  }
-							}'::jsonb
+							}'::jsonb,
+		p_techbd_version_number    => v_techbd_version_number
 	);
     
     RETURN NEXT ok(
@@ -304,7 +327,8 @@ BEGIN
 	    p_origin                   => 'http'::text,
 	    p_source_type              => 'fhir'::text,
 	    p_group_hub_interaction_id => NULL::text,
-	    p_request_source   => NULL::text	    
+	    p_request_source   		   => NULL::text,
+		p_techbd_version_number    => v_techbd_version_number
 	);
 
     RETURN NEXT ok(
@@ -319,7 +343,8 @@ BEGIN
             NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
                    WHERE sat_intr.hub_interaction_id = v_interaction_id
 	               AND sat_intr.uri                  = '/Bundle/'
-				   AND sat_intr.provenance           = 'FHIR'),
+				   AND sat_intr.provenance           = 'FHIR'
+				   AND sat_intr.techbd_version_number= v_techbd_version_number),
             'FHIR Bundle - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
 	);
        
@@ -376,7 +401,8 @@ BEGIN
 		p_origin									  => 'http',
 		p_group_hub_interaction_id					  => NULL,
 		p_sftp_session_id							  => '0cc90e96-b8bc-4642-b4ae-910444360636',
-		p_request_source							  => 'nexus'
+		p_request_source							  => 'nexus',
+		p_techbd_version_number    					  => v_techbd_version_number
 	);
     
     RETURN NEXT ok(
@@ -456,7 +482,8 @@ BEGIN
 		p_origin									  => 'http',
 		p_group_hub_interaction_id					  => NULL,
 		p_sftp_session_id							  => '0cc90e96-b8bc-4642-b4ae-910444360636',
-		p_request_source							  => 'nexus'
+		p_request_source							  => 'nexus',
+		p_techbd_version_number    					  => v_techbd_version_number
 	);
     RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
@@ -696,7 +723,8 @@ BEGIN
 		p_origin				   => NULL,
 		p_source_type			   => 'CCDA',
 		p_group_hub_interaction_id => NULL,	
-		p_request_source		   => 'nexus'
+		p_request_source		   => 'nexus',
+		p_techbd_version_number    => v_techbd_version_number
     );
     
     RETURN NEXT ok(
@@ -765,7 +793,8 @@ BEGIN
 		p_origin				   => NULL,
 		p_source_type			   => 'CCDA',
 		p_group_hub_interaction_id => NULL,	
-		p_request_source		   => 'nexus'
+		p_request_source		   => 'nexus',
+		p_techbd_version_number    => v_techbd_version_number
     );
 
     RETURN NEXT ok(
