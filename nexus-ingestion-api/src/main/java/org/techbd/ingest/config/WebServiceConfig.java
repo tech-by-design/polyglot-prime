@@ -54,12 +54,27 @@ public class WebServiceConfig extends WsConfigurationSupport {
         return wsdlDefinition;
     }
 
+    @Bean(name = "pnr")
+    public DefaultWsdl11Definition pnrWsdl(XsdSchema pnrSchema) {
+        var wsdlDefinition = new DefaultWsdl11Definition();
+        wsdlDefinition.setPortTypeName("PNRPort");
+        wsdlDefinition.setLocationUri("/ws");
+        wsdlDefinition.setTargetNamespace("urn:ihe:iti:xds-b:2007");
+        wsdlDefinition.setSchema(pnrSchema);
+        return wsdlDefinition;
+    }
+
     @Bean
     public XsdSchema hl7Schema() {
         return new SimpleXsdSchema(
                 new ClassPathResource("ITI/schema/HL7V3/NE2008/multicacheschemas/PRPA_IN201301UV02.xsd"));
     }
-
+    @Bean
+    public XsdSchema pnrSchema() {
+        return new SimpleXsdSchema(
+            new ClassPathResource("ITI/schema/IHE/XDS.b_DocumentRepository.xsd")
+        );
+    }
     /**
      * Custom message factory that dynamically supports SOAP 1.1 and SOAP 1.2 based
      * on Content-Type.
