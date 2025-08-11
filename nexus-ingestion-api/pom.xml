@@ -74,6 +74,11 @@
             <artifactId>spring-ws-core</artifactId>
             <version>4.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.openehealth.ipf.commons</groupId>
+            <artifactId>ipf-commons-ihe-xds</artifactId>
+            <version>4.1.0</version>
+        </dependency>
         <!-- AWS Lambda Core -->
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -204,6 +209,7 @@
 				<configuration>
 					<sources>
 						<source>${project.basedir}/src/main/resources/ITI/schema/HL7V3/NE2008/multicacheschemas</source>
+                        <source>${project.basedir}/src/main/resources/ITI/schema/IHE</source>
 					</sources>
 					<outputDirectory>${project.build.directory}/generated-sources/jaxb</outputDirectory>
 					<clearOutputDir>false</clearOutputDir>
