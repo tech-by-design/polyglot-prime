@@ -88,7 +88,6 @@ public class SqsPublishStep implements MessageProcessingStep {
         try {
             final var messageGroupId = messageGroupService.createMessageGroupId(context,interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
-            message.put("content", content);
             String messageJson = objectMapper.writeValueAsString(message);
             String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
                     ? appConfig.getAws().getSqs().getFifoQueueUrl()
