@@ -1,17 +1,14 @@
 <channel version="4.5.3">
-  <id>6e13cb5f-88a1-4f2a-9a58-03f75baee99a</id>
+  <id>6f5112d2-f801-4f80-a5ba-0edb634e5fc6</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.7.0</description>
-  <revision>1</revision>
+  <description>Version: 0.8.1</description>
+  <revision>32</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -438,7 +438,7 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
     logger.info(&quot;File content: (input validation) - &quot; + fileContent);
 }*/
 //channelMap.put(&apos;fileContent&apos;, fileContent);
-extractClinicalDocument(rawData);
+
 
 //Check the file type, only .xml and .txt allowed
 var filename = null;
@@ -448,7 +448,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
 
-    var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
 
@@ -460,6 +460,8 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
 }
+
+extractClinicalDocument(rawData);
 
 //////////////////////////////////////////////////////
 // Read environment variables and set to global map //
@@ -1456,7 +1458,7 @@ function saveValidationFailure(interactionId, tenantId, requestedPath, errorMess
 
 
 // Function 4: Save FHIR Conversion Success
-function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject) {
+function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson) {
  try {
         logInfo(&quot;Attempting to save FHIR conversion success for interactionId: &quot; + interactionId, channelMap);
         
@@ -1465,7 +1467,7 @@ function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonO
             interactionId,
             tenantId,
             requestedPath,
-            jsonObject
+            cleanedJsonStringJson
         );
 
         if (conversionSuccess) {
@@ -1939,17 +1941,14 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 			var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
 			
 			// Check if the header value is valid
-			if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() !== &quot;&quot;) {
+			if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
 			    if (validUrls.includes(customBaseFhirUrl)) {
 			        // Store valid value in channelMap
 			        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
 				   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
 			    } else {
-			        // Throw a Bad Request error if the URL is not in the valid list
-					var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
+			        var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
 					logger.error(errorMessage);
-					setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-					throw errorMessage; // Stop further processing by throwing an exception
 			    }
 			}
 	
@@ -1962,13 +1961,14 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 			var bundleOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
 			
 			// Perform the transformation
-			try {&#xd;				transformer.transform(phiFilteredCcdFile, bundleOutput);&#xd;			&#xd;				// Store the transformed XML in the channel map&#xd;				var ccdFhirBundle = xmlOutputStream.toString();&#xd;				channelMap.put(&apos;ccd_fhir_bundle&apos;, ccdFhirBundle);&#xd;				logger.info(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle);&#xd;	&#xd;				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object&#xd;				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;				logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);&#xd;
+			try {&#xd;				transformer.transform(phiFilteredCcdFile, bundleOutput);&#xd;			&#xd;				// Store the transformed XML in the channel map&#xd;				var ccdFhirBundle = xmlOutputStream.toString();&#xd;				channelMap.put(&apos;ccd_fhir_bundle&apos;, ccdFhirBundle);&#xd;				logger.info(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle);&#xd;	&#xd;				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object&#xd;				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;				logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+				var cleanedJsonStringJson = JSON.parse(cleanedJsonString);&#xd;
 
 //#####################################################################################################
                 // STEP 4: Save the FHIR conversion result using separated function
 //#####################################################################################################
                 if (saveFhirConversionSuccess) {
-                    var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject);
+                    var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson);
                    // var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject);
                     if (conversionSuccess) {
                         // Setup request parameters
@@ -1999,7 +1999,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
                             var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
                             if (processFHIRBundle) {
                                 channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
-                                var validationResults = processFHIRBundle(tenantId, channelMap, ccdFhirBundle, responseMap);
+                                var validationResults = processFHIRBundle(tenantId, channelMap, cleanedJsonString, responseMap);
                                 responseMap.put(&quot;resultJSON&quot;, validationResults);
                                 logInfo(&quot;FHIR bundle processing completed successfully&quot;, channelMap);
                                 logInfo(&quot;Submission result: &quot; + JSON.stringify(validationResults), channelMap);
@@ -2584,7 +2584,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754297952333</time>
+        <time>1754906130274</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
