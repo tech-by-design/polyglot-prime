@@ -24,6 +24,8 @@ import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
+import org.techbd.iti.schema.ObjectFactory;
+import jakarta.xml.bind.JAXBElement;
 
 /**n
  * XDS.b Provide and Register Document Set-b Endpoint (ITI-41).
@@ -55,29 +57,38 @@ public class PnrEndpoint {
     public PnrEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
         this.ackService = ackService;
         this.messageProcessorService = messageProcessorService;
+        log.info("PnrEndpoint constructor called - bean is being created!");
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "ProvideAndRegisterDocumentSetRequest")
     @ResponsePayload
-    public RegistryResponseType handleProvideAndRegister(@RequestPayload ProvideAndRegisterDocumentSetRequestType request,
-                                     MessageContext messageContext) {
-        String interactionId = UUID.randomUUID().toString();
+    public JAXBElement<RegistryResponseType> handleProvideAndRegister(@RequestPayload JAXBElement<ProvideAndRegisterDocumentSetRequestType> request,
+                                                                     MessageContext messageContext) {
+        final String interactionId = UUID.randomUUID().toString();
         try {
             log.info("[{}] Received ProvideAndRegisterDocumentSet-b (ITI-41) request", interactionId);
-            RequestContext context = buildRequestContext(interactionId);
+            ProvideAndRegisterDocumentSetRequestType requestData = request.getValue();
+            
+            // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
-
+            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
+            
             // Process the PnR transaction
             messageProcessorService.processMessage(context, rawSoapMessage);
-
-            return ackService.createPnrAcknowledgement("Success", interactionId);
+            
+            // Create response using ObjectFactory
+            RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
+            ObjectFactory factory = new ObjectFactory();
+            return factory.createRegistryResponse(response);
         } catch (Exception e) {
             log.error("[{}] Exception processing ITI-41: {}", interactionId, e.getMessage(), e);
-            return ackService.createPnrAcknowledgement("Failure", interactionId);
+            RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId);
+            ObjectFactory factory = new ObjectFactory();
+            return factory.createRegistryResponse(response);
         }
     }
 
-    private RequestContext buildRequestContext(String interactionId) {
+    private RequestContext buildRequestContext(String rawSoapMessage, String interactionId) {
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
 
@@ -123,7 +134,7 @@ public class PnrEndpoint {
                 uploadTime,
                 timestamp,
                 originalFileName,
-                0, // Will be set after parsing actual payload size
+                rawSoapMessage != null ? rawSoapMessage.length() : 0, // Payload size
                 objectKey,
                 metadataKey,
                 fullS3Path,
