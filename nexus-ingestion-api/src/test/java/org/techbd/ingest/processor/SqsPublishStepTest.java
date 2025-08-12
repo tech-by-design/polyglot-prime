@@ -76,7 +76,7 @@ class SqsPublishStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080");
+                "8080",null,null);
 
         sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
                 messageGroupService);
@@ -114,9 +114,11 @@ class SqsPublishStepTest {
                 .messageId("sqs-msg-id-456")
                 .build();
         when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
-        sqsPublishStep.process(context, content);
+        sqsPublishStep.process(context, content,null);
         assertEquals("sqs-msg-id-456", context.getMessageId());
         verify(sqsClient, times(1)).sendMessage(any(SendMessageRequest.class));
     }
+
+
 
 }

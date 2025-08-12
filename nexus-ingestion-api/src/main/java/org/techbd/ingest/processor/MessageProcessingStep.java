@@ -25,5 +25,5 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface MessageProcessingStep {
     void process(RequestContext context, MultipartFile file);
-    void process(RequestContext context, String content);
+    void process(RequestContext context, String content, String ackMessage);
 }

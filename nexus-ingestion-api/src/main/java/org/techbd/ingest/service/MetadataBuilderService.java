@@ -40,7 +40,8 @@ public class MetadataBuilderService {
         metadata.put("tenantId", context.getTenantId());
         metadata.put("fileName", context.getFileName());
         metadata.put("FileSize", String.valueOf(context.getFileSize()));
-        metadata.put("s3ObjectPath", context.getFullS3Path());
+        metadata.put("s3DataObjectPath", context.getFullS3DataPath());
+        metadata.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath()); 
         metadata.put("UploadTime", context.getUploadTime().toString());
         metadata.put("UploadedBy", context.getUserAgent());
         return metadata;
@@ -63,24 +64,21 @@ public class MetadataBuilderService {
         jsonMetadata.put("fileName", context.getFileName());
         jsonMetadata.put("fileSize", String.valueOf(context.getFileSize()));
         jsonMetadata.put("sourceSystem", context.getUserAgent());
-        jsonMetadata.put("s3ObjectPath", context.getFullS3Path());
+        jsonMetadata.put("s3DataObjectPath", context.getFullS3DataPath());
+        jsonMetadata.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath());        
         jsonMetadata.put("requestUrl", context.getRequestUrl());
         jsonMetadata.put("fullRequestUrl", context.getFullRequestUrl());
         jsonMetadata.put("queryParams", context.getQueryParams());
         jsonMetadata.put("protocol", context.getProtocol());
         jsonMetadata.put("localAddress", context.getLocalAddress());
         jsonMetadata.put("remoteAddress", context.getRemoteAddress());
-
         List<Map<String, String>> headerList = context.getHeaders().entrySet().stream()
                 .map(entry -> Map.of(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
-
         jsonMetadata.put("headers", headerList);
-
         Map<String, Object> wrapper = new HashMap<>();
         wrapper.put("key", context.getObjectKey());
         wrapper.put("json_metadata", jsonMetadata);
-
         return wrapper;
     }
 
@@ -100,12 +98,12 @@ public class MetadataBuilderService {
         message.put("fileName", context.getFileName());
         message.put("fileSize", context.getFileSize());
         message.put("s3ObjectId", context.getObjectKey());
-        message.put("s3ObjectPath", context.getFullS3Path());
+        message.put("s3DataObjectPath", context.getFullS3DataPath());
+        message.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath());
         message.put("messageGroupId", context.getMessageGroupId());
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());
         }
-
         return message;
     }
 }

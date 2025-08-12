@@ -22,6 +22,7 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.Hl7Util;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
 
@@ -79,15 +80,13 @@ public class PnrEndpoint {
             interactionId);
             // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
-            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            
-            // Process the PnR transaction
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            
+            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);        
             // Create response using ObjectFactory
             RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
             ObjectFactory factory = new ObjectFactory();
-            return factory.createRegistryResponse(response);
+            JAXBElement<RegistryResponseType> jaxbResponse = factory.createRegistryResponse(response);
+            messageProcessorService.processMessage(context, rawSoapMessage, Hl7Util.toXmlString(jaxbResponse,interactionId));
+            return jaxbResponse;
         } catch (Exception e) {
             log.error("PnrEndpoint:: Exception processing ITI-41 request. interactionId={}, error={}", interactionId, e.getMessage(), e);
             RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId);
@@ -99,11 +98,9 @@ public class PnrEndpoint {
     private RequestContext buildRequestContext(String rawSoapMessage, String interactionId) {
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
-
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest request = connection.getHttpServletRequest();
-
         Map<String, String> headers = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -123,13 +120,16 @@ public class PnrEndpoint {
         // Keep same file naming convention as PixEndpoint
         String fileBaseName = "soap-message";
         String fileExtension = "xml";
-
+        String ackFileBaseName = "soap-message-ack";
         String originalFileName = fileBaseName + "." + fileExtension;
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + ackObjectKey;
 
         log.debug("PnrEndpoint:: Request context built with source IP {}, destination port {}, user-agent: {} for interactionId :{}",
                 sourceIp, destinationPort, userAgent, interactionId);
@@ -145,7 +145,7 @@ public class PnrEndpoint {
                 rawSoapMessage != null ? rawSoapMessage.length() : 0, // Payload size
                 objectKey,
                 metadataKey,
-                fullS3Path,
+                fullS3DataPath,
                 userAgent,
                 request.getRequestURL().toString(),
                 request.getQueryString() == null ? "" : request.getQueryString(),
@@ -154,7 +154,9 @@ public class PnrEndpoint {
                 sourceIp,
                 sourceIp,
                 destinationIp,
-                destinationPort
+                destinationPort,                
+                ackObjectKey,
+                fullS3AckMessagePath
         );
     }
 }

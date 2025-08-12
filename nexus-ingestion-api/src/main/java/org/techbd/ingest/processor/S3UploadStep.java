@@ -64,62 +64,79 @@ public class S3UploadStep implements MessageProcessingStep {
         LOG.info("S3UploadStep initialized");
     }
 
-    /**
-     * Uploads the provided file and its metadata to S3.
-     *
-     * @param context The request context containing metadata for the operation.
-     * @param file    The file to upload to S3.
-     */
-    @Override
-    public void process(RequestContext context, MultipartFile file) {
-        String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with MultipartFile. interactionId={}, filename={}", interactionId,
-                file != null ? file.getOriginalFilename() : "null");
-        try {
-            Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
-            Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
-            String metadataContent = objectMapper.writeValueAsString(metadataJson);
-            LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using  key {} for interactionId={}",
-                    appConfig.getAws().getS3().getBucket(), context.getMetadataKey(), interactionId);
-            uploadStringContent(appConfig.getAws().getS3().getBucket(), context.getMetadataKey(), metadataContent,
-                    null, interactionId);
-            LOG.info("S3UploadStep:: Uploading file to S3 bucket {} using key {} for interactionId={}",
-                    appConfig.getAws().getS3().getBucket(), context.getObjectKey(), interactionId);
-            String s3Response = uploadFile(context.getObjectKey(), appConfig.getAws().getS3().getBucket(), file,
-                    metadata, interactionId);
-            context.setS3Response(s3Response);
-            LOG.info("S3UploadStep:: File and metadata uploaded successfully. interactionId={}", interactionId);
-        } catch (Exception e) {
-            LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
-            // throw new RuntimeException("S3 Upload Step Failed", e);
+        /**
+         * Uploads the provided file and its metadata to S3.
+         *
+         * @param context The request context containing metadata for the operation.
+         * @param file    The file to upload to S3.
+         */
+        @Override
+        public void process(RequestContext context, MultipartFile file) {
+                String interactionId = context != null ? context.getInteractionId() : "unknown";
+                LOG.info("S3UploadStep:: process called with MultipartFile. interactionId={}, filename={}",
+                                interactionId,
+                                file != null ? file.getOriginalFilename() : "null");
+                try {
+                        Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
+                        Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
+                        String metadataContent = objectMapper.writeValueAsString(metadataJson);
+                        LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using  key {} for interactionId={}",
+                                        appConfig.getAws().getS3().getBucket(), context.getMetadataKey(),
+                                        interactionId);
+                        uploadStringContent(appConfig.getAws().getS3().getBucket(), context.getMetadataKey(),
+                                        metadataContent,
+                                        null, interactionId);
+                        LOG.info("S3UploadStep:: Uploading file to S3 bucket {} using key {} for interactionId={}",
+                                        appConfig.getAws().getS3().getBucket(), context.getObjectKey(), interactionId);
+                        String s3Response = uploadFile(context.getObjectKey(), appConfig.getAws().getS3().getBucket(),
+                                        file,
+                                        metadata, interactionId);
+                        context.setS3Response(s3Response);
+                        LOG.info("S3UploadStep:: File and metadata uploaded successfully. interactionId={}",
+                                        interactionId);
+                } catch (Exception e) {
+                        LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
+                        // throw new RuntimeException("S3 Upload Step Failed", e);
+                }
         }
-    }
 
-    /**
-     * Uploads the provided string content and its metadata to S3.
-     *
-     * @param context The request context containing metadata for the operation.
-     * @param content The string content to upload to S3.
-     */
-    public void process(RequestContext context, String content) {
-        String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with String content. interactionId={}", interactionId);
-        try {
-            Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
-            Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
-            String metadataContent = objectMapper.writeValueAsString(metadataJson);
-            LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
-                    Constants.BUCKET_NAME, context.getMetadataKey(), interactionId);
-            uploadStringContent(Constants.BUCKET_NAME, context.getMetadataKey(), metadataContent, null, interactionId);
-            LOG.info("S3UploadStep:: Uploading content to S3 bucket {} using key {} for interactionId={}",
-                    Constants.BUCKET_NAME, context.getObjectKey(), interactionId);
-            uploadStringContent(Constants.BUCKET_NAME, context.getObjectKey(), content, metadata, interactionId);
-            LOG.info("S3UploadStep:: Content and metadata uploaded successfully. interactionId={}", interactionId);
-        } catch (Exception e) {
-            LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
-            // throw new RuntimeException("S3 Upload Step Failed", e);
+        /**
+         * Uploads the provided string content and its metadata to S3.
+         *
+         * @param context The request context containing metadata for the operation.
+         * @param content The string content to upload to S3.
+         */
+        public void process(RequestContext context, String content, String ackMessage) {
+                String interactionId = context != null ? context.getInteractionId() : "unknown";
+                LOG.info("S3UploadStep:: process called with String content. interactionId={}", interactionId);
+                try {
+                        Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
+                        Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
+                        String metadataContent = objectMapper.writeValueAsString(metadataJson);
+                        LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
+                                        Constants.BUCKET_NAME, context.getMetadataKey(), interactionId);
+                        uploadStringContent(Constants.BUCKET_NAME, context.getMetadataKey(), metadataContent, null,
+                                        interactionId);
+                        LOG.info("S3UploadStep:: Uploading content to S3 bucket {} using key {} for interactionId={}",
+                                        Constants.BUCKET_NAME, context.getObjectKey(), interactionId);
+                        uploadStringContent(Constants.BUCKET_NAME, context.getObjectKey(), content, metadata,
+                                        interactionId);
+                        if (ackMessage != null && !ackMessage.isEmpty()) {
+                                LOG.info("S3UploadStep:: Uploading Acknowledgement message content to S3 bucket {} using key {} for interactionId={}",
+                                                Constants.BUCKET_NAME, context.getAckObjectKey(), interactionId);
+                                uploadStringContent(Constants.BUCKET_NAME, context.getAckObjectKey(), ackMessage,
+                                                metadata, interactionId);
+                        } else {
+                                LOG.info("S3UploadStep:: No Acknowledgement message available to upload for interactionId={}",
+                                                interactionId);
+                        }
+                        LOG.info("S3UploadStep:: Content and metadata uploaded successfully. interactionId={}",
+                                        interactionId);
+                } catch (Exception e) {
+                        LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
+                        // throw new RuntimeException("S3 Upload Step Failed", e);
+                }
         }
-    }
 
     private String uploadFile(
             String key,

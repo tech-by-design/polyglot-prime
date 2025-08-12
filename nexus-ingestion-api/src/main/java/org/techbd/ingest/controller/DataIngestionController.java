@@ -206,7 +206,7 @@ public class DataIngestionController {
                 remoteAddress,
                 sourceIp,
                 destinationIp,
-                destinationPort
+                destinationPort,null,null
         );
     }
 }

@@ -82,7 +82,7 @@ class S3UploadStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080"
+                "8080",null,null
         );
         S3ServiceClientConfiguration mockConfig = mock(S3ServiceClientConfiguration.class);
         when(s3Client.serviceClientConfiguration()).thenReturn(mockConfig);
@@ -114,7 +114,29 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
-        s3UploadStep.process(context, content);
+        s3UploadStep.process(context, content,null);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+      
+    @Test
+    void testProcessWithAckMessage() throws Exception {
+        String content = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soapenv:Body><TestRequest>Hello</TestRequest></soapenv:Body></soapenv:Envelope>";
+        String ackMessage = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soapenv:Body><Ack>Success</Ack></soapenv:Body></soapenv:Envelope>";
+        RequestContext context = mock(RequestContext.class);
+        when(context.getInteractionId()).thenReturn("test-interaction");
+        when(context.getMetadataKey()).thenReturn("meta-key");
+        when(context.getObjectKey()).thenReturn("object-key");
+        when(context.getAckObjectKey()).thenReturn("ack-key");
+        Map<String, String> metadata = Map.of("metaKey", "metaValue");
+        Map<String, Object> metadataJson = Map.of("jsonKey", "jsonValue");
+        when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
+        when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
+        when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
+        s3UploadStep.process(context, content, ackMessage);
+
+        // Verify uploads: metadata, content, and ack
+        verify(s3Client, times(3)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }

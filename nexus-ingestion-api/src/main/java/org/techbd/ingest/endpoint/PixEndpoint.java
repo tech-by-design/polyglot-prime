@@ -20,6 +20,7 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.Hl7Util;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
 import org.techbd.iti.schema.PRPAIN201302UV02;
@@ -71,12 +72,13 @@ public class PixEndpoint {
             log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                 request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, error={}",
                 interactionId, e.getMessage(), e);
@@ -99,12 +101,13 @@ public class PixEndpoint {
             log.info("PixEndpoint:: Received PRPA_IN201302UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                 request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
                 interactionId, e.getMessage(), e);
@@ -127,12 +130,13 @@ public class PixEndpoint {
             log.info("PixEndpoint:: Received PRPA_IN201304UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                 request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",
                 interactionId, e.getMessage(), e);
@@ -161,21 +165,26 @@ public class PixEndpoint {
         String userAgent = headers.getOrDefault("User-Agent", "");
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "soap-message";
+        String ackFileBaseName = "soap-message-ack";
         String fileExtension = "xml";
         String originalFileName = fileBaseName + "." + fileExtension;
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
             datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
             datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + ackObjectKey;
         log.debug("PixEndpoint:: Request context built. interactionId={}, sourceIp={}, destinationPort={}, userAgent={}",
             interactionId, sourceIp, destinationPort, userAgent);
         return new RequestContext(
-            headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
-            originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3Path,
-            userAgent, request.getRequestURL().toString(),
-            request.getQueryString() == null ? "" : request.getQueryString(),
-            protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort
-        );
+                headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
+                originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3DataPath,
+                userAgent, request.getRequestURL().toString(),
+                request.getQueryString() == null ? "" : request.getQueryString(),
+                protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort,
+                ackObjectKey,
+                fullS3AckMessagePath);
     }
 }

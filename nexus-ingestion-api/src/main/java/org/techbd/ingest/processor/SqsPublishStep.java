@@ -82,7 +82,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         }
     }
 
-    public void process(RequestContext context, String content) {
+    public void process(RequestContext context, String content,String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("SqsPublishStep:: process called with String content. interactionId={}", interactionId);
         try {
