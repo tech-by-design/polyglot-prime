@@ -316,7 +316,7 @@
           "http://terminology.hl7.org/codesystem/v3-nullflavor",
           "http://hl7.org/fhir/us/core/structuredefinition/us-core-birthsex"
           ]}},                       
-          {"name": "PATIENT_BIRTH_DATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').birthDate", "constraints": {"required": true, "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?$"}},
+          {"name": "PATIENT_BIRTH_DATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').birthDate", "constraints": {"required": true, "pattern": "^(?:(?:(?:19|20)\\d{2})-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8])))|(?:(?:19|20)(?:[02468][048]|[13579][26])-02-29)$"}},
           {"name": "ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.line", "constraints": {"required": true}},          
           {"name": "ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.text"},          
           {"name": "CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.city", "constraints": {"required": true} },
