@@ -24,6 +24,9 @@ import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
+
+import io.micrometer.common.util.StringUtils;
+
 import org.techbd.iti.schema.ObjectFactory;
 import jakarta.xml.bind.JAXBElement;
 
@@ -64,11 +67,16 @@ public class PnrEndpoint {
     @ResponsePayload
     public JAXBElement<RegistryResponseType> handleProvideAndRegister(@RequestPayload JAXBElement<ProvideAndRegisterDocumentSetRequestType> request,
                                                                      MessageContext messageContext) {
-        final String interactionId = UUID.randomUUID().toString();
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
-            log.info("[{}] Received ProvideAndRegisterDocumentSet-b (ITI-41) request", interactionId);
-            ProvideAndRegisterDocumentSetRequestType requestData = request.getValue();
-            
+             log.info("PnrEndpoint:: Received ProvideAndRegisterDocumentSet-b (ITI-41) request. interactionId={}",
+            interactionId);
             // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
@@ -81,7 +89,7 @@ public class PnrEndpoint {
             ObjectFactory factory = new ObjectFactory();
             return factory.createRegistryResponse(response);
         } catch (Exception e) {
-            log.error("[{}] Exception processing ITI-41: {}", interactionId, e.getMessage(), e);
+            log.error("PnrEndpoint:: Exception processing ITI-41 request. interactionId={}, error={}", interactionId, e.getMessage(), e);
             RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId);
             ObjectFactory factory = new ObjectFactory();
             return factory.createRegistryResponse(response);
@@ -123,8 +131,8 @@ public class PnrEndpoint {
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
         String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
 
-        log.debug("[{}] Request context built with source IP {}, destination port {}, user-agent: {}",
-                interactionId, sourceIp, destinationPort, userAgent);
+        log.debug("PnrEndpoint:: Request context built with source IP {}, destination port {}, user-agent: {} for interactionId :{}",
+                sourceIp, destinationPort, userAgent, interactionId);
 
         return new RequestContext(
                 headers,

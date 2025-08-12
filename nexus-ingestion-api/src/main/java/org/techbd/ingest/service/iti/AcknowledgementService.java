@@ -28,7 +28,7 @@ public class AcknowledgementService {
         ed.setReference(tel);
 
         detail.setText(ed);
-        logger.debug("[{}] Added techbdGeneratedInteractionId detail", techBDInteractionId);
+        logger.debug("AcknowledgementService:: Added techbdGeneratedInteractionId detail: {}", techBDInteractionId);
         return detail;
     }
 
@@ -39,7 +39,7 @@ public class AcknowledgementService {
             String senderTelecomURL,
             String techBDInteractionId) {
 
-        logger.info("[{}] Creating HL7 acknowledgement response", techBDInteractionId);
+        logger.info("AcknowledgementService:: Creating HL7 acknowledgement response for interactionId: {}", techBDInteractionId);
 
         MCCIIN000002UV01 ack = new MCCIIN000002UV01();
 
@@ -47,7 +47,7 @@ public class AcknowledgementService {
         II id = new II();
         id.setRoot(UUID.randomUUID().toString());
         ack.setId(id);
-        logger.debug("[{}] Assigned response ID: {}", techBDInteractionId, id.getRoot());
+        logger.debug("AcknowledgementService:: Assigned response ID: {} for interaction id :{}", id.getRoot(), techBDInteractionId);
 
         // Creation time
         TS creationTime = new TS();
@@ -99,12 +99,12 @@ public class AcknowledgementService {
 
         ack.getAcknowledgement().add(ackBlock);
 
-        logger.info("[{}] HL7 acknowledgement created successfully", techBDInteractionId);
+        logger.info("AcknowledgementService:: HL7 acknowledgement created successfully for interactionId: {}", techBDInteractionId);
         return ack;
     }
 
     public MCCIIN000002UV01 createPixAcknowledgmentError(String errorMessage, String techBDInteractionId) {
-        logger.warn("[{}] Creating HL7 error acknowledgment: {}", techBDInteractionId, errorMessage);
+        logger.warn("AcknowledgementService:: Creating HL7 error acknowledgment for interactionId: {}, errorMessage: {}", techBDInteractionId, errorMessage);
 
         MCCIIN000002UV01 ack = new MCCIIN000002UV01();
 
@@ -121,7 +121,7 @@ public class AcknowledgementService {
             creationTime.setValue(xmlCal.toXMLFormat());
             ack.setCreationTime(creationTime);
         } catch (Exception e) {
-            logger.error("[{}] Error setting creationTime in error acknowledgment", techBDInteractionId, e);
+            logger.error("AcknowledgementService:: Error setting creationTime in error acknowledgment for interactionId: {}", techBDInteractionId, e);
         }
 
         // Interaction ID
@@ -164,12 +164,12 @@ public class AcknowledgementService {
 
         ack.getAcknowledgement().add(acknowledgement);
 
-        logger.warn("[{}] HL7 error acknowledgment created successfully", techBDInteractionId);
+        logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}", techBDInteractionId);
         return ack;
     }
 
     public RegistryResponseType createPnrAcknowledgement(String status, String techBDInteractionId) {
-        logger.info("[{}] Creating PnR acknowledgement with status: {}", techBDInteractionId, status);
+        logger.info("AcknowledgementService:: Creating PnR acknowledgement with status: {} for interactionId: {}", status, techBDInteractionId);
 
         ObjectFactory factory = new ObjectFactory();
         RegistryResponseType response = factory.createRegistryResponseType();
@@ -180,9 +180,8 @@ public class AcknowledgementService {
             response.setStatus("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure");
         }
 
-        logger.debug("[{}] techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{}",
+        logger.debug("AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}",
                 techBDInteractionId, UUID.randomUUID());
-
         return response;
     }
 }
