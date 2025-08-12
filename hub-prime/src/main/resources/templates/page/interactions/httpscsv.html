@@ -67,88 +67,6 @@
                 });
         }
 
-        // Define downloadZipFile globally
-        window.downloadZipFile = async function (apiUrl, csvZipFileName = 'csv_files') {
-            try {
-                // Fetch data from the API
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                // Get the JSON data
-                const data = await response.json();
-                if (!data) {
-                    throw new Error('No data received from API');
-                }
-
-                // Extract the zip file content from the response
-                // Handle your specific query response structure
-                let zipContent = null;
-
-                // Handle different response structures
-                if (Array.isArray(data) && data.length > 0) {
-                    // If data is an array, get the first item's zip content
-                    zipContent = data[0].csv_zip_file_content;
-                } else if (data.csv_zip_file_content) {
-                    // If data is an object with csv_zip_file_content field (your query structure)
-                    zipContent = data.csv_zip_file_content;
-                }
-
-                if (!zipContent) {
-                    throw new Error('No zip content found in the response');
-                }
-
-                // Decode the bytea data (assuming it's base64 encoded)
-                let binaryData;
-                try {
-                    // If the data is a base64 string, decode it
-                    if (typeof zipContent === 'string') {
-                        // Remove any data URL prefix if present
-                        const base64Data = zipContent.replace(/^data:.*,/, '');
-                        binaryData = atob(base64Data);
-                    } else {
-                        throw new Error('Zip content is not in expected string format');
-                    }
-                } catch (decodeError) {
-                    console.error('Error decoding zip content:', decodeError);
-                    throw new Error('Failed to decode zip content');
-                }
-
-                // Convert binary string to Uint8Array
-                const bytes = new Uint8Array(binaryData.length);
-                for (let i = 0; i < binaryData.length; i++) {
-                    bytes[i] = binaryData.charCodeAt(i);
-                }
-
-                // Create a Blob from the binary data
-                const blob = new Blob([bytes], { type: 'application/zip' });
-
-                // Create download link
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-
-                // Ensure the filename has .zip extension
-                const fileName = csvZipFileName.endsWith('.zip') ? csvZipFileName : `${csvZipFileName}.zip`;
-                link.download = fileName;
-
-                // Trigger download
-                document.body.appendChild(link);
-                link.click();
-
-                // Cleanup
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-
-                console.log(`ZIP file "${fileName}" downloaded successfully`);
-
-            } catch (error) {
-                console.error('Error downloading ZIP file:', error);
-                alert(`Failed to download ZIP file: ${error.message}`);
-            }
-        };
-
         // Define downloadValidationResult globally
         window.downloadValidationResult = async function (apiUrl, file_name = 'validation_result.json') {
             try {
@@ -196,14 +114,20 @@
                 const hub_interaction_id = params.data.hub_interaction_id;
                 const csv_zip_file_name = params.data.csv_zip_file_name || '';
 
-                // Create the URL for the API call
-                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_zip_download/hub_interaction_id/${hub_interaction_id}.json`;
+                // // Create the URL for the API call
+                // const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_zip_download/hub_interaction_id/${hub_interaction_id}.json`;
  
+                // // Create a download link placeholder
+                // return `<a href="#" title="${csv_zip_file_name}" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                //     <i class="fas fa-download"></i>
+                // </a>`;
+
+                const apiUrl = `/api/ux/tabular/jooq/binarydownload/${schemaName}/sat_interaction_zip_file_request/csv_zip_file_content/csv_zip_file_name/hub_interaction_id/${hub_interaction_id}`;
+
                 // Create a download link placeholder
-                return `<a href="#" title="${csv_zip_file_name}" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                return `<a href="${apiUrl}" title="${csv_zip_file_name}"  return false;" style="text-decoration: none; color: #007bff;">
                     <i class="fas fa-download"></i>
                 </a>`;
-
             }
 
             function downloadValidationResultCellRenderer(params) {

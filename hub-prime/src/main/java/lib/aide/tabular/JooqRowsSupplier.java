@@ -41,8 +41,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     public record TypableTable(Table<?> table, boolean stronglyTyped) {
 
         static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
-                                                      @Nonnull String tableLikeName) {
-    
+                @Nonnull String tableLikeName) {
+
             // Attempt to find a generated table reference using reflection
             try {
                 // String qualifiedTableName = schemaName != null ? schemaName.toUpperCase() + "." + tableLikeName.toUpperCase() : tableLikeName.toUpperCase();
@@ -56,7 +56,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         : DSL.name(tableLikeName)), false);
             }
         }
-    
+
         public Field<Object> column(final String columnName) {
             if (this.stronglyTyped) {
                 try {
@@ -162,7 +162,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 logger.error("JooqRowsSupplier error", e);
             }
             return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, null, -1,
-            includeGeneratedSqlInErrorResp ? e.getMessage() : null);
+                    includeGeneratedSqlInErrorResp ? e.getMessage() : null);
         }
     }
 
@@ -226,10 +226,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     }
                     if (filter.type().equals("like") || filter.type().equals("contains")) {
                         bindValues.add("%" + filter.filter() + "%");
-                    }
-                       
-                    else if (filter.type().equals("equals") &&
-                            (filter.dateFrom() != null || filter.filter() != null)) {
+                    } else if (filter.type().equals("equals")
+                            && (filter.dateFrom() != null || filter.filter() != null)) {
                         if (filter.dateFrom() != null) {
                             try {
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -253,8 +251,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         }
                     } else if (filter.filter() != null) {
                         bindValues.add(filter.filter());
-                    }
-                    else if (filter.type().equals("greaterThan") && filter.dateFrom() != null) {
+                    } else if (filter.type().equals("greaterThan") && filter.dateFrom() != null) {
                         // Parse and add date bind value
                         try {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -270,10 +267,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             LOG.error("Error parsing date for binding: " + filter.dateFrom(), e);
                             bindValues.add(filter.dateFrom());
                         }
-                    }
-                    
-                    else if (filter.type().equals("notEqual") &&
-                            (filter.dateFrom() != null || filter.filter() != null)) {
+                    } else if (filter.type().equals("notEqual")
+                            && (filter.dateFrom() != null || filter.filter() != null)) {
                         if (filter.dateFrom() != null) {
                             try {
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -295,10 +290,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             // For non-date fields
                             bindValues.add(filter.filter());
                         }
-                    } 
-
-                    else if (filter.type().equals("lessThan") &&
-                            (filter.dateFrom() != null || filter.filter() != null)) {
+                    } else if (filter.type().equals("lessThan")
+                            && (filter.dateFrom() != null || filter.filter() != null)) {
                         if (filter.dateFrom() != null) {
                             try {
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -519,7 +512,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 dslField.isNull();
             case "notBlank" ->
                 dslField.isNotNull()
-                        .and(DSL.condition("TRIM(CAST({0} AS VARCHAR)) <> ''", dslField));
+                .and(DSL.condition("TRIM(CAST({0} AS VARCHAR)) <> ''", dslField));
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "equals" -> {
@@ -594,7 +587,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "notContains" ->
                 dslField.notLikeIgnoreCase("%" + filter + "%");  // Only works if supported
-             case "startsWith" ->
+            case "startsWith" ->
                 dslField.startsWithIgnoreCase(filter);
             case "endsWith" ->
                 dslField.endsWithIgnoreCase(filter);
@@ -620,8 +613,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             LOG.error("Unable to parse date: {}", dateFrom, e);
                             yield DSL.falseCondition();
                         }
-                    }
-                    // Fall back to regular filter value if dateFrom is null
+                    } // Fall back to regular filter value if dateFrom is null
                     else if (filter != null) {
                         yield dslField.greaterThan(filter);
                     }
@@ -658,7 +650,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     yield DSL.falseCondition();
                 }
             }
-            
+
             case "between" ->
                 dslField.between(filter, secondfilter);
             case "inRange" ->
@@ -667,7 +659,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             default ->
                 throw new IllegalArgumentException(
                         "Unknown filter type '" + type + "' in filter for field '" + field
-                                + "' see JooqRowsSupplier::createCondition");
+                        + "' see JooqRowsSupplier::createCondition");
         };
     }
 
@@ -737,4 +729,46 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         }
     }
 
+    /**
+     * Downloads binary content and file name from specific columns for a given
+     * ID. Intended for use in API endpoints that serve file downloads.
+     *
+     * @param id The primary key or unique identifier value.
+     * @param idColumn The name of the ID column.
+     * @param binaryColumn The name of the binary column.
+     * @param fileNameColumn The name of the file name column.
+     * @return A result object containing the file name and binary content, or
+     * null if not found.
+     */
+    public FileDownloadResult downloadFileWithNameById(Object id, String idColumn, String binaryColumn, String fileNameColumn) {
+        try {
+            Field<Object> idField = typableTable.column(idColumn);
+            Field<byte[]> binaryField = typableTable.table.field(binaryColumn, byte[].class);
+            Field<String> fileNameField = typableTable.table.field(fileNameColumn, String.class);
+            Record record = dsl.select(binaryField, fileNameField)
+                    .from(typableTable.table)
+                    .where(idField.eq(id))
+                    .fetchOne();
+            if (record != null) {
+                return new FileDownloadResult(record.get(fileNameField), record.get(binaryField));
+            }
+        } catch (Exception e) {
+            LOG.error("Error downloading file for id: {}", id, e);
+        }
+        return null;
+    }
+
+    /**
+     * Simple result class for file download
+     */
+    public static class FileDownloadResult {
+
+        public final String fileName;
+        public final byte[] content;
+
+        public FileDownloadResult(String fileName, byte[] content) {
+            this.fileName = fileName;
+            this.content = content;
+        }
+    }
 }
