@@ -329,7 +329,7 @@
                         <strong>TechBD Tenant ID:</strong> Identifies the tenant associated with the request.<br>
                         <strong>URI:</strong> Displays the endpoint involved in the interaction.<br>
                         <strong>Processing Status:</strong> Indicates the current state of ZIP file processing (e.g.,
-                        <em>Processing Started</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
+                        <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
                         users understand where the file stands in the processing pipeline.<br>
                         <strong>CSV Issues:</strong> Highlights whether the FHIR conversion from the submitted CSV
                         failed. If a failure occurred, a direct link is provided to the
@@ -341,7 +341,7 @@
                         <strong>FHIR Count:</strong> Reflects the total FHIR interactions triggered by the request, and
                         can be expanded for detailed interaction-level insight.<br>
                         <strong>FHIR Success Count:</strong> Indicates how many of those interactions were successfully
-                        forwarded as valid FHIR resources.<br>
+                        forwarded as valid FHIR resources to DataLake.<br>
                         <strong>Download Options:</strong> Users can download the original ZIP file submitted for
                         processing and the corresponding OperationOutcome file, which contains validation results for
                         debugging and analysis.
