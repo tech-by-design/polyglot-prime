@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-08-12<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.657.0</li>
+          <li id="projectVersion">Version: 0.658.0</li>
         <li class="pull-right"><a href="${project.url}">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -241,14 +241,14 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">lib/aide/tabular/JooqRowsSupplier.java</td>
-<td>231</td></tr>
+<td>229</td></tr>
 <tr class="a">
 <td style="text-align: left;">lib/aide/tabular/JooqRowsSupplier.java</td>
-<td>275</td></tr>
+<td>270</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
-<pre>else if (filter.type().equals(&quot;equals&quot;) &amp;&amp;
-                            (filter.dateFrom() != null || filter.filter() != null)) {
+<pre>} else if (filter.type().equals(&quot;equals&quot;)
+                            &amp;&amp; (filter.dateFrom() != null || filter.filter() != null)) {
                         if (filter.dateFrom() != null) {
                             try {
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;);
