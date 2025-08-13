@@ -18,19 +18,6 @@ public class AcknowledgementService {
 
     private static final Logger logger = LoggerFactory.getLogger(AcknowledgementService.class);
 
-    private MCCIMT000200UV01AcknowledgementDetail createTechbdGeneratedInteractionDetail(String techBDInteractionId) {
-        MCCIMT000200UV01AcknowledgementDetail detail = new MCCIMT000200UV01AcknowledgementDetail();
-        detail.setTypeCode(AcknowledgementDetailType.I); // Informational
-
-        ED ed = new ED();
-        TEL tel = new TEL();
-        tel.setValue("urn:uuid:techbd-generated-interactionid:" + techBDInteractionId);
-        ed.setReference(tel);
-
-        detail.setText(ed);
-        logger.debug("AcknowledgementService:: Added techbdGeneratedInteractionId detail: {}", techBDInteractionId);
-        return detail;
-    }
 
     public MCCIIN000002UV01 createPixAcknowledgement(
             II originalRequestId,
@@ -93,10 +80,6 @@ public class AcknowledgementService {
             targetMessage.setId(unknownId);
         }
         ackBlock.setTargetMessage(targetMessage);
-
-        // Add techbdGeneratedInteractionId detail
-        ackBlock.getAcknowledgementDetail().add(createTechbdGeneratedInteractionDetail(techBDInteractionId));
-
         ack.getAcknowledgement().add(ackBlock);
 
         logger.info("AcknowledgementService:: HL7 acknowledgement created successfully for interactionId: {}", techBDInteractionId);

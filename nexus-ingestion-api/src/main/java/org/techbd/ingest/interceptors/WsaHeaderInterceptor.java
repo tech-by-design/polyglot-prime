@@ -11,7 +11,11 @@ import org.springframework.ws.server.EndpointInterceptor;
 import org.springframework.ws.soap.SoapHeader;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class WsaHeaderInterceptor implements EndpointInterceptor {
 
@@ -34,6 +38,8 @@ public class WsaHeaderInterceptor implements EndpointInterceptor {
         SoapHeader header = soapResponse.getSoapHeader();
         String wsaNs = "http://www.w3.org/2005/08/addressing";
         String wsaPrefix = "wsa";
+        String techbdNs = "urn:techbd:custom";
+        String techbdPrefix = "techbd";
         String messageId = "urn:uuid:" + UUID.randomUUID();
         String action = "urn:hl7-org:v3:MCCI_IN000002UV01";
         String to = "http://www.w3.org/2005/08/addressing/anonymous";
@@ -54,6 +60,15 @@ public class WsaHeaderInterceptor implements EndpointInterceptor {
         header.addHeaderElement(new QName(wsaNs, "MessageID", wsaPrefix)).setText(messageId);
         header.addHeaderElement(new QName(wsaNs, "RelatesTo", wsaPrefix)).setText(relatesTo);
         header.addHeaderElement(new QName(wsaNs, "To", wsaPrefix)).setText(to);
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        String interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (interactionId == null || interactionId.isBlank()) {
+            interactionId = "urn:uuid:techbd-generated-interactionid:" + UUID.randomUUID();
+        }
+        header.addHeaderElement(new QName(techbdNs, "InteractionID", techbdPrefix))
+                .setText(interactionId);
         return true;
     }
 
