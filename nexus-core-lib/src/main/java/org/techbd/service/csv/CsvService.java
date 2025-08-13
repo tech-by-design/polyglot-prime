@@ -318,7 +318,7 @@ public class CsvService {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "RECEIVED");
         response.put("message",
-                "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI for detailed status updates.");
+                "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI  Interactions > CSV via HTTPs tab for detailed status updates.");
         response.put("zipFileInteractionId", interactionId);
         return response;
     }
