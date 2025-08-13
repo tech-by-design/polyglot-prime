@@ -35,7 +35,7 @@ class MetadataBuilderServiceTest {
                 "192.168.1.1",
                 null,
                 "192.168.1.2",
-                "8080"
+                "8080",null,null
         );
         context.setS3Response(s3Response);
         return context;
@@ -52,7 +52,7 @@ class MetadataBuilderServiceTest {
                 .containsEntry("tenantId", "tenant1")
                 .containsEntry("fileName", "file.txt")
                 .containsEntry("FileSize", "123")
-                .containsEntry("s3ObjectPath", "s3://bucket/file.txt")
+                .containsEntry("s3DataObjectPath", "s3://bucket/file.txt")
                 .containsEntry("UploadedBy", "JUnit-Agent");
 
         assertThat(metadata).containsKey("UploadTime");
@@ -78,7 +78,7 @@ class MetadataBuilderServiceTest {
                 .containsEntry("fileName", "file.txt")
                 .containsEntry("fileSize", "123")
                 .containsEntry("sourceSystem", "JUnit-Agent")
-                .containsEntry("s3ObjectPath", "s3://bucket/file.txt")
+                .containsEntry("s3DataObjectPath", "s3://bucket/file.txt")
                 .containsEntry("requestUrl", "/upload")
                 .containsEntry("fullRequestUrl", "http://localhost/upload")
                 .containsEntry("protocol", "HTTP/1.1")
@@ -106,7 +106,7 @@ class MetadataBuilderServiceTest {
                 .containsEntry("fileName", "file.txt")
                 .containsEntry("fileSize", 123L)
                 .containsEntry("s3ObjectId", "objectKey")
-                .containsEntry("s3ObjectPath", "s3://bucket/file.txt")
+                .containsEntry("s3DataObjectPath", "s3://bucket/file.txt")
                 .containsEntry("requestUrl", "/upload")
                 .containsEntry("timestamp", "1716899999999");
 

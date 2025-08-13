@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 
@@ -39,10 +40,12 @@ public class DataIngestionController {
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
+    private final AppConfig appConfig;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper) {
+    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig) {
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
+        this.appConfig = appConfig;
         LOG.info("DataIngestionController initialized");
     }
 
@@ -159,25 +162,15 @@ public class DataIngestionController {
         Instant now = Instant.now();
         String timestamp = String.valueOf(now.toEpochMilli());
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
-
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1); // e.g., csv
         String fileBaseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // e.g., ttest
-
-        String s3PrefixPath = String.format("data/%s/%s/%s", datePath, timestamp, interactionId);
-        String metadataPrefixPath = String.format("metadata/%s/%s/%s", datePath, timestamp, interactionId);
-
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-
+        String fullS3Path = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
-
         String fullRequestUrl = request.getRequestURL().toString();
         String queryParams = request.getQueryString();
         String protocol = request.getProtocol();
@@ -206,7 +199,7 @@ public class DataIngestionController {
                 remoteAddress,
                 sourceIp,
                 destinationIp,
-                destinationPort
+                destinationPort,null,null
         );
     }
 }

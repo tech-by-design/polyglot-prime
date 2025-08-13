@@ -10,6 +10,7 @@ org:
         fifo-queue-url: ${AWS_SQS_QUEUE_NAME:default-fifo-url}
       s3:
         bucket: ${AWS_S3_BUCKET_NAME:default-bucket}
+        metadata-bucket: ${AWS_S3_METADATA_BUCKET_NAME:default-metadata-bucket}
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:sandbox}

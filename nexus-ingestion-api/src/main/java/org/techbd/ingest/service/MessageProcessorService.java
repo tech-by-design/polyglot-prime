@@ -57,14 +57,15 @@ public class MessageProcessorService {
      *
      * @param context The request context containing metadata for the operation.
      * @param content The raw string content to process.
+     * @param ackMessage The acknowledgement message to be processed.
      * @return A map containing the result of the processing, including message ID and S3 path.
      */
-    public Map<String, String> processMessage(RequestContext context, String content) {
+    public Map<String, String> processMessage(RequestContext context, String content,String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={}", interactionId);
         for (MessageProcessingStep step : processingSteps) {
             LOG.info("MessageProcessorService:: Processing step {} for interactionId={}", step.getClass().getSimpleName(), interactionId);
-            step.process(context, content);
+            step.process(context, content, ackMessage);
         }
         LOG.info("MessageProcessorService:: All processing steps completed for interactionId={}", interactionId);
         return createSuccessResponse(context.getMessageId(), context);
@@ -84,7 +85,7 @@ public class MessageProcessorService {
             return Map.of(
                     "messageId", messageId,
                     "interactionId", context.getInteractionId(),
-                    "fullS3Path", context.getFullS3Path(),
+                    "fullS3Path", context.getFullS3DataPath(),
                     "timestamp", context.getTimestamp());
         } catch (Exception e) {
             LOG.error("MessageProcessorService:: Error creating success response for interactionId={}", interactionId, e);

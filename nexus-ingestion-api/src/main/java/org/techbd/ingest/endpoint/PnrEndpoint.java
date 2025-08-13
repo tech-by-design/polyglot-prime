@@ -19,11 +19,16 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.Hl7Util;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
+
+import io.micrometer.common.util.StringUtils;
+
 import org.techbd.iti.schema.ObjectFactory;
 import jakarta.xml.bind.JAXBElement;
 
@@ -53,10 +58,12 @@ public class PnrEndpoint {
 
     private final AcknowledgementService ackService;
     private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public PnrEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
+    public PnrEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.ackService = ackService;
         this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
         log.info("PnrEndpoint constructor called - bean is being created!");
     }
 
@@ -64,24 +71,27 @@ public class PnrEndpoint {
     @ResponsePayload
     public JAXBElement<RegistryResponseType> handleProvideAndRegister(@RequestPayload JAXBElement<ProvideAndRegisterDocumentSetRequestType> request,
                                                                      MessageContext messageContext) {
-        final String interactionId = UUID.randomUUID().toString();
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
-            log.info("[{}] Received ProvideAndRegisterDocumentSet-b (ITI-41) request", interactionId);
-            ProvideAndRegisterDocumentSetRequestType requestData = request.getValue();
-            
+             log.info("PnrEndpoint:: Received ProvideAndRegisterDocumentSet-b (ITI-41) request. interactionId={}",
+            interactionId);
             // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
-            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            
-            // Process the PnR transaction
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            
+            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);        
             // Create response using ObjectFactory
             RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
             ObjectFactory factory = new ObjectFactory();
-            return factory.createRegistryResponse(response);
+            JAXBElement<RegistryResponseType> jaxbResponse = factory.createRegistryResponse(response);
+            messageProcessorService.processMessage(context, rawSoapMessage, Hl7Util.toXmlString(jaxbResponse,interactionId));
+            return jaxbResponse;
         } catch (Exception e) {
-            log.error("[{}] Exception processing ITI-41: {}", interactionId, e.getMessage(), e);
+            log.error("PnrEndpoint:: Exception processing ITI-41 request. interactionId={}, error={}", interactionId, e.getMessage(), e);
             RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId);
             ObjectFactory factory = new ObjectFactory();
             return factory.createRegistryResponse(response);
@@ -91,11 +101,9 @@ public class PnrEndpoint {
     private RequestContext buildRequestContext(String rawSoapMessage, String interactionId) {
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
-
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest request = connection.getHttpServletRequest();
-
         Map<String, String> headers = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -115,16 +123,19 @@ public class PnrEndpoint {
         // Keep same file naming convention as PixEndpoint
         String fileBaseName = "soap-message";
         String fileExtension = "xml";
-
+        String ackFileBaseName = "soap-message-ack";
         String originalFileName = fileBaseName + "." + fileExtension;
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
 
-        log.debug("[{}] Request context built with source IP {}, destination port {}, user-agent: {}",
-                interactionId, sourceIp, destinationPort, userAgent);
+        log.debug("PnrEndpoint:: Request context built with source IP {}, destination port {}, user-agent: {} for interactionId :{}",
+                sourceIp, destinationPort, userAgent, interactionId);
 
         return new RequestContext(
                 headers,
@@ -137,7 +148,7 @@ public class PnrEndpoint {
                 rawSoapMessage != null ? rawSoapMessage.length() : 0, // Payload size
                 objectKey,
                 metadataKey,
-                fullS3Path,
+                fullS3DataPath,
                 userAgent,
                 request.getRequestURL().toString(),
                 request.getQueryString() == null ? "" : request.getQueryString(),
@@ -146,7 +157,9 @@ public class PnrEndpoint {
                 sourceIp,
                 sourceIp,
                 destinationIp,
-                destinationPort
+                destinationPort,                
+                ackObjectKey,
+                fullS3AckMessagePath
         );
     }
 }

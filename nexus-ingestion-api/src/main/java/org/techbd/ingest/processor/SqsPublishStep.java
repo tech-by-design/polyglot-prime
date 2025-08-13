@@ -2,19 +2,17 @@ package org.techbd.ingest.processor;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
@@ -62,9 +60,7 @@ public class SqsPublishStep implements MessageProcessingStep {
             final var messageGroupId = messageGroupService.createMessageGroupId(context,interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             String messageJson = objectMapper.writeValueAsString(message);
-            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
-                    ? appConfig.getAws().getSqs().getFifoQueueUrl()
-                    : Constants.FIFO_Q_URL;
+            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl();
             LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
 
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
@@ -82,17 +78,14 @@ public class SqsPublishStep implements MessageProcessingStep {
         }
     }
 
-    public void process(RequestContext context, String content) {
+    public void process(RequestContext context, String content,String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("SqsPublishStep:: process called with String content. interactionId={}", interactionId);
         try {
             final var messageGroupId = messageGroupService.createMessageGroupId(context,interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
-            message.put("content", content);
             String messageJson = objectMapper.writeValueAsString(message);
-            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
-                    ? appConfig.getAws().getSqs().getFifoQueueUrl()
-                    : Constants.FIFO_Q_URL;
+            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl();
             LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
 
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()

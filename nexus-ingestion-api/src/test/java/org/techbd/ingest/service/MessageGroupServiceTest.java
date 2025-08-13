@@ -42,7 +42,7 @@ class MessageGroupServiceTest {
                 "192.168.1.1", // remoteAddress
                 "192.168.1.1", // sourceIp
                 "192.168.1.2", // destinationIp
-                "8080" // destinationPort
+                "8080",null,null
         );
 
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -71,7 +71,7 @@ class MessageGroupServiceTest {
                 "192.168.1.1",
                 null, // sourceIp
                 "192.168.1.2",
-                "8080");
+                "8080",null,null);
 
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals(Constants.DEFAULT_MESSAGE_GROUP_ID, groupId);
@@ -99,7 +99,7 @@ class MessageGroupServiceTest {
                 "192.168.1.1",
                 "   ", // sourceIp blank
                 "", // destinationIp empty
-                " " // destinationPort blank
+                " " ,null,null// destinationPort blank
         );
 
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -128,7 +128,7 @@ class MessageGroupServiceTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 null, // destinationIp is null
-                "8080");
+                "8080",null,null);
 
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals(Constants.DEFAULT_MESSAGE_GROUP_ID, groupId);

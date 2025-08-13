@@ -40,7 +40,8 @@
     "fileName": "<file-name>.zip",
     "queryParams": null,
     "sourceSystem": "<source-system>",
-    "s3ObjectPath": "s3://<s3-bucket-name>/data/<YYYY>/<MM>/<DD>/<timestamp>-<interactionId>-<fileName>.zip",
+    "s3DataObjectPath": "s3://<s3-bucket-name>/data/<YYYY>/<MM>/<DD>/<timestamp>-<interactionId>-<fileName>.<fileextension>",
+    "s3AckMessageObjectPath": "s3://<s3-bucket-name>/data/<YYYY>/<MM>/<DD>/<timestamp>-<interactionId>-<fileName>-ack.<fileextension>",
     "protocol": "<protocol-version>",
     "uploadDate": "<YYYY-MM-DD>",
     "fileSize": "<file-size-in-bytes>",
@@ -85,16 +86,17 @@
 - **Sample SQS Message**
   ```json
   {
-    "messageGroupId": "202.83.55.151_10.0.24.24_443",
-    "s3Response": "Uploaded to S3: data/2025/08/05/1754387067153-21991793-a608-4d19-b571-1ea96f114eea-test.zip (ETag: \"3496a7ba9fc9ce41ced802fed4bf6d46\")",
-    "interactionId": "21991793-a608-4d19-b571-1ea96f114eea",
-    "fileName": "test.zip",
-    "fileSize": 198,
-    "s3ObjectId": "data/2025/08/05/1754387067153-21991793-a608-4d19-b571-1ea96f114eea-test.zip",
-    "requestUrl": "/ingest",
-    "s3ObjectPath": "s3://nexus-ingestion-s3-bucket/data/2025/08/05/1754387067153-21991793-a608-4d19-b571-1ea96f114eea-test.zip",
-    "tenantId": "unknown-tenant",
-    "timestamp": "1754387067153"
+    "tenantId": "<tenantId>",
+    "interactionId": "<uuid-interaction-id>",
+    "requestUrl": "<originalRequestUrl>",
+    "timestamp": "<epochMilliTimestamp>",
+    "fileName": "<uploadedFileName>",
+    "fileSize": "<fileSizeInBytes>",
+    "s3ObjectId": "<s3ObjectKey>",
+    "s3DataObjectPath": "s3://<bucketName>/<s3ObjectKey>",
+    "s3AckMessageObjectPath": "s3://<bucketName>/<s3AckObjectKey>",
+    "messageGroupId": "<sourceIp>_<destinationIp>_<destinationPort>",
+    "s3Response": "Uploaded to S3: <s3ObjectKey> (ETag: \"<etagValue>\")"
   }
   ```
 

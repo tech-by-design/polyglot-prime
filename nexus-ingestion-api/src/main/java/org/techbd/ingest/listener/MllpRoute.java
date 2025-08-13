@@ -11,6 +11,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -28,10 +29,12 @@ public class MllpRoute extends RouteBuilder {
 
     private final int port;
     private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public MllpRoute(int port, MessageProcessorService messageProcessorService) {
+    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
     }
 
     @Override
@@ -46,9 +49,9 @@ public class MllpRoute extends RouteBuilder {
                     String nack;
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
-                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message);
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId);
+                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
@@ -112,13 +115,17 @@ public class MllpRoute extends RouteBuilder {
         destinationPort,interactionId);
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "hl7-message";
+        String ackFileBaseName = "hl7-message-ack";
         String fileExtension = "hl7";
         String originalFileName = fileBaseName + "." + fileExtension;
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);        
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
         return new RequestContext(
                 headers,
                 "/hl7",
@@ -130,7 +137,7 @@ public class MllpRoute extends RouteBuilder {
                 hl7Message.length(),
                 objectKey,
                 metadataKey,
-                fullS3Path,
+                fullS3DataPath,
                 getUserAgentFromHL7(hl7Message, interactionId),
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
@@ -139,7 +146,9 @@ public class MllpRoute extends RouteBuilder {
                 exchange.getIn().getHeader("CamelMllpRemoteAddress", String.class),
                 sourceIp,
                 destinationIp,
-                destinationPort);
+                destinationPort,
+                ackObjectKey,
+                fullS3AckMessagePath);
     }
   
     private String extractSourceIp(Map<String, String> headers) {

@@ -17,14 +17,17 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.Hl7Util;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
 import org.techbd.iti.schema.PRPAIN201302UV02;
 import org.techbd.iti.schema.PRPAIN201304UV02;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -32,18 +35,15 @@ import jakarta.servlet.http.HttpServletRequest;
  *
  * Handles the following IHE ITI transactions:
  * <ul>
- *   <li><b>ITI-8</b> Patient Identity Feed - Add (PRPA_IN201301UV02)</li>
- *   <li><b>ITI-8</b> Patient Identity Feed - Update (PRPA_IN201302UV02)</li>
- *   <li><b>ITI-8</b> Patient Identity Feed - Merge/Duplicate Resolved (PRPA_IN201304UV02)</li>
+ *   <li> Patient Identity Feed - Add (PRPA_IN201301UV02)</li>
+ *   <li> Patient Identity Feed - Update (PRPA_IN201302UV02)</li>
+ *   <li> Patient Identity Feed - Merge/Duplicate Resolved (PRPA_IN201304UV02)</li>
  * </ul>
  *
  * Incoming HL7v3 XML messages are processed via {@link MessageProcessorService}.
  * Acknowledgements are returned using {@link AcknowledgementService}.
  *
- * This class should only handle PIX-related transactions.
- * For XDS.b Provide and Register (PnR, ITI-41), see {@link org.techbd.ingest.endpoint.PnrEndpoint}.
  */
-
 @Endpoint
 public class PixEndpoint {
 
@@ -52,52 +52,68 @@ public class PixEndpoint {
 
     private final AcknowledgementService ackService;
     private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
+    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.ackService = ackService;
         this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixAdd(@RequestPayload PRPAIN201301UV02 request,
-                                     MessageContext messageContext) {
-        final String interactionId = UUID.randomUUID().toString();
+                                         MessageContext messageContext) {
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
-            log.info("[{}] Received PRPA_IN201301UV02 request", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
-                request.getId(), request.getSender().getDevice(), //TODO -handle when sender information is not available
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
+                request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
-                context.getProtocol(),interactionId
+                context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
-            log.error("[{}] Exception processing PRPA_IN201301UV02: {}", interactionId, e.getMessage(), e);
-          //TODO  - check on how should we send back acknowledgements in case of errors
-          return ackService.createPixAcknowledgmentError("Internal server error",interactionId);
+            log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, error={}",
+                interactionId, e.getMessage(), e);
+            return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
         }
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201302UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixUpdate(@RequestPayload PRPAIN201302UV02 request,
-                                     MessageContext messageContext) {
-        final String interactionId = UUID.randomUUID().toString();
+                                            MessageContext messageContext) {
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
-            log.info("[{}] Received PRPA_IN201302UV02 request", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201302UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
-                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
+                request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
-                context.getProtocol(),interactionId
+                context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
-            log.error("[{}] Exception processing PRPA_IN201302UV02: {}", interactionId, e.getMessage(), e);
-            //TODO  - check on how should we send back acknowledgements in case of errors
+            log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
+                interactionId, e.getMessage(), e);
             return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
         }
     }
@@ -105,21 +121,28 @@ public class PixEndpoint {
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201304UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixDuplicateResolved(@RequestPayload PRPAIN201304UV02 request,
-                                                     MessageContext messageContext) {
-        final String interactionId = UUID.randomUUID().toString();
+                                                       MessageContext messageContext) {
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
-            log.info("[{}] Received PRPA_IN201304UV02 request", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201304UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-            messageProcessorService.processMessage(context, rawSoapMessage);
-            return ackService.createPixAcknowledgement(
-                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+            MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
+                request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
-                context.getProtocol(),interactionId
+                context.getProtocol(), interactionId
             );
+            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            return response;
         } catch (Exception e) {
-            log.error("[{}] Exception processing PRPA_IN201304UV02: {}", interactionId, e.getMessage(), e);
-            //TODO  - check on how should we send back acknowledgements in case of errors
+            log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",
+                interactionId, e.getMessage(), e);
             return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
         }
     }
@@ -145,21 +168,26 @@ public class PixEndpoint {
         String userAgent = headers.getOrDefault("User-Agent", "");
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "soap-message";
+        String ackFileBaseName = "soap-message-ack";
         String fileExtension = "xml";
         String originalFileName = fileBaseName + "." + fileExtension;
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
             datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
             datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-        log.debug("[{}] Request context built with source IP {}, destination port {}, user-agent: {}",
+        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
+        log.debug("PixEndpoint:: Request context built. interactionId={}, sourceIp={}, destinationPort={}, userAgent={}",
             interactionId, sourceIp, destinationPort, userAgent);
         return new RequestContext(
-            headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
-            originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3Path,
-            userAgent, request.getRequestURL().toString(),
-            request.getQueryString() == null ? "" : request.getQueryString(),
-            protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort
-        );
+                headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
+                originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3DataPath,
+                userAgent, request.getRequestURL().toString(),
+                request.getQueryString() == null ? "" : request.getQueryString(),
+                protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort,
+                ackObjectKey,
+                fullS3AckMessagePath);
     }
 }

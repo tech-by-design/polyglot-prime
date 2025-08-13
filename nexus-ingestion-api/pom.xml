@@ -7,13 +7,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
         <relativePath />
     </parent>
 
     <groupId>org.techbd</groupId>
     <artifactId>nexus-ingestion-api</artifactId>
-    <version>0.1.20</version>
+    <version>0.1.21</version>
     <name>nexus-ingestion-api</name>
     <description>Nexus Ingestion API</description>
 
@@ -28,6 +28,12 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
