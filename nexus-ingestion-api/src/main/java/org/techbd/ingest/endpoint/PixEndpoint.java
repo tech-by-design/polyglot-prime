@@ -17,6 +17,7 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
@@ -51,10 +52,12 @@ public class PixEndpoint {
 
     private final AcknowledgementService ackService;
     private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
+    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.ackService = ackService;
         this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")
@@ -174,8 +177,8 @@ public class PixEndpoint {
             datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
             datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3DataPath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-        String fullS3AckMessagePath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + ackObjectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
         log.debug("PixEndpoint:: Request context built. interactionId={}, sourceIp={}, destinationPort={}, userAgent={}",
             interactionId, sourceIp, destinationPort, userAgent);
         return new RequestContext(

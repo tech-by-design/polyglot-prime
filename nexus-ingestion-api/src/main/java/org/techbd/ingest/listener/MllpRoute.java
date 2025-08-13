@@ -11,6 +11,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -28,10 +29,12 @@ public class MllpRoute extends RouteBuilder {
 
     private final int port;
     private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public MllpRoute(int port, MessageProcessorService messageProcessorService) {
+    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
     }
 
     @Override
@@ -121,8 +124,8 @@ public class MllpRoute extends RouteBuilder {
             datePath, timestamp, interactionId, ackFileBaseName, fileExtension);        
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String fullS3DataPath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-        String fullS3AckMessagePath = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + ackObjectKey;
+        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
+        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
         return new RequestContext(
                 headers,
                 "/hl7",

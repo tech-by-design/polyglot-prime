@@ -6,6 +6,7 @@ org:
       secret-key: test
       s3:
         bucket: local-bucket
+        metadata-bucket: local-metadata-bucket
         endpoint: http://localhost:4566
       sqs:
         endpoint: http://localhost:4566

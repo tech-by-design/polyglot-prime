@@ -3,16 +3,18 @@ package org.techbd.ingest.processor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MetadataBuilderService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -83,7 +85,7 @@ public class S3UploadStep implements MessageProcessingStep {
                         LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using  key {} for interactionId={}",
                                         appConfig.getAws().getS3().getBucket(), context.getMetadataKey(),
                                         interactionId);
-                        uploadStringContent(appConfig.getAws().getS3().getBucket(), context.getMetadataKey(),
+                        uploadStringContent(appConfig.getAws().getS3().getMetadataBucket(), context.getMetadataKey(),
                                         metadataContent,
                                         null, interactionId);
                         LOG.info("S3UploadStep:: Uploading file to S3 bucket {} using key {} for interactionId={}",
@@ -114,17 +116,17 @@ public class S3UploadStep implements MessageProcessingStep {
                         Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
                         String metadataContent = objectMapper.writeValueAsString(metadataJson);
                         LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
-                                        Constants.BUCKET_NAME, context.getMetadataKey(), interactionId);
-                        uploadStringContent(Constants.BUCKET_NAME, context.getMetadataKey(), metadataContent, null,
+                                        appConfig.getAws().getS3().getMetadataBucket(), context.getMetadataKey(), interactionId);
+                        uploadStringContent(appConfig.getAws().getS3().getMetadataBucket(), context.getMetadataKey(), metadataContent, null,
                                         interactionId);
                         LOG.info("S3UploadStep:: Uploading content to S3 bucket {} using key {} for interactionId={}",
-                                        Constants.BUCKET_NAME, context.getObjectKey(), interactionId);
-                        uploadStringContent(Constants.BUCKET_NAME, context.getObjectKey(), content, metadata,
+                                        appConfig.getAws().getS3().getBucket(), context.getObjectKey(), interactionId);
+                        uploadStringContent(appConfig.getAws().getS3().getBucket(), context.getObjectKey(), content, metadata,
                                         interactionId);
                         if (ackMessage != null && !ackMessage.isEmpty()) {
                                 LOG.info("S3UploadStep:: Uploading Acknowledgement message content to S3 bucket {} using key {} for interactionId={}",
-                                                Constants.BUCKET_NAME, context.getAckObjectKey(), interactionId);
-                                uploadStringContent(Constants.BUCKET_NAME, context.getAckObjectKey(), ackMessage,
+                                                appConfig.getAws().getS3().getBucket(), context.getAckObjectKey(), interactionId);
+                                uploadStringContent(appConfig.getAws().getS3().getBucket(), context.getAckObjectKey(), ackMessage,
                                                 metadata, interactionId);
                         } else {
                                 LOG.info("S3UploadStep:: No Acknowledgement message available to upload for interactionId={}",
