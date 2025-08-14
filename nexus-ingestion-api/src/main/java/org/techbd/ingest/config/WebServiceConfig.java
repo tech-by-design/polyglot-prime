@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.config.annotation.WsConfigurationSupport;
 import org.springframework.ws.server.EndpointInterceptor;
 import org.springframework.ws.soap.SoapMessageFactory;
@@ -22,6 +23,7 @@ import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
 import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
 import org.techbd.ingest.interceptors.WsaHeaderInterceptor;
+import org.techbd.ingest.util.SoapResponseUtil;
 
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.MimeHeaders;
@@ -31,9 +33,15 @@ import jakarta.xml.soap.SOAPMessage;
 @Configuration
 public class WebServiceConfig extends WsConfigurationSupport {
 
+    private final SoapResponseUtil soapResponseUtil;
+
+    public WebServiceConfig(SoapResponseUtil soapResponseUtil) {
+        this.soapResponseUtil = soapResponseUtil;
+    }
+
     @Override
     protected void addInterceptors(List<EndpointInterceptor> interceptors) {
-        interceptors.add(new WsaHeaderInterceptor());
+        interceptors.add(new WsaHeaderInterceptor(soapResponseUtil));
     }
 
     @Bean
@@ -42,6 +50,13 @@ public class WebServiceConfig extends WsConfigurationSupport {
         servlet.setApplicationContext(context);
         servlet.setTransformWsdlLocations(true);
         return new ServletRegistrationBean<>(servlet, "/ws/*");
+    }
+
+    @Bean
+    public Jaxb2Marshaller jaxb2Marshaller() {
+        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+        marshaller.setContextPath("org.techbd.iti.schema");
+        return marshaller;
     }
 
     @Bean(name = "pix")

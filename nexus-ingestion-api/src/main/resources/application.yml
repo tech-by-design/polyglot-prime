@@ -1,5 +1,5 @@
-# server:
-#     port: 9999
+server:
+    port: 9999
 org:
   techbd:
     aws:
@@ -11,6 +11,15 @@ org:
       s3:
         bucket: ${AWS_S3_BUCKET_NAME:default-bucket}
         metadata-bucket: ${AWS_S3_METADATA_BUCKET_NAME:default-metadata-bucket}
+    soap:
+      wsa:
+        namespace: "http://www.w3.org/2005/08/addressing"
+        prefix: "wsa"
+        action: "urn:hl7-org:v3:MCCI_IN000002UV01"
+        to: "http://www.w3.org/2005/08/addressing/anonymous"
+      techbd:
+        namespace: "urn:techbd:custom"
+        prefix: "techbd"    
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:sandbox}

@@ -80,7 +80,7 @@ public class PixEndpoint {
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
-            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, error={}",
@@ -109,7 +109,7 @@ public class PixEndpoint {
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
-            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+           // messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
             return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
@@ -138,7 +138,7 @@ public class PixEndpoint {
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
-            messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+          //  messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
             return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",

@@ -14,11 +14,20 @@ import org.springframework.ws.soap.SoapMessage;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.processor.S3UploadStep;
+import org.techbd.ingest.util.Hl7Util;
+import org.techbd.ingest.util.SoapResponseUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 public class WsaHeaderInterceptor implements EndpointInterceptor {
 
+    private final SoapResponseUtil soapResponseUtil;
+
+    public WsaHeaderInterceptor(SoapResponseUtil soapResponseUtil) {
+        this.soapResponseUtil = soapResponseUtil;
+    }
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(WsaHeaderInterceptor.class);
      @Override
     public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -33,42 +42,11 @@ public class WsaHeaderInterceptor implements EndpointInterceptor {
 
     @Override
     public boolean handleResponse(MessageContext messageContext, Object endpoint) throws Exception {
-        SoapMessage soapResponse = (SoapMessage) messageContext.getResponse();
-        SoapMessage soapRequest = (SoapMessage) messageContext.getRequest();
-        SoapHeader header = soapResponse.getSoapHeader();
-        String wsaNs = "http://www.w3.org/2005/08/addressing";
-        String wsaPrefix = "wsa";
-        String techbdNs = "urn:techbd:custom";
-        String techbdPrefix = "techbd";
-        String messageId = "urn:uuid:" + UUID.randomUUID();
-        String action = "urn:hl7-org:v3:MCCI_IN000002UV01";
-        String to = "http://www.w3.org/2005/08/addressing/anonymous";
-        String relatesTo = null;
-        Iterator<?> it = soapRequest.getSoapHeader().examineAllHeaderElements();
-        while (it.hasNext()) {
-            SoapHeaderElement element = (SoapHeaderElement) it.next();
-            if ("MessageID".equals(element.getName().getLocalPart()) &&
-                    wsaNs.equals(element.getName().getNamespaceURI())) {
-                relatesTo = element.getText();
-                break;
-            }
-        }
-        if (relatesTo == null) {
-            relatesTo = "urn:uuid:unknown-incoming-message-id"; // fallback
-        }
-        header.addHeaderElement(new QName(wsaNs, "Action", wsaPrefix)).setText(action);
-        header.addHeaderElement(new QName(wsaNs, "MessageID", wsaPrefix)).setText(messageId);
-        header.addHeaderElement(new QName(wsaNs, "RelatesTo", wsaPrefix)).setText(relatesTo);
-        header.addHeaderElement(new QName(wsaNs, "To", wsaPrefix)).setText(to);
-        var transportContext = TransportContextHolder.getTransportContext();
+         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
         String interactionId = (String) httpRequest.getAttribute("interactionId");
-        if (interactionId == null || interactionId.isBlank()) {
-            interactionId = "urn:uuid:techbd-generated-interactionid:" + UUID.randomUUID();
-        }
-        header.addHeaderElement(new QName(techbdNs, "InteractionID", techbdPrefix))
-                .setText(interactionId);
+        soapResponseUtil.buildSoapResponse(interactionId, messageContext);
         return true;
     }
 
