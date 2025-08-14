@@ -4514,10 +4514,95 @@ where
     ])
 	and coalesce(error_payload.value ->> 'title',
 	errors_summary.value ->> 'type') is not null
+	AND sifcr.created_at >= NOW() - INTERVAL '7 days'
 order by
 	sifcr.created_at desc;
 
 
+/*
+-- Drop the materialized view if it exists
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_errors_mat CASCADE;
+
+-- Create the materialized view
+CREATE MATERIALIZED VIEW techbd_udi_ingress.csv_data_integrity_errors_mat
+TABLESPACE pg_default
+AS
+select
+	sifcr.created_at,
+	sifcr.tenant_id,
+	sifcr.uri,
+	sifcr.zip_file_hub_interaction_id,
+	sifcr.hub_interaction_id,
+	sifcr.group_id,
+	tasks.value ->> 'name'::text as section,
+	coalesce(error_payload.value ->> 'fieldName'::text,
+	errors_summary.value ->> 'fieldName'::text) as fieldname,
+	error_payload.value ->> 'cell'::text as value,
+	coalesce(error_payload.value ->> 'title'::text,
+	errors_summary.value ->> 'type'::text) as error_type,
+	coalesce(error_payload.value ->> 'message'::text,
+	errors_summary.value ->> 'message'::text) as error,
+	error_payload.value ->> 'description'::text as description,
+	(error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
+	(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
+	case
+		when tasks.value ->> 'name'::text = 'qe_admin_data'::text then original_csv.qe_admin_data_file_name
+		when tasks.value ->> 'name'::text = 'pt_info_data'::text then original_csv.demographic_data_file_name
+		when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
+		when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
+		else null::text
+	end as file_name
+from
+	techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+left join techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv 
+    on
+	sifcr.hub_interaction_id = original_csv.hub_interaction_id
+	and original_csv.nature = 'Original Flat File CSV'::text
+left join lateral jsonb_array_elements(
+    ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
+) tasks(value) on
+	true
+left join lateral jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value) on
+	true
+left join lateral jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) errors_summary(value) on
+	true
+where
+	sifcr.nature = 'CSV Validation Result'::text
+	and (
+        ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
+		or jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
+    )
+	and sifcr.uri = any (array[
+        '/flatfile/csv/Bundle'::text,
+	'/flatfile/csv/Bundle/'::text,
+	'/flatfile/csv/Bundle/$validate'::text,
+	'/flatfile/csv/Bundle/$validate/'::text
+    ])
+	and coalesce(error_payload.value ->> 'title',
+	errors_summary.value ->> 'type') is not null
+order by
+	sifcr.created_at desc
+WITH NO DATA;
+
+-- Indexes for performance
+CREATE INDEX csv_data_integrity_errors_mat_created_at_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (created_at);
+
+CREATE INDEX csv_data_integrity_errors_mat_tenant_id_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (tenant_id);
+
+CREATE INDEX csv_data_integrity_errors_mat_hub_interaction_id_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (hub_interaction_id);
+
+CREATE INDEX csv_data_integrity_errors_mat_zip_file_hub_interaction_id_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (zip_file_hub_interaction_id);
+
+CREATE INDEX csv_data_integrity_errors_mat_error_type_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (error_type);
+
+CREATE INDEX csv_data_integrity_errors_mat_fieldname_idx 
+    ON techbd_udi_ingress.csv_data_integrity_errors_mat USING btree (fieldname);	
+*/
 /*****************************************
 This query retrieves interaction details from the techbd_udi_ingress.sat_interaction_fhir_request table. It includes interaction date, tenant ID (QE), IT vendor, SCN, type, and the count of interactions.
 
