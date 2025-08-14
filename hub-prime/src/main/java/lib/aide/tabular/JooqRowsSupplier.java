@@ -730,45 +730,30 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     /**
-     * Downloads binary content and file name from specific columns for a given
-     * ID. Intended for use in API endpoints that serve file downloads.
+     * Downloads file content from a specific column for a given ID.
+     * <p>
+     * This method is intended for use in API endpoints that serve file downloads.
      *
-     * @param id The primary key or unique identifier value.
+     * @param id The primary key or unique identifier value for the row.
      * @param idColumn The name of the ID column.
-     * @param binaryColumn The name of the binary column.
-     * @param fileNameColumn The name of the file name column.
-     * @return A result object containing the file name and binary content, or
-     * null if not found.
+     * @param fileDataColumn The name of the column containing the file data.
+     * @return The file content as a byte array, or null if not found or on error.
+     *
      */
-    public FileDownloadResult downloadFileWithNameById(Object id, String idColumn, String binaryColumn, String fileNameColumn) {
+    public byte[] downloadFileContentById(Object id, String idColumn, String fileDataColumn) {
         try {
             Field<Object> idField = typableTable.column(idColumn);
-            Field<byte[]> binaryField = typableTable.table.field(binaryColumn, byte[].class);
-            Field<String> fileNameField = typableTable.table.field(fileNameColumn, String.class);
-            Record record = dsl.select(binaryField, fileNameField)
+            Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            Record record = dsl.select(binaryField)
                     .from(typableTable.table)
                     .where(idField.eq(id))
                     .fetchOne();
             if (record != null) {
-                return new FileDownloadResult(record.get(fileNameField), record.get(binaryField));
+                return record.get(binaryField);
             }
         } catch (Exception e) {
             LOG.error("Error downloading file for id: {}", id, e);
         }
         return null;
-    }
-
-    /**
-     * Simple result class for file download
-     */
-    public static class FileDownloadResult {
-
-        public final String fileName;
-        public final byte[] content;
-
-        public FileDownloadResult(String fileName, byte[] content) {
-            this.fileName = fileName;
-            this.content = content;
-        }
     }
 }
