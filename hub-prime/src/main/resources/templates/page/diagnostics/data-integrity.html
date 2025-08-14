@@ -17,11 +17,13 @@
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'csv_data_integrity_errors';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
+            const helpers = new Helpers();
             const agGridInstance = new AGGridAideBuilder()
             .withColumnDefs([
                             { 
@@ -119,14 +121,16 @@
                 .build();
 
             agGridInstance.init('serverDataGrid');
+            
+            helpers.injectDateRangeText('date-range', 'This data grid displays errors related to the integrity of data within the submitted CSV files for the period from <b>{startDate}</b> to <b>{endDate}</b>. It includes issues such as foreign key violations, incorrect values, and constraint errors for specific rows and fields. Each row provides detailed information about the error type, the problematic field, and the exact location (row and column) of the issue. The grid also indicates the section and file name where the error occurred, offering a comprehensive view of data inconsistencies to support debugging and resolution.');
         });
     </script>
 </head>
 
 <body>
     <div layout:fragment="content">
-        <div class="grid-description">
-            This data grid highlights errors related to the integrity of data within the submitted CSV files. It includes issues such as foreign key violations, incorrect values, and constraint errors for specific rows and fields in the data. Each row in the grid provides detailed information about the error type, the problematic field, and the exact location (row and column) of the issue. This grid also identifies the section and file name where the error occurred, offering a comprehensive view of data inconsistencies for debugging and resolution.
+        <div class="grid-description" id="date-range">
+            
  </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
