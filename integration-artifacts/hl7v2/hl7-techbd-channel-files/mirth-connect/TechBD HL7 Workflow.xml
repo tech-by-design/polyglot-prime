@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>e8a2a67d-94c4-4208-bc74-dfb555ced84c</id>
+  <id>28c4c91e-ecc2-4619-b19d-5a680df00fdd</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.1</description>
-  <revision>42</revision>
+  <revision>86</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -55,7 +55,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name</string>
           </list>
         </entry>
         <entry>
@@ -75,7 +75,7 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>FileName Validation</name>
+          <name>FileName validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
@@ -93,7 +93,7 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
-}
+}&#xd;
 &#xd;var rawData = connectorMessage.getRawData();var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
 
@@ -282,75 +282,144 @@ function extractSegments(hl7Text) {
     return segments;
 }
 
-// --------------------
-// Helper: Parse XML and get required segments
-// --------------------
-function getRequiredSegmentsFromXml(xmlPath) {
+function validateFieldsInAllSegments(segmentName, fieldIndex, componentIndex, hl7Text, fieldName, description) {
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    var violations = [];
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+
+        if (line.startsWith(segmentName + &quot;|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+
+            // Pad fields if necessary
+            while (fields.length &lt; fieldIndex) {
+                fields.push(&quot;&quot;);
+            }
+
+            var value = fields[fieldIndex] || &quot;&quot;;
+
+            if (componentIndex != null) {
+                var components = value.split(&quot;^&quot;);
+                value = components.length &gt;= componentIndex ? components[componentIndex - 1].trim() : &quot;&quot;;
+            } else {
+                value = value.trim();
+            }
+
+            if (!value) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: segmentName,
+                    fieldIndex: fieldIndex,
+                    fieldName: fieldName,
+                    description: description,
+                    lineContent: line
+                });
+            }
+        }
+    }
+
+    return violations;
+}
+
+function getRequiredSegmentsAndFieldsFromXml(xmlPath) {
     var File = java.io.File;
     var FileInputStream = java.io.FileInputStream;
     var IOUtils = Packages.org.apache.commons.io.IOUtils;
     var SAXBuilder = Packages.org.jdom2.input.SAXBuilder;
-    var Element = Packages.org.jdom2.Element;
 
-    logger.info(&quot;Checking XML template path: &quot; + xmlPath);
+    var file = new File(xmlPath);
+    if (!file.exists()) throw new Error(&quot;Template XML file not found: &quot; + xmlPath);
 
-    try {
-        var file = new File(xmlPath);
-        if (!file.exists()) {
-            logger.error(&quot;XML file not found at: &quot; + xmlPath);
-            throw new Error(&quot;Template XML file not found.&quot;);
+    var builder = new SAXBuilder();
+    var document = builder.build(file);
+    var root = document.getRootElement();
+
+    var messageStructure = root.getChild(&quot;MessageStructure&quot;);
+    var segmentGroup = messageStructure.getChild(&quot;SegmentGroup&quot;);
+    var segmentElems = segmentGroup.getChildren(&quot;Segment&quot;);
+
+    var requiredSegments = [];
+    for each (var seg in segmentElems) {
+        var usage = seg.getAttributeValue(&quot;Usage&quot;);
+        var name = seg.getAttributeValue(&quot;Name&quot;);
+        if (&quot;R&quot;.equalsIgnoreCase(usage) &amp;&amp; name) {
+            requiredSegments.push(name);
         }
-
-        // Log the raw file content
-        var fis = new FileInputStream(file);
-        var fileContent = IOUtils.toString(fis, &quot;UTF-8&quot;);
-        fis.close();
-        logger.info(&quot;XML File Content:\n&quot; + fileContent);
-
-        // Parse XML with JDOM 2.x
-        var builder = new SAXBuilder();
-        var document = builder.build(file);
-
-        var root = document.getRootElement(); // &lt;ConformanceProfile&gt;
-        logger.info(&quot;Parsed XML root element: &quot; + root.getName());
-
-        var messageStructure = root.getChild(&quot;MessageStructure&quot;);
-        if (messageStructure == null) throw new Error(&quot;Missing &lt;MessageStructure&gt; in XML.&quot;);
-
-        var segmentGroup = messageStructure.getChild(&quot;SegmentGroup&quot;);
-        if (segmentGroup == null) throw new Error(&quot;Missing &lt;SegmentGroup&gt; in XML.&quot;);
-
-        var segments = segmentGroup.getChildren(&quot;Segment&quot;);
-        var requiredSegments = [];
-
-        logger.info(&quot;Total segments found in SegmentGroup: &quot; + segments.size());
-
-        for (var i = 0; i &lt; segments.size(); i++) {
-            var seg = segments.get(i);
-            var rawUsage = seg.getAttributeValue(&quot;Usage&quot;);
-            var rawName = seg.getAttributeValue(&quot;Name&quot;);
-
-            var usage = rawUsage != null ? String(rawUsage).replace(/[\s\u200B\u00A0]+/g, &quot;&quot;).toUpperCase() : &quot;&quot;;
-            var name = rawName != null ? String(rawName).replace(/[\s\u200B\u00A0]+/g, &quot;&quot;) : &quot;&quot;;
-
-            logger.info(&quot;Segment[&quot; + i + &quot;] - Raw Usage: &apos;&quot; + rawUsage + &quot;&apos;, Cleaned Usage: &apos;&quot; + usage + &quot;&apos;&quot;);
-            logger.info(&quot;Segment[&quot; + i + &quot;] - Raw Name: &apos;&quot; + rawName + &quot;&apos;, Cleaned Name: &apos;&quot; + name + &quot;&apos;&quot;);
-
-            if (usage === &quot;R&quot; &amp;&amp; name !== &quot;&quot;) {
-                requiredSegments.push(name);
-                logger.info(&quot;Added Segment: &quot; + name);
-            } else {
-                logger.info(&quot;Skipped Segment[&quot; + i + &quot;] - usage=&apos;&quot; + usage + &quot;&apos;, name=&apos;&quot; + name + &quot;&apos;&quot;);
-            }
-        }
-
-        logger.info(&quot;Final extracted required segments: &quot; + requiredSegments.join(&apos;,&apos;));
-        return requiredSegments;
-
-    } catch (e) {
-        logger.error(&quot;Error parsing XML template: &quot; + e.message);
-        throw e;
     }
+
+    var segmentsSection = root.getChild(&quot;Segments&quot;);
+    var segmentDefs = segmentsSection.getChildren(&quot;SegmentDef&quot;);
+
+    var requiredFields = [];
+
+    for each (var segDef in segmentDefs) {
+        var segmentName = segDef.getAttributeValue(&quot;Name&quot;);
+        var fields = segDef.getChildren(&quot;Field&quot;);
+
+        for each (var field in fields) {
+		    var usage = field.getAttributeValue(&quot;Usage&quot;);
+		    var fieldName = field.getAttributeValue(&quot;Name&quot;);
+		    fieldName = String(fieldName).trim();
+			var description = String(field.getAttributeValue(&quot;Description&quot;) || &quot;&quot;).trim();
+		
+		    if (!fieldName) {
+		        logger.warn(&quot;Skipping field: Missing field name entirely&quot;);
+		        continue;
+		    }
+		
+		    fieldName = String(fieldName).trim();
+		
+		    if (!&quot;R&quot;.equalsIgnoreCase(usage)) {
+		        logger.info(&quot;Skipping non-required field: &quot; + fieldName + &quot; (Usage=&quot; + usage + &quot;)&quot;);
+		        continue;
+		    }
+		
+		    if (!fieldName.match(/^[A-Z0-9]{3,5}-\d+(\.\d+)?$/)) {
+		        logger.warn(&quot;Field does not match pattern: &apos;&quot; + fieldName + &quot;&apos; (Length=&quot; + fieldName.length + &quot;)&quot;);
+		        continue;
+		    }
+		
+		    var fieldParts = fieldName.split(&quot;-&quot;);
+		    if (fieldParts.length !== 2) {
+		        logger.warn(&quot;Unexpected field format: &apos;&quot; + fieldName + &quot;&apos;, parts=&quot; + fieldParts);
+		        continue;
+		    }
+		
+		    var seg = fieldParts[0];
+		    var fieldComp = fieldParts[1].split(&quot;.&quot;);
+		
+		    var fieldIndex = parseInt(fieldComp[0], 10);
+		    if (isNaN(fieldIndex)) {
+		        logger.warn(&quot;Could not parse fieldIndex: &apos;&quot; + fieldComp[0] + &quot;&apos; from fieldName: &apos;&quot; + fieldName + &quot;&apos;&quot;);
+		        continue;
+		    }
+		
+		    var componentIndex = null;
+		    if (fieldComp.length &gt; 1) {
+		        componentIndex = parseInt(fieldComp[1], 10);
+		        if (isNaN(componentIndex)) {
+		            logger.warn(&quot;Could not parse componentIndex: &apos;&quot; + fieldComp[1] + &quot;&apos; from fieldName: &apos;&quot; + fieldName + &quot;&apos;&quot;);
+		            continue;
+		        }
+		    }
+		
+		    requiredFields.push({
+		        segment: seg,
+		        fieldIndex: fieldIndex,
+		        componentIndex: componentIndex,
+		        fieldName: fieldName,
+		        description: description
+		    });
+		
+		    logger.info(&quot;✅ Extracted required field: &quot; + seg + &quot;-&quot; + fieldIndex + (componentIndex ? &quot;.&quot; + componentIndex : &quot;&quot;));
+		}
+    }
+
+    return {
+        requiredSegments: requiredSegments,
+        requiredFields: requiredFields
+    };
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -764,6 +833,7 @@ function set_fhir_resource_profile_urls(transformer) {
 	return transformer;
 }
 
+
 function getConsentResourceStatus(sourceXml) {
 	try {
 		var consentInfo = {};
@@ -1023,7 +1093,7 @@ if (requestedPath == &quot;/&quot;) {
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 	requestedPath == &quot;/hl7v2/Bundle/$validate&quot;){
-	try {
+try {
     // Step 1: Get HL7 Input
     var raw = connectorMessage.getRawData();
     if (!raw || raw.trim().length === 0) {
@@ -1032,6 +1102,13 @@ if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 
     var hl7Body = extractHL7Body(raw);
     logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;));
+	    logger.error(msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
 
     // Step 2: Extract input segments
     var inputSegments = extractSegments(hl7Body);
@@ -1041,23 +1118,55 @@ if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
     // Step 3: Load required segments from XML template
     var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
     logger.info(&quot;Extracted template:\n&quot; + xmlPath);
-    var requiredSegments = getRequiredSegmentsFromXml(xmlPath);
-    var normalizedRequired = requiredSegments.map(String);
-    logger.info(&quot;Required segments from XML template: &quot; + normalizedRequired.join(&apos;,&apos;));
 
-    // Step 4: Check for missing segments
-    var missing = [];
-    for (var i = 0; i &lt; normalizedRequired.length; i++) {
-        if (normalizedInput.indexOf(normalizedRequired[i]) === -1) {
-            missing.push(normalizedRequired[i]);
-        }
-    }
+	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
+	var requiredSegments = profile.requiredSegments;
+	var requiredFields = profile.requiredFields;
 
-    if (missing.length &gt; 0) {
-        var msg = &quot;Missing required HL7 segments: &quot; + missing.join(&apos;, &apos;);
-        responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segments&quot;));
-        throw new Error(msg);
-    }
+	var allViolations = [];
+
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
+	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
+	    var check = profile.requiredFields[i];
+	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
+	    allViolations = allViolations.concat(violations);
+	}
+
+	if (allViolations.length &gt; 0) {
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;) +
+		               &quot; in segment &apos;&quot; + v.segment;
+		    }
+		}).join(&quot;\n\n&quot;);
+	
+	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    logger.error(msg);
+	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
+	}
+	
+
 
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
@@ -1134,55 +1243,94 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 		throw new Error(&quot;No XML data received in the request.&quot;);
 	}
 
-//try {
-//    // Step 1: Get HL7 Input
-//    var raw = connectorMessage.getRawData();
-//    if (!raw || raw.trim().length === 0) {
-//        throw new Error(&quot;Empty HL7 message received.&quot;);
-//    }
-//
-//    var hl7Body = extractHL7Body(raw);
-//    logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
-//
-//    // Step 2: Extract input segments
-//    var inputSegments = extractSegments(hl7Body);
-//    var normalizedInput = inputSegments.map(String);
-//    logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
-//
-//    // Step 3: Load required segments from XML template
-//    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
-//    logger.info(&quot;Extracted template:\n&quot; + xmlPath);
-//    var requiredSegments = getRequiredSegmentsFromXml(xmlPath);
-//    var normalizedRequired = requiredSegments.map(String);
-//    logger.info(&quot;Required segments from XML template: &quot; + normalizedRequired.join(&apos;,&apos;));
-//
-//    // Step 4: Check for missing segments
-//    var missing = [];
-//    for (var i = 0; i &lt; normalizedRequired.length; i++) {
-//        if (normalizedInput.indexOf(normalizedRequired[i]) === -1) {
-//            missing.push(normalizedRequired[i]);
-//        }
-//    }
-//
-//    if (missing.length &gt; 0) {
-//        var msg = &quot;Missing required HL7 segments: &quot; + missing.join(&apos;, &apos;);
-//        responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segments&quot;));
-//        throw new Error(msg);
-//    }
-//
-//    // Step 5: Valid
-//    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
-//    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
-//    logger.info(success);
-//
-//	} catch (e) {
-//	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
-//	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
-//	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
-//	    }
-//	    logger.error(&quot;Validation error: &quot; + errorMsg);
-//	    throw e;
-//	}
+try {
+    // Step 1: Get HL7 Input
+    var raw = connectorMessage.getRawData();
+    if (!raw || raw.trim().length === 0) {
+        throw new Error(&quot;Empty HL7 message received.&quot;);
+    }
+
+    var hl7Body = extractHL7Body(raw);
+    logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;));
+	    logger.error(msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
+
+    // Step 2: Extract input segments
+    var inputSegments = extractSegments(hl7Body);
+    var normalizedInput = inputSegments.map(String);
+    logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
+
+    // Step 3: Load required segments from XML template
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    logger.info(&quot;Extracted template:\n&quot; + xmlPath);
+
+	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
+	var requiredSegments = profile.requiredSegments;
+	var requiredFields = profile.requiredFields;
+
+	var allViolations = [];
+
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
+	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
+	    var check = profile.requiredFields[i];
+	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
+	    allViolations = allViolations.concat(violations);
+	}
+
+	if (allViolations.length &gt; 0) {
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;) +
+		               &quot; in segment &apos;&quot; + v.segment;
+		    }
+		}).join(&quot;\n\n&quot;);
+	
+	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    logger.error(msg);
+	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
+	}
+	
+
+
+    // Step 5: Valid
+    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    logger.info(success);
+
+	} catch (e) {
+	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
+	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	    }
+	    logger.error(&quot;Validation error: &quot; + errorMsg);
+	    throw e;
+	}
 
 try {
     var rawTransformedData = connectorMessage.getTransformedData();
@@ -1587,7 +1735,19 @@ return value; // Keep the value as is
         </outboundProperties>
       </responseTransformer>
       <filter version="4.5.0">
-        <elements/>
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>sourceMap.get(&apos;contextPath&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;/hl7v2/Bundle&apos;</string>
+              <string>&apos;/hl7v2/Bundle/&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
       </filter>
       <transportName>HTTP Sender</transportName>
       <mode>DESTINATION</mode>
@@ -1595,10 +1755,11 @@ return value; // Keep the value as is
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>var index = message.indexOf(&quot;MSH|&quot;);
+  <preprocessingScript>// Check filename in HTTP content
+var index = message.indexOf(&quot;MSH|&quot;);
 if (index !== -1) {
     message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
-}&#xd;
+}
 return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
@@ -1672,7 +1833,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754473964252</time>
+        <time>1755170814272</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
