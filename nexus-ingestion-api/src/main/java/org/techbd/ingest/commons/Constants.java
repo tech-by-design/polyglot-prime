@@ -11,7 +11,7 @@ public class Constants {
     public static final String SQS_BASE_URL = System.getenv("ORG_TECHBD_SERVICE_SQS_BASE_URL");
     public static final String AWS_REGION = System.getenv("ORG_TECHBD_SERVICE_AWS_REGION");
 
-    public static final String REQ_HEADER_TENANT_ID = "X-TechBD-Tenant-ID";
+    public static final String REQ_HEADER_TENANT_ID = "x-techbd-tenant-id";
     public static final String REQ_HEADER_X_FORWARDED_FOR = "x-forwarded-for";
     public static final String REQ_HEADER_X_REAL_IP = "x-real-ip";
     public static final String REQ_X_SERVER_IP= "x-server-ip";
