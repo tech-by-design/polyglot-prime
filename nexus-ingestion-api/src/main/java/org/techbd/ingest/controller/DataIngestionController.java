@@ -81,7 +81,7 @@ public class DataIngestionController {
             HttpServletRequest request) throws Exception {
         
         // Get interactionId from filter
-        String interactionId = (String) request.getAttribute("interactionId");
+        String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
         if (file == null || file.isEmpty()) {
             LOG.warn("Uploaded file is empty. interactionId={}", interactionId);

@@ -1,9 +1,12 @@
 package org.techbd.ingest.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ws.WebServiceMessage;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.RegistryResponseType;
 
@@ -72,5 +75,17 @@ private static final Logger LOG = LoggerFactory.getLogger(Hl7Util.class);
         );
     }
     return sw.toString();
+}
+
+public static String soapMessageToString(WebServiceMessage soapMessage, String interactionId) {
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        soapMessage.writeTo(out);
+        return out.toString(StandardCharsets.UTF_8);
+    } catch (Exception e) {
+        LOG.error("Error converting SoapMessage to String for interactionId={}", interactionId, e);
+        throw new RuntimeException(
+            "Error converting SoapMessage to String for interactionId=" + interactionId, e
+        );
+    }
 }
 }

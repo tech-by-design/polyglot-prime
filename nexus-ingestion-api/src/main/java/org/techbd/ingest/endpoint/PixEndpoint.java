@@ -21,7 +21,6 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
-import org.techbd.ingest.util.Hl7Util;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
 import org.techbd.iti.schema.PRPAIN201302UV02;
@@ -67,7 +66,7 @@ public class PixEndpoint {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
@@ -96,7 +95,7 @@ public class PixEndpoint {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
@@ -109,7 +108,7 @@ public class PixEndpoint {
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
-           // messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
@@ -125,7 +124,7 @@ public class PixEndpoint {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
@@ -138,7 +137,7 @@ public class PixEndpoint {
                 context.getSourceIp() + ":" + context.getDestinationPort(),
                 context.getProtocol(), interactionId
             );
-          //  messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.toXmlString(response,interactionId));
+            httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
             log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",

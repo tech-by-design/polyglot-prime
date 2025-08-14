@@ -23,6 +23,7 @@ import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
 import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
 import org.techbd.ingest.interceptors.WsaHeaderInterceptor;
+import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.SoapResponseUtil;
 
 import jakarta.xml.soap.MessageFactory;
@@ -34,14 +35,18 @@ import jakarta.xml.soap.SOAPMessage;
 public class WebServiceConfig extends WsConfigurationSupport {
 
     private final SoapResponseUtil soapResponseUtil;
+    private final MessageProcessorService messageProcessorService;
+    private final AppConfig appConfig;
 
-    public WebServiceConfig(SoapResponseUtil soapResponseUtil) {
+    public WebServiceConfig(SoapResponseUtil soapResponseUtil, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.soapResponseUtil = soapResponseUtil;
+        this.messageProcessorService = messageProcessorService;
+        this.appConfig = appConfig;
     }
 
     @Override
     protected void addInterceptors(List<EndpointInterceptor> interceptors) {
-        interceptors.add(new WsaHeaderInterceptor(soapResponseUtil));
+        interceptors.add(new WsaHeaderInterceptor(soapResponseUtil, messageProcessorService, appConfig));
     }
 
     @Bean
