@@ -1341,9 +1341,8 @@
 		</xsl:if>
         "category": [
 		  {
-                "coding": [
+                "coding":
                   <xsl:value-of select='$categoryXml'/>
-                ]
               },
           {
             "coding": [{

@@ -1,5 +1,4 @@
 <ConformanceProfile ID="ORU_R01_Profile_v23" Name="ORU^R01" HL7Version="2.3">
-  <!-- Version 0.2.0 -->
   <MessageStructure ID="ORU_R01">
     <SegmentGroup Name="ORU_R01_Message">
       <Segment Name="MSH" Usage="R" MinOccurs="1" MaxOccurs="1"/>
@@ -13,27 +12,18 @@
       <Field Name="MSH-6" Datatype="HD" Usage="O"/>
     </SegmentDef>
     <SegmentDef Name="PID">
+	  <Field Name="PID-3.1" Datatype="CX" Usage="R" Description="MR value"/>
       <Field Name="PID-7" Datatype="CX" Usage="R" Description="birth date"/>
       <Field Name="PID-8" Datatype="XPN" Usage="R" Description="gender"/>
     </SegmentDef>
-    <!-- <SegmentDef Name="OBR"> -->
-      <!-- <Field Name="OBR-4" Datatype="CE" Usage="R"/> -->
-      <!-- <Field Name="OBR-7" Datatype="TS" Usage="O"/> -->
-    <!-- </SegmentDef> -->
     <SegmentDef Name="OBX">
       <Field Name="OBX-2" Datatype="ID" Usage="R"/>
       <Field Name="OBX-3" Datatype="CE" Usage="R"/>
 	  <Field Name="OBX-3.1" Datatype="CE" Usage="R" Description="code -> coding -> code"/>
-	  <!-- <Field Name="OBX-3.2" Datatype="CE" Usage="R" Description="code -> coding -> display"/> -->
-	  <!-- <Field Name="OBX-5.1" Datatype="CE" Usage="O" Description="provision -> type"/> -->
-	  <!-- <Field Name="OBX-11" Datatype="CE" Usage="R" Description="status"/> -->
-	  <!-- <Field Name="OBX-14" Datatype="TS" Usage="R" Description="DateTime"/> -->
     </SegmentDef>
 	<SegmentDef Name="PV1">
       <Field Name="PV1-2" Datatype="TS" Usage="R"/>
 	  <Field Name="PV1-2.1" Datatype="TS" Usage="R" Description="class -> code"/>
-	  <!-- <Field Name="PV1-2.2" Datatype="TS" Usage="O" Description="class -> display"/> -->
-	  <Field Name="PV1-4" Datatype="TS" Usage="R"/>
     </SegmentDef>
   </Segments>
 </ConformanceProfile>
