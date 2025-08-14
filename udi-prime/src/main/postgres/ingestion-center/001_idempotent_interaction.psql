@@ -4207,17 +4207,16 @@ SELECT
     sizfr.sftp_session_id,
 	INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) as status,
 --	count(distinct siffcr.qe_admin_data_file_name) as grouping_files,
---    SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
---    SUM(CASE WHEN siffcr.qe_admin_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
---    SUM(CASE WHEN siffcr.screening_observation_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
---    SUM(CASE WHEN siffcr.screening_profile_data_file_name IS NOT NULL THEN 1 ELSE 0 END) AS file_count,
     COALESCE(fhir_summary.fhir_count, 0) AS fhir_count,
     COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
     -- is_failed condition
     CASE 
-        WHEN general_error_check.hub_interaction_id IS NOT NULL OR fhir_failure_check.hub_interaction_id IS NOT NULL
-        THEN 'True' ELSE 'False' 
-    END AS is_failed
+    WHEN general_error_check.hub_interaction_id IS NOT NULL 
+         OR fhir_failure_check.hub_interaction_id IS NOT NULL
+         OR sizfr.status = 'PROCESSING_FAILED'
+    THEN 'Failed' 
+    ELSE 'Success' 
+END AS is_failed
 
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
