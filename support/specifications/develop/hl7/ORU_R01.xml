@@ -16,14 +16,15 @@
       <Field Name="PID-7" Datatype="CX" Usage="R" Description="birth date"/>
       <Field Name="PID-8" Datatype="XPN" Usage="R" Description="gender"/>
     </SegmentDef>
+
     <SegmentDef Name="OBX">
       <Field Name="OBX-2" Datatype="ID" Usage="R"/>
       <Field Name="OBX-3" Datatype="CE" Usage="R"/>
-	  <Field Name="OBX-3.1" Datatype="CE" Usage="R" Description="code -> coding -> code"/>
+	  <Field Name="OBX-3.1" Datatype="CE" Usage="R" Description="Question code"/>
     </SegmentDef>
 	<SegmentDef Name="PV1">
       <Field Name="PV1-2" Datatype="TS" Usage="R"/>
-	  <Field Name="PV1-2.1" Datatype="TS" Usage="R" Description="class -> code"/>
+	  <Field Name="PV1-2.1" Datatype="TS" Usage="R" Description="Encounter class -> code"/>
     </SegmentDef>
   </Segments>
 </ConformanceProfile>
