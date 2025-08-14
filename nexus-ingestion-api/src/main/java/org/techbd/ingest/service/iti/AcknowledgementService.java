@@ -141,10 +141,6 @@ public class AcknowledgementService {
         text.setReference(tel);
         detail.setText(text);
         acknowledgement.getAcknowledgementDetail().add(detail);
-
-        // Add techbdGeneratedInteractionId detail
-        acknowledgement.getAcknowledgementDetail().add(createTechbdGeneratedInteractionDetail(techBDInteractionId));
-
         ack.getAcknowledgement().add(acknowledgement);
 
         logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}", techBDInteractionId);
