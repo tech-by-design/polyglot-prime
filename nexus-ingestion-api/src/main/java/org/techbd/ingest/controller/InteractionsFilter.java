@@ -31,7 +31,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
             while (headerNames.hasMoreElements()) {
                 var headerName = headerNames.nextElement();
                 var headerValue = origRequest.getHeader(headerName);
-                LOG.info("{} - Header: {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, headerName, headerValue);
+                LOG.info("DEBUG_REQ_HDR {} - Header: {} = {}", interactionId, headerName, headerValue);
             }
         }
         chain.doFilter(origRequest, origResponse);
