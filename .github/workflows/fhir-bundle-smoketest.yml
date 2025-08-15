@@ -124,7 +124,7 @@ jobs:
 
     - name: Send Email Notification (Conditional)
       if: env.failure_report != 'No failures detected.'
-      uses: dawidd6/action-send-mail@v3
+      uses: dawidd6/action-send-mail@v4
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
