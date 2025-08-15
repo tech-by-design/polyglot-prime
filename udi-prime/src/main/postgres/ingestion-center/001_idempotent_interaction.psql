@@ -4447,6 +4447,43 @@ where
 
 
 /*****************************************
+-- Creates a view of CSV submissions that failed validation  
+-- Joins zip file requests with CSV request details  
+-- Filters for 'CSV Validation Result' with 'VALIDATION_FAILED' state  
+-- Selects tenant, interaction, timestamp, URI, and file name  
+-- Groups to remove duplicates for each submission  
+-- Orders results by newest submissions first  
+*****************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_error_summary cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_data_integrity_error_summary 
+AS 
+SELECT 
+     sizfr.tenant_id,
+    sizfr.hub_interaction_id,
+    sizfr.created_at,
+    sizfr.uri,
+    sizfr.user_agent, 
+    sizfr.csv_zip_file_name
+
+FROM
+    techbd_udi_ingress.sat_interaction_zip_file_request sizfr
+inner JOIN
+    techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
+    ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id  
+WHERE siffcr.nature = 'CSV Validation Result' AND siffcr.to_state = 'VALIDATION_FAILED' 
+GROUP BY 
+    sizfr.hub_interaction_id,
+    sizfr.created_at,
+    sizfr.uri, 
+    sizfr.tenant_id,
+    sizfr.user_agent, 
+    sizfr.csv_zip_file_name 
+ORDER BY 
+    sizfr.created_at DESC;
+
+
+/*****************************************
 The `csv_data_integrity` view captures data integrity errors from CSV validation results in the `sat_interaction_flat_file_csv_request` table.
 
 It includes:
@@ -4457,7 +4494,7 @@ It includes:
 Only entries with the `nature` as `CSV Validation Result` and validation errors exceeding zero are included. The `uri` is filtered for specific paths related to flat file CSV bundles.
 *****************************************/
 
-
+/*
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_errors cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_data_integrity_errors 
 AS 
@@ -4472,10 +4509,8 @@ select
 	coalesce(error_payload.value ->> 'fieldName'::text,
 	errors_summary.value ->> 'fieldName'::text) as fieldname,
 	error_payload.value ->> 'cell'::text as value,
-	coalesce(error_payload.value ->> 'title'::text,
-	errors_summary.value ->> 'type'::text) as error_type,
-	coalesce(error_payload.value ->> 'message'::text,
-	errors_summary.value ->> 'message'::text) as error,
+	coalesce(error_payload.value ->> 'title'::text,	errors_summary.value ->> 'type'::text) as error_type,
+	coalesce(error_payload.value ->> 'message'::text,	errors_summary.value ->> 'message'::text) as error,
 	error_payload.value ->> 'description'::text as description,
 	(error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
 	(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
@@ -4501,7 +4536,8 @@ left join lateral jsonb_array_elements(tasks.value -> 'errors'::text) error_payl
 left join lateral jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) errors_summary(value) on
 	true
 where
-	sifcr.nature = 'CSV Validation Result'::text
+--sifcr.zip_file_hub_interaction_id = '56c3c77c-d49f-4c0e-9d9d-de3d11009564'
+	and sifcr.nature = 'CSV Validation Result'::text
 	and (
         ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
 		or jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
@@ -4513,11 +4549,12 @@ where
 	'/flatfile/csv/Bundle/$validate/'::text
     ])
 	and coalesce(error_payload.value ->> 'title',
-	errors_summary.value ->> 'type') is not null
+	errors_summary.value ->> 'type') is not null 
 	AND sifcr.created_at >= NOW() - INTERVAL '7 days'
 order by
 	sifcr.created_at desc;
 
+*/
 
 /*
 -- Drop the materialized view if it exists
@@ -7703,4 +7740,92 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_zip_download AS
 SELECT
     hub_interaction_id,
     csv_zip_file_content
-FROM techbd_udi_ingress.sat_interaction_zip_file_request;   
+FROM techbd_udi_ingress.sat_interaction_zip_file_request;
+
+/*******************************************************************************************
+ * Stored Procedure for CSV Data Integrity Errors (Replacement for View)
+ *
+ * This stored procedure replaces the csv_data_integrity_errors view by accepting
+ * zip_file_hub_interaction_id as a parameter instead of having it hardcoded.
+ *
+ * Parameters:
+ * - p_zip_file_hub_interaction_id: The zip file interaction ID to filter errors for
+ *
+ * Returns: CSV data integrity error records for the specified zip file interaction
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_csv_data_integrity_errors(TEXT);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_csv_data_integrity_errors(
+    p_zip_file_hub_interaction_id TEXT
+)
+RETURNS TABLE (
+    created_at TIMESTAMPTZ,
+    tenant_id TEXT,
+    uri TEXT,
+    zip_file_hub_interaction_id TEXT,
+    hub_interaction_id TEXT,
+    group_id TEXT,
+    section TEXT,
+    fieldname TEXT,
+    value TEXT,
+    error_type TEXT,
+    error TEXT,
+    description TEXT,
+    rownumber INTEGER,
+    fieldnumber INTEGER,
+    file_name TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sifcr.created_at,
+        sifcr.tenant_id,
+        sifcr.uri,
+        sifcr.zip_file_hub_interaction_id,
+        sifcr.hub_interaction_id,
+        sifcr.group_id,
+        tasks.value ->> 'name'::text as section,
+        coalesce(error_payload.value ->> 'fieldName'::text,
+        errors_summary.value ->> 'fieldName'::text) as fieldname,
+        error_payload.value ->> 'cell'::text as value,
+        coalesce(error_payload.value ->> 'title'::text, errors_summary.value ->> 'type'::text) as error_type,
+        coalesce(error_payload.value ->> 'message'::text, errors_summary.value ->> 'message'::text) as error,
+        error_payload.value ->> 'description'::text as description,
+        (error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
+        (error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
+        case
+            when tasks.value ->> 'name'::text = 'qe_admin_data'::text then original_csv.qe_admin_data_file_name
+            when tasks.value ->> 'name'::text = 'pt_info_data'::text then original_csv.demographic_data_file_name
+            when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
+            when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
+            else null::text
+        end as file_name
+    FROM
+        techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+    LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
+        ON sifcr.hub_interaction_id = original_csv.hub_interaction_id
+        AND original_csv.nature = 'Original Flat File CSV'::text
+    LEFT JOIN LATERAL jsonb_array_elements(
+        ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
+    ) tasks(value) ON true
+    LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value) ON true
+    LEFT JOIN LATERAL jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) errors_summary(value) ON true
+    WHERE
+        sifcr.zip_file_hub_interaction_id = p_zip_file_hub_interaction_id
+        AND sifcr.nature = 'CSV Validation Result'::text
+        AND (
+            ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
+            OR jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
+        )
+        AND sifcr.uri = ANY (ARRAY[
+            '/flatfile/csv/Bundle'::text,
+            '/flatfile/csv/Bundle/'::text,
+            '/flatfile/csv/Bundle/$validate'::text,
+            '/flatfile/csv/Bundle/$validate/'::text
+        ])
+        AND coalesce(error_payload.value ->> 'title',
+        errors_summary.value ->> 'type') IS NOT NULL
+    ORDER BY
+        sifcr.created_at DESC
+		LIMIT 150;
+END;
+$$ LANGUAGE plpgsql;

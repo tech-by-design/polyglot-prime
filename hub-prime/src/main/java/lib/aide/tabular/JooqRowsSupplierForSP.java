@@ -72,7 +72,7 @@ public class JooqRowsSupplierForSP {
         Result<?> result = finalQuery.fetch();
 
         // Use different formatting based on stored procedure
-        if ("get_fhir_patient_screening_questions_answers".equals(storedProcName)) {
+        if ("get_fhir_patient_screening_questions_answers".equals(storedProcName) || "get_csv_data_integrity_errors".equals(storedProcName)) {
             // For screening questions, return data without complex formatting to avoid null issues
             return result.intoMaps();
         } else {
@@ -390,9 +390,20 @@ public class JooqRowsSupplierForSP {
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
 
                 String hubInteractionId = paramMap.get("p_hub_interaction_id");
-                String patientMrn = paramMap.get("p_patient_mrn"); 
+                String patientMrn = paramMap.get("p_patient_mrn");
 
                 return new GetFhirPatientScreeningQuestionsAnswers().call(hubInteractionId, patientMrn);
+            }
+            case "get_csv_data_integrity_errors" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String zipFileHubInteractionId = paramMap.get("p_zip_file_hub_interaction_id");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_csv_data_integrity_errors('%s')",
+                    zipFileHubInteractionId);
+                return DSL.table(functionCall);
             }
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
