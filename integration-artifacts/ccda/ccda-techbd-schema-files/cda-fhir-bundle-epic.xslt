@@ -125,7 +125,7 @@
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
                                 | /ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location
-                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:location/ccda:healthCareFacility/ccda:location
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole
                                 "/>
             <!-- Call Grouper Observation template -->
             <xsl:call-template name="GrouperObservation"/>
@@ -604,7 +604,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
+        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1]) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                   <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
@@ -622,9 +622,9 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1])  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {                        
-                        "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
+                        "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1], ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
                 }
@@ -718,7 +718,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:participant/@typeCode) and (string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
+        <xsl:if test="string(ccda:participant/@typeCode) and (string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1]) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                     <xsl:if test="string(ccda:participant/@typeCode)"> 
@@ -736,9 +736,9 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1])  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {
-                        "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
+                        "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1], ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
                 }
@@ -1921,68 +1921,65 @@
         </xsl:if>
 
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address": [
-                <xsl:for-each select="ccda:addr[not(@nullFlavor)]">
+            , "address": 
                     {
-                        <xsl:if test="string(@use)">
+                        <xsl:if test="string(ccda:addr/@use)">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
+                                <xsl:when test="ccda:addr/@use='HP' or ccda:addr/@use='H'">home</xsl:when>
+                                <xsl:when test="ccda:addr/@use='WP'">work</xsl:when>
+                                <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
+                                <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
+                                <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
+                        <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode)">
+                            "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                   <xsl:value-of select="."/>
                                   <xsl:if test="position() != last()">, </xsl:if>
                               </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                              <xsl:if test="string(ccda:addr/ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:city"/></xsl:if>
+                              <xsl:if test="string(ccda:addr/ccda:state)">, <xsl:value-of select="ccda:addr/ccda:state"/></xsl:if>
+                              <xsl:if test="string(ccda:addr/ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:postalCode"/></xsl:if>" ,
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
+                        <xsl:if test="ccda:addr/ccda:streetAddressLine">
                             "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
+                                <xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
+                        <xsl:if test="string(ccda:addr/ccda:city)">
+                            , "city": "<xsl:value-of select="ccda:addr/ccda:city"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
+                        <xsl:if test="string(ccda:addr/ccda:county)">
+                            , "district": "<xsl:value-of select="ccda:addr/ccda:county"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
+                        <xsl:if test="string(ccda:addr/ccda:state)">
+                            , "state": "<xsl:value-of select="ccda:addr/ccda:state"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
+                        <xsl:if test="string(ccda:addr/ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
+                        <xsl:if test="string(ccda:addr/ccda:country)">
+                            , "country": "<xsl:value-of select="ccda:addr/ccda:country"/>"
                         </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
+                        <xsl:if test="ccda:addr/ccda:useablePeriod">
                             ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">
                                     "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
+                                                  <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:low/@value"/>
                                               </xsl:call-template>"
                                 </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:high/@value)">
+                                    <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
                                     "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
+                                                <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:high/@value"/>
                                             </xsl:call-template>"
                                 </xsl:if>
                             }
                         </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
+                    } 
         </xsl:if>
       },
       "request" : {
@@ -1994,7 +1991,7 @@
   </xsl:template>
 
   <!-- Location Template from Encounters section -->
-  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole/ccda:playingEntity">
+  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">
   <xsl:if test="string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
@@ -2005,73 +2002,70 @@
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$locationMetaProfileUrl'/>"]
         }
-        <xsl:if test="ccda:name">
-          ,"name": "<xsl:value-of select="ccda:name"/>"
+        <xsl:if test="ccda:playingEntity/ccda:name">
+          ,"name": "<xsl:value-of select="ccda:playingEntity/ccda:name"/>"
         </xsl:if>
 
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address": [
-                <xsl:for-each select="ccda:addr[not(@nullFlavor)]">
+            , "address":
                     {
-                        <xsl:if test="string(@use)">
+                        <xsl:if test="string(ccda:addr/@use)">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
+                                <xsl:when test="ccda:addr/@use='HP' or ccda:addr/@use='H'">home</xsl:when>
+                                <xsl:when test="ccda:addr/@use='WP'">work</xsl:when>
+                                <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
+                                <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
+                                <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
+                        <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode)">
+                            "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                   <xsl:value-of select="."/>
                                   <xsl:if test="position() != last()">, </xsl:if>
                               </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                              <xsl:if test="string(ccda:addr/ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:city"/></xsl:if>
+                              <xsl:if test="string(ccda:addr/ccda:state)">, <xsl:value-of select="ccda:addr/ccda:state"/></xsl:if>
+                              <xsl:if test="string(ccda:addr/ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:postalCode"/></xsl:if>" ,
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
+                        <xsl:if test="ccda:addr/ccda:streetAddressLine">
                             "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
+                                <xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
+                        <xsl:if test="string(ccda:addr/ccda:city)">
+                            , "city": "<xsl:value-of select="ccda:addr/ccda:city"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
+                        <xsl:if test="string(ccda:addr/ccda:county)">
+                            , "district": "<xsl:value-of select="ccda:addr/ccda:county"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
+                        <xsl:if test="string(ccda:addr/ccda:state)">
+                            , "state": "<xsl:value-of select="ccda:addr/ccda:state"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
+                        <xsl:if test="string(ccda:addr/ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
+                        <xsl:if test="string(ccda:addr/ccda:country)">
+                            , "country": "<xsl:value-of select="ccda:addr/ccda:country"/>"
                         </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
+                        <xsl:if test="ccda:addr/ccda:useablePeriod">
                             ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">
                                     "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
+                                                  <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:low/@value"/>
                                               </xsl:call-template>"
                                 </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:high/@value)">
+                                    <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
                                     "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
+                                                <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:high/@value"/>
                                             </xsl:call-template>"
                                 </xsl:if>
                             }
                         </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
+                    }
         </xsl:if>
       },
       "request" : {

@@ -2,8 +2,8 @@
   <id>9185f9cf-a564-4ae8-b3f6-d4240d061dd5</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.29</description>
-  <revision>29</revision>
+  <description>Version: 0.4.30</description>
+  <revision>32</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -999,6 +999,8 @@ function setResourceIdParameters(transformer) {
 	// Extract `location`
      try {
 	    var location;
+	    var location_name;
+	    var location_address;
 	
 	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
 	    if (
@@ -1009,6 +1011,8 @@ function setResourceIdParameters(transformer) {
 	        xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location
 	    ) {
 	        location = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location;
+	        location_name = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location.name;
+	        location_address = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location.addr;
 	    }
 	
 	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
@@ -1021,27 +1025,26 @@ function setResourceIdParameters(transformer) {
 	            section.entry[0].encounter &amp;&amp;
 	            section.entry[0].encounter.participant &amp;&amp;
 	            section.entry[0].encounter.participant.participantRole &amp;&amp;
-	            section.entry[0].encounter.participant.participantRole.playingEntity &amp;&amp;
 	            section.entry[0].encounter.participant.participantRole.playingEntity
 	        ) {
-	            location = section.entry[0].encounter.participant.participantRole.playingEntity;
+	            location = section.entry[0].encounter.participant.participantRole;
+	            location_name = section.entry[0].encounter.participant.participantRole.playingEntity.name;
+	            location_address = section.entry[0].encounter.participant.participantRole.addr;
 	        }
 	    }
 	
 	    if (
 	        location &amp;&amp;
-	        location.name != undefined &amp;&amp;
-	        location.addr != undefined &amp;&amp;
-	        location.name.toString().trim() !== &quot;&quot; &amp;&amp;
-	        location.addr.toString().trim() !== &quot;&quot;
+	        location_name != undefined &amp;&amp; location_name.toString().trim() !== &quot;&quot; &amp;&amp;
+	        location_address != undefined &amp;&amp; location_address.toString().trim() !== &quot;&quot;
 	    ) {
 	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
 	    } else {
-	        logger.error(&quot;Location not found in the XML.&quot;);
+	        logger.info(&quot;Location not found in the XML.&quot;);
 	    }
 	
 	} catch (e) {
-	    logger.error(&quot;Error accessing location: &quot; + e);
+	    logger.info(&quot;Error accessing location: &quot; + e);
 	}
      	
 	return transformer;
@@ -2025,7 +2028,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754460917483</time>
+        <time>1755255219307</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
