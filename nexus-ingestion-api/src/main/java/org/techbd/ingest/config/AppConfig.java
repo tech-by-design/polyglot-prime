@@ -5,11 +5,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Configuration;
-
-/**
- * AppConfig holds application-specific settings, mapping them from application.yml or application.properties.
- * It provides AWS-related configurations such as region, secret name, access key, secret key, and service endpoints.
- */
 @Configuration
 @ConfigurationProperties(prefix = "org.techbd")
 @ConfigurationPropertiesScan
@@ -17,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppConfig {
 
     private Aws aws;
+    private Soap soap;
 
     @Data
     public static class Aws {
@@ -39,6 +35,26 @@ public class AppConfig {
             private String baseUrl;
             private String fifoQueueUrl;
             private String endpoint;
+        }
+    }
+
+    @Data
+    public static class Soap {
+        private Wsa wsa;
+        private Techbd techbd;
+
+        @Data
+        public static class Wsa {
+            private String namespace;
+            private String prefix;
+            private String action;
+            private String to;
+        }
+
+        @Data
+        public static class Techbd {
+            private String namespace;
+            private String prefix;
         }
     }
 }

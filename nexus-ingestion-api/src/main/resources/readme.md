@@ -79,6 +79,8 @@ rm -rf aws awscliv2.zip  # Clean up
 export LOCALSTACK_ENDPOINT=http://localhost:4566
 
 aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-bucket
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-metadata-bucket
+
 ```
 
 ---

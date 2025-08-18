@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
@@ -75,11 +76,89 @@ class DataIngestionControllerTest {
         MockMultipartFile mockFile = new MockMultipartFile("file", fileName, null, fileBytes);
         Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
         Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
-        when(messageProcessorService.processMessage( any(RequestContext.class),eq(mockFile)))
+
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(mockFile)))
                 .thenReturn(mockResponse);
-        ResponseEntity<String> response = controller.ingest(mockFile, mockHeaders, servletRequest);
+
+        // Pass `null` for ackMessage
+        ResponseEntity<String> response = controller.ingest(mockFile, null, mockHeaders, servletRequest);
+
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         assertThat(response.getBody()).contains("SUCCESS", fileName);
         verify(messageProcessorService).processMessage(any(RequestContext.class), eq(mockFile));
+    }
+
+    @Test
+    void testIngestRawData_shouldStoreAsDat() throws Exception {
+        String rawData = "some raw test data";
+        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+
+        Map<String, String> mockResponse = Map.of(
+                "status", "SUCCESS",
+                "fileName", "generatedFile.dat",
+                "messageId", "12345");
+
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
+                .thenReturn(mockResponse);
+
+        // Call the raw ingestion method
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).contains("SUCCESS");
+        assertThat(response.getBody()).contains(".dat");
+        assertThat(response.getBody()).contains("messageId");
+
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
+    }
+
+    @Test
+    void testIngestRawData_shouldStoreAsXml() throws Exception {
+        String rawData = "<note><to>User</to><from>Tester</from></note>";
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "Content-Type", "application/xml");
+
+        Map<String, String> mockResponse = Map.of(
+                "status", "SUCCESS",
+                "fileName", "generatedFile.xml",
+                "messageId", "67890");
+
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
+                .thenReturn(mockResponse);
+
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).contains("SUCCESS");
+        assertThat(response.getBody()).contains(".xml");
+        assertThat(response.getBody()).contains("messageId");
+
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
+    }
+
+    @Test
+    void testIngestRawData_shouldStoreAsJson() throws Exception {
+        String rawData = "{ \"name\": \"tester\", \"type\": \"json\" }";
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "Content-Type", "application/json");
+
+        Map<String, String> mockResponse = Map.of(
+                "status", "SUCCESS",
+                "fileName", "generatedFile.json",
+                "messageId", "99999");
+
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
+                .thenReturn(mockResponse);
+
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).contains("SUCCESS");
+        assertThat(response.getBody()).contains(".json");
+        assertThat(response.getBody()).contains("messageId");
+
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
     }
 }

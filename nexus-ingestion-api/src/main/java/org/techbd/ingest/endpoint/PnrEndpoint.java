@@ -74,7 +74,7 @@ public class PnrEndpoint {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute("interactionId");
+        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
@@ -88,7 +88,7 @@ public class PnrEndpoint {
             RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
             ObjectFactory factory = new ObjectFactory();
             JAXBElement<RegistryResponseType> jaxbResponse = factory.createRegistryResponse(response);
-            messageProcessorService.processMessage(context, rawSoapMessage, Hl7Util.toXmlString(jaxbResponse,interactionId));
+            httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return jaxbResponse;
         } catch (Exception e) {
             log.error("PnrEndpoint:: Exception processing ITI-41 request. interactionId={}, error={}", interactionId, e.getMessage(), e);
