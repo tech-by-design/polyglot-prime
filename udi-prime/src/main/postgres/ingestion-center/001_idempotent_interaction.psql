@@ -4459,19 +4459,24 @@ DROP VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_error_summary cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_data_integrity_error_summary 
 AS 
 SELECT 
-     sizfr.tenant_id,
+    sizfr.tenant_id,
     sizfr.hub_interaction_id,
     sizfr.created_at,
     sizfr.uri,
     sizfr.user_agent, 
     sizfr.csv_zip_file_name
-
-FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-inner JOIN
-    techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
+FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
+INNER JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
     ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id  
-WHERE siffcr.nature = 'CSV Validation Result' AND siffcr.to_state = 'VALIDATION_FAILED' 
+WHERE siffcr.nature = 'CSV Validation Result' 
+  AND siffcr.to_state = 'VALIDATION_FAILED'
+  AND NOT EXISTS (
+        SELECT 1
+        FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+        WHERE (sifcr.nature = 'CSV Validation Result' OR sifcr.nature = 'Converted to FHIR')
+          AND jsonb_array_length((sifcr.validation_result_payload -> 'validationResults') -> 'errors') > 0
+           AND sifcr.hub_interaction_id = siffcr.hub_interaction_id
+    )
 GROUP BY 
     sizfr.hub_interaction_id,
     sizfr.created_at,
@@ -7774,7 +7779,22 @@ RETURNS TABLE (
     fieldnumber INTEGER,
     file_name TEXT
 ) AS $$
+DECLARE
+    v_file_size BIGINT;
+    v_limit INT;
 BEGIN
+    -- Get the file size in bytes from sat_interaction_zip_file_request
+    SELECT octet_length(sizfr.csv_zip_file_content)
+    INTO v_file_size
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
+    WHERE sizfr.hub_interaction_id = p_zip_file_hub_interaction_id;
+
+    -- Decide the row limit based on file size
+    v_limit := CASE 
+                  WHEN v_file_size > 1024*1024 THEN 200   -- > 1MB
+                  ELSE 1000
+               END;
+
     RETURN QUERY
     SELECT
         sifcr.created_at,
@@ -7798,7 +7818,7 @@ BEGIN
             when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
             when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
             else null::text
-        end as file_name
+        end as file_name 
     FROM
         techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
     LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
@@ -7815,17 +7835,11 @@ BEGIN
         AND (
             ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
             OR jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
-        )
-        AND sifcr.uri = ANY (ARRAY[
-            '/flatfile/csv/Bundle'::text,
-            '/flatfile/csv/Bundle/'::text,
-            '/flatfile/csv/Bundle/$validate'::text,
-            '/flatfile/csv/Bundle/$validate/'::text
-        ])
+        ) 
         AND coalesce(error_payload.value ->> 'title',
         errors_summary.value ->> 'type') IS NOT NULL
     ORDER BY
         sifcr.created_at DESC
-		LIMIT 150;
+    LIMIT v_limit;
 END;
 $$ LANGUAGE plpgsql;
