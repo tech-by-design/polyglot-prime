@@ -464,11 +464,11 @@ public class OrchestrationEngine {
                     fhirContext.setParserErrorHandler(lenientErrorHandler);
 
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
-                    final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+                    //final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                     LOG.debug("BUNDLE PAYLOAD parse -END for interactionid:{} ", interactionId);
                     // final var validatorOptions = new ValidationOptions().addProfile(profileUrl);
                     // final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
-                     final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
+                     final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(payload);
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
