@@ -39,6 +39,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/actuator/health/mllp").permitAll()
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/ingest").permitAll()
                         .requestMatchers("/ws").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/features/*").permitAll()
