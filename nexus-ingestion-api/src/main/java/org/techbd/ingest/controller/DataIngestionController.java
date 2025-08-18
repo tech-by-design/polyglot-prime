@@ -206,10 +206,10 @@ private String resolveExtension(String contentType) {
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1); // e.g., csv
         String fileBaseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // e.g., ttest
-        String objectKey = String.format("data/%s/%s-%s-%s.%s",
-                datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
-                datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String objectKey = String.format("data/%s/%s_%s",
+                datePath, interactionId, timestamp);
+        String metadataKey = String.format("metadata/%s/%s_%s_metadata.json",
+                datePath, interactionId, timestamp);
         String fullS3Path = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
         String fullRequestUrl = request.getRequestURL().toString();

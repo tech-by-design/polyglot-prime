@@ -125,12 +125,12 @@ public class PnrEndpoint {
         String fileExtension = "xml";
         String ackFileBaseName = "soap-message-ack";
         String originalFileName = fileBaseName + "." + fileExtension;
-        String objectKey = String.format("data/%s/%s-%s-%s.%s",
-                datePath, timestamp, interactionId, fileBaseName, fileExtension);
-        String ackObjectKey = String.format("data/%s/%s-%s-%s.%s",
-            datePath, timestamp, interactionId, ackFileBaseName, fileExtension);
-        String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
-                datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String objectKey = String.format("data/%s/%s_%s",
+                datePath, interactionId, timestamp);
+        String ackObjectKey = String.format("data/%s/%s_%s_ack",
+                datePath, interactionId, timestamp);
+        String metadataKey = String.format("metadata/%s/%s_%s_metadata.json",
+                datePath, interactionId, timestamp);
         String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
         String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
 
