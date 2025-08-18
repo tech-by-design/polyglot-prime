@@ -455,7 +455,7 @@ public class TabularRowsController {
         }
     }
 
-    @Operation(summary = "Download binary file from a table by ID", description = "Downloads a file and its name from the specified table and columns.")
+    @Operation(summary = "Download file from a table by ID", description = "Downloads a file and its name from the specified table and column.")
     @GetMapping(value = "/api/ux/tabular/jooq/download/{schemaName}/{tableName}/{fileContentColName}/{idColumn}/{id}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @ResponseBody
     public ResponseEntity<byte[]> downloadFile(
