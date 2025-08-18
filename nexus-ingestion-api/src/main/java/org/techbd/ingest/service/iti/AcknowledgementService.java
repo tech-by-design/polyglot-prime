@@ -18,7 +18,6 @@ public class AcknowledgementService {
 
     private static final Logger logger = LoggerFactory.getLogger(AcknowledgementService.class);
 
-
     public MCCIIN000002UV01 createPixAcknowledgement(
             II originalRequestId,
             MCCIMT000100UV01Device originalSenderDevice,
@@ -26,7 +25,8 @@ public class AcknowledgementService {
             String senderTelecomURL,
             String techBDInteractionId) {
 
-        logger.info("AcknowledgementService:: Creating HL7 acknowledgement response for interactionId: {}", techBDInteractionId);
+        logger.info("AcknowledgementService:: Creating HL7 acknowledgement response for interactionId: {}",
+                techBDInteractionId);
 
         MCCIIN000002UV01 ack = new MCCIIN000002UV01();
 
@@ -34,7 +34,8 @@ public class AcknowledgementService {
         II id = new II();
         id.setRoot(UUID.randomUUID().toString());
         ack.setId(id);
-        logger.debug("AcknowledgementService:: Assigned response ID: {} for interaction id :{}", id.getRoot(), techBDInteractionId);
+        logger.debug("AcknowledgementService:: Assigned response ID: {} for interaction id :{}", id.getRoot(),
+                techBDInteractionId);
 
         // Creation time
         TS creationTime = new TS();
@@ -47,27 +48,52 @@ public class AcknowledgementService {
         interaction.setRoot("2.16.840.1.113883.1.6");
         interaction.setExtension("MCCI_IN000002UV01");
         ack.setInteractionId(interaction);
-
-        // Receiver
         MCCIMT000200UV01Receiver receiver = new MCCIMT000200UV01Receiver();
-        MCCIMT000100UV01Device receiverDevice = new MCCIMT000100UV01Device();
+        receiver.setTypeCode(CommunicationFunctionType.RCV); 
+        MCCIMT000200UV01Device receiverDevice = new MCCIMT000200UV01Device();
         receiverDevice.setDeterminerCode("INSTANCE");
-        if (originalSenderDevice != null && originalSenderDevice.getId() != null
-                && !originalSenderDevice.getId().isEmpty()) {
-            receiverDevice.getId().addAll(originalSenderDevice.getId());
+        if (originalSenderDevice != null && originalSenderDevice.getId() != null) {
+            for (II id1 : originalSenderDevice.getId()) {
+                II copy = new II();
+                copy.setRoot(id1.getRoot());
+                copy.setExtension(id1.getExtension());
+                copy.setAssigningAuthorityName(id1.getAssigningAuthorityName());
+                receiverDevice.getId().add(copy);
+            }
         }
+        receiver.setDevice(receiverDevice);
         ack.getReceiver().add(receiver);
-
         // Sender
         MCCIMT000200UV01Sender sender = new MCCIMT000200UV01Sender();
-        MCCIMT000100UV01Device senderDevice = new MCCIMT000100UV01Device();
+        sender.setTypeCode(CommunicationFunctionType.SND); // required for sender
+
+        MCCIMT000200UV01Device senderDevice = new MCCIMT000200UV01Device();
         senderDevice.setDeterminerCode("INSTANCE");
+
+        // Set telecom if provided
         if (senderTelecomURL != null && !senderTelecomURL.isBlank()) {
             TEL tel = new TEL();
             tel.setValue(senderTelecomURL);
             senderDevice.getTelecom().add(tel);
         }
-        ack.setSender(sender);
+
+        // Optional: copy IDs from some original sender device if available
+        if (originalSenderDevice != null && originalSenderDevice.getId() != null) {
+            for (II id2 : originalSenderDevice.getId()) {
+                II copy = new II();
+                copy.setRoot(id2.getRoot());
+                copy.setExtension(id2.getExtension());
+                copy.setAssigningAuthorityName(id2.getAssigningAuthorityName());
+                senderDevice.getId().add(copy);
+            }
+        }
+
+        // Attach device to sender
+        sender.setDevice(senderDevice);
+
+// Add sender to ack
+ack.setSender(sender);
+
 
         // Acknowledgement
         MCCIMT000200UV01Acknowledgement ackBlock = new MCCIMT000200UV01Acknowledgement();
@@ -82,12 +108,15 @@ public class AcknowledgementService {
         ackBlock.setTargetMessage(targetMessage);
         ack.getAcknowledgement().add(ackBlock);
 
-        logger.info("AcknowledgementService:: HL7 acknowledgement created successfully for interactionId: {}", techBDInteractionId);
+        logger.info("AcknowledgementService:: HL7 acknowledgement created successfully for interactionId: {}",
+                techBDInteractionId);
         return ack;
     }
 
     public MCCIIN000002UV01 createPixAcknowledgmentError(String errorMessage, String techBDInteractionId) {
-        logger.warn("AcknowledgementService:: Creating HL7 error acknowledgment for interactionId: {}, errorMessage: {}", techBDInteractionId, errorMessage);
+        logger.warn(
+                "AcknowledgementService:: Creating HL7 error acknowledgment for interactionId: {}, errorMessage: {}",
+                techBDInteractionId, errorMessage);
 
         MCCIIN000002UV01 ack = new MCCIIN000002UV01();
 
@@ -104,7 +133,9 @@ public class AcknowledgementService {
             creationTime.setValue(xmlCal.toXMLFormat());
             ack.setCreationTime(creationTime);
         } catch (Exception e) {
-            logger.error("AcknowledgementService:: Error setting creationTime in error acknowledgment for interactionId: {}", techBDInteractionId, e);
+            logger.error(
+                    "AcknowledgementService:: Error setting creationTime in error acknowledgment for interactionId: {}",
+                    techBDInteractionId, e);
         }
 
         // Interaction ID
@@ -143,12 +174,14 @@ public class AcknowledgementService {
         acknowledgement.getAcknowledgementDetail().add(detail);
         ack.getAcknowledgement().add(acknowledgement);
 
-        logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}", techBDInteractionId);
+        logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}",
+                techBDInteractionId);
         return ack;
     }
 
     public RegistryResponseType createPnrAcknowledgement(String status, String techBDInteractionId) {
-        logger.info("AcknowledgementService:: Creating PnR acknowledgement with status: {} for interactionId: {}", status, techBDInteractionId);
+        logger.info("AcknowledgementService:: Creating PnR acknowledgement with status: {} for interactionId: {}",
+                status, techBDInteractionId);
 
         ObjectFactory factory = new ObjectFactory();
         RegistryResponseType response = factory.createRegistryResponseType();
@@ -159,7 +192,8 @@ public class AcknowledgementService {
             response.setStatus("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure");
         }
 
-        logger.debug("AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}",
+        logger.debug(
+                "AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}",
                 techBDInteractionId, UUID.randomUUID());
         return response;
     }
