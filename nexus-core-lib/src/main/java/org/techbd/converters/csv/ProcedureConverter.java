@@ -148,6 +148,7 @@ public class ProcedureConverter extends BaseConverter {
             String interactionId) {
 
         populateProcedureStatus(procedure, profileData, interactionId);
+        populateProcedureCategory(procedure);
         populateProcedureCode(procedure, profileData, interactionId);
         populateReferences(procedure, idsGenerated);
         populatePerformedPeriod(procedure, observations);
@@ -163,6 +164,15 @@ public class ProcedureConverter extends BaseConverter {
             procedure.setStatus(Procedure.ProcedureStatus.fromCode(statusCode));
         }
     
+    }
+
+    private void populateProcedureCategory(Procedure procedure) {
+        CodeableConcept category = new CodeableConcept();
+        category.addCoding(new Coding()
+                .setSystem("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes")
+                .setCode("sdoh-category-unspecified")
+                .setDisplay("SDOH Category Unspecified"));
+        procedure.setCategory(category);
     }
 
     private void populateProcedureCode(Procedure procedure, ScreeningProfileData profileData, String interactionId) {

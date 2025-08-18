@@ -119,19 +119,22 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
 
                         if ("96782-8".equals(data.getQuestionCode())) {
-                                CodeableConcept category = new CodeableConcept();
+                                CodeableConcept category1 = new CodeableConcept();
 
-                                category.addCoding(new Coding()
+                                category1.addCoding(new Coding()
                                                 .setSystem("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes")
                                                 .setCode("sdoh-category-unspecified")
                                                 .setDisplay("SDOH Category Unspecified"));
+                                observation.addCategory(category1);
 
-                                category.addCoding(new Coding()
+                                CodeableConcept category2 = new CodeableConcept();
+
+                                category2.addCoding(new Coding()
                                                 .setSystem("http://snomed.info/sct")
                                                 .setCode("365458002")
                                                 .setDisplay("Education and/or schooling finding"));
 
-                                observation.addCategory(category);
+                                observation.addCategory(category2);
                         } else {
                                 String[] rawCodes = data.getObservationCategorySdohCode().split(";");
                                 String sdohText = data.getObservationCategorySdohText();
