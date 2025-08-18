@@ -455,38 +455,37 @@ public class TabularRowsController {
         }
     }
 
-    @Operation(summary = "Download binary file from a table by ID", description = "Downloads a file and its name from the specified table and columns.")
-    @GetMapping(value = "/api/ux/tabular/jooq/binarydownload/{schemaName}/{tableName}/{binaryColumn}/{fileNameColumn}/{idColumn}/{id}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Operation(summary = "Download file from a table by ID", description = "Downloads a file and its name from the specified table and column.")
+    @GetMapping(value = "/api/ux/tabular/jooq/download/{schemaName}/{tableName}/{fileContentColName}/{idColumn}/{id}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @ResponseBody
     public ResponseEntity<byte[]> downloadFile(
             @PathVariable String schemaName,
             @PathVariable String tableName,
-            @PathVariable String binaryColumn,
+            @PathVariable String fileContentColName,
             @PathVariable String idColumn,
             @PathVariable String id,
-            @PathVariable String fileNameColumn
+            @RequestParam(value = "fileName", required = true) String fileName
     ) {
         if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
                 || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
                 || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(idColumn).matches()
-                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(binaryColumn).matches()
-                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(fileNameColumn).matches()) {
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(fileContentColName).matches()) {
             throw new IllegalArgumentException("Invalid schema, table, or column name.");
         }
 
         JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
-                .withTable(Tables.class, schemaName, tableName)
-                .withDSL(udiPrimeJpaConfig.dsl())
-                .withLogger(LOG)
-                .build();
+            .withTable(Tables.class, schemaName, tableName)
+            .withDSL(udiPrimeJpaConfig.dsl())
+            .withLogger(LOG)
+            .build();
 
-        JooqRowsSupplier.FileDownloadResult result = jooqRowsSupplier.downloadFileWithNameById(id, idColumn, binaryColumn, fileNameColumn);
-        if (result == null || result.content == null) {
-            return ResponseEntity.notFound().build();
-        }
-        String fileName = (result.fileName != null && !result.fileName.isBlank()) ? result.fileName : "downloaded_file.zip";
+        byte[] content = jooqRowsSupplier.downloadFileContentById(id, idColumn, fileContentColName);
+        // if (content == null) {
+        //     return ResponseEntity.notFound().build();
+        // }
+        String resolvedFileName = (fileName != null && !fileName.isBlank()) ? fileName : "downloaded_file.bin";
         return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=" + fileName)
-                .body(result.content);
+                .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
+                .body(content);
     }
 }
