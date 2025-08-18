@@ -67,62 +67,13 @@
                 });
         }
 
-        // Define downloadValidationResult globally
-        window.downloadValidationResult = async function (apiUrl, file_name = 'validation_result.json') {
-            try {
-                // Fetch data from the API
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                // Get the JSON data
-                const data = await response.json();
-
-                // Extract only the payload from the response
-                const payload = data[0]?.validation_result_payload;
-
-                // Convert the payload to a JSON string
-                const jsonString = JSON.stringify(payload, null, 2);
-
-                // Create a Blob from the JSON string
-                const blob = new Blob([jsonString], { type: "application/json" });
-
-                // Create a URL for the Blob
-                const url = URL.createObjectURL(blob);
-
-                // Create a temporary link to trigger the download
-                const tempLink = document.createElement('a');
-                tempLink.href = url;
-                tempLink.download = file_name + '.json';
-                document.body.appendChild(tempLink);
-                tempLink.click();
-
-                // Clean up
-                document.body.removeChild(tempLink);
-                URL.revokeObjectURL(url);
-
-            } catch (error) {
-                console.error('Error downloading payload:', error);
-            }
-        };
-
-
         document.addEventListener('DOMContentLoaded', function () {
 
             function downloadCellRenderer(params) {
                 const hub_interaction_id = params.data.hub_interaction_id;
                 const csv_zip_file_name = params.data.csv_zip_file_name || '';
 
-                // // Create the URL for the API call
-                // const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_zip_download/hub_interaction_id/${hub_interaction_id}.json`;
- 
-                // // Create a download link placeholder
-                // return `<a href="#" title="${csv_zip_file_name}" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
-                //     <i class="fas fa-download"></i>
-                // </a>`;
-
-                const apiUrl = `/api/ux/tabular/jooq/binarydownload/${schemaName}/sat_interaction_zip_file_request/csv_zip_file_content/csv_zip_file_name/hub_interaction_id/${hub_interaction_id}`;
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_zip_file_request/csv_zip_file_content/hub_interaction_id/${hub_interaction_id}?fileName=${csv_zip_file_name}`;
 
                 // Create a download link placeholder
                 return `<a href="${apiUrl}" title="${csv_zip_file_name}"  return false;" style="text-decoration: none; color: #007bff;">
@@ -133,12 +84,13 @@
             function downloadValidationResultCellRenderer(params) {
                 const hub_interaction_id = params.data.hub_interaction_id;
                 const file_name = `${params.data.csv_zip_file_name}_validation_result.json`;
-                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_http_validation_result/hub_interaction_id/${hub_interaction_id}.json`;
 
-                return `<a href="#" title="${file_name}" onclick="window.downloadValidationResult('${apiUrl}','${file_name}'); return false;" style="text-decoration: none; color: #007bff;">
-                                        <i class="fas fa-download"></i>
-                                    </a>`;
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_zip_file_request/validation_result_payload/hub_interaction_id/${hub_interaction_id}?fileName=${file_name}`;
 
+                // Create a download link placeholder
+                return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
             }
 
             function formatStatus(text) {
