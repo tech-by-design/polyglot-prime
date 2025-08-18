@@ -1,17 +1,14 @@
 <channel version="4.5.3">
-  <id>4f6eed2d-f1b2-433d-8a10-737a7e42fa01</id>
+  <id>e7f53fb8-961b-41cb-8185-89c47cac9f71</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.9.0</description>
-  <revision>28</revision>
+  <description>Version: 0.10.0</description>
+  <revision>10</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -101,7 +101,16 @@
           <enabled>true</enabled>
           <script>/**
 * Replacer function to remove empty values
-*/&#xd;function removeEmptyValues(key, value) {&#xd;  // Remove values that are empty strings, null, undefined, or empty objects/arrays&#xd;  if (value === &quot;&quot; || value === null || value === undefined || &#xd;      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||&#xd;      (Array.isArray(value) &amp;&amp; value.length === 0)) {&#xd;    return undefined; // Exclude the key from the result&#xd;  }&#xd;  return value; // Keep the value as is&#xd;}
+*/
+function removeEmptyValues(key, value) {
+  // Remove values that are empty strings, null, undefined, or empty objects/arrays
+  if (value === &quot;&quot; || value === null || value === undefined || 
+      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||
+      (Array.isArray(value) &amp;&amp; value.length === 0)) {
+    return undefined; // Exclude the key from the result
+  }
+  return value; // Keep the value as is
+}
 
 
 /**
@@ -115,7 +124,7 @@ function createJsonResponse(status, message) {
 * Util function to set error response.
 */
 function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }
@@ -260,8 +269,6 @@ function validateLowHighDates(xmlData) {
         throw new error(&quot;Validation Error: &quot; + error.message);
      }
 }
-
-
 
 function extractClinicalDocument(rawXml) {
 	try {
@@ -439,7 +446,6 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
 }*/
 //channelMap.put(&apos;fileContent&apos;, fileContent);
 
-
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -448,6 +454,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
 
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
@@ -576,7 +583,6 @@ function getManufacturerModelName(xmlData) {
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
 */
 function generateSHA256(inputString) {
-    //var md = MessageDigest.getInstance(&quot;SHA-256&quot;);
     var md = Packages.java.security.MessageDigest.getInstance(&quot;SHA-256&quot;);
     md.update(inputString.getBytes(&quot;UTF-8&quot;));   
     var digest = md.digest();
@@ -654,7 +660,6 @@ function getEncounterEffectiveTime(encounterNodeList) {
     var fallbackTime = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
     var effectiveTimeOut = &apos;&apos;;
 
-//    if (!encounterNodeList || encounterNodeList.length() === 0) {
     if (!encounterNodeList || encounterNodeList.length === 0) {	
         return fallbackTime;
     }
@@ -798,11 +803,6 @@ function getObservationCategoryCodes(transformer, observations) {
 	        categorySet[code] = getCategoryDisplay(codes[i].toString().trim());  
 	    }
 	}
-	/*for (var code in categorySet) {
-	    if (categorySet.hasOwnProperty(code)) {
-	        logger.info(&quot;Category Code: &quot; + code + &quot;, Display: &quot; + categorySet[code]);
-	    }
-	}*/
 	
 	var categoryJsonArray = [];
 	for (var code in categorySet) {
@@ -833,12 +833,11 @@ function getObservationCategoryCodes(transformer, observations) {
 	return transformer;
 }
 
-
-
 function getMultipleAnswersForComponent(transformer, observations) {
 	if (observations == null) {
         return transformer;
     }
+    
     //var xml = new XML(observations); // Parse the source message as XML    
     var xml;
     try {
@@ -850,7 +849,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
     var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
     default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
     var matchingObservations = [];
- 
+
     // Extract all observation code attributes
     try {
 	    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
@@ -879,13 +878,15 @@ function getMultipleAnswersForComponent(transformer, observations) {
         logger.error(&quot;XPath error while extracting observations: &quot; + err.toString());
         return transformer;
     }
- 
+
 	var seenCodes = {};
 	var codingArray = [];
+	
 	for each (var obs in matchingObservations) {
 	    for each (var val in obs.value) {
 	        var code = val.@code.toString();
 	        var display = val.@displayName.toString();
+	
 	        if (code &amp;&amp; !seenCodes[code]) {
 	            codingArray.push({
 	                &quot;system&quot;: &quot;http://loinc.org&quot;,
@@ -896,13 +897,11 @@ function getMultipleAnswersForComponent(transformer, observations) {
 	        }
 	    }
 	}
- 
+
 	transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
 	logger.info(&quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));
 	return transformer;
 }
-
-
 
 // Define Namespace Resolver
 function setResourceIdParameters(transformer) {
@@ -934,6 +933,14 @@ function setResourceIdParameters(transformer) {
 	// Extract `author (organization)`
 	var author = xmlDoc.*::author[0];
 	transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+
+	// Extract `Questionnaire`
+	var Questionnaire = xmlDoc.*::component
+                              .*::structuredBody
+                              .*::component
+                              .*::section.(@ID != &apos;sexualOrientation&apos;)
+                              .*::entry;
+	transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
 	
 	// Extract `observations`
 	try {
@@ -1014,6 +1021,8 @@ function setResourceIdParameters(transformer) {
 	// Extract `location`
      try {
 	    var location;
+	    var location_name;
+	    var location_address;
 	
 	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
 	    if (
@@ -1024,6 +1033,8 @@ function setResourceIdParameters(transformer) {
 	        xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location
 	    ) {
 	        location = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location;
+	        location_name = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location.name;
+	        location_address = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location.addr;
 	    }
 	
 	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
@@ -1036,27 +1047,26 @@ function setResourceIdParameters(transformer) {
 	            section.entry[0].encounter &amp;&amp;
 	            section.entry[0].encounter.participant &amp;&amp;
 	            section.entry[0].encounter.participant.participantRole &amp;&amp;
-	            section.entry[0].encounter.participant.participantRole.playingEntity &amp;&amp;
 	            section.entry[0].encounter.participant.participantRole.playingEntity
 	        ) {
-	            location = section.entry[0].encounter.participant.participantRole.playingEntity;
+	            location = section.entry[0].encounter.participant.participantRole;
+	            location_name = section.entry[0].encounter.participant.participantRole.playingEntity.name;
+	            location_address = section.entry[0].encounter.participant.participantRole.addr;
 	        }
 	    }
 	
 	    if (
 	        location &amp;&amp;
-	        location.name != undefined &amp;&amp;
-	        location.addr != undefined &amp;&amp;
-	        location.name.toString().trim() !== &quot;&quot; &amp;&amp;
-	        location.addr.toString().trim() !== &quot;&quot;
+	        location_name != undefined &amp;&amp; location_name.toString().trim() !== &quot;&quot; &amp;&amp;
+	        location_address != undefined &amp;&amp; location_address.toString().trim() !== &quot;&quot;
 	    ) {
 	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
 	    } else {
-	        logger.error(&quot;Location not found in the XML.&quot;);
+	        logger.info(&quot;Location not found in the XML.&quot;);
 	    }
 	
 	} catch (e) {
-	    logger.error(&quot;Error accessing location: &quot; + e);
+	    logger.info(&quot;Error accessing location: &quot; + e);
 	}
      	
 	return transformer;
@@ -1080,8 +1090,7 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 }
 
 function set_fhir_resource_profile_urls(transformer) {
-//	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
-	var baseFhirUrl = &apos;http://test.shinny.org/us/ny/hrsn&apos;; //TODO: Fix later
+	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
 	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
 	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
 	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
@@ -1096,148 +1105,19 @@ function set_fhir_resource_profile_urls(transformer) {
 //	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
 	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
-	if(baseFhirUrl != null) {
-		transformer.setParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
-		channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
-		logger.info(&quot;baseFhirUrl: &quot; + baseFhirUrl);
-	} else {
-		var errorMessage = &apos;BASE_FHIR_URL variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-	
-	if(bundleMetaProfileUrl != null) {
-		transformer.setParameter(&quot;bundleMetaProfileUrl&quot;, bundleMetaProfileUrl);
-		channelMap.put(&apos;bundleMetaProfileUrl&apos;, bundleMetaProfileUrl);
-		logger.info(&quot;bundleMetaProfileUrl: &quot; + bundleMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_BUNDLE variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-	
-	if(patientMetaProfileUrl != null) {
-		transformer.setParameter(&quot;patientMetaProfileUrl&quot;, patientMetaProfileUrl);
-		channelMap.put(&apos;patientMetaProfileUrl&apos;, patientMetaProfileUrl);
-		logger.info(&quot;patientMetaProfileUrl: &quot; + patientMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_PATIENT variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-	
-	if(encounterMetaProfileUrl != null) {
-		transformer.setParameter(&quot;encounterMetaProfileUrl&quot;, encounterMetaProfileUrl);
-		channelMap.put(&apos;encounterMetaProfileUrl&apos;, encounterMetaProfileUrl);
-		logger.info(&quot;encounterMetaProfileUrl: &quot; + encounterMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_ENCOUNTER variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-	
-	if(consentMetaProfileUrl != null) {
-		transformer.setParameter(&quot;consentMetaProfileUrl&quot;, consentMetaProfileUrl);
-		channelMap.put(&apos;consentMetaProfileUrl&apos;, consentMetaProfileUrl);
-		logger.info(&quot;consentMetaProfileUrl: &quot; + consentMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_CONSENT variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-		
-	if(organizationMetaProfileUrl != null) {
-		transformer.setParameter(&quot;organizationMetaProfileUrl&quot;, organizationMetaProfileUrl);
-		channelMap.put(&apos;organizationMetaProfileUrl&apos;, organizationMetaProfileUrl);
-		logger.info(&quot;organizationMetaProfileUrl: &quot; + organizationMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_ORGANIZATION variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-			
-	if(observationMetaProfileUrl != null) {
-		transformer.setParameter(&quot;observationMetaProfileUrl&quot;, observationMetaProfileUrl);
-		channelMap.put(&apos;observationMetaProfileUrl&apos;, observationMetaProfileUrl);
-		logger.info(&quot;observationMetaProfileUrl: &quot; + observationMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_OBSERVATION variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-				
-	if(observationSexualOrientationMetaProfileUrl != null) {
-		transformer.setParameter(&quot;observationSexualOrientationMetaProfileUrl&quot;, observationSexualOrientationMetaProfileUrl);
-		channelMap.put(&apos;observationSexualOrientationMetaProfileUrl&apos;, observationSexualOrientationMetaProfileUrl);
-		logger.info(&quot;observationSexualOrientationMetaProfileUrl: &quot; + observationSexualOrientationMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_SEXUAL_ORIENTATION variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-					
-	if(questionnaireMetaProfileUrl != null) {
-		transformer.setParameter(&quot;questionnaireMetaProfileUrl&quot;, questionnaireMetaProfileUrl);
-		channelMap.put(&apos;questionnaireMetaProfileUrl&apos;, questionnaireMetaProfileUrl);
-		logger.info(&quot;questionnaireMetaProfileUrl: &quot; + questionnaireMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-						
-	if(questionnaireResponseMetaProfileUrl != null) {
-		transformer.setParameter(&quot;questionnaireResponseMetaProfileUrl&quot;, questionnaireResponseMetaProfileUrl);
-		channelMap.put(&apos;questionnaireResponseMetaProfileUrl&apos;, questionnaireResponseMetaProfileUrl);
-		logger.info(&quot;questionnaireResponseMetaProfileUrl: &quot; + questionnaireResponseMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-							
-	if(practitionerMetaProfileUrl != null) {
-		transformer.setParameter(&quot;practitionerMetaProfileUrl&quot;, practitionerMetaProfileUrl);
-		channelMap.put(&apos;practitionerMetaProfileUrl&apos;, practitionerMetaProfileUrl);
-		logger.info(&quot;practitionerMetaProfileUrl: &quot; + practitionerMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_PRACTITIONER variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-
-	if(procedureMetaProfileUrl != null) {
-		transformer.setParameter(&quot;procedureMetaProfileUrl&quot;, procedureMetaProfileUrl);
-		channelMap.put(&apos;procedureMetaProfileUrl&apos;, procedureMetaProfileUrl);
-		logger.info(&quot;procedureMetaProfileUrl: &quot; + procedureMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_PROCEDURE variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
-	
-	if(locationMetaProfileUrl != null) {
-		transformer.setParameter(&quot;locationMetaProfileUrl&quot;, locationMetaProfileUrl);
-		channelMap.put(&apos;locationMetaProfileUrl&apos;, locationMetaProfileUrl);
-		logger.info(&quot;locationMetaProfileUrl: &quot; + locationMetaProfileUrl);
-	} else {
-		var errorMessage = &apos;PROFILE_URL_LOCATION variable is not set&apos;;
-		logger.error(errorMessage);
-		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		throw errorMessage; // Stop further processing by throwing an exception
-	}
+	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
+	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, patientMetaProfileUrl, &apos;PROFILE_URL_PATIENT&apos;, &apos;patientMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, encounterMetaProfileUrl, &apos;PROFILE_URL_ENCOUNTER&apos;, &apos;encounterMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, consentMetaProfileUrl, &apos;PROFILE_URL_CONSENT&apos;, &apos;consentMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, organizationMetaProfileUrl, &apos;PROFILE_URL_ORGANIZATION&apos;, &apos;organizationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, observationMetaProfileUrl, &apos;PROFILE_URL_OBSERVATION&apos;, &apos;observationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, observationSexualOrientationMetaProfileUrl, &apos;PROFILE_URL_SEXUAL_ORIENTATION&apos;, &apos;observationSexualOrientationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, questionnaireMetaProfileUrl, &apos;PROFILE_URL_QUESTIONNAIRE&apos;, &apos;questionnaireMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, questionnaireResponseMetaProfileUrl, &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE&apos;, &apos;questionnaireResponseMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, practitionerMetaProfileUrl, &apos;PROFILE_URL_PRACTITIONER&apos;, &apos;practitionerMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, procedureMetaProfileUrl, &apos;PROFILE_URL_PROCEDURE&apos;, &apos;procedureMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, locationMetaProfileUrl, &apos;PROFILE_URL_LOCATION&apos;, &apos;locationMetaProfileUrl&apos;);
 
 	transformer.setParameter(&quot;patientCIN&quot;, channelMap.get(&apos;patientCIN&apos;)); // Pass the parameter to XSLT
 	if (channelMap.get(&apos;organizationNPI&apos;)) {
@@ -3214,7 +3094,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755146665241</time>
+        <time>1755514290038</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
