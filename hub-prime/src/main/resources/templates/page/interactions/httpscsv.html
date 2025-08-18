@@ -170,11 +170,15 @@
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
                     { headerName: "Processing Status", field: "status", headerTooltip: "The ZIP file processing status.", filter: "agTextColumnFilter" },
                     {
-                        headerName: "CSV Issues", field: "is_failed", headerTooltip: "Issue on generating FHIR from CSV", filter: "agTextColumnFilter", cellRenderer: params => {
-                            if (params.value === 'True') {
+                        headerName: "Data Validation Status",
+                        field: "is_failed",
+                        headerTooltip: "Issue on generating FHIR from CSV",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: params => {
+                            if (params.value === 'Failed' && params.data.status !== 'Processing Failed') {
                                 return `<a href="/data-quality/csv-validations/file-not-processed" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } else {
-                                return params.value
+                                return params.value;
                             }
                         }
                     },
@@ -255,7 +259,7 @@
                         <strong>Processing Status:</strong> Indicates the current state of ZIP file processing (e.g.,
                         <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
                         users understand where the file stands in the processing pipeline.<br>
-                        <strong>CSV Issues:</strong> Highlights whether the FHIR conversion from the submitted CSV
+                        <strong>Data Validation Status:</strong> Highlights whether the FHIR conversion from the submitted CSV
                         failed. If a failure occurred, a direct link is provided to the
                         <a href="/data-quality/csv-validations/file-not-processed" class="text-blue-600 underline"
                             target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the

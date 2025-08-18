@@ -17,16 +17,16 @@
     {
       "type": "CCDA",
       "channel": "CcdaBundle.xml",
-      "version": "0.8.1",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-08-11"
+      "version": "0.9.0",
+      "editedby": "jewelbonnie",
+      "date": "2025-08-14"
     },
     {
       "type": "CCDA",
       "channel": "CcdaBundleValidate.xml",
-      "version": "0.6.0",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-07-28"
+      "version": "0.7.0",
+      "editedby": "jewelbonnie",
+      "date": "2025-08-14"
     },
     {
       "type": "FLAT FILE",
