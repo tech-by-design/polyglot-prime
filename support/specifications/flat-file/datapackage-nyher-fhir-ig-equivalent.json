@@ -138,7 +138,7 @@
         "zh-hk", "zh-sg", "zh-tw", "asl"
       ]}},      
       {"name": "SCREENING_LANGUAGE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.display"},
-      {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]} },
+      {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage"]} },
       {"name": "SCREENING_ENTITY_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.value", "constraints": {"required": true}},
       {"name": "SCREENING_ENTITY_ID_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.system", "constraints": { "required":true,
         "enum": ["http://hl7.org/fhir/sid/us-npi", "http://www.medicaid.gov","http://www.irs.gov","http://hl7.org/fhir/sid/us-npi/", "http://www.medicaid.gov/", "http://www.irs.gov/"]
@@ -396,9 +396,7 @@
           "ru", "ru-ru", "sr", "sr-rs", "sv", "sv-se", "te", "zh", "zh-cn", "zh-hk", "zh-sg", "zh-tw", "asl"
           ] }},    
            {"name": "PREFERRED_LANGUAGE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.display & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true"},
-          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["iso",
-          "iso 639-2",
-          "http://hl7.org/fhir/us/core/valueset/simple-language",
+          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":[
           "urn:ietf:bcp:47",
           "http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage"
           ]}},

@@ -183,8 +183,6 @@
 ### `PROCEDURE_STATUS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').status
   - `type` string
-  - `constraints`:
-    - `enum` ['preparation', 'in-progress', 'not-done', 'on-hold', 'stopped', 'completed', 'entered-in-error', 'unknown']
 ### `PROCEDURE_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').code.coding.code
   - `type` string
@@ -194,8 +192,6 @@
 ### `PROCEDURE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').code.coding.system
   - `type` string
-  - `constraints`:
-    - `enum` ['http://www.ama-assn.org/go/cpt', 'http://snomed.info/sct', 'urn:oid:2.16.840.1.113883.6.285', 'http://www.cms.gov/medicare/coding/icd10', 'urn:oid:2.16.840.1.113883.6.13']
 ### `PROCEDURE_CODE_MODIFIER`
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').modifierExtension.value
   - `type` string
@@ -242,7 +238,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage']
+    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
   - `type` string
@@ -253,7 +249,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['http://hl7.org/fhir/sid/us-npi', 'http://www.medicaid.gov', 'http://www.scn.ny.gov', 'http://www.cbo.ny.gov', 'http://www.hl7.org/oid', 'http://www.irs.gov', 'http://hl7.org/fhir/sid/us-npi/', 'http://www.medicaid.gov/', 'http://www.scn.ny.gov/', 'http://www.cbo.ny.gov/', 'http://www.hl7.org/oid/', 'http://www.irs.gov/']
+    - `enum` ['http://hl7.org/fhir/sid/us-npi', 'http://www.medicaid.gov', 'http://www.irs.gov', 'http://hl7.org/fhir/sid/us-npi/', 'http://www.medicaid.gov/', 'http://www.irs.gov/']
 ### `CONSENT_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated
   - `type` string
@@ -325,7 +321,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['96777-8', '97023-6', 'nysahchrsn', 'nys-ahc-hrsn', 'na']
+    - `enum` ['96777-8', '97023-6', 'nysahchrsn', 'nys-ahc-hrsn']
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
@@ -391,7 +387,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null)(;\s*(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null))*$`
+    - `pattern` `^(neg|pos|null)(;\s*(neg|pos|null))*$`
 ### `SCREENING_START_DATETIME`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').effectiveDateTime OR Bundle.entry.resource.where(resourceType = 'Observation').effectivePeriod.start
   - `type` string
@@ -438,19 +434,19 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[\r\n\t\S]+`
+    - `pattern` `[ \r\n\t\S]+`
 ### `GIVEN_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').name.given
   - `type` string
   - `constraints`:
     - `required` True
     - `minLength` 1
-    - `pattern` `[\r\n\t\S]+`
+    - `pattern` `[ \r\n\t\S]+`
 ### `MIDDLE_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').name.extension.valueString
   - `type` string
   - `constraints`:
-    - `pattern` `[\r\n\t\S]+`
+    - `pattern` `[ \r\n\t\S]+`
 ### `ADMINISTRATIVE_SEX_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').gender(code)
   - `type` string
@@ -472,7 +468,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
   - `type` string
   - `constraints`:
-    - `enum` ['f', 'm', 'unk']
+    - `enum` ['f', 'm', 'unk', 'asku', 'oth']
 ### `SEX_AT_BIRTH_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
   - `type` string
@@ -486,7 +482,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?$`
+    - `pattern` `^(?:(?:(?:19|20)\d{2})-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2[0-8])))|(?:(?:19|20)(?:[02468][048]|[13579][26])-02-29)$`
 ### `ADDRESS1`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').address.line
   - `type` string
@@ -523,8 +519,6 @@
 ### `TELECOM_USE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.use
   - `type` string
-  - `constraints`:
-    - `enum` ['home', 'work', 'temp', 'old', 'mobile']
 ### `RACE_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
@@ -542,7 +536,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
-    - `pattern` `^(2135-2|2186-5|2133-7|2137-8|2148-5|2155-0|2165-9|2178-2|2180-8|2182-4|2184-0|2138-6|2139-4|2140-2|2141-0|2142-8|2143-6|2144-4|2145-1|2146-9|2149-3|2150-1|2151-9|2152-7|2153-5|2156-8|2157-6|2158-4|2159-2|2160-0|2161-8|2162-6|2163-4|2166-7|2167-5|2168-3|2169-1|2170-9|2171-7|2172-5|2173-3|2174-1|2175-8|2176-6|ASKU|UNK|OTH|asked-declined)(;\s*(2135-2|2186-5|2133-7|2137-8|2148-5|2155-0|2165-9|2178-2|2180-8|2182-4|2184-0|2138-6|2139-4|2140-2|2141-0|2142-8|2143-6|2144-4|2145-1|2146-9|2149-3|2150-1|2151-9|2152-7|2153-5|2156-8|2157-6|2158-4|2159-2|2160-0|2161-8|2162-6|2163-4|2166-7|2167-5|2168-3|2169-1|2170-9|2171-7|2172-5|2173-3|2174-1|2175-8|2176-6|ASKU|UNK|OTH|asked-declined))*$`
+    - `pattern` `^(2135-2|2186-5|2133-7|2137-8|2148-5|2155-0|2165-9|2178-2|2180-8|2182-4|2184-0|2138-6|2139-4|2140-2|2141-0|2142-8|2143-6|2144-4|2145-1|2146-9|2149-3|2150-1|2151-9|2152-7|2153-5|2156-8|2157-6|2158-4|2159-2|2160-0|2161-8|2162-6|2163-4|2166-7|2167-5|2168-3|2169-1|2170-9|2171-7|2172-5|2173-3|2174-1|2175-8|2176-6|ASKU|UNK)(;\s*(2135-2|2186-5|2133-7|2137-8|2148-5|2155-0|2165-9|2178-2|2180-8|2182-4|2184-0|2138-6|2139-4|2140-2|2141-0|2142-8|2143-6|2144-4|2145-1|2146-9|2149-3|2150-1|2151-9|2152-7|2153-5|2156-8|2157-6|2158-4|2159-2|2160-0|2161-8|2162-6|2163-4|2166-7|2167-5|2168-3|2169-1|2170-9|2171-7|2172-5|2173-3|2174-1|2175-8|2176-6|ASKU|UNK))*$`
 ### `ETHNICITY_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
@@ -568,7 +562,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `pattern` `^(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined)(;\s*(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined))*$`
+    - `pattern` `^(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asku|asked-declined)(;\s*(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asku|asked-declined))*$`
 ### `GENDER_IDENTITY_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display
   - `type` string
@@ -589,7 +583,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
-    - `enum` ['iso', 'iso 639-2', 'http://hl7.org/fhir/us/core/valueset/simple-language', 'urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
+    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
 ### `SEXUAL_ORIENTATION_CODE`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code
   - `type` string
