@@ -1174,25 +1174,27 @@
                                     <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                   </xsl:call-template>"
                     }
-                    <xsl:choose>
-                      <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
-                        <xsl:choose>
-                          <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
-                            , {
-                                "system": "http://snomed.info/sct",
-                                "code": "365458002",
-                                "display": "Education and/or schooling finding"
-                              }
-                          </xsl:when>
-                        </xsl:choose>
-                      </xsl:when>
-                    </xsl:choose>
                     ],
                     "text" : "<xsl:call-template name="mapSDOHCategoryText">
                                 <xsl:with-param name="questionCode" select="$questionCode"/>
                                 <xsl:with-param name="categoryCode" select="$categoryCode"/>
                               </xsl:call-template>"
                   },
+                  <xsl:choose>
+                    <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
+                      <xsl:choose>
+                        <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
+                          { 
+                            "coding": [{
+                              "system": "http://snomed.info/sct",
+                              "code": "365458002",
+                              "display": "Education and/or schooling finding"
+                            }]
+                          },
+                        </xsl:when>
+                      </xsl:choose>
+                    </xsl:when>
+                  </xsl:choose>
                   {
                     "coding": [{
                         "system": "http://terminology.hl7.org/CodeSystem/observation-category",
