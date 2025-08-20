@@ -4426,6 +4426,45 @@ ORDER BY
     sizfcr.created_at DESC;  
 
 /*****************************************
+-- View: techbd_udi_ingress.csv_incomplete_groups_errors_summary 
+-- Purpose: Summarizes CSV file requests that resulted in validation or conversion errors. 
+-- Details:
+--   - Joins zip file requests with their corresponding flat file CSV requests.
+--   - Filters for records where the nature is either 'CSV Validation Result' or 'Converted to FHIR'.
+--   - Ensures that validation results contain at least one error.
+--   - Returns identifying details such as tenant, interaction, timestamp, URI,
+--     user agent, and CSV zip file name.
+--   - Groups by interaction metadata and orders results by most recent created_at.
+****************************************/
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_incomplete_groups_errors_summary cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_incomplete_groups_errors_summary
+AS 
+SELECT 
+    sizfr.tenant_id,
+    sizfr.hub_interaction_id,
+    sizfr.created_at,
+    sizfr.uri,
+    sizfr.user_agent, 
+    sizfr.csv_zip_file_name
+FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
+INNER JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
+    ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id      
+where
+	(siffcr.nature = 'CSV Validation Result'::text OR siffcr.nature = 'Converted to FHIR'::text)
+	and jsonb_array_length((siffcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text) > 0    	
+GROUP BY 
+    sizfr.hub_interaction_id,
+    sizfr.created_at,
+    sizfr.uri, 
+    sizfr.tenant_id,
+    sizfr.user_agent, 
+    sizfr.csv_zip_file_name 
+ORDER BY 
+    sizfr.created_at DESC;	
+
+/*****************************************
 The `csv_incomplete_groups` view identifies incomplete groups in CSV validation results from the `sat_interaction_flat_file_csv_request` table. 
 
 It extracts:
