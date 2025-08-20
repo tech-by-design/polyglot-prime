@@ -21,7 +21,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
@@ -90,7 +90,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
@@ -238,7 +238,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
+    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage', 'http://test.shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
   - `type` string
@@ -290,7 +290,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
