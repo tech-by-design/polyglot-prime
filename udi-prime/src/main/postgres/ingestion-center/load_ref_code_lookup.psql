@@ -2164,7 +2164,24 @@ SET
     system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
 WHERE code_type = 'sexual_orientation'
   AND code = 'UNK' ;
-
+ 
+INSERT INTO techbd_udi_ingress.ref_code_lookup
+(ref_code_lookup_id, code_type, code, display_string, system_value, description, ig_version, created_at, created_by, provenance)
+VALUES
+     ('f1f4cd18-6815-45dd-abcc-cd51e5c089cb','language','acf','Saint Lucian Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('007f0c71-ab8c-4ebc-936e-73fe0666a118','language','ase','American Sign Language','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('4ec43fc9-ee74-4526-a93f-2b27da0e7e37','language','crp','Creoles and pidgins','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('7521a51c-c483-43f1-a51b-ce34cafea1c0','language','crs','Seselwa Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('5f9a168f-96aa-4004-b95b-e118b41f11cb','language','gcr','Guadeloupean Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('0e659cda-57f3-4109-ba20-762075ef922f','language','gcf','Guianese Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('d7bfb03c-73bc-49d3-a42c-34d03d6002b7','language','ht','Haitian Creole','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('b3b9a29c-74bb-48fb-af0f-2a1866ec143a','language','kmv','Karipúna Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('844ab382-4019-418e-86c8-0ad1d39b7735','language','rcf','Réunion Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('c16a5976-5130-4f5e-bbd7-4bf9027ddbd8','language','scf','San Miguel Creole French','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('0c9721da-35d9-4d44-96e3-0a803c28e464','language','sq','Albanian','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
+	 ('b2a1e3e5-de21-42a4-9d02-14e14f1cf0ff','language','yue','Cantonese','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD')
+ON CONFLICT DO NOTHING;
+ 
 
 /*
 -- Step 1: Create TEMP staging table

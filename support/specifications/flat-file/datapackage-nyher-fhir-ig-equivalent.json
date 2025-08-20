@@ -130,12 +130,13 @@
      {"name": "SCREENING_STATUS_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').status.display"},         
       {"name": "SCREENING_STATUS_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').status.coding.system" , "constraints": {"enum": [ "http://hl7.org/fhir/observation-status" ] }},
       {"name": "SCREENING_LANGUAGE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.code", "constraints": { "enum": [
-        "ar", "bn", "cs", "da", "de", "de-at", "de-ch", "de-de", "el", "en", "en-au",
-        "en-ca", "en-gb", "en-in", "en-nz", "en-sg", "en-us", "es", "es-ar", "es-es",
-        "es-uy", "fi", "fr", "fr-be", "fr-ch", "fr-fr", "fy", "fy-nl", "hi", "hr", "it",
-        "it-ch", "it-it", "ja", "ko", "nl", "nl-be", "nl-nl", "no", "no-no", "pa", "pl",
-        "pt", "pt-br", "ru", "ru-ru", "sr", "sr-rs", "sv", "sv-se", "te", "zh", "zh-cn",
-        "zh-hk", "zh-sg", "zh-tw", "asl"
+        "acf", "ar", "ase", "bn", "crp", "crs", "cs", "da", "de", "de-at", "de-ch", "de-de",
+            "el", "en", "en-au", "en-ca", "en-gb", "en-in", "en-nz", "en-sg", "en-us",
+            "es", "es-ar", "es-es", "es-uy", "fi", "fr", "fr-be", "fr-ch", "fr-fr",
+            "fy", "fy-nl", "gcr", "gcf", "hi", "ht", "hr", "it", "it-ch", "it-it",
+            "ja", "kmv", "ko", "nl", "nl-be", "nl-nl", "no", "no-no", "pa", "pl",
+            "pt", "pt-br", "rcf", "ru", "ru-ru", "scf", "sr", "sr-rs", "sq", "sv",
+            "sv-se", "te", "yue", "zh", "zh-cn", "zh-hk", "zh-sg", "zh-tw"
       ]}},      
       {"name": "SCREENING_LANGUAGE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.display"},
       {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage","http://test.shinny.org/us/ny/hrsn/codesystem/shinnylanguage"]} },
