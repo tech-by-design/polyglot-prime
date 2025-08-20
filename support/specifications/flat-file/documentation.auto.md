@@ -21,7 +21,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
@@ -90,7 +90,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
@@ -230,7 +230,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.code
   - `type` string
   - `constraints`:
-    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'hi', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'ru', 'ru-ru', 'sr', 'sr-rs', 'sv', 'sv-se', 'te', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw', 'asl']
+    - `enum` ['acf', 'ar', 'ase', 'bn', 'crp', 'crs', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'gcr', 'gcf', 'hi', 'ht', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'kmv', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'rcf', 'ru', 'ru-ru', 'scf', 'sr', 'sr-rs', 'sq', 'sv', 'sv-se', 'te', 'yue', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw']
 ### `SCREENING_LANGUAGE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.display
   - `type` string
@@ -238,7 +238,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
+    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage', 'http://test.shinny.org/us/ny/hrsn/codesystem/shinnylanguage']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
   - `type` string
@@ -290,7 +290,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `\S*`
 ### `FACILITY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
