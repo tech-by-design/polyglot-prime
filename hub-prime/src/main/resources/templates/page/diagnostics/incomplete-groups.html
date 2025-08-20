@@ -18,61 +18,98 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'csv_incomplete_groups_errors';
+        const viewName = 'csv_incomplete_groups_errors_summary';
+        const detailViewName = 'csv_incomplete_groups_errors';
+
+        function getDetailData(params) {
+            const hub_interaction_id = params.data.hub_interaction_id;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailViewName}/zip_file_hub_interaction_id/${hub_interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
+
+        const detailGrid = [ 
+                            {
+                                headerName: "TechBD Group Interaction ID",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The unique Group Interaction ID for the TechBD tenant associated with the CSV file."
+                            }, 
+                            {
+                                headerName: "Error Type",
+                                field: "error_type",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The category or type of validation error encountered."
+                            },
+                            {
+                                headerName: "Error Message",
+                                field: "error",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The detailed error message describing the validation issue."
+                            },
+                            {
+                                headerName: "Description",
+                                field: "description",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "A brief description of the validation error."
+                            }
+        ];
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
             .withColumnDefs([
-                            { 
-                                headerName: "Created Time", 
-                                field: "created_at", 
-                                sortable: true, 
-                                sort: "desc", 
-                                filter: "agDateColumnFilter", 
+                            {
+                                headerName: "Created Time",
+                                field: "created_at",
+                                sortable: true,
+                                sort: "desc",
+                                filter: "agDateColumnFilter",
                                 headerTooltip: "The timestamp when the CSV validation error was recorded."
                             },
-                            { 
-                                headerName: "TechBD Tenant ID", 
-                                field: "tenant_id", 
-                                filter: "agTextColumnFilter", 
+                            {
+                                headerName: "TechBD Tenant ID",
+                                field: "tenant_id",
+                                filter: "agTextColumnFilter",
                                 headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
                             },
-                            { 
-                                headerName: "TechBD Group Interaction ID", 
-                                field: "hub_interaction_id", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The unique Group Interaction ID  for the TechBD tenant associated with the CSV file."
-                            }, 
-                            { 
-                                headerName: "TechBD Zip File Interaction ID", 
-                                field: "zip_file_hub_interaction_id", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
-                            },                            
-                            { 
-                                headerName: "URI", 
-                                field: "uri", 
-                                filter: "agTextColumnFilter", 
+                            {
+                                headerName: "TechBD Zip File Interaction ID",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file.",
+                                cellRenderer: 'agGroupCellRenderer'
+                            },
+                            {
+                                headerName: "URI",
+                                field: "uri",
+                                filter: "agTextColumnFilter",
                                 headerTooltip: "The URI where the CSV file was submitted or validated."
-                            }, 
-                            { 
-                                headerName: "Error Type", 
-                                field: "error_type", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The category or type of validation error encountered."
                             },
-                            { 
-                                headerName: "Error Message", 
-                                field: "error", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The detailed error message describing the validation issue."
+                            {
+                                headerName: "User Agent",
+                                field: "user_agent",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The User Agent of the user who submitted the CSV file."
                             },
-                            { 
-                                headerName: "Description", 
-                                field: "description", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "A brief description of the validation error."
-                            } 
+                            {
+                                headerName: "CSV Zip File Name",
+                                field: "csv_zip_file_name",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The name of the CSV zip file."
+                            }
                         ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -83,6 +120,19 @@
                         }));
                     },
                 )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: detailGrid,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getDetailData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
@@ -95,8 +145,9 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid focuses on errors related to incomplete file groups required for validation. Each row represents a missing or incomplete file within a logical group, with details such as the group identifier, the missing file name, and the associated error message. This view is essential for ensuring that all mandatory files for validation, such as demographic data or screening data, are included in the submission. Users can utilize this grid to identify gaps in their datasets and take corrective action promptly.
- </div>
+            This data grid provides a summary overview of incomplete file groups that resulted in validation errors, displaying key information such as Created Time, Tenant ID, Interaction ID, URI, User Agent, and CSV Zip File Name. The grid highlights submissions where mandatory files for validation are missing or incomplete, enabling users to quickly identify problematic file groups.
+            A drill-down feature enables users to explore detailed insights for each entry by clicking the expand arrow next to any row. This reveals specific validation errors including Error Type, Error Message, and Description for each incomplete file within the group, providing comprehensive context for efficient error resolution.
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
