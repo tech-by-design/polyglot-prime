@@ -249,14 +249,6 @@ public class CsvOrchestrationEngine {
                     file.getOriginalFilename(), masterInteractionId);
             final Instant intiatedAt = Instant.now();
             final String originalFilename = file.getOriginalFilename();
-            final String uniqueFilename = masterInteractionId + "_"
-                    + (originalFilename != null ? originalFilename : "upload.zip");
-            final Path destinationPath = Path.of(coreAppConfig.getCsv().validation().inboundPath(), uniqueFilename);
-            Files.createDirectories(destinationPath.getParent());
-
-            // Save the uploaded file to the inbound folder
-            Files.copy(file.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
-
             // Trigger CSV processing and validation
             this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
             saveCombinedValidationResults(validationResults, masterInteractionId);
