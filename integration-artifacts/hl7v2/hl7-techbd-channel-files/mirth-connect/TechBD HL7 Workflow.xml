@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>28c4c91e-ecc2-4619-b19d-5a680df00fdd</id>
+  <id>9a6f8178-6e7e-40c1-98ad-59fa1cfb07a9</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.1</description>
-  <revision>86</revision>
+  <revision>1</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -80,7 +80,7 @@
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
 /**
-* Util function to generate json string wit hstatus and message
+* Util function to generate json string with status and message
 */
 function createJsonResponse(status, message) {
     return JSON.stringify({ status: status, message: message });
@@ -94,8 +94,9 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }&#xd;
-&#xd;var rawData = connectorMessage.getRawData();var filename = null;
-var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+&#xd;var rawData = connectorMessage.getRawData();
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/);
 
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
@@ -112,6 +113,39 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
+}
+
+
+// ---------------- HL7 VALIDATION ----------------
+
+// Parse request as XML
+var requestXml = new XML(connectorMessage.getRawData());
+
+// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+
+// Safety check
+if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+    var errorMessage = &quot;No HL7 content found in uploaded file.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// Now validate HL7 lines
+var lines = hl7Data.split(/\r?\n/);
+if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
+    var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+for (var i = 0; i &lt; lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith(&quot;|&quot;)) {
+        var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
+        setErrorResponse(400, errorMessage);
+        throw errorMessage;
+    }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
@@ -254,6 +288,7 @@ function getOutcome(text, severity, code) {
     });
 }
 
+
 // --------------------
 // Helper: Extract HL7 body from raw data
 // --------------------
@@ -352,6 +387,7 @@ function getRequiredSegmentsAndFieldsFromXml(xmlPath) {
     var segmentDefs = segmentsSection.getChildren(&quot;SegmentDef&quot;);
 
     var requiredFields = [];
+    var oneOfGroups = [];
 
     for each (var segDef in segmentDefs) {
         var segmentName = segDef.getAttributeValue(&quot;Name&quot;);
@@ -414,12 +450,78 @@ function getRequiredSegmentsAndFieldsFromXml(xmlPath) {
 		
 		    logger.info(&quot;✅ Extracted required field: &quot; + seg + &quot;-&quot; + fieldIndex + (componentIndex ? &quot;.&quot; + componentIndex : &quot;&quot;));
 		}
+
+		// Handle &lt;OneOfGroup&gt;
+        var groups = segDef.getChildren(&quot;OneOfGroup&quot;);
+        for each (var group in groups) {
+            var groupFields = [];
+            var groupDesc = group.getAttributeValue(&quot;Description&quot;) || &quot;&quot;;
+
+            for each (var field in group.getChildren(&quot;Field&quot;)) {
+                var fieldName = String(field.getAttributeValue(&quot;Name&quot;)).trim();
+                var description = String(field.getAttributeValue(&quot;Description&quot;) || &quot;&quot;).trim();
+
+                var parts = fieldName.split(&quot;-&quot;);
+                var seg = parts[0];
+                var idxComp = parts[1].split(&quot;.&quot;);
+                var fieldIndex = parseInt(idxComp[0], 10);
+                var componentIndex = idxComp.length &gt; 1 ? parseInt(idxComp[1], 10) : null;
+
+                groupFields.push({
+                    segment: seg,
+                    fieldIndex: fieldIndex,
+                    componentIndex: componentIndex,
+                    fieldName: fieldName,
+                    description: description
+                });
+            }
+
+            oneOfGroups.push({
+                segment: segmentName,
+                description: groupDesc,
+                fields: groupFields
+            });
+        }
     }
+
 
     return {
         requiredSegments: requiredSegments,
-        requiredFields: requiredFields
+        requiredFields: requiredFields,
+        oneOfGroups: oneOfGroups
     };
+}
+
+function validateOneOfGroups(groups, hl7Text) {
+    var violations = [];
+
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+
+    for each (var group in groups) {
+        var satisfied = false;
+
+        for each (var f in group.fields) {
+            var fieldViolations = validateFieldsInAllSegments(
+                f.segment, f.fieldIndex, f.componentIndex, hl7Text,
+                f.fieldName, f.description
+            );
+            if (fieldViolations.length === 0) {
+                satisfied = true;
+                break;
+            }
+        }
+
+        if (!satisfied) {
+            violations.push({
+                segment: group.segment,
+                fieldName: group.fields.map(f =&gt; f.fieldName).join(&quot; OR &quot;),
+                description: group.description,
+                lineNumber: &quot;-&quot;, // optional: could inspect the first PID line
+                lineContent: &quot;&quot;  // optional
+            });
+        }
+    }
+    return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -581,6 +683,10 @@ logger.info(&quot;User-Agent: &quot; + userAgent);
 var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
 channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
 logger.info(&quot;OrganizationName: &quot; + OrganizationName);
+
+var SeverityLevel = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
+channelMap.put(&apos;SeverityLevel&apos;, SeverityLevel);
+logger.info(&quot;SeverityLevel: &quot; + SeverityLevel);
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
@@ -1116,7 +1222,7 @@ try {
     logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
 
     // Step 3: Load required segments from XML template
-    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-validation-schema.xml&quot;;
     logger.info(&quot;Extracted template:\n&quot; + xmlPath);
 
 	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
@@ -1147,6 +1253,10 @@ try {
 	    allViolations = allViolations.concat(violations);
 	}
 
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
 	if (allViolations.length &gt; 0) {
 		var errorDetails = allViolations.map(function(v) {
 		    if (!v.fieldName) {
@@ -1155,8 +1265,7 @@ try {
 		    } else {
 		        // Field-level violation
 		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
-		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;) +
-		               &quot; in segment &apos;&quot; + v.segment;
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
 		    }
 		}).join(&quot;\n\n&quot;);
 	
@@ -1266,7 +1375,7 @@ try {
     logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
 
     // Step 3: Load required segments from XML template
-    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-validation-schema.xml&quot;;
     logger.info(&quot;Extracted template:\n&quot; + xmlPath);
 
 	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
@@ -1297,6 +1406,10 @@ try {
 	    allViolations = allViolations.concat(violations);
 	}
 
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
 	if (allViolations.length &gt; 0) {
 		var errorDetails = allViolations.map(function(v) {
 		    if (!v.fieldName) {
@@ -1305,8 +1418,7 @@ try {
 		    } else {
 		        // Field-level violation
 		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
-		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;) +
-		               &quot; in segment &apos;&quot; + v.segment;
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
 		    }
 		}).join(&quot;\n\n&quot;);
 	
@@ -1636,6 +1748,12 @@ return value; // Keep the value as is
               <string>${elaboration}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -1833,7 +1951,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755170814272</time>
+        <time>1755761105286</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1842,5 +1960,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
