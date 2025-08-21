@@ -229,7 +229,7 @@ public class CsvService {
 
             engine.orchestrate(session);
 
-            List<Object> result = csvBundleProcessorService.processPayload(
+            List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
                     interactionId,
                     session.getPayloadAndValidationOutcomes(),
                     session.getFilesNotProcessed(),
@@ -239,9 +239,9 @@ public class CsvService {
                     file.getOriginalFilename(),
                     (String) requestParams.get(Constants.BASE_FHIR_URL));
 
-            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_COMPLETED, requestParams);
+            saveFullOperationOutcome(jooqCfg,fullOperationOutcome, interactionId, requestParams);
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
-            return result;
+            return fullOperationOutcome;
         } catch (Exception ex) {
             LOG.error("Synchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                     interactionId, ex.getMessage(), ex);
@@ -284,7 +284,7 @@ public class CsvService {
 
                 engine.orchestrate(session);
 
-                csvBundleProcessorService.processPayload(
+                List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
                         interactionId,
                         session.getPayloadAndValidationOutcomes(),
                         session.getFilesNotProcessed(),
@@ -294,8 +294,7 @@ public class CsvService {
                         file.getOriginalFilename(),
                         (String) requestParams.get(Constants.BASE_FHIR_URL));
 
-                saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_COMPLETED, requestParams);
+                saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
                 LOG.info("Asynchronous processing completed for zipFileInteractionId: {}",
                         interactionId);
             } catch (Exception ex) {
@@ -358,5 +357,37 @@ public class CsvService {
             return List.of(response);
         }
     }
+
+        private void saveFullOperationOutcome(final List<Object> fullOperationOutcome,
+                final String masterInteractionId, Map<String, Object> requestParameters) {
+            LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
+                    masterInteractionId);
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            final var createdAt = OffsetDateTime.now();
+            final var initRIHR = new SatInteractionCsvRequestUpserted();
+            try {
+                initRIHR.setInteractionId(masterInteractionId);
+                initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+                initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
+                initRIHR.setCreatedAt(createdAt);
+                initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setPFullOperationOutcome(
+                        (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                final var start = Instant.now();
+                final var execResult = initRIHR.execute(jooqCfg);
+                final var end = Instant.now();
+                LOG.info(
+                        "CsvService::saveFullOperationOutcome : END for zipFileInteractionId : {} .Time taken : {} milliseconds"
+                                + execResult,
+                        masterInteractionId, 
+                        Duration.between(start, end).toMillis());
+            } catch (final Exception e) {
+                LOG.error("ERROR:: saveFullOperationOutcome CALL for zipFileInteractionId : {}"
+                        + initRIHR.getName() + " initRIHR error", masterInteractionId,
+                        e);
+            }
+        }
 
 }
