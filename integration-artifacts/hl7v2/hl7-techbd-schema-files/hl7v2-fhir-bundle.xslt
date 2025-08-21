@@ -662,23 +662,25 @@
                                   <xsl:with-param name="questionCode" select="$questionCode"/>
                                   <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                 </xsl:call-template>"
-                  }
+                  }]
+				}
 				  <xsl:choose>
                         <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
                           <xsl:choose>
                             <xsl:when test="string($questionCode)= '96782-8'">
-                              , {
+                              ,{
+								"coding": [
+								{
                                   "system": "http://snomed.info/sct",
                                   "code": "365458002",
                                   "display": "Education and/or schooling finding"
-                                }
+                                }]
+								}
                             </xsl:when>
                           </xsl:choose>
                         </xsl:when>
                       </xsl:choose>
-				  ]
-                },
-                {
+				,{
                   "coding": [{
                       "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                       "code": "social-history"
@@ -713,6 +715,25 @@
               <!-- https://test.shinny.org/change_log.html#v150 
                  According to v1.5.0 change log, add component element for the question code '96778-6' -->
             <xsl:choose>
+				<xsl:when test="string(OBX.5/OBX.5.1) = 'X-SDOH-FLO-1570000066-Patient unable to answer' 
+                                  or string(OBX.5/OBX.5.1) = 'X-SDOH-FLO-1570000066-Patient declined'">
+                      <xsl:variable name="dataAbsentReasonCode">
+                        <xsl:call-template name="getDataAbsentReasonFhirCode">
+                          <xsl:with-param name="dataAbsentReason" select="string(OBX.5/OBX.5.1)"/>
+                        </xsl:call-template>
+                      </xsl:variable>
+                      "dataAbsentReason": {
+                          "coding": [
+                              {
+                                  "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+                                  "code": "<xsl:value-of select="$dataAbsentReasonCode"/>",
+                                  "display": "<xsl:call-template name="getDataAbsentReasonFhirDisplay">
+                                                <xsl:with-param name="dataAbsentReasonCode" select="$dataAbsentReasonCode"/>
+                                              </xsl:call-template>"
+                              }
+                          ]
+                      },
+                </xsl:when>
 			  <xsl:when test="string(OBX.3/OBX.3.1) = '96778-6'">
 				"component": [
 				  {
@@ -1609,6 +1630,24 @@
   </xsl:when>
   <xsl:otherwise/>
 </xsl:choose>
+</xsl:template>
+
+<xsl:template name="getDataAbsentReasonFhirCode">
+  <xsl:param name="dataAbsentReason"/>
+  <xsl:choose>
+    <xsl:when test="$dataAbsentReason = 'X-SDOH-FLO-1570000066-Patient unable to answer'">asked-unknown</xsl:when>
+    <xsl:when test="$dataAbsentReason = 'X-SDOH-FLO-1570000066-Patient declined'">asked-declined</xsl:when>
+    <xsl:otherwise/>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template name="getDataAbsentReasonFhirDisplay">
+  <xsl:param name="dataAbsentReasonCode"/>
+  <xsl:choose>
+    <xsl:when test="$dataAbsentReasonCode = 'asked-unknown'">Asked But Unknown</xsl:when>
+    <xsl:when test="$dataAbsentReasonCode = 'asked-declined'">Asked But Declined</xsl:when>
+    <xsl:otherwise/>
+  </xsl:choose>
 </xsl:template>
 
 </xsl:stylesheet>

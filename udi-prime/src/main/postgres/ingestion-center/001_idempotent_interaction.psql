@@ -4233,7 +4233,14 @@ SELECT
          OR sizfr.status = 'PROCESSING_FAILED'
     THEN 'Failed' 
     ELSE 'Success' 
-END AS is_failed
+END AS is_failed,
+    MAX(CASE 
+        WHEN full_operation_outcome IS NULL 
+             OR full_operation_outcome::text = '{}' 
+             OR full_operation_outcome::text = '[]' 
+        THEN 'validation_result_payload'
+        ELSE 'full_operation_outcome'
+    end) AS selected_field
 
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
