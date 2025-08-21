@@ -77,6 +77,7 @@ public class CsvService {
             final var jooqCfg = dslContext.configuration();
             saveArchiveInteraction(zipFileInteractionId, jooqCfg, requestParameters, file,
                     CsvProcessingState.PROCESSING_COMPLETED);
+            saveIncomingFileToInboundFolder(file, zipFileInteractionId);   
             session = engine.session()
                     .withMasterInteractionId(zipFileInteractionId)
                     .withSessionId(UUID.randomUUID().toString())
