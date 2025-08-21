@@ -83,9 +83,10 @@
 
             function downloadValidationResultCellRenderer(params) {
                 const hub_interaction_id = params.data.hub_interaction_id;
+                const validation_result = params.data.selected_field || 'validation_result_payload';
                 const file_name = `${params.data.csv_zip_file_name}_validation_result.json`;
 
-                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_zip_file_request/validation_result_payload/hub_interaction_id/${hub_interaction_id}?fileName=${file_name}`;
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_zip_file_request/${validation_result}/hub_interaction_id/${hub_interaction_id}?fileName=${file_name}`;
 
                 // Create a download link placeholder
                 return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
