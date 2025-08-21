@@ -3,8 +3,7 @@
     <SegmentGroup Name="ORU_R01_Message">
       <Segment Name="MSH" Usage="R" MinOccurs="1" MaxOccurs="1"/>
       <Segment Name="PID" Usage="R" MinOccurs="1" MaxOccurs="1"/>
-      <Segment Name="OBR" Usage="R" MinOccurs="1" MaxOccurs="1"/>
-      <Segment Name="OBX" Usage="R" MinOccurs="1" MaxOccurs="*"/>
+	  <Segment Name="PV1" Usage="R" MinOccurs="1" MaxOccurs="1"/>
     </SegmentGroup>
   </MessageStructure>
   <Segments>
@@ -15,6 +14,17 @@
 	  <Field Name="PID-3.1" Datatype="CX" Usage="R" Description="MR value"/>
       <Field Name="PID-7" Datatype="CX" Usage="R" Description="birth date"/>
       <Field Name="PID-8" Datatype="XPN" Usage="R" Description="gender"/>
+	  
+    <OneOfGroup Description="Patient Name or Alias (Family)">
+        <Field Name="PID-5.1" Datatype="XPN" Usage="C" Description="Patient Name Family"/>
+        <Field Name="PID-9.1" Datatype="XPN" Usage="C" Description="Patient Alias Family"/>
+    </OneOfGroup>
+
+    <OneOfGroup Description="Patient Name or Alias (Given)">
+        <Field Name="PID-5.2" Datatype="XPN" Usage="C" Description="Patient Name Given"/>
+        <Field Name="PID-9.2" Datatype="XPN" Usage="C" Description="Patient Alias Given"/>
+    </OneOfGroup>
+	  
     </SegmentDef>
 
     <SegmentDef Name="OBX">
