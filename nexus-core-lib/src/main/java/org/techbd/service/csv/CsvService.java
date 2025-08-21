@@ -77,6 +77,7 @@ public class CsvService {
             final var jooqCfg = dslContext.configuration();
             saveArchiveInteraction(zipFileInteractionId, jooqCfg, requestParameters, file,
                     CsvProcessingState.PROCESSING_COMPLETED);
+            saveIncomingFileToInboundFolder(file, zipFileInteractionId);         
             session = engine.session()
                     .withMasterInteractionId(zipFileInteractionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -87,7 +88,9 @@ public class CsvService {
             engine.orchestrate(session);
             LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
                     zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
-            return session.getValidationResults();
+            Map<String, Object> fullOperationOutcome =  session.getValidationResults();
+            saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
+            return fullOperationOutcome;
         } finally {
             if (null == session) {
                 engine.clear(session);
@@ -247,7 +250,7 @@ public class CsvService {
                     file.getOriginalFilename(),
                     (String) requestParams.get(Constants.BASE_FHIR_URL));
 
-            saveFullOperationOutcome(jooqCfg,fullOperationOutcome, interactionId, requestParams);
+            saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
             return fullOperationOutcome;
         } catch (Exception ex) {
@@ -364,37 +367,71 @@ public class CsvService {
         }
     }
 
-        private void saveFullOperationOutcome(final List<Object> fullOperationOutcome,
-                final String masterInteractionId, Map<String, Object> requestParameters) {
+    private void saveFullOperationOutcome(final Map<String, Object> fullOperationOutcome,
+                    final String masterInteractionId, Map<String, Object> requestParameters) {
             LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
-                    masterInteractionId);
+                            masterInteractionId);
             final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
-                initRIHR.setInteractionId(masterInteractionId);
-                initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
-                initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
-                initRIHR.setCreatedAt(createdAt);
-                initRIHR.setCreatedBy(CsvService.class.getName());
-                initRIHR.setPFullOperationOutcome(
-                        (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
-                final var start = Instant.now();
-                final var execResult = initRIHR.execute(jooqCfg);
-                final var end = Instant.now();
-                LOG.info(
-                        "CsvService::saveFullOperationOutcome : END for zipFileInteractionId : {} .Time taken : {} milliseconds"
-                                + execResult,
-                        masterInteractionId, 
-                        Duration.between(start, end).toMillis());
+                    initRIHR.setInteractionId(masterInteractionId);
+                    initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                    initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+                    initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
+                    initRIHR.setCreatedAt(createdAt);
+                    initRIHR.setCreatedBy(CsvService.class.getName());
+                    initRIHR.setPFullOperationOutcome(
+                                    (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    final var start = Instant.now();
+                    final var execResult = initRIHR.execute(jooqCfg);
+                    final var end = Instant.now();
+                    LOG.info(
+                                    "CsvService::saveFullOperationOutcome : END for zipFileInteractionId : {} .Time taken : {} milliseconds"
+                                                    + execResult,
+                                    masterInteractionId,
+                                    Duration.between(start, end).toMillis());
             } catch (final Exception e) {
-                LOG.error("ERROR:: saveFullOperationOutcome CALL for zipFileInteractionId : {}"
-                        + initRIHR.getName() + " initRIHR error", masterInteractionId,
-                        e);
+                    LOG.error("ERROR:: saveFullOperationOutcome CALL for zipFileInteractionId : {}"
+                                    + initRIHR.getName() + " initRIHR error", masterInteractionId,
+                                    e);
             }
-        }
+    }
+
+    
+    private void saveFullOperationOutcome(final List<Object> fullOperationOutcome,
+                    final String masterInteractionId, Map<String, Object> requestParameters) {
+            LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
+                            masterInteractionId);
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            final var createdAt = OffsetDateTime.now();
+            final var initRIHR = new SatInteractionCsvRequestUpserted();
+            try {
+                    initRIHR.setInteractionId(masterInteractionId);
+                    initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                    initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+                    initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
+                    initRIHR.setCreatedAt(createdAt);
+                    initRIHR.setCreatedBy(CsvService.class.getName());
+                    initRIHR.setPFullOperationOutcome(
+                                    (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    final var start = Instant.now();
+                    final var execResult = initRIHR.execute(jooqCfg);
+                    final var end = Instant.now();
+                    LOG.info(
+                                    "CsvService::saveFullOperationOutcome : END for zipFileInteractionId : {} .Time taken : {} milliseconds"
+                                                    + execResult,
+                                    masterInteractionId,
+                                    Duration.between(start, end).toMillis());
+            } catch (final Exception e) {
+                    LOG.error("ERROR:: saveFullOperationOutcome CALL for zipFileInteractionId : {}"
+                                    + initRIHR.getName() + " initRIHR error", masterInteractionId,
+                                    e);
+            }
+    }
+    
      /**
      * Saves a MultipartFile to a given inbound directory with a unique filename
      * based on the interactionId.
