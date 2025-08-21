@@ -89,6 +89,7 @@ public class CsvService {
             LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
                     zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
             Map<String, Object> fullOperationOutcome =  session.getValidationResults();
+            saveMiscErrorsForValidation(session.getFilesNotProcessed(), zipFileInteractionId, requestParameters, file.getOriginalFilename());
             saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
             return fullOperationOutcome;
         } finally {
@@ -432,6 +433,44 @@ public class CsvService {
             }
     }
     
+    private void saveMiscErrorsForValidation(final List<org.techbd.model.csv.FileDetail> filesNotProcessed,
+            final String masterInteractionId, final Map<String, Object> requestParameters, final String originalFileName) {
+        if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
+            return;
+        }
+        
+        final Map<String, Object> fileNotProcessedError = csvBundleProcessorService.createOperationOutcomeForFileNotProcessed(
+                masterInteractionId, filesNotProcessed, originalFileName);
+        
+        final List<Object> miscErrors = List.of(fileNotProcessedError);
+        
+        LOG.info("SaveMiscErrorsForValidation: BEGIN for zipFileInteractionId: {}", masterInteractionId);
+        final var dslContext = coreUdiPrimeJpaConfig.dsl();
+        final var jooqCfg = dslContext.configuration();
+        final var createdAt = OffsetDateTime.now();
+        final var initRIHR = new SatInteractionCsvRequestUpserted();
+        try {
+            initRIHR.setInteractionId(masterInteractionId);
+            initRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
+            initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+            initRIHR.setCreatedAt(createdAt);
+            initRIHR.setCreatedBy(CsvService.class.getName());
+            initRIHR.setZipFileProcessingErrors(
+                    (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
+            final var start = Instant.now();
+            final var execResult = initRIHR.execute(jooqCfg);
+            final var end = Instant.now();
+            LOG.info(
+                    "SaveMiscErrorsForValidation: END for zipFileInteractionId: {} .Time taken: {} milliseconds{}",
+                    masterInteractionId,
+                    Duration.between(start, end).toMillis(),
+                    execResult);
+        } catch (final Exception e) {
+            LOG.error("ERROR:: SaveMiscErrorsForValidation CALL for zipFileInteractionId: {}"
+                    + initRIHR.getName() + " initRIHR error", masterInteractionId, e);
+        }
+    }
+
      /**
      * Saves a MultipartFile to a given inbound directory with a unique filename
      * based on the interactionId.
