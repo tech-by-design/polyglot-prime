@@ -501,7 +501,7 @@ private List<Object> processScreening(final String groupKey,
                         "resourceType", "OperationOutcome")
                         );
     }
-    private Map<String, Object> createOperationOutcomeForFileNotProcessed(
+    public Map<String, Object> createOperationOutcomeForFileNotProcessed(
         final String masterInteractionId,
         final List<FileDetail> filesNotProcessed,
         final String originalFileName) {
