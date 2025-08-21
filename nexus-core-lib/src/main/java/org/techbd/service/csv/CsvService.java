@@ -1,6 +1,10 @@
 package org.techbd.service.csv;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -19,6 +23,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.CsvProcessingState;
 import org.techbd.config.Nature;
@@ -44,18 +49,21 @@ public class CsvService {
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
     private final TaskExecutor asyncTaskExecutor;
+    private final CoreAppConfig coreAppConfig;
 
     public CsvService(
             final CsvOrchestrationEngine engine,
             final CsvBundleProcessorService csvBundleProcessorService,
             final CoreDataLedgerApiClient coreDataLedgerApiClient,
             final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
-            @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor) {
+            @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor,
+            final CoreAppConfig coreAppConfig) {
         this.engine = engine;
         this.csvBundleProcessorService = csvBundleProcessorService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         this.asyncTaskExecutor = asyncTaskExecutor;
+        this.coreAppConfig = coreAppConfig;
     }
 
     public Object validateCsvFile(final MultipartFile file, final Map<String, Object> requestParameters,
@@ -264,11 +272,9 @@ public class CsvService {
             Map<String, Object> responseParams,
             MultipartFile file,
             org.jooq.Configuration jooqCfg,
-            long start) {
-
+            long start) {        
         CompletableFuture.runAsync(() -> {
             CsvOrchestrationEngine.OrchestrationSession session = null;
-
             try {
                 saveArchiveInteractionStatus(interactionId, jooqCfg,
                         CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
@@ -339,7 +345,7 @@ public class CsvService {
 
         // Ledger + Initial Archive
         auditInitialReceipt(zipFileInteractionId, provenance, requestParameters, file, jooqCfg);
-
+        saveIncomingFileToInboundFolder(file, zipFileInteractionId);           
         long start = System.nanoTime();
 
         if ("true".equalsIgnoreCase(isSync)) {
@@ -389,5 +395,27 @@ public class CsvService {
                         e);
             }
         }
-
+     /**
+     * Saves a MultipartFile to a given inbound directory with a unique filename
+     * based on the interactionId.
+     *
+     * @param file                MultipartFile from request
+     * @param masterInteractionId unique interaction identifier
+     * @param inboundDir          base inbound directory path
+     * @return Path to the saved file
+     * @throws IOException if saving fails
+     */
+    public Path saveIncomingFileToInboundFolder(
+            MultipartFile file,
+            String masterInteractionId) throws IOException {
+        final String originalFilename = file.getOriginalFilename();
+        final String safeFilename = (originalFilename != null && !originalFilename.isBlank())
+                ? originalFilename
+                : "upload.zip";
+        final String uniqueFilename = masterInteractionId + "_" + safeFilename;
+        final Path destinationPath = Path.of(coreAppConfig.getCsv().validation().inboundPath(), uniqueFilename);
+        Files.createDirectories(destinationPath.getParent());
+        Files.copy(file.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+        return destinationPath;
+    }
 }

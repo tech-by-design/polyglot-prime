@@ -13,12 +13,24 @@ logging:
       springframework: INFO
       hibernate: ERROR
       web: DEBUG
-      techbd:
-        service:
-          http:
-            hub:
-              prime:
-                api: INFO
+      apache:
+        commons:
+          vfs2: ERROR   # Apache VFS internals
+          fileupload: ERROR             # File upload / temp file handling
+        catalina: ERROR                 # Tomcat core
+        coyote: ERROR                   # Tomcat req/res
+        tomcat: ERROR                   # Tomcat internals      
+    techbd:
+      service:
+        http:
+          hub:
+            prime:
+              api: INFO
+    java:
+      util:
+        concurrent: ERROR               # General concurrency logging
+        CompletableFuture: ERROR        # CompletableFuture callbacks/errors
+        ForkJoinPool: ERROR             # Thread pool scheduling
     ca:
       uhn: WARN
     root: INFO
