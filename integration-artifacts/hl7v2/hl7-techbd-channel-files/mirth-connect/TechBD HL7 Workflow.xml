@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.1</description>
-  <revision>1</revision>
+  <revision>2</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1748,12 +1748,6 @@ return value; // Keep the value as is
               <string>${elaboration}</string>
             </list>
           </entry>
-          <entry>
-            <string>X-TechBD-Validation-Severity-Level</string>
-            <list>
-              <string>${SeverityLevel}</string>
-            </list>
-          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -1951,7 +1945,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755761105286</time>
+        <time>1755779305722</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1960,6 +1954,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>
