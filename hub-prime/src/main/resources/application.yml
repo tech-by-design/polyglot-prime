@@ -80,10 +80,6 @@ springdoc:
   show-actuator: true 
 
 server:
-  # tomcat:
-  #   max-swallow-size: -1   # or increase to something > 10MB
-  #   max-http-form-post-size: 10MB
-  port: 9999
   servlet:
     context-path: /
     session:
