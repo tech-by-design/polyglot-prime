@@ -1,5 +1,8 @@
 package org.techbd.util.fhir;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -153,7 +156,7 @@ public class CoreFHIRUtil {
    
     public static Map<String, Object> buildHeaderParametersMap(String tenantId, String customDataLakeApi,
             String dataLakeApiContentType, String requestUriToBeOverridden,
-            String validationSeverityLevel, String healthCheck, String correlationId, String provenance) {
+            String validationSeverityLevel, String healthCheck, String correlationId, String provenance, String requestedIgVersion   ) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(Constants.TENANT_ID, tenantId);
         addIfNotEmpty(headers, Constants.CUSTOM_DATA_LAKE_API, customDataLakeApi);
@@ -163,6 +166,7 @@ public class CoreFHIRUtil {
         addIfNotEmpty(headers, Constants.HEALTH_CHECK, healthCheck);
         addIfNotEmpty(headers, Constants.CORRELATION_ID, correlationId);
         addIfNotEmpty(headers, Constants.PROVENANCE, provenance);
+        addIfNotEmpty(headers, Constants.SHIN_NY_IG_VERSION, requestedIgVersion );
         
         return headers;
     }
@@ -229,6 +233,47 @@ public class CoreFHIRUtil {
         return result;
     }
 
+    
 
-
+    public static boolean ensureEngineVersionMatches(String requestedPath) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        URL resourceUrl = classLoader.getResource(requestedPath);
+    
+        if (resourceUrl == null) {
+            LOG.warn("IG path '{}' not found in classpath.", requestedPath);
+            return false;
+        }
+    
+        try {
+            File dir = new File(resourceUrl.toURI());
+            if (!dir.exists() || !dir.isDirectory()) {
+                LOG.warn("IG path is not a valid directory: {}", dir.getAbsolutePath());
+                return false;
+            }
+    
+            // Extract the version from the path (after the last '/v')
+            String folderName = dir.getName();
+            if (folderName.startsWith("v")) {
+                folderName = folderName.substring(1);
+            }
+    
+            LOG.info("Checking IG version folder: {}", folderName);
+    
+            // If directory exists and has any files, we treat it as valid
+            File[] files = dir.listFiles();
+            if (files != null && files.length > 0) {
+                LOG.info("✅ Matching IG version '{}' found in path: {}", folderName, requestedPath);
+                return true;
+            } else {
+                LOG.warn("IG version folder '{}' is empty in path: {}", folderName, requestedPath);
+            }
+    
+        } catch (URISyntaxException e) {
+            LOG.error("Error resolving IG folder path: {}", requestedPath, e);
+        }
+    
+        LOG.warn("❌ IG version folder not found or invalid: {}", requestedPath);
+        return false;
+    }
+    
 }
