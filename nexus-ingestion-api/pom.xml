@@ -13,7 +13,7 @@
 
     <groupId>org.techbd</groupId>
     <artifactId>nexus-ingestion-api</artifactId>
-    <version>0.673.0</version>
+    <version>0.674.0</version>
     <name>nexus-ingestion-api</name>
     <description>Nexus Ingestion API</description>
 
