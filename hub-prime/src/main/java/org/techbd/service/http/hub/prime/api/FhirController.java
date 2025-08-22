@@ -180,6 +180,7 @@ public class FhirController {
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(hidden = true, description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
                         @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
+                        @Parameter(description = "Optional header to specify IG version.", required = false) @RequestHeader(value = "X-SHIN-NY-IG-Version", required = false) String requestedIgVersion ,                    
                         HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
                 try {
@@ -205,7 +206,7 @@ public class FhirController {
                         Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
                                         dataLakeApiContentType,
                                         requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
-                                        provenance);
+                                        provenance,requestedIgVersion);
                         Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
                         CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
                                         mtlsStrategy, source, null, null,request.getRequestURI());
@@ -270,6 +271,7 @@ public class FhirController {
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
+                        @Parameter(description = "Optional header to specify IG version.", required = false) @RequestHeader(value = "X-SHIN-NY-IG-Version", required = false) String requestedIgVersion,
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
@@ -284,7 +286,7 @@ public class FhirController {
                         }
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
-                                        null, null, null, null, null);
+                                        null, null, null, null, null,requestedIgVersion );
                         Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);            
                         CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
                                         null, null,
