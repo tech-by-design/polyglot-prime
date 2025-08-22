@@ -1,6 +1,8 @@
 package org.techbd.util.fhir;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
@@ -234,46 +236,60 @@ public class CoreFHIRUtil {
     }
 
     
-
     public static boolean ensureEngineVersionMatches(String requestedPath) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL resourceUrl = classLoader.getResource(requestedPath);
-    
-        if (resourceUrl == null) {
-            LOG.warn("IG path '{}' not found in classpath.", requestedPath);
-            return false;
-        }
-    
         try {
-            File dir = new File(resourceUrl.toURI());
-            if (!dir.exists() || !dir.isDirectory()) {
-                LOG.warn("IG path is not a valid directory: {}", dir.getAbsolutePath());
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            URL resourceUrl = classLoader.getResource(requestedPath);
+
+            if (resourceUrl == null) {
+                LOG.warn("IG path '{}' not found in classpath.", requestedPath);
                 return false;
             }
-    
-            // Extract the version from the path (after the last '/v')
-            String folderName = dir.getName();
-            if (folderName.startsWith("v")) {
-                folderName = folderName.substring(1);
+
+            LOG.info("Checking IG resources at: {}", resourceUrl);
+
+            // --- Handle "file:" protocol (local dev) ---
+            if ("file".equalsIgnoreCase(resourceUrl.getProtocol())) {
+                File dir = new File(resourceUrl.toURI());
+                if (!dir.exists() || !dir.isDirectory()) {
+                    LOG.warn("IG path is not a valid directory: {}", dir.getAbsolutePath());
+                    return false;
+                }
+
+                String folderName = dir.getName();
+                if (folderName.startsWith("v")) {
+                    folderName = folderName.substring(1);
+                }
+
+                File[] files = dir.listFiles();
+                if (files != null && files.length > 0) {
+                    LOG.info("✅ Matching IG version '{}' found in local path: {}", folderName, requestedPath);
+                    return true;
+                } else {
+                    LOG.warn("IG version folder '{}' is empty in path: {}", folderName, requestedPath);
+                }
+                return false;
             }
-    
-            LOG.info("Checking IG version folder: {}", folderName);
-    
-            // If directory exists and has any files, we treat it as valid
-            File[] files = dir.listFiles();
-            if (files != null && files.length > 0) {
-                LOG.info("✅ Matching IG version '{}' found in path: {}", folderName, requestedPath);
-                return true;
-            } else {
-                LOG.warn("IG version folder '{}' is empty in path: {}", folderName, requestedPath);
+
+            // --- Handle "jar:" protocol (production / Spring Boot) ---
+            if ("jar".equalsIgnoreCase(resourceUrl.getProtocol())) {
+                try (InputStream is = resourceUrl.openStream()) {
+                    if (is != null) {
+                        LOG.info("✅ IG version '{}' exists inside JAR for path: {}", requestedPath, resourceUrl);
+                        return true;
+                    }
+                } catch (IOException e) {
+                    LOG.error("Error accessing IG path inside JAR: {}", requestedPath, e);
+                    return false;
+                }
             }
-    
-        } catch (URISyntaxException e) {
+
+            LOG.warn("⚠ Unsupported protocol '{}' for IG path: {}", resourceUrl.getProtocol(), resourceUrl);
+            return false;
+
+        } catch (Exception e) {
             LOG.error("Error resolving IG folder path: {}", requestedPath, e);
+            return false;
         }
-    
-        LOG.warn("❌ IG version folder not found or invalid: {}", requestedPath);
-        return false;
     }
-    
 }
