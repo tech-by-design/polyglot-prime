@@ -5,15 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.4</version>
-        <relativePath />
+        <groupId>org.techbd</groupId>
+        <artifactId>polyglot-prime</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.techbd</groupId>
     <artifactId>nexus-ingestion-api</artifactId>
-    <version>0.672.0</version>
     <name>nexus-ingestion-api</name>
     <description>Nexus Ingestion API</description>
 
