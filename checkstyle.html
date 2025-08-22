@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-08-22<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.673.0</li>
+          <li id="projectVersion">Version: 0.674.0</li>
         <li class="pull-right"><a href="${project.url}">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -77,7 +77,7 @@
 <tr class="b">
 <td style="text-align: left;">24</td>
 <td>0</td>
-<td>71</td>
+<td>73</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -139,7 +139,7 @@
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java">org/techbd/service/http/hub/prime/api/FhirController.java</a></td>
 <td>0</td>
-<td>4</td>
+<td>6</td>
 <td>0</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FConsoleController.java">org/techbd/service/http/hub/prime/ux/ConsoleController.java</a></td>
@@ -312,7 +312,7 @@
 <ul>
 <li>tokens: <code>&quot;COMMA, SEMI, POST_INC, POST_DEC, DOT, ELLIPSIS, METHOD_REF&quot;</code></li>
 <li>allowLineBreaks: <code>&quot;true&quot;</code></li></ul></td>
-<td>2</td>
+<td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
 <td style="text-align: left;"></td>
@@ -324,6 +324,11 @@
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#ParenPad">ParenPad</a></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
+<td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#SeparatorWrap">SeparatorWrap</a>
 <ul>
 <li>tokens: <code>&quot;METHOD_REF&quot;</code></li>
@@ -331,7 +336,7 @@
 <li>option: <code>&quot;nl&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#SeparatorWrap">SeparatorWrap</a>
 <ul>
@@ -340,7 +345,7 @@
 <li>option: <code>&quot;EOL&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#SeparatorWrap">SeparatorWrap</a>
 <ul>
@@ -349,7 +354,7 @@
 <li>option: <code>&quot;EOL&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#SeparatorWrap">SeparatorWrap</a>
 <ul>
@@ -358,7 +363,7 @@
 <li>option: <code>&quot;EOL&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#SeparatorWrap">SeparatorWrap</a>
 <ul>
@@ -367,7 +372,7 @@
 <li>option: <code>&quot;nl&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
 <ul>
@@ -644,15 +649,27 @@
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>GenericWhitespace</td>
-<td>GenericWhitespace '&lt;' is preceded with whitespace.</td>
-<td>209</td></tr>
+<td>NoWhitespaceBefore</td>
+<td>',' is preceded with whitespace.</td>
+<td>183</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>GenericWhitespace</td>
 <td>GenericWhitespace '&lt;' is preceded with whitespace.</td>
-<td>288</td></tr></table></section><section>
+<td>210</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>ParenPad</td>
+<td>')' is preceded with whitespace.</td>
+<td>289</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>GenericWhitespace</td>
+<td>GenericWhitespace '&lt;' is preceded with whitespace.</td>
+<td>290</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/ux/ConsoleController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FConsoleController.java"></a>
 <table class="table table-striped">
 <tr class="a">
