@@ -161,8 +161,12 @@ BEGIN
             fd.resource_type,
             fd.patient_mrn,
             (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
-            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code,
-            (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'display' AS answer,
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code, 
+            CASE 
+                WHEN (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
+                THEN (fd.resource -> 'valueCodeableConcept' ->> 'text')
+                ELSE (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
+            END AS answer,            
             (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
            FROM filtered_data fd
           WHERE fd.resource_type = 'Observation'
@@ -174,7 +178,11 @@ BEGIN
             fd.patient_mrn,
             comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
             comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
-            coding ->> 'display' AS answer,
+            CASE 
+                WHEN (coding ->> 'display') = '{Number}'
+                THEN (comp -> 'valueCodeableConcept' ->> 'text')
+                ELSE (coding ->> 'display')
+            END AS answer,            
             coding ->> 'code' AS answer_code
            FROM filtered_data fd
            CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp

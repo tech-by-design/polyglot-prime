@@ -78,7 +78,7 @@ public class CsvController {
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
         null,
         null, null, null, null,
-        null);   
+        null,null);   
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
     requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
@@ -111,7 +111,7 @@ public class CsvController {
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
         null,
         null, validationSeverityLevel, null, null,
-        null);    
+        null,null);    
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
     requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
