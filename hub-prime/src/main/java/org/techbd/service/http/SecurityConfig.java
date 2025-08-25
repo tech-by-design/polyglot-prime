@@ -2,8 +2,6 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -26,16 +24,15 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+ 
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("!localopen")
 public class SecurityConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class.getName());
-
+  
     @Autowired
-    private GitHubUserAuthorizationFilter authzFilter;
+    private MultiProviderUserAuthorizationFilter authzFilter;
+ 
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -67,7 +64,7 @@ public class SecurityConfig {
                                 .anyRequest().authenticated())
                 .oauth2Login(
                         oauth2Login -> oauth2Login
-                                .successHandler(gitHubLoginSuccessHandler())
+                                .successHandler(oAuth2LoginSuccessHandler())
                                 .defaultSuccessUrl(Constant.HOME_PAGE_URL)
                                 .loginPage(Constant.LOGIN_PAGE_URL))
                 .logout(
@@ -113,12 +110,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationSuccessHandler gitHubLoginSuccessHandler() {
-        return new GitHubLoginSuccessHandler();
+    public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {
+        return new OAuth2LoginSuccessHandler();
     }
-
-    private static class GitHubLoginSuccessHandler implements AuthenticationSuccessHandler {
-
+ 
+    private static class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
+ 
         private final RequestCache requestCache = new HttpSessionRequestCache();
 
         @Override
