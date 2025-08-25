@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
 
@@ -52,7 +53,7 @@ public class SqsPublishStep implements MessageProcessingStep {
     }
 
     @Override
-    public void process(RequestContext context, MultipartFile file) {
+    public void process(RequestContext context, MultipartFile file, SourceType sourceType) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("SqsPublishStep:: process called with MultipartFile. interactionId={}, filename={}", interactionId,
                 file != null ? file.getOriginalFilename() : "null");
@@ -78,7 +79,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         }
     }
 
-    public void process(RequestContext context, String content,String ackMessage) {
+    public void process(RequestContext context, String content, String ackMessage, SourceType sourceType) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("SqsPublishStep:: process called with String content. interactionId={}", interactionId);
         try {

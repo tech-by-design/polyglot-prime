@@ -21,6 +21,7 @@ import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.ingest.util.Hl7Util;
@@ -83,7 +84,8 @@ public class PnrEndpoint {
             interactionId);
             // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
-            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);        
+            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
+//TODO: Check            messageProcessorService.processMessage(context, rawSoapMessage, null, SourceType.SOAP);
             // Create response using ObjectFactory
             RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
             ObjectFactory factory = new ObjectFactory();

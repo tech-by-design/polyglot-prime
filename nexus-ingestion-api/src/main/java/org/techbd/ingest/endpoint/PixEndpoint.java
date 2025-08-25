@@ -19,6 +19,7 @@ import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.iti.schema.MCCIIN000002UV01;
@@ -74,6 +75,7 @@ public class PixEndpoint {
             log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. interactionId={}", interactionId);
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
+//TODO: Check            messageProcessorService.processMessage(context, rawSoapMessage, null, SourceType.SOAP);
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                 request.getId(), request.getSender().getDevice(),
                 context.getSourceIp() + ":" + context.getDestinationPort(),
