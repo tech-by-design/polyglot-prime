@@ -438,6 +438,36 @@ public class OrchestrationEngine {
                     .orElse(null);
         }
 
+        // 1. Validate after parsing into Bundle
+        public ca.uhn.fhir.validation.ValidationResult validateAsBundle(
+                String payload,
+                FhirContext fhirContext,
+                FhirBundleValidator bundleValidator,
+                String interactionId) {
+
+            LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
+            final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+            LOG.debug("BUNDLE PAYLOAD parse -END for interactionId:{}", interactionId);
+
+            final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
+            return hapiVR;
+        }
+
+        // 2. Validate using raw JSON payload
+        public ca.uhn.fhir.validation.ValidationResult validateAsRawPayload(
+                String payload,
+                FhirContext fhirContext,
+                FhirBundleValidator bundleValidator,
+                String interactionId) {
+
+            LOG.debug("RAW PAYLOAD validation -BEGIN for interactionId:{}", interactionId);
+            fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+            final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(payload);
+            ;
+            LOG.debug("RAW PAYLOAD validation -END for interactionId:{}", interactionId);
+
+            return hapiVR;
+
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,
                 final String interactionId, final String requestedIgVersion) {
@@ -496,12 +526,7 @@ public class OrchestrationEngine {
                     var lenientErrorHandler = new CustomParserErrorHandler();
                     fhirContext.setParserErrorHandler(lenientErrorHandler);
 
-                    LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
-                   final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
-                    LOG.debug("BUNDLE PAYLOAD parse -END for interactionid:{} ", interactionId);
-                    // final var validatorOptions = new ValidationOptions().addProfile(profileUrl);
-                    // final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
-                     final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
+                    final var hapiVR = validateAsRawPayload(payload, fhirContext, bundleValidator, interactionId);
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
