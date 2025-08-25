@@ -14,6 +14,7 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 
 import ca.uhn.hl7v2.AcknowledgmentCode;
@@ -51,7 +52,7 @@ public class MllpRoute extends RouteBuilder {
                         Message hapiMsg = parser.parse(hl7Message);
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId);
-                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage);
+                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage, SourceType.REST);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
