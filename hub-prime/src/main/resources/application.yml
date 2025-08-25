@@ -46,6 +46,32 @@ spring:
     exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   application:
     name: techbd-hub-prime
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID:}
+            client-secret: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET:}
+            scope:
+              - read:user
+          fusionauth:
+            client-id: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FUSIONAUTH_CLIENT_ID:}
+            client-secret: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FUSIONAUTH_CLIENT_SECRET:}
+            scope:
+              - openid
+              - profile
+              - email
+            authorization-grant-type: authorization_code
+            provider: fusionauth
+            redirect-uri: "{baseUrl}/login/oauth2/code/fusionauth"
+        provider:
+          fusionauth:
+            authorization-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_AUTHORIZATION_URI:}
+            token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_TOKEN_URI:}
+            user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_USER_INFO_URI:}
+            jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_JWK_SET_URI:}
+            user-name-attribute: email    
   jpa:
     properties:
       hibernate:

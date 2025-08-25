@@ -16,6 +16,10 @@ public class Constant {
     public static final String[] UNAUTHENTICATED_URLS = {
             "/login/**", "/oauth2/**",
             "/",
+            "/login/oauth2/code/**", 
+            "/oauth2/authorization/**",
+            // OAuth2 metadata discovery (e.g., .well-known/openid-configuration)
+            "/.well-known/**",
             "/metadata",
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",

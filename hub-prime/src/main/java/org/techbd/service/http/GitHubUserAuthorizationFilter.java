@@ -2,15 +2,20 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.techbd.service.http.FusionAuthUsersService.AuthorizedUser;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -22,9 +27,20 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
 
+
+    private static final Logger LOG = LoggerFactory.getLogger(InteractionsFilter.class.getName());
+
     private static final String AUTH_USER_SESSION_ATTR_NAME = "authenticatedUser";
     private static final String supportEmail = "help@techbd.org";
     private static final String supportEmailDisplayName = "Tech by Design Support <" + supportEmail + ">";
+
+      private final GitHubUsersService gitHubUsers;
+      private FusionAuthUsersService fusionAuthUsersService;
+
+    public GitHubUserAuthorizationFilter(final GitHubUsersService gitHubUsers ,FusionAuthUsersService fusionAuthUsers) {
+        this.gitHubUsers = gitHubUsers;
+        this.fusionAuthUsersService = fusionAuthUsers;
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser)
@@ -43,11 +59,7 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
         request.getSession(true).setAttribute(AUTH_USER_SESSION_ATTR_NAME, authUser);
     }
 
-    private final GitHubUsersService gitHubUsers;
-
-    public GitHubUserAuthorizationFilter(final GitHubUsersService gitHubUsers) {
-        this.gitHubUsers = gitHubUsers;
-    }
+   
 
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response,
@@ -57,7 +69,12 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
         if (sessionUser.isEmpty()) {
             final var authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated()
-                    && !"anonymousUser".equals(authentication.getPrincipal().toString())) {
+                    && !"anonymousUser".equals(authentication.getPrincipal().toString())&&
+                authentication instanceof OAuth2AuthenticationToken oAuth2Token) {
+                   String registrationId = oAuth2Token.getAuthorizedClientRegistrationId();
+                 DefaultOAuth2User oAuth2User = (DefaultOAuth2User) oAuth2Token.getPrincipal();
+                 try{     
+                    if ("github".equalsIgnoreCase(registrationId)) { 
                 final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
                 final var gitHubLoginId = Optional.ofNullable(gitHubPrincipal.getAttribute("login")).orElseThrow();
                 final var gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
@@ -70,6 +87,23 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                     return;
                 }
                 setAuthenticatedUser(request, new AuthenticatedUser(gitHubPrincipal, gitHubAuthnUser.orElseThrow()));
+            }
+             else if ("fusionauth".equalsIgnoreCase(registrationId)) {
+                               
+               AuthorizedUser user = fusionAuthUsersService.extractFusionAuthUser(oAuth2User);
+               DefaultOAuth2User enrichedOAuth2User = fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token , oAuth2User,user);
+             
+               var adaptedUser = adaptFusionUserToGitHubFormat(user);
+               setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, adaptedUser)); 
+              // fusionAuthUsersService.convertToJson(enrichedOAuth2User);
+               LOG.info("FusionAuth user authenticated: {}", user.email());
+            }
+
+            } catch (Exception e) {
+                LOG.error("Error processing user authorization for login provider: {}", registrationId, e);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal auth error");
+                return;
+            }
             }
         }
 
@@ -91,4 +125,18 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+     // In GitHubUserAuthorizationFilter.java (or a new util class)
+    private static GitHubUsersService.AuthorizedUser adaptFusionUserToGitHubFormat(FusionAuthUsersService.AuthorizedUser faUser) {
+    return new GitHubUsersService.AuthorizedUser(
+        faUser.name(),              // name
+        faUser.email(),             // emailPrimary
+        null,                       // profilePicUrl (FusionAuth doesn't provide this)
+        faUser.fusionAuthId(),      // gitHubId (reusing for compatibility)
+        "fusionauth",               // tenantId or any dummy value
+        Map.of( // basic actuator role support
+            "actuator", new GitHubUsersService.Resource(faUser.roles())
+        )
+    );
+  }
 }
