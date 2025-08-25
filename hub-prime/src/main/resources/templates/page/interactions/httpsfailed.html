@@ -29,49 +29,7 @@
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'interaction_http_request_forward_failure';
         const popViewName = 'interaction_http_fhir_request';
-
-
-        // Define downloadPayload globally
-        window.downloadPayload = async function (apiUrl, patient_mrn = 'mrn', nature = 'nature') {
-            try {
-                // Fetch data from the API
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                // Get the JSON data
-                const data = await response.json();
-
-                // Extract only the payload from the response
-                const payload = data[0]?.payload;
-                console.log('Payload:', payload);
-
-                // Convert the payload to a JSON string
-                const jsonString = JSON.stringify(payload, null, 2);
-
-                // Create a Blob from the JSON string
-                const blob = new Blob([jsonString], { type: "application/json" });
-
-                // Create a URL for the Blob
-                const url = URL.createObjectURL(blob);
-
-                // Create a temporary link to trigger the download
-                const tempLink = document.createElement('a');
-                tempLink.href = url;
-                tempLink.download = patient_mrn + '_' + nature + '.json';
-                document.body.appendChild(tempLink);
-                tempLink.click();
-
-                // Clean up
-                document.body.removeChild(tempLink);
-                URL.revokeObjectURL(url);
-
-            } catch (error) {
-                console.error('Error downloading payload:', error);
-            }
-        };
-
+ 
         document.addEventListener('DOMContentLoaded', function () {
 
             function downloadCellRenderer(params) {
@@ -81,12 +39,13 @@
                 const patient_mrn = params.data.patient_mrn;
                 const nature = params.data.nature;
                 const sat_interaction_fhir_request_id = params.data.sat_interaction_fhir_request_id; // Assuming you need interaction_id
+                const file_name = patient_mrn + '_' + nature + '.json';
 
-                // Create the URL for the API call
-                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_fhir_request_id/${sat_interaction_fhir_request_id}.json`;
+                // Create the URL for the API call                
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_fhir_request/payload/sat_interaction_fhir_request_id/${sat_interaction_fhir_request_id}?fileName=${file_name}`;
 
                 // Create a download link placeholder
-                const downloadLink = `<a href="#" onclick="window.downloadPayload('${apiUrl}','${patient_mrn}','${nature}'); return false;" style="text-decoration: none; color: #007bff;">
+                const downloadLink = `<a href="${apiUrl}" title="${file_name}" return false;" style="text-decoration: none; color: #007bff;">
         <i class="fas fa-download"></i>
     </a>`;
 
