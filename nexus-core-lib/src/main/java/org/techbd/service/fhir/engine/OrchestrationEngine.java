@@ -467,7 +467,8 @@ public class OrchestrationEngine {
             LOG.debug("RAW PAYLOAD validation -END for interactionId:{}", interactionId);
 
             return hapiVR;
-
+        }
+        
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,
                 final String interactionId, final String requestedIgVersion) {
