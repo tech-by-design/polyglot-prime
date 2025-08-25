@@ -43,7 +43,6 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.exceptions.ErrorCode;
 import org.techbd.exceptions.JsonValidationException;
-import org.techbd.service.fhir.validation.CustomParserErrorHandler;
 import org.techbd.service.fhir.validation.FhirBundleValidator;
 import org.techbd.service.fhir.validation.PostPopulateSupport;
 import org.techbd.service.fhir.validation.PrePopulateSupport;
@@ -57,6 +56,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
+import ca.uhn.fhir.parser.LenientErrorHandler;
 import ca.uhn.fhir.validation.FhirValidator;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
@@ -524,8 +524,7 @@ public class OrchestrationEngine {
                     }
                     this.igVersion = bundleValidator.getIgVersion();
                                         this.fhirProfileUrl = bundleValidator.getFhirProfileUrl();
-                    var lenientErrorHandler = new CustomParserErrorHandler();
-                    fhirContext.setParserErrorHandler(lenientErrorHandler);
+                    fhirContext.setParserErrorHandler(new LenientErrorHandler());
 
                     final var hapiVR = validateAsRawPayload(payload, fhirContext, bundleValidator, interactionId);
                     final var completedAt = Instant.now();
@@ -537,11 +536,6 @@ public class OrchestrationEngine {
                         public String getOperationOutcome() {
                             final var jp = FhirContext.forR4Cached().newJsonParser();
                             OperationOutcome outcome = (OperationOutcome) hapiVR.toOperationOutcome();
-                            if (lenientErrorHandler != null) {
-                                for (OperationOutcomeIssueComponent issue : lenientErrorHandler.getParserIssues()) {
-                                    outcome.addIssue(issue);
-                                }
-                            }
                             return jp.encodeResourceToString(outcome);
                         }
 
