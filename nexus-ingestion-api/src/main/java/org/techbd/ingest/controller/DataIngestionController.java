@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -240,7 +241,7 @@ private String resolveExtension(String contentType) {
                 remoteAddress,
                 sourceIp,
                 destinationIp,
-                destinationPort,null,null
+                destinationPort,null,null,SourceType.INGEST.name()
         );
     }
 }

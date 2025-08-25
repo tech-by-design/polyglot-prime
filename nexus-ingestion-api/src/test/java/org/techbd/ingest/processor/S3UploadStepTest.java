@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
+import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MetadataBuilderService;
@@ -82,7 +83,7 @@ class S3UploadStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080",null,null
+                "8080",null,null,SourceType.INGEST.name()
         );
         S3ServiceClientConfiguration mockConfig = mock(S3ServiceClientConfiguration.class);
         when(s3Client.serviceClientConfiguration()).thenReturn(mockConfig);

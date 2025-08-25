@@ -27,4 +27,5 @@ public class Constants {
     public static final String RAW_SOAP_ATTRIBUTE = "RAW_SOAP_MESSAGE";
     public static final String REQUEST_CONTEXT ="REQUEST_CONTEXT";
     public static final String INTERACTION_ID = "interactionId";
+    public static final String CAMEL_MLLP_LOCAL_ADDRESS = "CamelMllpLocalAddress";
     }

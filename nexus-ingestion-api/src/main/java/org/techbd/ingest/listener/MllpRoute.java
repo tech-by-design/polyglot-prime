@@ -11,6 +11,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
@@ -96,23 +97,7 @@ public class MllpRoute extends RouteBuilder {
                 }
             }
         });
-        String tenantId = headers.get(Constants.REQ_HEADER_TENANT_ID);
-        String sourceIp = extractSourceIp(headers);
-        String destinationIp = headers.get(Constants.REQ_X_SERVER_IP);
-        String destinationPort = headers.get(Constants.REQ_X_SERVER_PORT);
-        if (tenantId == null || tenantId.trim().isEmpty()) {
-            tenantId = Constants.TENANT_ID;
-        }
-        if (tenantId == null || tenantId.trim().isEmpty()) {
-            tenantId = Constants.DEFAULT_TENANT_ID;
-        }
-        log.info("Request Headers - tenantId: {}, xForwardedFor: {}, xRealIp: {}, sourceIp: {}, destinationIp: {}, destinationPort: {}, interactionId: {}",
-        headers.get(Constants.REQ_HEADER_TENANT_ID),
-        headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR),
-        headers.get(Constants.REQ_HEADER_X_REAL_IP),
-        sourceIp,
-        destinationIp,
-        destinationPort,interactionId);
+      
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "hl7-message";
         String ackFileBaseName = "hl7-message-ack";
@@ -126,10 +111,16 @@ public class MllpRoute extends RouteBuilder {
                 datePath, interactionId, timestamp);
         String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
         String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
+        String localAddress = exchange.getIn().getHeader("CamelMllpLocalAddress", String.class);
+        String destinationPort = null;
+        if (localAddress != null && localAddress.contains(":")) {
+            destinationPort = localAddress.substring(localAddress.lastIndexOf(":") + 1);
+            exchange.getIn().setHeader("messageGroupId", destinationPort);
+        }
         return new RequestContext(
                 headers,
                 "/hl7",
-                tenantId,
+                null,
                 interactionId,
                 uploadTime,
                 timestamp,
@@ -142,13 +133,13 @@ public class MllpRoute extends RouteBuilder {
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
                 "MLLP",
-                "127.0.0.1",
+                localAddress,
                 exchange.getIn().getHeader("CamelMllpRemoteAddress", String.class),
-                sourceIp,
-                destinationIp,
+                null,
+                null,
                 destinationPort,
                 ackObjectKey,
-                fullS3AckMessagePath);
+                fullS3AckMessagePath, SourceType.MLLP.name());
     }
   
     private String extractSourceIp(Map<String, String> headers) {

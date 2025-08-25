@@ -50,6 +50,7 @@ public class RequestContext {
     private final String sourceIp;
     private final String destinationIp;
     private final String destinationPort;
+    private final String sourceType;
     private String messageGroupId;
     private String s3Response;
     private String messageId;
@@ -59,7 +60,7 @@ public class RequestContext {
                           String objectKey, String metadataKey, String fullS3DataPath, String userAgent,
                           String fullRequestUrl, String queryParams, String protocol,
                           String localAddress, String remoteAddress, String sourceIp, String destinationIp,
-                          String destinationPort, String ackObjectKey,String fullS3AckMessagePath) {
+                          String destinationPort, String ackObjectKey,String fullS3AckMessagePath,String sourceType) {
         this.headers = headers;
         this.requestUrl = requestUrl;
         this.tenantId = tenantId;
@@ -82,6 +83,7 @@ public class RequestContext {
         this.sourceIp = sourceIp;
         this.destinationIp = destinationIp;
         this.destinationPort = destinationPort;
+        this.sourceType = sourceType;
     }
 }
 

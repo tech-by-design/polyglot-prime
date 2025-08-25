@@ -17,6 +17,7 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -50,12 +51,10 @@ public class PixEndpoint {
     private static final String NAMESPACE_URI = "urn:hl7-org:v3";
 
     private final AcknowledgementService ackService;
-    private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
 
-    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService, AppConfig appConfig) {
+    public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig) {
         this.ackService = ackService;
-        this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
     }
 
@@ -187,6 +186,6 @@ public class PixEndpoint {
                 request.getQueryString() == null ? "" : request.getQueryString(),
                 protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort,
                 ackObjectKey,
-                fullS3AckMessagePath);
+                fullS3AckMessagePath,SourceType.PIX.name());
     }
 }

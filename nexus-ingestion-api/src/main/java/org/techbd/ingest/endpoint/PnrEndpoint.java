@@ -19,6 +19,7 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -57,12 +58,10 @@ public class PnrEndpoint {
     private static final String NAMESPACE_URI = "urn:ihe:iti:xds-b:2007";
 
     private final AcknowledgementService ackService;
-    private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
 
-    public PnrEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService, AppConfig appConfig) {
+    public PnrEndpoint(AcknowledgementService ackService,AppConfig appConfig) {
         this.ackService = ackService;
-        this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         log.info("PnrEndpoint constructor called - bean is being created!");
     }
@@ -159,7 +158,7 @@ public class PnrEndpoint {
                 destinationIp,
                 destinationPort,                
                 ackObjectKey,
-                fullS3AckMessagePath
+                fullS3AckMessagePath,SourceType.PNR.name()
         );
     }
 }
