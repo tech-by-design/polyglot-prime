@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
     nexus-hub-fusion-devl-deployment:
-      if: endsWith(github.ref, '-fusion')  # Only run if tag ends with '-nexus'
+      if: ${{ github.ref_name == 'fusion' }}
       runs-on: ubuntu-latest 
       steps:
         - uses: actions/checkout@v4
