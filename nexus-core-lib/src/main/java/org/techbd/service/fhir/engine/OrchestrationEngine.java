@@ -501,11 +501,18 @@ public class OrchestrationEngine {
                                 "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0",
                                 "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0",
                                 "uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
-
+                        
+                        String profileBaseUrl = profileUrl;
+                        if (profileUrl != null) {
+                            int idx = profileUrl.indexOf("/StructureDefinition/");
+                            if (idx != -1) {
+                                profileBaseUrl = profileUrl.substring(0, idx);
+                            }
+                        }                                
                         bundleValidator = FhirBundleValidator.builder()
                                 .fhirContext(FhirContext.forR4())
-                                .fhirValidator(initializeFhirValidator(shinNyPackagePath, basePackages, profileUrl))
-                                .baseFHIRUrl(profileUrl)
+                                .fhirValidator(initializeFhirValidator(shinNyPackagePath, basePackages, profileBaseUrl))
+                                .baseFHIRUrl(profileBaseUrl)
                                 .packagePath(shinNyPackagePath)
                                 .igVersion(headerIgVersion)
                                 .build();
