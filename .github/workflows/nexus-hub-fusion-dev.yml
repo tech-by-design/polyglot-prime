@@ -1,0 +1,42 @@
+name: Nexus Hub Fusion Polyglot Prime Deployment
+on:
+  push:
+    tags:
+      - '*'
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+jobs:
+    nexus-hub-fusion-devl-deployment:
+      if: ${{ github.ref_name == 'fusion' }}
+      runs-on: ubuntu-latest 
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Configure Git
+          run: |
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+  
+        - name: Clone infrastructure repository
+          run: |
+            git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+            
+        - name: Update fhir environment file
+          run: |
+            cd infrastructure-prime
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/hub.dev.fusion.techbd.org/.env
+  
+        - name: Commit and push changes
+          run: |
+            cd infrastructure-prime
+            git add .
+            git commit -m "ci: nexus-hub-ui-fusion devl ${{ github.ref_name }} deployment"
+            git push
+

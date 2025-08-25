@@ -733,7 +733,7 @@
                               }
                           ]
                       },
-                    </xsl:when>
+                </xsl:when>
 			  <xsl:when test="string(OBX.3/OBX.3.1) = '96778-6'">
 				"component": [
 				  {
@@ -1522,40 +1522,40 @@
     <xsl:param name="nameNode"/>
     {
 		<!-- valueString from given name (concatenation of given components) -->
-		<xsl:if test="string($nameNode/PID.5.2) or string($nameNode/PID.5.3)">
+		<xsl:if test="string($nameNode/*[2]) or string($nameNode/*[3])">
 		  "extension": [{
 			"url": "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/middle-name",
-			"valueString": "<xsl:value-of select="normalize-space(concat($nameNode/PID.5.2, ' ', $nameNode/PID.5.3))"/>"
+			"valueString": "<xsl:value-of select="normalize-space(concat($nameNode/*[2], ' ', $nameNode/*[3]))"/>"
 		  }],
 		</xsl:if>
 
 		<!-- use -->
-		<xsl:if test="string($nameNode/PID.5.7)">
+		<xsl:if test="string($nameNode/*[7])">
 		  "use": "<xsl:choose>
-					<xsl:when test="$nameNode/PID.5.7 = 'L'">official</xsl:when>
-					<xsl:when test="$nameNode/PID.5.7 = 'P'">usual</xsl:when>
-					<xsl:otherwise><xsl:value-of select="$nameNode/PID.5.7"/></xsl:otherwise>
+					<xsl:when test="$nameNode/*[7] = 'L'">official</xsl:when>
+					<xsl:when test="$nameNode/*[7] = 'P'">usual</xsl:when>
+					<xsl:otherwise><xsl:value-of select="$nameNode/*[7]"/></xsl:otherwise>
 				  </xsl:choose>",
 		</xsl:if>
 
 		<!-- prefix -->
-		<xsl:if test="string($nameNode/PID.5.5)">
-		  "prefix": ["<xsl:value-of select='$nameNode/PID.5.5'/>"],
+		<xsl:if test="string($nameNode/*[5])">
+		  "prefix": ["<xsl:value-of select='$nameNode/*[5]'/>"],
 		</xsl:if>
 
 		<!-- given -->
-		<xsl:if test="string($nameNode/PID.5.2) or string($nameNode/PID.5.3)">
-		  "given": ["<xsl:value-of select='normalize-space(concat($nameNode/PID.5.2, &quot; &quot;, $nameNode/PID.5.3))'/>"]
+		<xsl:if test="string($nameNode/*[2]) or string($nameNode/*[3])">
+		  "given": ["<xsl:value-of select='normalize-space(concat($nameNode/*[2], &quot; &quot;, $nameNode/*[3]))'/>"]
 		</xsl:if>
 
 		<!-- family -->
-		<xsl:if test="string($nameNode/PID.5.1)">
-		  ,"family": "<xsl:value-of select='$nameNode/PID.5.1'/>"
+		<xsl:if test="string($nameNode/*[1])">
+		  ,"family": "<xsl:value-of select='$nameNode/*[1]'/>"
 		</xsl:if>
 
 		<!-- suffix -->
-		<xsl:if test="string($nameNode/PID.5.4)">
-		  ,"suffix": ["<xsl:value-of select='$nameNode/PID.5.4'/>"]
+		<xsl:if test="string($nameNode/*[4])">
+		  ,"suffix": ["<xsl:value-of select='$nameNode/*[4]'/>"]
 		</xsl:if>
     }
 </xsl:template>

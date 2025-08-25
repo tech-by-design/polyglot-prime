@@ -47,12 +47,12 @@ import org.techbd.config.CoreAppConfig.MTlsAwsSecrets;
 import org.techbd.config.CoreAppConfig.MTlsResources;
 import org.techbd.config.CoreAppConfig.PostStdinPayloadToNyecDataLakeExternal;
 import org.techbd.config.CoreAppConfig.WithApiKeyAuth;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Helpers;
 import org.techbd.config.Interactions;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.exceptions.ErrorCode;
 import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
@@ -195,9 +195,9 @@ public class FHIRService {
                     dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
                 }
 
-                final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
+                                final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         source);
-                final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
+                                               final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
 				if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
 					payloadWithDisposition = registerValidationResults(jooqCfg, requestParameters,
 							result, interactionId, groupInteractionId, masterInteractionId,
@@ -502,6 +502,8 @@ public class FHIRService {
 			final var start = Instant.now();
 			LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
 			final var igPackages = coreAppConfig.getIgPackages();
+            var requestedIgVersion = (String) requestParameters.get(Constants.SHIN_NY_IG_VERSION);
+            LOG.info("headerIgVersion : "+ requestedIgVersion);
 			final var sessionBuilder = engine.session()
 					.withSessionId(UUID.randomUUID().toString())
 					.onDevice(Device.createDefault())
@@ -510,6 +512,7 @@ public class FHIRService {
 					.withFhirProfileUrl(CoreFHIRUtil.getBundleProfileUrl())
 					.withTracer(tracer)
 					.withFhirIGPackages(igPackages)
+                    .withRequestedIgVersion(requestedIgVersion)
 					.addHapiValidationEngine(); // by default
 					// clearExisting is set to true so engines can be fully supplied through header
 					
