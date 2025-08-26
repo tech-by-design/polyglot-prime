@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
+import org.techbd.util.AppLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.opentelemetry.api.trace.Span;
@@ -28,6 +29,8 @@ public abstract class BaseIgValidationTest {
     protected static SpanBuilder spanBuilder;
 
     protected static Span span;
+    
+    private static AppLogger appLogger;
 
     protected static OrchestrationEngine.HapiValidationEngine spyHapiEngine;
 
@@ -37,13 +40,13 @@ public abstract class BaseIgValidationTest {
         appConfig = mock(CoreAppConfig.class);
         spanBuilder = mock(SpanBuilder.class);
         span = mock(Span.class);
-
+        appLogger = mock(AppLogger.class);
         when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
         when(spanBuilder.startSpan()).thenReturn(span);
         when(appConfig.getIgPackages()).thenReturn(getIgPackages());
        // when(appConfig.getIgVersion()).thenReturn("1.3.0");
 
-        engine = new OrchestrationEngine(appConfig);
+        engine = new OrchestrationEngine(appConfig,appLogger);
         Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
         profileMapField.setAccessible(true);
         profileMapField.set(null, getProfileMap());

@@ -8,14 +8,16 @@ import java.util.function.Function;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.VFS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 @Service
 public class VfsCoreService {
-    private static final Logger logger = LoggerFactory.getLogger(VfsCoreService.class);
-
+    private final TemplateLogger logger;
+    public VfsCoreService(AppLogger appLogger) {
+        this.logger = appLogger.getLogger(VfsCoreService.class);
+    }
     /**
      * Creates a VFS consumer with the specified configuration.
      *

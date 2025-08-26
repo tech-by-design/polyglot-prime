@@ -5,8 +5,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
@@ -15,6 +13,8 @@ import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHl7Request;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,12 +31,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Service
 public class HL7Service {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final TemplateLogger logger;
 
-    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, final AppLogger appLogger) {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
-    }
-
-    private static final Logger logger = LoggerFactory.getLogger(HL7Service.class);
+        this.logger = appLogger.getLogger(HL7Service.class);
+    }    
 
     /**
      * Saves the original HL7 payload along with metadata to the database.

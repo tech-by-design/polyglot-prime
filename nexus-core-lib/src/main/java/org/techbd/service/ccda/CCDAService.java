@@ -5,8 +5,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
@@ -15,6 +13,8 @@ import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,10 +32,12 @@ import com.fasterxml.jackson.databind.JsonNode;
  @Service
 public class CCDAService {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    private final TemplateLogger logger;
+    
+    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.logger = appLogger.getLogger(CCDAService.class);
     }
-    private static final Logger logger = LoggerFactory.getLogger(CCDAService.class);
 
     public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,

@@ -25,8 +25,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -61,6 +59,8 @@ import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.fhir.engine.OrchestrationEngine.Device;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionFhirRequest;
 import org.techbd.util.AWSUtil;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -91,7 +91,7 @@ import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerExcept
 @Getter
 @Setter
 public class FHIRService {
-    private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
+    private final TemplateLogger LOG;
     private final CoreAppConfig coreAppConfig;
 	private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final OrchestrationEngine engine;
@@ -99,12 +99,13 @@ public class FHIRService {
 	private Tracer tracer;
 
 	public FHIRService(CoreAppConfig coreAppConfig, CoreDataLedgerApiClient coreDataLedgerApiClient,OrchestrationEngine engine,
-	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
 		this.coreAppConfig = coreAppConfig;
 		this.coreDataLedgerApiClient = coreDataLedgerApiClient;
 		this.tracer = GlobalOpenTelemetry.get().getTracer("FHIRService");
 		this.engine = engine;
 		this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+		LOG = appLogger.getLogger(FHIRService.class);
 	}
 
  /**
@@ -1211,7 +1212,7 @@ public class FHIRService {
 		return keyDetails;
 	}
 
-	public static String getValue(final SecretsManagerClient secretsClient, final String secretName) {
+	public String getValue(final SecretsManagerClient secretsClient, final String secretName) {
 		LOG.debug("FHIRService:: getValue  - Get Value of secret with name  : {} -BEGIN", secretName);
 		String secret = null;
 		try {

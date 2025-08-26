@@ -1,7 +1,5 @@
 package org.techbd.service.fhir.validation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -18,7 +16,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FhirBundleValidator {
-    private static final Logger LOG = LoggerFactory.getLogger(FhirBundleValidator.class);
     private String baseFHIRUrl;
     private FhirContext fhirContext;
     private String igVersion;

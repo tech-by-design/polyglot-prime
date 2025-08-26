@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import org.techbd.config.State;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystemException;
@@ -32,8 +31,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +39,7 @@ import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
+import org.techbd.config.State;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
@@ -50,6 +48,8 @@ import org.techbd.service.vfs.VfsCoreService;
 import org.techbd.service.vfs.VfsIngressConsumer;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,15 +67,16 @@ public class CsvOrchestrationEngine {
     private final CoreAppConfig coreAppConfig;
     private final VfsCoreService vfsCoreService;
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
+    private static TemplateLogger log;
     private static final Pattern FILE_PATTERN = Pattern.compile(
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
-    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
         this.sessions = new ConcurrentHashMap<>();
         this.coreAppConfig = coreAppConfig;
         this.vfsCoreService = vfsCoreService;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        log = appLogger.getLogger(CsvOrchestrationEngine.class);
     }
 
     public List<OrchestrationSession> getSessions() {
