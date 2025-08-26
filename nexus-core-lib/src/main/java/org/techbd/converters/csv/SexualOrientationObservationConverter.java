@@ -15,8 +15,6 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
@@ -25,7 +23,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
 import org.techbd.util.DateUtil;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
@@ -33,12 +33,12 @@ import org.techbd.util.fhir.CoreFHIRUtil;
 @Component
 @Order(3)
 public class SexualOrientationObservationConverter extends BaseConverter {
+    private final TemplateLogger LOG;
 
-    public SexualOrientationObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public SexualOrientationObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
         super(codeLookupService,coreUdiPrimeJpaConfig);
+        LOG = appLogger.getLogger(SexualOrientationObservationConverter.class);
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
 
     @Override
     public ResourceType getResourceType() {

@@ -35,8 +35,6 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.config.Configuration;
 import org.techbd.config.CoreAppConfig;
@@ -46,7 +44,9 @@ import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.fhir.validation.FhirBundleValidator;
 import org.techbd.service.fhir.validation.PostPopulateSupport;
 import org.techbd.service.fhir.validation.PrePopulateSupport;
+import org.techbd.util.AppLogger;
 import org.techbd.util.JsonText.JsonTextSerializer;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -144,23 +144,26 @@ public class OrchestrationEngine {
     private final ConcurrentHashMap<String, OrchestrationSession> sessions;
     private final Map<ValidationEngineIdentifier, ValidationEngine> validationEngineCache;
     private final CoreAppConfig coreAppConfig;
-    private static final Logger LOG = LoggerFactory.getLogger(OrchestrationEngine.class);
+    private final TemplateLogger LOG;
+    private final AppLogger appLogger;
     private Tracer tracer;
 
-    public OrchestrationEngine(final CoreAppConfig coreAppConfig) {
+    public OrchestrationEngine(final CoreAppConfig coreAppConfig, AppLogger appLogger) {
         this.sessions = new ConcurrentHashMap<>();
         this.coreAppConfig = coreAppConfig;
         this.validationEngineCache = new HashMap<>();
- 		this.tracer = GlobalOpenTelemetry.get().getTracer("OrchestrationEngine");
+        this.tracer = GlobalOpenTelemetry.get().getTracer("OrchestrationEngine");
+        LOG = appLogger.getLogger(OrchestrationEngine.class);
+        this.appLogger = appLogger;
         initializeEngines();
     }
 
     private void initializeEngines() {
         LOG.info("OrchestrationEngine:: initializeEngines -BEGIN");
         getOrCreateValidationEngine(ValidationEngineIdentifier.HAPI, coreAppConfig.getIgPackages(),
-                tracer);
-        getOrCreateValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, null, null);
-        getOrCreateValidationEngine(ValidationEngineIdentifier.HL7_API, null, null);
+                tracer,appLogger,LOG);
+        getOrCreateValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, null, null,appLogger,LOG);
+        getOrCreateValidationEngine(ValidationEngineIdentifier.HL7_API, null, null,appLogger,LOG);
         LOG.info("OrchestrationEngine:: initializeEngines -END");
     }
 
@@ -191,13 +194,15 @@ public class OrchestrationEngine {
 
     private ValidationEngine getOrCreateValidationEngine(@NotNull final ValidationEngineIdentifier type,
             final Map<String, FhirV4Config> igPackages,
-            final Tracer tracer) {
+            final Tracer tracer, AppLogger appLogger,TemplateLogger LOG) {
         return validationEngineCache.computeIfAbsent(type, k -> {
             switch (type) {
                 case HAPI:
                     return new HapiValidationEngine.Builder()
                             .withIgPackages(igPackages)
                             .withTracer(tracer)
+                            .withAppLogger(appLogger)
+                            .withTemplateLogger(LOG)
                             .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().build();
@@ -285,6 +290,8 @@ public class OrchestrationEngine {
         private final Map<String, FhirV4Config> igPackages;
         private String igVersion;
         private final Tracer tracer;
+        private final AppLogger appLogger;
+        private final TemplateLogger LOG;
         private final String interactionId;
         private final List<FhirBundleValidator> fhirBundleValidators;
         
@@ -299,6 +306,8 @@ public class OrchestrationEngine {
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;
             this.tracer = builder.tracer;
+            this.appLogger = builder.appLogger;
+            this.LOG = builder.LOG;
             this.interactionId = builder.interactionId;
             this.fhirBundleValidators = new ArrayList<>();
             initializeFhirBundleValidators();
@@ -391,12 +400,12 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
                 supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-                final var prePopulateSupport = new PrePopulateSupport(tracer);
+                final var prePopulateSupport = new PrePopulateSupport(tracer, appLogger);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
-                final var postPopulateSupport = new PostPopulateSupport(tracer);
+                final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);
                 postPopulateSupport.update(supportChain,profileBaseUrl);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
@@ -639,7 +648,9 @@ public class OrchestrationEngine {
             private String igVersion;
             private String interactionId;
             private Tracer tracer;
-            
+            private AppLogger appLogger;
+            private TemplateLogger LOG;
+
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
                 return this;
@@ -664,7 +675,14 @@ public class OrchestrationEngine {
                 this.tracer = tracer;
                 return this;
             }
-
+            public Builder withAppLogger(@NotNull final AppLogger appLogger) {
+                this.appLogger = appLogger;
+                return this;
+            }
+            public Builder withTemplateLogger(@NotNull final TemplateLogger LOG) {
+                this.LOG = LOG;
+                return this;
+            } 
             public HapiValidationEngine build() {
                 return new HapiValidationEngine(this);
             }
@@ -983,6 +1001,8 @@ public class OrchestrationEngine {
             private String sessionId;
             private String interactionId;
             private Tracer tracer;
+            private AppLogger appLogger;
+            private TemplateLogger LOG;
             private String requestedIgVersion;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
@@ -1035,6 +1055,16 @@ public class OrchestrationEngine {
 
             public Builder withTracer(@NotNull final Tracer tracer) {
                 this.tracer = tracer;
+                return this;
+            }
+
+            public Builder withAppLogger(@NotNull final AppLogger appLogger) {
+                this.appLogger = appLogger;
+                return this;
+            }
+
+            public Builder withTemplateLogger(@NotNull final TemplateLogger LOG) {
+                this.LOG = LOG;
                 return this;
             }
 

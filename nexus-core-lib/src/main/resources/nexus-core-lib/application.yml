@@ -1,5 +1,6 @@
 org:
   techbd:
+    version: ${project.version}
     csv:
       validation:
         pythonScriptPath: ${PYTHON_SCRIPT_PATH}support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py

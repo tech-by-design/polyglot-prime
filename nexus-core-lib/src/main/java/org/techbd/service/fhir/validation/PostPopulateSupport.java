@@ -2,8 +2,8 @@ package org.techbd.service.fhir.validation;
 
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.r4.model.ValueSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.ConceptReaderUtils;
 
 import io.opentelemetry.api.trace.Span;
@@ -13,10 +13,11 @@ public class PostPopulateSupport {
 
     private final String referenceCodesPath = "ig-packages/reference/";
     private final Tracer tracer;
-    private static final Logger LOG = LoggerFactory.getLogger(PostPopulateSupport.class);
+    private static TemplateLogger LOG;
 
-    public PostPopulateSupport(final Tracer tracer) {
+    public PostPopulateSupport(final Tracer tracer, AppLogger appLogger) {
         this.tracer = tracer;
+        LOG = appLogger.getLogger(PostPopulateSupport.class);
     }
 
     public void update(ValidationSupportChain validationSupportChain, String profileBaseUrl) {

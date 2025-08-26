@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
@@ -35,16 +33,17 @@ import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.AppLogger;
 import org.techbd.util.SystemDiagnosticsLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 @Service
 public class CsvService {
-
     private final CsvOrchestrationEngine engine;
-    private static final Logger LOG = LoggerFactory.getLogger(CsvService.class);
+    private final TemplateLogger LOG;
     private final CsvBundleProcessorService csvBundleProcessorService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
@@ -57,13 +56,14 @@ public class CsvService {
             final CoreDataLedgerApiClient coreDataLedgerApiClient,
             final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
             @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor,
-            final CoreAppConfig coreAppConfig) {
+            final CoreAppConfig coreAppConfig,AppLogger appLogger) {
         this.engine = engine;
         this.csvBundleProcessorService = csvBundleProcessorService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         this.asyncTaskExecutor = asyncTaskExecutor;
         this.coreAppConfig = coreAppConfig;
+        this.LOG = appLogger.getLogger(CsvService.class);
     }
 
     public Object validateCsvFile(final MultipartFile file, final Map<String, Object> requestParameters,
@@ -114,6 +114,7 @@ public class CsvService {
             updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+            updateRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = updateRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -166,6 +167,7 @@ public class CsvService {
             final var provenance = "%s.saveArchiveInteraction".formatted(CsvService.class.getName());
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(zipFileInteractionId);
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             setUserDetails(initRIHR, requestParameters);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
@@ -259,7 +261,7 @@ public class CsvService {
                     interactionId, ex.getMessage(), ex);
             saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_FAILED, requestParams);
             SystemDiagnosticsLogger.logResourceStats(interactionId,
-                    coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor);
+                    coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,coreAppConfig.getVersion());
             throw ex;
         } finally {
             engine.clear(session);
@@ -313,7 +315,7 @@ public class CsvService {
                 saveArchiveInteractionStatus(interactionId, jooqCfg,
                         CsvProcessingState.PROCESSING_FAILED, requestParams);
                 SystemDiagnosticsLogger.logResourceStats(interactionId,
-                        coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor);
+                        coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,coreAppConfig.getVersion());
             } finally {
                 engine.clear(session);
                 long durationMs = (System.nanoTime() - start) / 1_000_000;
@@ -329,6 +331,8 @@ public class CsvService {
         response.put("message",
                 "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI  Interactions > CSV via HTTPs tab for detailed status updates.");
         response.put("zipFileInteractionId", interactionId);
+        response.put("zipFileInteractionId", interactionId);
+        response.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
         return response;
     }
 
@@ -385,6 +389,7 @@ public class CsvService {
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -418,6 +423,7 @@ public class CsvService {
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -457,6 +463,7 @@ public class CsvService {
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setZipFileProcessingErrors(
                     (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
