@@ -331,6 +331,8 @@ public class CsvService {
         response.put("message",
                 "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI  Interactions > CSV via HTTPs tab for detailed status updates.");
         response.put("zipFileInteractionId", interactionId);
+        response.put("zipFileInteractionId", interactionId);
+        response.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
         return response;
     }
 

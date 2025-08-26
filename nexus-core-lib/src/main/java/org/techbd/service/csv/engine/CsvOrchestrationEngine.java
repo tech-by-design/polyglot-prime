@@ -462,7 +462,7 @@ public class CsvOrchestrationEngine {
                     .orElse(Map.of());
         }
 
-        private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
+        private  Map<String, Object> createOperationOutcome(final String masterInteractionId,
                 final String groupInteractionId,
                 final String validationResults,
                 final List<FileDetail> fileDetails, final Map<String,Object> requestParameters, final long zipFileSize,
@@ -472,6 +472,7 @@ public class CsvOrchestrationEngine {
             return Map.of(
                     "resourceType", "OperationOutcome",
                     "zipFileInteractionId",masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "groupInteractionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
                     "provenance", provenance);
@@ -491,6 +492,7 @@ public class CsvOrchestrationEngine {
             final Device device = Device.INSTANCE;
             result.put("resourceType", "OperationOutcome");
             result.put("zipFileInteractionId", masterInteractionId);
+            result.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
             result.put("originalFileName", originalFileName);
             result.put("validationResults", combinedValidationResult);
             result.put("requestUri", requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
@@ -505,7 +507,7 @@ public class CsvOrchestrationEngine {
             return result;
         }
 
-        private static Map<String, Object> populateProvenance(final String masterInteractionId,final String groupInteractionId,
+        private Map<String, Object> populateProvenance(final String masterInteractionId,final String groupInteractionId,
                 final List<FileDetail> fileDetails,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) {
             final List<String> fileNames = fileDetails.stream()
@@ -514,6 +516,7 @@ public class CsvOrchestrationEngine {
             return Map.of(
                     "resourceType", "Provenance",
                     "zipFileInteractionId",masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "groupInteractionId", groupInteractionId,
                     "agent", List.of(Map.of(
                             "who", Map.of(
@@ -669,6 +672,7 @@ public class CsvOrchestrationEngine {
         
             return Map.of(
                     "zipFileInteractionId", masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "originalFileName", originalFileName,
                     "validationResults", Map.of(
                             "resourceType", "OperationOutcome",
@@ -717,6 +721,7 @@ public class CsvOrchestrationEngine {
             Map<String, Object> operationOutcome = new HashMap<>();
             operationOutcome.put("resourceType", "OperationOutcome");
             operationOutcome.put("zipFileInteractionId", masterInteractionId);
+            operationOutcome.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
 
             // Validation Results with Detailed Errors
             Map<String, Object> validationResults = new HashMap<>();

@@ -495,6 +495,7 @@ private List<Object> processScreening(final String groupKey,
         return Map.of(
                 "masterInteractionId", masterInteractionId,
                 "groupInteractionId", groupInteractionId,
+                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
                 "provenance", provenance,
@@ -569,6 +570,7 @@ private List<Object> processScreening(final String groupKey,
     
         return Map.of(
                 "zipFileInteractionId", masterInteractionId,
+                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                 "originalFileName", originalFileName,
                 "validationResults", Map.of(
                         "resourceType", "OperationOutcome",

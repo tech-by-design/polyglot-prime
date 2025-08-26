@@ -337,7 +337,7 @@ public class FHIRService {
 		final var immediateResult = Map.of(
 				"resourceType", "OperationOutcome", 
 				"bundleSessionId", interactionId,
-				"techBDVersion", coreAppConfig.getVersion(),	
+				Constants.TECHBD_VERSION, coreAppConfig.getVersion(),	
 				"validationResults", List.of(validationResult)
 		);
 
@@ -534,7 +534,7 @@ public class FHIRService {
 								+ coreAppConfig.getOperationOutcomeHelpUrl(),
 						"bundleSessionId", interactionId, // for tracking in
 															// database, etc.
-						"techBDVersion", coreAppConfig.getVersion(),								
+							Constants.TECHBD_VERSION, coreAppConfig.getVersion(),								
 						"isAsync", true,
 						"validationResults", session.getValidationResults(),
 						"statusUrl","/Bundle/$status/"
