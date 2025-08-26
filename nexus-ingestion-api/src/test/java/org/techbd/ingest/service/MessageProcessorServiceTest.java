@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.processor.MessageProcessingStep;
 
 public class MessageProcessorServiceTest {
@@ -39,10 +40,10 @@ public class MessageProcessorServiceTest {
         when(context.getFullS3DataPath()).thenReturn("s3://bucket/test.hl7");
         when(context.getTimestamp()).thenReturn("2025-07-17T12:00:00Z");
 
-        Map<String, String> result = service.processMessage(context, file);
+        Map<String, String> result = service.processMessage(context, file, SourceType.REST);
 
-        verify(step1).process(context, file);
-        verify(step2).process(context, file);
+        verify(step1).process(context, file, SourceType.REST);
+        verify(step2).process(context, file, SourceType.REST);
 
         assertThat(result).containsEntry("messageId", "msg-001");
         assertThat(result).containsEntry("interactionId", "int-001");
@@ -60,10 +61,10 @@ public class MessageProcessorServiceTest {
         when(context.getFullS3DataPath()).thenReturn("s3://bucket/test-string.hl7");
         when(context.getTimestamp()).thenReturn("2025-07-17T13:00:00Z");
 
-        Map<String, String> result = service.processMessage(context, content,mllpAck);
+        Map<String, String> result = service.processMessage(context, content, mllpAck, SourceType.REST);
 
-        verify(step1).process(context, content,mllpAck);
-        verify(step2).process(context, content,mllpAck);
+        verify(step1).process(context, content, mllpAck, SourceType.REST);
+        verify(step2).process(context, content, mllpAck, SourceType.REST);
 
         assertThat(result).containsEntry("messageId", "msg-002");
         assertThat(result).containsEntry("interactionId", "int-002");
@@ -78,7 +79,7 @@ public class MessageProcessorServiceTest {
         when(context.getMessageId()).thenReturn("msg-003");
         when(context.getFullS3DataPath()).thenThrow(new RuntimeException("Simulated failure"));
 
-        Map<String, String> result = service.processMessage(context, "raw-content","");
+        Map<String, String> result = service.processMessage(context, "raw-content", "", SourceType.REST);
 
         assertThat(result).containsEntry("error", "Failed to create response");
         assertThat(result).containsEntry("interactionId", "int-003");

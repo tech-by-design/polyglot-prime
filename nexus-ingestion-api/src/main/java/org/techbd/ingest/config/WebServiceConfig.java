@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -65,7 +66,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
     }
 
     @Bean(name = "pix")
-    public DefaultWsdl11Definition pixWsdl(XsdSchema hl7Schema) {
+    public DefaultWsdl11Definition pixWsdl(@Qualifier("hl7Schema") XsdSchema hl7Schema) {
         var wsdlDefinition = new DefaultWsdl11Definition();
         wsdlDefinition.setPortTypeName("PIXPort");
         wsdlDefinition.setLocationUri("/ws");
@@ -75,7 +76,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
     }
 
     @Bean(name = "pnr")
-    public DefaultWsdl11Definition pnrWsdl(XsdSchema pnrSchema) {
+    public DefaultWsdl11Definition pnrWsdl(@Qualifier("pnrSchema") XsdSchema pnrSchema) {
         var wsdlDefinition = new DefaultWsdl11Definition();
         wsdlDefinition.setPortTypeName("PNRPort");
         wsdlDefinition.setLocationUri("/ws");

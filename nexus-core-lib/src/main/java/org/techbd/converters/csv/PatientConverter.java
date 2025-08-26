@@ -26,8 +26,6 @@ import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
@@ -36,18 +34,20 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
 import org.techbd.util.DateUtil;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
 
 @Component
 @Order(2)
 public class PatientConverter extends BaseConverter {
-
-    public PatientConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    private final TemplateLogger LOG;
+    public PatientConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
         super(codeLookupService,coreUdiPrimeJpaConfig);
+        LOG = appLogger.getLogger(PatientConverter.class);
     }
-    private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
     /**
      * Returns the resource type associated with this converter.

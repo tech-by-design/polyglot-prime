@@ -5,16 +5,17 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,10 +33,14 @@ import com.fasterxml.jackson.databind.JsonNode;
  @Service
 public class CCDAService {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    private final TemplateLogger logger;
+    private final CoreAppConfig coreAppConfig;
+
+    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger, CoreAppConfig coreAppConfig) {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.logger = appLogger.getLogger(CCDAService.class);
+        this.coreAppConfig = coreAppConfig;
     }
-    private static final Logger logger = LoggerFactory.getLogger(CCDAService.class);
 
     public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
@@ -59,6 +64,7 @@ public class CCDAService {
             rihr.setPSourceType(SourceType.CCDA.name());
             rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             final Instant start = Instant.now();
@@ -114,6 +120,7 @@ public class CCDAService {
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -167,7 +174,7 @@ public class CCDAService {
             rihr.setPSourceType(SourceType.CCDA.name());
             rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
-
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             final Instant start = Instant.now();
@@ -220,7 +227,7 @@ public class CCDAService {
             rihr.setPFromState(State.CCDA_ACCEPT.name());
             rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             rihr.setPSourceType(SourceType.CCDA.name());
-            // rihr.setCreatedAt(OffsetDateTime.now());
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);

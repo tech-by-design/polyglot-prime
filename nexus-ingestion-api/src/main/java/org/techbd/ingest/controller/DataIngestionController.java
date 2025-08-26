@@ -25,6 +25,7 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -96,27 +97,82 @@ public class DataIngestionController {
 
         Map<String, String> responseMap;
 
-        if (file != null && !file.isEmpty()) {
-            LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
-                    file.getOriginalFilename(), file.getSize(), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, file.getSize(), file.getOriginalFilename());
-            responseMap = messageProcessorService.processMessage(context, file);
+    if (file != null && !file.isEmpty()) {
+        LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
+            file.getOriginalFilename(), file.getSize(), interactionId);
+        RequestContext context = createRequestContext(interactionId,
+            headers, request, file.getSize(), file.getOriginalFilename());
+        responseMap = messageProcessorService.processMessage(context, file, SourceType.REST);
 
-        } else if (body != null && !body.isBlank()) {
-            String contentType = request.getContentType();
-            String extension = resolveExtension(contentType);
-            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-            LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
-                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, body.length(), generatedFileName);
-            responseMap = messageProcessorService.processMessage(context, body);
+    } else if (body != null && !body.isBlank()) {
+        String contentType = request.getContentType();
+        String extension = resolveExtension(contentType);
+        String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+        LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
+            contentType, body.substring(0, Math.min(200, body.length())), interactionId);
+        RequestContext context = createRequestContext(interactionId,
+            headers, request, body.length(), generatedFileName);
+        responseMap = messageProcessorService.processMessage(context, body, SourceType.REST);
 
-        } else {
-            LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
-            throw new IllegalArgumentException("Request must contain either a file or body data");
-        }
+    } else {
+        LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
+        throw new IllegalArgumentException("Request must contain either a file or body data");
+    }
+        LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
+        String responseJson = objectMapper.writeValueAsString(responseMap);
+        LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
+        return ResponseEntity.ok(responseJson);
+    }
+
+    /**
+     * Endpoint to handle /hold requests.
+     *
+     * This endpoint can accept either:
+     * - a file upload (multipart/form-data)
+     * - raw data in the body (JSON, XML, plain text, HL7, etc.)
+     *
+     * If raw body data is provided, a filename is generated
+     * based on the Content-Type header.
+     *
+     * @param file    The optional file to be ingested (when multipart/form-data).
+     * @param body    The optional raw payload (when Content-Type is JSON/XML/Text).
+     * @param headers The request headers containing metadata.
+     * @param request The HTTP servlet request.
+     * @return A response entity containing the result of the ingestion process.
+     * @throws Exception If an error occurs during processing.
+     */
+    @PostMapping(value = "/hold", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.ALL_VALUE })
+    public ResponseEntity<String> hold(
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestBody(required = false) String body,
+            @RequestHeader Map<String, String> headers,
+            HttpServletRequest request) throws Exception {
+        String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
+        LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+
+        Map<String, String> responseMap;
+
+    if (file != null && !file.isEmpty()) {
+        LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
+            file.getOriginalFilename(), file.getSize(), interactionId);
+        RequestContext context = createRequestContext(interactionId,
+            headers, request, file.getSize(), file.getOriginalFilename());
+        responseMap = messageProcessorService.processMessage(context, file, SourceType.HOLD);
+
+    } else if (body != null && !body.isBlank()) {
+        String contentType = request.getContentType();
+        String extension = resolveExtension(contentType);
+        String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+        LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
+            contentType, body.substring(0, Math.min(200, body.length())), interactionId);
+        RequestContext context = createRequestContext(interactionId,
+            headers, request, body.length(), generatedFileName);
+        responseMap = messageProcessorService.processMessage(context, body, SourceType.HOLD);
+
+    } else {
+        LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
+        throw new IllegalArgumentException("Request must contain either a file or body data");
+    }
         LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
         String responseJson = objectMapper.writeValueAsString(responseMap);
         LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);

@@ -8,6 +8,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.commons.SourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -95,7 +96,7 @@ class SqsPublishStepTest {
 
         when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "test-content".getBytes());
-        sqsPublishStep.process(context, file);
+        sqsPublishStep.process(context, file, SourceType.REST);
         assertEquals("msg-123", context.getMessageId());
         verify(sqsClient).sendMessage(any(SendMessageRequest.class));
     }
@@ -115,7 +116,7 @@ class SqsPublishStepTest {
                 .messageId("sqs-msg-id-456")
                 .build();
         when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
-        sqsPublishStep.process(context, content,null);
+        sqsPublishStep.process(context, content, null, SourceType.REST);
         assertEquals("sqs-msg-id-456", context.getMessageId());
         verify(sqsClient, times(1)).sendMessage(any(SendMessageRequest.class));
     }
