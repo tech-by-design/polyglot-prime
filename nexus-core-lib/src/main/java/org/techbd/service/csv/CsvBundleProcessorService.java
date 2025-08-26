@@ -191,6 +191,7 @@ public class CsvBundleProcessorService {
             initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
             final var start = Instant.now();
@@ -277,6 +278,7 @@ public class CsvBundleProcessorService {
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(groupInteractionId);
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();

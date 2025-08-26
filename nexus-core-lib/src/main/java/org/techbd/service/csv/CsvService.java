@@ -114,6 +114,7 @@ public class CsvService {
             updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
+            updateRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = updateRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -166,6 +167,7 @@ public class CsvService {
             final var provenance = "%s.saveArchiveInteraction".formatted(CsvService.class.getName());
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(zipFileInteractionId);
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             setUserDetails(initRIHR, requestParameters);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
@@ -385,6 +387,7 @@ public class CsvService {
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -418,6 +421,7 @@ public class CsvService {
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
+                    initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -457,6 +461,7 @@ public class CsvService {
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setZipFileProcessingErrors(
                     (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();

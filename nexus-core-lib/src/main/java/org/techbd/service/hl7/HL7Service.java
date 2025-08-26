@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
@@ -32,10 +33,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class HL7Service {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
     private final TemplateLogger logger;
+    private final CoreAppConfig coreAppConfig;
 
-    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, final AppLogger appLogger) {
+    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, final AppLogger appLogger, final CoreAppConfig coreAppConfig) {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         this.logger = appLogger.getLogger(HL7Service.class);
+        this.coreAppConfig = coreAppConfig;
     }    
 
     /**
@@ -72,6 +75,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -126,6 +130,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();

@@ -326,7 +326,7 @@ public class FHIRService {
 	}
 	
 
-	public static Map<String, Object> buildOperationOutcome(final JsonValidationException ex,
+	public Map<String, Object> buildOperationOutcome(final JsonValidationException ex,
 															final String interactionId) {
 		final var validationResult = Map.of(
 				"valid", false,
@@ -337,6 +337,7 @@ public class FHIRService {
 		final var immediateResult = Map.of(
 				"resourceType", "OperationOutcome", 
 				"bundleSessionId", interactionId,
+				"techBDVersion", coreAppConfig.getVersion(),	
 				"validationResults", List.of(validationResult)
 		);
 
@@ -478,6 +479,7 @@ public class FHIRService {
 		rihr.setPProvenance(provenance);
 		rihr.setPFromState(fromState);
 		rihr.setPToState(toState);
+		rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
 		setUserDetails(rihr, requestParameters);
 	}
 
@@ -532,6 +534,7 @@ public class FHIRService {
 								+ coreAppConfig.getOperationOutcomeHelpUrl(),
 						"bundleSessionId", interactionId, // for tracking in
 															// database, etc.
+						"techBDVersion", coreAppConfig.getVersion(),								
 						"isAsync", true,
 						"validationResults", session.getValidationResults(),
 						"statusUrl","/Bundle/$status/"
@@ -1639,6 +1642,7 @@ public class FHIRService {
 				// time
 				initRIHR.setPCreatedBy(FHIRService.class.getName());
 				initRIHR.setPProvenance(provenance);
+				initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = initRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1700,6 +1704,7 @@ public class FHIRService {
 				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
 				forwardRIHR.setPProvenance(provenance);
+				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = forwardRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1761,6 +1766,7 @@ public class FHIRService {
 				// app time
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
 				forwardRIHR.setPProvenance(provenance);
+				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = forwardRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1871,6 +1877,7 @@ public class FHIRService {
 				errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
 				errorRIHR.setPCreatedBy(FHIRService.class.getName());
 				errorRIHR.setPProvenance(provenance);
+				errorRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = errorRIHR.execute(jooqCfg);
 				final var end = Instant.now();

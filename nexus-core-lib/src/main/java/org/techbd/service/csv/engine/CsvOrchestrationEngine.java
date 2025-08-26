@@ -309,6 +309,7 @@ public class CsvOrchestrationEngine {
                         .formatted(CsvService.class.getName());
                 initRIHR.setPProvenance(provenance);
                 initRIHR.setPCsvGroupId(masterInteractionId);
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -392,6 +393,7 @@ public class CsvOrchestrationEngine {
                         .formatted(CsvService.class.getName());
                 initRIHR.setPProvenance(provenance);
                 initRIHR.setPCsvGroupId(masterInteractionId);
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -427,6 +429,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setNature("Update Zip File Payload");
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 initRIHR.setValidationResultPayload(
                         (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
                 final var start = Instant.now();
