@@ -2,8 +2,8 @@
   <id>38e62b8d-ea36-49ff-a535-cacbb3944bd1</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.12.0</description>
-  <revision>20</revision>
+  <description>Version: 0.13.0</description>
+  <revision>22</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-TechBD-CIN, X-TechBD-Facility-ID, X-TechBD-Encounter-Type, X-TechBD-OrgNPI, X-TechBD-OrgTIN</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-TechBD-CIN, X-TechBD-Facility-ID, X-TechBD-Encounter-Type, X-TechBD-OrgNPI, X-TechBD-OrgTIN, X-TechBD-Screening-Code</string>
           </list>
         </entry>
         <entry>
@@ -2546,7 +2546,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1756184939736</time>
+        <time>1756213576086</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
