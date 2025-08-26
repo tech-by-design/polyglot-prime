@@ -50,8 +50,7 @@ public class SwaggerConfig {
                 .externalDocs(new ExternalDocumentation()
                         .description("Tech by Design Technical Documents Microsite")
                         .url("https://tech-by-design.github.io/docs.techbd.org/"))
-        // .addServersItem(new Server().url(serverUrl).description("Environment-specific
-        // server URL"))
+                        // .addServersItem(new Server().url(serverUrl).description("Environment-specific server URL"))
         ;
     }
 
@@ -117,8 +116,7 @@ public class SwaggerConfig {
                         "/interactions/**",
                         "/mock/shinny-data-lake/**")
                 .addOpenApiCustomizer(openApi -> {
-                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and
-                                                              // clear generated server
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
                     servers.add(new Server()
                             .url(hubApiUrl)
                             .description("Tech by Design Hub Self-Service UI API Server"));
@@ -142,14 +140,14 @@ public class SwaggerConfig {
                             .url(fhirApiUrl)
                             .description("Tech by Design FHIR API Server"));
                     openApi.setServers(servers);
-    
+
                     // Add reusable FileUpload schema
                     openApi.getComponents().addSchemas("FileUpload", new io.swagger.v3.oas.models.media.Schema<>()
                             .type("object")
                             .addProperties("file", new io.swagger.v3.oas.models.media.Schema<>()
                                     .type("file")
                                     .format("binary")));
-    
+
                     // Add Mirth Endpoint 1
                     openApi.getPaths().addPathItem("/ccda/Bundle", new PathItem()
                             .post(new Operation()
@@ -162,48 +160,54 @@ public class SwaggerConfig {
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-CIN")
                                             .description(
                                                     "Mandatory header to specify the CIN (Patient Medicaid Number) for the Patient resource. It will be used in the generated FHIR")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Facility-ID")
                                             .description(
                                                     "Mandatory header for MRN Facility code")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                       .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Encounter-Type")
                                             .description(
                                                     "Mandatory header for Encounter Type Code")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-OrgNPI")
                                             .description(
                                                     "Optional header to specify the NPI (National Provider Identifier) for the Organization resource. It will be used in the generated FHIR. Either this or X-TechBD-OrgTIN must be provided.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-OrgTIN")
                                             .description(
                                                     "Optional header to specify the TIN (Tax ID Number) for the Organization resource. It will be used in the generated FHIR. Either this or X-TechBD-OrgNPI must be provided.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Base-FHIR-URL")
                                             .description("Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                       .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Screening-Code")
+                                            .description("Optional header to specify the Screening code for the Observation grouper resource. If provided, it will be used in the generated FHIR; otherwise, default value will be used.")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Validation-Severity-Level")
                                             .description(
                                                     "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).")
@@ -227,7 +231,7 @@ public class SwaggerConfig {
                                             .addApiResponse("500",
                                                     new ApiResponse()
                                                             .description("Server error")))));
-    
+
                     // Add Mirth Endpoint 2
                     openApi.getPaths().addPathItem("/ccda/Bundle/$validate", new PathItem()
                             .post(new Operation()
@@ -258,8 +262,8 @@ public class SwaggerConfig {
                                                     new ApiResponse()
                                                             .description("Server error")))));
 
-                        // Add Mirth Endpoint 3
-                        openApi.getPaths().addPathItem("/hl7v2/Bundle", new PathItem()
+                    // Add Mirth Endpoint 3
+                    openApi.getPaths().addPathItem("/hl7v2/Bundle", new PathItem()
                             .post(new Operation()
                                     .tags(List.of("Tech by Design Hub HL7 Endpoints"))
                                     .summary("HL7 endpoint to validate and convert HL7 to JSON, then store, and forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use /hl7v2/Bundle/$validate.")
@@ -270,54 +274,54 @@ public class SwaggerConfig {
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-CIN")
                                             .description(
                                                     "Mandatory header to specify the CIN (Patient Medicaid Number) for the Patient resource. It will be used in the generated FHIR")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Facility-ID")
                                             .description(
                                                     "Mandatory header for MRN Facility code")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                       .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Encounter-Type")
                                             .description(
                                                     "Mandatory header for Encounter Type Code")
                                             .required(true)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-OrgNPI")
                                             .description(
                                                     "Optional header to specify the NPI (National Provider Identifier) for the Organization resource. It will be used in the generated FHIR. Either this or X-TechBD-OrgTIN must be provided.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-OrgTIN")
                                             .description(
                                                     "Optional header to specify the TIN (Tax ID Number) for the Organization resource. It will be used in the generated FHIR. Either this or X-TechBD-OrgNPI must be provided.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Base-FHIR-URL")
                                             .description("Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Organization-Name")
                                             .description("Optional header to specify the Organization-Name. If provided, it will be used else MSH.6 value will be used.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
-                                       .addParametersItem(new Parameter()
+                                    .addParametersItem(new Parameter()
                                             .name("X-TechBD-Validation-Severity-Level")
                                             .description(
                                                     "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).")
@@ -342,8 +346,8 @@ public class SwaggerConfig {
                                                     new ApiResponse()
                                                             .description("Server error")))));
 
-                        // Add Mirth Endpoint 4
-                        openApi.getPaths().addPathItem("/hl7v2/Bundle/$validate", new PathItem()
+                    // Add Mirth Endpoint 4
+                    openApi.getPaths().addPathItem("/hl7v2/Bundle/$validate", new PathItem()
                             .post(new Operation()
                                     .tags(List.of("Tech by Design Hub HL7 Endpoints"))
                                     .summary("HL7 endpoint to validate and convert HL7 to JSON but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /hl7v2/Bundle not /hl7v2/Bundle/$validate.")
