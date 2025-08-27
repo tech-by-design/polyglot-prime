@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.0 -->
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -101,6 +101,8 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
   
+  <xsl:variable name="encounterStatus" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+
   <!-- Get Organization name from the first encounter entry -->
   <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
 
@@ -562,7 +564,7 @@
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -670,12 +672,8 @@
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
-        <!-- "identifier" : [{          
-          "system" : "urn:oid:<xsl:value-of select="ccda:id/@root"/>",
-          "value" : "<xsl:value-of select="ccda:id/@extension"/>"
-        }], -->
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
