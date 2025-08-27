@@ -247,9 +247,20 @@
 
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
-        <resources>
+      	<resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>ig-packages/**/*</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>ig-packages/**/*</include>
+                </includes>
+                <filtering>false</filtering>
             </resource>
         </resources>
         <testSourceDirectory>src/test/java</testSourceDirectory>

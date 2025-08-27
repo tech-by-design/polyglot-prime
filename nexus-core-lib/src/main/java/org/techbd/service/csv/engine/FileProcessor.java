@@ -10,13 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 
 public class FileProcessor {
-    private static final Logger LOG = LoggerFactory.getLogger(FileProcessor.class);
 
     public static Map<String, List<FileDetail>> processAndGroupFiles(final List<String> filePaths) throws IOException {
         final Map<String, List<FileDetail>> groupedFiles = new HashMap<>();

@@ -7,13 +7,13 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 import ca.uhn.fhir.context.FhirContext;
 
@@ -21,11 +21,12 @@ import ca.uhn.fhir.context.FhirContext;
 public class CsvToFhirConverter {
     private final List<IConverter> converters; // todo move other converters inside bundle converter after hl7 changes
     private final BundleConverter bundleConverter;
-    private static final Logger LOG = LoggerFactory.getLogger(CsvToFhirConverter.class.getName());
+    private final TemplateLogger LOG;
 
-    public CsvToFhirConverter(BundleConverter bundleConverter, List<IConverter> converters) {
+    public CsvToFhirConverter(BundleConverter bundleConverter, List<IConverter> converters,AppLogger appLogger) {
         this.converters = converters;
         this.bundleConverter = bundleConverter;
+        this.LOG = appLogger.getLogger(CsvToFhirConverter.class);
     }
 
     public String convert(DemographicData demographicData,

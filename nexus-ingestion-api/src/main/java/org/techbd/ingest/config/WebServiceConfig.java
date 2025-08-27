@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ import org.springframework.ws.soap.saaj.SaajSoapMessage;
 import org.springframework.ws.soap.saaj.SaajSoapMessageFactory;
 import org.springframework.ws.transport.http.MessageDispatcherServlet;
 import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
+import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
 import org.techbd.ingest.interceptors.WsaHeaderInterceptor;
@@ -65,7 +67,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
     }
 
     @Bean(name = "pix")
-    public DefaultWsdl11Definition pixWsdl(XsdSchema hl7Schema) {
+    public DefaultWsdl11Definition pixWsdl(@Qualifier("hl7Schema") XsdSchema hl7Schema) {
         var wsdlDefinition = new DefaultWsdl11Definition();
         wsdlDefinition.setPortTypeName("PIXPort");
         wsdlDefinition.setLocationUri("/ws");
@@ -75,7 +77,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
     }
 
     @Bean(name = "pnr")
-    public DefaultWsdl11Definition pnrWsdl(XsdSchema pnrSchema) {
+    public DefaultWsdl11Definition pnrWsdl(@Qualifier("pnrSchema") XsdSchema pnrSchema) {
         var wsdlDefinition = new DefaultWsdl11Definition();
         wsdlDefinition.setPortTypeName("PNRPort");
         wsdlDefinition.setLocationUri("/ws");
@@ -109,20 +111,41 @@ public class WebServiceConfig extends WsConfigurationSupport {
         @Override
         public SaajSoapMessage createWebServiceMessage(InputStream inputStream) throws IOException {
             try {
+                // Get HTTP request to check Content-Type
+                var transportContext = TransportContextHolder.getTransportContext();
+                String httpContentType = null;
+                if (transportContext != null) {
+                    var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext.getConnection();
+                    httpContentType = connection.getHttpServletRequest().getContentType();
+                }
+                
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 inputStream.transferTo(baos);
                 byte[] bytes = baos.toByteArray();
-                MimeHeaders headers = extractHeaders(bytes);
-                String contentType = getContentType(headers);
-                MessageFactory msgFactory;
-                if (contentType != null && contentType.contains("application/soap+xml")) {
-                    msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+                
+                // Check if it's MTOM multipart content from HTTP header
+                if (httpContentType != null && httpContentType.contains("multipart/related")) {
+                    // Handle MTOM - create MIME headers from HTTP request
+                    MimeHeaders mimeHeaders = new MimeHeaders();
+                    mimeHeaders.addHeader("Content-Type", httpContentType);
+                    MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
+                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                    SOAPMessage soapMessage = msgFactory.createMessage(mimeHeaders, bis);
+                    return new SaajSoapMessage(soapMessage);
                 } else {
-                    msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
+                    // Regular SOAP handling
+                    MimeHeaders headers = extractHeaders(bytes);
+                    String contentType = getContentType(headers);
+                    MessageFactory msgFactory;
+                    if (contentType != null && contentType.contains("application/soap+xml")) {
+                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+                    } else {
+                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
+                    }
+                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                    SOAPMessage soapMessage = msgFactory.createMessage(headers, bis);
+                    return new SaajSoapMessage(soapMessage);
                 }
-                ByteArrayInputStream bis = new ByteArrayInputStream(bytes); // reuse cached stream
-                SOAPMessage soapMessage = msgFactory.createMessage(headers, bis);
-                return new SaajSoapMessage(soapMessage);
             } catch (Exception e) {
                 throw new IOException("Unable to create SOAP message", e);
             }

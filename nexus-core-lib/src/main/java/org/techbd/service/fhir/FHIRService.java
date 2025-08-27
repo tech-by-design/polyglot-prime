@@ -25,8 +25,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -61,6 +59,8 @@ import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.fhir.engine.OrchestrationEngine.Device;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionFhirRequest;
 import org.techbd.util.AWSUtil;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -91,7 +91,7 @@ import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerExcept
 @Getter
 @Setter
 public class FHIRService {
-    private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
+    private final TemplateLogger LOG;
     private final CoreAppConfig coreAppConfig;
 	private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final OrchestrationEngine engine;
@@ -99,12 +99,13 @@ public class FHIRService {
 	private Tracer tracer;
 
 	public FHIRService(CoreAppConfig coreAppConfig, CoreDataLedgerApiClient coreDataLedgerApiClient,OrchestrationEngine engine,
-	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
 		this.coreAppConfig = coreAppConfig;
 		this.coreDataLedgerApiClient = coreDataLedgerApiClient;
 		this.tracer = GlobalOpenTelemetry.get().getTracer("FHIRService");
 		this.engine = engine;
 		this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+		LOG = appLogger.getLogger(FHIRService.class);
 	}
 
  /**
@@ -325,7 +326,7 @@ public class FHIRService {
 	}
 	
 
-	public static Map<String, Object> buildOperationOutcome(final JsonValidationException ex,
+	public Map<String, Object> buildOperationOutcome(final JsonValidationException ex,
 															final String interactionId) {
 		final var validationResult = Map.of(
 				"valid", false,
@@ -336,6 +337,7 @@ public class FHIRService {
 		final var immediateResult = Map.of(
 				"resourceType", "OperationOutcome", 
 				"bundleSessionId", interactionId,
+				Constants.TECHBD_VERSION, coreAppConfig.getVersion(),	
 				"validationResults", List.of(validationResult)
 		);
 
@@ -477,6 +479,7 @@ public class FHIRService {
 		rihr.setPProvenance(provenance);
 		rihr.setPFromState(fromState);
 		rihr.setPToState(toState);
+		rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
 		setUserDetails(rihr, requestParameters);
 	}
 
@@ -531,6 +534,7 @@ public class FHIRService {
 								+ coreAppConfig.getOperationOutcomeHelpUrl(),
 						"bundleSessionId", interactionId, // for tracking in
 															// database, etc.
+							Constants.TECHBD_VERSION, coreAppConfig.getVersion(),								
 						"isAsync", true,
 						"validationResults", session.getValidationResults(),
 						"statusUrl","/Bundle/$status/"
@@ -1211,7 +1215,7 @@ public class FHIRService {
 		return keyDetails;
 	}
 
-	public static String getValue(final SecretsManagerClient secretsClient, final String secretName) {
+	public String getValue(final SecretsManagerClient secretsClient, final String secretName) {
 		LOG.debug("FHIRService:: getValue  - Get Value of secret with name  : {} -BEGIN", secretName);
 		String secret = null;
 		try {
@@ -1638,6 +1642,7 @@ public class FHIRService {
 				// time
 				initRIHR.setPCreatedBy(FHIRService.class.getName());
 				initRIHR.setPProvenance(provenance);
+				initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = initRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1699,6 +1704,7 @@ public class FHIRService {
 				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
 				forwardRIHR.setPProvenance(provenance);
+				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = forwardRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1760,6 +1766,7 @@ public class FHIRService {
 				// app time
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
 				forwardRIHR.setPProvenance(provenance);
+				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = forwardRIHR.execute(jooqCfg);
 				final var end = Instant.now();
@@ -1870,6 +1877,7 @@ public class FHIRService {
 				errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
 				errorRIHR.setPCreatedBy(FHIRService.class.getName());
 				errorRIHR.setPProvenance(provenance);
+				errorRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = errorRIHR.execute(jooqCfg);
 				final var end = Instant.now();
