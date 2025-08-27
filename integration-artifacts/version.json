@@ -97,14 +97,14 @@
       {
         "name": "cda-fhir-bundle-epic.xslt",
         "type": "CCDA",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "editedby": "",
         "date": "2025-08-01"
       },
       {
         "name": "cda-fhir-bundle-medent.xslt",
         "type": "CCDA",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "editedby": "",
         "date": "2025-08-01"
       },
@@ -125,7 +125,7 @@
       {
         "name": "cda-phi-filter-medent.xslt",
         "type": "CCDA",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "editedby": "",
         "date": "2025-08-01"
       },
