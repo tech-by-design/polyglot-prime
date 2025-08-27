@@ -43,14 +43,14 @@ public class CsvConversionUtil {
      *         list of demographic data with that ID
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
-    public static Map<String, List<DemographicData>> convertCsvStringToDemographicData(String csvData) {
+    public static Map<String, List<DemographicData>> convertCsvStringToDemographicData(String csvData,String interactionId,String techBDVersion) {
         try {
-            return convertCsvStringToObjectMap(csvData, DemographicData.class, SEPARATOR, "patientMrIdValue");
+            return convertCsvStringToObjectMap(csvData, DemographicData.class, SEPARATOR, "patientMrIdValue",interactionId,techBDVersion);
         } catch (IOException e) {
             //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
             LOG.error(
-                    "Error converting CSV data to DemographicData: Field 'patientMrIdValue' does not exist or is incorrect. Details: "
-                            + e.getMessage());
+                    "Error converting CSV data to DemographicData: Field 'patientMrIdValue' does not exist or is incorrect for interactionId: {} TechBDVersion :{} . Details: "
+                            + e.getMessage(), interactionId, techBDVersion);
             return new HashMap<>();
         }
     }
@@ -64,12 +64,12 @@ public class CsvConversionUtil {
      *         list of screening observation data with that ID
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
-    public static Map<String, List<ScreeningObservationData>> convertCsvStringToScreeningObservationData(String csvData) {
+    public static Map<String, List<ScreeningObservationData>> convertCsvStringToScreeningObservationData(String csvData,String interactionId,String techBDVersion) {
         try {
-            return convertCsvStringToObjectMap(csvData, ScreeningObservationData.class, SEPARATOR, "encounterId");
+            return convertCsvStringToObjectMap(csvData, ScreeningObservationData.class, SEPARATOR, "encounterId",interactionId,techBDVersion);
         } catch (IOException e) {
             //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
-            LOG.error("Error converting CSV data to ScreeningObservationData: Field 'encounterId' does not exist or is incorrect. Details: " + e.getMessage());
+            LOG.error("Error converting CSV data to ScreeningObservationData: Field 'encounterId' does not exist or is incorrect for interactionId: {} TechBDVersion :{} . Details: " + e.getMessage(), interactionId, techBDVersion);
             return new HashMap<>();
         }
     }
@@ -84,12 +84,12 @@ public class CsvConversionUtil {
      *         list of QE admin data with that ID
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
-    public static Map<String, List<QeAdminData>> convertCsvStringToQeAdminData(String csvData) {
+    public static Map<String, List<QeAdminData>> convertCsvStringToQeAdminData(String csvData,String interactionId,String techBDVersion) {
         try {
-            return convertCsvStringToObjectMap(csvData, QeAdminData.class, SEPARATOR, "patientMrIdValue");
+            return convertCsvStringToObjectMap(csvData, QeAdminData.class, SEPARATOR, "patientMrIdValue",interactionId,techBDVersion);
         } catch (IOException e) {
              //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
-            LOG.error("Error converting CSV data to QeAdminData: Field 'patientMrIdValue' does not exist or is incorrect. Details: " + e.getMessage());
+            LOG.error("Error converting CSV data to QeAdminData: Field 'patientMrIdValue' does not exist or is incorrect for interactionId: {} TechBDVersion :{} . Details: " + e.getMessage(), interactionId, techBDVersion);
             return new HashMap<>();
         }
     }
@@ -104,12 +104,12 @@ public class CsvConversionUtil {
      *         list of screening profile data with that ID
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
-    public static Map<String, List<ScreeningProfileData>> convertCsvStringToScreeningProfileData(String csvData) {
+    public static Map<String, List<ScreeningProfileData>> convertCsvStringToScreeningProfileData(String csvData,String interactionId,String techBDVersion) {
         try {
-            return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, SEPARATOR, "encounterId");
+            return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, SEPARATOR, "encounterId",interactionId,techBDVersion);
         } catch (IOException e) {
             //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
-            LOG.error("Error converting CSV data to ScreeningProfileData: Field 'encounterId' does not exist or is incorrect. Details: " + e.getMessage());
+            LOG.error("Error converting CSV data to ScreeningProfileData: Field 'encounterId' does not exist or is incorrect for interactionId: {} TechBDVersion :{} . Details: " + e.getMessage(), interactionId, techBDVersion);
             return new HashMap<>();
         }
     }
@@ -130,7 +130,7 @@ public class CsvConversionUtil {
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
    
-   public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName) throws IOException {
+   public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName,String interactionId,String techBDVersion) throws IOException {
     List<String[]> errorRows = new ArrayList<>();
 
     try (InputStreamReader reader = new InputStreamReader(new BOMInputStream(new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
@@ -162,7 +162,7 @@ public class CsvConversionUtil {
             List<CsvException> errors = csvToBean.getCapturedExceptions();
 
             for (CsvException error : errors) {
-                LOG.error("Malformed CSV row skipped: {}", error.getLineNumber(), error);
+                LOG.error("Malformed CSV row skipped: {} for interactionId: {} TechBDVersion: {}", error.getLineNumber(), interactionId, techBDVersion, error);
                 errorRows.add(error.getLine()); // Store bad rows for debugging
             }
 
@@ -171,7 +171,7 @@ public class CsvConversionUtil {
                     .collect(Collectors.groupingBy(obj -> {
                         String fieldValue = getFieldValue(obj, fieldName);
                         if (fieldValue == null) {
-                            LOG.error("Null value encountered for field '{}' in object: {}", fieldName, obj);
+                            LOG.error("Null value encountered for field '{}' in object: {} for interactionId: {} TechBDVersion: {}", fieldName, obj, interactionId, techBDVersion);
                             throw new IllegalArgumentException("Field '" + fieldName + "' has a null value in object: " + obj);
                         }
                         return fieldValue;

@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import org.techbd.config.State;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystemException;
@@ -32,8 +31,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +39,7 @@ import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
+import org.techbd.config.State;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
@@ -50,6 +48,8 @@ import org.techbd.service.vfs.VfsCoreService;
 import org.techbd.service.vfs.VfsIngressConsumer;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,15 +67,16 @@ public class CsvOrchestrationEngine {
     private final CoreAppConfig coreAppConfig;
     private final VfsCoreService vfsCoreService;
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
+    private static TemplateLogger log;
     private static final Pattern FILE_PATTERN = Pattern.compile(
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
-    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
         this.sessions = new ConcurrentHashMap<>();
         this.coreAppConfig = coreAppConfig;
         this.vfsCoreService = vfsCoreService;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        log = appLogger.getLogger(CsvOrchestrationEngine.class);
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -308,6 +309,7 @@ public class CsvOrchestrationEngine {
                         .formatted(CsvService.class.getName());
                 initRIHR.setPProvenance(provenance);
                 initRIHR.setPCsvGroupId(masterInteractionId);
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -391,6 +393,7 @@ public class CsvOrchestrationEngine {
                         .formatted(CsvService.class.getName());
                 initRIHR.setPProvenance(provenance);
                 initRIHR.setPCsvGroupId(masterInteractionId);
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -426,6 +429,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setNature("Update Zip File Payload");
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 initRIHR.setValidationResultPayload(
                         (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
                 final var start = Instant.now();
@@ -458,7 +462,7 @@ public class CsvOrchestrationEngine {
                     .orElse(Map.of());
         }
 
-        private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
+        private  Map<String, Object> createOperationOutcome(final String masterInteractionId,
                 final String groupInteractionId,
                 final String validationResults,
                 final List<FileDetail> fileDetails, final Map<String,Object> requestParameters, final long zipFileSize,
@@ -468,6 +472,7 @@ public class CsvOrchestrationEngine {
             return Map.of(
                     "resourceType", "OperationOutcome",
                     "zipFileInteractionId",masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "groupInteractionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
                     "provenance", provenance);
@@ -487,6 +492,7 @@ public class CsvOrchestrationEngine {
             final Device device = Device.INSTANCE;
             result.put("resourceType", "OperationOutcome");
             result.put("zipFileInteractionId", masterInteractionId);
+            result.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
             result.put("originalFileName", originalFileName);
             result.put("validationResults", combinedValidationResult);
             result.put("requestUri", requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
@@ -501,7 +507,7 @@ public class CsvOrchestrationEngine {
             return result;
         }
 
-        private static Map<String, Object> populateProvenance(final String masterInteractionId,final String groupInteractionId,
+        private Map<String, Object> populateProvenance(final String masterInteractionId,final String groupInteractionId,
                 final List<FileDetail> fileDetails,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) {
             final List<String> fileNames = fileDetails.stream()
@@ -510,6 +516,7 @@ public class CsvOrchestrationEngine {
             return Map.of(
                     "resourceType", "Provenance",
                     "zipFileInteractionId",masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "groupInteractionId", groupInteractionId,
                     "agent", List.of(Map.of(
                             "who", Map.of(
@@ -665,6 +672,7 @@ public class CsvOrchestrationEngine {
         
             return Map.of(
                     "zipFileInteractionId", masterInteractionId,
+                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                     "originalFileName", originalFileName,
                     "validationResults", Map.of(
                             "resourceType", "OperationOutcome",
@@ -713,6 +721,7 @@ public class CsvOrchestrationEngine {
             Map<String, Object> operationOutcome = new HashMap<>();
             operationOutcome.put("resourceType", "OperationOutcome");
             operationOutcome.put("zipFileInteractionId", masterInteractionId);
+            operationOutcome.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
 
             // Validation Results with Detailed Errors
             Map<String, Object> validationResults = new HashMap<>();

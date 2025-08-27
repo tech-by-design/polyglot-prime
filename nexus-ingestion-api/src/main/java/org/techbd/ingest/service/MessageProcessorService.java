@@ -135,9 +135,9 @@ public class MessageProcessorService {
         try {
             LOG.info("MessageProcessorService:: Creating success response for interactionId={}", interactionId);
             return Map.of(
-                    "messageId", messageId,
+                    "messageId", messageId != null ? messageId : context.getInteractionId(),
                     "interactionId", context.getInteractionId(),
-                    "fullS3Path", context.getFullS3DataPath(),
+                    "fullS3Path", context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set",
                     "timestamp", context.getTimestamp());
         } catch (Exception e) {
             LOG.error("MessageProcessorService:: Error creating success response for interactionId={}", interactionId,

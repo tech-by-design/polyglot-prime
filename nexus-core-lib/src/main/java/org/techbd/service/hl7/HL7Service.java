@@ -5,16 +5,17 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHl7Request;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,12 +32,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Service
 public class HL7Service {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final TemplateLogger logger;
+    private final CoreAppConfig coreAppConfig;
 
-    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, final AppLogger appLogger, final CoreAppConfig coreAppConfig) {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
-    }
-
-    private static final Logger logger = LoggerFactory.getLogger(HL7Service.class);
+        this.logger = appLogger.getLogger(HL7Service.class);
+        this.coreAppConfig = coreAppConfig;
+    }    
 
     /**
      * Saves the original HL7 payload along with metadata to the database.
@@ -72,6 +75,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -126,6 +130,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();

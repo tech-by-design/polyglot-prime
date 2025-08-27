@@ -1,6 +1,6 @@
 package org.techbd.service.csv;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.*;
+import static org.techbd.udi.auto.jooq.ingress.Tables.REF_CODE_LOOKUP_CODE_VIEW;
 
 import java.util.Collections;
 import java.util.List;
@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.Record2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -20,11 +20,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class CodeLookupService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CodeLookupService.class.getName());
+    private final TemplateLogger LOG;
     private final ObjectMapper objectMapper;
 
-    public CodeLookupService() {
+    public CodeLookupService(AppLogger appLogger) {
         this.objectMapper = new ObjectMapper();
+        this.LOG = appLogger.getLogger(CodeLookupService.class);
     }
 
     public Map<String, Map<String, String>> fetchCode(DSLContext dsl, String interactionId) {
