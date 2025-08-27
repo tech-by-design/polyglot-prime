@@ -11,14 +11,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.config.Configuration;
-import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
+import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 import org.techbd.util.AWSUtil;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,11 +32,12 @@ import lombok.Setter;
 public class CoreDataLedgerApiClient {
     private final HttpClient client = HttpClient.newHttpClient();
     private final org.techbd.config.CoreAppConfig appConfig;
-    private static final Logger LOG = LoggerFactory.getLogger(CoreDataLedgerApiClient.class.getName());
+    private final TemplateLogger LOG;
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    public CoreDataLedgerApiClient(CoreAppConfig appConfig,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public CoreDataLedgerApiClient(CoreAppConfig appConfig,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
         this.appConfig = appConfig;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        LOG = appLogger.getLogger(CoreDataLedgerApiClient.class);
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,

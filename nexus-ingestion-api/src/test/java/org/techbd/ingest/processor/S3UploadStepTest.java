@@ -19,6 +19,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MetadataBuilderService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -101,7 +102,7 @@ class S3UploadStepTest {
         PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(response);
-        s3UploadStep.process(context, file);
+        s3UploadStep.process(context, file, SourceType.REST);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         assertEquals("Uploaded to S3: objectKey (ETag: 123etag)", context.getS3Response());
     }
@@ -114,7 +115,7 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
-        s3UploadStep.process(context, content,null);
+        s3UploadStep.process(context, content, null, SourceType.REST);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
       
@@ -134,7 +135,7 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
-        s3UploadStep.process(context, content, ackMessage);
+        s3UploadStep.process(context, content, ackMessage, SourceType.SOAP);
 
         // Verify uploads: metadata, content, and ack
         verify(s3Client, times(3)).putObject(any(PutObjectRequest.class), any(RequestBody.class));

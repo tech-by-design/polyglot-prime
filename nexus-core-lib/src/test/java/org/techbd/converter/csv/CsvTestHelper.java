@@ -26,22 +26,22 @@ public class CsvTestHelper {
     
    public static ScreeningProfileData createScreeningProfileData() throws IOException {
         String csvContent = Files.readString(Path.of(BASE_CSV_PATH + SCREENING_PROFILE_FILE));
-        return CsvConversionUtil.convertCsvStringToScreeningProfileData(csvContent).get("EncounterExample").get(0);
+        return CsvConversionUtil.convertCsvStringToScreeningProfileData(csvContent,"test","0.667.0").get("EncounterExample").get(0);
     }
 
     public static DemographicData createDemographicData() throws IOException {
         String csvContent = Files.readString(Path.of(BASE_CSV_PATH + DEMOGRAPHIC_DATA_FILE));
-        return CsvConversionUtil.convertCsvStringToDemographicData(csvContent).get("11223344").get(0);
+        return CsvConversionUtil.convertCsvStringToDemographicData(csvContent,"test","0.667.0").get("11223344").get(0);
     }
 
     public static List<ScreeningObservationData> createScreeningObservationData() throws IOException {
         String csvContent = Files.readString(Path.of(BASE_CSV_PATH + SCREENING_OBSERVATION_FILE));
-        return CsvConversionUtil.convertCsvStringToScreeningObservationData(csvContent).get("EncounterExample");
+        return CsvConversionUtil.convertCsvStringToScreeningObservationData(csvContent,"test","0.667.0").get("EncounterExample");
     }
 
     public static QeAdminData createQeAdminData() throws IOException {
         String csvContent = Files.readString(Path.of(BASE_CSV_PATH + QE_ADMIN_DATA_FILE));
-        return CsvConversionUtil.convertCsvStringToQeAdminData(csvContent).get("11223344").get(0);
+        return CsvConversionUtil.convertCsvStringToQeAdminData(csvContent,"test","0.667.0").get("11223344").get(0);
     }
     
     public static Map<String, String> getProfileMap() {

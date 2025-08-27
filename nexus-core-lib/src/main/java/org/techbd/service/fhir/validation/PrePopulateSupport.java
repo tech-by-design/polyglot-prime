@@ -9,8 +9,8 @@ import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.ValueSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.ConceptReaderUtils;
 import org.techbd.util.fhir.FileUtils;
 
@@ -22,10 +22,11 @@ public class PrePopulateSupport {
 
     private final String referenceCodesPath = "ig-packages/reference/";
     private final Tracer tracer;
-    private static final Logger LOG = LoggerFactory.getLogger(PrePopulateSupport.class);
+    private final TemplateLogger LOG;
 
-    public PrePopulateSupport(final Tracer tracer) {
+    public PrePopulateSupport(final Tracer tracer, final AppLogger appLogger) {
         this.tracer = tracer;
+        this.LOG = appLogger.getLogger(PrePopulateSupport.class);
     }
 
     public PrePopulatedValidationSupport build(FhirContext fhirContext) {

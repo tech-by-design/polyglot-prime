@@ -24,8 +24,6 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
@@ -34,7 +32,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
 import org.techbd.util.DateUtil;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
 
@@ -42,11 +42,12 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
-        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+        private final TemplateLogger LOG;
+        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
                 super(codeLookupService,coreUdiPrimeJpaConfig);
+                LOG = appLogger.getLogger(ScreeningResponseObservationConverter.class);
         }
 
-        private static final Logger LOG = LoggerFactory.getLogger(ScreeningResponseObservationConverter.class);
 
         // Constants for URLs and systems
         private static final String OBSERVATION_URL_BASE = "http://shinny.org/us/ny/hrsn/Observation/";

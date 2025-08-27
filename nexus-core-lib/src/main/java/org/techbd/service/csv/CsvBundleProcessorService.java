@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
@@ -43,6 +41,8 @@ import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.fhir.FHIRService;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
@@ -53,7 +53,7 @@ import jakarta.servlet.http.Cookie;
 
 @Service
 public class CsvBundleProcessorService {
-    private static final Logger LOG = LoggerFactory.getLogger(CsvBundleProcessorService.class.getName());
+    private final TemplateLogger LOG;
     private final CsvToFhirConverter csvToFhirConverter;
     private final FHIRService fhirService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
@@ -61,12 +61,13 @@ public class CsvBundleProcessorService {
     private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,
-    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
         this.csvToFhirConverter = csvToFhirConverter;
         this.fhirService = fhirService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreAppConfig = coreAppConfig;
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.LOG = appLogger.getLogger(CsvBundleProcessorService.class);
     }
 
     public List<Object> processPayload(final String masterInteractionId,
@@ -108,13 +109,13 @@ public class CsvBundleProcessorService {
                         final FileType fileType = fileDetail.fileType();
                         switch (fileType) {
                             case SDOH_PtInfo ->
-                                demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
+                                demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content,masterInteractionId ,coreAppConfig.getVersion() );
                             case SDOH_ScreeningProf -> screeningProfileData = CsvConversionUtil
-                                    .convertCsvStringToScreeningProfileData(content);
+                                    .convertCsvStringToScreeningProfileData(content,masterInteractionId ,coreAppConfig.getVersion() );
                             case SDOH_QEadmin ->
-                                qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
+                                qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content,masterInteractionId ,coreAppConfig.getVersion() );
                             case SDOH_ScreeningObs -> screeningObservationData = CsvConversionUtil
-                                    .convertCsvStringToScreeningObservationData(content);
+                                    .convertCsvStringToScreeningObservationData(content,masterInteractionId ,coreAppConfig.getVersion() );
                             default -> throw new IllegalStateException("Unexpected value: " + fileType);
                         }
                     }
@@ -190,6 +191,7 @@ public class CsvBundleProcessorService {
             initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
             final var start = Instant.now();
@@ -276,6 +278,7 @@ public class CsvBundleProcessorService {
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(groupInteractionId);
+            initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -492,6 +495,7 @@ private List<Object> processScreening(final String groupKey,
         return Map.of(
                 "masterInteractionId", masterInteractionId,
                 "groupInteractionId", groupInteractionId,
+                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
                 "provenance", provenance,
@@ -566,6 +570,7 @@ private List<Object> processScreening(final String groupKey,
     
         return Map.of(
                 "zipFileInteractionId", masterInteractionId,
+                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
                 "originalFileName", originalFileName,
                 "validationResults", Map.of(
                         "resourceType", "OperationOutcome",

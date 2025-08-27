@@ -1,17 +1,14 @@
 <channel version="4.5.3">
-  <id>118438e7-a04a-4b68-9707-a36520c2f5f1</id>
+  <id>38e62b8d-ea36-49ff-a535-cacbb3944bd1</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.11.0</description>
-  <revision>14</revision>
+  <description>Version: 0.13.0</description>
+  <revision>22</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-TechBD-CIN, X-TechBD-Facility-ID, X-TechBD-Encounter-Type, X-TechBD-OrgNPI, X-TechBD-OrgTIN</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-TechBD-CIN, X-TechBD-Facility-ID, X-TechBD-Encounter-Type, X-TechBD-OrgNPI, X-TechBD-OrgTIN, X-TechBD-Screening-Code</string>
           </list>
         </entry>
         <entry>
@@ -279,12 +279,16 @@ function extractClinicalDocument(rawXml) {
 		var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
 		
 		var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
+		logger.info(&quot;hasXmlDeclaration: &quot; +hasXmlDeclaration);
 		var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
 		var start = rawXml.indexOf(startTag);
+		logger.info(&quot;start rawXml: &quot; +start);
 		var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+		logger.info(&quot;end rawXml: &quot; +end);
 		
 		if (start !== -1 &amp;&amp; end !== -1) {
 		    end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
+		    logger.info(&quot;end rawXml2: &quot; +end);
 		    extractedXml = rawXml.substring(start, end);
 		
 		    // If no XML declaration, add it manually
@@ -1449,17 +1453,58 @@ function saveFhirConversionFailure(interactionId, tenantId, requestedPath, error
 //    return saveResults;
 //}
 
+// Helper function to validate and get tenant information
+function getTenantInfo(tenantId) {
+    // If tenantId is undefined or null, try to get it from channelMap or other sources
+    if (!tenantId || tenantId === &apos;undefined&apos;) {
+        // Try to get from channelMap
+        var channelTenantId = channelMap.get(&quot;tenantId&quot;);
+        if (channelTenantId) {
+            logInfo(&quot;#######Using tenant ID from channelMap: &quot; + channelTenantId, channelMap);
+            return channelTenantId;
+        }
+        
+        // Try to get from globalMap
+        var globalTenantId = globalMap.get(&quot;tenantId&quot;);
+        if (globalTenantId) {
+            logInfo(&quot;Using tenant ID from globalMap: &quot; + globalTenantId, channelMap);
+            return globalTenantId;
+        }
+        
+        // Default fallback
+        logError(&quot;Tenant ID is undefined, using default value&quot;, channelMap);
+        return &quot;unknown&quot;;
+    }
+    return tenantId;
+}
+
+
 // Function 6: Save All Error Information (Comprehensive Error Handler)
 function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMessage, errorResponse) {
     var saveResults = {
+        originalPayloadSaved: false,
         validationSaved: false,
         conversionSaved: false
     };
     
     if (typeof interactionId !== &apos;undefined&apos;) {
         try {
+           
+           
+            // Validate tenant information
+            var validTenantId = getTenantInfo(tenantId);
+            
+            // 1. FIRST: Save the original CCDA payload so it&apos;s available for viewing
+            if (sourceXml) {
+                saveResults.originalPayloadSaved = saveOriginalCcdaPayload(interactionId, validTenantId, requestedPath, sourceXml, successResponse);
+                logInfo(&quot;********Original payload save result: &quot; + saveResults.originalPayloadSaved, channelMap);
+            } else {
+                logError(&quot;***** No sourceXml provided - cannot save original payload *****&quot;, channelMap);
+            }
+            
+            
             // Only save validation failure - no FHIR conversion failure since conversion was never attempted
-            saveResults.validationSaved = saveValidationFailure(interactionId, tenantId, requestedPath, errorMessage, errorResponse);
+            saveResults.validationSaved = saveValidationFailure(interactionId, validTenantId, requestedPath, errorMessage, errorResponse);
             
             logInfo(&quot;***** Saved validation failure only - no conversion was attempted *****&quot;, channelMap);
             
@@ -1523,7 +1568,7 @@ if (requestedPath == &quot;/&quot;) {
 
 //Extract the name and extension of the file received before processing.
 msg = channelMap.get(&apos;fileContent&apos;);
-msg = String(msg).replace(/^\uFEFF/, &apos;&apos;).trim();  // remove BOM and leading/trailing whitespace
+//msg = String(msg).replace(/^\uFEFF/, &apos;&apos;).trim();  // remove BOM and leading/trailing whitespace
 logger.info(&quot;msg: &quot; + msg);
 
 if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
@@ -1580,10 +1625,12 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	
 		// Add XML declaration if missing
 		if (!msg.startsWith(&apos;&lt;?xml&apos;)) {
+		   logger.info(&quot;msg1*****: &quot; + msg);
 		    var idx = msg.indexOf(&apos;&lt;ClinicalDocument&apos;);
 		    if (idx !== -1) {
 		        msg = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos; + msg.substring(idx);
 		    } else {
+		        logger.info(&quot;msg2**********: &quot; + msg);
 		        throw new Error(&quot;Missing &lt;ClinicalDocument&gt; element&quot;);
 		    }
 		}
@@ -1967,7 +2014,11 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
         // STEP 6: Save all error information using separated function
 //#######################################################################################################################################
         if (saveAllErrorInformation &amp;&amp; typeof interactionId !== &apos;undefined&apos;) {
-            saveAllErrorInformation(interactionId, tenantId, requestedPath, e.message, errorResponse);
+          //  saveAllErrorInformation(interactionId, tenantId, requestedPath, e.message, errorResponse);
+        // Get the XML from wherever it&apos;s stored in your flow
+var sourceXml = channelMap.get(&quot;sourceXml&quot;) || channelMap.get(&quot;originalXml&quot;) || msg.toString();
+logInfo(&quot;Found sourceXml: &quot; + (sourceXml ? &quot;YES (length: &quot; + sourceXml.length + &quot;)&quot; : &quot;NO&quot;), channelMap);
+saveAllErrorInformation(interactionId, tenantId, requestedPath, sourceXml, errorMessage, errorResponse);
         }
 	
 //#######################################################################################################################################
@@ -2495,7 +2546,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755693987486</time>
+        <time>1756213576086</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
