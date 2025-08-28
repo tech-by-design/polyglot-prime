@@ -37,6 +37,9 @@ logging:
     io:
       opentelemetry: TRACE
       micrometer: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG      
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
@@ -56,8 +59,8 @@ spring:
             scope:
               - read:user
           fusionauth:
-            client-id: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FUSIONAUTH_CLIENT_ID:}
-            client-secret: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_FUSIONAUTH_CLIENT_SECRET:}
+            client-id: 79425b8d-50cc-40fd-af2e-55ccb26422a5
+            client-secret: fmJumqJnmYZ3KhVuQlM6jDz1rBi7QUPWvsaEoz1vwJM
             scope:
               - openid
               - profile
