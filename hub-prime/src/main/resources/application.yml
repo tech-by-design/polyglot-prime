@@ -97,6 +97,7 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
+            maxDownloadJsonPrettyPrintSizeMB: 1 # 1MB default, configurable for file download JSON pretty-print
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
