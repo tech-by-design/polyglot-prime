@@ -67,15 +67,15 @@ spring:
               - email
             authorization-grant-type: authorization_code
             provider: fusionauth
-            redirect-uri: "{baseUrl}/login/oauth2/code/fusionauth"
+            redirect-uri: "https://hub.fo.dev.techbd.org/login/oauth2/code/fusionauth"
         provider:
           fusionauth:
-            authorization-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_AUTHORIZATION_URI:}
-            token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_TOKEN_URI:}
-            user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_USER_INFO_URI:}
-            jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_JWK_SET_URI:}
-            user-name-attribute: email    
-  jpa:
+           authorization-uri: https://technology-by-design-dev.fusionauth.io/oauth2/authorize
+           token-uri: https://technology-by-design-dev.fusionauth.io/oauth2/token
+           user-info-uri: https://technology-by-design-dev.fusionauth.io/oauth2/userinfo
+           jwk-set-uri: https://technology-by-design-dev.fusionauth.io/.well-known/jwks.json
+           user-name-attribute: email    
+  jpa: 
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
