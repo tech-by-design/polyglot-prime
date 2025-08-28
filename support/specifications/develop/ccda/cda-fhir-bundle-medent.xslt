@@ -1324,18 +1324,19 @@
     </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapEncounterStatus">
+<xsl:template name="mapEncounterStatus"> 
     <xsl:param name="statusCode"/>
+    <xsl:variable name="cleanCode" select="normalize-space(string($statusCode))"/>
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed' or 
-                        $statusCode = 'normal'">finished</xsl:when>
-        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled' or 
-                        $statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
-        <xsl:when test="$statusCode = 'nullified' or 
-                        $statusCode = 'corrected'">entered-in-error</xsl:when>
-        <xsl:when test="$statusCode = 'new'">planned</xsl:when>
+        <xsl:when test="$cleanCode = 'completed' or 
+                        $cleanCode = 'normal'">finished</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled' or 
+                        $cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">on-hold</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified' or 
+                        $cleanCode = 'corrected'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'new'">planned</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
