@@ -94,8 +94,8 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                DefaultOAuth2User enrichedOAuth2User = fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token , oAuth2User,user);
              
                var adaptedUser = adaptFusionUserToGitHubFormat(user);
-               setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, adaptedUser)); 
-              // fusionAuthUsersService.convertToJson(enrichedOAuth2User);
+               setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, adaptedUser));
+               fusionAuthUsersService.convertToJson(enrichedOAuth2User);
                LOG.info("FusionAuth user authenticated: {}", user.email());
             }
 

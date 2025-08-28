@@ -3,6 +3,7 @@ package org.techbd.service.http;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -236,12 +237,14 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setPCreatedBy(InteractionsFilter.class.getName());
                 rihr.setPProvenance(provenance);
                 // User details
+                var userRole = "API_ROLE";
+                Object role=null;
+                String roleString="N/A";
+                String sql ="";
                 if (saveUserDataToInteractions) {
                     var curUserName = "API_USER";
                     var gitHubLoginId = "N/A";
                     final var sessionId = origRequest.getRequestedSessionId();
-                    var userRole = "API_ROLE";
-
                     final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
                     if (curUser.isPresent()) {
                         final var ghUser = curUser.get().ghUser();
@@ -252,18 +255,36 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                     .map(GrantedAuthority::getAuthority)
                                     .collect(Collectors.joining(","));
                             LOG.info("userRole: " + userRole);
-                            userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented as part of Auth
+                            role = curUser.get().principal().getAttributes().get("role");
+                            Object tenantsObj  = curUser.get().principal().getAttributes().get("groupNames"); 
+                           if (role instanceof Collection<?> roles && !roles.isEmpty()) {
+                                 roleString = roles.stream()
+                                                        .map(Object::toString)
+                                                        .collect(Collectors.joining(","));
+
+                                  String tenantsString = "";
+                           if (tenantsObj instanceof Collection<?> tenants && !tenants.isEmpty()) {
+                                    tenantsString = tenants.stream()
+                                                        .map(Object::toString)
+                                                        .collect(Collectors.joining(","));
+                                }
+                                 sql = String.format(
+                                    "SET ROLE \"%s\"; SET jwt.claims.tenants = '%s';",
+                                    roleString, tenantsString
+                                );
+                                LOG.info("Executing SQL: " + sql);
+                            }
                         }
                     }
                     rihr.setPUserName(curUserName);
                     rihr.setPUserId(gitHubLoginId);
                     rihr.setPUserSession(sessionId);
-                    rihr.setPUserRole(userRole);
+                    rihr.setPUserRole(roleString != null ? roleString : userRole); 
                 } else {
                     LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
                             + saveUserDataToInteractions);
                 }
-
+                dsl.execute(sql);
                 rihr.execute(dsl.configuration());
                 LOG.info("REGISTER State None : END for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
