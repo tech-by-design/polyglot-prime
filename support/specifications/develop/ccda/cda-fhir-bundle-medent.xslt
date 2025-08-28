@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -65,19 +66,6 @@
 
   <xsl:variable name="encounterEffectiveTime">
     <xsl:choose>
-      <!-- First, try encompassingEncounter -->
-      <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime">
-        <xsl:choose>
-          <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/@value">
-            <xsl:value-of select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/@value"/>
-          </xsl:when>
-          <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/ccda:low/@value">
-            <xsl:value-of select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/ccda:low/@value"/>
-          </xsl:when>
-        </xsl:choose>
-      </xsl:when>
-
-      <!-- Fallback to first encounter entry -->
       <xsl:when test="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:effectiveTime">
         <xsl:choose>
           <xsl:when test="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:effectiveTime/@value">
@@ -100,6 +88,8 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
   
+  <xsl:variable name="encounterStatus" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+
   <!-- Get Organization name from the first encounter entry -->
   <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
 
@@ -121,14 +111,12 @@
     </xsl:if>
 
     , "entry": [
-      <xsl:apply-templates select="/ccda:ClinicalDocument/ccda:recordTarget/ccda:patientRole 
-                                | /ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter 
+      <xsl:apply-templates select="/ccda:ClinicalDocument/ccda:recordTarget/ccda:patientRole
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='sexualOrientation']/ccda:entry/ccda:observation
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship
                                 | /ccda:ClinicalDocument/ccda:authorization/ccda:consent 
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
-                                | /ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole
                                 "/>
             <!-- Call Grouper Observation template -->
@@ -550,115 +538,6 @@
   </xsl:template>
 
   <!-- Encounter Template -->
-  <xsl:template name="Encounter" match="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter">
-    ,{
-      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
-      "resource": {
-        "resourceType": "Encounter",
-        "id": "<xsl:value-of select="$encounterResourceId"/>",
-        "meta" : {
-          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
-        },
-        "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
-                        </xsl:call-template>",
-        <xsl:if test="string($encounterType)">
-          <xsl:variable name="encounterTypeDisplay">
-            <xsl:call-template name="getEncounterTypeDisplay">
-              <xsl:with-param name="encounterType" select="$encounterType"/>
-            </xsl:call-template>
-          </xsl:variable>
-
-          "type": [
-            {
-              "coding": [
-                {
-                  "system": "http://snomed.info/sct",
-                  "code": "<xsl:value-of select="$encounterType"/>",
-                  "display": "<xsl:value-of select="$encounterTypeDisplay"/>"
-                }
-              ],
-              "text": "<xsl:value-of select="$encounterTypeDisplay"/>"
-            }
-          ],
-        </xsl:if>
-        "class": {
-          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
-          "code": "<xsl:value-of select="ccda:code/@code"/>",
-          "display": "<xsl:value-of select="ccda:code/@displayName"/>"
-        },
-        "subject" : {
-          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
-          "display" : "<xsl:value-of select="$patientResourceName"/>"
-        }
-        <xsl:choose>
-          <!-- Check if low or high exists -->
-          <xsl:when test="string(ccda:effectiveTime/ccda:low/@value) or string(ccda:effectiveTime/ccda:high/@value)">
-            , "period": {
-              "start": "<xsl:call-template name='formatDateTime'>
-                          <xsl:with-param name='dateTime' select='ccda:effectiveTime/ccda:low/@value'/>
-                      </xsl:call-template>",
-              "end": "<xsl:call-template name='formatDateTime'>
-                        <xsl:with-param name='dateTime' select='ccda:effectiveTime/ccda:high/@value'/>
-                    </xsl:call-template>"
-            }
-          </xsl:when>
-          <!-- Check if only value exists -->
-          <xsl:when test="string(ccda:effectiveTime/@value)">
-            , "period": {
-              "start": "<xsl:call-template name='formatDateTime'>
-                          <xsl:with-param name='dateTime' select='ccda:effectiveTime/@value'/>
-                      </xsl:call-template>"
-            }
-          </xsl:when>
-        </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1]) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
-        , "participant": [
-                {
-                  <xsl:if test="string(ccda:encounterParticipant/@typeCode)"> 
-                    "type": [
-                        {
-                            "coding": [
-                                {
-                                    "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
-                                    "code": "<xsl:value-of select="ccda:encounterParticipant/@typeCode"/>",
-                                    "display": "<xsl:call-template name='mapParticipantType'>
-                                                  <xsl:with-param name='typeCode' select='ccda:encounterParticipant/@typeCode'/>
-                                              </xsl:call-template>"
-                                }
-                            ]
-                        }
-                      ]
-                    </xsl:if>
-                    , "individual": {
-                        "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1], ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
-                    }
-                }
-            ]
-        </xsl:if>
-        <xsl:if test="string($locationResourceId) or string(ccda:location/ccda:healthCareFacility/ccda:location/ccda:name)">
-        , "location": [
-            {
-                "location": {
-                    <xsl:if test="string($locationResourceId)"> 
-                      "reference": "Location/<xsl:value-of select="$locationResourceId"/>",
-                    </xsl:if>
-                    "display": "<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:location/ccda:name"/>"
-                }
-            }
-        ]
-        </xsl:if>
-      }      
-      , "request" : {
-        "method" : "POST",
-        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>"
-      }
-    }
-  </xsl:template>
-
-  <!-- Encounter Template -->
-  <!-- <xsl:template name="ComponentEncounter" match="//ccda:component/ccda:structuredBody/ccda:component/ccda:encounters/ccda:entry[position()=1]/ccda:encounter"> -->
   <xsl:template name="ComponentEncounter" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
@@ -669,12 +548,8 @@
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
-        <!-- "identifier" : [{          
-          "system" : "urn:oid:<xsl:value-of select="ccda:id/@root"/>",
-          "value" : "<xsl:value-of select="ccda:id/@extension"/>"
-        }], -->
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -1449,18 +1324,19 @@
     </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapEncounterStatus">
+<xsl:template name="mapEncounterStatus"> 
     <xsl:param name="statusCode"/>
+    <xsl:variable name="cleanCode" select="normalize-space(string($statusCode))"/>
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed' or 
-                        $statusCode = 'normal'">finished</xsl:when>
-        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled' or 
-                        $statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
-        <xsl:when test="$statusCode = 'nullified' or 
-                        $statusCode = 'corrected'">entered-in-error</xsl:when>
-        <xsl:when test="$statusCode = 'new'">planned</xsl:when>
+        <xsl:when test="$cleanCode = 'completed' or 
+                        $cleanCode = 'normal'">finished</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled' or 
+                        $cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">on-hold</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified' or 
+                        $cleanCode = 'corrected'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'new'">planned</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1754,92 +1630,6 @@
         </xsl:if>
     }
 </xsl:template>
-
-<!-- Location Template from encompassingEncounter -->
-<xsl:template name="LocationResource" match="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location">
-  <xsl:if test="string($locationResourceId)"> 
-    ,{
-      "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
-      "resource": {
-        "resourceType": "Location",
-        "id": "<xsl:value-of select='$locationResourceId'/>",
-        "meta": {
-          "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["<xsl:value-of select='$locationMetaProfileUrl'/>"]
-        }
-        <xsl:if test="ccda:name">
-          ,"name": "<xsl:value-of select="ccda:name"/>"
-        </xsl:if>
-
-        <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address": 
-                    {
-                        <xsl:if test="string(ccda:addr/@use)">
-                            "use": "<xsl:choose>
-                                <xsl:when test="ccda:addr/@use='HP' or ccda:addr/@use='H'">home</xsl:when>
-                                <xsl:when test="ccda:addr/@use='WP'">work</xsl:when>
-                                <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
-                                <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
-                            </xsl:choose>",
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:addr/ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:addr/ccda:state)">, <xsl:value-of select="ccda:addr/ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:addr/ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:addr/ccda:postalCode"/></xsl:if>" ,
-                        </xsl:if>
-                        <xsl:if test="ccda:addr/ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:addr/ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
-                                    <xsl:if test="position() != last()">, </xsl:if>
-                                </xsl:for-each>
-                            ]
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:addr/ccda:city"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:addr/ccda:county"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:addr/ccda:state"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:addr/ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:addr/ccda:country"/>"
-                        </xsl:if>
-                        <xsl:if test="ccda:addr/ccda:useablePeriod">
-                            ,"period": {
-                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">
-                                    "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:low/@value"/>
-                                              </xsl:call-template>"
-                                </xsl:if>
-                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
-                                    "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:high/@value"/>
-                                            </xsl:call-template>"
-                                </xsl:if>
-                            }
-                        </xsl:if>
-                    }
-        </xsl:if>
-      },
-      "request" : {
-        "method" : "POST",
-        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select="$locationResourceId"/>"
-      }
-    }
-  </xsl:if>
-  </xsl:template>
 
   <!-- Location Template from Encounters section -->
   <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">

@@ -19,6 +19,10 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.techbd.service.http.hub.prime.ux.config.FileDownloadProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -54,8 +58,11 @@ public class TabularRowsController {
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-
     private final List<Validator> validators;
+    @Autowired
+    private FileDownloadProperties fileDownloadProperties;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig, List<Validator> validators) {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
@@ -480,10 +487,32 @@ public class TabularRowsController {
             .build();
 
         byte[] content = jooqRowsSupplier.downloadFileContentById(id, idColumn, fileContentColName);
-        // if (content == null) {
-        //     return ResponseEntity.notFound().build();
-        // }
-        String resolvedFileName = (fileName != null && !fileName.isBlank()) ? fileName : "downloaded_file.bin";
+        int maxContentSize = fileDownloadProperties != null ? fileDownloadProperties.getMaxDownloadJsonPrettyPrintSizeBytes() : 1 * 1024 * 1024;
+        String resolvedFileName = (fileName != null && !fileName.isBlank()) ? fileName : "downloaded_file.dat";
+        boolean prettifyContent = false;
+        if (fileName != null && !fileName.isBlank()) {
+            try {
+                boolean endsWithJson = fileName.trim().toLowerCase().endsWith(".json");
+                if (endsWithJson && content != null && content.length < maxContentSize) {
+                    prettifyContent = true;
+                }
+                resolvedFileName = fileName;
+            } catch (Exception e) {
+                LOG.debug("fileName check failed, using as-is: {}", e.getMessage());
+                resolvedFileName = fileName;
+            }
+        }
+        if (prettifyContent) {
+            try {
+                // Try to parse and pretty-print the content
+                Object json = objectMapper.readValue(content, Object.class);
+                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+                String prettyJson = writer.writeValueAsString(json);
+                content = prettyJson.getBytes(StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                LOG.debug("File content is not valid JSON, sending as-is: {}", e.getMessage());
+            }
+        }
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
                 .body(content);
