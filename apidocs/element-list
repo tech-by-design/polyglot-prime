@@ -20,6 +20,7 @@ org.techbd.service.http.hub.prime.api
 org.techbd.service.http.hub.prime.health
 org.techbd.service.http.hub.prime.route
 org.techbd.service.http.hub.prime.ux
+org.techbd.service.http.hub.prime.ux.config
 org.techbd.service.http.hub.prime.ux.validator
 org.techbd.udi
 org.techbd.util
