@@ -613,5 +613,10 @@
     "name": "org.techbd.service.http.hub.prime.dataLedgerApiKeySecretName",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.dataLedgerApiKeySecretName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.maxDownloadJsonPrettyPrintSizeMB",
+    "type": "java.lang.String",
+    "description": "Maximum JSON file size (in MB) eligible for pretty-printing during download. JSON downloads smaller than this limit will be formatted for readability. Larger files will be returned as-is to avoid performance overhead."
   }
 ]}
