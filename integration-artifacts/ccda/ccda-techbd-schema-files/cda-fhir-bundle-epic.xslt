@@ -1994,7 +1994,7 @@
   
   <!-- Location Template from Encounters section -->
   <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">
-  <xsl:if test="string($locationResourceId)">
+  <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location/ccda:name) and string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
       "resource": {
