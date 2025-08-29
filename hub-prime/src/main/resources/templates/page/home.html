@@ -54,27 +54,7 @@
         </div>
 
        <div sec:authorize="isAuthenticated()">
-        <div th:if="${sessionUser.provider == 'fusionauth'}"
-          class="p-4 rounded-lg shadow-sm"
-          style="background-color: hsl(259.6261682243, 59.7765363128%, 87.9019607843%);">
-    
-          You're logged in as 
-        <span th:text="${sessionUser.name}">Name</span>
-        (<span th:text="${sessionUser.email}">user@example.com</span>)
-
-    <!-- Roles -->
-          <span class="ml-4 font-semibold">Roles:</span>
-         <span th:each="role : ${sessionUser.roles}"
-           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-1">
-         <span th:text="${role}">ROLE</span>
-        </span>
-
-    <!-- Tenants (Groups) -->
-         <span class="ml-4 font-semibold">Tenants:</span>
-         <span th:each="group : ${sessionUser.groups}"
-          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-1">
-        <span th:text="${group}">Tenant</span>
-       </span>
+      
         </div>
         <div sec:authorize="isAnonymous()">
             <div>You're not logged in so you only have guest privileges.</div>
