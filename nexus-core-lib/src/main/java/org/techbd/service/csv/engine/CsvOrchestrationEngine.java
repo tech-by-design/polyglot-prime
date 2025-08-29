@@ -40,6 +40,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.State;
+import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
@@ -160,7 +161,7 @@ public class CsvOrchestrationEngine {
                 throw new IllegalArgumentException("File must not be null");
             }
             return new OrchestrationSession(sessionId, tenantId, device, file, masterInteractionId, requestParameters,
-                    generateBundle);
+                    generateBundle,CsvProcessingMetrics.builder());
         }
     }
 
@@ -187,6 +188,7 @@ public class CsvOrchestrationEngine {
         private final MultipartFile file;
         private Map<String, Object> validationResults;
         private List<FileDetail> filesNotProcessed;
+        private CsvProcessingMetrics.CsvProcessingMetricsBuilder metricsBuilder;
         private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
         Map<String,Object> requestParameters;
@@ -196,7 +198,7 @@ public class CsvOrchestrationEngine {
                 final MultipartFile file,
                 final String masterInteractionId,
                 final Map<String,Object> requestParameters,
-                boolean generateBundle) {
+                boolean generateBundle,CsvProcessingMetrics.CsvProcessingMetricsBuilder metricsBuilder) {
             this.sessionId = sessionId;
             this.tenantId = tenantId;
             this.device = device;
@@ -207,6 +209,7 @@ public class CsvOrchestrationEngine {
             this.generateBundle = generateBundle;
             this.payloadAndValidationOutcomes = new HashMap<>();
             this.filesNotProcessed = new ArrayList<>();
+            this.metricsBuilder = metricsBuilder;
         }
 
         public boolean isGenerateBundle() {
@@ -243,6 +246,10 @@ public class CsvOrchestrationEngine {
 
         public List<FileDetail> getFilesNotProcessed() {
             return filesNotProcessed;
+        }
+
+        public CsvProcessingMetrics.CsvProcessingMetricsBuilder  getMetricsBuilder() {
+            return metricsBuilder;
         }
 
         public void validate() throws IOException {
@@ -504,6 +511,7 @@ public class CsvOrchestrationEngine {
             result.put("initiatedAt", initiatedAt.toString());
             result.put("completedAt", completedAt.toString());
             result.put("fileNotProcessed", this.filesNotProcessed);
+            result.put("csvProcessingMetrics", metricsBuilder.build());
             return result;
         }
 
@@ -559,13 +567,44 @@ public class CsvOrchestrationEngine {
                             masterInteractionId);
                     throw new FileSystemException("Processed directory not found: " + processedDirPath);
                 }
-
-                // Collect CSV files for validation
                 final List<String> csvFiles = scanForCsvFiles(processedDir, masterInteractionId);
 
                 final Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
+                for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
+                    String groupKey = entry.getKey();
+                    if (groupKey.equals("filesNotProcessed")) {
+                        this.filesNotProcessed = entry.getValue();
+                        combinedValidationResults.add(
+                                createOperationOutcomeForFileNotProcessed(
+                                        masterInteractionId, entry.getValue(), originalFileName));
+                        continue;
+                    }
+                    List<FileDetail> fileDetails = entry.getValue();
+                    Map<String, Object> operationOutcomeForThisGroup;
+                    final String groupInteractionId = UUID.randomUUID().toString();
+                    boolean isGroupValid = false;
+                    
+                    if (isGroupComplete(fileDetails)) {
+                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId, groupKey, fileDetails,
+                                originalFileName);
+                        isGroupValid = extractValidValue(operationOutcomeForThisGroup);
+                    } else {
+                        // Incomplete group - generate error operation outcome
+                        operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
+                                groupKey, fileDetails, originalFileName, masterInteractionId);
+                        log.warn("Incomplete Group - Missing files for group {} for zipFileInteractionId : {}", groupKey, masterInteractionId);
+                    }
 
+                    combinedValidationResults.add(operationOutcomeForThisGroup);
+                    if (generateBundle) {
+                        this.payloadAndValidationOutcomes.put(groupKey,
+                                new PayloadAndValidationOutcome(fileDetails,
+                                        isGroupValid,
+                                        groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
+                                        operationOutcomeForThisGroup));
+                    }
+                }
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
@@ -578,9 +617,12 @@ public class CsvOrchestrationEngine {
                     List<FileDetail> fileDetails = entry.getValue();
                     Map<String, Object> operationOutcomeForThisGroup;
                     final String groupInteractionId = UUID.randomUUID().toString();
+
+                    boolean isGroupValid = false;
                     if (isGroupComplete(fileDetails)) {
                         operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId, groupKey, fileDetails,
                                 originalFileName);
+                        isGroupValid = extractValidValue(operationOutcomeForThisGroup);
                     } else {
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
@@ -592,8 +634,7 @@ public class CsvOrchestrationEngine {
                     if (generateBundle) {
                         this.payloadAndValidationOutcomes.put(groupKey,
                                 new PayloadAndValidationOutcome(fileDetails,
-                                        isGroupComplete(fileDetails) ? extractValidValue(operationOutcomeForThisGroup)
-                                                : false,
+                                        isGroupValid,
                                         groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
                                         operationOutcomeForThisGroup));
                     }
@@ -853,36 +894,67 @@ public class CsvOrchestrationEngine {
 
         private List<String> scanForCsvFiles(final FileObject processedDir, String zipFileInteractionId)
                 throws FileSystemException {
+
             final List<String> csvFiles = new ArrayList<>();
+            int totalNumberOfFiles = 0;
 
             try {
                 final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
-                    log.warn("No children found in processed directory: {} for zipFileInteractionId :{}",
-                            processedDir.getName().getPath(), zipFileInteractionId);
-                    log.warn("No children found in processed directory: {} for zipFileInteractionId :{}",
+                    log.warn("No children found in processed directory: {} for zipFileInteractionId: {}",
                             processedDir.getName().getPath(), zipFileInteractionId);
                     return csvFiles;
                 }
 
                 for (final FileObject child : children) {
-                    // Enhanced null and extension checking
-                    if (child != null
-                            && child.getName() != null
-                            && "csv".equalsIgnoreCase(child.getName().getExtension())) {
+                    if (child == null || child.getName() == null) {
+                        continue;
+                    }
+
+                    final String fileName = child.getName().getBaseName();
+                    // Skip directories
+                    if (child.getType().hasChildren()) {
+                        log.debug("Skipping directory: {} for zipFileInteractionId: {}", fileName,
+                                zipFileInteractionId);
+                        continue;
+                    }
+                    // Skip hidden/system files
+                    if (fileName.startsWith(".") || fileName.endsWith(".lock") || fileName.startsWith("~")) {
+                        log.debug("Skipping hidden/system file: {} for zipFileInteractionId: {}", fileName,
+                                zipFileInteractionId);
+                        continue;
+                    }
+                    // Skip explicitly excluded files
+                    if ("validate-nyher-fhir-ig-equivalent.py".equals(fileName)
+                            || "datapackage-nyher-fhir-ig-equivalent.json".equals(fileName)
+                            || "output.json".equals(fileName)
+                            || (fileName.startsWith(zipFileInteractionId) && fileName.endsWith(".zip"))) {
+                        log.debug("Skipping excluded file: {} for zipFileInteractionId: {}", fileName,
+                                zipFileInteractionId);
+                        continue;
+                    }
+                    // Count all valid files
+                    totalNumberOfFiles++;
+
+                    // Collect only CSV file paths
+                    if ("csv".equalsIgnoreCase(child.getName().getExtension())) {
                         csvFiles.add(child.getName().getPath());
                     }
                 }
 
                 if (csvFiles.isEmpty()) {
-                    log.warn("No CSV files found in directory: {} for zipFileInteractionId :{}", processedDir.getName().getPath(), zipFileInteractionId);
+                    log.warn("No CSV files found in directory: {} for zipFileInteractionId: {}",
+                            processedDir.getName().getPath(), zipFileInteractionId);
                 }
-            } catch (final org.apache.commons.vfs2.FileSystemException e) {
-                log.error("Error collecting CSV files from directory {}: {} for zipFileInteractionId :{}",
-                        processedDir.getName().getPath(), e.getMessage(), zipFileInteractionId,e);
-            }
 
+            } catch (final org.apache.commons.vfs2.FileSystemException e) {
+                log.error("Error collecting files from directory {} for zipFileInteractionId: {} -> {}",
+                        processedDir.getName().getPath(), zipFileInteractionId, e.getMessage(), e);
+            }
+            log.info("Summary for zipFileInteractionId: {} -> Total files: {}, Total CSV files: {}",
+                    zipFileInteractionId, totalNumberOfFiles, csvFiles.size());
+            metricsBuilder.totalNumberOfFilesInZipFile(totalNumberOfFiles);
             return csvFiles;
         }
 
@@ -1035,12 +1107,6 @@ public class CsvOrchestrationEngine {
             }
 
             // Pad with empty strings if fewer than 7 files
-            while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4 (files) //TODO CHECK IF THIS IS
-                                         // NEEDED ACCORDING TO NUMBER OF FILES.
-                command.add("");
-            }
-
-            // Add output path
             // command.add("output.json");
 
             return command;
