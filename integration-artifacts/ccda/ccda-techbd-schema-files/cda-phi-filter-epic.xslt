@@ -65,7 +65,6 @@
             <component>
                 <structuredBody>
                     <!-- Encounter -->
-                    <xsl:if test="not(hl7:componentOf/hl7:encompassingEncounter)">
                         <xsl:variable name="encounterEntry" select="hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]"/>
                         <xsl:if test="$encounterEntry">
                             <component>
@@ -76,8 +75,7 @@
                                 </section>
                             </component>
                         </xsl:if>
-                    </xsl:if>
-
+                    
                     <!-- Observations -->
                     <xsl:variable name="observations" select="hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='29762-2']]/hl7:entry[
                         hl7:observation/hl7:entryRelationship/hl7:observation/hl7:entryRelationship/hl7:observation[
