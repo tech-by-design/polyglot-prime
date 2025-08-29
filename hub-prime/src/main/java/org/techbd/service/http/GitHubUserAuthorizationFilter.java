@@ -96,7 +96,7 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                var adaptedUser = adaptFusionUserToGitHubFormat(user);
                setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, adaptedUser));
                fusionAuthUsersService.convertToJson(enrichedOAuth2User);
-               LOG.info("FusionAuth user authenticated: {}", user.email());
+               LOG.info("FusionAuth user authenticated: {} ,{}", user.email() ,user.roles());
             }
 
             } catch (Exception e) {
