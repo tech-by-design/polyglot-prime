@@ -33,9 +33,6 @@ public class CsvProcessingMetrics {
      */
     private int numberOfFhirBundlesGeneratedFromZipFile;
 
-    /** Number of FHIR resources successfully created from CSV data. */
-    private int numberOfGeneratedBundlesSendToNyecApi;
-
     /**
      * Tracks overall validation result for ZIP file processing.
      * Default is "Success". If any errors occur (e.g., UTF-8 encoding issues,
@@ -43,5 +40,5 @@ public class CsvProcessingMetrics {
      * this will be set to "Failed".
      */
     @Builder.Default
-    private CsvDataValidationStatus dataValidationStatus = CsvDataValidationStatus.SUCCESS;
+    private String dataValidationStatus = CsvDataValidationStatus.SUCCESS.getDescription();
  }

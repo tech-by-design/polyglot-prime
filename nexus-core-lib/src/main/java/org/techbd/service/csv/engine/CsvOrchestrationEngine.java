@@ -40,6 +40,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.State;
+import org.techbd.model.csv.CsvDataValidationStatus;
 import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
@@ -259,7 +260,7 @@ public class CsvOrchestrationEngine {
             final String originalFilename = file.getOriginalFilename();
             // Trigger CSV processing and validation
             this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-            saveCombinedValidationResults(validationResults, masterInteractionId);
+            saveCombinedValidationResults(validationResults, masterInteractionId,metricsBuilder.build());
             log.info("CsvOrchestrationEngine : validate - file : {} END for zipFileInteractionid : {}",
                     file.getOriginalFilename(), masterInteractionId);
         }
@@ -423,7 +424,7 @@ public class CsvOrchestrationEngine {
         }
 
         private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
-                final String masterInteractionId) {
+                final String masterInteractionId,CsvProcessingMetrics metrics) {
             log.info("SaveCombinedValidationResults: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = coreUdiPrimeJpaConfig.dsl();
@@ -433,12 +434,13 @@ public class CsvOrchestrationEngine {
             try {
                 initRIHR.setInteractionId(masterInteractionId);
                 initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature("Update Zip File Payload");
+                initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 initRIHR.setValidationResultPayload(
                         (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
+                initRIHR.setElaboration(null != metrics ? (JsonNode) Configuration.objectMapper.valueToTree(metrics) : null);        
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -511,7 +513,6 @@ public class CsvOrchestrationEngine {
             result.put("initiatedAt", initiatedAt.toString());
             result.put("completedAt", completedAt.toString());
             result.put("fileNotProcessed", this.filesNotProcessed);
-            result.put("csvProcessingMetrics", metricsBuilder.build());
             return result;
         }
 
@@ -578,6 +579,7 @@ public class CsvOrchestrationEngine {
                         combinedValidationResults.add(
                                 createOperationOutcomeForFileNotProcessed(
                                         masterInteractionId, entry.getValue(), originalFileName));
+                        metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -590,12 +592,15 @@ public class CsvOrchestrationEngine {
                                 originalFileName);
                         isGroupValid = extractValidValue(operationOutcomeForThisGroup);
                     } else {
+                        metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
                                 groupKey, fileDetails, originalFileName, masterInteractionId);
                         log.warn("Incomplete Group - Missing files for group {} for zipFileInteractionId : {}", groupKey, masterInteractionId);
                     }
-
+                    if (!isGroupValid) {
+                        metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+                    }
                     combinedValidationResults.add(operationOutcomeForThisGroup);
                     if (generateBundle) {
                         this.payloadAndValidationOutcomes.put(groupKey,
@@ -604,41 +609,7 @@ public class CsvOrchestrationEngine {
                                         groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
                                         operationOutcomeForThisGroup));
                     }
-                }
-                for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
-                    String groupKey = entry.getKey();
-                    if (groupKey.equals("filesNotProcessed")) {
-                        this.filesNotProcessed =entry.getValue();
-                        combinedValidationResults.add(
-                                createOperationOutcomeForFileNotProcessed(
-                                        masterInteractionId, entry.getValue(), originalFileName));
-                        continue;
-                    }
-                    List<FileDetail> fileDetails = entry.getValue();
-                    Map<String, Object> operationOutcomeForThisGroup;
-                    final String groupInteractionId = UUID.randomUUID().toString();
-
-                    boolean isGroupValid = false;
-                    if (isGroupComplete(fileDetails)) {
-                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId, groupKey, fileDetails,
-                                originalFileName);
-                        isGroupValid = extractValidValue(operationOutcomeForThisGroup);
-                    } else {
-                        // Incomplete group - generate error operation outcome
-                        operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
-                                groupKey, fileDetails, originalFileName, masterInteractionId);
-                        log.warn("Incomplete Group - Missing files for group {} for zipFileInteractionId : {}", groupKey, masterInteractionId);
-                    }
-
-                    combinedValidationResults.add(operationOutcomeForThisGroup);
-                    if (generateBundle) {
-                        this.payloadAndValidationOutcomes.put(groupKey,
-                                new PayloadAndValidationOutcome(fileDetails,
-                                        isGroupValid,
-                                        groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
-                                        operationOutcomeForThisGroup));
-                    }
-                }
+                }               
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, requestParameters,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
