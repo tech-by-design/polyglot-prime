@@ -86,7 +86,14 @@ public class DataIngestionController {
      * @return A response entity containing the result of the ingestion process.
      * @throws Exception If an error occurs during processing.
      */
-    @PostMapping(value = "/ingest", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.ALL_VALUE })
+    @PostMapping(value = "/ingest", consumes = { 
+        MediaType.MULTIPART_FORM_DATA_VALUE, 
+        "multipart/related", 
+        "application/xop+xml", 
+        MediaType.TEXT_XML_VALUE,
+        MediaType.APPLICATION_XML_VALUE,
+        MediaType.ALL_VALUE 
+    })
     public ResponseEntity<String> ingest(
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestBody(required = false) String body,
@@ -141,7 +148,12 @@ public class DataIngestionController {
      * @return A response entity containing the result of the ingestion process.
      * @throws Exception If an error occurs during processing.
      */
-    @PostMapping(value = "/hold", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.ALL_VALUE })
+    @PostMapping(value = "/hold", consumes = { 
+        MediaType.MULTIPART_FORM_DATA_VALUE, 
+        "multipart/related", // MTOM support
+        "application/xop+xml", // XOP support
+        MediaType.ALL_VALUE 
+    })
     public ResponseEntity<String> hold(
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestBody(required = false) String body,

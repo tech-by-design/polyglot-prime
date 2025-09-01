@@ -1,3 +1,9 @@
+server:
+  port: ${SERVER_PORT:8080}
+  max-http-request-size: ${MAX_HTTP_REQUEST_SIZE:50MB}
+  tomcat:
+    max-swallow-size: ${MAX_SWALLOW_SIZE:50MB}
+    max-http-form-post-size: ${MAX_HTTP_FORM_POST_SIZE:50MB}
 org:
   techbd:
     aws:
@@ -24,8 +30,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: ${MULTIPART_FILE_SIZE:10MB}
-      max-request-size: ${MULTIPART_FILE_SIZE:10MB}
+      max-file-size: ${MULTIPART_FILE_SIZE:50MB}
+      max-request-size: ${MULTIPART_REQUEST_SIZE:50MB}
       file-size-threshold: 2MB
       resolve-lazily: true
 management:

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -96,6 +97,8 @@
   </xsl:variable>
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
+
+ <xsl:variable name="encounterStatus" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:statusCode/@code"/>
 
   <!-- Get Organization name from the first encounter entry -->
   <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
@@ -552,7 +555,7 @@
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -652,6 +655,7 @@
 
   <!-- Encounter Template -->
   <xsl:template name="ComponentEncounter" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter">
+    <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:code/@code)">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
@@ -661,12 +665,8 @@
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
-        <!-- "identifier" : [{          
-          "system" : "urn:oid:<xsl:value-of select="ccda:id/@root"/>",
-          "value" : "<xsl:value-of select="ccda:id/@extension"/>"
-        }], -->
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -698,7 +698,6 @@
           "display" : "<xsl:value-of select="$patientResourceName"/>"
         }
         <xsl:choose>
-          <!-- Check if low or high exists -->
           <xsl:when test="string(ccda:effectiveTime/ccda:low/@value) or string(ccda:effectiveTime/ccda:high/@value)">
             , "period": {
               "start": "<xsl:call-template name='formatDateTime'>
@@ -709,7 +708,6 @@
                     </xsl:call-template>"
             }
           </xsl:when>
-          <!-- Check if only value exists -->
           <xsl:when test="string(ccda:effectiveTime/@value)">
             , "period": {
               "start": "<xsl:call-template name='formatDateTime'>
@@ -762,6 +760,7 @@
         "url" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>"
       }
     }
+    </xsl:if>
   </xsl:template>
 
   <!-- Consent Template -->
@@ -1431,18 +1430,19 @@
     </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapEncounterStatus">
+<xsl:template name="mapEncounterStatus"> 
     <xsl:param name="statusCode"/>
+    <xsl:variable name="cleanCode" select="normalize-space(string($statusCode))"/>
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed' or 
-                        $statusCode = 'normal'">finished</xsl:when>
-        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled' or 
-                        $statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
-        <xsl:when test="$statusCode = 'nullified' or 
-                        $statusCode = 'corrected'">entered-in-error</xsl:when>
-        <xsl:when test="$statusCode = 'new'">planned</xsl:when>
+        <xsl:when test="$cleanCode = 'completed' or 
+                        $cleanCode = 'normal'">finished</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled' or 
+                        $cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">on-hold</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified' or 
+                        $cleanCode = 'corrected'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'new'">planned</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1991,10 +1991,10 @@
     }
   </xsl:if>
   </xsl:template>
-
+  
   <!-- Location Template from Encounters section -->
   <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">
-  <xsl:if test="string($locationResourceId)">
+  <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location/ccda:name) and string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
       "resource": {
@@ -2009,7 +2009,7 @@
         </xsl:if>
 
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address":
+            , "address": 
                     {
                         <xsl:if test="string(ccda:addr/@use)">
                             "use": "<xsl:choose>
@@ -2067,7 +2067,7 @@
                                 </xsl:if>
                             }
                         </xsl:if>
-                    }
+                    } 
         </xsl:if>
       },
       "request" : {
@@ -2077,7 +2077,7 @@
     }
   </xsl:if>
   </xsl:template>
-
+  
   <xsl:template name="mapScreeningCodeDisplay">
     <xsl:param name="screeningCode"/>
     <xsl:choose>

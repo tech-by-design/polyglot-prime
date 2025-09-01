@@ -116,6 +116,9 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
+        PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(response);
         s3UploadStep.process(context, content, null, SourceType.REST);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
@@ -136,9 +139,11 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
+        PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(response);
         s3UploadStep.process(context, content, ackMessage, SourceType.SOAP);
 
-        // Verify uploads: metadata, content, and ack
         verify(s3Client, times(3)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }

@@ -28,6 +28,7 @@ import org.techbd.config.Nature;
 import org.techbd.config.Origin;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
+import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.service.csv.engine.CsvOrchestrationEngine;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
@@ -89,7 +90,7 @@ public class CsvService {
             LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
                     zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
             Map<String, Object> fullOperationOutcome =  session.getValidationResults();
-            saveMiscErrorsForValidation(session.getFilesNotProcessed(), zipFileInteractionId, requestParameters, file.getOriginalFilename());
+            saveMiscErrorsForValidation(session.getFilesNotProcessed(), zipFileInteractionId, requestParameters, file.getOriginalFilename(),session.getMetricsBuilder().build());
             saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
             return fullOperationOutcome;
         } finally {
@@ -251,7 +252,7 @@ public class CsvService {
                     responseParams,
                     tenantId,
                     file.getOriginalFilename(),
-                    (String) requestParams.get(Constants.BASE_FHIR_URL));
+                    (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
 
             saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
@@ -304,7 +305,7 @@ public class CsvService {
                         responseParams,
                         tenantId,
                         file.getOriginalFilename(),
-                        (String) requestParams.get(Constants.BASE_FHIR_URL));
+                        (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
 
                 saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
                 LOG.info("Asynchronous processing completed for zipFileInteractionId: {}",
@@ -440,7 +441,7 @@ public class CsvService {
     }
     
     private void saveMiscErrorsForValidation(final List<org.techbd.model.csv.FileDetail> filesNotProcessed,
-            final String masterInteractionId, final Map<String, Object> requestParameters, final String originalFileName) {
+            final String masterInteractionId, final Map<String, Object> requestParameters, final String originalFileName, CsvProcessingMetrics metricsBuilder) {
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
             return;
         }
@@ -463,6 +464,7 @@ public class CsvService {
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setZipFileProcessingErrors(
                     (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
+            initRIHR.setElaboration((JsonNode) Configuration.objectMapper.valueToTree(metricsBuilder));
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
