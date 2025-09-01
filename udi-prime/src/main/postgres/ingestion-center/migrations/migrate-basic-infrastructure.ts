@@ -543,6 +543,16 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
     sqlNS: ingressSchema
 });
 
+const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
+  bundle_id: text(),
+  hub_interaction_id: text(),
+  retry_interaction_id: text(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1077,6 +1087,17 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE techbd_udi_ingress.link_nexus_interaction
           ADD CONSTRAINT link_nexus_interaction_pkey
           PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
+      END IF;
+
+      ${ccdaReplayDetails}
+      CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ccda_replay_details_bundle_id_key'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.ccda_replay_details
+          ADD CONSTRAINT ccda_replay_details_bundle_id_key UNIQUE (bundle_id);
       END IF;
 
       IF NOT EXISTS (

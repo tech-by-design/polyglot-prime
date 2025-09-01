@@ -7846,3 +7846,327 @@ BEGIN
     LIMIT v_limit;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_xml_content_from_mirth_fdw(p_bundle_id text)
+RETURNS TEXT LANGUAGE plpgsql AS
+$$
+DECLARE
+    v_xml TEXT := NULL;
+    v_channel_id int;
+    v_table text;
+    v_sql text;
+BEGIN
+    -- Find the channel id
+    SELECT dc.local_channel_id
+    INTO v_channel_id
+    FROM techbd_udi_ingress.d_channels dc
+    INNER JOIN techbd_udi_ingress.channel c ON c.id = dc.channel_id
+    WHERE c.name = 'TechBD CCD Workflow';
+
+    -- Build the foreign table name (e.g., d_mc8)
+    v_table := format('d_mc%s', v_channel_id);
+
+    -- Build the SQL dynamically
+    v_sql := format($f$
+        SELECT mc.content
+        FROM techbd_udi_ingress.%I mc
+        JOIN techbd_udi_ingress.%I mc2
+          ON mc.message_id = mc2.message_id
+         AND mc2.metadata_id = 2
+         AND mc2.content_type = 11
+         AND mc2.content LIKE '%%' || %L || '%%'
+        WHERE mc.metadata_id = 2
+          AND mc.content_type = 3
+        LIMIT 1
+    $f$, v_table, v_table, p_bundle_id);
+
+	-- Execute dynamic SQL and put result into v_xml
+    EXECUTE v_sql INTO v_xml;
+
+    RETURN v_xml;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.merge_bundle_resource_ids(p_new_bundle JSONB, p_bundle_id text)
+RETURNS JSONB LANGUAGE plpgsql AS
+$$
+DECLARE
+    v_bundle_id1 TEXT;
+    v_consent_id1 TEXT;
+    v_bundle_id2 TEXT;
+    v_consent_id2 TEXT;
+    v_obs_map JSONB;  -- mapping of obs2.id -> obs1.id
+    v_corrected_bundle JSONB;
+	v_hub_interaction_id text;
+	v_payload JSONB;
+BEGIN
+	IF p_bundle_id IS NULL THEN
+        RETURN jsonb_build_object('error', 'bundle_id is empty', 
+								  'merge_success', false);
+    END IF;
+	IF p_new_bundle IS NULL THEN
+        RETURN jsonb_build_object('error', 'new_bundle is empty', 
+								  'merge_success', false);
+    END IF;
+
+	IF p_bundle_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM techbd_udi_ingress.ccda_replay_details
+        WHERE bundle_id = p_bundle_id
+    ) THEN
+        RETURN jsonb_build_object('error', 'bundle_id is already re-submitted', 
+								  'merge_success', false,
+								  'bundle_id', p_bundle_id);
+    END IF;	
+
+	SELECT r.hub_interaction_id, r.payload
+		INTO v_hub_interaction_id, v_payload
+		FROM techbd_udi_ingress.sat_interaction_fhir_request r
+		WHERE r.nature = 'Original FHIR Payload'
+		  AND r.payload->>'id' = p_bundle_id
+		  AND r.payload IS NOT NULL;
+
+    -- Extract bundle IDs
+    v_bundle_id1 := v_payload->>'id';
+    v_bundle_id2 := p_new_bundle->>'id';
+
+    -- Extract Consent IDs
+    SELECT e->'resource'->>'id'
+    INTO v_consent_id1
+    FROM jsonb_array_elements(v_payload->'entry') e
+    WHERE e->'resource'->>'resourceType' = 'Consent'
+    LIMIT 1;
+
+    SELECT e->'resource'->>'id'
+    INTO v_consent_id2
+    FROM jsonb_array_elements(p_new_bundle->'entry') e
+    WHERE e->'resource'->>'resourceType' = 'Consent'
+    LIMIT 1;
+
+    -- Build a mapping of Observation IDs (hasMember only) between v_payload and p_new_bundle
+    SELECT jsonb_object_agg(obs2.id2, obs1.id1)
+    INTO v_obs_map
+    FROM (
+        SELECT row_number() OVER () rn, e->'resource'->>'id' id1
+        FROM jsonb_array_elements(v_payload->'entry') e
+        WHERE e->'resource'->>'resourceType' = 'Observation'
+          AND e->'resource' ? 'hasMember'
+    ) obs1
+    JOIN (
+        SELECT row_number() OVER () rn, e->'resource'->>'id' id2
+        FROM jsonb_array_elements(p_new_bundle->'entry') e
+        WHERE e->'resource'->>'resourceType' = 'Observation'
+          AND e->'resource' ? 'hasMember'
+    ) obs2 ON obs1.rn = obs2.rn;
+
+    -- Start with p_new_bundle but replace its bundle ID
+    v_corrected_bundle := jsonb_set(p_new_bundle, '{id}', to_jsonb(v_bundle_id1));
+
+    -- Walk through entries and fix Consent + targeted Observations
+    v_corrected_bundle := jsonb_set(
+        v_corrected_bundle,
+        '{entry}',
+        (
+            SELECT jsonb_agg(
+                CASE
+                    -- Fix Consent resource
+                    WHEN e->'resource'->>'resourceType' = 'Consent'
+                    THEN
+                        jsonb_set(
+                            jsonb_set(
+                                jsonb_set(e, '{resource,id}', to_jsonb(v_consent_id1)),
+                                '{fullUrl}', to_jsonb(
+                                    regexp_replace(e->>'fullUrl', v_consent_id2, v_consent_id1)
+                                )
+                            ),
+                            '{request,url}', to_jsonb(
+                                regexp_replace(e#>>'{request,url}', v_consent_id2, v_consent_id1)
+                            )
+                        )
+
+                    -- Fix Observation (hasMember only) but skip hasMember content
+                    WHEN e->'resource'->>'resourceType' = 'Observation'
+                         AND e->'resource' ? 'hasMember'
+                    THEN
+                        (
+                            WITH new_id AS (
+                                SELECT v_obs_map->>(e->'resource'->>'id') AS id1,
+                                       e->'resource'->>'id' AS id2
+                            )
+                            SELECT jsonb_set(
+                                jsonb_set(
+                                    jsonb_set(e, '{resource,id}', to_jsonb(new_id.id1)),
+                                    '{fullUrl}', to_jsonb(
+                                        regexp_replace(e->>'fullUrl', new_id.id2, new_id.id1)
+                                    )
+                                ),
+                                '{request,url}', to_jsonb(
+                                    regexp_replace(e#>>'{request,url}', new_id.id2, new_id.id1)
+                                )
+                            )
+                            FROM new_id
+                        )
+
+                    ELSE e
+                END
+            )
+            FROM jsonb_array_elements(v_corrected_bundle->'entry') e
+        )
+    );
+
+	--Remove extra array from category -> coding in grouper observation and array of address in Location resource, if any
+	v_corrected_bundle := techbd_udi_ingress.fix_fhir_bundle_payload(v_corrected_bundle);
+
+	INSERT INTO techbd_udi_ingress.ccda_replay_details (bundle_id,	hub_interaction_id,	retry_interaction_id, provenance)
+		VALUES(p_bundle_id, v_hub_interaction_id, null, 'replay ccda');
+
+    RETURN jsonb_build_object(
+		'hub_interaction_id', v_hub_interaction_id,
+	    'bundle_id', p_bundle_id,
+		'original_payload', v_payload,
+		'new_bundle_generated', p_new_bundle,
+	    'corrected_bundle', v_corrected_bundle,
+		'merge_success', true
+	);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.fix_fhir_bundle_payload(p_bundle JSONB)
+RETURNS JSONB LANGUAGE plpgsql AS
+$$
+DECLARE
+    v_entry JSONB;
+    v_idx   INT := 0;
+    v_fixed JSONB := p_bundle;
+BEGIN
+    -- Loop through entries
+    FOR v_idx IN 0 .. COALESCE(jsonb_array_length(p_bundle->'entry') - 1, -1) LOOP
+        v_entry := p_bundle->'entry'->v_idx;
+
+        -- CASE 1: Observation with hasMember and category.coding is array of arrays
+        IF (v_entry->'resource'->>'resourceType') = 'Observation'
+           AND (v_entry->'resource' ? 'hasMember')
+           AND jsonb_typeof(v_entry->'resource'->'category') = 'array'
+        THEN
+            v_fixed := jsonb_set(
+                v_fixed,
+                ARRAY['entry', v_idx::text, 'resource', 'category'],
+                (
+                    SELECT jsonb_agg(
+                               jsonb_set(
+                                   cat,
+                                   '{coding}',
+                                   CASE
+                                       WHEN jsonb_typeof(cat->'coding') = 'array'
+                                            AND jsonb_typeof(cat->'coding'->0) = 'array'
+                                       THEN (cat->'coding'->0)
+                                       ELSE (cat->'coding')
+                                   END
+                               )
+                           )
+                    FROM jsonb_array_elements(v_entry->'resource'->'category') AS cat
+                ),
+                false
+            );
+        END IF;
+
+        -- CASE 2: Location with address as single-element array
+        IF (v_entry->'resource'->>'resourceType') = 'Location'
+           AND jsonb_typeof(v_entry->'resource'->'address') = 'array'
+           AND jsonb_array_length(v_entry->'resource'->'address') = 1
+        THEN
+            v_fixed := jsonb_set(
+                v_fixed,
+                ARRAY['entry', v_idx::text, 'resource', 'address'],
+                (v_entry->'resource'->'address'->0),
+                false
+            );
+        END IF;
+
+    END LOOP;
+
+    RETURN v_fixed;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.ccda_replay_details_upserted(text, text, text, timestamptz, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.ccda_replay_details_upserted(p_bundle_id text, p_hub_interaction_id text, p_retry_interaction_id text, p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_created_by text DEFAULT NULL::text, p_provenance text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_error_msg 			TEXT;
+    v_error_type 			TEXT;
+    v_sqlstate 				TEXT;
+    v_pg_detail 			TEXT;
+    v_pg_hint 				TEXT;
+    v_pg_context 			TEXT;
+    v_created_at 			TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
+    v_created_by 			TEXT 		:= COALESCE(p_created_by, current_user);
+    v_provenance 			TEXT 		:= COALESCE(p_provenance, 'replay ccda');
+    v_exception_id 			TEXT 		:= gen_random_uuid()::text;
+   	v_hub_interaction_key 	TEXT;
+   	v_return				TEXT;
+	v_elaboration 			JSONB;   	
+
+BEGIN
+	/*---register diagnostic log---*/
+	v_elaboration := jsonb_build_object(
+							'old interaction_id', p_hub_interaction_id,
+							'bundle_id', p_bundle_id,
+							'retry_interaction_id', p_retry_interaction_id
+							);
+	CALL techbd_udi_ingress.register_diagnostic_log(
+			v_exception_id, v_hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
+			'Input parameters into ccda_replay_details_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+	/*------------------------------*/
+
+  	IF p_bundle_id IS NULL OR p_hub_interaction_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+	IF p_bundle_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM techbd_udi_ingress.ccda_replay_details
+        WHERE bundle_id = p_bundle_id
+    ) THEN
+        UPDATE techbd_udi_ingress.ccda_replay_details
+			SET hub_interaction_id 		= p_hub_interaction_id,
+				retry_interaction_id 	= p_retry_interaction_id,
+				created_at				= v_created_at,
+				created_by 				= v_created_by,
+				provenance				= v_provenance
+		WHERE bundle_id = p_bundle_id;
+		v_return = p_bundle_id;
+    ELSE
+		INSERT INTO techbd_udi_ingress.ccda_replay_details (bundle_id,	hub_interaction_id,	retry_interaction_id, provenance)
+		VALUES(p_bundle_id, p_hub_interaction_id, p_retry_interaction_id, v_provenance);
+		--RETURNING bundle_id INTO v_return;
+		v_return = p_bundle_id;
+	END IF;	
+	RETURN v_return;
+EXCEPTION
+	WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		    
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		v_hub_interaction_key,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+	RETURN NULL;
+END;
+$function$
+;
