@@ -1483,7 +1483,7 @@ DECLARE
     v_exception_id 					TEXT := gen_random_uuid()::text;
    	v_hub_interaction_key 			TEXT;
    	v_return						TEXT;
-   	v_client_ip_address				TEXT;
+   	v_client_ip_address				TEXT := NULL;
    	v_client_ip_address_forwarded	TEXT := NULL;
    	v_user_agent		    		TEXT;
    	v_intr_start_time 				TIMESTAMPTZ := NULL;
@@ -1523,27 +1523,38 @@ BEGIN
 		v_intr_start_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
 		v_intr_finish_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 		v_techbd_version_number	:= p_additional_details->'version'->>'techbd_version_number';
-	ELSE
-	  	-- Extract Observability Metrics Start and Finish Time
-		SELECT
-		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Start-Time' THEN header->>'value' ELSE NULL END),
-		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time' THEN header->>'value' ELSE NULL END) 
-		INTO v_intr_start_time,v_intr_finish_time
-		FROM jsonb_array_elements(sat_interaction_user_upserted.payload->'response'->'headers') AS header
-		;
-	
-		-- Extract Client IP Address
-	   	v_client_ip_address := sat_interaction_user_upserted.payload -> 'request'->>'clientIpAddress';
-	
-		-- Extract Client IP Address Forwarded
-	    SELECT h.value ->> 'value'::text INTO v_client_ip_address_forwarded
-	    FROM jsonb_array_elements((sat_interaction_user_upserted.payload -> 'request'::text) -> 'headers'::text) h(value)
-	    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;
-	   
-	   -- Extract User Agent
-	   	v_user_agent := sat_interaction_user_upserted.payload -> 'request'->>'userAgent';
 	END IF;
 
+  	-- Extract Observability Metrics Start and Finish Time
+	IF v_intr_start_time IS NULL THEN
+		SELECT
+		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Start-Time' THEN header->>'value' ELSE NULL END)
+		INTO v_intr_start_time
+		FROM jsonb_array_elements(sat_interaction_user_upserted.payload->'response'->'headers') AS header;
+	END IF;
+	
+	IF v_intr_finish_time IS NULL THEN
+		SELECT
+		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time' THEN header->>'value' ELSE NULL END) 
+		INTO v_intr_finish_time
+		FROM jsonb_array_elements(sat_interaction_user_upserted.payload->'response'->'headers') AS header;
+	END IF;
+
+	-- Extract Client IP Address
+	IF v_client_ip_address IS NULL THEN
+   		v_client_ip_address := sat_interaction_user_upserted.payload -> 'request'->>'clientIpAddress';
+	END IF;
+
+	-- Extract Client IP Address Forwarded
+    SELECT h.value ->> 'value'::text INTO v_client_ip_address_forwarded
+    FROM jsonb_array_elements((sat_interaction_user_upserted.payload -> 'request'::text) -> 'headers'::text) h(value)
+    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;
+   
+   -- Extract User Agent
+	IF v_user_agent IS NULL THEN
+   		v_user_agent := sat_interaction_user_upserted.payload -> 'request'->>'userAgent';
+	END IF;
+	
     INSERT INTO techbd_udi_ingress.sat_interaction_user (
 		sat_interaction_user_id,
 		hub_interaction_id,
