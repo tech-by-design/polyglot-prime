@@ -85,23 +85,23 @@
                                   
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-0"> <span sec:authentication="principal.attributes['name']" class="font-bold"></span></a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
+                                <!-- <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-0"><span sec:authentication="principal.attributes['role']" class="font-bold"></span></a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
-                                    id="user-menu-item-0"><span sec:authentication="principal.attributes['groupNames']" class="font-bold"></span></a>                                    
+                                    id="user-menu-item-0"><span sec:authentication="principal.attributes['groupNames']" class="font-bold"></span></a>                                     -->
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-0">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-1">Settings</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-2">Sign out</a>
-                                 <button onclick="checkDbRole()" 
+                                 <!-- <button onclick="checkDbRole()" 
                                         class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-200"
                                         role="menuitem">
                                     Check DB Role
-                                </button>
+                                </button> -->
                             </div>
-                            <script>
+                            <!-- <script>
                             async function checkDbRole() {
                                 try {
                                     let res = await fetch('/api/debug/db-role');
@@ -111,7 +111,7 @@
                                     console.error("Error fetching role", e);
                                 }
                             }
-                            </script>              
+                            </script>               -->
                              <script>
                         document.addEventListener('DOMContentLoaded', function () { 
                             const userMenuButton = document.getElementById('user-menu-button');
