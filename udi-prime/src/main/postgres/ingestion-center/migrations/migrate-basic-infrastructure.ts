@@ -545,8 +545,8 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
 
 const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
   bundle_id: text(),
-  hub_interaction_id: text(),
-  retry_interaction_id: text(),
+  hub_interaction_id: textNullable(),
+  retry_interaction_id: textNullable(),
   ...dvts.housekeeping.columns
 }, {
   isIdempotent: true,
@@ -1099,6 +1099,8 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE techbd_udi_ingress.ccda_replay_details
           ADD CONSTRAINT ccda_replay_details_bundle_id_key UNIQUE (bundle_id);
       END IF;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN retry_interaction_id DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN hub_interaction_id DROP NOT NULL;
 
       IF NOT EXISTS (
           SELECT 1
