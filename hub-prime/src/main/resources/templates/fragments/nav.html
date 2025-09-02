@@ -93,25 +93,14 @@
                                     id="user-menu-item-0">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-1">Settings</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
-                                    id="user-menu-item-2">Sign out</a>
-                                 <!-- <button onclick="checkDbRole()" 
-                                        class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-200"
-                                        role="menuitem">
-                                    Check DB Role
-                                </button> -->
+                                <form action="/logout" method="get">
+                                <button type="submit"
+                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="menuitem" tabindex="-1" id="user-menu-item-2">
+                                    Sign out
+                                </button>
+                                </form>
                             </div>
-                            <!-- <script>
-                            async function checkDbRole() {
-                                try {
-                                    let res = await fetch('/api/debug/db-role');
-                                    let json = await res.json();
-                                    console.log("DB Role Info:", json);
-                                } catch (e) {
-                                    console.error("Error fetching role", e);
-                                }
-                            }
-                            </script>               -->
                              <script>
                         document.addEventListener('DOMContentLoaded', function () { 
                             const userMenuButton = document.getElementById('user-menu-button');

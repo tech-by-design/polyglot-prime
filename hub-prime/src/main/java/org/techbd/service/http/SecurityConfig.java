@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.web.cors.CorsConfiguration;
@@ -67,11 +69,11 @@ public class SecurityConfig {
                                 .successHandler(oAuth2LoginSuccessHandler())
                                 .defaultSuccessUrl(Constant.HOME_PAGE_URL)
                                 .loginPage(Constant.LOGIN_PAGE_URL))
-                .logout(
-                        logout -> logout
-                                .deleteCookies(Constant.SESSIONID_COOKIE)
-                                .logoutSuccessUrl(Constant.LOGOUT_PAGE_URL)
-                                .invalidateHttpSession(true)
+               .logout(logout -> logout
+                                .deleteCookies(Constant.SESSIONID_COOKIE)   // clear JSESSIONID (or your custom session cookie)
+                                .invalidateHttpSession(true)                // kill server-side session
+                                .clearAuthentication(true)  
+                                .logoutSuccessHandler(customLogoutSuccessHandler())
                                 .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
@@ -133,5 +135,18 @@ public class SecurityConfig {
             response.sendRedirect(targetUrl);
         }
     }
+
+    @Bean
+    public LogoutSuccessHandler customLogoutSuccessHandler() {
+    return (request, response, authentication) -> {
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+        }
+        String fusionAuthLogoutUrl = "https://technology-by-design-dev.fusionauth.io/oauth2/logout"
+                + "?client_id=79425b8d-50cc-40fd-af2e-55ccb26422a5"
+                + "&post_logout_redirect_uri=https://hub.fo.dev.techbd.org/";
+        response.sendRedirect(fusionAuthLogoutUrl);
+    };
+}
 
 }
