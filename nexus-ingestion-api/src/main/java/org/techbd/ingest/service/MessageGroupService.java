@@ -1,13 +1,18 @@
 
 package org.techbd.ingest.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.commons.SourceType;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
+
+import com.amazonaws.services.kms.model.MessageType;
 
 /**
  * Service responsible for generating a unique message group ID
@@ -42,28 +47,31 @@ public class MessageGroupService {
         String destinationIp = context.getDestinationIp();
         String destinationPort = context.getDestinationPort();
         String tenantId = context.getTenantId();
-        String sourceType = context.getSourceType(); // Enum type now
+        MessageSourceType messageSourceType = context.getMessageSourceType();
+        String messageGroupId = Constants.DEFAULT_MESSAGE_GROUP_ID;
 
-        var messageGroupId = Constants.DEFAULT_MESSAGE_GROUP_ID;
-
-        if (sourceType.equals(SourceType.MLLP.name())) {
-            if (isBlank(destinationPort)) {
-                logger.warn("Missing destinationPort for MLLP. Using default message group. interactionId='{}'",
-                        interactionId);
-            } else {
+        if (MessageSourceType.MLLP == messageSourceType) {
+            if (StringUtils.isNotBlank(destinationPort)) {
                 messageGroupId = destinationPort.trim();
+            } else {
+                logger.warn("MLLP source but no destination port. Using default group. interactionId='{}'",
+                        interactionId);
             }
         } else if (StringUtils.isNotBlank(tenantId)) {
             messageGroupId = tenantId.trim();
         } else {
-            // Case 3: Default to sourceIp + destinationIp + destinationPort
-            if (isBlank(sourceIp) || isBlank(destinationIp) || isBlank(destinationPort)) {
-                logger.warn("Incomplete request context. Using default message group. "
-                        + "sourceIp='{}', destinationIp='{}', destinationPort='{}', interactionId='{}'",
-                        sourceIp, destinationIp, destinationPort, interactionId);
+            List<String> parts = new ArrayList<>();
+            if (StringUtils.isNotBlank(sourceIp))
+                parts.add(sourceIp.trim());
+            if (StringUtils.isNotBlank(destinationIp))
+                parts.add(destinationIp.trim());
+            if (StringUtils.isNotBlank(destinationPort))
+                parts.add(destinationPort.trim());
+            if (!parts.isEmpty()) {
+                messageGroupId = String.join("_", parts);
             } else {
-                messageGroupId = String.format("%s_%s_%s", sourceIp.trim(), destinationIp.trim(),
-                        destinationPort.trim());
+                logger.warn("No context values available. Using default message group. interactionId='{}'",
+                        interactionId);
             }
         }
 
@@ -72,7 +80,4 @@ public class MessageGroupService {
         return messageGroupId;
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
 }
