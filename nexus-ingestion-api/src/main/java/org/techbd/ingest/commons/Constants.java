@@ -1,4 +1,7 @@
 package org.techbd.ingest.commons;
+
+import java.time.format.DateTimeFormatter;
+
 /**
  * Constants class holds various constants used throughout the application.
  * <p>
@@ -28,4 +31,6 @@ public class Constants {
     public static final String REQUEST_CONTEXT ="REQUEST_CONTEXT";
     public static final String INTERACTION_ID = "interactionId";
     public static final String CAMEL_MLLP_LOCAL_ADDRESS = "CamelMllpLocalAddress";
+    public static final String CAMEL_MLLP_REMOTE_ADDRESS = "CamelMllpRemoteAddress";
+    public static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     }

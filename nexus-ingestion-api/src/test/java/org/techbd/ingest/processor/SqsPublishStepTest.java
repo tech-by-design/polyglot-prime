@@ -1,24 +1,31 @@
 package org.techbd.ingest.processor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.ZonedDateTime;
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
-import org.techbd.ingest.commons.SourceType;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
-import java.time.ZonedDateTime;
-import java.util.Map;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class SqsPublishStepTest {
 
@@ -78,7 +85,7 @@ class SqsPublishStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080",null,null,SourceType.INGEST.name());
+                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST");
 
         sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
                 messageGroupService);
@@ -96,7 +103,7 @@ class SqsPublishStepTest {
 
         when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
         MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "test-content".getBytes());
-        sqsPublishStep.process(context, file, SourceType.REST);
+        sqsPublishStep.process(context, file);
         assertEquals("msg-123", context.getMessageId());
         verify(sqsClient).sendMessage(any(SendMessageRequest.class));
     }
@@ -116,11 +123,8 @@ class SqsPublishStepTest {
                 .messageId("sqs-msg-id-456")
                 .build();
         when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
-        sqsPublishStep.process(context, content, null, SourceType.REST);
+        sqsPublishStep.process(context, content, null);
         assertEquals("sqs-msg-id-456", context.getMessageId());
         verify(sqsClient, times(1)).sendMessage(any(SendMessageRequest.class));
     }
-
-
-
 }

@@ -1,13 +1,6 @@
 package org.techbd.ingest.endpoint;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,20 +11,19 @@ import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
+import org.techbd.ingest.AbstractMessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.commons.SourceType;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
-import org.techbd.ingest.util.Hl7Util;
+import org.techbd.iti.schema.ObjectFactory;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
 
 import io.micrometer.common.util.StringUtils;
-
-import org.techbd.iti.schema.ObjectFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.bind.JAXBElement;
 
 /**n
@@ -53,7 +45,7 @@ import jakarta.xml.bind.JAXBElement;
  * are fundamentally different transactions.
  */
 @Endpoint
-public class PnrEndpoint {
+public class PnrEndpoint extends AbstractMessageSourceProvider{
 
     private static final Logger log = LoggerFactory.getLogger(PnrEndpoint.class);
     private static final String NAMESPACE_URI = "urn:ihe:iti:xds-b:2007";
@@ -83,9 +75,7 @@ public class PnrEndpoint {
             interactionId);
             // Get raw SOAP message and build context
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
-            RequestContext context = buildRequestContext(rawSoapMessage, interactionId);
-//TODO: Check            messageProcessorService.processMessage(context, rawSoapMessage, null, SourceType.SOAP);
-            // Create response using ObjectFactory
+            RequestContext context = createRequestContext(interactionId, null, httpRequest, rawSoapMessage.length(), "soap-message.xml");
             RegistryResponseType response = ackService.createPnrAcknowledgement("Success", interactionId);
             ObjectFactory factory = new ObjectFactory();
             JAXBElement<RegistryResponseType> jaxbResponse = factory.createRegistryResponse(response);
@@ -99,68 +89,18 @@ public class PnrEndpoint {
         }
     }
 
-    private RequestContext buildRequestContext(String rawSoapMessage, String interactionId) {
-        ZonedDateTime uploadTime = ZonedDateTime.now();
-        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
-        var transportContext = TransportContextHolder.getTransportContext();
-        var connection = (HttpServletConnection) transportContext.getConnection();
-        HttpServletRequest request = connection.getHttpServletRequest();
-        Map<String, String> headers = new HashMap<>();
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String header = headerNames.nextElement();
-            String value = request.getHeader(header);
-            headers.put(header, value);
-        }
+    @Override
+    public MessageSourceType getMessageSource() {
+        return MessageSourceType.SOAP_PNR;
+    }
 
-        String tenantId = headers.getOrDefault("X-Tenant-ID", "default-tenant");
-        String sourceIp = request.getRemoteAddr();
-        String destinationIp = request.getLocalAddr();
-        String destinationPort = String.valueOf(request.getLocalPort());
-        String protocol = request.getProtocol();
-        String userAgent = headers.getOrDefault("User-Agent", "");
-        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+    @Override
+    public String getDataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
+    }
 
-        // Keep same file naming convention as PixEndpoint
-        String fileBaseName = "soap-message";
-        String fileExtension = "xml";
-        String ackFileBaseName = "soap-message-ack";
-        String originalFileName = fileBaseName + "." + fileExtension;
-        String objectKey = String.format("data/%s/%s_%s",
-                datePath, interactionId, timestamp);
-        String ackObjectKey = String.format("data/%s/%s_%s_ack",
-                datePath, interactionId, timestamp);
-        String metadataKey = String.format("metadata/%s/%s_%s_metadata.json",
-                datePath, interactionId, timestamp);
-        String fullS3DataPath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + objectKey;
-        String fullS3AckMessagePath = Constants.S3_PREFIX + appConfig.getAws().getS3().getBucket() + "/" + ackObjectKey;
-
-        log.debug("PnrEndpoint:: Request context built with source IP {}, destination port {}, user-agent: {} for interactionId :{}",
-                sourceIp, destinationPort, userAgent, interactionId);
-
-        return new RequestContext(
-                headers,
-                request.getRequestURI(),
-                tenantId,
-                interactionId,
-                uploadTime,
-                timestamp,
-                originalFileName,
-                rawSoapMessage != null ? rawSoapMessage.length() : 0, // Payload size
-                objectKey,
-                metadataKey,
-                fullS3DataPath,
-                userAgent,
-                request.getRequestURL().toString(),
-                request.getQueryString() == null ? "" : request.getQueryString(),
-                protocol,
-                destinationIp,
-                sourceIp,
-                sourceIp,
-                destinationIp,
-                destinationPort,                
-                ackObjectKey,
-                fullS3AckMessagePath,SourceType.PNR.name()
-        );
+    @Override
+    public String getMetadataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 }

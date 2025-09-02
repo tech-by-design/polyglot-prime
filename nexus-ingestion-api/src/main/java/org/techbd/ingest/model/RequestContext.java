@@ -3,6 +3,8 @@ package org.techbd.ingest.model;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import org.techbd.ingest.commons.MessageSourceType;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +43,7 @@ public class RequestContext {
     private final String ackObjectKey;
     private final String fullS3DataPath;
     private final String fullS3AckMessagePath;
+    private final String fullS3MetadataPath;
     private final String userAgent;
     private final String fullRequestUrl;
     private final String queryParams;
@@ -50,7 +53,9 @@ public class RequestContext {
     private final String sourceIp;
     private final String destinationIp;
     private final String destinationPort;
-    private final String sourceType;
+    private final MessageSourceType messageSourceType;
+    private final String dataBucketName;
+    private final String metaDataBucketName;
     private String messageGroupId;
     private String s3Response;
     private String messageId;
@@ -60,7 +65,8 @@ public class RequestContext {
                           String objectKey, String metadataKey, String fullS3DataPath, String userAgent,
                           String fullRequestUrl, String queryParams, String protocol,
                           String localAddress, String remoteAddress, String sourceIp, String destinationIp,
-                          String destinationPort, String ackObjectKey,String fullS3AckMessagePath,String sourceType) {
+                          String destinationPort, String ackObjectKey,String fullS3AckMessagePath, 
+                          String fullS3MetadataPath, MessageSourceType messageSourceType,String dataBucketName,String metadataBucketName) {
         this.headers = headers;
         this.requestUrl = requestUrl;
         this.tenantId = tenantId;
@@ -83,7 +89,10 @@ public class RequestContext {
         this.sourceIp = sourceIp;
         this.destinationIp = destinationIp;
         this.destinationPort = destinationPort;
-        this.sourceType = sourceType;
+        this.fullS3MetadataPath = fullS3MetadataPath;
+        this.messageSourceType = messageSourceType;
+        this.dataBucketName = dataBucketName;
+        this.metaDataBucketName = metadataBucketName;
     }
 }
 
