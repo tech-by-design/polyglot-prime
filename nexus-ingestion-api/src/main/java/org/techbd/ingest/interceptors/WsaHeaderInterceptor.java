@@ -11,7 +11,6 @@ import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.Hl7Util;
 import org.techbd.ingest.util.SoapResponseUtil;
@@ -49,7 +48,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor {
         SoapMessage message = soapResponseUtil.buildSoapResponse(interactionId, messageContext);
         RequestContext context = (RequestContext) httpRequest.getAttribute(Constants.REQUEST_CONTEXT);
         String rawSoapMessage = (String) messageContext.getProperty(Constants.RAW_SOAP_ATTRIBUTE);
-        messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.soapMessageToString(message, interactionId), SourceType.SOAP);
+        messageProcessorService.processMessage(context, rawSoapMessage,Hl7Util.soapMessageToString(message, interactionId));
         return true;
     }
 

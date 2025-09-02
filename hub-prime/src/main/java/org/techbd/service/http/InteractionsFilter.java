@@ -24,6 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
+import org.techbd.config.CoreAppConfig;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
@@ -62,6 +63,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private String allowedHostsString;
 
     private List<String> allowedHosts;
+
+    @Autowired
+    private CoreAppConfig coreAppConfig;
 
     @PostConstruct
     private void init() {
@@ -234,6 +238,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setPPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
                 rihr.setPCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setPCreatedBy(InteractionsFilter.class.getName());
+                rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
                 rihr.setPProvenance(provenance);
                 // User details
                 if (saveUserDataToInteractions) {

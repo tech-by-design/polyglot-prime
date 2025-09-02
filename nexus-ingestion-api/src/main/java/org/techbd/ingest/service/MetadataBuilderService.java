@@ -41,7 +41,10 @@ public class MetadataBuilderService {
         metadata.put("fileName", context.getFileName());
         metadata.put("FileSize", String.valueOf(context.getFileSize()));
         metadata.put("s3DataObjectPath", context.getFullS3DataPath());
-        metadata.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath()); 
+        metadata.put("fullS3MetaDataPath", context.getFullS3MetadataPath());
+        if (context.getFullS3AckMessagePath() != null) {
+            metadata.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath()); 
+        }
         metadata.put("UploadTime", context.getUploadTime().toString());
         metadata.put("UploadedBy", context.getUserAgent());
         return metadata;
@@ -65,7 +68,10 @@ public class MetadataBuilderService {
         jsonMetadata.put("fileSize", String.valueOf(context.getFileSize()));
         jsonMetadata.put("sourceSystem", context.getUserAgent());
         jsonMetadata.put("s3DataObjectPath", context.getFullS3DataPath());
-        jsonMetadata.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath());        
+        jsonMetadata.put("fullS3MetaDataPath", context.getFullS3MetadataPath());
+        if (context.getFullS3AckMessagePath() != null) {
+            jsonMetadata.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath()); 
+        }       
         jsonMetadata.put("requestUrl", context.getRequestUrl());
         jsonMetadata.put("fullRequestUrl", context.getFullRequestUrl());
         jsonMetadata.put("queryParams", context.getQueryParams());
@@ -99,7 +105,10 @@ public class MetadataBuilderService {
         message.put("fileSize", context.getFileSize());
         message.put("s3ObjectId", context.getObjectKey());
         message.put("s3DataObjectPath", context.getFullS3DataPath());
-        message.put("s3AckMessageObjectPath", context.getFullS3AckMessagePath());
+        message.put("fullS3MetaDataPath", context.getFullS3MetadataPath());
+        if (context.getFullS3AckMessagePath() != null) {
+            message.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
+        }
         message.put("messageGroupId", context.getMessageGroupId());
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());

@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MetadataBuilderService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,56 +77,26 @@ public class S3UploadStep implements MessageProcessingStep {
      * @param file The file to upload to S3.
      */
     @Override
-    public void process(RequestContext context, MultipartFile file, SourceType sourceType) {
+    public void process(RequestContext context, MultipartFile file) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with MultipartFile. interactionId={}, filename={}, sourceType={}",
+        LOG.info("S3UploadStep:: process called with MultipartFile. interactionId={}, filename={}",
                 interactionId,
-                file != null ? file.getOriginalFilename() : "null",
-                sourceType);
+                file != null ? file.getOriginalFilename() : "null");
         try {
             Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
             Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
             String metadataContent = objectMapper.writeValueAsString(metadataJson);
-            String bucketName;
-            String objectKey;
-            String metadataKey;
-            if (sourceType == SourceType.HOLD) {
-                // Use HOLD_S3_BUCKET_NAME from env
-                bucketName = System.getenv("HOLD_S3_BUCKET_NAME");
-                if (bucketName == null || bucketName.isEmpty()) {
-                    throw new IllegalStateException("HOLD_S3_BUCKET_NAME environment variable is not set");
-                }
-                // Build S3 key: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-                String destinationPort = context.getDestinationPort() != null ? context.getDestinationPort() : "UNKNOWN_PORT";
-                java.time.ZonedDateTime now = context.getUploadTime();
-                String yyyy = String.format("%04d", now.getYear());
-                String mm = String.format("%02d", now.getMonthValue());
-                String dd = String.format("%02d", now.getDayOfMonth());
-                String originalFileName = context.getFileName() != null ? context.getFileName() : "file";
-                String extension = "";
-                int dotIdx = originalFileName.lastIndexOf('.');
-                if (dotIdx > 0 && dotIdx < originalFileName.length() - 1) {
-                    extension = originalFileName.substring(dotIdx + 1);
-                }
-                String timestamp = context.getTimestamp() != null ? context.getTimestamp() : String.valueOf(System.currentTimeMillis());
-                String timestampFileName = timestamp + "_" + originalFileName;
-                objectKey = String.format("hold/%s/%s/%s/%s/%s%s%s",
-                        destinationPort, yyyy, mm, dd, timestampFileName,
-                        extension.isEmpty() ? "" : ".", extension);
-                metadataKey = objectKey + "_metadata.json";
-            } else {
-                bucketName = appConfig.getAws().getS3().getBucket();
-                objectKey = context.getObjectKey();
-                metadataKey = context.getMetadataKey();
-            }
-
+            String bucketName = context.getDataBucketName();
+            String metaDataBucketName = context.getMetaDataBucketName();
+            String objectKey = context.getObjectKey();
+            String metadataKey = context.getMetadataKey();
+  
             if (file == null || file.isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file is null or empty");
             }
-
             LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
-                    bucketName, metadataKey, interactionId);
-            uploadStringContent(bucketName, metadataKey, metadataContent, null, interactionId);
+                    metaDataBucketName, metadataKey, interactionId);
+            uploadStringContent(metaDataBucketName, metadataKey, metadataContent, null, interactionId);
             LOG.info("S3UploadStep:: Uploading file to S3 bucket {} using key {} for interactionId={}",
                     bucketName, objectKey, interactionId);
             String s3Response = uploadFile(objectKey, bucketName, file, metadata, interactionId);
@@ -143,54 +113,22 @@ public class S3UploadStep implements MessageProcessingStep {
      * @param context The request context containing metadata for the operation.
      * @param content The string content to upload to S3.
      */
-    public void process(RequestContext context, String content, String ackMessage, SourceType sourceType) {
+    public void process(RequestContext context, String content, String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with String content. interactionId={}, sourceType={}", interactionId, sourceType);
+        LOG.info("S3UploadStep:: process called with String content. interactionId={}", interactionId);
         try {
             Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
             Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
             String metadataContent = objectMapper.writeValueAsString(metadataJson);
-
-            String bucketName;
-            String objectKey;
-            String metadataKey;
-            String ackKey;
-
-            if (sourceType == SourceType.HOLD) {
-                // Use HOLD_S3_BUCKET_NAME from env
-                bucketName = System.getenv("HOLD_S3_BUCKET_NAME");
-                if (bucketName == null || bucketName.isEmpty()) {
-                    throw new IllegalStateException("HOLD_S3_BUCKET_NAME environment variable is not set");
-                }
-                // Build S3 key: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-                String destinationPort = context.getDestinationPort() != null ? context.getDestinationPort() : "unknown";
-                java.time.ZonedDateTime now = context.getUploadTime();
-                String yyyy = String.format("%04d", now.getYear());
-                String mm = String.format("%02d", now.getMonthValue());
-                String dd = String.format("%02d", now.getDayOfMonth());
-                String originalFileName = context.getFileName() != null ? context.getFileName() : "file";
-                String extension = "";
-                int dotIdx = originalFileName.lastIndexOf('.');
-                if (dotIdx > 0 && dotIdx < originalFileName.length() - 1) {
-                    extension = originalFileName.substring(dotIdx + 1);
-                }
-                String timestamp = context.getTimestamp() != null ? context.getTimestamp() : String.valueOf(System.currentTimeMillis());
-                String timestampFileName = timestamp + "_" + originalFileName;
-                objectKey = String.format("hold/%s/%s/%s/%s/%s%s%s",
-                        destinationPort, yyyy, mm, dd, timestampFileName,
-                        extension.isEmpty() ? "" : ".", extension);
-                metadataKey = objectKey + "_metadata.json";
-                ackKey = objectKey + ".ack.json";
-            } else {
-                bucketName = appConfig.getAws().getS3().getBucket();
-                objectKey = context.getObjectKey();
-                metadataKey = context.getMetadataKey();
-                ackKey = context.getAckObjectKey();
-            }
+            String bucketName = context.getDataBucketName();
+            String metaDataBucketName = context.getMetaDataBucketName();
+            String objectKey = context.getObjectKey();
+            String metadataKey = context.getMetadataKey();
+            String acknowledgementKey = context.getAckObjectKey();
 
             LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
-                    bucketName, metadataKey, interactionId);
-            uploadStringContent(bucketName, metadataKey, metadataContent, null, interactionId);
+                    metaDataBucketName, metadataKey, interactionId);
+            uploadStringContent(metaDataBucketName, metadataKey, metadataContent, null, interactionId);
 
             LOG.info("S3UploadStep:: Uploading content to S3 bucket {} using key {} for interactionId={}",
                     bucketName, objectKey, interactionId);
@@ -198,8 +136,8 @@ public class S3UploadStep implements MessageProcessingStep {
 
             if (ackMessage != null && !ackMessage.isEmpty()) {
                 LOG.info("S3UploadStep:: Uploading Acknowledgement message content to S3 bucket {} using key {} for interactionId={}",
-                        bucketName, ackKey, interactionId);
-                uploadStringContent(bucketName, ackKey, ackMessage, metadata, interactionId);
+                        bucketName, acknowledgementKey, interactionId);
+                uploadStringContent(bucketName, acknowledgementKey, ackMessage, metadata, interactionId);
             } else {
                 LOG.info("S3UploadStep:: No Acknowledgement message available to upload for interactionId={}",
                         interactionId);
@@ -286,6 +224,10 @@ public class S3UploadStep implements MessageProcessingStep {
                     e.getMessage(), e);
             throw e;
         }
+    }
+    @Override
+    public boolean isEnabledFor(RequestContext context) {
+        return context.getMessageSourceType().shouldUploadToS3();
     }
 
 }
