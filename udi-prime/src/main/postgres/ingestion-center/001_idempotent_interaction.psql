@@ -252,47 +252,53 @@ BEGIN
     RETURN QUERY
     WITH combined_query AS (
         SELECT 
-            htt_req.hub_interaction_id AS interaction_id,
-            htt_req.uri,
-            htt_req.interaction_start_time AS start_time,
-            htt_req.interaction_end_time   AS finish_time,
-            (EXTRACT(EPOCH FROM (htt_req.interaction_end_time - htt_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs,
-            htt_req.sat_interaction_fhir_request_id AS interaction_http_request_id
+            htt_req.hub_interaction_id AS interaction_id_val,
+            htt_req.uri AS uri_val,
+            htt_req.interaction_start_time AS start_time_val,
+            htt_req.interaction_end_time   AS finish_time_val,
+            (EXTRACT(EPOCH FROM (htt_req.interaction_end_time - htt_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs_val,
+            htt_req.sat_interaction_fhir_request_id AS interaction_http_request_id_val
         FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
         WHERE htt_req.interaction_start_time IS NOT NULL
           AND htt_req.interaction_end_time   IS NOT NULL
-          AND htt_req.interaction_start_time >=  TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
-          AND htt_req.interaction_start_time <  TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
+          AND htt_req.interaction_start_time >= start_date::timestamp
+          AND htt_req.interaction_start_time <  end_date::timestamp + INTERVAL '1 day'
 
         UNION ALL
 
         SELECT 
-            user_req.hub_interaction_id AS interaction_id,
-            user_req.uri,
-            user_req.interaction_start_time AS start_time,
-            user_req.interaction_end_time   AS finish_time,
-            (EXTRACT(EPOCH FROM (user_req.interaction_end_time - user_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs,
-            user_req.sat_interaction_user_id AS interaction_http_request_id
+            user_req.hub_interaction_id AS interaction_id_val,
+            user_req.uri AS uri_val,
+            user_req.interaction_start_time AS start_time_val,
+            user_req.interaction_end_time   AS finish_time_val,
+            (EXTRACT(EPOCH FROM (user_req.interaction_end_time - user_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs_val,
+            user_req.sat_interaction_user_id AS interaction_http_request_id_val
         FROM techbd_udi_ingress.sat_interaction_user user_req
         WHERE user_req.uri NOT ILIKE '%/Bundle%'
           AND user_req.uri NOT ILIKE '%/Hl7/v2%'
           AND user_req.interaction_start_time IS NOT NULL
           AND user_req.interaction_end_time   IS NOT NULL
-          AND user_req.interaction_start_time >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
-          AND user_req.interaction_start_time <  TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD')  + INTERVAL '1 day'
+          AND user_req.interaction_start_time >= start_date::timestamp
+          AND user_req.interaction_start_time <  end_date::timestamp + INTERVAL '1 day'
     ),
     ranked AS (
         SELECT *,
                ROW_NUMBER() OVER (
-                   PARTITION BY interaction_id 
-                   ORDER BY duration_millisecs DESC
+                   PARTITION BY interaction_id_val
+                   ORDER BY duration_millisecs_val DESC
                ) AS rn
         FROM combined_query
     )
-    SELECT interaction_id, uri, start_time, finish_time, duration_millisecs, interaction_http_request_id
+    SELECT 
+        interaction_id_val AS interaction_id,
+        uri_val AS uri,
+        start_time_val AS start_time,
+        finish_time_val AS finish_time,
+        duration_millisecs_val AS duration_millisecs,
+        interaction_http_request_id_val AS interaction_http_request_id
     FROM ranked
     WHERE rn = 1
-    ORDER BY duration_millisecs DESC;
+    ORDER BY duration_millisecs_val DESC;
 END;
 $$ LANGUAGE plpgsql;
 
