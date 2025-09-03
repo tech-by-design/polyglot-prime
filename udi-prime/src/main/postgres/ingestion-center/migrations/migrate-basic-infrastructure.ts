@@ -547,6 +547,10 @@ const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
   bundle_id: text(),
   hub_interaction_id: textNullable(),
   retry_interaction_id: textNullable(),
+  is_valid: boolean().default(false),
+  error_message: jsonbNullable(),
+  elaboration: jsonbNullable(),
+  retry_master_interaction_id: textNullable(),
   ...dvts.housekeeping.columns
 }, {
   isIdempotent: true,
@@ -1103,6 +1107,11 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
       ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN retry_interaction_id DROP NOT NULL;
       ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN hub_interaction_id DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details 
+          ADD COLUMN IF NOT EXISTS is_valid BOOLEAN DEFAULT FALSE,
+          ADD COLUMN IF NOT EXISTS error_message JSONB DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS elaboration JSONB DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS retry_master_interaction_id TEXT DEFAULT NULL;
 
       IF NOT EXISTS (
           SELECT 1
