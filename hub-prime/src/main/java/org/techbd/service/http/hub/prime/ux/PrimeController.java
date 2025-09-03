@@ -73,39 +73,39 @@ public class PrimeController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
     }
 
-    @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-            "application/json", "text/html" })
-    public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
-        final var account = sftpManager.configuredTenant(tenantId);
-        if (account.isPresent()) {
-            final var content = sftpManager.tenantEgressContent(account.get(), 10);
-            final var mre = content.mostRecentEgress();
+    // @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
+    //         "application/json", "text/html" })
+    // public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
+    //     final var account = sftpManager.configuredTenant(tenantId);
+    //     if (account.isPresent()) {
+    //         final var content = sftpManager.tenantEgressContent(account.get(), 10);
+    //         final var mre = content.mostRecentEgress();
 
-            if ("html".equalsIgnoreCase(extension)) {
-                String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(content.error() == null
-                                ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
-                                        content.directories().length,
-                                        mre,
-                                        timeAgo)
-                                : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri()));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("Unknown tenantId '%s'".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }
+    //         if ("html".equalsIgnoreCase(extension)) {
+    //             String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
+    //             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+    //                     .body(content.error() == null
+    //                             ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
+    //                                     content.directories().length,
+    //                                     mre,
+    //                                     timeAgo)
+    //                             : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri()));
+    //         } else if ("json".equalsIgnoreCase(extension)) {
+    //             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+    //         } else {
+    //             return ResponseEntity.badRequest().build();
+    //         }
+    //     } else {
+    //         if ("html".equalsIgnoreCase(extension)) {
+    //             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+    //                     .body("Unknown tenantId '%s'".formatted(tenantId));
+    //         } else if ("json".equalsIgnoreCase(extension)) {
+    //             return ResponseEntity.noContent().build();
+    //         } else {
+    //             return ResponseEntity.badRequest().build();
+    //         }
+    //     }
+    // }
 
     @GetMapping(value = "/dashboard/stat/fhir/most-recent/{tenantId}.{extension}", produces = {
             "application/json", "text/html" })
@@ -118,7 +118,8 @@ public class PrimeController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
         List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+                //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))                
+                .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
                 .fetch()
                 .intoMaps();
 
@@ -362,7 +363,8 @@ public class PrimeController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
         List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+               // .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+               .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
                 .fetch()
                 .intoMaps();
 
@@ -412,7 +414,8 @@ public class PrimeController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
         List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+                //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+                 .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
                 .fetch()
                 .intoMaps();
 
