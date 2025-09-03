@@ -546,6 +546,7 @@ public class OrchestrationEngine {
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
+                    this.igVersion = bundleValidator.getIgVersion();  
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
