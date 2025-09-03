@@ -250,23 +250,48 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT *
-    FROM (
-        SELECT DISTINCT ON (intr_observe.interaction_id)
-            intr_observe.interaction_id,
-            intr_observe.uri,
-            intr_observe.start_time,
-            intr_observe.finish_time,
-            EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000::numeric AS duration_millisecs,
-            intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
-        FROM techbd_udi_ingress.interaction_http_request intr_observe
-        WHERE intr_observe.start_time IS NOT NULL
-          AND intr_observe.finish_time IS NOT NULL
-          AND intr_observe.start_time >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
-          AND intr_observe.start_time < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
-        ORDER BY intr_observe.interaction_id,
-                 EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000 DESC
-    ) AS sub
+    WITH combined_query AS (
+        SELECT 
+            htt_req.hub_interaction_id AS interaction_id,
+            htt_req.uri,
+            htt_req.interaction_start_time AS start_time,
+            htt_req.interaction_end_time   AS finish_time,
+            (EXTRACT(EPOCH FROM (htt_req.interaction_end_time - htt_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs,
+            htt_req.sat_interaction_fhir_request_id AS interaction_http_request_id
+        FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+        WHERE htt_req.interaction_start_time IS NOT NULL
+          AND htt_req.interaction_end_time   IS NOT NULL
+          AND htt_req.interaction_start_time >=  TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
+          AND htt_req.interaction_start_time <  TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
+
+        UNION ALL
+
+        SELECT 
+            user_req.hub_interaction_id AS interaction_id,
+            user_req.uri,
+            user_req.interaction_start_time AS start_time,
+            user_req.interaction_end_time   AS finish_time,
+            (EXTRACT(EPOCH FROM (user_req.interaction_end_time - user_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs,
+            user_req.sat_interaction_user_id AS interaction_http_request_id
+        FROM techbd_udi_ingress.sat_interaction_user user_req
+        WHERE user_req.uri NOT ILIKE '%/Bundle%'
+          AND user_req.uri NOT ILIKE '%/Hl7/v2%'
+          AND user_req.interaction_start_time IS NOT NULL
+          AND user_req.interaction_end_time   IS NOT NULL
+          AND user_req.interaction_start_time >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
+          AND user_req.interaction_start_time <  TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD')  + INTERVAL '1 day'
+    ),
+    ranked AS (
+        SELECT *,
+               ROW_NUMBER() OVER (
+                   PARTITION BY interaction_id 
+                   ORDER BY duration_millisecs DESC
+               ) AS rn
+        FROM combined_query
+    )
+    SELECT interaction_id, uri, start_time, finish_time, duration_millisecs, interaction_http_request_id
+    FROM ranked
+    WHERE rn = 1
     ORDER BY duration_millisecs DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -921,34 +946,16 @@ interactions per tenant. Only the most recent interaction per tenant is retained
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
-with ranked_records as (
-select
-	sihr.sat_interaction_fhir_request_id,
-	sihr.hub_interaction_id as interaction_id,
-	sihr.tenant_id as tenant_id,
-	sihr.created_at as interaction_created_at,
-	row_number() over (partition by (sihr.tenant_id_lower) order by sihr.created_at desc) as rn,
-	COUNT(*)
- over (partition by (sihr.tenant_id_lower)) as interaction_count
-from
-	techbd_udi_ingress.sat_interaction_fhir_request sihr
-where
-	sihr.uri = any (array['/Bundle'::text,
-	'/Bundle/$validate'::text,
-	'/Bundle/'::text,
-	'/Bundle/$validate/'::text
-     ])
-)
-select
-	sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-	interaction_id,
-	tenant_id,
-	interaction_created_at,
-	interaction_count
-from
-	ranked_records
-where
-	rn = 1;
+  SELECT DISTINCT ON (tenant_id_lower)
+    sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    sihr.hub_interaction_id AS interaction_id,
+    sihr.tenant_id,
+	sihr.tenant_id_lower,
+    sihr.created_at AS interaction_created_at,
+    COUNT(*) OVER (PARTITION BY sihr.tenant_id_lower) AS interaction_count
+FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+WHERE sihr.uri IN ('/Bundle', '/Bundle/$validate', '/Bundle/', '/Bundle/$validate/')
+ORDER BY tenant_id_lower, sihr.created_at DESC;
 
 
 /**
@@ -3383,7 +3390,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS
     WHERE 
         sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]) 
         AND sihr.tenant_id_lower::text IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
-    AND sihr.created_at::date >= (CURRENT_DATE - INTERVAL '1 day')  -- Filter for last 1 day
+    AND sihr.created_at >= (CURRENT_DATE - INTERVAL '1 day')  -- Filter for last 1 day
 GROUP BY 
     sihr.tenant_id_lower::text, sihr.created_at::date
 ORDER BY 
@@ -4803,28 +4810,16 @@ per tenant. Only the most recent interaction per tenant is retained.
 
  DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_csv_https CASCADE;
  CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_csv_https AS
- WITH ranked_records AS (
-    SELECT 
-        sihr.sat_interaction_fhir_request_id,
-        sihr.hub_interaction_id AS interaction_id,
-        sihr.tenant_id AS tenant_id,
-        sihr.created_at AS interaction_created_at,
-        row_number() OVER (PARTITION BY (sihr.tenant_id_lower) ORDER BY sihr.created_at DESC) AS rn,
-        COUNT(*)
- OVER (PARTITION BY (sihr.tenant_id_lower)) AS interaction_count
-    FROM 
-        techbd_udi_ingress.sat_interaction_fhir_request sihr 
-    WHERE sihr.source_type = 'CSV' 
-)
-SELECT 
-    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-    interaction_id,
-    tenant_id,
-    interaction_created_at,
-    interaction_count
-FROM 
-    ranked_records
-WHERE rn = 1;    
+	SELECT DISTINCT ON (sihr.tenant_id_lower)
+		sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+		sihr.hub_interaction_id AS interaction_id,
+		sihr.tenant_id,
+		sihr.created_at AS interaction_created_at,
+		sihr.tenant_id_lower,
+		COUNT(*) OVER (PARTITION BY sihr.tenant_id_lower) AS interaction_count
+	FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+	WHERE sihr.source_type = 'CSV'
+	ORDER BY sihr.tenant_id_lower, sihr.created_at DESC;  
 
 
 /*****************************************
@@ -4845,26 +4840,28 @@ drop view if exists techbd_udi_ingress.fhir_session_diagnostics cascade;
 create or replace view techbd_udi_ingress.fhir_session_diagnostics     
 as
 	select
-	to_timestamp(encountered_at::double precision)::date as encountered_date,
+	created_at::date as encountered_date,
 	tenant_id,
-	severity,
+	lower(severity) as severity,
 	message as message,
 	ig_version,
-	validation_engine,
+	MAX(validation_engine)  as validation_engine,
 	COUNT(*) as issue_count
 from
 	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
-	where severity in ('warning','ERROR','WARING','error','FATAL','fatal')
+	where lower(severity) in ('warning','error','fatal')
 	and message != ''	
+ 	AND created_at >= (CURRENT_DATE - INTERVAL '7 days')
+
 group by
-	encountered_date,
+	created_at::date,
 	tenant_id,
-	severity,
+	lower(severity),
 	message,
-	ig_version,
-	validation_engine
+	ig_version
+	--validation_engine
 order by
-	encountered_date desc;
+	created_at::date desc ;
 
 
 /*****************************************
@@ -4889,19 +4886,20 @@ select
 	uri,
 	bundle_id,
 	session_id,
-	severity,
+	LOWER(severity) AS severity,
 	message,
 	line,
 	"column",
 	ig_version,
 	validation_engine,
 	diagnostics,
-	to_char(to_timestamp(intr_diagno.encountered_at::double precision),	'MM-DD-YYYY'::text) AS encountered_date,
+	to_char(created_at, 'MM-DD-YYYY') AS encountered_date,
 	elaboration
 from
 	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno
-where severity in ('warning','ERROR','WARING','error','FATAL','fatal')
-	and message != '';
+WHERE LOWER(severity) IN ('warning', 'error', 'fatal')
+AND created_at >= (CURRENT_DATE - INTERVAL '7 days')
+	AND message <> '';
 
 
 /******************************************************************************************
@@ -5103,28 +5101,16 @@ per tenant. Only the most recent interaction per tenant is retained.
 
  DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_ccda_https CASCADE;
  CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_ccda_https AS
- WITH ranked_records AS (
-    SELECT 
-        sihr.sat_interaction_fhir_request_id,
-        sihr.hub_interaction_id AS interaction_id,
-        sihr.tenant_id AS tenant_id,
-        sihr.created_at AS interaction_created_at,
-        row_number() OVER (PARTITION BY (sihr.tenant_id_lower) ORDER BY sihr.created_at DESC) AS rn,
-        COUNT(*)
- OVER (PARTITION BY (sihr.tenant_id_lower)) AS interaction_count
-    FROM 
-        techbd_udi_ingress.sat_interaction_fhir_request sihr 
-    WHERE sihr.source_type = 'CCDA' 
-)
-SELECT 
-    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-    interaction_id,
-    tenant_id,
-    interaction_created_at,
-    interaction_count
-FROM 
-    ranked_records
-WHERE rn = 1; 
+ SELECT DISTINCT ON (sihr.tenant_id_lower)
+    sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    sihr.hub_interaction_id AS interaction_id,
+    sihr.tenant_id,
+    sihr.created_at AS interaction_created_at,
+    sihr.tenant_id_lower,
+    COUNT(*) OVER (PARTITION BY sihr.tenant_id_lower) AS interaction_count
+FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+WHERE sihr.source_type = 'CCDA'
+ORDER BY sihr.tenant_id_lower, sihr.created_at DESC;
 
 
 /*******************************************************************************************

@@ -736,6 +736,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_date_time ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time);
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_issue_partial ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue) WHERE issue LIKE '%has not been checked because it is unknown%' OR issue LIKE '%Unknown profile%' OR issue LIKE '%Unknown extension%' OR issue LIKE '%Unknown Code System%' OR issue LIKE '%not found%' OR issue LIKE '%has not been checked because it could not be found%' OR issue LIKE '%Unable to find a match for profile%' OR issue LIKE '%None of the codings provided%' OR issue LIKE '%Unable to expand ValueSet%' OR issue LIKE '%Slicing cannot be evaluated%' OR issue LIKE '%could not be resolved%';
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_idx_encountered_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (encountered_at);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_created_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (created_at DESC);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_severity_lower ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity));      
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_ccda_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_created_at_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (created_at DESC);

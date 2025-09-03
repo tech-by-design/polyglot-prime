@@ -16,6 +16,7 @@
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_session_diagnostics';
@@ -156,6 +157,7 @@
         }        
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
+            const helpers = new Helpers();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                      { headerName: "Encountered Time", field: "encountered_date", sortable: true, sort: "desc", filter: "agDateColumnFilter", cellRenderer: 'agGroupCellRenderer', headerTooltip: "Timestamp indicating when the issue was encountered." },                    
@@ -192,6 +194,9 @@
                 .build();
 
             agGridInstance.init('serverDataGrid');
+             // Add date-range text 
+            // Inject the date range into the HTML
+            helpers.injectDateRangeText('date-range', 'This data grid provides a high-level summary view on the Data Quality page, highlighting errors in submissions to facilitate swift identification and resolution. Key fields such as Date, Tenant ID, Issue Message, Severity, IG Version, HAPI Version, and Issue Count are displayed, offering a comprehensive snapshot of data quality issues for the period <b>{startDate}</b> to <b>{endDate}</b>. The Severity field categorizes issues into ERROR and WARNING, enabling users to prioritize their efforts effectively. A drill-down feature enables users to explore detailed insights for each entry, including additional context like the associated Bundle ID and other relevant information. This functionality ensures efficient error tracing and resolution, streamlining the data validation process and enhancing overall submission quality.',7);
         });
     </script>
 </head>
@@ -199,8 +204,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid provides a high-level summary view on the Data Quality page, highlighting errors in submissions to facilitate swift identification and resolution. Key fields such as Date, Tenant ID, Issue Message, Severity, IG Version, HAPI Version, and Issue Count are displayed, offering a comprehensive snapshot of data quality issues. The Severity field categorizes issues into ERROR and WARNING, enabling users to prioritize their efforts effectively.
-            A drill-down feature enables users to explore detailed insights for each entry, including additional context like the associated Bundle ID and other relevant information. This functionality ensures efficient error tracing and resolution, streamlining the data validation process and enhancing overall submission quality.
+           <div id="date-range"></div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
