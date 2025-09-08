@@ -30,7 +30,12 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -41,12 +46,23 @@ class PatientConverterTest {
      
         @Mock
         CodeLookupService codeLookupService;
+        
+        @Mock
+        CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        
+        @Mock
+        AppLogger appLogger;
+        
+        @Mock
+        TemplateLogger templateLogger;
 
-        @InjectMocks
         private PatientConverter patientConverter;
 
         @BeforeEach
         void setUp() throws Exception {
+                when(appLogger.getLogger(PatientConverter.class)).thenReturn(templateLogger);
+                patientConverter = new PatientConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+                
                 Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
                 profileMapField.setAccessible(true);
                 profileMapField.set(null, CsvTestHelper.getProfileMap());

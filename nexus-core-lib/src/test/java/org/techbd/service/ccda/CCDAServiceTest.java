@@ -18,6 +18,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
 import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,6 +29,7 @@ class CCDAServiceTest {
     private Configuration jooqConfig;
     private CCDAService ccdaService;
     private AppLogger appLogger;
+    private TemplateLogger templateLogger;
     private CoreAppConfig coreAppConfig;
 
     @BeforeEach
@@ -36,7 +38,9 @@ class CCDAServiceTest {
         dslContext = mock(DSLContext.class);
         jooqConfig = mock(Configuration.class);
         appLogger = mock(AppLogger.class);
+        templateLogger = mock(TemplateLogger.class);
         coreAppConfig = mock(CoreAppConfig.class);
+        when(appLogger.getLogger(CCDAService.class)).thenReturn(templateLogger);
         when(coreUdiPrimeJpaConfig.dsl()).thenReturn(dslContext);
         when(dslContext.configuration()).thenReturn(jooqConfig);
         ccdaService = new CCDAService(coreUdiPrimeJpaConfig, appLogger, coreAppConfig);
@@ -52,7 +56,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveOriginalCcdaPayload("int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"));
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "test-source");
 
             assertTrue(result);
         }
@@ -68,7 +72,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"));
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "test-source");
 
             assertTrue(result);
         }
@@ -84,7 +88,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveFhirConversionResult(true, "int123", "tenantA",
-                    "/test-uri", Map.of("fhir", "bundle"));
+                    "/test-uri", Map.of("fhir", "bundle"), "test-source");
 
             assertTrue(result);
         }
@@ -100,7 +104,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveCcdaValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"));
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "test-source");
 
             assertTrue(result);
         }
@@ -113,7 +117,7 @@ class CCDAServiceTest {
 
         CCDAService errorService = new CCDAService(faultyConfig, appLogger,coreAppConfig);
 
-        boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of());
+        boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "test-source");
 
         assertFalse(result);
     }
