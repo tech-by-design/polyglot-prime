@@ -53,7 +53,6 @@ jobs:
             cd infrastructure-prime
             gh pr create --base main --head nexus-hub-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus Devl techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl deployment for version ${{ github.ref_name }}"
 			
-
     nexus-api-devl-deployment:
       needs: nexus-hub-devl-deployment
       if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
