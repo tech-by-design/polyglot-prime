@@ -13,12 +13,12 @@ org:
         base-url: ${ORG_TECHBD_SERVICE_SQS_BASE_URL:https://sqs.us-east-1.amazonaws.com}
         fifo-queue-url: ${AWS_SQS_QUEUE_NAME:default-fifo-url}
       s3:
-        default:
+        default-config:
           bucket: ${AWS_S3_BUCKET_NAME}
           metadata-bucket: ${AWS_S3_METADATA_BUCKET_NAME}
-        hold:
+        hold-config:
           bucket: ${HOLD_S3_BUCKET_NAME}
-          metadata-bucket: ${HOLD_S3_METADATA_BUCKET_NAME}
+          metadata-bucket: ${HOLD_S3_BUCKET_NAME}
     soap:
       wsa:
         namespace: "http://www.w3.org/2005/08/addressing"
