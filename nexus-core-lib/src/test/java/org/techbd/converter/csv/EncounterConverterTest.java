@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,11 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -41,13 +46,23 @@ class EncounterConverterTest {
 
     @Mock
     CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    
+    @Mock
+    AppLogger appLogger;
+    
+    @Mock
+    TemplateLogger templateLogger;
 
-    @InjectMocks
     private EncounterConverter encounterConverter;
     
     @BeforeEach
     void setUp() throws Exception {
-         
+            MockitoAnnotations.openMocks(this);
+            when(appLogger.getLogger(EncounterConverter.class)).thenReturn(templateLogger);
+            
+            // Manually instantiate the converter after mocks are set up
+            encounterConverter = new EncounterConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+            
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
             profileMapField.set(null, CsvTestHelper.getProfileMap());
@@ -71,9 +86,8 @@ class EncounterConverterTest {
         // Call the convert method of the encounter converter
         final BundleEntryComponent result = encounterConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                        screeningDataList, "interactionId", idsGenerated,null)
+                        screeningDataList, "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL)
                 .get(0);
-        ;
 
         // Create soft assertions to verify the result
         final SoftAssertions softly = new SoftAssertions();
@@ -114,7 +128,7 @@ class EncounterConverterTest {
 
         final var result = encounterConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId", idsGenerated,CsvTestHelper.BASE_FHIR_URL);
+                "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL);
 
         final Encounter encounter = (Encounter) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/encounter.json";

@@ -19,13 +19,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.ScreeningResponseObservationConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -34,13 +39,26 @@ class ScreeningResponseObservationConverterTest {
 
     @Mock
     CodeLookupService codeLookupService;
+    
+    @Mock
+    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    
+    @Mock
+    AppLogger appLogger;
+    
+    @Mock
+    TemplateLogger templateLogger;
 
-    @InjectMocks
     private ScreeningResponseObservationConverter converter;
 
     @BeforeEach
     void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
+        when(appLogger.getLogger(ScreeningResponseObservationConverter.class)).thenReturn(templateLogger);
+        
+        // Manually instantiate the converter after mocks are set up
+        converter = new ScreeningResponseObservationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+        
         Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
         profileMapField.setAccessible(true);
         profileMapField.set(null, CsvTestHelper.getProfileMap());
@@ -64,7 +82,7 @@ class ScreeningResponseObservationConverterTest {
                 qeAdminData,
                 screeningProfileData,
                 screeningObservationDataList,
-                interactionId, idsGenerated,null);
+                interactionId, idsGenerated, CsvTestHelper.BASE_FHIR_URL);
         assertThat(result).isNotNull();
         //assertThat(result).hasSize(screeningObservationDataList.size() + 1);
         for (int i = 0; i < screeningObservationDataList.size(); i++) {
@@ -86,7 +104,7 @@ class ScreeningResponseObservationConverterTest {
         final Map<String, String> idsGenerated = new HashMap<>();
         final var screeningResourceData = CsvTestHelper.createScreeningProfileData();
         final var result = converter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                screeningDataList, "interactionId", idsGenerated,null);
+                screeningDataList, "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL);
         final Observation observation = (Observation) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/screening-response.json";
         final FhirContext fhirContext = FhirContext.forR4();

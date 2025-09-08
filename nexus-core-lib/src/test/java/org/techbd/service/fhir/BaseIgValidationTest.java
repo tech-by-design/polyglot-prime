@@ -12,7 +12,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
+import org.techbd.service.fhir.validation.PostPopulateSupport;
+import org.techbd.service.fhir.validation.PrePopulateSupport;
 import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.opentelemetry.api.trace.Span;
@@ -31,6 +34,8 @@ public abstract class BaseIgValidationTest {
     protected static Span span;
     
     private static AppLogger appLogger;
+    
+    private static TemplateLogger templateLogger;
 
     protected static OrchestrationEngine.HapiValidationEngine spyHapiEngine;
 
@@ -41,6 +46,10 @@ public abstract class BaseIgValidationTest {
         spanBuilder = mock(SpanBuilder.class);
         span = mock(Span.class);
         appLogger = mock(AppLogger.class);
+        templateLogger = mock(TemplateLogger.class);
+        when(appLogger.getLogger(OrchestrationEngine.class)).thenReturn(templateLogger);
+        when(appLogger.getLogger(PrePopulateSupport.class)).thenReturn(templateLogger);
+        when(appLogger.getLogger(PostPopulateSupport.class)).thenReturn(templateLogger);
         when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
         when(spanBuilder.startSpan()).thenReturn(span);
         when(appConfig.getIgPackages()).thenReturn(getIgPackages());

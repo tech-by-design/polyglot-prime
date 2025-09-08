@@ -22,14 +22,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.converters.csv.ProcedureConverter;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 import org.techbd.util.csv.CsvConstants;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -38,6 +43,15 @@ class ProcedureConverterTest {
 
     @Mock
     CodeLookupService codeLookupService;
+    
+    @Mock
+    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    
+    @Mock
+    AppLogger appLogger;
+    
+    @Mock
+    TemplateLogger templateLogger;
 
     @InjectMocks
     private ProcedureConverter procedureConverter;
@@ -57,6 +71,7 @@ class ProcedureConverterTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(appLogger.getLogger(ProcedureConverter.class)).thenReturn(templateLogger);
         idsGenerated = new HashMap<>();
         baseFHIRUrl = "http://shinny.org/us/ny/hrsn";
 
