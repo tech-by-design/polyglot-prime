@@ -44,8 +44,7 @@ jobs:
             cd infrastructure-prime
             git add .
             git commit -m "ci: nexus-hub-ui devl ${{ github.ref_name }} deployment"
-            git push --set-upstream origin nexus-hub-devl-deployment-${{ github.ref_name}}-deployment
-			
+            git push --set-upstream origin nexus-hub-devl-deployment-${{ github.ref_name}}-deployment	
         - name: Create Pull Request
           env:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
@@ -85,7 +84,6 @@ jobs:
             git add .
             git commit -m "ci: nexus-api-devl ${{ github.ref_name }} deployment"
             git push --set-upstream origin nexus-api-devl-deployment-${{ github.ref_name}}-deployment
-			
         - name: Create Pull Request
           env:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
