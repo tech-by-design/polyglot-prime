@@ -28,7 +28,12 @@ jobs:
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
-            
+
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b nexus-hub-devl-deployment-${{ github.ref_name}}-deployment
+        
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
@@ -39,7 +44,15 @@ jobs:
             cd infrastructure-prime
             git add .
             git commit -m "ci: nexus-hub-ui devl ${{ github.ref_name }} deployment"
-            git push
+            git push --set-upstream origin nexus-hub-devl-deployment-${{ github.ref_name}}-deployment
+			
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head nexus-hub-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus Devl techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl deployment for version ${{ github.ref_name }}"
+			
 
     nexus-api-devl-deployment:
       needs: nexus-hub-devl-deployment
@@ -57,6 +70,11 @@ jobs:
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
 
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b nexus-api-devl-deployment-${{ github.ref_name}}-deployment
+
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
@@ -67,4 +85,12 @@ jobs:
             cd infrastructure-prime
             git add .
             git commit -m "ci: nexus-api-devl ${{ github.ref_name }} deployment"
-            git push
+            git push --set-upstream origin nexus-api-devl-deployment-${{ github.ref_name}}-deployment
+			
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head nexus-api-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus Devl API techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl API deployment for version ${{ github.ref_name }}"
+			
