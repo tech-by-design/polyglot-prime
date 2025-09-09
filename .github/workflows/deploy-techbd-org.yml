@@ -28,6 +28,11 @@ jobs:
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+        
+        - name: Checkout to 0.662.0-hotfix branch
+          run: |
+            cd infrastructure-prime
+            git checkout 0.662.0-hotfix
 
         - name: Create and switch to a new branch
           run: |
