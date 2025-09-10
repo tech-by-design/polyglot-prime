@@ -19,8 +19,8 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_http_request';
-        const popViewName = 'interaction_http_request_payload';
+        const viewName = 'fusion_interaction_http_request';
+        const popViewName = 'fusion_interaction_http_request_payload';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -46,7 +46,7 @@
                             if (uri === "/Bundle" || uri === "/Bundle/"  || uri === "/Hl7/v2") {
                                 const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                                 // If URI is /Bundle, use the bundle-specific view                                
-                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
+                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/fusion_interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
                             } else {
                                 // Otherwise, use the default view
                                 apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${params.value}.json`;

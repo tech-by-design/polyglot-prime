@@ -21,8 +21,8 @@
         import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'fhir_validation_issue';
-        const igPublication = 'fhir_validation_issue_details';
+        const viewName = 'fusion_fhir_validation_issue';
+        const igPublication = 'fusion_fhir_validation_issue_details';
         const igPublicationColumnDefs = [
             { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", tooltipValueGetter: (params) => `${params.value}`, headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
             { headerName: "Severity", field: "issue_severity", filter: "agTextColumnFilter"  },
