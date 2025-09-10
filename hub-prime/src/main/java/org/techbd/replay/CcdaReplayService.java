@@ -156,14 +156,23 @@ public class CcdaReplayService {
 				// // Write pretty-printed JSON
 				// Configuration.objectMapper.writeValue(outputFile, generatedBundleNode);
 				if (copyResourceIds) {
-					LOG.info(
-							"CCDA-REPLAY COPY RESOURCE IDS ENABLED-Copying Resource IDs, fullUrl, and request.url  for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
-							replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
-					generatedBundleNode = FhirBundleUtil.copyResourceIds(originalBundle, generatedBundle);
-					LOG.info(
-							"CCDA-REPLAY COPY RESOURCE COMPLETED -COPIED Resource IDs, fullUrl, and request.url  for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
-							replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
+					if (originalBundle == null) {
+						LOG.warn(
+								"CCDA-REPLAY COPY RESOURCE IDS SKIPPED - originalBundle is null for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
+								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
+					} else {
+						LOG.info(
+								"CCDA-REPLAY COPY RESOURCE IDS ENABLED - Copying Resource IDs, fullUrl, and request.url for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
+								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
+
+						generatedBundleNode = FhirBundleUtil.copyResourceIds(originalBundle, generatedBundle);
+
+						LOG.info(
+								"CCDA-REPLAY COPY RESOURCE COMPLETED - COPIED Resource IDs, fullUrl, and request.url for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
+								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
+					}
 				}
+
 				Map<String, Object> correctedResponse = mergeBundleResourceIds(generatedBundleNode, bundleId,
 						replayMasterInteractionId, interactionId);
 				final String correctedBundle = String.valueOf(correctedResponse.get("corrected_bundle"));
