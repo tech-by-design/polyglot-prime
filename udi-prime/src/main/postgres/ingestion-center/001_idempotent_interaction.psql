@@ -7342,36 +7342,8 @@ $function$
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_hl7_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_hl7_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_hl7_request(
-	p_interaction_id text, 
-	p_interaction_key text, 
-	p_nature jsonb,
-	p_from_state text, 
-	p_to_state text, 
-	p_hub_nexus_interaction_id text DEFAULT NULL::text,
-	p_payload jsonb DEFAULT NULL::jsonb, 
-	p_payload_text text DEFAULT NULL::text, 
-	p_rule_namespace text DEFAULT NULL::text, 
-	p_elaboration jsonb DEFAULT NULL::jsonb, 
-	p_content_type text DEFAULT NULL::text, 
-	p_state_transition_reason text DEFAULT NULL::text, 
-	p_user_id text DEFAULT NULL::text, 
-	p_user_name text DEFAULT NULL::text, 
-	p_user_session text DEFAULT NULL::text, 
-	p_user_role text DEFAULT NULL::text, 
-	p_created_by text DEFAULT CURRENT_USER, 
-	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
-	p_provenance text DEFAULT NULL::text, 
-	p_hub_upsert_behavior boolean DEFAULT true, 
-	p_source_hub_interaction_id text DEFAULT NULL::text, 
-	p_client_ip_address text DEFAULT NULL::text, 
-	p_user_agent text DEFAULT NULL::text, 
-	p_origin text DEFAULT NULL::text, 
-	p_source_type text DEFAULT NULL::text, 
-	p_group_hub_interaction_id text DEFAULT NULL::text,
-	p_request_source text DEFAULT NULL::text,
-	p_techbd_version_number text DEFAULT NULL::text,
-	p_file_name text DEFAULT NULL::text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_hl7_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_hl7_request(p_interaction_id text, p_interaction_key text, p_nature jsonb, p_from_state text, p_to_state text, p_hub_nexus_interaction_id text DEFAULT NULL::text, p_payload jsonb DEFAULT NULL::jsonb, p_payload_text text DEFAULT NULL::text, p_rule_namespace text DEFAULT NULL::text, p_elaboration jsonb DEFAULT NULL::jsonb, p_content_type text DEFAULT NULL::text, p_state_transition_reason text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text, p_user_name text DEFAULT NULL::text, p_user_session text DEFAULT NULL::text, p_user_role text DEFAULT NULL::text, p_created_by text DEFAULT CURRENT_USER, p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_provenance text DEFAULT NULL::text, p_hub_upsert_behavior boolean DEFAULT true, p_source_hub_interaction_id text DEFAULT NULL::text, p_client_ip_address text DEFAULT NULL::text, p_user_agent text DEFAULT NULL::text, p_origin text DEFAULT NULL::text, p_source_type text DEFAULT NULL::text, p_group_hub_interaction_id text DEFAULT NULL::text, p_request_source text DEFAULT NULL::text, p_techbd_version_number text DEFAULT NULL::text, p_file_name text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -7383,6 +7355,7 @@ DECLARE
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
     v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
+    v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'HL7');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
@@ -7433,7 +7406,7 @@ BEGIN
 							'step', '0. Input parameters into register_interaction_hl7_request function'
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
-			v_exception_id, p_interaction_key, p_created_by, p_provenance, 'info'::text, 
+			v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
 			'Input parameters into register_interaction_hl7_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/ 
 
@@ -7464,7 +7437,7 @@ BEGIN
     -- Attempt to insert into hub_interaction
 	BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
-        VALUES (p_interaction_id, p_interaction_key, v_created_at, p_created_by, v_provenance);
+        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance);
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
          						'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7478,7 +7451,7 @@ BEGIN
 								'file_name', p_file_name,
          						'step', '1. Insert into hub_interaction'
          						);
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/   
     EXCEPTION
@@ -7495,7 +7468,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -7523,7 +7496,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
             );
            RETURN jsonb_build_object('error', 'Insert into hub_interaction failed', 
 								  	 'payload', null,
@@ -7536,7 +7509,7 @@ BEGIN
 		INSERT INTO techbd_udi_ingress.link_nexus_interaction (
 			hub_nexus_interaction_id, hub_interaction_id, created_by, created_at, provenance
 		) VALUES (
-			p_hub_nexus_interaction_id, p_interaction_id, p_created_by, CURRENT_TIMESTAMP, v_provenance
+			p_hub_nexus_interaction_id, p_interaction_id, v_created_by, CURRENT_TIMESTAMP, v_provenance
 		) ON CONFLICT DO NOTHING;
 		/*---register diagnostic log---*/
 		v_elaboration := jsonb_build_object(
@@ -7551,7 +7524,7 @@ BEGIN
 								'file_name', p_file_name,
 								'step', '2. Insert into link_nexus_interaction'
 								);
-		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
 																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 		/*------------------------------*/   
 	END IF;
@@ -7565,7 +7538,7 @@ BEGIN
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -7581,7 +7554,7 @@ BEGIN
 								'file_name', p_file_name,
          						'step', '3. Insert into sat_interaction_http_request'
          						);
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
@@ -7598,7 +7571,7 @@ BEGIN
 		        tenant_id					=> v_tenant_id_denorm,
 		        elaboration					=> p_elaboration,
 		        created_at 					=> v_created_at,
-		        created_by 					=> p_created_by,
+		        created_by 					=> v_created_by,
 		        provenance 					=> v_provenance,
 				p_additional_details		=> v_additional_details
 	       	); 
@@ -7616,7 +7589,7 @@ BEGIN
 								'file_name', p_file_name,
          						'step', '4. Insert into user info'
          						);
-         	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+         	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	      	/*------------------------------*/
 	    END IF;
@@ -7634,14 +7607,14 @@ BEGIN
 				p_hl7_payload_text			=> p_payload_text,
 		        p_state_transition_reason	=> p_state_transition_reason,
 		        p_created_at				=> v_created_at,
-		        p_created_by				=> p_created_by,
+		        p_created_by				=> v_created_by,
 		        p_provenance				=> v_provenance,
 		        p_elaboration				=> p_elaboration,
 				p_client_ip_address			=> p_client_ip_address,
 				p_user_agent				=> p_user_agent,
 				p_origin					=> p_origin,
 				p_techbd_version_number		=> p_techbd_version_number,
-				file_name					=> p_file_name
+				p_file_name					=> p_file_name
 	       	);
 			v_return := jsonb_build_object('payload', p_payload,
 									 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7661,7 +7634,7 @@ BEGIN
 									'file_name', p_file_name,
 									'step', '5. Insert into sat_interaction_hl7_request table'
 									);
-			CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+			CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
 																		'Insert into sat_interaction_hl7_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 			/*------------------------------*/ 
        	ELSE
@@ -7697,7 +7670,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
             );
 			v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7844,41 +7817,44 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_xml_content_from_mirth_fdw(p_b
 RETURNS JSONB LANGUAGE plpgsql AS
 $$
 DECLARE
-    v_xml 			TEXT 	:= NULL;
-    v_channel_id 	INT;
-    v_table 		TEXT;
-    v_sql 			TEXT;
-	v_result 		JSONB 	:= NULL;
-	v_base_fhir_url TEXT 	:= NULL;
+    v_xml             TEXT := NULL;
+    v_channel_id      INT;
+    v_table           TEXT;
+    v_sql             TEXT;
+    v_result          JSONB := NULL;
+    v_base_fhir_url   TEXT := NULL;
+    v_patient_cin     TEXT := NULL;
+    v_facility_id     TEXT := NULL;
+    v_org_npi         TEXT := NULL;
+    v_org_tax         TEXT := NULL;
+    v_encounter_type  TEXT := NULL;
+    v_tenant_id       TEXT := NULL;
 BEGIN
-	IF p_bundle_id IS NULL OR p_bundle_id = '' THEN
-        RETURN jsonb_build_object(
-			'error', 'bundle_id is empty.'
-		);
+    IF p_bundle_id IS NULL OR p_bundle_id = '' THEN
+        RETURN jsonb_build_object('error', 'bundle_id is empty.');
     END IF;
 
-	-- Prevent duplicate replay
+    -- Prevent duplicate replay
     IF EXISTS (
         SELECT 1 FROM techbd_udi_ingress.ccda_replay_details
         WHERE bundle_id = p_bundle_id
     ) THEN
         RETURN jsonb_build_object(
-		'alreadyResubmitted', true,
-		'bundle_id', p_bundle_id
-	);
+            'alreadyResubmitted', true,
+            'bundle_id', p_bundle_id
+        );
     END IF;
 
-    -- Find the channel id
+    -- Get channel id
     SELECT dc.local_channel_id
     INTO v_channel_id
     FROM techbd_udi_ingress.d_channels dc
-    INNER JOIN techbd_udi_ingress.channel c ON c.id = dc.channel_id
+    JOIN techbd_udi_ingress.channel c ON c.id = dc.channel_id
     WHERE c.name = 'TechBD CCD Workflow';
 
-    -- Build the foreign table name
     v_table := format('d_mc%s', v_channel_id);
 
-    -- Build the SQL dynamically
+    -- Get CCD XML from FDW
     v_sql := format($f$
         SELECT mc.content
         FROM techbd_udi_ingress.%I mc
@@ -7892,27 +7868,79 @@ BEGIN
         LIMIT 1
     $f$, v_table, v_table, p_bundle_id);
 
-	-- Execute dynamic SQL and put result into v_xml
     EXECUTE v_sql INTO v_xml;
 
-	SELECT split_part(
-	           jsonb_array_elements_text(r.payload->'meta'->'profile'),
-	           '/StructureDefinition',
-	           1
-	       )
-	  INTO v_base_fhir_url
-	  FROM techbd_udi_ingress.sat_interaction_fhir_request r
-	 WHERE r.nature = 'Original FHIR Payload'
-	   AND r.payload->>'id' = p_bundle_id
-	   AND r.payload IS NOT NULL
-	 LIMIT 1;
+    -- Single CTE to fetch relevant info from sat_interaction_fhir_request
+    WITH fhir_req AS (
+        SELECT r.payload, r.tenant_id
+        FROM techbd_udi_ingress.sat_interaction_fhir_request r
+        WHERE r.nature = 'Original FHIR Payload'
+          AND r.bundle_id = p_bundle_id
+          AND r.payload->>'id' = r.bundle_id
+          AND r.payload IS NOT NULL
+    ),
+    -- Extract patient info
+    patient AS (
+        SELECT
+            MAX(CASE WHEN coding->>'code' = 'MA' THEN ident->>'value' END) AS patient_cin,
+            MAX(CASE WHEN coding->>'code' = 'MR'
+                THEN split_part(
+                        ident->>'system',
+                        '/',
+                        array_length(string_to_array(ident->>'system', '/'), 1)
+                     )
+                END) AS facility_id
+        FROM fhir_req r
+        JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON true
+        JOIN LATERAL jsonb_array_elements(e->'resource'->'identifier') ident ON true
+        JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON true
+        WHERE e->'resource'->>'resourceType' = 'Patient'
+    ),
+    org AS (
+        SELECT
+            MAX(CASE WHEN coding->>'code' = 'NPI' THEN ident->>'value' END) AS org_npi,
+            MAX(CASE WHEN coding->>'code' = 'TAX' THEN ident->>'value' END) AS org_tax
+        FROM fhir_req r
+        JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON true
+        JOIN LATERAL jsonb_array_elements(e->'resource'->'identifier') ident ON true
+        JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON true
+        WHERE e->'resource'->>'resourceType' = 'Organization'
+    ),
+    encounter AS (
+        SELECT coding->>'code' AS encounter_type
+        FROM fhir_req r
+        JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON true
+        JOIN LATERAL jsonb_array_elements(e->'resource'->'type') type ON true
+        JOIN LATERAL jsonb_array_elements(type->'coding') coding ON true
+        WHERE e->'resource'->>'resourceType' = 'Encounter'
+        LIMIT 1
+    ),
+    base AS (
+        SELECT 
+            split_part(jsonb_array_elements_text(r.payload->'meta'->'profile'), '/StructureDefinition', 1) AS base_fhir_url,
+            r.tenant_id
+        FROM fhir_req r
+        LIMIT 1
+    )
+    SELECT p.patient_cin, p.facility_id, o.org_npi, o.org_tax, e.encounter_type, b.base_fhir_url, b.tenant_id
+    INTO v_patient_cin, v_facility_id, v_org_npi, v_org_tax, v_encounter_type, v_base_fhir_url, v_tenant_id
+    FROM patient p
+    CROSS JOIN org o
+    CROSS JOIN encounter e
+    CROSS JOIN base b;
 
     RETURN jsonb_build_object(
-		'alreadyResubmitted', false,
-	    'originalCCDAPayload', v_xml,
-		'bundle_id', p_bundle_id,
-		'base_fhir_url', v_base_fhir_url
-	);
+        'alreadyResubmitted', false,
+        'originalCCDAPayload', v_xml,
+        'X-TechBD-Tenant-ID', v_tenant_id,
+        'X-TechBD-Bundle-ID', p_bundle_id,
+        'X-TechBD-Base-FHIR-URL', v_base_fhir_url,
+        'X-TechBD-CIN', v_patient_cin,
+        'X-TechBD-OrgNPI', v_org_npi,
+        'X-TechBD-Facility-ID', v_facility_id,
+        'X-TechBD-OrgTIN', v_org_tax,
+        'X-TechBD-Encounter-Type', v_encounter_type
+    );
 END;
 $$;
 
@@ -7961,7 +7989,8 @@ BEGIN
 	INTO v_hub_interaction_id, v_payload
 	FROM techbd_udi_ingress.sat_interaction_fhir_request r
 	WHERE r.nature = 'Original FHIR Payload'
-	  AND r.payload->>'id' = p_bundle_id
+	  AND r.bundle_id = p_bundle_id
+      AND r.payload->>'id' = r.bundle_id
 	  AND r.payload IS NOT NULL;
 
     -- Extract bundle IDs
