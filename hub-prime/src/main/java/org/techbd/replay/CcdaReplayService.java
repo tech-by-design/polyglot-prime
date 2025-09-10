@@ -57,7 +57,7 @@ public class CcdaReplayService {
 			String replayMasterInteractionId,
 			boolean trialRun,
 			boolean sendToNyec,
-			boolean immediate, boolean addBundleToOutput) {
+			boolean immediate) {
 
 		Map<String, Object> response = new LinkedHashMap<>();
 		response.put("replayMasterInteractionId", replayMasterInteractionId);
@@ -69,8 +69,7 @@ public class CcdaReplayService {
 					replayMasterInteractionId, appConfig.getVersion(), bundleIds.size());
 
 			Map<String, Map<String, Object>> result = processBundles(bundleIds, replayMasterInteractionId, trialRun,
-					sendToNyec,
-					addBundleToOutput);
+					sendToNyec);
 			response.put("status", "Completed");
 			response.put("result", result);
 
@@ -82,7 +81,7 @@ public class CcdaReplayService {
 
 			CompletableFuture.runAsync(() -> {
 				try {
-					processBundles(bundleIds, replayMasterInteractionId, trialRun, sendToNyec, addBundleToOutput);
+					processBundles(bundleIds, replayMasterInteractionId, trialRun, sendToNyec);
 					LOG.info("CCDA-REPLAY Completed asynchronous processing for replayMasterInteractionId={} TechBdVersion:{}",
 							replayMasterInteractionId, appConfig.getVersion());
 				} catch (Exception e) {
@@ -102,7 +101,7 @@ public class CcdaReplayService {
 	private Map<String, Map<String, Object>> processBundles(List<String> bundleIds,
 			String replayMasterInteractionId,
 			boolean trialRun,
-			boolean sendToNyec, boolean addBundleToOutput) {
+			boolean sendToNyec) {
 
 		Map<String, Map<String, Object>> processingDetails = new HashMap<>();
 
@@ -184,7 +183,7 @@ public class CcdaReplayService {
 				}
 
 				handleSuccess(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun, processingDetails,
-						originalHubInteractionId, addBundleToOutput, correctedBundle);
+						originalHubInteractionId, correctedBundle);
 
 			} catch (Exception e) {
 				handleException(bundleId, replayMasterInteractionId, interactionId, trialRun, e, processingDetails);
@@ -200,7 +199,6 @@ public class CcdaReplayService {
 			boolean trialRun,
 			Map<String, Map<String, Object>> processingDetails,
 			String originalHubInteractionId,
-			boolean addBundleToOutput,
 			String correctedBundle) {
 
 		LOG.info("CCDA-REPLAY Bundle {} successfully replayed for replayMasterInteractionId={} interactionId={} TechBdVersion:{}",
@@ -222,20 +220,20 @@ public class CcdaReplayService {
 				"PROCESSING COMPLETED - Bundle successfully replayed",
 				"Success");
 
-		// Add corrected bundle if requested
-		if (addBundleToOutput && correctedBundle != null) {
-			try {
-				JsonNode correctedBundleNode = Configuration.objectMapper.readTree(correctedBundle);
-				processingDetails.get(bundleId).put("correctedBundle", correctedBundleNode);
+		// // Add corrected bundle if requested
+		// if (addBundleToOutput && correctedBundle != null) {
+		// 	try {
+		// 		JsonNode correctedBundleNode = Configuration.objectMapper.readTree(correctedBundle);
+		// 		processingDetails.get(bundleId).put("correctedBundle", correctedBundleNode);
 
-			} catch (JsonProcessingException e) {
-				LOG.error(
-						"CCDA-REPLAY Bundle {} replayed but corrected bundle JSON parsing failed. replayMasterInteractionId={} interactionId={} TechBdVersion:{} error={}",
-						bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), e.getMessage(), e);
-				processingDetails.get(bundleId).put("correctedBundle",
-						"Error parsing corrected bundle JSON: " + e.getMessage());
-			}
-		}
+		// 	} catch (JsonProcessingException e) {
+		// 		LOG.error(
+		// 				"CCDA-REPLAY Bundle {} replayed but corrected bundle JSON parsing failed. replayMasterInteractionId={} interactionId={} TechBdVersion:{} error={}",
+		// 				bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), e.getMessage(), e);
+		// 		processingDetails.get(bundleId).put("correctedBundle",
+		// 				"Error parsing corrected bundle JSON: " + e.getMessage());
+		// 	}
+		// }
 	}
 
 	// Helper for missing original CCD payload
