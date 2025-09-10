@@ -82,11 +82,11 @@
         import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'fhir_needs_attention';
+        const viewName = 'fusion_fhir_needs_attention';
         const storedProcName = 'get_fhir_needs_attention';
-        const datalakeSubmissionDetails = 'fhir_needs_attention_details';
+        const datalakeSubmissionDetails = 'fusion_fhir_needs_attention_details';
         const datalakeSubmissionDetailsSP = 'get_fhir_needs_attention_details';
-        const missingSubmissionDetails = 'missing_datalake_submission_details';
+        const missingSubmissionDetails = 'fusion_missing_datalake_submission_details';
         const missingSubmissionDetailsSP = 'get_missing_datalake_submission_details';
         document.addEventListener('DOMContentLoaded', function () {
             const helpers = new Helpers();
@@ -171,7 +171,7 @@
                             button.innerText = hub_interaction_id;
                             button.style.textDecoration = 'underline';
                             button.addEventListener('click', () => {
-                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/fusion_interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                             });
                             return button;
                         }
