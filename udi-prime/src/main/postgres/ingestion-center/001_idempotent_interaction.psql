@@ -7884,22 +7884,20 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.merge_bundle_resource_ids(jsonb, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.merge_bundle_resource_ids(
-    p_new_bundle JSONB,
-    p_bundle_id  text
-)
-RETURNS JSONB LANGUAGE plpgsql AS
-$$
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.merge_bundle_resource_ids(p_new_bundle jsonb, p_bundle_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
 DECLARE
     v_bundle_id1 TEXT;
     v_consent_id1 TEXT;
     v_bundle_id2 TEXT;
     v_consent_id2 TEXT;
-
+ 
     v_obs_id1 TEXT;
     v_obs_id2 TEXT;
     v_obs_issued2 TEXT;
-
+ 
     v_corrected_bundle JSONB;
     v_hub_interaction_id text;
     v_payload JSONB;
@@ -7910,7 +7908,7 @@ BEGIN
     IF p_new_bundle IS NULL THEN
         RETURN jsonb_build_object('error', 'new_bundle is empty', 'merge_success', false);
     END IF;
-
+ 
     -- Prevent duplicate replay
     IF EXISTS (
         SELECT 1 FROM techbd_udi_ingress.ccda_replay_details
@@ -7922,33 +7920,33 @@ BEGIN
             'bundle_id', p_bundle_id
         );
     END IF;
-
+ 
     -- Get original payload
     SELECT r.hub_interaction_id, r.payload
-	INTO v_hub_interaction_id, v_payload
-	FROM techbd_udi_ingress.sat_interaction_fhir_request r
-	WHERE r.nature = 'Original FHIR Payload'
-	  AND r.bundle_id = p_bundle_id
+    INTO v_hub_interaction_id, v_payload
+    FROM techbd_udi_ingress.sat_interaction_fhir_request r
+    WHERE r.nature = 'Original FHIR Payload'
+      AND r.bundle_id = p_bundle_id
       AND r.payload->>'id' = r.bundle_id
-	  AND r.payload IS NOT NULL;
-
+      AND r.payload IS NOT NULL;
+ 
     -- Extract bundle IDs
     v_bundle_id1 := v_payload->>'id';
     v_bundle_id2 := p_new_bundle->>'id';
-
+ 
     -- Extract Consent IDs
     SELECT e->'resource'->>'id'
     INTO v_consent_id1
     FROM jsonb_array_elements(v_payload->'entry') e
     WHERE e->'resource'->>'resourceType' = 'Consent'
     LIMIT 1;
-
+ 
     SELECT e->'resource'->>'id'
     INTO v_consent_id2
     FROM jsonb_array_elements(p_new_bundle->'entry') e
     WHERE e->'resource'->>'resourceType' = 'Consent'
     LIMIT 1;
-
+ 
     -- Extract Observation (hasMember) IDs and issued
     SELECT e->'resource'->>'id'
     INTO v_obs_id1
@@ -7956,17 +7954,17 @@ BEGIN
     WHERE e->'resource'->>'resourceType' = 'Observation'
       AND e->'resource' ? 'hasMember'
     LIMIT 1;
-
+ 
     SELECT e->'resource'->>'id', e->'resource'->>'issued'
     INTO v_obs_id2, v_obs_issued2
     FROM jsonb_array_elements(p_new_bundle->'entry') e
     WHERE e->'resource'->>'resourceType' = 'Observation'
       AND e->'resource' ? 'hasMember'
     LIMIT 1;
-
+ 
     -- Start with p_new_bundle but replace its bundle ID
     v_corrected_bundle := jsonb_set(p_new_bundle, '{id}', to_jsonb(v_bundle_id1));
-
+ 
     -- Fix Consent + Grouper Observation
     v_corrected_bundle := jsonb_set(
         v_corrected_bundle,
@@ -7977,37 +7975,49 @@ BEGIN
                     -- Fix Consent resource
                     WHEN e->'resource'->>'resourceType' = 'Consent'
                     THEN
-                        jsonb_set(
-                            jsonb_set(
-                                jsonb_set(e, '{resource,id}', to_jsonb(v_consent_id1)),
-                                '{fullUrl}', to_jsonb(regexp_replace(e->>'fullUrl', v_consent_id2, v_consent_id1))
-                            ),
-                            '{request,url}', to_jsonb(regexp_replace(e#>>'{request,url}', v_consent_id2, v_consent_id1))
-                        ) || jsonb_build_object(
-                            'resource', jsonb_set(e->'resource', '{dateTime}', to_jsonb(e->'resource'->>'dateTime'))
+                        (
+                            WITH updated_resource AS (
+                                SELECT jsonb_set(e->'resource', '{id}', to_jsonb(v_consent_id1)) AS r
+                            )
+                            SELECT jsonb_set(
+                                       jsonb_set(
+                                           jsonb_set(e, '{resource}', r),
+                                           '{fullUrl}', to_jsonb(regexp_replace(e->>'fullUrl', v_consent_id2, v_consent_id1))
+                                       ),
+                                       '{request,url}', to_jsonb(regexp_replace(e#>>'{request,url}', v_consent_id2, v_consent_id1))
+                                   ) || jsonb_build_object(
+                                       'resource', jsonb_set(r, '{dateTime}', to_jsonb(r->>'dateTime'))
+                                   )
+                            FROM updated_resource
                         )
-
+ 
                     -- Fix Grouper Observation
                     WHEN e->'resource'->>'resourceType' = 'Observation'
                          AND e->'resource' ? 'hasMember'
                     THEN
-                        jsonb_set(
-                            jsonb_set(
-                                jsonb_set(e, '{resource,id}', to_jsonb(v_obs_id1)),
-                                '{fullUrl}', to_jsonb(regexp_replace(e->>'fullUrl', v_obs_id2, v_obs_id1))
-                            ),
-                            '{request,url}', to_jsonb(regexp_replace(e#>>'{request,url}', v_obs_id2, v_obs_id1))
-                        ) || jsonb_build_object(
-                            'resource', jsonb_set(e->'resource', '{issued}', to_jsonb(v_obs_issued2))
+                        (
+                            WITH updated_resource AS (
+                                SELECT jsonb_set(e->'resource', '{id}', to_jsonb(v_obs_id1)) AS r
+                            )
+                            SELECT jsonb_set(
+                                       jsonb_set(
+                                           jsonb_set(e, '{resource}', r),
+                                           '{fullUrl}', to_jsonb(regexp_replace(e->>'fullUrl', v_obs_id2, v_obs_id1))
+                                       ),
+                                       '{request,url}', to_jsonb(regexp_replace(e#>>'{request,url}', v_obs_id2, v_obs_id1))
+                                   ) || jsonb_build_object(
+                                       'resource', jsonb_set(r, '{issued}', to_jsonb(v_obs_issued2))
+                                   )
+                            FROM updated_resource
                         )
-
+ 
                     ELSE e
                 END
             )
             FROM jsonb_array_elements(v_corrected_bundle->'entry') e
         )
     );
-    
+ 
     RETURN jsonb_build_object(
         'hub_interaction_id', v_hub_interaction_id,
         'bundle_id', p_bundle_id,
@@ -8017,7 +8027,7 @@ BEGIN
         'merge_success', true
     );
 END;
-$$;
+$function$;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.fix_fhir_bundle_payload(jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.fix_fhir_bundle_payload(p_bundle JSONB)
