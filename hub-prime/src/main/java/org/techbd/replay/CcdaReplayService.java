@@ -127,7 +127,9 @@ public class CcdaReplayService {
 					continue;
 				}						
 				Object originalCCDAPayload = originalPayloadAndHeaders.get("originalCCDAPayload");
-				if (originalCCDAPayload == null) {
+				if (originalCCDAPayload == null
+						|| "null".equalsIgnoreCase(originalCCDAPayload.toString().trim())
+						|| originalCCDAPayload.toString().trim().isEmpty()) {
 					handleMissingPayload(bundleId, replayMasterInteractionId, interactionId, tenantId,
 							trialRun, processingDetails, originalHubInteractionId);
 					continue;
