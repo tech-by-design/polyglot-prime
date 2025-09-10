@@ -31,9 +31,8 @@ public class CcdaReplayController {
         @RequestBody List<String> bundleIds,
         @RequestParam(name = "trialRun", required = false, defaultValue = "true") boolean trialRun,
         @RequestParam(name = "sendToNyec", required = false, defaultValue = "false") boolean sendToNyec,
-        @RequestParam(name = "immediate", required = false, defaultValue = "true") boolean immediate,
-        @RequestParam(name = "addBundleToOutput", required = false, defaultValue = "true") boolean addBundleToOutput) {
+        @RequestParam(name = "immediate", required = false, defaultValue = "false") boolean immediate) {
         final var replayMasterInteractionId = UUID.randomUUID().toString(); 
-        return replayService.replayBundlesAsync(bundleIds,replayMasterInteractionId,trialRun,sendToNyec,immediate,addBundleToOutput);
+        return replayService.replayBundlesAsync(bundleIds,replayMasterInteractionId,trialRun,sendToNyec,immediate);
     }
 }
