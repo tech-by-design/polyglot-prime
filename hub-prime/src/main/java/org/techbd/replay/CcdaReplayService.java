@@ -167,11 +167,11 @@ public class CcdaReplayService {
 						replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 
 				if (sendToNyec) {
-					Map<String, Object> requestParametersMap = Map.of(
-							Constants.SOURCE_TYPE, SourceType.CCDA.name(),
-							Constants.INTERACTION_ID, interactionId,
-							Constants.TENANT_ID, tenantId,
-							Constants.REQUEST_URI, "/ccda/replay/");
+					Map<String, Object> requestParametersMap = new HashMap<>();
+					requestParametersMap.put(Constants.SOURCE_TYPE, SourceType.CCDA.name());
+					requestParametersMap.put(Constants.INTERACTION_ID, interactionId);
+					requestParametersMap.put(Constants.TENANT_ID, tenantId);
+					requestParametersMap.put(Constants.REQUEST_URI, "/ccda/replay/");
 					Map<String, Object> responseMap = new HashMap<>();
 					LOG.info(
 							"CCDA-REPLAY Sending replayed bundle to NYEC FHIR endpoint for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion:{}",
