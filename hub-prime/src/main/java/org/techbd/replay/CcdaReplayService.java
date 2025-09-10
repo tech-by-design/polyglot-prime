@@ -1,7 +1,5 @@
 package org.techbd.replay;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -67,8 +65,8 @@ public class CcdaReplayService {
 		response.put("bundleIds", bundleIds);
 
 		if (immediate) {
-			LOG.info("CCDA-REPLAY Starting synchronous processing for replayMasterInteractionId={} with {} bundle(s)",
-					replayMasterInteractionId, bundleIds.size());
+			LOG.info("CCDA-REPLAY Starting synchronous processing for replayMasterInteractionId={} TechBdVersion:{} with {} bundle(s)",
+					replayMasterInteractionId, appConfig.getVersion(), bundleIds.size());
 
 			Map<String, Map<String, Object>> result = processBundles(bundleIds, replayMasterInteractionId, trialRun,
 					sendToNyec,
@@ -76,27 +74,27 @@ public class CcdaReplayService {
 			response.put("status", "Completed");
 			response.put("result", result);
 
-			LOG.info("CCDA-REPLAY Completed synchronous processing for replayMasterInteractionId={}",
-					replayMasterInteractionId);
+			LOG.info("CCDA-REPLAY Completed synchronous processing for replayMasterInteractionId={} TechBdVersion:{}",
+					replayMasterInteractionId, appConfig.getVersion());
 		} else {
-			LOG.info("CCDA-REPLAY Starting asynchronous processing for replayMasterInteractionId={} with {} bundle(s)",
-					replayMasterInteractionId, bundleIds.size());
+			LOG.info("CCDA-REPLAY Starting asynchronous processing for replayMasterInteractionId={} TechBdVersion:{} with {} bundle(s)",
+					replayMasterInteractionId, appConfig.getVersion(), bundleIds.size());
 
 			CompletableFuture.runAsync(() -> {
 				try {
 					processBundles(bundleIds, replayMasterInteractionId, trialRun, sendToNyec, addBundleToOutput);
-					LOG.info("CCDA-REPLAY Completed asynchronous processing for replayMasterInteractionId={}",
-							replayMasterInteractionId);
+					LOG.info("CCDA-REPLAY Completed asynchronous processing for replayMasterInteractionId={} TechBdVersion:{}",
+							replayMasterInteractionId, appConfig.getVersion());
 				} catch (Exception e) {
-					LOG.error("CCDA-REPLAY Asynchronous processing failed for replayMasterInteractionId={} error={}",
-							replayMasterInteractionId, e.getMessage(), e);
+					LOG.error("CCDA-REPLAY Asynchronous processing failed for replayMasterInteractionId={} TechBdVersion:{} error={}",
+							replayMasterInteractionId, appConfig.getVersion(), e.getMessage(), e);
 				}
 			}, asyncTaskExecutor);
 
 			response.put("status", "Processing started asynchronously");
 			response.put("result", null);
-			LOG.info("CCDA-REPLAY Asynchronous processing submitted for replayMasterInteractionId={}",
-					replayMasterInteractionId);
+			LOG.info("CCDA-REPLAY Asynchronous processing submitted for replayMasterInteractionId={} TechBdVersion:{}",
+					replayMasterInteractionId, appConfig.getVersion());
 		}
 		return response;
 	}
@@ -113,26 +111,26 @@ public class CcdaReplayService {
 
 			try {
 				LOG.info(
-						"CCDA-REPLAY PROCESSING STARTED - Replaying bundle {} with replayMasterInteractionId={} interactionId={}",
-						bundleId, replayMasterInteractionId, interactionId);
+						"CCDA-REPLAY PROCESSING STARTED - Replaying bundle {} with replayMasterInteractionId={} interactionId={} TechBdVersion:{}",
+						bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion());
 
 				Map<String, Object> originalPayloadAndHeaders = getOriginalCCDPayload(bundleId,
 						replayMasterInteractionId, interactionId);
 				String tenantId = (String) originalPayloadAndHeaders.get("X-TechBD-Tenant-ID");
 				String originalHubInteractionId = (String) originalPayloadAndHeaders
 						.get("original_hub_interaction_id");
-				Object originalCCDAPayload = originalPayloadAndHeaders.get("originalCCDAPayload");
-				if (originalCCDAPayload == null) {
-					handleMissingPayload(bundleId, replayMasterInteractionId, interactionId, tenantId,
-							trialRun, processingDetails, originalHubInteractionId);
-					continue;
-				}
 				boolean isAlreadyResubmitted = originalPayloadAndHeaders.get("alreadyResubmitted") != null
 						&& Boolean.parseBoolean(originalPayloadAndHeaders.get("alreadyResubmitted").toString());
 
 				if (isAlreadyResubmitted) {
 					handleAlreadyResubmitted(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun,
 							processingDetails, originalHubInteractionId);
+					continue;
+				}						
+				Object originalCCDAPayload = originalPayloadAndHeaders.get("originalCCDAPayload");
+				if (originalCCDAPayload == null) {
+					handleMissingPayload(bundleId, replayMasterInteractionId, interactionId, tenantId,
+							trialRun, processingDetails, originalHubInteractionId);
 					continue;
 				}
 
@@ -165,8 +163,8 @@ public class CcdaReplayService {
 				}
 
 				LOG.info(
-						"CCDA-REPLAY PROCESSING COMPLETED - Bundle successfully replayed with replayMasterInteractionId={} interactionId={} bundleId={} tenantId={}",
-						replayMasterInteractionId, interactionId, bundleId, tenantId);
+						"CCDA-REPLAY PROCESSING COMPLETED - Bundle successfully replayed with replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion:{}",
+						replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 
 				if (sendToNyec) {
 					Map<String, Object> requestParametersMap = Map.of(
@@ -176,13 +174,13 @@ public class CcdaReplayService {
 							Constants.REQUEST_URI, "/ccda/replay/");
 					Map<String, Object> responseMap = new HashMap<>();
 					LOG.info(
-							"CCDA-REPLAY Sending replayed bundle to NYEC FHIR endpoint for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={}",
-							replayMasterInteractionId, interactionId, bundleId, tenantId);
+							"CCDA-REPLAY Sending replayed bundle to NYEC FHIR endpoint for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion:{}",
+							replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 					fhirService.processBundle(correctedBundle, requestParametersMap, responseMap);
 				} else {
 					LOG.info(
-							"CCDA-REPLAY sendToNyec is false. Skipping sending replayed bundle to NYEC FHIR endpoint for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={}",
-							replayMasterInteractionId, interactionId, bundleId, tenantId);
+							"CCDA-REPLAY sendToNyec is false. Skipping sending replayed bundle to NYEC FHIR endpoint for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion:{}",
+							replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 				}
 
 				handleSuccess(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun, processingDetails,
@@ -205,11 +203,11 @@ public class CcdaReplayService {
 			boolean addBundleToOutput,
 			String correctedBundle) {
 
-		LOG.info("CCDA-REPLAY Bundle {} successfully replayed for replayMasterInteractionId={} interactionId={}",
-				bundleId, replayMasterInteractionId, interactionId);
+		LOG.info("CCDA-REPLAY Bundle {} successfully replayed for replayMasterInteractionId={} interactionId={} TechBdVersion:{}",
+				bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion());
 
 		if (!trialRun) {
-			upsertCcdaReplayDetails(bundleId, originalHubInteractionId, interactionId, false, null,
+			upsertCcdaReplayDetails(bundleId, originalHubInteractionId, interactionId, true, null,
 					Configuration.objectMapper.createObjectNode()
 							.put("message", "PROCESSING COMPLETED - Bundle successfully replayed")
 							.put("status", "Success"),
@@ -232,8 +230,8 @@ public class CcdaReplayService {
 
 			} catch (JsonProcessingException e) {
 				LOG.error(
-						"CCDA-REPLAY Bundle {} replayed but corrected bundle JSON parsing failed. replayMasterInteractionId={} interactionId={} error={}",
-						bundleId, replayMasterInteractionId, interactionId, e.getMessage(), e);
+						"CCDA-REPLAY Bundle {} replayed but corrected bundle JSON parsing failed. replayMasterInteractionId={} interactionId={} TechBdVersion:{} error={}",
+						bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), e.getMessage(), e);
 				processingDetails.get(bundleId).put("correctedBundle",
 						"Error parsing corrected bundle JSON: " + e.getMessage());
 			}
@@ -250,8 +248,8 @@ public class CcdaReplayService {
 			String originalHubInteractionId) {
 
 		LOG.info(
-				"CCDA-REPLAY PROCESSING STARTED - Replaying bundle {} with replayMasterInteractionId={} interactionId={}",
-				bundleId, replayMasterInteractionId, interactionId);
+				"CCDA-REPLAY PROCESSING STARTED - Replaying bundle {} with replayMasterInteractionId={} interactionId={} TechBdVersion:{}",
+				bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion());
 
 		if (!trialRun) {
 			upsertCcdaReplayDetails(bundleId, originalHubInteractionId, interactionId, false, null,
@@ -273,8 +271,8 @@ public class CcdaReplayService {
 			String tenantId, boolean trialRun, Map<String, Map<String, Object>> processingDetails,
 			String originalHubInteractionId) {
 
-		LOG.warn("Skipping already resubmitted bundle {} interactionId={} tenantId={}", bundleId, interactionId,
-				tenantId);
+		LOG.warn("Skipping already resubmitted bundle {} interactionId={} tenantId={} TechBdVersion:{}",
+				bundleId, interactionId, tenantId, appConfig.getVersion());
 
 		if (!trialRun) {
 			upsertCcdaReplayDetails(bundleId, originalHubInteractionId, interactionId, false, null,
@@ -300,7 +298,7 @@ public class CcdaReplayService {
 		Map<String, Object> errorMessage = (Map<String, Object>) responseJson.getOrDefault("errorMessage",
 				Map.of("message", "Unknown error during CCDA processing"));
 
-		LOG.error("Bundle {} failed validation: {}", bundleId, errorMessage);
+		LOG.error("BundleId {}  ReplayInteractionId {} interactionId {} TechBDVersion {} failed validation: {}", bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), errorMessage);
 
 		if (!trialRun) {
 			upsertCcdaReplayDetails(bundleId, null, interactionId, false,
@@ -328,10 +326,10 @@ public class CcdaReplayService {
 		Map<String, Object> errorMessage = (Map<String, Object>) correctedResponse.getOrDefault("error",
 				Map.of("message", "Unknown error during merging bundle resource IDs"));
 
-		LOG.error("Bundle {} failed merging: {}", bundleId, errorMessage);
+		LOG.error("BundleId {}  ReplayInteractionId {} interactionId {} TechBDVersion {} failed merging: {}", bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), errorMessage);
 
 		if (!trialRun) {
-			upsertCcdaReplayDetails(bundleId, null, interactionId, false,
+			upsertCcdaReplayDetails(bundleId, null, interactionId, true,
 					Configuration.objectMapper.valueToTree(errorMessage),
 					Configuration.objectMapper.createObjectNode()
 							.put("message", "Failed Merging Bundle Resource IDs")
@@ -350,7 +348,7 @@ public class CcdaReplayService {
 	private void handleException(String bundleId, String replayMasterInteractionId, String interactionId,
 			boolean trialRun, Exception e, Map<String, Map<String, Object>> processingDetails) {
 
-		LOG.error("Bundle {} processing failed: {}", bundleId, e.getMessage(), e);
+		LOG.error("BundleId {}  ReplayInteractionId {} interactionId {} TechBDVersion {} processing failed: {}", bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), e.getMessage(), e);
 
 		if (!trialRun) {
 			upsertCcdaReplayDetails(bundleId, null, interactionId, false, null,
@@ -437,8 +435,8 @@ public class CcdaReplayService {
 	public Map<String, Object> getOriginalCCDPayload(String bundleId,
 			String replayMasterInteractionId,
 			String interactionId) {
-		LOG.info("CCDA-REPLAY Fetching CCDA payload for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-				replayMasterInteractionId, interactionId, bundleId);
+		LOG.info("CCDA-REPLAY Fetching CCDA payload for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+				replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 		Map<String, Object> response = new HashMap<>(3);
 		try {
 			final DSLContext dslContext = udiPrimeJpaConfig.dsl();
@@ -449,19 +447,19 @@ public class CcdaReplayService {
 			final var responseJson = (JsonNode) routine.getReturnValue();
 			if (responseJson == null) {
 				LOG.warn(
-						"CCDA-REPLAY No CCDA payload found for replayMasterInteractionId: {} InteractionId: {}  bundleId={}",
-						replayMasterInteractionId, interactionId, bundleId);
+						"CCDA-REPLAY No CCDA payload found for replayMasterInteractionId: {} InteractionId: {}  bundleId={} TechBDVersion {}",
+						replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 			} else {
 				response.putAll(extractFields(responseJson));
 				LOG.info(
-						"CCDA-REPLAY Successfully fetched CCDA payload for replayMasterInteractionId: {} InteractionId: {} bundleId={} ({} chars)",
-						replayMasterInteractionId, interactionId, bundleId,
+						"CCDA-REPLAY Successfully fetched CCDA payload for replayMasterInteractionId: {} InteractionId: {} TechBDVersion: {} bundleId={} ({} chars)",
+						replayMasterInteractionId, interactionId, appConfig.getVersion(), bundleId,
 						responseJson.size());
 			}
 		} catch (Exception e) {
 			LOG.error(
-					"CCDA-REPLAY Error fetching CCDA payload for replayMasterInteractionId: {} InteractionId: {} bundleId={}  : {}",
-					replayMasterInteractionId, interactionId, bundleId, e.getMessage(), e);
+					"CCDA-REPLAY Error fetching CCDA payload for replayMasterInteractionId: {} InteractionId: {} TechBDVersion: {} bundleId={}  : {}",
+					replayMasterInteractionId, interactionId, appConfig.getVersion(), bundleId, e.getMessage(), e);
 			throw e;
 		}
 		return response;
@@ -487,8 +485,8 @@ public class CcdaReplayService {
 			String replayMasterInteractionId,
 			String interactionId) {
 		LOG.info(
-				"CCDA-REPLAY Generating CCDA Bundle BEGIN for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-				replayMasterInteractionId, interactionId, bundleId);
+				"CCDA-REPLAY Generating CCDA Bundle BEGIN for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+				replayMasterInteractionId, interactionId, bundleId,appConfig.getVersion());
 
 		// Fetch values dynamically from orginalPayloadAndHeaders
 		String cin = (String) orginalPayloadAndHeaders.get("X-TechBD-CIN");
@@ -502,13 +500,14 @@ public class CcdaReplayService {
 		String encounterType = (String) orginalPayloadAndHeaders.get("X-TechBD-Encounter-Type");
 		String screeningCode = (String) orginalPayloadAndHeaders.get("X-TechBD-Screening-Code");
 		LOG.info(
-				"CCDA-REPLAY  CCDA Replay invoked with parameters - replayMasterInteractionId: {}, interactionId: {}, bundleId: {}, "
+				"CCDA-REPLAY  CCDA Replay invoked with parameters - replayMasterInteractionId: {}, interactionId: {}, bundleId: {}, TechBDVersion: {},"
 						+
 						"CIN: {}, OrgNPI: {}, OrgTIN: {}, Tenant-ID: {}, Facility-ID: {}, Base FHIR URL: {}, " +
 						"Encounter Type: {}, Screening Code: {}, originalCCDAPayload present: {}",
 				replayMasterInteractionId,
 				interactionId,
 				bundleId,
+				appConfig.getVersion(),
 				cin,
 				orgNpi,
 				orgTin,
@@ -555,14 +554,14 @@ public class CcdaReplayService {
 					.block();
 			Map<String, Object> result = objectMapper.readValue(apiResponse, Map.class);
 			LOG.info(
-					"CCDA-REPLAY Received response from CCDA Bundle replay endpoint for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-					replayMasterInteractionId, interactionId, bundleId);
+					"CCDA-REPLAY Received response from CCDA Bundle replay endpoint for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+					replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 
 			return result;
 
 		} catch (WebClientResponseException e) {
-			LOG.error("CCDA-REPLAY WebClient error: status={} body={}", e.getStatusCode(), e.getResponseBodyAsString(),
-					e);
+			LOG.error("CCDA-REPLAY WebClient error: status={} body={} TechBDVersion: {}", e.getStatusCode(), e.getResponseBodyAsString(),
+					appConfig.getVersion());
 			return Map.of(
 					"isValid", false,
 					"errorMessage", Map.of("message", "WebClient error: " + e.getMessage()),
@@ -581,8 +580,8 @@ public class CcdaReplayService {
 			String replayMasterInteractionId,
 			String interactionId) {
 		LOG.info(
-				"CCDA-REPLAY Merging bundle resources BEGIN for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-				replayMasterInteractionId, interactionId, bundleId);
+				"CCDA-REPLAY Merging bundle resources BEGIN for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+				replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 		Map<String, Object> response = new HashMap<>();
 		try {
 			final var dslContext = udiPrimeJpaConfig.dsl();
@@ -594,23 +593,23 @@ public class CcdaReplayService {
 			final var responseJson = routine.getReturnValue();
 			if (responseJson == null) {
 				LOG.warn(
-						"CCDA-REPLAY Merge returned null for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-						replayMasterInteractionId, interactionId, bundleId);
+						"CCDA-REPLAY Merge returned null for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+						replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 			} else {
 				LOG.debug(
-						"CCDA-REPLAY Successfully merged resources for replayMasterInteractionId: {} InteractionId: {} bundleId: {} resultSize: {}",
-						replayMasterInteractionId, interactionId, bundleId,
+						"CCDA-REPLAY Successfully merged resources for replayMasterInteractionId: {} InteractionId: {} bundleId: {}  TechBDVersion: {} resultSize: {}",
+						replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion(),
 						responseJson.toString().length());
 				response = extractFields(responseJson);
 			}
 			LOG.info(
-					"CCDA-REPLAY Merging bundle resources COMPLETED for replayMasterInteractionId: {} InteractionId: {} bundleId: {}",
-					replayMasterInteractionId, interactionId, bundleId);
+					"CCDA-REPLAY Merging bundle resources COMPLETED for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
+					replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 			return response;
 		} catch (Exception e) {
 			LOG.error(
-					"CCDA-REPLAY Error merging bundle resources for replayMasterInteractionId: {} InteractionId: {} bundleId: {} error: {}",
-					replayMasterInteractionId, interactionId, bundleId, e.getMessage(), e);
+					"CCDA-REPLAY Error merging bundle resources for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {} error: {}",
+					replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion(), e);
 			// throw e;
 		}
 		return null;
@@ -626,8 +625,8 @@ public class CcdaReplayService {
 			String replayMasterInteractionId, String tenantId) {
 
 		LOG.info(
-				"CCDA-REPLAY Upserting CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {}",
-				replayMasterInteractionId, interactionId, bundleId);
+				"CCDA-REPLAY Upserting CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {} TechBDVersion: {}",
+				replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 		try {
 			final var dslContext = udiPrimeJpaConfig.dsl();
 			final var jooqCfg = dslContext.configuration();
@@ -648,18 +647,18 @@ public class CcdaReplayService {
 			final var returnValue = routine.getReturnValue();
 			if (returnValue == null) {
 				LOG.warn(
-						"CCDA-REPLAY Upsert returned null for replayMasterInteractionId: {} interactionId: {} bundleId: {}",
-						replayMasterInteractionId, interactionId, bundleId);
+						"CCDA-REPLAY Upsert returned null for replayMasterInteractionId: {} interactionId: {} bundleId: {} TechBDVersion: {}",
+						replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion());
 			} else {
 				LOG.debug(
-						"CCDA-REPLAY Successfully upserted CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {} returnLength={}",
-						replayMasterInteractionId, interactionId, bundleId,
+						"CCDA-REPLAY Successfully upserted CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {} TechBDVersion: {} returnLength={}",
+						replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion(),
 						returnValue.length());
 			}
 		} catch (Exception e) {
 			LOG.error(
-					"CCDA-REPLAY Error upserting CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {} error: {}",
-					replayMasterInteractionId, interactionId, bundleId, e.getMessage(), e);
+					"CCDA-REPLAY Error upserting CCDA replay details for replayMasterInteractionId: {} interactionId: {} bundleId: {} TechBDVersion: {} error: {}",
+					replayMasterInteractionId, interactionId, bundleId, appConfig.getVersion(), e.getMessage(), e);
 		}
 	}
 
