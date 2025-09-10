@@ -2,31 +2,100 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{layout/prime}">
 
-<head> 
+<head>
+   
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
     <style>
-        .grid-description{
+        .grid-description {
             font-size: 14px;
             margin: 5px 0px 5px 15px;
         }
-    </style>
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+
+        #date-picker-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;  
+            align-items: center;  
+            justify-content: flex-start;
+        }
+
+        .date-picker-label{      
+            width: 100px;
+            line-height: 35px;
+        }
+
+        .date-picker-label {
+            text-align: right;
+        }
+
+        #searchButton {
+            margin-left: 10px;
+            background-color: #e7e7e7;
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        #clearButton {
+            margin-left: 10px;
+            background-color: #e7e7e7;
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            display: none;
+        }
+
+        </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
         import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'fhir_session_diagnostics';
+        const storedProcName = 'get_fhir_session_diagnostics';
+        const detailStoredProcName = 'get_fhir_session_diagnostics_details';
         const fhirValidationIssue = 'fhir_session_diagnostics_details';
+        // Date formatting function
+        const formatDate = (date) => {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}-${day}-${year}`;
+        };
+
         const fhirValidationIssueColumnDefs = [
             { headerName: "TechBD Interaction ID", field: "session_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the interaction during which the issue occurred" },
-            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the bundle during which the issue occurred" },            
+            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the bundle during which the issue occurred" },
             { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
             { headerName: "Issue Line", field: "line", filter: "agTextColumnFilter", headerTooltip: "The line number where the issue occurred" },
-            { headerName: "Issue Column", field: "column", filter: "agTextColumnFilter", headerTooltip: "The column number where the issue occurred" },
+            { headerName: "Issue Column", field: "col_no", filter: "agTextColumnFilter", headerTooltip: "The column number where the issue occurred" },
             { headerName: "Diagnostics", field: "diagnostics", filter: "agTextColumnFilter", headerTooltip: "The diagnostics associated with the issue" },
         ];
 
@@ -37,12 +106,11 @@
                     message: issue.message ,  // Default message if none exists
                     severity: issue.severity ,  // Default severity if none exists 
                     encountered_date: issue.encountered_date  ,  // Set to encountered date or default
-                    ig_version: issue.ig_version  ,  // Set to ig_version, default to "Unknown" if not available
-                    encountered_date: issue.encountered_date  ,  // Assuming encountered_date maps to issue_date
+                    ig_version: issue.ig_version  ,  // Set to ig_version, default to "Unknown" if not available 
                     tenant_id: issue.tenant_id  ,  // Mapping tenant_id
                     session_id: issue.session_id  ,  // Mapping session_id
                     line: issue.line  ,  // Mapping line
-                    column: issue.column  ,  // Mapping column
+                    column: issue.col_no  ,  // Mapping column
                     uri: issue.uri  ,  // Mapping uri
                     diagnostics: issue.diagnostics  ,  // Mapping diagnostics
                     bundle_id: issue.bundle_id  ,  // Mapping bundle_id
@@ -54,149 +122,179 @@
             }
 
         function getFhirValidationIssueGridData(params) {
-            const ig_version = params.data.ig_version ;
-            const message = params.data.message ;
-            const encountered_date = params.data.encountered_date ;
-            const severity = params.data.severity ;
-            const tenant_id = params.data.tenant_id ;
-            const validation_engine = params.data.validation_engine ;
+            const ig_version = params.data.ig_version;
+            const message = params.data.message;
+            const encountered_date = params.data.encountered_date;
+            const severity = params.data.severity;
+            const tenant_id = params.data.tenant_id;
+            const validation_engine = params.data.validation_engine;
 
-            const filterModel = {};
+            // Get current date range from date pickers
+            const startDate = $('#start-date').datepicker('getDate');
+            const endDate = $('#end-date').datepicker('getDate');
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);
 
-            // Add filters only if values exist
-            if (tenant_id) {
-                filterModel["tenant_id"] = {
-                    filterType: "text",
-                    type: "equals",
-                    filter: tenant_id
-                };
-            }
-
-            if (severity) {
-                filterModel["severity"] = {
-                    filterType: "text",
-                    type: "equals",
-                    filter: severity
-                };
-            }
-
-            if (message) {
-                filterModel["message"] = {
-                    filterType: "text",
-                    type: "equals",
-                    filter: message
-                };
-            }
-
-            if (ig_version) {
-                filterModel["ig_version"] = {
-                    filterType: "text",
-                    type: "equals",
-                    filter: ig_version
-                };
-            }
-
-            if (validation_engine) {
-                filterModel["validation_engine"] = {
-                    filterType: "text",
-                    type: "equals",
-                    filter: validation_engine
-                };
-            }
-
-            if (encountered_date) {
-                filterModel["encountered_date"] = {
-                    filterType: "date",
-                    type: "equals",
-                    filter: encountered_date
-                }
-            }            
-
-            // Request data
-            const requestData = {
-                startRow: 0,
-                endRow: 500,
-                rowGroupCols: [],
-                valueCols: [],
-                pivotCols: [],
-                pivotMode: false,
-                groupKeys: [],
-                filterModel, // Use the dynamically created filter model
-                sortModel: [
-                    {
-                        sort: "desc",
-                        colId: "encountered_date"
-                    }
-                ]
+            const storedProcParams = {
+                "p_tenant_id": tenant_id,
+                "p_severity": severity,
+                "p_message": message,
+                "p_ig_version": ig_version,
+                "p_validation_engine": validation_engine,
+                "p_encountered_date": encountered_date   
             };
 
-            // Fetch with POST method
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${fhirValidationIssue}.json`), {
-                method: 'POST',  // Use POST method
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 1000,
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            };
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+            const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${detailStoredProcName}.json?storedProcparams=${paramsJson}`);
+
+            fetch(url, {
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'  // Ensure it's sent as JSON
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestData)  // Convert the request data to a JSON string
+                body: JSON.stringify(gridRequestBody)
             })
             .then(response => {
                 if (response.url.includes('/?timeout=true')) {
-                    window.location.href = '/?timeout=true'; // Redirect to login page
-                    return null; // Prevent further processing of the response
+                    window.location.href = '/?timeout=true';
+                    return null;
                 }
-                return response.json();  // Parse the response as JSON
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
             })
             .then(response => {
-                 // Transform the response data
-                const transformedResponse = transformFhirValidationIssues(response);
-                params.successCallback(transformedResponse);  // Pass the response to the ag-Grid success callback
+                let rowData = response;
+
+                if (!Array.isArray(rowData)) {
+                    if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                        rowData = rowData.rows;
+                    } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        rowData = rowData.data;
+                    } else {
+                        console.error("Unexpected response format:", response);
+                        rowData = [];
+                    }
+                }
+
+                params.successCallback(rowData, rowData.length);
             })
             .catch(error => {
-                console.error('Error fetching details data: ' + error);
+                console.error('Error fetching FHIR validation issue details: ' + error);
+                params.failCallback();
             });
-
-        }        
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const helpers = new Helpers();
-            const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
-                     { headerName: "Encountered Time", field: "encountered_date", sortable: true, sort: "desc", filter: "agDateColumnFilter", cellRenderer: 'agGroupCellRenderer', headerTooltip: "Timestamp indicating when the issue was encountered." },                    
-                    { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },
-                    { headerName: "Severity", field: "severity", filter: "agTextColumnFilter", headerTooltip: "The severity of the issue." },
-                    { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter", headerTooltip: "A description of the issue." },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
-                    { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
-                    { headerName: "Issue Count", field: "issue_count", filter: "agTextColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
-                ])
-                .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
-                    (data, valueCols) => {
-                        return valueCols.map(col => ({
-                            headerName: col.displayName,
-                            field: col.field
-                        }));
-                    },
-                )
-                .withMasterDetail(true)
-                .withDetailCellRendererParams({
-                    detailGridOptions: {
-                        columnDefs: fhirValidationIssueColumnDefs,
-                        defaultColDef: {
-                            flex: 1
-                        }
-                    },
-                    getDetailRowData: params => {
-                        getFhirValidationIssueGridData(params);
-                    }
-                })
-                .withModalAide(modalAide)
-                .withGridDivStyles({ height: "750px", width: "100%" })
-                .build();
 
-            agGridInstance.init('serverDataGrid');
-             // Add date-range text 
-            // Inject the date range into the HTML
-            helpers.injectDateRangeText('date-range', 'This data grid provides a high-level summary view on the Data Quality page, highlighting errors in submissions to facilitate swift identification and resolution. Key fields such as Date, Tenant ID, Issue Message, Severity, IG Version, HAPI Version, and Issue Count are displayed, offering a comprehensive snapshot of data quality issues for the period <b>{startDate}</b> to <b>{endDate}</b>. The Severity field categorizes issues into ERROR and WARNING, enabling users to prioritize their efforts effectively. A drill-down feature enables users to explore detailed insights for each entry, including additional context like the associated Bundle ID and other relevant information. This functionality ensures efficient error tracing and resolution, streamlining the data validation process and enhancing overall submission quality.',7);
+            // Initialize date range
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+
+            let initialStartDate = formatDate(oneWeekAgo);
+            let initialEndDate = formatDate(today);
+
+            // Datepicker Initialization
+            $("#start-date, #end-date").datepicker({
+                dateFormat: "mm-dd-yy",
+                onSelect: function() {
+                    const startDate = $('#start-date').datepicker('getDate');
+                    const endDate = $('#end-date').datepicker('getDate');
+                    const formattedStartDate = formatDate(startDate);
+                    const formattedEndDate = formatDate(endDate);
+
+                    if (formattedStartDate !== initialStartDate || formattedEndDate !== initialEndDate) {
+                        $('#clearButton').show();
+                    } else {
+                        $('#clearButton').hide();
+                    }
+                }
+            });
+
+            $("#start-date").datepicker("setDate", oneWeekAgo);
+            $("#end-date").datepicker("setDate", today);
+
+            updateGridWithDates(oneWeekAgo, today);
+
+            // Search Button Click Handler
+            $('#searchButton').click(function() {
+                $('#serverDataGrid').empty();
+                const startDate = $('#start-date').datepicker('getDate');
+                const endDate = $('#end-date').datepicker('getDate');
+                updateGridWithDates(startDate, endDate);
+            });
+
+            $('#clearButton').click(function() {
+               location.reload();
+            });
+
+            function updateGridWithDates(startDate, endDate) {
+                const formattedStartDate = formatDate(startDate);
+                const formattedEndDate = formatDate(endDate);
+
+                const storedProcParams = {
+                    "p_start_date": formattedStartDate,
+                    "p_end_date": formattedEndDate
+                };
+
+                helpers.injectDateRangeText('date-range', 'This data grid provides a high-level summary view on the Data Quality page, highlighting errors in submissions to facilitate swift identification and resolution from <b>{startDate}</b> to <b>{endDate}</b>. Key fields such as Date, Tenant ID, Issue Message, Severity, IG Version, HAPI Version, and Issue Count are displayed, offering a comprehensive snapshot of data quality issues. The Severity field categorizes issues into ERROR and WARNING, enabling users to prioritize their efforts effectively. A drill-down feature enables users to explore detailed insights for each entry, including additional context like the associated Bundle ID and other relevant information. This functionality ensures efficient error tracing and resolution, streamlining the data validation process and enhancing overall submission quality.');
+
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+                const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+
+                const agGridInstance = new AGGridAideBuilder()
+                    .withColumnDefs([
+                         { headerName: "Encountered Date", field: "encountered_date", sortable: true,   filter: "agDateColumnFilter", cellRenderer: 'agGroupCellRenderer', headerTooltip: "Date indicating when the issue was encountered." },
+                        { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },
+                        { headerName: "Severity", field: "severity", filter: "agTextColumnFilter", headerTooltip: "The severity of the issue." },
+                        { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter", headerTooltip: "A description of the issue." },
+                        { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
+                        { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
+                        { headerName: "Issue Count", field: "issue_count", filter: "agTextColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
+                    ])
+                    .withServerSideDatasource(
+                        window.shell.serverSideUrl(url),
+                        (data, valueCols) => {
+                            return valueCols.map(col => ({
+                                headerName: col.displayName,
+                                field: col.field
+                            }));
+                        },
+                    )
+                    .withMasterDetail(true)
+                    .withDetailCellRendererParams({
+                        detailGridOptions: {
+                            columnDefs: fhirValidationIssueColumnDefs,
+                            defaultColDef: {
+                                flex: 1
+                            }
+                        },
+                        getDetailRowData: params => {
+                            getFhirValidationIssueGridData(params);
+                        }
+                    })
+                    .withDetailRowAutoHeight(false)
+                    .withModalAide(modalAide)
+                    .withGridDivStyles({ height: "750px", width: "100%" })
+                    .build();
+
+                agGridInstance.init('serverDataGrid');
+            }
         });
     </script>
 </head>
@@ -204,7 +302,18 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-           <div id="date-range"></div>
+            <div id="date-range">
+                <!-- The date range will be injected here -->
+            </div>
+        </div>
+        <div id="date-picker-container">
+            <label for="start-date" class="date-picker-label">Start Date:</label>
+            <input type="text" id="start-date" name="start-date" readonly>
+            <label for="end-date" class="date-picker-label">End Date:</label>
+            <input type="text" id="end-date" name="end-date" readonly>
+            <button id="searchButton">Search</button>
+            <button id="clearButton" style="display: none;">Clear</button>
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
