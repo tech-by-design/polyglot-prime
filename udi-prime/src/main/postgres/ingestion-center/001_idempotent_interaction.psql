@@ -7706,7 +7706,6 @@ SELECT
 FROM techbd_udi_ingress.sat_interaction_zip_file_request;   
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_xml_content_from_mirth_fdw(text);
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_xml_content_from_mirth_fdw(text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_xml_content_from_mirth_fdw(p_bundle_id text)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -7727,6 +7726,7 @@ DECLARE
     v_original_hub_interaction_id  TEXT := NULL;
     v_grouper_screening_code       TEXT := NULL;
 	v_original_bundle              JSONB := NULL;
+	v_alreadyResubmitted		   boolean := false;
 BEGIN
     IF p_bundle_id IS NULL OR p_bundle_id = '' THEN
         RETURN jsonb_build_object('error', 'bundle_id is empty.');
@@ -7738,10 +7738,7 @@ BEGIN
         FROM techbd_udi_ingress.ccda_replay_details
         WHERE bundle_id = p_bundle_id
     ) THEN
-        RETURN jsonb_build_object(
-            'alreadyResubmitted', true,
-            'bundle_id', p_bundle_id
-        );
+		v_alreadyResubmitted := true;
     END IF;
  
     -- Get channel id for the FDW table
@@ -7872,7 +7869,7 @@ BEGIN
       CROSS JOIN base      b;
  
     RETURN jsonb_build_object(
-        'alreadyResubmitted', false,
+        'alreadyResubmitted', v_alreadyResubmitted,
         'originalCCDAPayload', v_xml,
 		'originalBundle', v_original_bundle,
         'original_hub_interaction_id', v_original_hub_interaction_id,
@@ -8096,19 +8093,24 @@ $$;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.ccda_replay_details_upserted(text, text, text, timestamptz, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.ccda_replay_details_upserted(text, text, text, timestamptz, text, text, bool, jsonb, jsonb, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.ccda_replay_details_upserted(text, text, text, timestamptz, text, text, bool, jsonb, jsonb, text, jsonb, jsonb, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.ccda_replay_details_upserted(
-	p_bundle_id text, 
-	p_hub_interaction_id text, 
-	p_retry_interaction_id text, 
-	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-	p_created_by text DEFAULT NULL::text, 
+	p_bundle_id text,
+	p_hub_interaction_id text,
+	p_retry_interaction_id text,
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
+	p_created_by text DEFAULT NULL::text,
 	p_provenance text DEFAULT NULL::text,
-	p_is_valid boolean DEFAULT FALSE,
-	p_error_message jsonb DEFAULT NULL,
-	p_elaboration jsonb DEFAULT NULL,
-	p_retry_master_interaction_id text DEFAULT NULL)
- RETURNS text
- LANGUAGE plpgsql
+	p_is_valid boolean DEFAULT false,
+	p_error_message jsonb DEFAULT NULL::jsonb,
+	p_elaboration jsonb DEFAULT NULL::jsonb,
+	p_retry_master_interaction_id text DEFAULT NULL::text,
+	p_new_bundle_generated jsonb DEFAULT NULL::jsonb,
+	p_corrected_bundle jsonb DEFAULT NULL::jsonb,
+	p_original_ccda_file text DEFAULT NULL::text
+	)
+RETURNS text
+LANGUAGE plpgsql
 AS $function$
 DECLARE
     v_error_msg 			TEXT;
@@ -8133,38 +8135,23 @@ BEGIN
 							'retry_master_interaction_id', p_retry_master_interaction_id
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
-			v_exception_id, v_hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
+			v_exception_id, v_hub_interaction_key, v_created_by, v_provenance, 'info'::text,
 			'Input parameters into ccda_replay_details_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/
-
+ 
   	IF p_bundle_id IS NULL OR p_hub_interaction_id IS NULL THEN
         RETURN NULL;
     END IF;
-
-	IF p_bundle_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM techbd_udi_ingress.ccda_replay_details
-        WHERE bundle_id = p_bundle_id
-    ) THEN
-        UPDATE techbd_udi_ingress.ccda_replay_details
-			SET hub_interaction_id 		= p_hub_interaction_id,
-				retry_interaction_id 	= p_retry_interaction_id,
-				created_at				= v_created_at,
-				created_by 				= v_created_by,
-				provenance				= v_provenance,
-				is_valid				= p_is_valid,
-				error_message			= p_error_message,
-				elaboration				= p_elaboration,
-				retry_master_interaction_id = p_retry_master_interaction_id
-		WHERE bundle_id = p_bundle_id;
-		v_return = p_bundle_id;
-    ELSE
-		INSERT INTO techbd_udi_ingress.ccda_replay_details 
-					(bundle_id, hub_interaction_id, retry_interaction_id, provenance, created_by, created_at,
-					is_valid, error_message, elaboration, retry_master_interaction_id)
-		VALUES(p_bundle_id, p_hub_interaction_id, p_retry_interaction_id, v_provenance, v_created_by, v_created_at,
-					p_is_valid, p_error_message, p_elaboration, p_retry_master_interaction_id);
-		v_return = p_bundle_id;
-	END IF;	
+ 
+	INSERT INTO techbd_udi_ingress.ccda_replay_details
+				(bundle_id, hub_interaction_id, retry_interaction_id, provenance, created_by, created_at,
+				is_valid, error_message, elaboration, retry_master_interaction_id,
+				new_bundle_generated, corrected_bundle, original_ccda_file)
+	VALUES(p_bundle_id, p_hub_interaction_id, p_retry_interaction_id, v_provenance, v_created_by, v_created_at,
+				p_is_valid, p_error_message, p_elaboration, p_retry_master_interaction_id,
+				p_new_bundle_generated, p_corrected_bundle, p_original_ccda_file);
+	v_return = p_bundle_id;
+	
 	RETURN v_return;
 EXCEPTION
 	WHEN OTHERS THEN
