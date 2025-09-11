@@ -70,7 +70,7 @@ org:
     defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
     operationOutcomeHelpUrl: "https://techbd.org/get-help/"
     dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-    dataLedgerTracking: true
+    dataLedgerTracking: true #enabled
     dataLedgerDiagnostics: true
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
     defaultDataLakeApiAuthn:
