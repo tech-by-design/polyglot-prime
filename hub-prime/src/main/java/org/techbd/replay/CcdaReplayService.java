@@ -511,6 +511,12 @@ public class CcdaReplayService {
 		return result;
 	}
 
+	private String normalizeHeader(Object value) {
+		if (value == null)
+			return null;
+		String str = value.toString().trim();
+		return (str.isEmpty() || "null".equalsIgnoreCase(str)) ? null : str;
+	}
 	public Map<String, Object> getGeneratedBundle(Map<String, Object> orginalPayloadAndHeaders,
 			String bundleId,
 			String replayMasterInteractionId,
@@ -518,18 +524,16 @@ public class CcdaReplayService {
 		LOG.info(
 				"CCDA-REPLAY INVOKE MIRTH CHANNEL TO GENERATE BUNDLE BEGIN for replayMasterInteractionId: {} InteractionId: {} bundleId: {} TechBDVersion: {}",
 				replayMasterInteractionId, interactionId, bundleId,appConfig.getVersion());
-
-		// Fetch values dynamically from orginalPayloadAndHeaders
-		String cin = (String) orginalPayloadAndHeaders.get("X-TechBD-CIN");
-		String orgNpi = (String) orginalPayloadAndHeaders.get("X-TechBD-OrgNPI");
-		String orgTin = (String) orginalPayloadAndHeaders.get("X-TechBD-OrgTIN");
-		String bundleIdHeader = (String) orginalPayloadAndHeaders.get("X-TechBD-Bundle-ID");
-		String tenantIdHeader = (String) orginalPayloadAndHeaders.get("X-TechBD-Tenant-ID");
+		String cin = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-CIN"));
+		String orgNpi = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-OrgNPI"));
+		String orgTin = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-OrgTIN"));
+		String bundleIdHeader = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Bundle-ID"));
+		String tenantIdHeader = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Tenant-ID"));
+		String facilityId = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Facility-ID"));
+		String baseFhirUrl = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Base-FHIR-URL"));
+		String encounterType = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Encounter-Type"));
+		String screeningCode = normalizeHeader(orginalPayloadAndHeaders.get("X-TechBD-Screening-Code"));
 		Object originalCCDAPayload = orginalPayloadAndHeaders.get("originalCCDAPayload");
-		String facilityId = (String) orginalPayloadAndHeaders.get("X-TechBD-Facility-ID");
-		String baseFhirUrl = (String) orginalPayloadAndHeaders.get("X-TechBD-Base-FHIR-URL");
-		String encounterType = (String) orginalPayloadAndHeaders.get("X-TechBD-Encounter-Type");
-		String screeningCode = (String) orginalPayloadAndHeaders.get("X-TechBD-Screening-Code");
 		LOG.info(
 				"CCDA-REPLAY  PARAMETERS PASSED TO MIRTH /ccda/replay endpoint- replayMasterInteractionId: {}, interactionId: {}, bundleId: {}, TechBDVersion: {},"
 						+
@@ -562,11 +566,11 @@ public class CcdaReplayService {
 					.header("X-TechBD-Tenant-ID", tenantIdHeader)
 					.header("X-TechBD-CIN", cin)
 					.header("X-TechBD-OrgNPI", orgNpi)
-					.header("X-TechBD-OrgTIN", orgTin != null ? orgTin : "")
+					.header("X-TechBD-OrgTIN", orgTin)
 					.header("X-TechBD-Facility-ID", facilityId)
 					.header("X-TechBD-Encounter-Type", encounterType)
 					.header("X-TechBD-Bundle-ID", bundleIdHeader)
-					.header("X-TechBD-Base-FHIR-URL", baseFhirUrl != null ? baseFhirUrl : "")
+					.header("X-TechBD-Base-FHIR-URL", baseFhirUrl != null ? baseFhirUrl : appConfig.getBaseFHIRURL())
 					.header("X-TechBD-Screening-Code", screeningCode)
 					.body(BodyInserters.fromMultipartData("file",
 							originalCCDAPayload != null
