@@ -155,6 +155,7 @@ public class CcdaReplayService {
 
 				// // Write pretty-printed JSON
 				// Configuration.objectMapper.writeValue(outputFile, generatedBundleNode);
+				String correctedBundle = null;
 				if (copyResourceIds) {
 					if (originalBundle == null) {
 						LOG.warn(
@@ -166,30 +167,27 @@ public class CcdaReplayService {
 								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 
 						generatedBundleNode = FhirBundleUtil.copyResourceIds(originalBundle, generatedBundle);
-
+						correctedBundle = Configuration.objectMapper.writeValueAsString(generatedBundleNode);
 						LOG.info(
 								"CCDA-REPLAY COPY RESOURCE COMPLETED - COPIED Resource IDs, fullUrl, and request.url for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
 								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 					}
+				} else {
+
+					Map<String, Object> correctedResponse = mergeBundleResourceIds(generatedBundleNode, bundleId,
+							replayMasterInteractionId, interactionId);
+					correctedBundle = String.valueOf(correctedResponse.get("corrected_bundle"));
+
+					boolean mergeSuccess = correctedResponse.get("merge_success") != null
+							&& Boolean.parseBoolean(correctedResponse.get("merge_success").toString());
+
+					if (!mergeSuccess) {
+						handleMergeFailure(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun,
+								processingDetails, correctedResponse);
+						continue;
+					}
+
 				}
-
-				Map<String, Object> correctedResponse = mergeBundleResourceIds(generatedBundleNode, bundleId,
-						replayMasterInteractionId, interactionId);
-				final String correctedBundle = String.valueOf(correctedResponse.get("corrected_bundle"));
-
-				boolean mergeSuccess = correctedResponse.get("merge_success") != null
-						&& Boolean.parseBoolean(correctedResponse.get("merge_success").toString());
-
-				if (!mergeSuccess) {
-					handleMergeFailure(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun,
-							processingDetails, correctedResponse);
-					continue;
-				}
-
-				LOG.info(
-						"CCDA-REPLAY PROCESSING COMPLETED - Bundle successfully replayed with replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion:{}",
-						replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
-
 				if (sendToNyec) {
 					Map<String, Object> requestParametersMap = new HashMap<>();
 					requestParametersMap.put(Constants.SOURCE_TYPE, SourceType.CCDA.name());
