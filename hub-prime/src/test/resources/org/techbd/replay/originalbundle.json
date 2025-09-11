@@ -1,0 +1,1137 @@
+{
+  "id" : "3786be2a-d91f-49e5-b4e9-bb66e7311094",
+  "meta" : {
+    "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile" ],
+    "lastUpdated" : "2025-09-09T10:46:42.248Z"
+  },
+  "type" : "transaction",
+  "entry" : [ {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5",
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "name" : [ {
+        "use" : "official",
+        "given" : [ "Test" ],
+        "family" : "Wisby",
+        "period" : {
+          "start" : "2025-02-03T12:19:23Z"
+        },
+        "extension" : [ {
+          "url" : "http://test.shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+          "valueString" : "Test"
+        } ]
+      } ],
+      "gender" : "male",
+      "birthDate" : "1991-08-29",
+      "extension" : [ {
+        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+        "extension" : [ {
+          "url" : "ombCategory",
+          "valueCoding" : {
+            "code" : "UNK",
+            "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+            "display" : "unknown"
+          }
+        }, {
+          "url" : "text",
+          "valueString" : "unknown"
+        } ]
+      }, {
+        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+        "extension" : [ {
+          "url" : "ombCategory",
+          "valueCoding" : {
+            "code" : "UNK",
+            "display" : "unknown"
+          }
+        }, {
+          "url" : "text",
+          "valueString" : "unknown"
+        } ]
+      }, {
+        "url" : "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
+        "valueCode" : "M"
+      } ],
+      "identifier" : [ {
+        "type" : {
+          "text" : "Patient Medicaid Number",
+          "coding" : [ {
+            "code" : "MA",
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "display" : "Patient Medicaid Number"
+          } ]
+        },
+        "value" : "GH12345W",
+        "system" : "http://www.medicaid.gov/"
+      }, {
+        "type" : {
+          "text" : "Social Security Number",
+          "coding" : [ {
+            "code" : "SS",
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "display" : "Social Security Number"
+          } ]
+        },
+        "value" : "330-38-3883",
+        "system" : "http://www.ssa.gov/"
+      }, {
+        "type" : {
+          "text" : "Medical Record Number",
+          "coding" : [ {
+            "code" : "MR",
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "display" : "Medical Record Number"
+          } ]
+        },
+        "value" : "444333Epic",
+        "system" : "http://www.scn.gov/facility/WWPOC",
+        "assigner" : {
+          "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+        }
+      } ],
+      "resourceType" : "Patient",
+      "deceasedBoolean" : false
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85",
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "name" : "Initial Department",
+      "active" : true,
+      "address" : [ {
+        "use" : "work",
+        "city" : "Madison",
+        "line" : [ "MODEL DRIVE" ],
+        "text" : "MODEL DRIVE Madison, WI 53711",
+        "state" : "WI",
+        "postalCode" : "53711"
+      } ],
+      "telecom" : [ {
+        "use" : "work",
+        "value" : "tel:271-9000",
+        "system" : "phone"
+      } ],
+      "identifier" : [ {
+        "use" : "official",
+        "type" : {
+          "coding" : [ {
+            "code" : "TAX",
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "display" : "Tax ID Number"
+          } ]
+        },
+        "value" : "778899A",
+        "system" : "http://www.irs.gov/"
+      } ],
+      "resourceType" : "Organization"
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Consent/af2da105815506b7cd5281044627e929c0bb33e4cadae756e90311963c8a",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Consent/af2da105815506b7cd5281044627e929c0bb33e4cadae756e90311963c8a",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "af2da105815506b7cd5281044627e929c0bb33e4cadae756e90311963c8a",
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "scope" : {
+        "text" : "treatment",
+        "coding" : [ {
+          "code" : "treatment",
+          "system" : "http://terminology.hl7.org/CodeSystem/consentscope",
+          "display" : "Treatment"
+        } ]
+      },
+      "policy" : [ {
+        "authority" : "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
+      } ],
+      "status" : "active",
+      "patient" : {
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "coding" : [ {
+          "code" : "59284-0",
+          "system" : "http://loinc.org",
+          "display" : "Consent Document"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "IDSCL",
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ActCode"
+        } ]
+      } ],
+      "dateTime" : "2025-09-09T10:46:42.248Z",
+      "provision" : {
+        "type" : "deny"
+      },
+      "organization" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Consent",
+      "sourceAttachment" : {
+        "language" : "en",
+        "contentType" : "application/pdf"
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9",
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "type" : [ {
+        "text" : "History taking, self-administered, by computer terminal",
+        "coding" : [ {
+          "code" : "23918007",
+          "system" : "http://snomed.info/sct",
+          "display" : "History taking, self-administered, by computer terminal"
+        } ]
+      } ],
+      "class" : {
+        "code" : "AMB",
+        "system" : "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+        "display" : "Ambulatory"
+      },
+      "period" : {
+        "start" : "2025-02-17T00:00:00Z"
+      },
+      "status" : "entered-in-error",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "location" : [ {
+        "location" : {
+          "display" : "Initial Department",
+          "reference" : "Location/2d34278717aa138ce608a44aa4e2b4c4427b205430b66ab797e99a83a404"
+        }
+      } ],
+      "participant" : [ {
+        "type" : [ {
+          "coding" : [ {
+            "code" : "ATND",
+            "system" : "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+            "display" : "attender"
+          } ]
+        } ],
+        "individual" : {
+          "display" : "Starter Provider"
+        }
+      } ],
+      "resourceType" : "Encounter"
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Location/2d34278717aa138ce608a44aa4e2b4c4427b205430b66ab797e99a83a404",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Location/2d34278717aa138ce608a44aa4e2b4c4427b205430b66ab797e99a83a404",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "2d34278717aa138ce608a44aa4e2b4c4427b205430b66ab797e99a83a404",
+      "meta" : {
+        "profile" : [ "http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "name" : "Initial Department",
+      "address" : {
+        "use" : "work",
+        "city" : "Verona",
+        "line" : [ "1979 Milky Way" ],
+        "text" : "1979 Milky Way Verona, WI 53593-9179",
+        "state" : "WI",
+        "country" : "USA",
+        "district" : "DANE",
+        "postalCode" : "53593-9179"
+      },
+      "resourceType" : "Location"
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/88122-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/88122-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "88122-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "(I/We) worried whether (my/our) food would run out before (I/we) got money to buy more.  ",
+        "coding" : [ {
+          "code" : "88122-7",
+          "system" : "http://loinc.org",
+          "display" : "(I/We) worried whether (my/our) food would run out before (I/we) got money to buy more.  "
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Food Insecurity",
+        "coding" : [ {
+          "code" : "food-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Food Insecurity"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "dataAbsentReason" : {
+        "coding" : [ {
+          "code" : "asked-declined",
+          "system" : "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+          "display" : "Asked But Declined"
+        } ]
+      },
+      "effectiveDateTime" : "2025-02-17T00:00:00Z"
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/88123-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/88123-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "88123-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "The food that (I/we) bought just didn't last, and (I/we) didn't have money to get more.",
+        "coding" : [ {
+          "code" : "88123-5",
+          "system" : "http://loinc.org",
+          "display" : "The food that (I/we) bought just didn't last, and (I/we) didn't have money to get more."
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Food Insecurity",
+        "coding" : [ {
+          "code" : "food-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Food Insecurity"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Never true",
+        "coding" : [ {
+          "code" : "LA28398-8",
+          "system" : "http://loinc.org",
+          "display" : "Never true"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/96779-472298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/96779-472298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "96779-472298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12Mo",
+        "coding" : [ {
+          "code" : "96779-4",
+          "system" : "http://loinc.org",
+          "display" : "Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12Mo"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Utility Insecurity",
+        "coding" : [ {
+          "code" : "utility-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Utility Insecurity"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Already shut off",
+        "coding" : [ {
+          "code" : "LA32002-0",
+          "system" : "http://loinc.org",
+          "display" : "Already shut off"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/71802-372298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/71802-372298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "71802-372298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Housing status",
+        "coding" : [ {
+          "code" : "71802-3",
+          "system" : "http://loinc.org",
+          "display" : "Housing status"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Housing Instability",
+        "coding" : [ {
+          "code" : "housing-instability",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Housing Instability"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "I have a steady place to live",
+        "coding" : [ {
+          "code" : "LA31993-1",
+          "system" : "http://loinc.org",
+          "display" : "I have a steady place to live"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/96778-672298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/96778-672298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "96778-672298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Problems with place where you live",
+        "coding" : [ {
+          "code" : "96778-6",
+          "system" : "http://loinc.org",
+          "display" : "Problems with place where you live"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Inadequate Housing",
+        "coding" : [ {
+          "code" : "inadequate-housing",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Inadequate Housing"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "dataAbsentReason" : {
+        "coding" : [ {
+          "code" : "asked-declined",
+          "system" : "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+          "display" : "Asked But Declined"
+        } ]
+      },
+      "effectiveDateTime" : "2025-02-17T00:00:00Z"
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/93030-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/93030-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "93030-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living",
+        "coding" : [ {
+          "code" : "93030-5",
+          "system" : "http://loinc.org",
+          "display" : "Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Transportation Insecurity",
+        "coding" : [ {
+          "code" : "transportation-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Transportation Insecurity"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Yes",
+        "coding" : [ {
+          "code" : "LA33-6",
+          "system" : "http://loinc.org",
+          "display" : "Yes"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/95618-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/95618-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "95618-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Physically hurt you",
+        "coding" : [ {
+          "code" : "95618-5",
+          "system" : "http://loinc.org",
+          "display" : "Physically hurt you"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Interpersonal Safety",
+        "coding" : [ {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Rarely",
+        "coding" : [ {
+          "code" : "LA10066-1",
+          "system" : "http://loinc.org",
+          "display" : "Rarely"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/95617-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/95617-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "95617-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Insult you or talk down to you",
+        "coding" : [ {
+          "code" : "95617-7",
+          "system" : "http://loinc.org",
+          "display" : "Insult you or talk down to you"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Interpersonal Safety",
+        "coding" : [ {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Rarely",
+        "coding" : [ {
+          "code" : "LA10066-1",
+          "system" : "http://loinc.org",
+          "display" : "Rarely"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/95616-972298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/95616-972298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "95616-972298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Threaten you with physical harm",
+        "coding" : [ {
+          "code" : "95616-9",
+          "system" : "http://loinc.org",
+          "display" : "Threaten you with physical harm"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Interpersonal Safety",
+        "coding" : [ {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Rarely",
+        "coding" : [ {
+          "code" : "LA10066-1",
+          "system" : "http://loinc.org",
+          "display" : "Rarely"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/95615-172298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/95615-172298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "95615-172298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Scream or curse at you",
+        "coding" : [ {
+          "code" : "95615-1",
+          "system" : "http://loinc.org",
+          "display" : "Scream or curse at you"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Interpersonal Safety",
+        "coding" : [ {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Rarely",
+        "coding" : [ {
+          "code" : "LA10066-1",
+          "system" : "http://loinc.org",
+          "display" : "Rarely"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/96780-272298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/96780-272298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "96780-272298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Wants help finding or keeping work or a job",
+        "coding" : [ {
+          "code" : "96780-2",
+          "system" : "http://loinc.org",
+          "display" : "Wants help finding or keeping work or a job"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Employment Status",
+        "coding" : [ {
+          "code" : "employment-status",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Employment Status"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "Yes, help keeping work",
+        "coding" : [ {
+          "code" : "LA31982-4",
+          "system" : "http://loinc.org",
+          "display" : "Yes, help keeping work"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/96782-872298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/96782-872298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "96782-872298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d",
+      "code" : {
+        "text" : "Wants help with school or training",
+        "coding" : [ {
+          "code" : "96782-8",
+          "system" : "http://loinc.org",
+          "display" : "Wants help with school or training"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "text" : "Education/Training",
+        "coding" : [ {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "365458002",
+          "system" : "http://snomed.info/sct",
+          "display" : "Education and/or schooling finding"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "text" : "No",
+        "coding" : [ {
+          "code" : "LA32-8",
+          "system" : "http://loinc.org",
+          "display" : "No"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/30fa4cb2f79dd29886e1853bfd906f77add91a7f1024b82b45a646e110178cd7",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/30fa4cb2f79dd29886e1853bfd906f77add91a7f1024b82b45a646e110178cd7",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "30fa4cb2f79dd29886e1853bfd906f77add91a7f1024b82b45a646e110178cd7",
+      "code" : {
+        "text" : "Sexual orientation",
+        "coding" : [ {
+          "code" : "76690-7",
+          "system" : "http://loinc.org",
+          "display" : "Sexual orientation"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-17T00:00:00Z",
+      "valueCodeableConcept" : {
+        "coding" : [ {
+          "code" : "OTH",
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+          "display" : "Other"
+        } ]
+      }
+    }
+  }, {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/100698-07e4fc7c793dd18b5110d0bad291cf1a35c3a67f2dea2dd44d4a1edb6",
+    "request" : {
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/100698-07e4fc7c793dd18b5110d0bad291cf1a35c3a67f2dea2dd44d4a1edb6",
+      "method" : "POST"
+    },
+    "resource" : {
+      "id" : "100698-07e4fc7c793dd18b5110d0bad291cf1a35c3a67f2dea2dd44d4a1edb6",
+      "code" : {
+        "coding" : [ {
+          "code" : "100698-0",
+          "system" : "http://loinc.org",
+          "display" : "Social Determinants of Health screening report Document"
+        } ]
+      },
+      "meta" : {
+        "profile" : [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ],
+        "lastUpdated" : "2025-09-09T10:46:42.248Z"
+      },
+      "issued" : "2025-09-09T10:46:42.248Z",
+      "status" : "final",
+      "subject" : {
+        "display" : "Wisby Test",
+        "reference" : "Patient/74c024b8845b0d5c32afccfa1d5dc98f28cff4160a97c7abfa1868229ad1bd5"
+      },
+      "category" : [ {
+        "coding" : [ {
+          "code" : "food-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Food Insecurity"
+        }, {
+          "code" : "utility-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Utility Insecurity"
+        }, {
+          "code" : "housing-instability",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Housing Instability"
+        }, {
+          "code" : "inadequate-housing",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Inadequate Housing"
+        }, {
+          "code" : "transportation-insecurity",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Transportation Insecurity"
+        }, {
+          "code" : "sdoh-category-unspecified",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "SDOH Category Unspecified"
+        }, {
+          "code" : "employment-status",
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "display" : "Employment Status"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "social-history",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      }, {
+        "coding" : [ {
+          "code" : "survey",
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category"
+        } ]
+      } ],
+      "language" : "en",
+      "encounter" : {
+        "reference" : "Encounter/34ac99b69ee313c4ec5bf2afae3fd2d8c4d9d77bb67ad49336a3d5eb1dce0e9"
+      },
+      "hasMember" : [ {
+        "reference" : "Observation/88122-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/88123-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/96779-472298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/71802-372298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/96778-672298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/93030-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/95618-572298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/95617-772298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/95616-972298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/95615-172298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/96780-272298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      }, {
+        "reference" : "Observation/96782-872298ade443f6d1bd91ee96935a85485780578a21b46fa4a4ce23a89d"
+      } ],
+      "performer" : [ {
+        "reference" : "Organization/ceafc5ed25788896617c1771c666dfb24bbaaa75cc9d7259372a23e71a85"
+      } ],
+      "resourceType" : "Observation",
+      "effectiveDateTime" : "2025-02-11T00:00:00Z"
+    }
+  } ],
+  "timestamp" : "2025-02-17T15:04:18Z",
+  "resourceType" : "Bundle"
+}
