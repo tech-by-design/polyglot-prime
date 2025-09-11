@@ -1110,7 +1110,25 @@ const migrateSP = pgSQLa.storedProcedure(
           ADD COLUMN IF NOT EXISTS error_message JSONB DEFAULT NULL,
           ADD COLUMN IF NOT EXISTS elaboration JSONB DEFAULT NULL,
           ADD COLUMN IF NOT EXISTS retry_master_interaction_id TEXT DEFAULT NULL;
-
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details
+          ADD COLUMN IF NOT EXISTS reply_id TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+          ADD COLUMN IF NOT EXISTS new_bundle_generated jsonb,
+          ADD COLUMN IF NOT EXISTS corrected_bundle jsonb,
+          ADD COLUMN IF NOT EXISTS original_ccda_file text;
+      
+      DO $$
+      BEGIN
+          IF EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'ccda_replay_details_bundle_id_key'
+                AND conrelid = 'techbd_udi_ingress.ccda_replay_details'::regclass
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.ccda_replay_details
+              DROP CONSTRAINT ccda_replay_details_bundle_id_key;
+          END IF;
+      END$$;
+      
       IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
