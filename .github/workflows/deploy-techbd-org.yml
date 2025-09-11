@@ -16,6 +16,7 @@ concurrency:
 jobs:
     synthetic-techbd-devl-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -27,6 +28,11 @@ jobs:
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b synthetic-techbd-fhir-development-${{ github.ref_name}}-deployment
             
         - name: Update fhir environment file
           run: |
@@ -38,10 +44,18 @@ jobs:
             cd infrastructure-prime
             git add .
             git commit -m "ci: fhir development ${{ github.ref_name }} deployment"
-            git push
+            git push --set-upstream origin synthetic-techbd-fhir-development-${{ github.ref_name}}-deployment
+
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head synthetic-techbd-fhir-development-${{ github.ref_name}}-deployment --title "FHIR Devl techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir devl deployment for version ${{ github.ref_name }}"
 
     synthetic-techbd-stage-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -81,6 +95,7 @@ jobs:
 
     phi-prod-techbd-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -119,6 +134,7 @@ jobs:
 
     phi-qa-techbd-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
