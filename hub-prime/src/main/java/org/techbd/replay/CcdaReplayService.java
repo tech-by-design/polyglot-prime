@@ -33,7 +33,6 @@ import org.techbd.udi.auto.jooq.ingress.routines.MergeBundleResourceIds;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.swagger.v3.core.util.Json;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -133,6 +132,7 @@ public class CcdaReplayService {
 				}
 				Object originalBundleObj = originalPayloadAndHeaders.get("originalBundle");
 				String originalBundle = Configuration.objectMapper.writeValueAsString(originalBundleObj);
+				JsonNode originalBundleNode = Configuration.objectMapper.readTree(originalBundle);
 				Map<String, Object> responseJson = getGeneratedBundle(originalPayloadAndHeaders, bundleId,
 						replayMasterInteractionId, interactionId);
 
@@ -148,13 +148,7 @@ public class CcdaReplayService {
 				Object generatedBundleObj = responseJson.get("generatedBundle");
 				String generatedBundle = Configuration.objectMapper.writeValueAsString(generatedBundleObj);
 				JsonNode generatedBundleNode = Configuration.objectMapper.readTree(generatedBundle);
-				// File outputFile = new File("src/test/resources/org/techbd/replay/newbundle.json");
-
-				// // Ensure parent directories exist
-				// outputFile.getParentFile().mkdirs();
-
-				// // Write pretty-printed JSON
-				// Configuration.objectMapper.writeValue(outputFile, generatedBundleNode);
+				
 				String correctedBundle = null;
 				if (copyResourceIds) {
 					if (originalBundle == null) {
@@ -166,7 +160,21 @@ public class CcdaReplayService {
 								"CCDA-REPLAY COPY RESOURCE IDS ENABLED - Copying Resource IDs, fullUrl, and request.url for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
 								replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 
-						generatedBundleNode = FhirBundleUtil.copyResourceIds(originalBundle, generatedBundle);
+						generatedBundleNode = FhirBundleUtil.copyResourceIds(
+								originalBundleNode,
+								generatedBundleNode,
+								replayMasterInteractionId,
+								interactionId,
+								bundleId,
+								tenantId,
+								appConfig.getVersion());
+						// File outputFile = new File("src/test/resources/org/techbd/replay/correctedbundle.json");
+
+						// // Ensure parent directories exist
+						// outputFile.getParentFile().mkdirs();
+
+						// // Write pretty-printed JSON
+						// Configuration.objectMapper.writeValue(outputFile, generatedBundleNode);	
 						correctedBundle = Configuration.objectMapper.writeValueAsString(generatedBundleNode);
 						LOG.info(
 								"CCDA-REPLAY COPY RESOURCE COMPLETED - COPIED Resource IDs, fullUrl, and request.url for replayMasterInteractionId={} interactionId={} bundleId={} tenantId={} TechBdVersion={}",
