@@ -27,12 +27,13 @@ public class CcdaReplayController {
      * @return interim response with acknowledgement
      */
     @PostMapping("/replay")
-   public Object replayBundles(
-        @RequestBody List<String> bundleIds,
-        @RequestParam(name = "trialRun", required = false, defaultValue = "true") boolean trialRun,
-        @RequestParam(name = "sendToNyec", required = false, defaultValue = "false") boolean sendToNyec,
-        @RequestParam(name = "immediate", required = false, defaultValue = "false") boolean immediate) {
-        final var replayMasterInteractionId = UUID.randomUUID().toString(); 
-        return replayService.replayBundlesAsync(bundleIds,replayMasterInteractionId,trialRun,sendToNyec,immediate);
+    public Object replayBundles(
+            @RequestBody List<String> bundleIds,
+            @RequestParam(name = "trialRun", required = false, defaultValue = "true") boolean trialRun,
+            @RequestParam(name = "sendToNyec", required = false, defaultValue = "false") boolean sendToNyec,
+            @RequestParam(name = "immediate", required = false, defaultValue = "false") boolean immediate,
+            @RequestParam(name = "copyResourceIds", required = false, defaultValue = "true") boolean copyResourceIds) {
+        final var replayMasterInteractionId = UUID.randomUUID().toString();
+        return replayService.replayBundlesAsync(bundleIds, replayMasterInteractionId, trialRun, sendToNyec, immediate, copyResourceIds);
     }
 }
