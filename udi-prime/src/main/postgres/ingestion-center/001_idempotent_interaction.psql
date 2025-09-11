@@ -7706,6 +7706,7 @@ SELECT
 FROM techbd_udi_ingress.sat_interaction_zip_file_request;   
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_xml_content_from_mirth_fdw(text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_xml_content_from_mirth_fdw(text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_xml_content_from_mirth_fdw(p_bundle_id text)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -7715,7 +7716,7 @@ DECLARE
     v_channel_id                   INT;
     v_table                        TEXT;
     v_sql                          TEXT;
-
+ 
     v_base_fhir_url                TEXT := NULL;
     v_patient_cin                  TEXT := NULL;
     v_facility_id                  TEXT := NULL;
@@ -7725,11 +7726,12 @@ DECLARE
     v_tenant_id                    TEXT := NULL;
     v_original_hub_interaction_id  TEXT := NULL;
     v_grouper_screening_code       TEXT := NULL;
+	v_original_bundle              JSONB := NULL;
 BEGIN
     IF p_bundle_id IS NULL OR p_bundle_id = '' THEN
         RETURN jsonb_build_object('error', 'bundle_id is empty.');
     END IF;
-
+ 
     -- Prevent duplicate replay
     IF EXISTS (
         SELECT 1
@@ -7741,16 +7743,16 @@ BEGIN
             'bundle_id', p_bundle_id
         );
     END IF;
-
+ 
     -- Get channel id for the FDW table
     SELECT dc.local_channel_id
       INTO v_channel_id
       FROM techbd_udi_ingress.d_channels dc
       JOIN techbd_udi_ingress.channel c ON c.id = dc.channel_id
      WHERE c.name = 'TechBD CCD Workflow';
-
+ 
     v_table := format('d_mc%s', v_channel_id);
-
+ 
     -- Fetch CCD XML from the mirth FDW table (dynamic table name)
     v_sql := format($f$
         SELECT mc.content
@@ -7764,9 +7766,9 @@ BEGIN
            AND mc.content_type = 3
          LIMIT 1
     $f$, v_table, v_table, p_bundle_id);
-
+ 
     EXECUTE v_sql INTO v_xml;
-
+ 
     WITH fhir_req AS (
         SELECT r.payload, r.tenant_id, r.hub_interaction_id
           FROM techbd_udi_ingress.sat_interaction_fhir_request r
@@ -7776,7 +7778,7 @@ BEGIN
            AND r.payload->>'id' = r.bundle_id
          LIMIT 1
     ),
-
+ 
     -- Patient identifiers
     patient AS (
         SELECT
@@ -7794,7 +7796,7 @@ BEGIN
           JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON TRUE
          WHERE e->'resource'->>'resourceType' = 'Patient'
     ),
-
+ 
     -- Organization identifiers
     org AS (
         SELECT
@@ -7806,7 +7808,7 @@ BEGIN
           JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON TRUE
          WHERE e->'resource'->>'resourceType' = 'Organization'
     ),
-
+ 
     -- Encounter type (aggregate to guarantee one row)
     encounter AS (
         SELECT MAX(coding->>'code') AS encounter_type
@@ -7816,7 +7818,7 @@ BEGIN
           JOIN LATERAL jsonb_array_elements(typ->'coding') coding ON TRUE
          WHERE e->'resource'->>'resourceType' = 'Encounter'
     ),
-
+ 
     -- Grouper Observation code (hasMember present) — aggregate to guarantee one row
     grouper AS (
 	    SELECT MAX(coding->>'code') AS grouper_screening_code
@@ -7826,20 +7828,21 @@ BEGIN
 	     WHERE e->'resource'->>'resourceType' = 'Observation'
 	       AND (e->'resource') ? 'hasMember'
 	),
-
+ 
     -- Base FHIR URL + tenant + interaction (aggregate to guarantee one row)
     base AS (
         SELECT
             MIN(split_part(pf, '/StructureDefinition', 1)) AS base_fhir_url,
             r.tenant_id,
-            r.hub_interaction_id
+            r.hub_interaction_id,
+			r.payload
           FROM fhir_req r
           LEFT JOIN LATERAL (
               SELECT jsonb_array_elements_text(r.payload->'meta'->'profile') AS pf
           ) p ON TRUE
-         GROUP BY r.tenant_id, r.hub_interaction_id
+         GROUP BY r.tenant_id, r.hub_interaction_id, r.payload
     )
-
+ 
     SELECT
         p.patient_cin,
         p.facility_id,
@@ -7849,7 +7852,8 @@ BEGIN
         b.base_fhir_url,
         b.tenant_id,
         b.hub_interaction_id,
-        g.grouper_screening_code
+        g.grouper_screening_code,
+		b.payload
       INTO
         v_patient_cin,
         v_facility_id,
@@ -7859,16 +7863,18 @@ BEGIN
         v_base_fhir_url,
         v_tenant_id,
         v_original_hub_interaction_id,
-        v_grouper_screening_code
+        v_grouper_screening_code,
+		v_original_bundle
       FROM patient         p
       CROSS JOIN org       o
       CROSS JOIN encounter e
       CROSS JOIN grouper   g
       CROSS JOIN base      b;
-
+ 
     RETURN jsonb_build_object(
         'alreadyResubmitted', false,
         'originalCCDAPayload', v_xml,
+		'originalBundle', v_original_bundle,
         'original_hub_interaction_id', v_original_hub_interaction_id,
         'X-TechBD-Tenant-ID', v_tenant_id,
         'X-TechBD-Bundle-ID', p_bundle_id,
