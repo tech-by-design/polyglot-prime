@@ -23,7 +23,7 @@ public class FhirBundleUtil {
 
     private static final FhirContext fhirContext = FhirContext.forR4();
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Set<String> SCREENING_CODES = Set.of("100698-0", "97023-6", "96777-8");
+    private static final Set<String> SCREENING_CODES = Set.of("100698-0", "97023-6", "96777-8","NYS-AHC-HRSN","NYSAHCHRSN");
 
     /**
      * Copies resource IDs, fullUrls, request.urls, references, Consent.dateTime,
