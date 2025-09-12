@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.techbd</groupId>
 		<artifactId>polyglot-prime</artifactId>
-		<version>0.662.7</version>
+		<version>0.662.8</version>
 		<relativePath>../pom.xml</relativePath> 
 	</parent>
 
@@ -375,7 +375,7 @@
 		<dependency>
 			<groupId>org.techbd</groupId>
 			<artifactId>nexus-core-lib</artifactId>
-			<version>0.662.7</version>
+			<version>0.662.8</version>
 		</dependency>
 	</dependencies>
 
