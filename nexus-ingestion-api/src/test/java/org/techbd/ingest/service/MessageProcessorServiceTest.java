@@ -38,6 +38,7 @@ public class MessageProcessorServiceTest {
         RequestContext context = mock(RequestContext.class);
         when(context.getInteractionId()).thenReturn("int-001");
         when(context.getMessageId()).thenReturn("msg-001");
+        when(context.getTenantId()).thenReturn("test-tenant-from-junit");
         when(context.getFullS3DataPath()).thenReturn("s3://bucket/test.hl7");
         when(context.getTimestamp()).thenReturn("2025-07-17T12:00:00Z");
         when (context.getMessageSourceType()).thenReturn(MessageSourceType.HTTP_INGEST); 

@@ -57,7 +57,7 @@ public class MessageGroupService {
                 logger.warn("MLLP source but no destination port. Using default group. interactionId='{}'",
                         interactionId);
             }
-        } else if (StringUtils.isNotBlank(tenantId)) {
+        } else if (StringUtils.isNotBlank(tenantId) && !isDefaultTenantId(tenantId)) {
             messageGroupId = tenantId.trim();
         } else {
             List<String> parts = new ArrayList<>();
@@ -70,14 +70,26 @@ public class MessageGroupService {
             if (!parts.isEmpty()) {
                 messageGroupId = String.join("_", parts);
             } else {
-                logger.warn("No context values available. Using default message group. interactionId='{}'",
+                messageGroupId = "unknown-tenantId";
+                logger.warn("No context values available. Using unknown-tenantId. interactionId='{}'",
                         interactionId);
             }
         }
 
         logger.debug("Generated message group ID: {} for interactionId: {}", messageGroupId, interactionId);
+        //logger.info("TenantId from context: '{}', Generated message group ID: '{}' for interactionId: '{}'", tenantId, messageGroupId, interactionId);
+
         context.setMessageGroupId(messageGroupId);
         return messageGroupId;
+    }
+
+    /**
+     * Checks if the tenant ID is a default/fallback value that should not be used for message grouping.
+     */
+    private boolean isDefaultTenantId(String tenantId) {
+        return Constants.DEFAULT_TENANT_ID.equals(tenantId) || 
+               "unknown-tenant".equals(tenantId) ||
+               "unknown-tenantId".equals(tenantId);
     }
 
 }
