@@ -2,8 +2,8 @@
   <id>6205b7dc-87cf-4fd1-8b29-76def2ef1bcf</id>
   <nextMetaDataId>14</nextMetaDataId>
   <name>TechBD CCD Replay Workflow</name>
-  <description>Version: 0.4.31 CCDA Repaly</description>
-  <revision>21</revision>
+  <description>Version: 0.4.32 CCDA Repaly</description>
+  <revision>26</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -122,7 +122,8 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                                         &quot;severity&quot;: &quot;error&quot;,
                                         &quot;code&quot;: code,
                                         &quot;details&quot;: {
-                                            &quot;text&quot;: errorMsg
+                                            &quot;text&quot;: errorMsg,
+                                            &quot;bunde_id&quot;: channelMap.get(&apos;bundle_id&apos;)
                                         }
                                     }
                                 ]
@@ -174,20 +175,20 @@ function sendDataLedgerSync(payload) {
             var responseBody = EntityUtils.toString(response.getEntity());
 
             if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
-                logger.info(&quot;Data Ledger API Response: &quot; + responseBody);
+                logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Data Ledger API Response: &quot; + responseBody);
                 return {
                     statusCode: statusCode,
                     body: responseBody
                 };
             } else {
-                logger.error(&quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
-                throw new Error(&quot;Request failed with status &quot; + statusCode);
+                logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
+                throw new Error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Request failed with status &quot; + statusCode);
             }
         } finally {
             EntityUtils.consumeQuietly(response.getEntity());
         }
     } catch (error) {
-        logger.error(&quot;Data Ledger API Request Failed: &quot; + error.message);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Data Ledger API Request Failed: &quot; + error.message);
         throw error;
     }
 }
@@ -216,8 +217,8 @@ function validateAddrDates(addr, contextTag) {
 		  }
 		}
      } catch (error) {
-        logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Validation Error: &quot; + error.message);
+        throw new error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Validation Error: &quot; + error.message);
      }
 }
     
@@ -244,8 +245,8 @@ function validateLowHighDates(xmlData) {
 	        }
 	    }
 	} catch (error) {
-        logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Validation Error: &quot; + error.message);
+        throw new error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Validation Error: &quot; + error.message);
      }
 }
 
@@ -271,17 +272,17 @@ function extractClinicalDocument(rawXml) {
 		        extractedXml = xmlDeclaration + extractedXml;
 		    }
 		
-		    logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
+		    logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Final Extracted XML: &quot; + extractedXml);
 		    channelMap.put(&apos;fileContent&apos;, extractedXml);
 		} else {
-		    logger.error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;)));
-		    throw new Error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    throw new Error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		}
 	} catch (error) {
-        logger.error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message)));
-	   throw new error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+	   throw new error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
      }
 }
 
@@ -289,12 +290,13 @@ function extractClinicalDocument(rawXml) {
 function getJsonErrorMessage(errorMsg) {
 	var jsonResponse = {
 	    &quot;isValid&quot;: false,
-	    &quot;errorMessage&quot;: errorMsg
+	    &quot;errorMessage&quot;: errorMsg,
+	    &quot;bundle_id&quot;: channelMap.get(&apos;bundle_id&apos;)
 	};
 	
 	channelMap.put(&apos;jsonResult&apos;, jsonResponse);
 	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(jsonResponse));
-	logger.error(errorMsg);
+	logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + errorMsg);
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -401,6 +403,7 @@ if (missingHeaders.length &gt; 0) {
     var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
     logger.error(errorMessage);
     setErrorResponse(400, errorMessage);
+    getJsonErrorMessage(errorMessage);
     throw errorMessage;
 }
 
@@ -413,30 +416,9 @@ var rawData = connectorMessage.getRawData();
 if (!rawData || rawData.trim().length === 0) {
     errorMessage = &quot;No file provided in the request.&quot;;
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    getJsonErrorMessage(errorMessage);
     throw errorMessage;
 }
-
-//Check the file type, only .xml and .txt allowed
-/*var filename = null;
-var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
-
-if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
-    filename = filenameMatch[1];
-    logger.info(&quot;Filename: &quot; + filename);
-
-    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
-    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
-    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
-    logger.info(&quot;File extension: &quot; + extension);
-
-    if (extension !== &quot;xml&quot; &amp;&amp; extension !== &quot;txt&quot;) {
-       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .xml and .txt are allowed.&quot;;
-       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-    	  throw errorMessage; // Stop further processing by throwing an exception
-    }
-} else {
-    logger.warn(&quot;Filename not found in message content.&quot;);
-}*/
 
 extractClinicalDocument(rawData);
 
@@ -472,6 +454,7 @@ if (missingEnvVars.length &gt; 0) {
     var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
     logger.error(errorMessage);
     setErrorResponse(500, errorMessage); // Internal Server Error
+    getJsonErrorMessage(errorMessage);
     throw errorMessage;
 }
 
@@ -526,7 +509,7 @@ function getManufacturerModelName(xmlData) {
 			logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
 
 		} else {
-		    logger.error(&quot;xmlData is undefined or empty.&quot;);
+		    logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;xmlData is undefined or empty.&quot;);
 		}
 	} catch (e) {
         //logger.warn(&quot;Error parsing manufacturerModelName: &quot; + e);
@@ -536,11 +519,11 @@ function getManufacturerModelName(xmlData) {
         } else {
            errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
         }
-        logger.error(errorMsg);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + errorMsg);
 
         // Failure: Return an OperationOutcome JSON response with validation errors
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-
+	   getJsonErrorMessage(errorMsg);	
         throw new Error(errorMsg);
      }
 }</script>
@@ -615,11 +598,11 @@ function getPatientMRN(patientRoles) {
             }
 	   }        
     } else {
-        logger.error(&quot;PatientRole not found in the XML.&quot;);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;PatientRole not found in the XML.&quot;);
     }
 
     if (!extensionAttr) {
-       logger.warn(&quot;No matching MRN found.&quot;);
+       logger.warn(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;No matching MRN found.&quot;);
     }
 
     channelMap.put(&apos;Patient-MRN&apos;, extensionAttr);
@@ -672,7 +655,7 @@ function generateSHA256Id(resource, resourceName, resourceIdName, transformer, a
         transformer.setParameter(resourceIdName, sha256Hash);
         logger.info(resourceIdName + &quot; : &quot; + sha256Hash);
     } else {
-        logger.error(resourceName + &quot; not found in the XML.&quot;);
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + resourceName + &quot; not found in the XML.&quot;);
     }
 
     return transformer;
@@ -812,7 +795,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
     try {
         xml = new XML(observations.toString()); // Safely parse the XML
     } catch (e) {
-        logger.error(&quot;Error parsing observations XML: &quot; + e.toString());
+        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error parsing observations XML: &quot; + e.toString());
         return transformer;
     }
     var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
@@ -924,7 +907,7 @@ function setResourceIdParameters(transformer) {
 	                         .*::entryRelationship;
 		transformer = generateSHA256Id(observations, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 	} catch (e) {
-	    logger.error(&quot;Error accessing Observations: &quot; + e);
+	    logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error accessing Observations: &quot; + e);
 	}
 	
 	// Extract `sexualOrientation`
@@ -954,11 +937,11 @@ function setResourceIdParameters(transformer) {
 		        var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
 		        transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
 		    } else {
-		        logger.error(&quot;Encounter resource not found in the XML.&quot;);
+		        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Encounter resource not found in the XML.&quot;);
 		    }
 		}
 	} catch (e) {
-	    logger.error(&quot;Error accessing encounter: &quot; + e);
+	    logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error accessing encounter: &quot; + e);
 	}
 
 	///Grouper Observation Resource 
@@ -1031,11 +1014,11 @@ function setResourceIdParameters(transformer) {
 	    ) {
 	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
 	    } else {
-	        logger.info(&quot;Location not found in the XML.&quot;);
+	        logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Location not found in the XML.&quot;);
 	    }
 	
 	} catch (e) {
-	    logger.info(&quot;Error accessing location: &quot; + e);
+	    logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error accessing location: &quot; + e);
 	}
      	
 	return transformer;
@@ -1048,10 +1031,10 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 	if(profileUrl != null) {
 		transformer.setParameter(metaProfileUrlName, profileUrl);
 		channelMap.put(metaProfileUrlName, profileUrl);
-		logger.info(metaProfileUrlName + &quot;: &quot; + profileUrl);
+		logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + metaProfileUrlName + &quot;: &quot; + profileUrl);
 	} else {
 		var errorMessage = urlEnv + &apos; variable is not set&apos;;
-		logger.error(errorMessage);
+		logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + errorMessage);
 		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
 		throw errorMessage; // Stop further processing by throwing an exception
 	}
@@ -1154,7 +1137,7 @@ function getConsentResourceStatus(sourceXml) {
 		}		
 		// Convert to JSON string (optional, for sending/logging)
 		var consentJsonString = JSON.stringify(consentInfo);
-		logger.info(&quot;Consent Info JSON: &quot; + consentJsonString);
+		logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Consent Info JSON: &quot; + consentJsonString);
 		channelMap.put(&apos;elaboration&apos;, consentJsonString);
 	} catch (e) {
         var errorMsg;
@@ -1167,7 +1150,7 @@ function getConsentResourceStatus(sourceXml) {
 
         // Failure: Return an OperationOutcome JSON response with validation errors
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-
+	   getJsonErrorMessage(errorMsg);
         throw new Error(errorMsg);
      }
 }</script>
@@ -1222,11 +1205,11 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 		    try {
 		        sendDataLedgerSync(payload);
 		    } catch (e) {
-		        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+		        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 		    }
 		    logger.info(&quot;data ledger api call -END received&quot;);
 		} else {
-		    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
+		    logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
 		}
 		//*********** DATA LEDGER ***************
 			
@@ -1237,13 +1220,13 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 			var sourceXml = ccda_msg.toXMLString();    		
 		
 		     if (!sourceXml || sourceXml.length === 0) {
-		         logger.error(&quot;No XML data received in the request.&quot;);
+		         logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;No XML data received in the request.&quot;);
 		         //responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
 		         getJsonErrorMessage(&quot;No XML data received in the request.&quot;);
 		         throw new Error(&quot;No XML data received in the request.&quot;);
 		     }
 		
-			logger.info(&quot;Source XML Content: &quot; + sourceXml); 
+			logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Source XML Content: &quot; + sourceXml); 
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
@@ -1292,7 +1275,7 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 			// Store the transformed XML in the channel map
 			var phiFilteredXml = xmlOutputStream.toString();
 			channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
-			logger.info(&quot;PHI Filtered CCD: &quot; + phiFilteredXml);
+			logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;PHI Filtered CCD: &quot; + phiFilteredXml);
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
@@ -1327,7 +1310,7 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 	        // Perform the validation
 	        try {
 	        	validator.validate(xmlSource);
-	          logger.info(&quot;CCD XML is valid according to the XSD.&quot;);            
+	          logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;CCD XML is valid according to the XSD.&quot;);            
 	        } catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
@@ -1363,11 +1346,11 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 			   try {
 		        sendDataLedgerSync(payload);
 			    } catch (e) {
-			        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+			        logger.error(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 			    }
 			    logger.info(&quot;data ledger api call -END sent&quot;);
 			} else {
-			    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
+			    logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
 			}
 			//*********** DATA LEDGER ***************
 	
@@ -1440,7 +1423,7 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 	
 				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object
 				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
-				logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+				logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Cleaned JSON : &quot; + cleanedJsonString);
 			} catch (e) {
 				var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
 			    getJsonErrorMessage(errorMsg);
@@ -1459,7 +1442,7 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
 			var successJsonResponse_json = JSON.stringify(successJsonResponse);
 	          channelMap.put(&apos;jsonResult&apos;, successJsonResponse_json);
 			responseMap.put(&apos;finalResponse&apos;, successJsonResponse_json); // JSON.stringify(successJsonResponse));
-			logger.info(&quot;Final Response : &quot; + successJsonResponse_json);
+			logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Final Response : &quot; + successJsonResponse_json);
 	          return successJsonResponse_json;
 	    
 		} catch (e) {
@@ -1486,7 +1469,7 @@ if (requestedPath == &quot;/ccda/replay/&quot; || requestedPath == &quot;/ccda/r
     // Failure: Return an OperationOutcome JSON response for general errors
     responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
     
-    logger.info(&quot;Invalid endpoint: &quot; + requestedPath);
+    logger.info(&apos;Bundle ID: &apos; + channelMap.get(&apos;bundle_id&apos;) + &apos; - &apos; + &quot;Invalid endpoint: &quot; + requestedPath);
     throw new Error(&quot;Invalid endpoint: &quot; + requestedPath);
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
@@ -1762,7 +1745,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1757573727513</time>
+        <time>1757675678974</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
