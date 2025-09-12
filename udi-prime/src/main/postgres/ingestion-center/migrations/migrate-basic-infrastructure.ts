@@ -1095,14 +1095,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${ccdaReplayDetails}
       CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
-      IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'ccda_replay_details_bundle_id_key'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.ccda_replay_details
-          ADD CONSTRAINT ccda_replay_details_bundle_id_key UNIQUE (bundle_id);
-      END IF;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details DROP CONSTRAINT IF EXISTS ccda_replay_details_bundle_id_key;
       ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN retry_interaction_id DROP NOT NULL;
       ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN hub_interaction_id DROP NOT NULL;
       ALTER TABLE techbd_udi_ingress.ccda_replay_details 
