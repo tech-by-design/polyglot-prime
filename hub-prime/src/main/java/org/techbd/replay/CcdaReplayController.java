@@ -37,10 +37,9 @@ public class CcdaReplayController {
         {
             final var replayMasterInteractionId = UUID.randomUUID().toString();
             if (useMirthRaw) {
-                return mirthRawReplayService.replayBundlesAsync(bundleIds, replayMasterInteractionId, trialRun,
-                        sendToNyec, immediate);
+                return mirthRawReplayService.replayBundlesAsync(bundleIds, replayMasterInteractionId, trialRun, immediate);
             }
-            return replayService.replayBundlesAsync(bundleIds, replayMasterInteractionId, trialRun, sendToNyec,
+            return replayService.replayBundlesAsync(bundleIds, replayMasterInteractionId, trialRun,
                     immediate);
         }
 

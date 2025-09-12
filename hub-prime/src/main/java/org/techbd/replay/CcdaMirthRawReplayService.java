@@ -55,7 +55,6 @@ public class CcdaMirthRawReplayService {
 			List<String> bundleIds,
 			String replayMasterInteractionId,
 			boolean trialRun,
-			boolean sendToNyec,
 			boolean immediate) {
 
 		Map<String, Object> response = new LinkedHashMap<>();
@@ -67,8 +66,7 @@ public class CcdaMirthRawReplayService {
 			LOG.info("CCDA-REPLAY Starting synchronous processing for replayMasterInteractionId={} TechBdVersion:{} with {} bundle(s)",
 					replayMasterInteractionId, appConfig.getVersion(), bundleIds.size());
 
-			Map<String, Map<String, Object>> result = processBundles(bundleIds, replayMasterInteractionId, trialRun,
-					sendToNyec);
+			Map<String, Map<String, Object>> result = processBundles(bundleIds, replayMasterInteractionId, trialRun);
 			response.put("status", "Completed");
 			response.put("result", result);
 
@@ -80,7 +78,7 @@ public class CcdaMirthRawReplayService {
 
 			CompletableFuture.runAsync(() -> {
 				try {
-					processBundles(bundleIds, replayMasterInteractionId, trialRun, sendToNyec);
+					processBundles(bundleIds, replayMasterInteractionId, trialRun);
 					LOG.info("CCDA-REPLAY Completed asynchronous processing for replayMasterInteractionId={} TechBdVersion:{}",
 							replayMasterInteractionId, appConfig.getVersion());
 				} catch (Exception e) {
@@ -98,8 +96,7 @@ public class CcdaMirthRawReplayService {
 
 	private Map<String, Map<String, Object>> processBundles(List<String> bundleIds,
 			String replayMasterInteractionId,
-			boolean trialRun,
-			boolean sendToNyec) {
+			boolean trialRun) {
 
 		Map<String, Map<String, Object>> processingDetails = new HashMap<>();
 
@@ -154,7 +151,7 @@ public class CcdaMirthRawReplayService {
 
 				if (!isValid) {
 					handleFailedValidation(bundleId, replayMasterInteractionId, interactionId, tenantId, trialRun,
-							processingDetails, responseJson);
+							processingDetails, responseJson,originalHubInteractionId);
 					continue;
 				}
 
@@ -188,7 +185,7 @@ public class CcdaMirthRawReplayService {
 							replayMasterInteractionId, interactionId, bundleId, tenantId, appConfig.getVersion());
 				}
 
-				if (sendToNyec) {
+				if (!trialRun) {
 					Map<String, Object> requestParametersMap = new HashMap<>();
 					requestParametersMap.put(Constants.SOURCE_TYPE, SourceType.CCDA.name());
 					requestParametersMap.put(Constants.INTERACTION_ID, interactionId);
@@ -314,7 +311,7 @@ public class CcdaMirthRawReplayService {
 
 	private void handleFailedValidation(String bundleId, String replayMasterInteractionId, String interactionId,
 			String tenantId, boolean trialRun, Map<String, Map<String, Object>> processingDetails,
-			Map<String, Object> responseJson) {
+			Map<String, Object> responseJson,String originalHubInteractionId) {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> errorMessage = (Map<String, Object>) responseJson.getOrDefault("errorMessage",
@@ -323,7 +320,7 @@ public class CcdaMirthRawReplayService {
 		LOG.info("CCDA REPLAY - FAILED SCHEMA VALIDATION BundleId {}  ReplayInteractionId {} interactionId {} TechBDVersion {} failed validation: {}", bundleId, replayMasterInteractionId, interactionId, appConfig.getVersion(), errorMessage);
 
 		if (!trialRun) {
-			upsertCcdaReplayDetails(bundleId, null, interactionId, false,
+			upsertCcdaReplayDetails(bundleId, originalHubInteractionId, interactionId, false,
 					Configuration.objectMapper.valueToTree(errorMessage),
 					Configuration.objectMapper.createObjectNode()
 							.put("message",
