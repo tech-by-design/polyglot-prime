@@ -7739,32 +7739,19 @@ BEGIN
         WHERE bundle_id = p_bundle_id
     ) THEN
 		v_alreadyResubmitted := true;
-    END IF;
+    END IF;    
  
-    -- Get channel id for the FDW table
-    SELECT dc.local_channel_id
-      INTO v_channel_id
-      FROM techbd_udi_ingress.d_channels dc
-      JOIN techbd_udi_ingress.channel c ON c.id = dc.channel_id
-     WHERE c.name = 'TechBD CCD Workflow';
- 
-    v_table := format('d_mc%s', v_channel_id);
- 
-    -- Fetch CCD XML from the mirth FDW table (dynamic table name)
-    v_sql := format($f$
-        SELECT mc.content
-          FROM techbd_udi_ingress.%I mc
-          JOIN techbd_udi_ingress.%I mc2
-            ON mc.message_id = mc2.message_id
-           AND mc2.metadata_id = 2
-           AND mc2.content_type = 11
-           AND mc2.content LIKE '%%' || %L || '%%'
-         WHERE mc.metadata_id = 2
-           AND mc.content_type = 3
-         LIMIT 1
-    $f$, v_table, v_table, p_bundle_id);
- 
-    EXECUTE v_sql INTO v_xml;
+	SELECT mc.content
+	  INTO v_xml
+      FROM public.d_mc mc
+      JOIN public.d_mc mc2
+        ON mc.message_id = mc2.message_id
+       AND mc2.metadata_id = 2
+       AND mc2.content_type = 11
+       AND mc2.content LIKE '%%' || p_bundle_id || '%%'
+     WHERE mc.metadata_id = 2
+       AND mc.content_type = 3
+     LIMIT 1;
  
     WITH fhir_req AS (
         SELECT r.payload, r.tenant_id, r.hub_interaction_id
