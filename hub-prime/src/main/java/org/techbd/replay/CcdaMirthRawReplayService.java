@@ -547,7 +547,7 @@ public class CcdaMirthRawReplayService {
 				originalCCDAPayload != null ? "YES (length=" + originalCCDAPayload.toString().length() + ")" : "NO");
 
 		WebClient webClient = WebClient.builder()
-				.baseUrl(System.getenv("TECHBD_CCDA_BASEURL"))
+				.baseUrl(System.getenv("TECHBD_CCDA_RAW_BASEURL"))
 				.build();
 
 		ObjectMapper objectMapper = new ObjectMapper();
