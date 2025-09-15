@@ -14,7 +14,7 @@
  *   several steps or dependent requests to fulfill a single client request.
  ****************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request CASCADE;
-/*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request
 AS 
 SELECT interaction_id,
     uri,
@@ -89,7 +89,7 @@ SELECT interaction_id,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri not ilike '%/Bundle%' and user_req.uri not ilike '%/Hl7/v2%') combined_query
   ORDER BY interaction_created_at DESC;
-*/
+
 /*******************************************************************************************
 This view combines data from hub_interaction and sat_interaction_http_request tables to 
 provide a consolidated view of HTTP FHIR requests, including resource types, 
