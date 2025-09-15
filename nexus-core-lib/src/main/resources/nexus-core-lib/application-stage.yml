@@ -1,6 +1,7 @@
 org:
   techbd:
     dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-    dataLedgerTracking: true
+    dataLedgerTracking: false
     dataLedgerDiagnostics: true
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
+    defaultDatalakeApiUrl: https://abcsds.com
