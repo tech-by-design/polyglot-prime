@@ -28,13 +28,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
  
 @Configuration
-@ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("!localopen")
 public class SecurityConfig {
   
+    
     @Autowired
-    private MultiProviderUserAuthorizationFilter authzFilter;
- 
+    private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -80,7 +79,7 @@ public class SecurityConfig {
                         sessionManagement -> sessionManagement
                                 .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(fusionAuthAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
             headers.frameOptions(frameOptions -> frameOptions.sameOrigin());

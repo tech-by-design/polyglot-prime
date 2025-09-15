@@ -53,11 +53,6 @@ spring:
     oauth2:
       client:
         registration:
-          github:
-            client-id: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID:}
-            client-secret: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET:}
-            scope:
-              - read:user
           fusionauth:
             client-id: 79425b8d-50cc-40fd-af2e-55ccb26422a5
             client-secret: fmJumqJnmYZ3KhVuQlM6jDz1rBi7QUPWvsaEoz1vwJM

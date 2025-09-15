@@ -210,16 +210,16 @@ public class Interactions {
 
     public static void setUserDetails(RegisterUserInteraction rihr, HttpServletRequest request) {
         var curUserName = "API_USER";
-        var gitHubLoginId = "N/A";
+        var fusionAuthId = "N/A";
         final var sessionId = request.getRequestedSessionId();
         var userRole = "API_ROLE";
         if (!Constant.isStatelessApiUrl(request.getRequestURI())) { // Call only if not a stateless URL
-            final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+            final var curUser = FusionAuthUserAuthorizationFilter.getAuthenticatedUser(request);
             if (curUser.isPresent()) {
-                final var ghUser = curUser.get().ghUser();
-                if (ghUser != null) {
-                    curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
-                    gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                final var faUser = curUser.get().faUser();
+                if (faUser != null) {
+                    curUserName = Optional.ofNullable(faUser.name()).orElse("NO_DATA");
+                    fusionAuthId = Optional.ofNullable(faUser.fusionAuthId()).orElse("NO_DATA");
                     userRole = curUser.get().principal().getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.joining(","));
@@ -228,7 +228,7 @@ public class Interactions {
             }
         }
         rihr.setPUserName(curUserName);
-        rihr.setPUserId(gitHubLoginId);
+        rihr.setPUserId(fusionAuthId);
         rihr.setPUserSession(sessionId);
         rihr.setPUserRole(userRole);
     }
