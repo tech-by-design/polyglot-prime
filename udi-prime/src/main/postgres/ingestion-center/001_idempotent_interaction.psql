@@ -14,7 +14,7 @@
  *   several steps or dependent requests to fulfill a single client request.
  ****************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request
+/*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request
 AS 
 SELECT interaction_id,
     uri,
@@ -27,7 +27,6 @@ SELECT interaction_id,
     user_agent,
     client_ip_address,
     content_type,
-    payload,
     elaboration,
     from_state,
     to_state,
@@ -51,7 +50,6 @@ SELECT interaction_id,
             htt_req.user_agent,
             htt_req.client_ip_address,
             'application/json'::text AS content_type,
-            htt_req.payload,
             htt_req.elaboration,
             htt_req.from_state,
             htt_req.to_state,
@@ -77,7 +75,6 @@ SELECT interaction_id,
             user_req.user_agent,
             user_req.client_ip_address,
             'application/json'::text AS content_type,
-            NULL::unknown AS payload,
             user_req.elaboration,
             NULL::unknown AS from_state,
             NULL::unknown AS to_state,
@@ -92,7 +89,7 @@ SELECT interaction_id,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri not ilike '%/Bundle%' and user_req.uri not ilike '%/Hl7/v2%') combined_query
   ORDER BY interaction_created_at DESC;
-
+*/
 /*******************************************************************************************
 This view combines data from hub_interaction and sat_interaction_http_request tables to 
 provide a consolidated view of HTTP FHIR requests, including resource types, 
@@ -147,7 +144,36 @@ AS SELECT hub_interaction_id AS interaction_id,
         END AS is_bundle_valid  
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
+   
+/*******************************************************************************************
+-- View to provide detailed information about FHIR HTTP requests linked to hub interactions.  
+-- Retrieves request metadata, workflow state transitions, patient identifiers, and issue counts.  
+-- Excludes system-generated expectation requests (uri = '/api/expect/fhir/bundle').  
+-- Useful for auditing, monitoring, and analytics of interaction-level FHIR requests.  
+*******************************************************************************************/
 
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_details
+AS  
+SELECT hub_interaction_id AS interaction_id,
+    uri,
+    bundle_id,
+    created_at AS interaction_created_at, 
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,  
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count, 
+    patient_id,
+    patient_mrn,   
+    source_hub_interaction_id 
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE uri != '/api/expect/fhir/bundle'; 
 
 /*******************************************************************************************
 This view provides a summary of HTTP FHIR requests, selecting the most recent record per 
@@ -189,7 +215,7 @@ AS SELECT  created_at AS interaction_created_at,
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
   WHERE uri <> '/api/expect/fhir/bundle'::text
   AND nature = 'Original FHIR Payload'
-  ORDER BY hub_interaction_id, created_at DESC;
+  ORDER BY created_at DESC;
 
 
 -- techbd_udi_ingress.interaction_http_request_payload source
@@ -208,7 +234,7 @@ The result is sorted in descending order of interaction duration.
 *******************************************************************************************/
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
+/* CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
 AS 
 SELECT *
 FROM (
@@ -226,7 +252,7 @@ FROM (
              EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000 DESC
 ) AS sub
 ORDER BY duration_millisecs DESC;
-
+*/
 
 /*******************************************************************************************
 This function returns HTTP interaction metrics filtered by date range. It provides detailed
@@ -2242,7 +2268,6 @@ AS SELECT sat_interaction_fhir_request_id,
     issues_count,
     resource_type_set AS resource_types,
     patient_id,
-    payload,
     patient_mrn,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
     case 
@@ -4320,8 +4345,7 @@ AS SELECT hub_interaction_id AS interaction_id,
     tenant_id,
     user_agent,
     client_ip_address,
-    'application/json'::text AS content_type,
-    payload,
+    'application/json'::text AS content_type, 
     elaboration,
     from_state,
     to_state,
@@ -4368,8 +4392,7 @@ AS SELECT sat_interaction_fhir_request_id,
     error_message AS error,
     issues_count,
     resource_type_set AS resource_types,
-    patient_id,
-    payload,
+    patient_id, 
     patient_mrn,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,    
     source_hub_interaction_id
@@ -4574,79 +4597,6 @@ GROUP BY
 ORDER BY 
     sizfr.created_at DESC;
 
-
-/*****************************************
-The `csv_data_integrity` view captures data integrity errors from CSV validation results in the `sat_interaction_flat_file_csv_request` table.
-
-It includes:
-- Contextual fields like `created_at`, `tenant_id`, `uri`, `zip_file_hub_interaction_id`, and `section`.
-- Details of validation errors, including `fieldname`, `value`, `error_type`, `error`, `description`, `rownumber`, and `fieldnumber`.
-- The `file_name` is dynamically determined based on the section type and associated file names.
-
-Only entries with the `nature` as `CSV Validation Result` and validation errors exceeding zero are included. The `uri` is filtered for specific paths related to flat file CSV bundles.
-*****************************************/
-
-/*
-DROP VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_errors cascade;
-CREATE OR REPLACE view techbd_udi_ingress.csv_data_integrity_errors 
-AS 
-select
-	sifcr.created_at,
-	sifcr.tenant_id,
-	sifcr.uri,
-	sifcr.zip_file_hub_interaction_id,
-	sifcr.hub_interaction_id,
-	sifcr.group_id,
-	tasks.value ->> 'name'::text as section,
-	coalesce(error_payload.value ->> 'fieldName'::text,
-	errors_summary.value ->> 'fieldName'::text) as fieldname,
-	error_payload.value ->> 'cell'::text as value,
-	coalesce(error_payload.value ->> 'title'::text,	errors_summary.value ->> 'type'::text) as error_type,
-	coalesce(error_payload.value ->> 'message'::text,	errors_summary.value ->> 'message'::text) as error,
-	error_payload.value ->> 'description'::text as description,
-	(error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
-	(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
-	case
-		when tasks.value ->> 'name'::text = 'qe_admin_data'::text then original_csv.qe_admin_data_file_name
-		when tasks.value ->> 'name'::text = 'pt_info_data'::text then original_csv.demographic_data_file_name
-		when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
-		when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
-		else null::text
-	end as file_name
-from
-	techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
-left join techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv 
-    on
-	sifcr.hub_interaction_id = original_csv.hub_interaction_id
-	and original_csv.nature = 'Original Flat File CSV'::text
-left join lateral jsonb_array_elements(
-    ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
-) tasks(value) on
-	true
-left join lateral jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value) on
-	true
-left join lateral jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) errors_summary(value) on
-	true
-where 
-	  sifcr.nature = 'CSV Validation Result'::text
-	and (
-        ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
-		or jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
-    )
-	and sifcr.uri = any (array[
-        '/flatfile/csv/Bundle'::text,
-	'/flatfile/csv/Bundle/'::text,
-	'/flatfile/csv/Bundle/$validate'::text,
-	'/flatfile/csv/Bundle/$validate/'::text
-    ])
-	and coalesce(error_payload.value ->> 'title',
-	errors_summary.value ->> 'type') is not null 
-	AND sifcr.created_at >= NOW() - INTERVAL '7 days'
-order by
-	sifcr.created_at desc;
-
-*/
-
  
 /*****************************************
 This query retrieves interaction details from the techbd_udi_ingress.sat_interaction_fhir_request table. It includes interaction date, tenant ID (QE), IT vendor, SCN, type, and the count of interactions.
@@ -4750,19 +4700,13 @@ SELECT
     sicr.tenant_id_lower,
     sicr.uri,
     sicr.nature,
-    sicr.payload,
     fhir_summary.fhir_conversion_status,
-    sicr.payload AS ccda_payload_text,
     sicr.client_ip_address,
     sicr.user_agent,
     sicr.from_state,
     sicr.to_state,
-    sicr.state_transition_reason,
-    sicr.elaboration,
     'CCDA' AS origin,
-    sicr.created_at,
-    sicr.created_by,
-    sicr.provenance
+    sicr.created_at
 FROM ranked_sicr sicr
 JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
 WHERE sicr.rn = 1
@@ -4787,18 +4731,14 @@ SELECT
     sicr.tenant_id_lower,
     sicr.uri,
     sicr.nature,
-    sicr.payload,
     'true' AS fhir_conversion_status,
-    sicr.payload AS ccda_payload_text,
     sicr.client_ip_address,
     sicr.user_agent,
     sicr.from_state,
     sicr.to_state,
     sicr.state_transition_reason,
-    sicr.elaboration,
     'HL7V2' AS origin,
     sicr.created_at,
-    sicr.created_by,
     sicr.provenance
 FROM techbd_udi_ingress.sat_interaction_fhir_request sicr  
 WHERE  
@@ -8363,5 +8303,138 @@ BEGIN
 		AND sifsd.created_at < p_encountered_date + INTERVAL '1 day'
 
     ORDER BY sifsd.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+/*******************************************************************************************
+ * Stored Procedure for HTTP Interaction Requests (Replacement for View)
+ *
+ * This stored procedure replaces the interaction_http_request view by accepting
+ * start_date and end_date as parameters instead of having no date filtering.
+ *
+ * Parameters:
+ * - start_date: The start date for filtering (format: MM-DD-YYYY)
+ * - end_date: The end date for filtering (format: MM-DD-YYYY)
+ *
+ * Returns: HTTP interaction request records for the specified date range
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_http_request(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request(
+    start_date TEXT,
+    end_date TEXT
+)
+RETURNS TABLE (
+    interaction_id TEXT,
+    uri TEXT,
+    interaction_created_at TIMESTAMP WITH TIME ZONE,
+    interaction_created_by TEXT,
+    interaction_provenance TEXT,
+    sat_interaction_http_request_id TEXT,
+    nature TEXT,
+    tenant_id TEXT,
+    user_agent TEXT,
+    client_ip_address TEXT,
+    content_type TEXT,
+    elaboration JSONB,
+    from_state TEXT,
+    to_state TEXT,
+    state_transition_reason TEXT,
+    request_created_at TIMESTAMP WITH TIME ZONE,
+    request_created_by TEXT,
+    request_provenance TEXT,
+    issues_count INTEGER,
+    resource_types TEXT,
+    start_time TIMESTAMP WITH TIME ZONE,
+    finish_time TIMESTAMP WITH TIME ZONE,
+    duration_millisecs NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        combined_query.interaction_id,
+        combined_query.uri,
+        combined_query.interaction_created_at,
+        combined_query.interaction_created_by,
+        combined_query.interaction_provenance,
+        combined_query.sat_interaction_http_request_id,
+        combined_query.nature,
+        combined_query.tenant_id,
+        combined_query.user_agent,
+        combined_query.client_ip_address,
+        combined_query.content_type,
+        combined_query.elaboration,
+        combined_query.from_state,
+        combined_query.to_state,
+        combined_query.state_transition_reason,
+        combined_query.request_created_at,
+        combined_query.request_created_by,
+        combined_query.request_provenance,
+        combined_query.issues_count,
+        combined_query.resource_types,
+        combined_query.start_time,
+        combined_query.finish_time,
+        combined_query.duration_millisecs
+    FROM (
+        SELECT
+            htt_req.hub_interaction_id AS interaction_id,
+            htt_req.uri,
+            htt_req.created_at AS interaction_created_at,
+            htt_req.created_by AS interaction_created_by,
+            htt_req.provenance AS interaction_provenance,
+            htt_req.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+            htt_req.nature,
+            htt_req.tenant_id,
+            htt_req.user_agent,
+            htt_req.client_ip_address,
+            'application/json'::text AS content_type,
+            htt_req.elaboration,
+            htt_req.from_state,
+            htt_req.to_state,
+            htt_req.state_transition_reason,
+            htt_req.created_at AS request_created_at,
+            htt_req.created_by AS request_created_by,
+            htt_req.provenance AS request_provenance,
+            htt_req.issues_count,
+            htt_req.resource_type_set AS resource_types,
+            htt_req.interaction_start_time AS start_time,
+            htt_req.interaction_end_time AS finish_time,
+            EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+        FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+        WHERE htt_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
+          AND htt_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
+
+        UNION ALL
+
+        SELECT
+            user_req.hub_interaction_id AS interaction_id,
+            user_req.uri,
+            user_req.created_at AS interaction_created_at,
+            user_req.created_by AS interaction_created_by,
+            user_req.provenance AS interaction_provenance,
+            user_req.sat_interaction_user_id AS sat_interaction_http_request_id,
+            user_req.nature,
+            user_req.tenant_id,
+            user_req.user_agent,
+            user_req.client_ip_address,
+            'application/json'::text AS content_type,
+            user_req.elaboration,
+            NULL::TEXT AS from_state,
+            NULL::TEXT AS to_state,
+            NULL::TEXT AS state_transition_reason,
+            user_req.created_at AS request_created_at,
+            user_req.created_by AS request_created_by,
+            user_req.provenance AS request_provenance,
+            NULL::INTEGER AS issues_count,
+            NULL::TEXT AS resource_types,
+            user_req.interaction_start_time AS start_time,
+            user_req.interaction_end_time AS finish_time,
+            EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+        FROM techbd_udi_ingress.sat_interaction_user user_req
+        WHERE user_req.uri NOT ILIKE '%/Bundle%'
+          AND user_req.uri NOT ILIKE '%/Hl7/v2%'
+          AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
+          AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
+    ) combined_query
+    ORDER BY combined_query.interaction_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
