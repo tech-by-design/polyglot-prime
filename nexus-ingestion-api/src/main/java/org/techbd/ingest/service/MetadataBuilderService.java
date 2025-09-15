@@ -97,7 +97,6 @@ public class MetadataBuilderService {
      */
     public Map<String, Object> buildSqsMessage(RequestContext context) {
         Map<String, Object> message = new HashMap<>();
-        message.put("tenantId", context.getTenantId());
         message.put("interactionId", context.getInteractionId());
         message.put("requestUrl", context.getRequestUrl());
         message.put("timestamp", context.getTimestamp());
