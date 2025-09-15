@@ -750,6 +750,10 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_nature_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (nature);
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_payload_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING gin (payload);
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_to_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (to_state);
+      CREATE INDEX IF NOT EXISTS idx_sat_interaction_user_created_at_desc ON techbd_udi_ingress.sat_interaction_user (created_at DESC);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_info_submitted_date_time_idx  ON techbd_udi_ingress.sat_interaction_fhir_screening_info (submitted_date_time DESC);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request 
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
