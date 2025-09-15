@@ -17,11 +17,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MetadataBuilderService;
 
+import com.amazonaws.services.kms.model.MessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -50,6 +51,9 @@ class S3UploadStepTest {
     @Mock
     private AppConfig.Aws.S3 s3;
 
+    @Mock
+    private AppConfig.Aws.S3.BucketConfig bucketConfig;
+
     @InjectMocks
     private S3UploadStep s3UploadStep;
 
@@ -61,7 +65,8 @@ class S3UploadStepTest {
 
         when(appConfig.getAws()).thenReturn(aws);
         when(aws.getS3()).thenReturn(s3);
-        when(s3.getBucket()).thenReturn("test-bucket");
+        when(aws.getS3().getDefaultConfig()).thenReturn(bucketConfig);
+        when(bucketConfig.getBucket()).thenReturn("test-bucket");
 
         context = new RequestContext(
                 Map.of("User-Agent", "JUnit-Test"),
@@ -83,7 +88,7 @@ class S3UploadStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080",null,null
+                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST"
         );
         S3ServiceClientConfiguration mockConfig = mock(S3ServiceClientConfiguration.class);
         when(s3Client.serviceClientConfiguration()).thenReturn(mockConfig);
@@ -102,7 +107,7 @@ class S3UploadStepTest {
         PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(response);
-        s3UploadStep.process(context, file, SourceType.REST);
+        s3UploadStep.process(context, file);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         assertEquals("Uploaded to S3: objectKey (ETag: 123etag)", context.getS3Response());
     }
@@ -115,7 +120,10 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
-        s3UploadStep.process(context, content, null, SourceType.REST);
+        PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(response);
+        s3UploadStep.process(context, content, null);
         verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
       
@@ -135,9 +143,11 @@ class S3UploadStepTest {
         when(metadataBuilderService.buildS3Metadata(any())).thenReturn(metadata);
         when(metadataBuilderService.buildMetadataJson(any())).thenReturn(metadataJson);
         when(objectMapper.writeValueAsString(metadataJson)).thenReturn("{\"jsonKey\":\"jsonValue\"}");
-        s3UploadStep.process(context, content, ackMessage, SourceType.SOAP);
+        PutObjectResponse response = PutObjectResponse.builder().eTag("123etag").build();
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(response);
+        s3UploadStep.process(context, content, ackMessage);
 
-        // Verify uploads: metadata, content, and ack
         verify(s3Client, times(3)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 }

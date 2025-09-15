@@ -22,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.service.MessageProcessorService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,9 +57,12 @@ class DataIngestionControllerTest {
         AppConfig.Aws awsMock = mock(AppConfig.Aws.class);
         when(awsMock.getRegion()).thenReturn("us-east-1");
         AppConfig.Aws.S3 s3Mock = mock(AppConfig.Aws.S3.class);
+        AppConfig.Aws.S3.BucketConfig defaultConfigMock = mock(AppConfig.Aws.S3.BucketConfig.class);
+        when(s3Mock.getDefaultConfig()).thenReturn(defaultConfigMock);
+        when(defaultConfigMock.getBucket()).thenReturn("test-bucket");  
         when(appConfig.getAws()).thenReturn(awsMock);
         when(awsMock.getS3()).thenReturn(s3Mock);
-        when(s3Mock.getBucket()).thenReturn("test-bucket"); 
+        when(s3Mock.getDefaultConfig().getBucket()).thenReturn("test-bucket"); 
     }
 
     static Stream<String> fileNames() {
@@ -72,21 +74,22 @@ class DataIngestionControllerTest {
     @MethodSource("fileNames")
     void testIngestEndpointWithDifferentFiles(String fileName) throws Exception {
         InputStream inputStream = getClass().getResourceAsStream("/org/techbd/ingest/examples/" + fileName);
-        assert inputStream != null : "Test file not found: " + fileName;
+        if (inputStream == null) {
+            throw new AssertionError("Test file not found: " + fileName);
+        }
         byte[] fileBytes = inputStream.readAllBytes();
         MockMultipartFile mockFile = new MockMultipartFile("file", fileName, null, fileBytes);
         Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
         Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
 
-        when(messageProcessorService.processMessage(any(RequestContext.class), eq(mockFile), SourceType.REST))
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(mockFile)))
                 .thenReturn(mockResponse);
 
-        // Pass `null` for ackMessage
         ResponseEntity<String> response = controller.ingest(mockFile, null, mockHeaders, servletRequest);
 
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         assertThat(response.getBody()).contains("SUCCESS", fileName);
-        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(mockFile), SourceType.REST);
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(mockFile));
     }
 
     @Test
@@ -99,10 +102,9 @@ class DataIngestionControllerTest {
                 "fileName", "generatedFile.dat",
                 "messageId", "12345");
 
-        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData), SourceType.REST))
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
                 .thenReturn(mockResponse);
 
-        // Call the raw ingestion method
         ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
 
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
@@ -110,7 +112,7 @@ class DataIngestionControllerTest {
         assertThat(response.getBody()).contains(".dat");
         assertThat(response.getBody()).contains("messageId");
 
-        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData), SourceType.REST);
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
     }
 
     @Test
@@ -125,7 +127,7 @@ class DataIngestionControllerTest {
                 "fileName", "generatedFile.xml",
                 "messageId", "67890");
 
-        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData), SourceType.REST))
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
                 .thenReturn(mockResponse);
 
         ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
@@ -135,7 +137,7 @@ class DataIngestionControllerTest {
         assertThat(response.getBody()).contains(".xml");
         assertThat(response.getBody()).contains("messageId");
 
-        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData), SourceType.REST);
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
     }
 
     @Test
@@ -150,7 +152,7 @@ class DataIngestionControllerTest {
                 "fileName", "generatedFile.json",
                 "messageId", "99999");
 
-        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData), SourceType.REST))
+        when(messageProcessorService.processMessage(any(RequestContext.class), eq(rawData)))
                 .thenReturn(mockResponse);
 
         ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
@@ -160,6 +162,6 @@ class DataIngestionControllerTest {
         assertThat(response.getBody()).contains(".json");
         assertThat(response.getBody()).contains("messageId");
 
-        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData), SourceType.REST);
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
     }
 }

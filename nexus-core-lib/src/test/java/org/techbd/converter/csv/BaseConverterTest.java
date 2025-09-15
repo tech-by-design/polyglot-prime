@@ -78,10 +78,10 @@ class BaseConverterTest {
 
         BaseConverter.SYSTEM_LOOKUP = systemLookup;
 
-        String result = baseConverter.fetchSystem("example", "category", "interactionId", null);
+        String result = baseConverter.fetchSystem("example", "defaultSystem", "category", "interactionId");
         assertEquals("mappedSystem", result);
 
-        result = baseConverter.fetchSystem("unknown", "category", "interactionId", null);
+        result = baseConverter.fetchSystem("unknown", "unknown", "category", "interactionId");
         assertEquals("unknown", result);
     }
     

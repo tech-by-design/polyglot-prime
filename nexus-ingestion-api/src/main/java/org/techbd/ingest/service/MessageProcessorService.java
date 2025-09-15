@@ -1,5 +1,6 @@
 package org.techbd.ingest.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -8,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.model.SourceType;
 import org.techbd.ingest.processor.MessageProcessingStep;
 
 /**
@@ -51,27 +51,21 @@ public class MessageProcessorService {
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
      */
-    public Map<String, String> processMessage(RequestContext context, MultipartFile file, SourceType sourceType) {
+    public Map<String, String> processMessage(RequestContext context, MultipartFile file) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info(
-                "MessageProcessorService:: processMessage called with MultipartFile. interactionId={}, filename={}, filesize={}, sourceType={}",
+                "MessageProcessorService:: processMessage called with MultipartFile. interactionId={}, filename={}, filesize={} from source : {}",
                 interactionId,
                 file != null ? file.getOriginalFilename() : "null",
-                file != null ? file.getSize() : 0,
-                sourceType);
-        if (sourceType == SourceType.HOLD) {
-            // Only run S3UploadStep
-            for (MessageProcessingStep step : processingSteps) {
-                if (step.getClass().getSimpleName().equals("S3UploadStep")) {
-                    LOG.info("MessageProcessorService:: Processing ONLY S3UploadStep for HOLD. interactionId={}", interactionId);
-                    step.process(context, file, sourceType);
-                }
-            }
-        } else {
-            for (MessageProcessingStep step : processingSteps) {
-                LOG.info("MessageProcessorService:: Processing step {} for interactionId={}",
+                file != null ? file.getSize() : 0, context.getMessageSourceType().name());
+        for (MessageProcessingStep step : processingSteps) {
+            if (step.isEnabledFor(context)) {
+                LOG.info("MessageProcessorService:: Executing step {} for interactionId={}",
                         step.getClass().getSimpleName(), interactionId);
-                step.process(context, file, sourceType);
+                step.process(context, file);
+            } else {
+                LOG.debug("MessageProcessorService:: Skipping step {} for interactionId={} (disabled)",
+                        step.getClass().getSimpleName(), interactionId);
             }
         }
         LOG.info("MessageProcessorService:: All processing steps completed for interactionId={}", interactionId);
@@ -86,8 +80,8 @@ public class MessageProcessorService {
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
      */
-    public Map<String, String> processMessage(RequestContext context, String content, SourceType sourceType) {
-        return processMessage(context, content, null, sourceType);
+    public Map<String, String> processMessage(RequestContext context, String content) {
+        return processMessage(context, content, null);
     }
 
     /**
@@ -100,22 +94,18 @@ public class MessageProcessorService {
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
      */
-    public Map<String, String> processMessage(RequestContext context, String content, String ackMessage, SourceType sourceType) {
+    public Map<String, String> processMessage(RequestContext context, String content, String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={}, sourceType={}",
-                interactionId, sourceType);
-        if (sourceType == SourceType.HOLD) {
-            for (MessageProcessingStep step : processingSteps) {
-                if (step.getClass().getSimpleName().equals("S3UploadStep")) {
-                    LOG.info("MessageProcessorService:: Processing ONLY S3UploadStep for HOLD. interactionId={}", interactionId);
-                    step.process(context, content, ackMessage, sourceType);
-                }
-            }
-        } else {
-            for (MessageProcessingStep step : processingSteps) {
-                LOG.info("MessageProcessorService:: Processing step {} for interactionId={}",
+        LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={} from source {}",
+                interactionId, context.getMessageSourceType().name());
+        for (MessageProcessingStep step : processingSteps) {
+            if (step.isEnabledFor(context)) {
+                LOG.info("MessageProcessorService:: Executing step {} for interactionId={}",
                         step.getClass().getSimpleName(), interactionId);
-                step.process(context, content, ackMessage, sourceType);
+                step.process(context, content, ackMessage);
+            } else {
+                LOG.debug("MessageProcessorService:: Skipping step {} for interactionId={} (disabled)",
+                        step.getClass().getSimpleName(), interactionId);
             }
         }
         LOG.info("MessageProcessorService:: All processing steps completed for interactionId={}", interactionId);
@@ -134,11 +124,18 @@ public class MessageProcessorService {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         try {
             LOG.info("MessageProcessorService:: Creating success response for interactionId={}", interactionId);
-            return Map.of(
-                    "messageId", messageId != null ? messageId : context.getInteractionId(),
-                    "interactionId", context.getInteractionId(),
-                    "fullS3Path", context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set",
-                    "timestamp", context.getTimestamp());
+            Map<String, String> response = new HashMap<>();
+            response.put("messageId", messageId != null ? messageId : context.getInteractionId());
+            response.put("interactionId", context.getInteractionId());
+            response.put("fullS3Path", context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set");
+            response.put("fullS3MetaDataPath",
+                    context.getFullS3MetadataPath() != null ? context.getFullS3MetadataPath() : "not-set");
+            response.put("timestamp", context.getTimestamp());
+            if (context.getFullS3AckMessagePath() != null) {
+                response.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
+            }
+
+            return response;
         } catch (Exception e) {
             LOG.error("MessageProcessorService:: Error creating success response for interactionId={}", interactionId,
                     e);

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
@@ -49,6 +50,7 @@ public class PrePopulateSupport {
             addICD10Codes(validationSupportChain, prePopulatedValidationSupport);
             addCPTCodes(validationSupportChain, prePopulatedValidationSupport);
             addHCPCSCodes(validationSupportChain, prePopulatedValidationSupport);
+            addLoincCodes(validationSupportChain, prePopulatedValidationSupport);
         } finally {
             span.end();
         }
@@ -192,4 +194,33 @@ public class PrePopulateSupport {
         concepts.forEach((k, v) -> valueSet.getCompose().getInclude().add(
                 new ValueSet.ConceptSetComponent().setSystem(k).setConcept(v)));
     }
+
+    private void addLoincCodes(ValidationSupportChain validationSupportChain,
+            PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        LOG.info("PrePopulateSupport:addLoincCodes  -BEGIN");
+        Span span = tracer.spanBuilder("PrePopulateSupport.addLoincCodes").startSpan();
+        try {
+            CodeSystem existingLoinc = (CodeSystem) validationSupportChain.fetchCodeSystem("http://loinc.org");
+            if (existingLoinc == null) {
+                CodeSystem newLoinc = new CodeSystem();
+                newLoinc.setUrl("http://loinc.org");
+                newLoinc.setVersion("2.81"); // or whatever version your .psv represents
+                newLoinc.setName("LOINC");
+                newLoinc.setStatus(Enumerations.PublicationStatus.ACTIVE);
+                newLoinc.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "loinc.psv"));
+                newLoinc.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+                prePopulatedValidationSupport.addCodeSystem(newLoinc);
+            } else {
+                if (existingLoinc.getConcept().isEmpty()) {
+                    existingLoinc.getConcept()
+                            .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "loinc.psv"));
+                }
+                existingLoinc.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            }
+        } finally {
+            span.end();
+        }
+        LOG.info("PrePopulateSupport:addLoincCodes  -END");
+    }
+
 }

@@ -18,6 +18,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
 import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,6 +29,7 @@ class CCDAServiceTest {
     private Configuration jooqConfig;
     private CCDAService ccdaService;
     private AppLogger appLogger;
+    private TemplateLogger templateLogger;
     private CoreAppConfig coreAppConfig;
 
     @BeforeEach
@@ -36,7 +38,9 @@ class CCDAServiceTest {
         dslContext = mock(DSLContext.class);
         jooqConfig = mock(Configuration.class);
         appLogger = mock(AppLogger.class);
+        templateLogger = mock(TemplateLogger.class);
         coreAppConfig = mock(CoreAppConfig.class);
+        when(appLogger.getLogger(CCDAService.class)).thenReturn(templateLogger);
         when(coreUdiPrimeJpaConfig.dsl()).thenReturn(dslContext);
         when(dslContext.configuration()).thenReturn(jooqConfig);
         ccdaService = new CCDAService(coreUdiPrimeJpaConfig, appLogger, coreAppConfig);

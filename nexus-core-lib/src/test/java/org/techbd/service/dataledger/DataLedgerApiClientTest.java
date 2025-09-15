@@ -26,6 +26,7 @@ import org.techbd.service.dataledger.CoreDataLedgerApiClient.Action;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.Actor;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
 import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 
 class DataLedgerApiClientTest {
 
@@ -39,12 +40,15 @@ class DataLedgerApiClientTest {
     private static HttpClient httpClient;
     private CoreDataLedgerApiClient coreDataLedgerApiClient;
     private static AppLogger appLogger;
+    private static TemplateLogger templateLogger;
 
     @BeforeAll
     static void init() {
         mockedHttpClient = mockStatic(HttpClient.class);
         httpClient = mock(HttpClient.class);
         appLogger = mock(AppLogger.class);
+        templateLogger = mock(TemplateLogger.class);
+        when(appLogger.getLogger(CoreDataLedgerApiClient.class)).thenReturn(templateLogger);
         mockedHttpClient.when(HttpClient::newHttpClient).thenReturn(httpClient);
     }
 

@@ -543,6 +543,20 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
     sqlNS: ingressSchema
 });
 
+const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
+  bundle_id: text(),
+  hub_interaction_id: textNullable(),
+  retry_interaction_id: textNullable(),
+  is_valid: boolean().default(false),
+  error_message: jsonbNullable(),
+  elaboration: jsonbNullable(),
+  retry_master_interaction_id: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -726,6 +740,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_date_time ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time);
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_issue_partial ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue) WHERE issue LIKE '%has not been checked because it is unknown%' OR issue LIKE '%Unknown profile%' OR issue LIKE '%Unknown extension%' OR issue LIKE '%Unknown Code System%' OR issue LIKE '%not found%' OR issue LIKE '%has not been checked because it could not be found%' OR issue LIKE '%Unable to find a match for profile%' OR issue LIKE '%None of the codings provided%' OR issue LIKE '%Unable to expand ValueSet%' OR issue LIKE '%Slicing cannot be evaluated%' OR issue LIKE '%could not be resolved%';
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_idx_encountered_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (encountered_at);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_created_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (created_at DESC);
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_severity_lower ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity));      
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_ccda_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_created_at_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (created_at DESC);
@@ -1078,6 +1094,24 @@ const migrateSP = pgSQLa.storedProcedure(
           ADD CONSTRAINT link_nexus_interaction_pkey
           PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
       END IF;
+
+      ${ccdaReplayDetails}
+      CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ccda_replay_details_bundle_id_key'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.ccda_replay_details
+          ADD CONSTRAINT ccda_replay_details_bundle_id_key UNIQUE (bundle_id);
+      END IF;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN retry_interaction_id DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN hub_interaction_id DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.ccda_replay_details 
+          ADD COLUMN IF NOT EXISTS is_valid BOOLEAN DEFAULT FALSE,
+          ADD COLUMN IF NOT EXISTS error_message JSONB DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS elaboration JSONB DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS retry_master_interaction_id TEXT DEFAULT NULL;
 
       IF NOT EXISTS (
           SELECT 1

@@ -1,0 +1,29 @@
+name: Test SES Auth
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Send Email Notification
+       uses: dawidd6/action-send-mail@v3
+       with:
+        server_address: email-smtp.us-east-1.amazonaws.com
+        server_port: 587
+        username: ${{ secrets.SES_SMTP_USERNAME }}
+        password: ${{ secrets.SES_SMTP_PASSWORD }}
+        subject: "CCDA Bundle SmokeTest Failures"
+        body: |
+          Hello Team,
+
+          The CCDA Bundle SmokeTest encountered failures in the following environments:
+
+          Please find the attached reports for the same.
+
+          Regards,
+          Tech by Design Automation Team
+        content_type: "text/plain"
+        from: "Tech by Design CCDA SmokeTest Result <no-reply@tx.techbd.org>"
+        to: rinshad-asharaf@netspective.in

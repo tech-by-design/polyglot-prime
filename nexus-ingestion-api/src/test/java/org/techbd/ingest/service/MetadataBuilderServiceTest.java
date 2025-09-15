@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
 
 class MetadataBuilderServiceTest {
@@ -35,7 +36,13 @@ class MetadataBuilderServiceTest {
                 "192.168.1.1",
                 null,
                 "192.168.1.2",
-                "8080",null,null
+                "8080",
+                null,
+                null,
+                null,
+                MessageSourceType.HTTP_INGEST,
+                "TEST",
+                "TEST"
         );
         context.setS3Response(s3Response);
         return context;

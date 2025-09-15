@@ -2257,6 +2257,6 @@ DROP TABLE IF EXISTS ref_code_lookup_staging;
 -- Optional: Show how many were inserted
 -- (not precise if ON CONFLICT DO NOTHING, but good for debugging)
 SELECT COUNT(*) AS inserted_rows FROM techbd_udi_ingress.ref_code_lookup
-WHERE created_at::date = CURRENT_DATE;
+WHERE created_at = CURRENT_DATE;
 
  */
