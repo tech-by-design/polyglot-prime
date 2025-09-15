@@ -23,51 +23,11 @@
         const modalAide = new ModalAide();
                
 
-        // Define downloadPayload globally
-        window.downloadPayload = async function (ccda_payload_text, tenant_id, nature) {
-            
-            // Decode the encoded CCDA payload text
-            const decodedPayload = ccda_payload_text;
-
-            // Create a Blob from the CCDA payload text
-            const blob = new Blob([decodedPayload], { type: "application/xml" });
-
-            // Get current date and time
-            const now = new Date();
-            const timestamp = now.toISOString().replace(/[-:T]/g, '').split('.')[0]; // Format: YYYYMMDDHHMMSS
-
-            // Create a URL for the Blob
-            const url = URL.createObjectURL(blob);
-
-            // Create a temporary link to trigger the download
-            const tempLink = document.createElement('a');
-            tempLink.href = url;
-            tempLink.download = `${tenant_id}_${nature}_${timestamp}.xml`;
-            document.body.appendChild(tempLink);
-            tempLink.click();
-
-            // Clean up
-            document.body.removeChild(tempLink);
-            URL.revokeObjectURL(url);
-
-         
-        };
-
+ 
 
         document.addEventListener('DOMContentLoaded', function () {
             
-            function downloadCellRenderer(params) {
-                const ccda_payload_text = params.data.ccda_payload_text; 
-                const tenant_id = params.data.tenant_id; 
-                const nature = params.data.nature;
-
-                // Create a download link placeholder
-                const downloadLink = `<a href="#" onclick="window.downloadPayload( \`${ccda_payload_text}\`,'${tenant_id}','${nature}'); return false;" style="text-decoration: none; color: #007bff;">
-        <i class="fas fa-download"></i>
-    </a>`;
-
-                return downloadLink;
-            }            
+            
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     {
