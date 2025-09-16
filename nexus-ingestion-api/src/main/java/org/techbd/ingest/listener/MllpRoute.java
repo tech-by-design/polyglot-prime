@@ -218,12 +218,12 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-       return Constants.S3_PREFIX + appConfig.getAws().getS3().getDefaultConfig().getBucket();
+       return appConfig.getAws().getS3().getDefaultConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
-        return Constants.S3_PREFIX + appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
+        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 
     @Override
