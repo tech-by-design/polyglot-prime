@@ -30,10 +30,11 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'interaction_http_fhir_request_summary';
+        const DetailViewNameWithPayload = 'interaction_http_fhir_request_payload_details';
         const DetailViewName = 'interaction_http_fhir_request_details';
 
 
-        function getInteractionHttpFhirData(params) { 
+        function getInteractionHttpFhirData(params) {
             const interactionId = params.data.interaction_id;
             console.log('Interaction ID:', interactionId);
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/interaction_id/${interactionId}.json`))
@@ -77,7 +78,7 @@
             const interactionHttpFhir = [
             { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", headerTooltip: "Description of the interaction’s type or purpose", flex: 2,
                 cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewNameWithPayload}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
             }, modalAide)
             },                                 
             { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },

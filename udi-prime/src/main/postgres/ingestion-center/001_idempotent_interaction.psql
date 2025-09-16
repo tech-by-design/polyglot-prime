@@ -175,6 +175,32 @@ SELECT hub_interaction_id AS interaction_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_payload_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_payload_details
+AS  
+SELECT hub_interaction_id AS interaction_id,
+    uri,
+    bundle_id,
+    created_at AS interaction_created_at, 
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,  
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count, 
+    payload,
+    patient_id,
+    patient_mrn,   
+    source_hub_interaction_id 
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE uri != '/api/expect/fhir/bundle';    
+
 /*******************************************************************************************
 This view provides a summary of HTTP FHIR requests, selecting the most recent record per 
 interaction ID. It includes metadata such as URI, tenant, organization, patient MRN, 
