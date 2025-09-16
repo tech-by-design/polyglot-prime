@@ -20,16 +20,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.OrganizationConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -40,12 +46,26 @@ class OrganizationConverterTest {
    
     @Mock
     CodeLookupService codeLookupService;
+    
+    @Mock
+    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    
+    @Mock
+    AppLogger appLogger;
+    
+    @Mock
+    TemplateLogger templateLogger;
 
-    @InjectMocks
     private OrganizationConverter organizationConverter;
 
     @BeforeEach
     void setUp() throws Exception {
+            MockitoAnnotations.openMocks(this);
+            when(appLogger.getLogger(OrganizationConverter.class)).thenReturn(templateLogger);
+            
+            // Manually instantiate the converter after mocks are set up
+            organizationConverter = new OrganizationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+            
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
             profileMapField.set(null, CsvTestHelper.getProfileMap());
@@ -67,7 +87,7 @@ class OrganizationConverterTest {
         // Call the convert method of the organization converter
         final BundleEntryComponent result = organizationConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,
-                        "interactionId",idsGenerated,null)
+                        "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL)
                 .get(0);
 
         // Create soft assertions to verify the result
@@ -148,7 +168,7 @@ class OrganizationConverterTest {
         final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
         final var result = organizationConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId", idsGenerated,CsvTestHelper.BASE_FHIR_URL);
+                "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL);
         final Organization organization = (Organization) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/organization.json";
         final FhirContext fhirContext = FhirContext.forR4();

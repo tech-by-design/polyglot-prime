@@ -334,7 +334,7 @@ AS SELECT validation_engine,
     to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date
       FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
    WHERE  
-   date_time::date >= CURRENT_DATE - INTERVAL '2 days'
+   date_time >= CURRENT_DATE - INTERVAL '2 days'
       AND (issue ~~ '%has not been checked because it is unknown%'::text 
             OR issue ~~ '%Unknown profile%'::text 
             OR issue ~~ '%Unknown extension%'::text 
@@ -374,7 +374,7 @@ AS
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
-    date_time::date >= CURRENT_DATE - INTERVAL '2 days'
+    date_time >= CURRENT_DATE - INTERVAL '2 days'
     AND (
         issue LIKE '%has not been checked because it is unknown%'
         OR issue LIKE '%Unknown profile%'

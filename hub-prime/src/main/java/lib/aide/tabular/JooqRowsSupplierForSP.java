@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -72,8 +73,10 @@ public class JooqRowsSupplierForSP {
         Result<?> result = finalQuery.fetch();
 
         // Use different formatting based on stored procedure
-        if ("get_fhir_patient_screening_questions_answers".equals(storedProcName) || "get_csv_data_integrity_errors".equals(storedProcName)) {
-            // For screening questions, return data without complex formatting to avoid null issues
+        if ("get_fhir_patient_screening_questions_answers".equals(storedProcName)
+                || "get_csv_data_integrity_errors".equals(storedProcName)) {
+            // For screening questions, return data without complex formatting to avoid null
+            // issues
             return result.intoMaps();
         } else {
             // For other stored procedures, use the standard formatting
@@ -150,7 +153,8 @@ public class JooqRowsSupplierForSP {
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + condition.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + condition.type());
                 };
             }
             case "text" -> { // Total 8 conditions for agTextColumnFilter
@@ -172,7 +176,8 @@ public class JooqRowsSupplierForSP {
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + condition.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + condition.type());
                 };
             }
             case "date" -> {
@@ -187,14 +192,15 @@ public class JooqRowsSupplierForSP {
                         DSL.field(column).gt(convertStringToLocalDate(condition.dateFrom(), DATE_TIME_FORMAT_YMDHMS));
                     case "inRange" ->
                         DSL.field(column).between(
-                        convertStringToLocalDate(condition.dateFrom(), DATE_TIME_FORMAT_YMDHMS),
-                        convertStringToLocalDate(condition.dateTo(), DATE_TIME_FORMAT_YMDHMS));
+                                convertStringToLocalDate(condition.dateFrom(), DATE_TIME_FORMAT_YMDHMS),
+                                convertStringToLocalDate(condition.dateTo(), DATE_TIME_FORMAT_YMDHMS));
                     case "blank" ->
                         DSL.field(column).isNull();
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + condition.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + condition.type());
                 };
             }
             case "boolean" -> { // Reserved for future use
@@ -237,7 +243,8 @@ public class JooqRowsSupplierForSP {
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + filterModel.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + filterModel.type());
                 };
             }
             case "text" -> { // Total 8 conditions for agTextColumnFilter
@@ -249,7 +256,8 @@ public class JooqRowsSupplierForSP {
                     case "equals" ->
                         DSL.field(column).equalIgnoreCase((String) filterModel.filter());
                     case "notEqual" ->
-                        DSL.lower(DSL.field(column, String.class)).ne(DSL.lower(DSL.val((String) filterModel.filter())));
+                        DSL.lower(DSL.field(column, String.class))
+                                .ne(DSL.lower(DSL.val((String) filterModel.filter())));
                     case "startsWith" ->
                         DSL.field(column).startsWithIgnoreCase((String) filterModel.filter());
                     case "endsWith" ->
@@ -259,7 +267,8 @@ public class JooqRowsSupplierForSP {
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + filterModel.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + filterModel.type());
                 };
             }
             case "date" -> {
@@ -274,14 +283,15 @@ public class JooqRowsSupplierForSP {
                         DSL.field(column).gt(convertStringToLocalDate(filterModel.dateFrom(), DATE_TIME_FORMAT_YMDHMS));
                     case "inRange" ->
                         DSL.field(column).between(
-                        convertStringToLocalDate(filterModel.dateFrom(), DATE_TIME_FORMAT_YMDHMS),
-                        convertStringToLocalDate(filterModel.dateTo(), DATE_TIME_FORMAT_YMDHMS));
+                                convertStringToLocalDate(filterModel.dateFrom(), DATE_TIME_FORMAT_YMDHMS),
+                                convertStringToLocalDate(filterModel.dateTo(), DATE_TIME_FORMAT_YMDHMS));
                     case "blank" ->
                         DSL.field(column).isNull();
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " + filterModel.type());
+                        throw new IllegalArgumentException(
+                                "Unsupported condition type in payload: " + filterModel.type());
                 };
             }
             case "boolean" -> { // Reserved for future use
@@ -328,22 +338,44 @@ public class JooqRowsSupplierForSP {
 
     private List<Map<String, Object>> formatData(List<Map<String, Object>> data) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_MDYHMS);
+        DateTimeFormatter mmddyyyyFormatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_MDY);
+
         return data.stream()
                 .map(row -> row.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> {
-                            Object value = entry.getValue();
-                            if (value != null) {
-                                if (value instanceof OffsetDateTime offsetDateTime) {
-                                    return offsetDateTime
-                                            .atZoneSameInstant(ZoneId.of("America/New_York"))
-                                            .toLocalDateTime()
-                                            .format(formatter);
-                                }
+                        // Skip null keys to avoid NullPointerException
+                        .filter(e -> {
+                            if (e.getKey() == null) {
+                                return false;
                             }
-                            return value;
-                        })))
+                            return true;
+                        })
+                        .collect(Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> {
+                                    Object value = entry.getValue();
+                                    try {
+                                        if (value != null) {
+                                            if (value instanceof OffsetDateTime offsetDateTime) {
+                                                return offsetDateTime
+                                                        .atZoneSameInstant(ZoneId.of("America/New_York"))
+                                                        .toLocalDateTime()
+                                                        .format(formatter);
+                                            } else if (value instanceof LocalDate localDate) {
+                                                return localDate.format(mmddyyyyFormatter);
+                                            } else if (value instanceof java.sql.Date sqlDate) {
+                                                return sqlDate.toLocalDate().format(mmddyyyyFormatter);
+                                            } else {
+                                                return value;
+                                            }
+                                        }
+                                        // If value is null, return empty string (or any default non-null value)
+                                        return "";
+                                    } catch (Exception ex) {
+                                        return "";
+                                    }
+                                },
+                                (v1, v2) -> v1 // If duplicate key, keep the first value
+                        )))
                 .collect(Collectors.toList());
     }
 
@@ -371,18 +403,19 @@ public class JooqRowsSupplierForSP {
                 Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
                 return new GetFhirNeedsAttention().call(paramMap.get("start_date"), paramMap.get("end_date"));
             }
-            case "get_interaction_http_request" -> {
-                return new GetInteractionHttpRequest().call();
-            }
+            // case "get_interaction_http_request" -> {
+            //     return new GetInteractionHttpRequest().call();
+            // }
             case "get_interaction_observe" -> {
-                // Temporary solution: use raw SQL to call the function until JOOQ classes are regenerated
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are
+                // regenerated
                 Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
                 LocalDate startDate = paramMap.get("start_date");
                 LocalDate endDate = paramMap.get("end_date");
 
                 // Create a table from the function call using raw SQL
                 String functionCall = String.format("techbd_udi_ingress.get_interaction_observe('%s', '%s')",
-                    startDate.toString(), endDate.toString());
+                        startDate.toString(), endDate.toString());
                 return DSL.table(functionCall);
             }
             case "get_fhir_patient_screening_questions_answers" -> {
@@ -402,7 +435,54 @@ public class JooqRowsSupplierForSP {
 
                 // Create a table from the function call using raw SQL
                 String functionCall = String.format("techbd_udi_ingress.get_csv_data_integrity_errors('%s')",
-                    zipFileHubInteractionId);
+                        zipFileHubInteractionId);
+                return DSL.table(functionCall);
+            }
+            case "get_fhir_session_diagnostics" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String startDate = paramMap.get("p_start_date");
+                String endDate = paramMap.get("p_end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format(
+                        "techbd_udi_ingress.get_fhir_session_diagnostics(DATE '%s', DATE '%s')",
+                        startDate, endDate);
+                return DSL.table(functionCall);
+            }
+            case "get_fhir_session_diagnostics_details" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String tenantId = paramMap.get("p_tenant_id");
+                String severity = paramMap.get("p_severity");
+                String message = paramMap.get("p_message");
+                String igVersion = paramMap.get("p_ig_version");
+                String validationEngine = paramMap.get("p_validation_engine");
+                String encounteredDate = paramMap.get("p_encountered_date");
+
+                // Create a table from the function call using raw SQL with proper null handling
+                String functionCall = String.format(
+                        "techbd_udi_ingress.get_fhir_session_diagnostics_details( %s, %s, %s, %s, %s,DATE %s)",
+                        tenantId != null ? "'" + tenantId + "'" : "NULL",
+                        severity != null ? "'" + severity + "'" : "NULL",
+                        message != null ? "'" + message.replace("'", "''") + "'" : "NULL",
+                        igVersion != null ? "'" + igVersion + "'" : "NULL",
+                        validationEngine != null ? "'" + validationEngine + "'" : "NULL",
+                        encounteredDate != null ? "'" + encounteredDate + "'" : "NULL");
+                return DSL.table(functionCall);
+            }
+            case "get_interaction_http_request" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String startDate = paramMap.get("start_date");
+                String endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_interaction_http_request('%s', '%s')",
+                    startDate, endDate);
                 return DSL.table(functionCall);
             }
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
@@ -411,9 +491,11 @@ public class JooqRowsSupplierForSP {
                 String tenantId = paramsMap.get("tenant_id").toLowerCase();
 
                 if (storedProcName.equals("get_fhir_needs_attention_details")) {
-                    return new GetFhirNeedsAttentionDetails().call(tenantId, dateMap.get("start_date"), dateMap.get("end_date"));
+                    return new GetFhirNeedsAttentionDetails().call(tenantId, dateMap.get("start_date"),
+                            dateMap.get("end_date"));
                 } else {
-                    return new GetMissingDatalakeSubmissionDetails().call(tenantId, dateMap.get("start_date"), dateMap.get("end_date"));
+                    return new GetMissingDatalakeSubmissionDetails().call(tenantId, dateMap.get("start_date"),
+                            dateMap.get("end_date"));
                 }
             }
             default ->
@@ -421,14 +503,14 @@ public class JooqRowsSupplierForSP {
         }
     }
 
-    private Map<String, LocalDate> parseDates(String paramsJson, ObjectMapper objectMapper, DateTimeFormatter formatter) throws Exception {
+    private Map<String, LocalDate> parseDates(String paramsJson, ObjectMapper objectMapper, DateTimeFormatter formatter)
+            throws Exception {
         Map<String, String> stringMap = objectMapper.readValue(paramsJson, Map.class);
         LocalDate startDate = LocalDate.parse(stringMap.get("start_date"), formatter);
         LocalDate endDate = LocalDate.parse(stringMap.get("end_date"), formatter);
         return Map.of(
                 "start_date", startDate,
-                "end_date", endDate
-        );
+                "end_date", endDate);
     }
 
     public static class Builder {

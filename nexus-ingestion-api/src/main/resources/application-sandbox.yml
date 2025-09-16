@@ -5,10 +5,16 @@ org:
       access-key: test
       secret-key: test
       s3:
-        bucket: local-bucket
-        metadata-bucket: local-metadata-bucket
-        endpoint: http://localhost:4566
+        default-config:
+          bucket: local-bucket
+          metadata-bucket: local-metadata-bucket
+          endpoint: http://localhost:4566
+        hold-config:
+          bucket: local-hold-bucket
+          metadata-bucket: local-hold-metadata-bucket
+          endpoint: http://localhost:4566
       sqs:
         endpoint: http://localhost:4566
         base-url: http://localhost:4566/000000000000
         fifo-queue-url: http://localhost:4566/000000000000/local-queue.fifo
+

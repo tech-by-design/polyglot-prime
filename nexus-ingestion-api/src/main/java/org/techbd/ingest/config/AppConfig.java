@@ -4,8 +4,7 @@ package org.techbd.ingest.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.context.annotation.Configuration;
-@Configuration
+import org.springframework.context.annotation.Configuration;@Configuration
 @ConfigurationProperties(prefix = "org.techbd")
 @ConfigurationPropertiesScan
 @Data
@@ -25,9 +24,15 @@ public class AppConfig {
 
         @Data
         public static class S3 {
-            private String bucket;
-            private String metadataBucket;
-            private String endpoint;
+            private BucketConfig defaultConfig; // maps to org.techbd.aws.s3.default
+            private BucketConfig holdConfig;          // maps to org.techbd.aws.s3.hold
+
+            @Data
+            public static class BucketConfig {
+                private String bucket;
+                private String metadataBucket;
+                private String endpoint;
+            }
         }
 
         @Data

@@ -74,9 +74,9 @@ public class AwsConfig {
         S3ClientBuilder builder = S3Client.builder()
                 .region(Region.of(aws.getRegion()));
 
-        if (isSandboxProfile() && s3.getEndpoint() != null) {
-            LOG.info("AwsConfig:: s3Client using sandbox endpoint: {}", s3.getEndpoint());
-            builder.endpointOverride(URI.create(s3.getEndpoint()));
+        if (isSandboxProfile() && s3.getDefaultConfig().getEndpoint() != null) {
+            LOG.info("AwsConfig:: s3Client using sandbox endpoint: {}", s3.getDefaultConfig().getEndpoint());
+            builder.endpointOverride(URI.create(s3.getDefaultConfig().getEndpoint()));
             builder.forcePathStyle(true); // Required for LocalStack
         }
 

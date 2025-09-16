@@ -20,12 +20,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.converters.csv.SexualOrientationObservationConverter;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.AppLogger;
+import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
+
+import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -34,13 +39,26 @@ import ca.uhn.fhir.parser.IParser;
 class SexualOrientationObservationConverterTest {
         @Mock
         CodeLookupService codeLookupService;
+        
+        @Mock
+        CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        
+        @Mock
+        AppLogger appLogger;
+        
+        @Mock
+        TemplateLogger templateLogger;
      
-        @InjectMocks
         private SexualOrientationObservationConverter sexualOrientationObservationConverter;
 
         @BeforeEach
         void setUp() throws Exception {
                 MockitoAnnotations.openMocks(this);
+                when(appLogger.getLogger(SexualOrientationObservationConverter.class)).thenReturn(templateLogger);
+                
+                // Manually instantiate the converter after mocks are set up
+                sexualOrientationObservationConverter = new SexualOrientationObservationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+                
                 Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
                 profileMapField.setAccessible(true);
                 profileMapField.set(null, CsvTestHelper.getProfileMap());
@@ -59,7 +77,7 @@ class SexualOrientationObservationConverterTest {
                 final String interactionId = "interactionId";
                 final Map<String, String> idsGenerated = new HashMap<>();
                 final BundleEntryComponent result = sexualOrientationObservationConverter.convert(
-                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,interactionId, idsGenerated,null).get(0);
+                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList, interactionId, idsGenerated, CsvTestHelper.BASE_FHIR_URL).get(0);
                 final SoftAssertions softly = new SoftAssertions();
                 softly.assertThat(result).isNotNull();
                 softly.assertThat(result.getResource()).isInstanceOf(Observation.class);
@@ -95,7 +113,7 @@ class SexualOrientationObservationConverterTest {
                 final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
                 final var result = sexualOrientationObservationConverter.convert(bundle, demographicData, qrAdminData,
                                 screeningResourceData, screeningDataList,
-                                "interactionId", idsGenerated,null);
+                                "interactionId", idsGenerated, CsvTestHelper.BASE_FHIR_URL);
                 final Observation observation = (Observation) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/sexual-orientation-observation.json";
                 final FhirContext fhirContext = FhirContext.forR4();
