@@ -77,6 +77,29 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(code, valueFromCsv);
     }
 
+    public String fetchCodeFromDisplay(String display, String category, String interactionId) {
+        if (DISPLAY_LOOKUP == null) {
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
+            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(dslContext, interactionId);
+        }
+
+        if (display == null || category == null) {
+            return null;
+        }
+        Map<String, String> innerMap = DISPLAY_LOOKUP.get(category);
+        if (innerMap == null) {
+            return null;
+        }
+
+        // Reverse lookup: find code for a given display
+        return innerMap.entrySet().stream()
+                .filter(e -> e.getValue().equalsIgnoreCase(display))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    }
+
+
     public String getOmbRaceCategory(String ombCategoryCode, String interactionId) {
         return getCategoryType("ombRaceCategory", ombCategoryCode, interactionId);
     }
