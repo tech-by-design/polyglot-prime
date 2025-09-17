@@ -175,6 +175,12 @@ SELECT hub_interaction_id AS interaction_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
+/*******************************************************************************************
+-- View to provide detailed information about FHIR HTTP requests linked to hub interactions.  
+-- Retrieves request metadata, payload, workflow state transitions, patient identifiers, and issue counts.  
+-- Excludes system-generated expectation requests (uri = '/api/expect/fhir/bundle').  
+-- Useful for auditing, monitoring, and analytics of interaction-level FHIR requests.  
+*******************************************************************************************/
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_payload_details CASCADE;

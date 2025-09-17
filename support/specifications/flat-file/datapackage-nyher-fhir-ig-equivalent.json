@@ -39,7 +39,18 @@
           {"name": "FACILITY_CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.city & Bundle.entry.resource.where(resourceType ='Organization').address.text"},
           {"name": "FACILITY_STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.state & Bundle.entry.resource.where(resourceType ='Organization').address.text", 
           "constraints": { "enum": [
-             "ny", "new york"  
+            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
+            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
+            "wv", "wy", "alaska","alabama","arkansas","american samoa","arizona","california",
+            "colorado","connecticut","district of columbia","delaware","florida","federated states of micronesia",
+            "georgia","guam","hawaii","iowa","idaho","illinois","indiana","kansas","kentucky","louisiana",
+            "massachusetts","maryland","maine","marshall islands","michigan","minnesota","missouri",
+            "northern mariana islands","mississippi","montana","north carolina","north dakota","nebraska",
+            "new hampshire","new jersey","new mexico","nevada","new york","ohio","oklahoma","oregon",
+            "pennsylvania","puerto rico","palau","rhode island","south carolina","south dakota","tennessee",
+            "texas","utah","virginia","virgin islands of the u.s.","vermont","washington","wisconsin",
+            "west virginia","wyoming"
           ] }},
             {"name": "FACILITY_ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text", "constraints": { "pattern": "^\\d{5}(-?\\d{4})?$"}}, 
           {"name": "FACILITY_COUNTY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.district  & Bundle.entry.resource.where(resourceType ='Organization').address.text" }, 
@@ -321,8 +332,19 @@
           {"name": "ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.line", "constraints": {"required": true}},          
           {"name": "ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.text"},          
           {"name": "CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.city", "constraints": {"required": true} },
-          {"name": "STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.state", "constraints": {"required": true, "enum":[
-             "ny", "new york"  
+          {"name": "STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.state", "constraints": {"required": true,  "enum": [
+            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
+            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
+            "wv", "wy", "alaska","alabama","arkansas","american samoa","arizona","california",
+            "colorado","connecticut","district of columbia","delaware","florida","federated states of micronesia",
+            "georgia","guam","hawaii","iowa","idaho","illinois","indiana","kansas","kentucky","louisiana",
+            "massachusetts","maryland","maine","marshall islands","michigan","minnesota","missouri",
+            "northern mariana islands","mississippi","montana","north carolina","north dakota","nebraska",
+            "new hampshire","new jersey","new mexico","nevada","new york","ohio","oklahoma","oregon",
+            "pennsylvania","puerto rico","palau","rhode island","south carolina","south dakota","tennessee",
+            "texas","utah","virginia","virgin islands of the u.s.","vermont","washington","wisconsin",
+            "west virginia","wyoming"
           ]
           }},
           {"name": "ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.postalCode", "constraints": { "required": true, "pattern": "^\\d{5}(-?\\d{4})?$"}},
