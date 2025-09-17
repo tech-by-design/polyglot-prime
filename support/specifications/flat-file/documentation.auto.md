@@ -59,7 +59,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.state & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
   - `constraints`:
-    - `enum` ['ny', 'new york']
+    - `enum` ['ak', 'al', 'ar', 'as', 'az', 'ca', 'co', 'ct', 'dc', 'de', 'fl', 'fm', 'ga', 'gu', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md', 'me', 'mh', 'mi', 'mn', 'mo', 'mp', 'ms', 'mt', 'nc', 'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'pr', 'pw', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va', 'vi', 'vt', 'wa', 'wi', 'wv', 'wy', 'alaska', 'alabama', 'arkansas', 'american samoa', 'arizona', 'california', 'colorado', 'connecticut', 'district of columbia', 'delaware', 'florida', 'federated states of micronesia', 'georgia', 'guam', 'hawaii', 'iowa', 'idaho', 'illinois', 'indiana', 'kansas', 'kentucky', 'louisiana', 'massachusetts', 'maryland', 'maine', 'marshall islands', 'michigan', 'minnesota', 'missouri', 'northern mariana islands', 'mississippi', 'montana', 'north carolina', 'north dakota', 'nebraska', 'new hampshire', 'new jersey', 'new mexico', 'nevada', 'new york', 'ohio', 'oklahoma', 'oregon', 'pennsylvania', 'puerto rico', 'palau', 'rhode island', 'south carolina', 'south dakota', 'tennessee', 'texas', 'utah', 'virginia', 'virgin islands of the u.s.', 'vermont', 'washington', 'wisconsin', 'west virginia', 'wyoming']
 ### `FACILITY_ZIP`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
@@ -501,7 +501,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['ny', 'new york']
+    - `enum` ['ak', 'al', 'ar', 'as', 'az', 'ca', 'co', 'ct', 'dc', 'de', 'fl', 'fm', 'ga', 'gu', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md', 'me', 'mh', 'mi', 'mn', 'mo', 'mp', 'ms', 'mt', 'nc', 'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'pr', 'pw', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va', 'vi', 'vt', 'wa', 'wi', 'wv', 'wy', 'alaska', 'alabama', 'arkansas', 'american samoa', 'arizona', 'california', 'colorado', 'connecticut', 'district of columbia', 'delaware', 'florida', 'federated states of micronesia', 'georgia', 'guam', 'hawaii', 'iowa', 'idaho', 'illinois', 'indiana', 'kansas', 'kentucky', 'louisiana', 'massachusetts', 'maryland', 'maine', 'marshall islands', 'michigan', 'minnesota', 'missouri', 'northern mariana islands', 'mississippi', 'montana', 'north carolina', 'north dakota', 'nebraska', 'new hampshire', 'new jersey', 'new mexico', 'nevada', 'new york', 'ohio', 'oklahoma', 'oregon', 'pennsylvania', 'puerto rico', 'palau', 'rhode island', 'south carolina', 'south dakota', 'tennessee', 'texas', 'utah', 'virginia', 'virgin islands of the u.s.', 'vermont', 'washington', 'wisconsin', 'west virginia', 'wyoming']
 ### `ZIP`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').address.postalCode
   - `type` string
