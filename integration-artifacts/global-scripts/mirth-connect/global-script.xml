@@ -1,0 +1,152 @@
+<map>
+  <entry>
+    <string>Undeploy</string>
+    <string>// This script executes once for each deploy, undeploy, or redeploy task
+// if at least one channel was undeployed
+// You only have access to the globalMap here to persist data
+return;</string>
+  </entry>
+  <entry>
+    <string>Postprocessor</string>
+    <string>// This script executes once after a message has been processed
+// This script applies across all channels
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+// You have access to &quot;response&quot;, if returned from the channel postprocessor
+return;</string>
+  </entry>
+  <entry>
+    <string>Deploy</string>
+    <string>// Version 0.1.0
+
+var PGobject = Packages.org.postgresql.util.PGobject;
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    return jsonbObj;
+}
+
+
+function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	
+	logger.info(&quot;interactionId: &quot; + interactionId);
+	logger.info(&quot;tenantId: &quot; + tenantId);
+	logger.info(&quot;requestUri: &quot; + requestUri);
+	logger.info(&quot;payloadJson: &quot; + payloadJson);
+	logger.info(&quot;operation: &quot; + operation);
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    logger.info(&quot;Inside DB Try&quot;);
+
+	    // Database connection details
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+
+	    logger.info(&quot;Database connection established successfully.&quot;);
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_hl7_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original HL7 Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;HL7_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(8, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(8, payloadJson);
+		}
+					
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		stmt.setNull(10, java.sql.Types.OTHER);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(19, java.sql.Types.VARCHAR);
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setNull(28, java.sql.Types.VARCHAR);
+		stmt.setString(29, globalMap.get(&apos;filename&apos;));
+
+	    var result = stmt.execute();
+	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	    logger.info(&quot;DB connection closed.&quot;);
+	}
+}
+
+globalMap.put(&apos;saveHL7Payload&apos;, saveHL7Payload);</string>
+  </entry>
+  <entry>
+    <string>Preprocessor</string>
+    <string>// Modify the message variable below to pre process data
+// This script applies across all channels
+return message;</string>
+  </entry>
+</map>
