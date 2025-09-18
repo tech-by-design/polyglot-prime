@@ -8327,8 +8327,8 @@ BEGIN
         AND (p_tenant_id IS NULL OR sifsd.tenant_id = p_tenant_id)
         AND (p_severity IS NULL OR LOWER(sifsd.severity) = LOWER(p_severity))
         AND (p_message IS NULL OR sifsd.message = p_message)
-        AND (p_ig_version IS NULL OR sifsd.ig_version = p_ig_version)
-        AND (p_validation_engine IS NULL OR sifsd.validation_engine = p_validation_engine)
+        AND (NULLIF(p_ig_version, '') IS NULL OR sifsd.ig_version = p_ig_version)
+        AND (NULLIF(p_validation_engine, '') IS NULL OR sifsd.validation_engine = p_validation_engine)
         --AND (p_encountered_date IS NULL OR to_char(sifsd.created_at, 'MM-DD-YYYY') = p_encountered_date)
        AND  
 		sifsd.created_at >= p_encountered_date
