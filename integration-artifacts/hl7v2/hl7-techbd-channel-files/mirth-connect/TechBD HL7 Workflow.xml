@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>9a6f8178-6e7e-40c1-98ad-59fa1cfb07a9</id>
+  <id>7d90deb4-b0bf-4397-b0ed-736d52c063fb</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.1</description>
-  <revision>2</revision>
+  <description>Version: 0.1.2</description>
+  <revision>28</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -93,14 +93,21 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
-}&#xd;
+}
+
+var interactionId = java.util.UUID.randomUUID().toString();
+globalMap.put(&apos;interactionId&apos;, interactionId);
+
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 &#xd;var rawData = connectorMessage.getRawData();
+
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/);
 
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
+    globalMap.put(&apos;filename&apos;, filename);
 
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
@@ -114,6 +121,34 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
 }
+
+
+		try{
+			//DB Save Original Payload
+		     logger.info(&quot;DB Save inside Source transformer&quot;);
+		     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     channelMap.put(&apos;tenantId&apos;, tenantId);
+		     var interactionId = globalMap.get(&apos;interactionId&apos;);
+		     logger.info(&quot;interactionId: &quot; + interactionId);
+		     var operation = &quot;saveOgHL7Payload&quot;;
+		     var result = saveHL7Payload(
+			   interactionId,
+			   tenantId,
+			   sourceMap.get(&apos;contextPath&apos;),
+			   rawData,
+			   operation
+			);
+		} catch (e) {
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;HL7 Og Payload save: &quot; + e.toString();
+	                throw errorMessage;
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	                throw errorMessage;
+	            }
+		}
 
 
 // ---------------- HL7 VALIDATION ----------------
@@ -277,9 +312,10 @@ for (var i = 0; i &lt; lines.length; i++) {
             <script>// --------------------
 // Helper: Get JSON Outcome
 // --------------------
-function getOutcome(text, severity, code) {
+function getOutcome(text, severity, code, interactionId) {
     return JSON.stringify({
         resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
         result: [{
             severity: severity,
             code: code,
@@ -558,6 +594,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interactionId&quot; : ChannelMap.get(interactionId),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;error&quot;,
@@ -658,6 +695,7 @@ function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
         missingHeaders.push(&quot;Missing required header &quot; + displayName);
     } else if (storeInMap) {
         channelMap.put(mapKey || headerName, value);
+        globalMap.put(mapKey || headerName, value);
     }
 
     return value;
@@ -684,9 +722,9 @@ var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organizat
 channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
 logger.info(&quot;OrganizationName: &quot; + OrganizationName);
 
-var SeverityLevel = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
-channelMap.put(&apos;SeverityLevel&apos;, SeverityLevel);
-logger.info(&quot;SeverityLevel: &quot; + SeverityLevel);
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
@@ -1191,7 +1229,9 @@ function getMultipleAnswersForComponent(transformer, observations) {
             <name>API endpoint processing</name>
             <sequenceNumber>4</sequenceNumber>
             <enabled>true</enabled>
-            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);logger.info(&quot;Request URL: &quot; + requestedPath);
+            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 
 if (requestedPath == &quot;/&quot;) {
 	return;
@@ -1199,6 +1239,7 @@ if (requestedPath == &quot;/&quot;) {
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 	requestedPath == &quot;/hl7v2/Bundle/$validate&quot;){
+
 try {
     // Step 1: Get HL7 Input
     var raw = connectorMessage.getRawData();
@@ -1206,11 +1247,15 @@ try {
         throw new Error(&quot;Empty HL7 message received.&quot;);
     }
 
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
+
+
     var hl7Body = extractHL7Body(raw);
     logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
     if (!hl7Body) {
 	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
 	    logger.error(msg);
 	
 	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
@@ -1270,8 +1315,17 @@ try {
 		}).join(&quot;\n\n&quot;);
 	
 	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
 	    logger.error(msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
 	}
 	
@@ -1279,14 +1333,37 @@ try {
 
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
-    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
     logger.info(success);
+
+    			// SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
 	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
-	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));	        
 	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    logger.error(&quot;Validation error: &quot; + errorMsg);
 	    throw e;
 	}	
@@ -1306,8 +1383,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
   });
 
 
-    var interactionId = java.util.UUID.randomUUID().toString();
-    channelMap.put(&quot;interactionId&quot;,interactionId);
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
     logger.info(&quot;InteractionId: &quot; + interactionId);
     var payload = JSON.stringify({
         executedAt: currentTimestampBegin,
@@ -1341,6 +1417,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 
 	/////
 	var rawMessage = connectorMessage.getTransformedData(); // msg contains the entire raw message
+	var raw = connectorMessage.getRawData();
 	
 	// Extract the XML content from the form-data (i.e., skip the metadata)
 	var xmlStartIndex = rawMessage.indexOf(&apos;&lt;?xml&apos;); // Find the XML declaration
@@ -1363,7 +1440,7 @@ try {
     logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
     if (!hl7Body) {
 	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
 	    logger.error(msg);
 	
 	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
@@ -1423,8 +1500,17 @@ try {
 		}).join(&quot;\n\n&quot;);
 	
 	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
 	    logger.error(msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
 	}
 	
@@ -1432,14 +1518,37 @@ try {
 
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
-    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
     logger.info(success);
+
+    // SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
 	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
-	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));
 	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    logger.error(&quot;Validation error: &quot; + errorMsg);
 	    throw e;
 	}
@@ -1468,7 +1577,7 @@ try {
     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
     transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
 
-    var bundleId = java.util.UUID.randomUUID().toString();
+    var bundleId = globalMap.get(&apos;interactionId&apos;);
     transformer.setParameter(&quot;bundleId&quot;, bundleId);
 
     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
@@ -1527,10 +1636,32 @@ try {
     var output = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
 
     try {
-    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);&#xd;		} catch (e) {
+    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+
+			//Save Converted FHIR
+				logger.info(&quot;FHIR Conversion Save inside Bundle&quot;);
+			     var tenantId = channelMap.get(&apos;tenantId&apos;);
+			     logger.info(&quot;tenant Id: &quot; + tenantId);
+			     var operation = &quot;saveConversionSuccess&quot;;
+			     var result = saveHL7Payload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   cleanedJsonString,
+				   operation
+				);
+			&#xd;		} catch (e) {
 			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
         		// Failure: Return an OperationOutcome JSON response for general errors
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
+
+		    try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
 			        &#xd;		    logger.error(&quot;Error during HL7 FHIR bundle transformation: &quot; + e);&#xd;		    throw e;&#xd;		}
 
 		// Convert the XML document to JSON
@@ -1546,6 +1677,15 @@ try {
 } catch (e) {
     var errorMsg = &quot;Error during XSLT transformation: &quot; + e.message + &quot;\nDetails: &quot; + e;
     logger.error(errorMsg);
+
+	try {
+		 var operation = &quot;saveValidationFailed&quot;;
+		 saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		  logger.info(&quot;Successfully saved validation failure information&quot;);
+		} catch (saveError) {
+		    logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		}
+    
     channelMap.put(&apos;xslt_result&apos;, errorMsg);
     throw e;
 }
@@ -1748,6 +1888,18 @@ return value; // Keep the value as is
               <string>${elaboration}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-Correlation-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -1945,7 +2097,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755779305722</time>
+        <time>1758195235371</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1954,5 +2106,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
