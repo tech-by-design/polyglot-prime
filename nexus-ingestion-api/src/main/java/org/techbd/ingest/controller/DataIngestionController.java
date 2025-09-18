@@ -3,8 +3,6 @@ package org.techbd.ingest.controller;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,30 +20,32 @@ import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Controller for handling data ingestion requests.
  * This controller processes file uploads and string content ingestion.
  */
 @RestController
-@Slf4j
 public class DataIngestionController extends AbstractMessageSourceProvider {
-    private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName()); 
+    private final TemplateLogger LOG;
     
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig) {
+    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger) {
+        super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
+        LOG = appLogger.getLogger(DataIngestionController.class);
         LOG.info("DataIngestionController initialized");
     }
 

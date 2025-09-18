@@ -2,8 +2,6 @@ package org.techbd.ingest.endpoint;
 
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -18,6 +16,8 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 import org.techbd.iti.schema.ObjectFactory;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
@@ -47,16 +47,17 @@ import jakarta.xml.bind.JAXBElement;
 @Endpoint
 public class PnrEndpoint extends AbstractMessageSourceProvider{
 
-    private static final Logger log = LoggerFactory.getLogger(PnrEndpoint.class);
+    private static TemplateLogger log;
     private static final String NAMESPACE_URI = "urn:ihe:iti:xds-b:2007";
 
     private final AcknowledgementService ackService;
     private final AppConfig appConfig;
 
-    public PnrEndpoint(AcknowledgementService ackService,AppConfig appConfig) {
+    public PnrEndpoint(AcknowledgementService ackService,AppConfig appConfig,AppLogger appLogger) {
+        super(appConfig, appLogger);
         this.ackService = ackService;
         this.appConfig = appConfig;
-        log.info("PnrEndpoint constructor called - bean is being created!");
+        log = appLogger.getLogger(PnrEndpoint.class);
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "ProvideAndRegisterDocumentSetRequest")

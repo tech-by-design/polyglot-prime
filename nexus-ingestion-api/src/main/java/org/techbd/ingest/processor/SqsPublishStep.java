@@ -2,8 +2,6 @@ package org.techbd.ingest.processor;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,6 +9,8 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 @Component
 @Order(2)
 public class SqsPublishStep implements MessageProcessingStep {
-    private static final Logger LOG = LoggerFactory.getLogger(SqsPublishStep.class);
+    private TemplateLogger LOG;
 
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
@@ -42,12 +42,13 @@ public class SqsPublishStep implements MessageProcessingStep {
     private final MessageGroupService messageGroupService;
 
     public SqsPublishStep(SqsClient sqsClient, ObjectMapper objectMapper, MetadataBuilderService metadataBuilderService,
-            AppConfig appConfig, MessageGroupService messageGroupService) {
+            AppConfig appConfig, MessageGroupService messageGroupService,AppLogger appLogger) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.metadataBuilderService = metadataBuilderService;
         this.messageGroupService = messageGroupService;
         this.appConfig = appConfig;
+        this.LOG = appLogger.getLogger(SqsPublishStep.class);
         LOG.info("SqsPublishStep initialized");
     }
 

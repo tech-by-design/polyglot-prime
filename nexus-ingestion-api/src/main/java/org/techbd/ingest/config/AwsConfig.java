@@ -1,11 +1,11 @@
 package org.techbd.ingest.config;
 import java.net.URI;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -42,7 +42,7 @@ import software.amazon.awssdk.services.sqs.SqsClientBuilder;
 @Configuration
 public class AwsConfig {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AwsConfig.class);
+    private static TemplateLogger LOG;
 
     private final AppConfig appConfig;
     private final Environment environment;
@@ -53,9 +53,10 @@ public class AwsConfig {
      * @param appConfig   The application configuration containing AWS settings.
      * @param environment The Spring environment for profile detection.
      */
-    public AwsConfig(AppConfig appConfig, Environment environment) {
+    public AwsConfig(AppConfig appConfig, Environment environment, AppLogger appLogger) {
         this.appConfig = appConfig;
         this.environment = environment;
+        LOG = appLogger.getLogger(AwsConfig.class);
         LOG.info("AwsConfig initialized");
     }
 

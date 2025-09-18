@@ -12,7 +12,7 @@ public class AppConfig {
 
     private Aws aws;
     private Soap soap;
-
+    private String version;
     @Data
     public static class Aws {
         private String region;
