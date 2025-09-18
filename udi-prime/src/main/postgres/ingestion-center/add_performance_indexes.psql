@@ -1,0 +1,27 @@
+
+-- Purpose: Add indexes to improve query performance
+-- Idempotent: uses IF NOT EXISTS for safe re-runs
+
+-- 1. User interactions by created_at
+CREATE INDEX IF NOT EXISTS idx_sat_interaction_user_created_at_desc
+    ON techbd_udi_ingress.sat_interaction_user (created_at DESC);
+
+-- 2. Screening info by submitted_date_time
+CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_info_submitted_date_time_idx
+    ON techbd_udi_ingress.sat_interaction_fhir_screening_info (submitted_date_time DESC);
+
+-- 3. Session diagnostics by created_at
+CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_created_at
+    ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (created_at DESC);
+
+-- 4. Session diagnostics by severity (case-insensitive)
+CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_severity_lower
+    ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity));
+
+-- 5. Screening patients by created_at
+CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx
+    ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC);
+
+-- 6. Screening organizations by created_at
+CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc
+    ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
