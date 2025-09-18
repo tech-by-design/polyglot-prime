@@ -410,7 +410,7 @@ public class PatientConverter extends BaseConverter {
             String originalValue = data.getState();
             String code = fetchCode(originalValue, CsvConstants.STATE, interactionId);
 
-            if (!code.equalsIgnoreCase(originalValue)) {
+            if (!code.equals(originalValue)) {
                 address.setState(code);
             } else {
                 String codeFromDisplay = fetchCodeFromDisplay(originalValue, CsvConstants.STATE, interactionId);

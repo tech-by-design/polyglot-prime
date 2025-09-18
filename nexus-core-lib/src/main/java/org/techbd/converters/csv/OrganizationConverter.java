@@ -171,7 +171,7 @@ public class OrganizationConverter extends BaseConverter {
                 String originalValue = qrAdminData.getFacilityState();
                 String code = fetchCode(originalValue, CsvConstants.STATE, interactionId);
 
-                if (!code.equalsIgnoreCase(originalValue)) {
+                if (!code.equals(originalValue)) {
                     address.setState(code);
                 } else {
                     String codeFromDisplay = fetchCodeFromDisplay(originalValue, CsvConstants.STATE, interactionId);
