@@ -4,15 +4,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,10 +40,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 @Order(1)
 public class S3UploadStep implements MessageProcessingStep {
 
-    private static final Logger LOG = LoggerFactory.getLogger(S3UploadStep.class);
     private final MetadataBuilderService metadataBuilderService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+    private final TemplateLogger LOG;
     private final S3Client s3Client;
 
     /**
@@ -62,11 +61,12 @@ public class S3UploadStep implements MessageProcessingStep {
             MetadataBuilderService metadataBuilderService,
             ObjectMapper objectMapper,
             AppConfig appConfig,
-            S3Client s3Client) {
+            S3Client s3Client,AppLogger appLogger) {
         this.metadataBuilderService = metadataBuilderService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
         this.s3Client = s3Client;
+        this.LOG = appLogger.getLogger(S3UploadStep.class);
         LOG.info("S3UploadStep initialized");
     }
 

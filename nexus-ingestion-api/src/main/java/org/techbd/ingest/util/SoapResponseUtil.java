@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.UUID;
 
 import javax.xml.namespace.QName;
+import javax.xml.transform.dom.DOMResult;
 
 import org.springframework.stereotype.Component;
 import org.springframework.ws.context.MessageContext;
@@ -12,18 +13,20 @@ import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
 import org.techbd.ingest.config.AppConfig;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.xml.soap.SOAPElement;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class SoapResponseUtil {
 
     private final AppConfig appConfig;
+    private TemplateLogger log;
+    public SoapResponseUtil(AppConfig appConfig, AppLogger appLogger) {
+        this.appConfig = appConfig;
+        this.log = appLogger.getLogger(SoapResponseUtil.class);
+        log.info("SoapResponseUtil initialized with AppConfig");
+    }
 
-    public SoapMessage buildSoapResponse(String interactionId,
-                                         MessageContext messageContext) {
+    public SoapMessage buildSoapResponse(String interactionId, MessageContext messageContext) {
         log.info("Building SOAP response for interactionId={}", interactionId);
 
         try {
@@ -42,20 +45,32 @@ public class SoapResponseUtil {
             var wsa = appConfig.getSoap().getWsa();
             var techbd = appConfig.getSoap().getTechbd();
 
+            // Standard WS-Addressing headers
             header.addHeaderElement(new QName(wsa.getNamespace(), "Action", wsa.getPrefix()))
-                  .setText(wsa.getAction());
+                    .setText(wsa.getAction());
             header.addHeaderElement(new QName(wsa.getNamespace(), "MessageID", wsa.getPrefix()))
-                  .setText(messageId);
+                    .setText(messageId);
             header.addHeaderElement(new QName(wsa.getNamespace(), "RelatesTo", wsa.getPrefix()))
-                  .setText(relatesTo);
+                    .setText(relatesTo);
             header.addHeaderElement(new QName(wsa.getNamespace(), "To", wsa.getPrefix()))
-                  .setText(wsa.getTo());
-            header.addHeaderElement(new QName(techbd.getNamespace(), "InteractionID", techbd.getPrefix()))
-                  .setText(interactionId);
+                    .setText(wsa.getTo());
 
-           // marshaller.marshal(payload, soapResponse.getPayloadResult());
+            // Create <techbd:Interaction> with attributes
+            SoapHeaderElement interactionHeader = header
+                    .addHeaderElement(new QName(techbd.getNamespace(), "Interaction", techbd.getPrefix()));
 
-            log.info("SOAP response built successfully for interactionId={}", interactionId);
+            // Cast Result to DOMResult and extract SOAPElement
+            DOMResult domResult = (DOMResult) interactionHeader.getResult();
+            SOAPElement interactionElement = (SOAPElement) domResult.getNode().getFirstChild();
+
+            // Add attributes
+            interactionElement.setAttribute("InteractionID", interactionId);
+            interactionElement.setAttribute("TechBDIngestionApiVersion", appConfig.getVersion());
+
+            // marshaller.marshal(payload, soapResponse.getPayloadResult());
+
+            log.info("SOAP response built successfully for interactionId={}, version={}",
+                    interactionId, appConfig.getVersion());
             return soapResponse;
 
         } catch (Exception e) {

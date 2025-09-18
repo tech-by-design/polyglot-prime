@@ -6,6 +6,7 @@ server:
     max-http-form-post-size: ${MAX_HTTP_FORM_POST_SIZE:50MB}
 org:
   techbd:
+    version: @project.version@
     aws:
       region: ${ORG_TECHBD_SERVICE_AWS_REGION:us-east-1}
       secret-name: ${ORG_TECHBD_SERVICE_SECRET_NAME:default-secret}

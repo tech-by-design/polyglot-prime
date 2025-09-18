@@ -22,7 +22,11 @@ import jakarta.xml.bind.Marshaller;
  */
 public class Hl7Util {
 
-private static final Logger LOG = LoggerFactory.getLogger(Hl7Util.class);
+    private static TemplateLogger LOG;
+      public Hl7Util(AppLogger appLogger) {
+        this.LOG = appLogger.getLogger(Hl7Util.class);
+        LOG.info("Hl7Util initialized");
+    }
 
   /**
      * Converts an {@link MCCIIN000002UV01} HL7 message into its XML string representation.
