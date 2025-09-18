@@ -116,9 +116,9 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 timestamp,
                 originalFileName,
                 hl7Message.length(),
-                getDataKey(interactionId, headers, originalFileName),
-                getMetaDataKey(interactionId, headers, originalFileName),
-                getFullS3DataPath(interactionId, headers, originalFileName),
+                getDataKey(interactionId, headers, originalFileName,timestamp),
+                getMetaDataKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3DataPath(interactionId, headers, originalFileName,timestamp),
                 getUserAgentFromHL7(hl7Message, interactionId),
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
@@ -128,9 +128,9 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 null,
                 null,
                 getDestinationPort(headers),
-                getAcknowledgementKey(interactionId, headers, originalFileName),
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName), 
-                getFullS3MetadataPath(interactionId, headers, originalFileName),
+                getAcknowledgementKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3AcknowledgementPath(interactionId, headers, originalFileName,timestamp),
+                getFullS3MetadataPath(interactionId, headers, originalFileName,timestamp),
                 MessageSourceType.MLLP,getDataBucketName(),getMetadataBucketName(),appConfig.getVersion());
     }
 

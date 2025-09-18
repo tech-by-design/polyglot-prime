@@ -73,9 +73,9 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
                 timestamp,
                 originalFileName,
                 fileSize,
-                getDataKey(interactionId, headers, originalFileName),
-                getMetaDataKey(interactionId, headers, originalFileName),
-                getFullS3DataPath(interactionId, headers, originalFileName),
+                getDataKey(interactionId, headers, originalFileName,timestamp),
+                getMetaDataKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3DataPath(interactionId, headers, originalFileName,timestamp),
                 userAgent,
                 fullRequestUrl,
                 queryParams,
@@ -85,10 +85,10 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
                 getSourceIp(headers),
                 getDestinationIp(headers),
                 getDestinationPort(headers), 
-                getAcknowledgementKey(interactionId, headers, originalFileName),
+                getAcknowledgementKey(interactionId, headers, originalFileName,timestamp),
                 (!MessageSourceType.HTTP_INGEST.equals(getMessageSource()) && !MessageSourceType.HTTP_HOLD.equals(getMessageSource()) ) ?  
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName) : null,
-                getFullS3MetadataPath(interactionId, headers, originalFileName),
+                getFullS3AcknowledgementPath(interactionId, headers, originalFileName,timestamp) : null,
+                getFullS3MetadataPath(interactionId, headers, originalFileName,timestamp),
                 getMessageSource(),getDataBucketName(),getMetadataBucketName(),appConfig.getVersion());
     }
     @Override

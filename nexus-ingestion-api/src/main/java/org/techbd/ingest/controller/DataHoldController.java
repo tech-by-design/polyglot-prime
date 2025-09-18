@@ -124,11 +124,10 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     }
 
     @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName) {
+    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
         // Build S3 key:
         // hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
         Instant currentTime = Instant.now();
-        String timestamp = String.valueOf(currentTime.toEpochMilli());
         ZonedDateTime now = currentTime.atZone(ZoneOffset.UTC);
         String yyyy = String.format("%04d", now.getYear());
         String mm = String.format("%02d", now.getMonthValue());
@@ -145,12 +144,12 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     }
 
     @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName) {
-        return getDataKey(interactionId, headers, originalFileName) + "_metadata.json";
+    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+        return getDataKey(interactionId, headers, originalFileName,timestamp) + "_metadata.json";
     }
 
     @Override
-    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName) {
-        return getDataKey(interactionId, headers, originalFileName) + ".ack.json";
+    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+        return getDataKey(interactionId, headers, originalFileName,timestamp) + ".ack.json";
     }
 }
