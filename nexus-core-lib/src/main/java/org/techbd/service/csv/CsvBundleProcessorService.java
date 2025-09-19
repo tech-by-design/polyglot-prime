@@ -202,9 +202,11 @@ public class CsvBundleProcessorService {
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            initRIHR.setPDataValidationStatus(metrics.getDataValidationStatus());
+            initRIHR.setPNumberOfFhirBundlesGeneratedFromZipFile(metrics.getNumberOfFhirBundlesGeneratedFromZipFile());
+            initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
-            initRIHR.setElaboration(null != metrics ? (JsonNode) Configuration.objectMapper.valueToTree(metrics) : null);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
