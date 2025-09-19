@@ -1199,6 +1199,9 @@ const migrateSP = pgSQLa.storedProcedure(
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS full_operation_outcome jsonb DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS data_validation_status TEXT DEFAULT NULL;
 
       ${dependenciesSQL}
 
