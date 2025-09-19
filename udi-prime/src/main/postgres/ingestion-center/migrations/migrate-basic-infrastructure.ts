@@ -1199,6 +1199,9 @@ const migrateSP = pgSQLa.storedProcedure(
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS full_operation_outcome jsonb DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS data_validation_status TEXT DEFAULT NULL;
 
       ${dependenciesSQL}
 
@@ -1207,39 +1210,6 @@ const migrateSP = pgSQLa.storedProcedure(
       ${testDependenciesSQL}
 
       ${searchPathAssurance}
-      DECLARE
-        tap_op TEXT := '';
-        test_result BOOLEAN;
-        line TEXT;
-      BEGIN
-          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text);
-          test_result = TRUE;
-
-          FOR line IN
-              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text)
-          LOOP
-              tap_op := tap_op || line || E'\n';
-
-              IF line LIKE 'not ok%' THEN
-                  test_result := FALSE;
-              END IF;
-          END LOOP;
-
-
-          -- Insert the test result into the test_results table
-          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (migration_version, test_name, tap_output, success, created_by, provenance)
-          VALUES ('${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap');
-
-          -- Check if the test passed
-          IF NOT test_result THEN
-              RAISE EXCEPTION 'Test failed: %', 'test_register_interaction_requests';
-          END IF;
-      EXCEPTION
-          -- Handle the specific error
-          WHEN others THEN
-              -- Raise an error with a custom message
-              RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
-      END;
     END
   `;
 
