@@ -5,15 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
-
-import com.amazonaws.services.kms.model.MessageType;
-
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 /**
  * Service responsible for generating a unique message group ID
  * using metadata from a {@link RequestContext}.
@@ -30,7 +27,11 @@ import com.amazonaws.services.kms.model.MessageType;
 @Service
 public class MessageGroupService {
 
-    private static final Logger logger = LoggerFactory.getLogger(MessageGroupService.class);
+    private static TemplateLogger logger;
+    public MessageGroupService(AppLogger appLogger) {
+        logger = appLogger.getLogger(MessageGroupService.class);
+        logger.info("MessageGroupService initialized");
+    }
 
     /**
      * Creates a message group ID by combining the source IP, destination IP,

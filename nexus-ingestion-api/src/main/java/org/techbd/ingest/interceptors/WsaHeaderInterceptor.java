@@ -22,15 +22,13 @@ public class WsaHeaderInterceptor implements EndpointInterceptor {
     private final SoapResponseUtil soapResponseUtil;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
+    
     public WsaHeaderInterceptor(SoapResponseUtil soapResponseUtil, MessageProcessorService messageProcessorService, AppConfig appConfig) {
         this.soapResponseUtil = soapResponseUtil;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
-        LOG.info("WsaHeaderInterceptor initialized with MessageProcessorService and AppConfig");
     }
-
-    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(WsaHeaderInterceptor.class);
-     @Override
+    @Override
     public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         messageContext.getRequest().writeTo(out);

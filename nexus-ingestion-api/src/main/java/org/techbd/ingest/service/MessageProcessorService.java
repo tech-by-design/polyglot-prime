@@ -4,12 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.processor.MessageProcessingStep;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 /**
  * {@code MessageProcessorService} is responsible for orchestrating the
@@ -33,13 +34,16 @@ import org.techbd.ingest.processor.MessageProcessingStep;
  */
 @Service
 public class MessageProcessorService {
-    private static final Logger LOG = LoggerFactory.getLogger(MessageProcessorService.class);
 
+    private final AppConfig appConfig;
+    private  TemplateLogger LOG;
     private final List<MessageProcessingStep> processingSteps;
 
-    public MessageProcessorService(List<MessageProcessingStep> processingSteps) {
+    public MessageProcessorService(List<MessageProcessingStep> processingSteps, AppLogger appLogger, AppConfig appConfig) {
         this.processingSteps = processingSteps;
+        LOG = appLogger.getLogger(MessageProcessorService.class);
         LOG.info("MessageProcessorService:: initialized");
+        this.appConfig = appConfig;
     }
 
     /**
@@ -127,6 +131,7 @@ public class MessageProcessorService {
             Map<String, String> response = new HashMap<>();
             response.put("messageId", messageId != null ? messageId : context.getInteractionId());
             response.put("interactionId", context.getInteractionId());
+            response.put("ingestionApiVersion", appConfig.getVersion());
             response.put("fullS3Path", context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set");
             response.put("fullS3MetaDataPath",
                     context.getFullS3MetadataPath() != null ? context.getFullS3MetadataPath() : "not-set");

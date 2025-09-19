@@ -21,6 +21,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.util.AppLogger;
 public class MllpRouteRegistrarTest {
 
   private MllpRouteFactory factory;
@@ -30,7 +31,8 @@ public class MllpRouteRegistrarTest {
   void setUp() {
     MessageProcessorService mockRouter = mock(MessageProcessorService.class);
     AppConfig config = mock(AppConfig.class);
-    factory = new MllpRouteFactory(mockRouter, config);
+    AppLogger appLogger = mock(AppLogger.class);
+    factory = new MllpRouteFactory(mockRouter, config, appLogger);
     beanFactory = mock(ConfigurableBeanFactory.class);
   }
 

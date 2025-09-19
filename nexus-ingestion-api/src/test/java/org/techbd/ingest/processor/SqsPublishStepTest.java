@@ -11,7 +11,6 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
@@ -20,6 +19,8 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -50,21 +51,23 @@ class SqsPublishStepTest {
     @Mock
     private MessageGroupService messageGroupService;
 
-    @InjectMocks
     private SqsPublishStep sqsPublishStep;
+
+    @Mock
+    private static AppLogger appLogger;
+
+    @Mock
+    private static TemplateLogger templateLogger;
 
     private RequestContext context;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-
         when(appConfig.getAws()).thenReturn(aws);
         when(aws.getSqs()).thenReturn(sqs);
         when(sqs.getFifoQueueUrl()).thenReturn("http://dummy-fifo-url");
-
         when(messageGroupService.createMessageGroupId(any(),any())).thenReturn("group-id-123");
-
         context = new RequestContext(
                 Map.of("User-Agent", "JUnit-Test"),
                 "/test",
@@ -85,10 +88,11 @@ class SqsPublishStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST");
-
+                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST","0.700.0");
+        when(appLogger.getLogger(SqsPublishStep.class)).thenReturn(templateLogger);
+        when(appConfig.getVersion()).thenReturn("1.0.0");
         sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
-                messageGroupService);
+                messageGroupService,appLogger);
     }
 
     @Test

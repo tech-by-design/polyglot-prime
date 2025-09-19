@@ -22,7 +22,9 @@ import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,16 +33,18 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 public class DataHoldController extends AbstractMessageSourceProvider {
-    private static final Logger LOG = LoggerFactory.getLogger(DataHoldController.class.getName());
+    private static TemplateLogger LOG;
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
 
     public DataHoldController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper,
-            AppConfig appConfig) {
+            AppConfig appConfig, AppLogger appLogger) {
+        super(appConfig, appLogger);        
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
+        LOG = appLogger.getLogger(DataHoldController.class);
         LOG.info("DataHoldController initialized");
     }
 
@@ -73,12 +77,12 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) throws Exception {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
-        LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+        LOG.info("DataHoldController:: Received ingest request. interactionId={}", interactionId);
 
         Map<String, String> responseMap;
 
         if (file != null && !file.isEmpty()) {
-            LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
+            LOG.info("DataHoldController:: File received: {} ({} bytes). interactionId={}",
                     file.getOriginalFilename(), file.getSize(), interactionId);
             RequestContext context = createRequestContext(interactionId,
                     headers, request, file.getSize(), file.getOriginalFilename());
@@ -88,19 +92,19 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             String contentType = request.getContentType();
             String extension = HttpUtil.resolveExtension(contentType);
             String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-            LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
+            LOG.info("DataHoldController:: Raw body received (Content-Type={}): {}... interactionId={}",
                     contentType, body.substring(0, Math.min(200, body.length())), interactionId);
             RequestContext context = createRequestContext(interactionId,
                     headers, request, body.length(), generatedFileName);
             responseMap = messageProcessorService.processMessage(context, body);
 
         } else {
-            LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
+            LOG.warn("DataHoldController:: Neither file nor body provided. interactionId={}", interactionId);
             throw new IllegalArgumentException("Request must contain either a file or body data");
         }
-        LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
+        LOG.info("DataHoldController:: Ingestion processed successfully. interactionId={}", interactionId);
         String responseJson = objectMapper.writeValueAsString(responseMap);
-        LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
+        LOG.info("DataHoldController:: Returning response for interactionId={}", interactionId);
         return ResponseEntity.ok(responseJson);
     }
 
@@ -120,11 +124,10 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     }
 
     @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName) {
+    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
         // Build S3 key:
         // hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
         Instant currentTime = Instant.now();
-        String timestamp = String.valueOf(currentTime.toEpochMilli());
         ZonedDateTime now = currentTime.atZone(ZoneOffset.UTC);
         String yyyy = String.format("%04d", now.getYear());
         String mm = String.format("%02d", now.getMonthValue());
@@ -141,12 +144,12 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     }
 
     @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName) {
-        return getDataKey(interactionId, headers, originalFileName) + "_metadata.json";
+    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+        return getDataKey(interactionId, headers, originalFileName,timestamp) + "_metadata.json";
     }
 
     @Override
-    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName) {
-        return getDataKey(interactionId, headers, originalFileName) + ".ack.json";
+    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+        return getDataKey(interactionId, headers, originalFileName,timestamp) + ".ack.json";
     }
 }
