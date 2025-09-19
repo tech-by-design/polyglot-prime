@@ -541,6 +541,7 @@ public class CsvOrchestrationEngine {
         public Map<String, Object> processScreenings(final String masterInteractionId, final Instant initiatedAt,
                 final String originalFileName, final String tenantId) {
             try {
+                 metricsBuilder.dataValidationStatus(CsvDataValidationStatus.SUCCESS.getDescription());
                 log.info("Inbound Folder Path: {} for zipFileInteractionId :{} ",
                         coreAppConfig.getCsv().validation().inboundPath(), masterInteractionId);
                 log.info("Ingress Home Path: {} for zipFileInteractionId : {}",
@@ -575,11 +576,13 @@ public class CsvOrchestrationEngine {
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
+                        if (!entry.getValue().isEmpty()) {
                         this.filesNotProcessed = entry.getValue();
                         combinedValidationResults.add(
                                 createOperationOutcomeForFileNotProcessed(
                                         masterInteractionId, entry.getValue(), originalFileName));
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+                        }
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
