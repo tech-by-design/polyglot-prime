@@ -2,8 +2,8 @@
   <id>7d90deb4-b0bf-4397-b0ed-736d52c063fb</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.2</description>
-  <revision>28</revision>
+  <description>Version: 0.1.3</description>
+  <revision>10</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1387,7 +1387,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
     logger.info(&quot;InteractionId: &quot; + interactionId);
     var payload = JSON.stringify({
         executedAt: currentTimestampBegin,
-        actor: &quot;TechBD&quot;,
+        actor: &quot;TechBD 1&quot;,
         action: &quot;received&quot;, 
         destination: &quot;TechBD&quot;,
         dataId: interactionId,
@@ -1398,13 +1398,13 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 	// Check if tracking is enabled
 	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
 	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
-	    logger.info(&quot;data ledger api call -BEGIN received&quot;);
+	    logger.info(&quot;data ledger api call -BEGIN received -&quot; +  interactionId);
 	    try {
 	        sendDataLedgerSync(payload);
 	    } catch (e) {
 	        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 	    }
-	    logger.info(&quot;data ledger api call -END received&quot;);
+	    logger.info(&quot;data ledger api call -END received -&quot; +  interactionId);
 	} else {
 	    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
 	}
@@ -1414,6 +1414,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 
 	
 	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
 
 	/////
 	var rawMessage = connectorMessage.getTransformedData(); // msg contains the entire raw message
@@ -2097,7 +2098,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758195235371</time>
+        <time>1758287582184</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
