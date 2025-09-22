@@ -3927,13 +3927,13 @@ BEGIN
 			--Denormalize the 'data_integrity' errors from validation_result_payload
 			SELECT techbd_udi_ingress.denormalize_validation_errors(
 				p_category => 'data_integrity', 
-				p_hub_interaction_id => v_return
+				p_hub_interaction_id => p_interaction_id
 			) INTO v_denormalize_result;
 	
 			--Denormalize the 'incomplete_groups' errors from validation_result_payload
 			SELECT techbd_udi_ingress.denormalize_validation_errors(
 				p_category => 'incomplete_groups', 
-				p_hub_interaction_id => v_return
+				p_hub_interaction_id => p_interaction_id
 			) INTO v_denormalize_result;
 		END IF;
 
@@ -8198,12 +8198,12 @@ BEGIN
 			WHERE 	hub_interaction_id = p_hub_interaction_id;
 
 			GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
-			RAISE NOTICE 'Inserted % rows in file_not_processed category.', v_inserted_count;
 
 		/*---register diagnostic log---*/
 	  	v_elaboration := jsonb_build_object(
 	 						'category', p_category,
 	 						'hub_interaction_id', p_hub_interaction_id,
+							'rows inserted', v_inserted_count,
 	 						'step', '1. Insert into sat_csv_fhir_processing_errors - file_not_processed'
 	 						);
 	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, '/flatfile/csv/Bundle', v_created_by, v_provenance, 'info'::text, 
@@ -8249,7 +8249,6 @@ BEGIN
 			  AND 	hub_interaction_id = p_hub_interaction_id;
 
 		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
-		RAISE NOTICE 'Inserted % rows in incomplete_groups category.', v_inserted_count;
 
 		/*---register diagnostic log---*/
 	  	v_elaboration := jsonb_build_object(
@@ -8315,7 +8314,6 @@ BEGIN
 			  AND hub_interaction_id = p_hub_interaction_id;
 
 		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
-		RAISE NOTICE 'Inserted % rows in data_integrity errors category.', v_inserted_count;
 
 		/*---register diagnostic log---*/
 	  	v_elaboration := jsonb_build_object(
