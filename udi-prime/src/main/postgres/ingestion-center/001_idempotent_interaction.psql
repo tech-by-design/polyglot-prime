@@ -3729,6 +3729,7 @@ DECLARE
 	p_elaboration					JSONB 	:= sat_interaction_csv_request_upserted.elaboration;
 	p_validation_result_payload		JSONB 	:= sat_interaction_csv_request_upserted.validation_result_payload;
 	p_interaction_id				TEXT 	:= sat_interaction_csv_request_upserted.interaction_id;
+	v_denormalize_result 			TEXT 	:= NULL;
 BEGIN	
 	/*---register diagnostic log---*/
   	v_elaboration := jsonb_build_object(
@@ -3772,6 +3773,13 @@ BEGIN
 			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
 			SET general_errors = zip_file_processing_errors
 			WHERE hub_interaction_id = p_interaction_id;
+
+			--Denormalize the 'file_not_processed' errors from validation_result_payload
+			SELECT techbd_udi_ingress.denormalize_validation_errors(
+				p_category => 'file_not_processed', 
+				p_hub_interaction_id => p_interaction_id
+			) INTO v_denormalize_result;
+
 		END IF;
 
 		IF p_elaboration IS NOT NULL THEN
@@ -3808,7 +3816,7 @@ BEGIN
 			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
 			SET data_validation_status = p_data_validation_status
 			WHERE hub_interaction_id = p_interaction_id;
-		END IF;	
+		END IF;
 
     	v_return := p_interaction_id;
     
@@ -3914,6 +3922,21 @@ BEGIN
 	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, uri, v_created_by, v_provenance, 'info'::text, 
 																'Insert into sat_interaction_flat_file_csv_request'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
 	  	/*------------------------------*/
+
+		IF p_validation_result_payload IS NOT NULL THEN
+			--Denormalize the 'data_integrity' errors from validation_result_payload
+			SELECT techbd_udi_ingress.denormalize_validation_errors(
+				p_category => 'data_integrity', 
+				p_hub_interaction_id => v_return
+			) INTO v_denormalize_result;
+	
+			--Denormalize the 'incomplete_groups' errors from validation_result_payload
+			SELECT techbd_udi_ingress.denormalize_validation_errors(
+				p_category => 'incomplete_groups', 
+				p_hub_interaction_id => v_return
+			) INTO v_denormalize_result;
+		END IF;
+
     END IF;
     
     RETURN v_return;
@@ -8100,3 +8123,240 @@ BEGIN
     ORDER BY combined_query.interaction_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.denormalize_validation_errors(text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.denormalize_validation_errors(p_category text, p_hub_interaction_id text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+	v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;   
+    v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;  -- Ensure created_at is not null
+    v_created_by 		TEXT 		:= CURRENT_USER;  -- Default created_by to the current user if not provided
+    v_provenance 		TEXT 		:= 'CSV';  -- Set default provenance
+    v_exception_id 		TEXT;
+    v_elaboration 		JSONB 	:= NULL;
+    v_diagnostic_id 	TEXT  	:= gen_random_uuid()::text;
+	v_inserted_count 	integer	:= 0;
+BEGIN	
+	/*---register diagnostic log---*/
+  	v_elaboration := jsonb_build_object(
+ 						'category', p_category,
+ 						'hub_interaction_id', p_hub_interaction_id,
+ 						'step', '- Input parameters to denormalize_validation_errors'
+ 						);
+	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, '/flatfile/csv/Bundle', current_user, 'CSV', 'info'::text, 
+															'Input parameters to denormalize_validation_errors'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
+  	/*------------------------------*/
+	
+	IF p_category IS NULL OR p_hub_interaction_id IS NULL THEN
+        RETURN 'p_category AND p_hub_interaction_id should not be NULL.';
+    END IF;
+
+	-- File Not Processed Errors
+	IF p_category = 'file_not_processed' AND p_hub_interaction_id IS NOT NULL THEN
+		INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+					sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+					zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+					row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+		SELECT gen_random_uuid()::text,
+			        p_category,
+			        null,--flat_file_hub_interaction_id
+			        v_created_at,
+			        tenant_id,
+			        uri,
+			        p_hub_interaction_id,--zip_file_hub_interaction_id
+			        group_id,
+			        NULL,
+			        NULL,
+			        NULL,
+			        issue.value ->> 'type'        AS error_type,
+			        issue.value ->> 'subType'     AS error_subtype,
+			        issue.value ->> 'reason'      AS error,
+			        issue.value ->> 'description' AS description,
+			        NULL,
+			        NULL,
+			        csv_zip_file_name,
+			        --jsonb_array_elements_text(issue.value -> 'files') AS file_name,
+					file_name.value AS file_name,
+			        origin,
+			        user_agent,
+					v_created_by,
+					v_provenance,
+					techbd_version_number
+			FROM 	techbd_udi_ingress.sat_interaction_zip_file_request,
+			LATERAL jsonb_array_elements(COALESCE(general_errors, '[]'::jsonb)) AS general_error(value)
+			CROSS JOIN LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue(value)
+			CROSS JOIN LATERAL jsonb_array_elements_text(issue.value -> 'files') AS file_name(value)
+			WHERE 	hub_interaction_id = p_hub_interaction_id;
+
+			GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
+			RAISE NOTICE 'Inserted % rows in file_not_processed category.', v_inserted_count;
+
+		/*---register diagnostic log---*/
+	  	v_elaboration := jsonb_build_object(
+	 						'category', p_category,
+	 						'hub_interaction_id', p_hub_interaction_id,
+	 						'step', '1. Insert into sat_csv_fhir_processing_errors - file_not_processed'
+	 						);
+	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, '/flatfile/csv/Bundle', v_created_by, v_provenance, 'info'::text, 
+																'Insert into sat_csv_fhir_processing_errors - file_not_processed'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+	  	/*------------------------------*/
+
+	END IF;
+	
+	-- incomplete_groups 
+	IF p_category = 'incomplete_groups' AND p_hub_interaction_id IS NOT NULL THEN
+		INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+					sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+					zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+					row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+			SELECT 	gen_random_uuid()::text,
+			       	p_category,
+			       	p_hub_interaction_id, --flat_file_hub_interaction_id
+			       	v_created_at,
+			       	tenant_id,
+			       	uri,
+			       	zip_file_hub_interaction_id,
+			       	group_id,
+			       	NULL,
+			       	NULL,
+			       	NULL,
+			       	error_payload.value ->> 'type'        AS error_type,
+			       	NULL,
+			       	error_payload.value ->> 'message'     AS error,
+			       	error_payload.value ->> 'description' AS description,
+			       	NULL,
+					NULL,
+			       	NULL,
+			       	NULL,
+			       	null, 
+					user_agent, 
+					v_created_by, 
+					v_provenance, 
+					techbd_version_number
+			FROM 	techbd_udi_ingress.sat_interaction_flat_file_csv_request,
+			LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errors') error_payload(value)
+			WHERE 	(nature = 'CSV Validation Result' OR nature = 'Converted to FHIR')
+			  AND 	jsonb_array_length(COALESCE((validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)) > 0
+			  AND 	hub_interaction_id = p_hub_interaction_id;
+
+		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
+		RAISE NOTICE 'Inserted % rows in incomplete_groups category.', v_inserted_count;
+
+		/*---register diagnostic log---*/
+	  	v_elaboration := jsonb_build_object(
+	 						'category', p_category,
+	 						'flat_file_csv_request_hub_interaction_id', p_hub_interaction_id,
+							'rows inserted', v_inserted_count,
+	 						'step', '2. Insert into sat_csv_fhir_processing_errors - incomplete_groups'
+	 						);
+	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, '/flatfile/csv/Bundle', v_created_by, v_provenance, 'info'::text, 
+																'Insert into sat_csv_fhir_processing_errors - incomplete_groups'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+	  	/*------------------------------*/
+	END IF;
+	   
+	-- data_integrity errors
+	IF p_category = 'data_integrity' AND p_hub_interaction_id IS NOT NULL THEN
+		INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+					sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+					zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+					row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+			SELECT gen_random_uuid()::text,
+			       'data_integrity',
+			       p_hub_interaction_id, --flat_file_hub_interaction_id
+			       created_at,
+			       tenant_id,
+			       uri,
+			       zip_file_hub_interaction_id,
+			       group_id,
+			       tasks.value ->> 'name' AS section,
+			       coalesce(error_payload.value ->> 'fieldName',
+			                errors_summary.value ->> 'fieldName') AS field_name,
+			       error_payload.value ->> 'cell' AS value,
+			       coalesce(error_payload.value ->> 'title',
+			                errors_summary.value ->> 'type') AS error_type,
+			       NULL,
+			       coalesce(error_payload.value ->> 'message',
+			                errors_summary.value ->> 'message') AS error,
+			       error_payload.value ->> 'description' AS description,
+			       (error_payload.value ->> 'rowNumber')::integer AS row_number,
+			       (error_payload.value ->> 'fieldNumber')::integer AS field_number,
+			       NULL,
+			       CASE
+			         WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
+			         WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
+			         WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
+			         WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
+			         ELSE NULL
+			       END AS file_name,
+			       NULL,
+			       user_agent, 
+				   v_created_by, 
+				   v_provenance, 
+				   techbd_version_number 
+			FROM   techbd_udi_ingress.sat_interaction_flat_file_csv_request,
+			LATERAL jsonb_array_elements(((validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') tasks(value)
+			LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') error_payload(value) ON true
+			LEFT JOIN LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errorsSummary') errors_summary(value) ON true
+			WHERE nature = 'CSV Validation Result'
+			  AND (
+			        ((((validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
+			        OR jsonb_array_length((validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
+			      )
+			  AND coalesce(error_payload.value ->> 'title', errors_summary.value ->> 'type') IS NOT NULL
+			  AND hub_interaction_id = p_hub_interaction_id;
+
+		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
+		RAISE NOTICE 'Inserted % rows in data_integrity errors category.', v_inserted_count;
+
+		/*---register diagnostic log---*/
+	  	v_elaboration := jsonb_build_object(
+	 						'category', p_category,
+	 						'flat_file_csv_request_hub_interaction_id', p_hub_interaction_id,
+							'rows inserted', v_inserted_count,
+	 						'step', '3. Insert into sat_csv_fhir_processing_errors - data_integrity'
+	 						);
+	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, '/flatfile/csv/Bundle', v_created_by, v_provenance, 'info'::text, 
+																'Insert into sat_csv_fhir_processing_errors - data_integrity'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+	  	/*------------------------------*/
+
+	END IF;
+	
+	RETURN p_category;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+		GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		v_elaboration := jsonb_build_object(
+         						'interaction_id', p_hub_interaction_id,
+         						'p_category', p_category
+         						);       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		'/flatfile/csv/Bundle',
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance, v_elaboration);
+		RETURN NULL;
+END;
+$function$;
