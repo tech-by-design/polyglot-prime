@@ -543,6 +543,34 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
     sqlNS: ingressSchema
 });
 
+const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_errors", {
+  sat_validation_and_fhir_conversion_errors_id: primaryKey(),
+  category: text(),
+  flat_file_hub_interaction_id: textNullable(),
+  tenant_id: textNullable(),
+  uri: textNullable(),
+  zip_file_hub_interaction_id: textNullable(),
+  group_id: textNullable(),
+  section: textNullable(),
+  field_name: textNullable(),
+  value: textNullable(),
+  error_type: textNullable(),
+  error_subtype: textNullable(),
+  error: textNullable(),
+  description: textNullable(),
+  row_number: textNullable(),
+  field_number: textNullable(),
+  zip_file_name: textNullable(),
+  file_name: textNullable(),
+  origin: textNullable(),
+  user_agent: textNullable(),
+  techbd_version_number: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1073,6 +1101,27 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS additional_details JSONB DEFAULT NULL;
       ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
       ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
+
+      ${csvFhirProcessingErrors}
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id);
+
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id);
+
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_created_at
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at);
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'category_check'
+            AND conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+          ADD CONSTRAINT category_check
+          CHECK (category IN ('data_integrity', 'file_not_processed', 'incomplete_groups'));
+      END IF;
 
       ${linkNexusInteraction}
       IF NOT EXISTS (
