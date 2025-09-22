@@ -1593,7 +1593,7 @@ BEGIN
 	    v_client_ip_address 	:= p_additional_details->'request'->>'remoteAddr';
 		v_intr_start_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
 		v_intr_finish_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
-		v_techbd_version_number	:= p_additional_details->'version'->>'techbd_version_number';
+		v_techbd_version_number	:= p_additional_details->>'version';
 	END IF;
 
   	-- Extract Observability Metrics Start and Finish Time
@@ -6120,10 +6120,8 @@ BEGIN
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
-       	IF(v_nature_denorm = 'Original FHIR Payload') THEN    
-			/*Add the version number to the additional_details json*/
-			p_additional_details := p_additional_details || jsonb_build_object('version', p_techbd_version_number);
- 		       	
+       	IF(v_nature_denorm = 'Original FHIR Payload') THEN
+
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        hub_interaction_id 			=> p_interaction_id,
 		        hub_interaction_key			=> p_interaction_key, 
@@ -6138,7 +6136,7 @@ BEGIN
 		        created_at 					=> v_created_at,
 		        created_by 					=> p_created_by,
 		        provenance 					=> v_provenance,
-				p_additional_details		=> p_additional_details
+				p_additional_details		=> COALESCE(p_additional_details, '{}'::jsonb) || jsonb_build_object('version', p_techbd_version_number) /*Add the version number to the additional_details json*/
 	       	); 
 	      	/*---register diagnostic log---*/
 	      	v_elaboration := jsonb_build_object(
@@ -6358,9 +6356,9 @@ DECLARE
 										        'User-Agent', p_user_agent,
 										        'remoteAddr', p_client_ip_address,
 										        'X-Observability-Metric-Interaction-Start-Time', CURRENT_TIMESTAMP,
-										        'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP,
-												'techbd_version_number', p_techbd_version_number
-										    )
+										        'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP
+										    ),
+											'version', p_techbd_version_number
 										);
    
 BEGIN 
@@ -6759,9 +6757,9 @@ DECLARE
 										    'User-Agent', p_user_agent,
 										    'remoteAddr', p_client_ip_address,
 										    'X-Observability-Metric-Interaction-Start-Time', CURRENT_TIMESTAMP,
-										    'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP,
-											'techbd_version_number', p_techbd_version_number
-										  )
+										    'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP
+										  ),
+											'version', p_techbd_version_number
 										);
    
 BEGIN 
@@ -7156,9 +7154,9 @@ DECLARE
 										        'User-Agent', p_user_agent,
 										        'remoteAddr', p_client_ip_address,
 										        'X-Observability-Metric-Interaction-Start-Time', p_intr_start_time,
-										        'X-Observability-Metric-Interaction-Finish-Time', p_intr_finish_time,
-												'techbd_version_number', p_techbd_version_number
-										    )
+										        'X-Observability-Metric-Interaction-Finish-Time', p_intr_finish_time
+										    ),
+											'version', p_techbd_version_number
 										);
    
 BEGIN 
@@ -7427,9 +7425,9 @@ DECLARE
 										        'User-Agent', p_user_agent,
 										        'remoteAddr', p_client_ip_address,
 										        'X-Observability-Metric-Interaction-Start-Time', CURRENT_TIMESTAMP,
-										        'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP,
-												'techbd_version_number', p_techbd_version_number
-										    )
+										        'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP
+										    ),
+											'version', p_techbd_version_number
 										);
    
 BEGIN 

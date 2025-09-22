@@ -1110,7 +1110,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id);
 
       CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_created_at
-          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at);
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at DESC);
 
       IF NOT EXISTS (
           SELECT 1
