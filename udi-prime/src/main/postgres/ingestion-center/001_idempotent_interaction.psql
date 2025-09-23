@@ -4460,85 +4460,81 @@ AS SELECT sat_interaction_fhir_request_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text AND source_type = 'CSV';
 
-
-
 /*******************************************************************************************
-This view summarizes validation errors from ZIP file uploads in the 
-sat_interaction_zip_file_request table, grouping by hub_interaction_id. 
-It extracts metadata and error types from nested JSON structures to provide 
-a consolidated error summary for each ZIP file interaction.
+This view summarizes CSV processing errors where ZIP file uploads could not be 
+processed due to the "file_not_processed" category. It queries the 
+sat_csv_fhir_processing_errors table, filtering specifically on 
+category = 'file_not_processed'.  
+
+For each ZIP file interaction (identified by zip_file_hub_interaction_id), 
+it aggregates key metadata such as creation time, tenant, group, URI, error 
+types, ZIP file name, origin, and user agent.  
+
+The result provides a consolidated summary of unprocessed file errors, making 
+it easier to identify failed uploads and investigate their root causes.
 *******************************************************************************************/
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error_summary cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error_summary
 AS 
 SELECT
-    sizfcr.hub_interaction_id,
-    MIN(sizfcr.created_at) AS created_at,
-    MIN(sizfcr.tenant_id) AS tenant_id,
-    MIN(sizfcr.group_id) AS group_id,
-    MIN(sizfcr.uri) AS uri,
-    MIN(issue.value ->> 'type') AS error_types,
-    MIN(sizfcr.csv_zip_file_name) AS zip_file_name,
-    MIN(sizfcr.origin) AS origin,
-    MIN(sizfcr.user_agent) AS user_agent
+    scfpe.zip_file_hub_interaction_id,
+    MIN(scfpe.created_at) AS created_at,
+    MIN(scfpe.tenant_id) AS tenant_id,
+    MIN(scfpe.group_id) AS group_id,
+    MIN(scfpe.uri) AS uri,
+    MIN(scfpe.error_type) AS error_types,
+    MIN(scfpe.zip_file_name) AS zip_file_name,
+    MIN(scfpe.origin) AS origin,
+    MIN(scfpe.user_agent) AS user_agent
 FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
-    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
-WHERE
-    sizfcr.general_errors IS NOT NULL
+    techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'file_not_processed'    
 GROUP BY
-    sizfcr.hub_interaction_id
+    scfpe.zip_file_hub_interaction_id
 ORDER BY
     created_at DESC;
 
+/*******************************************************************************************
+This view lists detailed CSV processing errors where uploaded ZIP files could 
+not be processed (category = 'file_not_processed'). It retrieves records from 
+the sat_csv_fhir_processing_errors table without aggregation, providing a 
+record-level view of each error.  
 
-/*****************************************
-This view, `csv_file_not_processed`, extracts details about files that could not be processed from the `sat_interaction_zip_file_request` table. 
-It identifies errors present in the `general_errors` field of the JSON payload. The extracted details include:
+The output includes timestamps, tenant and group identifiers, interaction IDs, 
+URIs, error type and subtype, descriptive messages, error details, file names, 
+ZIP file names, origin, and user agent.  
 
-- `created_at`: Timestamp of the request.
-- `tenant_id`: Identifier of the tenant associated with the request.
-- `uri`: The endpoint associated with the request.
-- `error_type`, `error`, and `description`: Specific details about the error encountered during processing.
-- `file_name`: The name of the zip file containing the problematic CSV files.
-- `user_agent`: Information about the client submitting the request.
-
-The view uses lateral joins to parse and extract errors from the `validationResults` field in the JSON payload. 
-Only requests with non-null `general_errors` are included. This view provides a structured summary of unprocessed files 
-for easier debugging and resolution of submission issues.
-*****************************************/
+This detailed view complements the summary view by offering full visibility 
+into each unprocessed file error, supporting debugging and root cause analysis.
+*******************************************************************************************/
 
 
-
-DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_errors CASCADE;
- 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error
 AS 
 SELECT
-    sizfcr.created_at,
-    sizfcr.tenant_id,
-    sizfcr.hub_interaction_id,
-    sizfcr.group_id,
-    sizfcr.uri,
-    issue.value ->> 'type' AS error_type,
-    issue.value ->> 'subType' AS error_subtype,
-    issue.value ->> 'description' AS description,
-    issue.value ->> 'reason' AS error,
-    jsonb_array_elements_text(issue.value -> 'files') AS file_name,
-    sizfcr.csv_zip_file_name AS zip_file_name,
-    sizfcr.origin AS origin,
-    sizfcr.user_agent AS user_agent
+    scfpe.created_at,
+    scfpe.tenant_id,
+    scfpe.zip_file_hub_interaction_id,
+    scfpe.group_id,
+    scfpe.uri,
+    scfpe.error_type,
+    scfpe.error_subtype,
+    scfpe.description,
+    scfpe.error,
+    scfpe.file_name,
+    scfpe.zip_file_name,
+    scfpe.origin,
+    scfpe.user_agent
 FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
-    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
-WHERE
-    sizfcr.general_errors IS NOT NULL
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'file_not_processed'       
 ORDER BY
-    sizfcr.created_at DESC;  
+    scfpe.created_at DESC;  
 
 /*****************************************
 -- View: techbd_udi_ingress.csv_incomplete_groups_errors_summary 
