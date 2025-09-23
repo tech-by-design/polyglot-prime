@@ -115,31 +115,49 @@
                         field: "hub_interaction_id",
                         filter: "agTextColumnFilter",
                         headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
-                        // cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                        //     modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
-                        // }, modalAide)
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
                     { headerName: "Processing Status", field: "status", headerTooltip: "The ZIP file processing status.", filter: "agTextColumnFilter" },
                     {
-                        headerName: "Data Validation Status",
-                        field: "is_failed",
-                        headerTooltip: "Issue on generating FHIR from CSV",
+                        headerName: "CSV Validation Status",
+                        field: "data_validation_status",
+                        headerTooltip: "The status of CSV file validation for the zip file.",
                         filter: "agTextColumnFilter",
                         cellRenderer: params => {
-                            if (params.value === 'Failed' && params.data.status !== 'Processing Failed') {
+                            if (params.value === 'Failed' || params.value === 'Partial Success') {
                                 return `<a href="/data-quality/csv-validations/file-not-processed" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } else {
                                 return params.value;
                             }
                         }
                     },
-                    // { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
-                    //{ headerName: "Total Group Count", field: "gourp_count", headerTooltip: "The file group count.", filter: "agNumberColumnFilter" },
-                    //{ headerName: "FHIR Group Count", field: "grouping_files", headerTooltip: "The file group count.", filter: "agNumberColumnFilter" },
-                    { headerName: "FHIR Count", field: "fhir_count", headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
-                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter" },
+                    { headerName: "Total File Count", field: "total_number_of_files_in_zip_file", headerTooltip: "The total number of files received within the ZIP.", filter: "agNumberColumnFilter" },
+                    { headerName: "FHIR Count", field: "number_of_fhir_bundles_generated_from_zip_file", headerTooltip: "The total number of FHIR bundles generated from the ZIP file.", filter: "agNumberColumnFilter",    cellRendererSelector: params => {
+                        if (params.data && params.data.uri === '/flatfile/csv/Bundle/$validate') {
+                            return {
+                                component: undefined // shows blank cell, no drill-down
+                            };
+                        }
+                        return {
+                            component: 'agGroupCellRenderer'
+                        };
+                    },    valueGetter: params => {
+                        if (params.data && params.data.uri === '/flatfile/csv/Bundle/$validate') {
+                            return null; // return null so nothing is shown
+                        }
+                        return params.data.number_of_fhir_bundles_generated_from_zip_file;
+                    }  },
+                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
+                        return params.data && params.data.uri === '/flatfile/csv/Bundle/$validate'
+                            ? ''
+                            : params.value;
+                    } },
+                    { headerName: "FHIR Failed Count", field: "fhir_count_failed", headerTooltip: "The number of failed FHIR interactions where an HTTP response error was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
+                        return params.data && params.data.uri === '/flatfile/csv/Bundle/$validate'
+                            ? ''
+                            : params.value;
+                    } },
                     {
                         headerName: "Zip File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
                         headerTooltip: "Download Zip File", filter: false, suppressFilter: true
@@ -212,17 +230,18 @@
                         <strong>Processing Status:</strong> Indicates the current state of ZIP file processing (e.g.,
                         <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
                         users understand where the file stands in the processing pipeline.<br>
-                        <strong>Data Validation Status:</strong> Highlights whether the FHIR conversion from the submitted CSV
-                        failed. If a failure occurred, a direct link is provided to the
+                        <strong>CSV Validation Status:</strong> Highlights whether the FHIR conversion from the submitted CSV
+                        failed. If a Failure/Partial Success occurred, a direct link is provided to the
                         <a href="/data-quality/csv-validations/file-not-processed" class="text-blue-600 underline"
                             target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the
-                        Interaction ID to filter errors on that page.<br>
-                        <!-- <strong>File Count:</strong> Shows the number of files processed within the ZIP (demographic,
-                        administrative, observation, and profile files).<br> -->
+                        Interaction ID to filter errors on that page.<br>                                            
+                        <strong>Total File Count:</strong> Shows the total number of files received within the ZIP file.<br>
                         <strong>FHIR Count:</strong> Reflects the total FHIR interactions triggered by the request, and
                         can be expanded for detailed interaction-level insight.<br>
                         <strong>FHIR Success Count:</strong> Indicates how many of those interactions were successfully
                         forwarded as valid FHIR resources to DataLake.<br>
+                        <strong>FHIR Failed Count:</strong> Indicates how many of those interactions failed to be forwarded
+                         as valid FHIR resources to DataLake.<br>
                         <strong>Download Options:</strong> Users can download the original ZIP file submitted for
                         processing and the corresponding OperationOutcome file, which contains validation results for
                         debugging and analysis.
