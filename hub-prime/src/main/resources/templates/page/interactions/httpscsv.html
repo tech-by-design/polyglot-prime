@@ -37,17 +37,20 @@
             },
             { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },
             { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
+            { 
+                headerName: "Operation Outcome Status", 
+                field: "is_bundle_valid", 
+                filter: "agTextColumnFilter", 
+                headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')" 
+            }, 
             { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" },
             { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
             { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },
             { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
             { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
             { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-            { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter", headerTooltip: "Count of issues encountered during validation" },
+            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" }, 
             { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },
-            { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
-            { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
         ];
         function getFhirGridData(params) {
             const hub_interaction_id = params.data.hub_interaction_id;

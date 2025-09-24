@@ -4426,7 +4426,12 @@ AS SELECT hub_interaction_id AS interaction_id,
     organization_name,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,  
     bundle_type AS bundle_resource_type,
-    source_hub_interaction_id    
+    source_hub_interaction_id,
+	CASE
+		WHEN is_bundle_valid = true THEN 'Valid'::text
+		WHEN is_bundle_valid = false THEN 'Invalid'::text
+		ELSE NULL::text
+	END AS is_bundle_valid  
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE source_type='CSV'; 
 
