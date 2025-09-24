@@ -22,9 +22,9 @@
         const detailViewName = 'csv_file_not_processed_error';
 
         function getDetailData(params) { 
-            const hub_interaction_id = params.data.hub_interaction_id;
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
              
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailViewName}/hub_interaction_id/${hub_interaction_id}.json`))
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailViewName}/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`))
                 .then(response => {
                     if (response.url.includes('/?timeout=true')) {
                         window.location.href = '/?timeout=true'; // Redirect to login page
@@ -84,7 +84,7 @@
                             },    
                             { 
                                 headerName: "TechBD Zip File Interaction ID", 
-                                field: "hub_interaction_id", 
+                                field: "zip_file_hub_interaction_id", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file.",
                                 cellRenderer: 'agGroupCellRenderer'                                
@@ -94,19 +94,19 @@
                                 field: "uri", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The URI where the CSV file was submitted or validated."
+                            },                        
+                            { 
+                                headerName: "Zip File Name", 
+                                field: "zip_file_name", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The name of the ZIP file where the error occurred."
                             },
                             { 
                                 headerName: "Error Type", 
                                 field: "error_types", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The category or type of validation error encountered."
-                            },                            
-                            { 
-                                headerName: "Zip File Name", 
-                                field: "zip_file_name", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The name of the ZIP file where the error occurred."
-                            },                                                       
+                            },                                                                                      
                             { 
                                 headerName: "Origin", 
                                 field: "origin", 

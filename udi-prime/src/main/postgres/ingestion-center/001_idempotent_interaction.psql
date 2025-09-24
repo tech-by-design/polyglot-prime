@@ -4329,15 +4329,24 @@ $$ LANGUAGE plpgsql;
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat CASCADE;
 
 /*******************************************************************************************
-This view summarizes CSV-based HTTP interactions by combining ZIP file requests with related 
-flat file and FHIR request data. It includes metadata such as tenant identifiers,  
-and FHIR processing statistics (total, success).
+This view summarizes CSV-based HTTP ZIP file requests and their corresponding 
+FHIR processing outcomes. It combines metadata from 
+sat_interaction_zip_file_request with aggregated success and failure counts 
+from sat_interaction_fhir_request.  
 
-It also introduces an `is_failed` flag to identify interactions that encountered issues. 
-A hub interaction is marked as failed if it contains general errors or if any associated 
-CSV processing failed during validation or FHIR conversion.
+Key details included:
+- Tenant identifiers, hub interaction ID, request URI, origin, and session info.  
+- File statistics: total files in the ZIP and number of FHIR bundles generated.  
+- FHIR outcome metrics: total responses, count of successful responses, 
+  and count of failed responses.  
+- Data quality indicators such as validation status, along with a normalized 
+  status field for readability.  
+- A helper field (`selected_field_for_download`) fixed to 'full_operation_outcome' 
+  for downstream use.  
 
-Only flat files with nature 'Original Flat File CSV' or 'CSV Validation Result' are considered.
+This view provides a consolidated pipeline-level summary of how each CSV ZIP 
+upload was processed through the HTTP-to-FHIR conversion, enabling tracking 
+of throughput, success vs. failure, and data validation results.
 *******************************************************************************************/
 
 
@@ -4353,16 +4362,6 @@ WITH fhir_summary AS (
     WHERE nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Error')
       AND source_type = 'CSV'
     GROUP BY source_hub_interaction_id
-),
-fhir_failure_check AS (
-    SELECT DISTINCT zip_file_hub_interaction_id AS hub_interaction_id
-    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
-    WHERE ((nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERSION_FAILED') OR (nature = 'CSV Validation Result' AND to_state = 'VALIDATION_FAILED'))
-),
-general_error_check AS (
-    SELECT DISTINCT sizfcr.hub_interaction_id
-    FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-         LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error
 )
 SELECT 
     sizfr.tenant_id_lower,
@@ -4374,57 +4373,17 @@ SELECT
     sizfr.origin,
     sizfr.sftp_session_id,
 	INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) as status,
---	count(distinct siffcr.qe_admin_data_file_name) as grouping_files,
-    COALESCE(fhir_summary.fhir_count, 0) AS fhir_count,
-    COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
-    -- is_failed condition
-    CASE 
-    WHEN general_error_check.hub_interaction_id IS NOT NULL 
-         OR fhir_failure_check.hub_interaction_id IS NOT NULL
-         OR sizfr.status = 'PROCESSING_FAILED'
-    THEN 'Failed' 
-    ELSE 'Success' 
-END AS is_failed,
-    MAX(CASE 
-        WHEN full_operation_outcome IS NULL 
-             OR full_operation_outcome::text = '{}' 
-             OR full_operation_outcome::text = '[]' 
-        THEN 'validation_result_payload'
-        ELSE 'full_operation_outcome'
-    end) AS selected_field
-
+	sizfr.total_number_of_files_in_zip_file as total_number_of_files_in_zip_file,
+	sizfr.number_of_fhir_bundles_generated_from_zip_file as number_of_fhir_bundles_generated_from_zip_file,
+	COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
+	COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
+	sizfr.data_validation_status as data_validation_status,
+	'full_operation_outcome' AS selected_field_for_download
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
 LEFT JOIN
-    techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
-    ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id 
-     AND siffcr.nature IN ('Original Flat File CSV', 'CSV Validation Result')
-LEFT JOIN
     fhir_summary
-    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id
-LEFT JOIN
-    general_error_check
-    ON sizfr.hub_interaction_id = general_error_check.hub_interaction_id
-LEFT JOIN
-    fhir_failure_check
-    ON sizfr.hub_interaction_id = fhir_failure_check.hub_interaction_id
-
-GROUP BY 
-    sizfr.hub_interaction_id,
-    sizfr.created_at,
-    sizfr.uri,
-    sizfr.tenant_id_lower,
-    sizfr.tenant_id,
-    sizfr.csv_zip_file_name,
-    sizfr.origin,
-    sizfr.sftp_session_id,
-	sizfr.status,
-    fhir_summary.fhir_count,
-    fhir_summary.fhir_count_success,
-    fhir_summary.fhir_count_failed,
-    general_error_check.hub_interaction_id,
-    fhir_failure_check.hub_interaction_id
-
+    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id    
 ORDER BY 
     sizfr.created_at DESC;
 
@@ -4501,85 +4460,81 @@ AS SELECT sat_interaction_fhir_request_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text AND source_type = 'CSV';
 
-
-
 /*******************************************************************************************
-This view summarizes validation errors from ZIP file uploads in the 
-sat_interaction_zip_file_request table, grouping by hub_interaction_id. 
-It extracts metadata and error types from nested JSON structures to provide 
-a consolidated error summary for each ZIP file interaction.
+This view summarizes CSV processing errors where ZIP file uploads could not be 
+processed due to the "file_not_processed" category. It queries the 
+sat_csv_fhir_processing_errors table, filtering specifically on 
+category = 'file_not_processed'.  
+
+For each ZIP file interaction (identified by zip_file_hub_interaction_id), 
+it aggregates key metadata such as creation time, tenant, group, URI, error 
+types, ZIP file name, origin, and user agent.  
+
+The result provides a consolidated summary of unprocessed file errors, making 
+it easier to identify failed uploads and investigate their root causes.
 *******************************************************************************************/
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error_summary cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error_summary
 AS 
 SELECT
-    sizfcr.hub_interaction_id,
-    MIN(sizfcr.created_at) AS created_at,
-    MIN(sizfcr.tenant_id) AS tenant_id,
-    MIN(sizfcr.group_id) AS group_id,
-    MIN(sizfcr.uri) AS uri,
-    MIN(issue.value ->> 'type') AS error_types,
-    MIN(sizfcr.csv_zip_file_name) AS zip_file_name,
-    MIN(sizfcr.origin) AS origin,
-    MIN(sizfcr.user_agent) AS user_agent
+    scfpe.zip_file_hub_interaction_id,
+    MIN(scfpe.created_at) AS created_at,
+    MIN(scfpe.tenant_id) AS tenant_id,
+    MIN(scfpe.group_id) AS group_id,
+    MIN(scfpe.uri) AS uri,
+    MIN(scfpe.error_type) AS error_types,
+    MIN(scfpe.zip_file_name) AS zip_file_name,
+    MIN(scfpe.origin) AS origin,
+    MIN(scfpe.user_agent) AS user_agent
 FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
-    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
-WHERE
-    sizfcr.general_errors IS NOT NULL
+    techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'file_not_processed'    
 GROUP BY
-    sizfcr.hub_interaction_id
+    scfpe.zip_file_hub_interaction_id
 ORDER BY
     created_at DESC;
 
+/*******************************************************************************************
+This view lists detailed CSV processing errors where uploaded ZIP files could 
+not be processed (category = 'file_not_processed'). It retrieves records from 
+the sat_csv_fhir_processing_errors table without aggregation, providing a 
+record-level view of each error.  
 
-/*****************************************
-This view, `csv_file_not_processed`, extracts details about files that could not be processed from the `sat_interaction_zip_file_request` table. 
-It identifies errors present in the `general_errors` field of the JSON payload. The extracted details include:
+The output includes timestamps, tenant and group identifiers, interaction IDs, 
+URIs, error type and subtype, descriptive messages, error details, file names, 
+ZIP file names, origin, and user agent.  
 
-- `created_at`: Timestamp of the request.
-- `tenant_id`: Identifier of the tenant associated with the request.
-- `uri`: The endpoint associated with the request.
-- `error_type`, `error`, and `description`: Specific details about the error encountered during processing.
-- `file_name`: The name of the zip file containing the problematic CSV files.
-- `user_agent`: Information about the client submitting the request.
-
-The view uses lateral joins to parse and extract errors from the `validationResults` field in the JSON payload. 
-Only requests with non-null `general_errors` are included. This view provides a structured summary of unprocessed files 
-for easier debugging and resolution of submission issues.
-*****************************************/
+This detailed view complements the summary view by offering full visibility 
+into each unprocessed file error, supporting debugging and root cause analysis.
+*******************************************************************************************/
 
 
-
-DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_errors CASCADE;
- 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error
 AS 
 SELECT
-    sizfcr.created_at,
-    sizfcr.tenant_id,
-    sizfcr.hub_interaction_id,
-    sizfcr.group_id,
-    sizfcr.uri,
-    issue.value ->> 'type' AS error_type,
-    issue.value ->> 'subType' AS error_subtype,
-    issue.value ->> 'description' AS description,
-    issue.value ->> 'reason' AS error,
-    jsonb_array_elements_text(issue.value -> 'files') AS file_name,
-    sizfcr.csv_zip_file_name AS zip_file_name,
-    sizfcr.origin AS origin,
-    sizfcr.user_agent AS user_agent
+    scfpe.created_at,
+    scfpe.tenant_id,
+    scfpe.zip_file_hub_interaction_id,
+    scfpe.group_id,
+    scfpe.uri,
+    scfpe.error_type,
+    scfpe.error_subtype,
+    scfpe.description,
+    scfpe.error,
+    scfpe.file_name,
+    scfpe.zip_file_name,
+    scfpe.origin,
+    scfpe.user_agent
 FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
-    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
-WHERE
-    sizfcr.general_errors IS NOT NULL
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'file_not_processed'       
 ORDER BY
-    sizfcr.created_at DESC;  
+    scfpe.created_at DESC;  
 
 /*****************************************
 -- View: techbd_udi_ingress.csv_incomplete_groups_errors_summary 
@@ -8220,31 +8175,37 @@ BEGIN
 			       	p_category,
 			       	p_hub_interaction_id, --flat_file_hub_interaction_id
 			       	v_created_at,
-			       	tenant_id,
-			       	uri,
-			       	zip_file_hub_interaction_id,
-			       	group_id,
-			       	NULL,
-			       	NULL,
-			       	NULL,
-			       	error_payload.value ->> 'type'        AS error_type,
-			       	NULL,
-			       	error_payload.value ->> 'message'     AS error,
-			       	error_payload.value ->> 'description' AS description,
-			       	NULL,
+			       	flat.tenant_id,
+					flat.uri,
+					zip_file_hub_interaction_id,
+					flat.group_id,
 					NULL,
-			       	NULL,
-			       	NULL,
-			       	null, 
-					user_agent, 
+					NULL,
+					NULL,
+					error_payload.value ->> 'type'        AS error_type,
+					NULL,
+					error_payload.value ->> 'message'     AS error,
+					error_payload.value ->> 'description' AS description,
+					NULL,
+					NULL,
+					zip.csv_zip_file_name,
+					NULL,
+					zip.origin, 
+    				flat.user_agent, 
 					v_created_by, 
 					v_provenance, 
-					techbd_version_number
-			FROM 	techbd_udi_ingress.sat_interaction_flat_file_csv_request,
-			LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errors') error_payload(value)
-			WHERE 	(nature = 'CSV Validation Result' OR nature = 'Converted to FHIR')
-			  AND 	jsonb_array_length(COALESCE((validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)) > 0
-			  AND 	hub_interaction_id = p_hub_interaction_id;
+					flat.techbd_version_number
+			FROM  
+				techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+				CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
+				INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip 
+					ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
+			WHERE  
+				(flat.nature = 'CSV Validation Result' OR flat.nature = 'Converted to FHIR')
+				AND jsonb_array_length(
+						COALESCE((flat.validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)
+					) > 0
+				AND flat.hub_interaction_id = p_hub_interaction_id;
 
 		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 
@@ -8266,50 +8227,53 @@ BEGIN
 					sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
 					zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
 					row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
-			SELECT gen_random_uuid()::text,
-			       'data_integrity',
-			       p_hub_interaction_id, --flat_file_hub_interaction_id
-			       created_at,
-			       tenant_id,
-			       uri,
-			       zip_file_hub_interaction_id,
-			       group_id,
-			       tasks.value ->> 'name' AS section,
-			       coalesce(error_payload.value ->> 'fieldName',
-			                errors_summary.value ->> 'fieldName') AS field_name,
-			       error_payload.value ->> 'cell' AS value,
-			       coalesce(error_payload.value ->> 'title',
-			                errors_summary.value ->> 'type') AS error_type,
-			       NULL,
-			       coalesce(error_payload.value ->> 'message',
-			                errors_summary.value ->> 'message') AS error,
-			       error_payload.value ->> 'description' AS description,
-			       (error_payload.value ->> 'rowNumber')::integer AS row_number,
-			       (error_payload.value ->> 'fieldNumber')::integer AS field_number,
-			       NULL,
-			       CASE
-			         WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
-			         WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
-			         WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
-			         WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
-			         ELSE NULL
-			       END AS file_name,
-			       NULL,
-			       user_agent, 
-				   v_created_by, 
-				   v_provenance, 
-				   techbd_version_number 
-			FROM   techbd_udi_ingress.sat_interaction_flat_file_csv_request,
-			LATERAL jsonb_array_elements(((validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') tasks(value)
-			LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') error_payload(value) ON true
-			LEFT JOIN LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errorsSummary') errors_summary(value) ON true
-			WHERE nature = 'CSV Validation Result'
-			  AND (
-			        ((((validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
-			        OR jsonb_array_length((validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
-			      )
-			  AND coalesce(error_payload.value ->> 'title', errors_summary.value ->> 'type') IS NOT NULL
-			  AND hub_interaction_id = p_hub_interaction_id;
+			SELECT 
+					gen_random_uuid()::text,
+					'data_integrity',
+					p_hub_interaction_id, -- flat_file_hub_interaction_id
+					flat.created_at,
+					flat.tenant_id,
+					flat.uri,
+					flat.zip_file_hub_interaction_id,
+					flat.group_id,
+					tasks.value ->> 'name' AS section,
+					COALESCE(error_payload.value ->> 'fieldName',
+							errors_summary.value ->> 'fieldName') AS field_name,
+					error_payload.value ->> 'cell' AS value,
+					COALESCE(error_payload.value ->> 'title',
+							errors_summary.value ->> 'type') AS error_type,
+					NULL,
+					COALESCE(error_payload.value ->> 'message',
+							errors_summary.value ->> 'message') AS error,
+					error_payload.value ->> 'description' AS description,
+					(error_payload.value ->> 'rowNumber')::integer AS row_number,
+					(error_payload.value ->> 'fieldNumber')::integer AS field_number,
+					zip.csv_zip_file_name,
+					CASE
+						WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
+						WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
+						WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
+						WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
+						ELSE NULL
+					END AS file_name,
+					zip.origin,
+					flat.user_agent, 
+					v_created_by, 
+					v_provenance, 
+					flat.techbd_version_number 
+			FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+			CROSS JOIN LATERAL jsonb_array_elements(((flat.validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') AS tasks(value)
+			LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') AS error_payload(value) ON true
+			LEFT JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errorsSummary') AS errors_summary(value) ON true
+			INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip 
+				ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
+			WHERE flat.nature = 'CSV Validation Result'
+			AND (
+					((((flat.validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
+					OR jsonb_array_length((flat.validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
+				)
+			AND COALESCE(error_payload.value ->> 'title', errors_summary.value ->> 'type') IS NOT NULL
+			AND flat.hub_interaction_id = p_hub_interaction_id;
 
 		GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 

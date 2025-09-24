@@ -117,7 +117,7 @@ BEGIN
         'The foreign key from sat_interaction_http_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_http_request',
         ARRAY['sat_interaction_http_request_id', 'hub_interaction_id', 'nature', 'content_type', 'payload', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 
-			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number'],
+			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number', 'tenant_id'],
         'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -130,7 +130,7 @@ BEGIN
     RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
         ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
 			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number'],
-        'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
+        'The columns of techbd_udi_ingress.sat_interaction_user should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 	
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
