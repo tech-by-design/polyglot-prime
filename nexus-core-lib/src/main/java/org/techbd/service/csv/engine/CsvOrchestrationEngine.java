@@ -575,6 +575,7 @@ public class CsvOrchestrationEngine {
 
                 final Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
+                int noOfValidGroups = 0;
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
@@ -605,6 +606,8 @@ public class CsvOrchestrationEngine {
                     }
                     if (!isGroupValid) {
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+                    } else {
+                        noOfValidGroups++;
                     }
                     combinedValidationResults.add(operationOutcomeForThisGroup);
                     if (generateBundle) {
@@ -614,7 +617,10 @@ public class CsvOrchestrationEngine {
                                         groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
                                         operationOutcomeForThisGroup));
                     }
-                }               
+                }
+                if (noOfValidGroups > 0 && CsvDataValidationStatus.FAILED.getDescription().equals(metricsBuilder.build().getDataValidationStatus())) {
+                    metricsBuilder.dataValidationStatus(CsvDataValidationStatus.PARTIAL_SUCCESS.getDescription());
+                }
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, requestParameters,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
