@@ -137,7 +137,9 @@
                     },
                     { headerName: "Total File Count", field: "total_number_of_files_in_zip_file", headerTooltip: "The total number of files received within the ZIP.", filter: "agNumberColumnFilter" },
                     { headerName: "FHIR Count", field: "number_of_fhir_bundles_generated_from_zip_file", headerTooltip: "The total number of FHIR bundles generated from the ZIP file.", filter: "agNumberColumnFilter",    cellRendererSelector: params => {
-                        if (params.data && params.data.uri === '/flatfile/csv/Bundle/$validate') {
+                        if  (params.data.uri &&
+                            (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
+                            params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
                             return {
                                 component: undefined // shows blank cell, no drill-down
                             };
@@ -146,18 +148,20 @@
                             component: 'agGroupCellRenderer'
                         };
                     },    valueGetter: params => {
-                        if (params.data && params.data.uri === '/flatfile/csv/Bundle/$validate') {
+                        if  ( params.data.uri &&
+                            (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
+                            params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
                             return null; // return null so nothing is shown
                         }
                         return params.data.number_of_fhir_bundles_generated_from_zip_file;
                     }  },
                     { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
-                        return params.data && params.data.uri === '/flatfile/csv/Bundle/$validate'
+                        return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
                             ? ''
                             : params.value;
                     } },
                     { headerName: "FHIR Failed Count", field: "fhir_count_failed", headerTooltip: "The number of failed FHIR interactions where an HTTP response error was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
-                        return params.data && params.data.uri === '/flatfile/csv/Bundle/$validate'
+                        return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
                             ? ''
                             : params.value;
                     } },
