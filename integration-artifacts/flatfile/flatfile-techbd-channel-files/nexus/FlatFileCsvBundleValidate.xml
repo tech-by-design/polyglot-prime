@@ -1,9 +1,9 @@
 <channel version="4.5.3">
-  <id>86f28a80-ee90-4257-be9c-e2dd9e008a33</id>
+  <id>fcd51265-3e7a-400e-951a-19b738e94604</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.7.0</description>
-  <revision>51</revision>
+  <description>Version: 0.8.0</description>
+  <revision>3</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -132,7 +132,40 @@ if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage; // Stop further processing by throwing an exception
 }
+//####################################################################################
 
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+    }
+
+    return value;
+}
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Check if there are any missing headers and stop processing
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &apos;Bad Request: &apos; + missingHeaders.join(&apos;; &apos;);
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+//####################################################################################
 ///////////////////////////////////////////////////////////////////////////
 // Parse the incoming request (assumes multipart form data)
 var rawData = connectorMessage.getRawData();
@@ -394,7 +427,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753954074585</time>
+        <time>1758687274416</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
