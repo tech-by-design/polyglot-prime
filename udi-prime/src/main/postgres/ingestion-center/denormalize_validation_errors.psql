@@ -1,0 +1,107 @@
+
+-- Purpose: Back fill the 'file not processed' and 'incomplete groups' validation errors into sat_csv_fhir_processing_errors table
+
+-- File Not Processed Errors
+INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+            sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+            zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+            row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+    WITH latest_interactions AS (
+        SELECT hub_interaction_id        
+        FROM techbd_udi_ingress.sat_interaction_zip_file_request
+        WHERE hub_interaction_id NOT IN (
+            SELECT zip_file_hub_interaction_id
+            FROM techbd_udi_ingress.sat_csv_fhir_processing_errors
+        )
+        ORDER BY created_at DESC 
+    )
+    SELECT 
+        gen_random_uuid()::text AS id,
+        'file_not_processed' AS category,
+        NULL::uuid AS flat_file_hub_interaction_id,
+        req.created_at,
+        req.tenant_id,
+        req.uri,
+        req.hub_interaction_id AS zip_file_hub_interaction_id,
+        req.group_id,
+        NULL AS extra1,
+        NULL AS extra2,
+        NULL AS extra3,
+        issue.value ->> 'type'        AS error_type,
+        issue.value ->> 'subType'     AS error_subtype,
+        issue.value ->> 'reason'      AS error,
+        issue.value ->> 'description' AS description,
+        NULL AS extra4,
+        NULL AS extra5,
+        req.csv_zip_file_name,
+        file_name.value               AS file_name,
+        req.origin,
+        req.user_agent,
+        CURRENT_USER                  AS created_by,
+        'CSV'                         AS source_type,
+        req.techbd_version_number
+    FROM latest_interactions li
+    JOIN techbd_udi_ingress.sat_interaction_zip_file_request req
+        ON req.hub_interaction_id = li.hub_interaction_id
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(req.general_errors, '[]'::jsonb)) AS general_error(value)
+    CROSS JOIN LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue(value)
+    CROSS JOIN LATERAL jsonb_array_elements_text(issue.value -> 'files') AS file_name(value);
+
+
+		
+-- incomplete_groups errors
+INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+            sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+            zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+            row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+    WITH latest_interactions AS (
+        SELECT hub_interaction_id        
+        FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+        WHERE hub_interaction_id NOT IN (
+            SELECT flat_file_hub_interaction_id
+            FROM techbd_udi_ingress.sat_csv_fhir_processing_errors
+        )
+        AND (nature = 'CSV Validation Result' OR nature = 'Converted to FHIR')
+        ORDER BY created_at DESC
+    )
+    SELECT  
+        gen_random_uuid()::text,
+        'incomplete_groups',
+        req.hub_interaction_id, -- flat_file_hub_interaction_id
+        req.created_at,
+        req.tenant_id,
+        req.uri,
+        req.zip_file_hub_interaction_id,
+        req.group_id,
+        NULL,
+        NULL,
+        NULL,
+        error_payload.value ->> 'type'        AS error_type,
+        NULL                                  AS error_subtype,
+        error_payload.value ->> 'message'     AS error,
+        error_payload.value ->> 'description' AS description,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL, 
+        req.user_agent, 
+        CURRENT_USER, 
+        'CSV', 
+        req.techbd_version_number
+    FROM latest_interactions li
+    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req
+        ON req.hub_interaction_id = li.hub_interaction_id
+    CROSS JOIN LATERAL jsonb_array_elements(
+        (req.validation_result_payload -> 'validationResults') -> 'errors'
+    ) AS error_payload(value)
+    WHERE (req.nature = 'CSV Validation Result' OR req.nature = 'Converted to FHIR')
+        AND jsonb_array_length(
+            COALESCE((req.validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)
+            ) > 0;
+
+
+
+
+--SELECT count(*) AS file_not_processed_errors FROM techbd_udi_ingress.sat_csv_fhir_processing_errors WHERE category = 'file_not_processed';
+--SELECT count(*) AS incomplete_groups_errors FROM techbd_udi_ingress.sat_csv_fhir_processing_errors WHERE category = 'incomplete_groups';

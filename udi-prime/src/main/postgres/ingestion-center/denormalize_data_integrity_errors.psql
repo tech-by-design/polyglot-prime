@@ -1,0 +1,72 @@
+
+-- Purpose: Back fill the 'data_integrity' errors into sat_csv_fhir_processing_errors table
+
+-- data_integrity errors
+INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+            sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+            zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+            row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+    WITH latest_interactions AS (
+        SELECT hub_interaction_id
+        FROM (
+            SELECT DISTINCT r.hub_interaction_id, r.created_at
+            FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request r
+            WHERE r.hub_interaction_id NOT IN (
+                SELECT e.flat_file_hub_interaction_id
+                FROM techbd_udi_ingress.sat_csv_fhir_processing_errors e
+                WHERE e.flat_file_hub_interaction_id IS NOT NULL
+            )
+            AND r.nature = 'CSV Validation Result'
+        ) t
+        ORDER BY t.created_at DESC
+    )
+    SELECT gen_random_uuid()::text,
+            'data_integrity',
+            req.hub_interaction_id, --flat_file_hub_interaction_id
+            req.created_at,
+            tenant_id,
+            uri,
+            zip_file_hub_interaction_id,
+            group_id,
+            tasks.value ->> 'name' AS section,
+            coalesce(error_payload.value ->> 'fieldName',
+                    errors_summary.value ->> 'fieldName') AS field_name,
+            error_payload.value ->> 'cell' AS value,
+            coalesce(error_payload.value ->> 'title',
+                    errors_summary.value ->> 'type') AS error_type,
+            NULL,
+            coalesce(error_payload.value ->> 'message',
+                    errors_summary.value ->> 'message') AS error,
+            error_payload.value ->> 'description' AS description,
+            (error_payload.value ->> 'rowNumber')::integer AS row_number,
+            (error_payload.value ->> 'fieldNumber')::integer AS field_number,
+            NULL,
+            CASE
+                WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
+                WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
+                WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
+                WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
+                ELSE NULL
+            END AS file_name,
+            NULL,
+            user_agent, 
+            CURRENT_USER, 
+            'CSV', 
+            techbd_version_number 
+    FROM latest_interactions li
+    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req
+        ON req.hub_interaction_id = li.hub_interaction_id
+    CROSS JOIN LATERAL jsonb_array_elements(((validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') tasks(value)
+    LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') error_payload(value) ON true
+    LEFT JOIN LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errorsSummary') errors_summary(value) ON true
+    WHERE nature = 'CSV Validation Result'
+        AND (
+            ((((validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
+            OR jsonb_array_length((validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
+            )
+        AND coalesce(error_payload.value ->> 'title', errors_summary.value ->> 'type') IS NOT NULL;
+
+
+
+
+--SELECT count(*) AS data_integrity_errors FROM techbd_udi_ingress.sat_csv_fhir_processing_errors WHERE category = 'data_integrity';
