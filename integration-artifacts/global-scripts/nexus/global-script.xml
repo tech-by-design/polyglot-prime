@@ -258,6 +258,7 @@ function getHeaderParameters(headers, channelMap, sourceMap) {
         Packages.org.techbd.config.Constants.MASTER_INTERACTION_ID,
         Packages.org.techbd.config.Constants.SOURCE_TYPE,
         Packages.org.techbd.config.Constants.VALIDATION_SEVERITY_LEVEL,
+        Packages.org.techbd.config.Constants.SHIN_NY_IG_VERSION,
         Packages.org.techbd.config.Constants.BASE_FHIR_URL
     ];
 
@@ -699,6 +700,167 @@ globalMap.put(&quot;processCSVZipFile&quot;, function(channelMap, sourceMap, con
 
 globalMap.put(&quot;getRequestParameters&quot;, getRequestParameters);
 globalMap.put(&quot;getHeaderParameters&quot;, getHeaderParameters);
+
+
+//================= GS FOR HL7 =========================//
+
+var PGobject = Packages.org.postgresql.util.PGobject;
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    return jsonbObj;
+}
+
+
+function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	
+	logger.info(&quot;interactionId: &quot; + interactionId);
+	logger.info(&quot;tenantId: &quot; + tenantId);
+	logger.info(&quot;requestUri: &quot; + requestUri);
+	logger.info(&quot;payloadJson: &quot; + payloadJson);
+	logger.info(&quot;operation: &quot; + operation);
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    logger.info(&quot;Inside DB Try&quot;);
+
+	    var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+		if(jdbcUrl != null) {
+		    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
+		    logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+		
+		var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+		if(jdbcUsername != null) {
+		    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+		    logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+		
+		var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
+		if(jdbcPassword != null) {
+		    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+		    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+
+	    // Database connection details
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+
+	    logger.info(&quot;Database connection established successfully.&quot;);
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_hl7_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original HL7 Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;HL7_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(8, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(8, payloadJson);
+		}
+					
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		stmt.setNull(10, java.sql.Types.OTHER);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(19, java.sql.Types.VARCHAR);
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setNull(28, java.sql.Types.VARCHAR);
+		stmt.setString(29, globalMap.get(&apos;filename&apos;));
+
+	    var result = stmt.execute();
+	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	    logger.info(&quot;DB connection closed.&quot;);
+	}
+}
+
+globalMap.put(&apos;saveHL7Payload&apos;, saveHL7Payload);
 </string>
   </entry>
   <entry>
