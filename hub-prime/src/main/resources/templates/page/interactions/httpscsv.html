@@ -86,7 +86,7 @@
 
             function downloadValidationResultCellRenderer(params) {
                 const hub_interaction_id = params.data.hub_interaction_id;
-                const validation_result = params.data.selected_field || 'validation_result_payload';
+                const validation_result = params.data.selected_field_for_download || 'validation_result_payload';
                 const file_name = `${params.data.csv_zip_file_name}_validation_result.json`;
 
                 const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_zip_file_request/${validation_result}/hub_interaction_id/${hub_interaction_id}?fileName=${file_name}`;
