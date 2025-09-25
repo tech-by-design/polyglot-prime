@@ -2,8 +2,8 @@
   <id>7d90deb4-b0bf-4397-b0ed-736d52c063fb</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.3</description>
-  <revision>11</revision>
+  <description>Version: 0.1.4</description>
+  <revision>31</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -79,6 +79,17 @@
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
+function getOutcome(text, severity, code, interactionId) {
+    return JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
+        result: [{
+            severity: severity,
+            code: code,
+            details: { text: text }
+        }]
+    });
+}
 /**
 * Util function to generate json string with status and message
 */
@@ -100,6 +111,9 @@ globalMap.put(&apos;interactionId&apos;, interactionId);
 
 var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 &#xd;var rawData = connectorMessage.getRawData();
+var xml = new XML(rawData);
+var hl7Message = xml.Content.Part.Content.toString();
+logger.info(&quot;hl7Message : &quot; + hl7Message);
 
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/);
@@ -136,7 +150,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 			   interactionId,
 			   tenantId,
 			   sourceMap.get(&apos;contextPath&apos;),
-			   rawData,
+			   hl7Message,
 			   operation
 			);
 		} catch (e) {
@@ -162,24 +176,48 @@ var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Con
 // Safety check
 if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
     var errorMessage = &quot;No HL7 content found in uploaded file.&quot;;
-    setErrorResponse(400, errorMessage);
-    throw errorMessage;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;missing-hl7&quot;, interactionId);
+	try {
+	        var operation = &quot;saveValidationFailed&quot;;
+	        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+	        logger.info(&quot;Successfully saved validation failure information&quot;);
+	    } catch (saveError) {
+	        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+	    }
+	 responseMap.put(&apos;finalResponse&apos;, outcome);
+      throw outcome;
 }
 
 // Now validate HL7 lines
 var lines = hl7Data.split(/\r?\n/);
 if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
     var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
-    setErrorResponse(400, errorMessage);
-    throw errorMessage;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
+	try {
+        var operation = &quot;saveValidationFailed&quot;;
+        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+        logger.info(&quot;Successfully saved validation failure information&quot;);
+    } catch (saveError) {
+        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+    }
+    responseMap.put(&apos;finalResponse&apos;, outcome);
+    throw outcome;
 }
 
 for (var i = 0; i &lt; lines.length; i++) {
     var line = lines[i].trim();
     if (line.startsWith(&quot;|&quot;)) {
         var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
-        setErrorResponse(400, errorMessage);
-        throw errorMessage;
+        var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;line-error&quot;, interactionId);
+	try {
+            var operation = &quot;saveValidationFailed&quot;;
+            saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+            logger.info(&quot;Successfully saved validation failure information&quot;);
+        } catch (saveError) {
+            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+        }
+        responseMap.put(&apos;finalResponse&apos;, outcome);
+    	 throw outcome;
     }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
@@ -2098,7 +2136,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758288470075</time>
+        <time>1758708435911</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2107,6 +2145,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

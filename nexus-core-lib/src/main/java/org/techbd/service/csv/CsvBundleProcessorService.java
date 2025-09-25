@@ -86,10 +86,7 @@ public class CsvBundleProcessorService {
                Constants.VALIDATION_SEVERITY_LEVEL,
                coreAppConfig.getValidationSeverityLevel()// Default to error if not specified
        );
-
-       // Add to request parameters for use throughout the chain
        requestParameters.put(Constants.VALIDATION_SEVERITY_LEVEL, severityLevel);
-
        LOG.debug("CsvBundleProcessorService:: Using validation severity level: {}", severityLevel);
 
         final List<Object> resultBundles = new ArrayList<>();
@@ -171,6 +168,10 @@ public class CsvBundleProcessorService {
             resultBundles.add(fileNotProcessedError);
             miscErrors.add(fileNotProcessedError);
             isAllCsvConvertedToFhir = false;
+        }
+        if (CsvDataValidationStatus.FAILED.getDescription().equals(metricsBuilder.build().getDataValidationStatus())
+                && totalNumberOfBundlesGenerated.get() > 0) {
+            metricsBuilder.dataValidationStatus(CsvDataValidationStatus.PARTIAL_SUCCESS.getDescription());
         }
         saveMiscErrorAndStatus(miscErrors, isAllCsvConvertedToFhir, masterInteractionId, requestParameters,metricsBuilder.build());
         addObservabilityHeadersToResponse(requestParameters, responseParameters);

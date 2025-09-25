@@ -2,8 +2,8 @@
   <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.31</description>
-  <revision>10</revision>
+  <description>Version: 0.4.32</description>
+  <revision>16</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -75,12 +75,144 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>Common JS functions</name>
+          <name>DB Save</name>
           <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var PGobject = Packages.org.postgresql.util.PGobject;
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    return jsonbObj;
+}
+
+
+function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	
+	logger.info(&quot;interactionId: &quot; + interactionId);
+	logger.info(&quot;tenantId: &quot; + tenantId);
+	logger.info(&quot;requestUri: &quot; + requestUri);
+	logger.info(&quot;payloadJson: &quot; + payloadJson);
+	logger.info(&quot;operation: &quot; + operation);
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    logger.info(&quot;Inside DB Try&quot;);
+
+	    // Database connection details
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+
+	    logger.info(&quot;Database connection established successfully.&quot;);
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original CCDA Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;CCDA_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(8, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(8, payloadJson);
+		}			
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		stmt.setNull(10, java.sql.Types.OTHER);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(19, java.sql.Types.VARCHAR);
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setNull(28, java.sql.Types.VARCHAR);
+		stmt.setString(29, channelMap.get(&apos;filename&apos;));
+
+	    var result = stmt.execute();
+	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	    logger.info(&quot;DB connection closed.&quot;);
+	}
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Common JS functions</name>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
 * Replacer function to remove empty values
 */
+
+var interactionId = java.util.UUID.randomUUID().toString();
+channelMap.put(&apos;interactionId&apos;, interactionId);
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+		
 function removeEmptyValues(key, value) {
   // Remove values that are empty strings, null, undefined, or empty objects/arrays
   if (value === &quot;&quot; || value === null || value === undefined || 
@@ -262,6 +394,7 @@ function extractClinicalDocument(rawXml) {
 		var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
 		var start = rawXml.indexOf(startTag);
 		var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+
 		
 		if (start !== -1 &amp;&amp; end !== -1) {
 		    end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
@@ -274,21 +407,86 @@ function extractClinicalDocument(rawXml) {
 		
 		    logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
 		    channelMap.put(&apos;fileContent&apos;, extractedXml);
+		    msg = channelMap.get(&apos;fileContent&apos;);
+
+		    try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   msg,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+		
 		} else {
+			try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   rawXml,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+			
 		    logger.error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;)));
+		    var errorResponse = getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    var operation = &quot;saveValidationFailed&quot;;
+		    saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
 		    throw new Error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		}
 	} catch (error) {
+		try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   rawXml,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+		
         logger.error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
-        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message)));
-	   throw new error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message)));
+	   var errorResponse = getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
+	   var operation = &quot;saveValidationFailed&quot;;
+	   saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+	   throw new error(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>Validate HTTP Request and collect headers</name>
-          <sequenceNumber>1</sequenceNumber>
+          <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
 
@@ -571,7 +769,7 @@ if(jdbcPassword != null) {
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>step_validate_profile_urls_env_variables</name>
-          <sequenceNumber>2</sequenceNumber>
+          <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
@@ -1197,132 +1395,6 @@ function getConsentResourceStatus(sourceXml) {
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>DB Save</name>
-          <sequenceNumber>3</sequenceNumber>
-          <enabled>true</enabled>
-          <script>var PGobject = Packages.org.postgresql.util.PGobject;
-
-function toJsonb(value) {
-    var jsonbObj = new PGobject();
-    jsonbObj.setType(&quot;jsonb&quot;);
-
-	if (typeof value === &quot;object&quot;) {
-        value = JSON.stringify(value);
-    }
-    
-    jsonbObj.setValue(value);
-    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
-    return jsonbObj;
-}
-
-
-function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, operation) {
-	
-	logger.info(&quot;interactionId: &quot; + interactionId);
-	logger.info(&quot;tenantId: &quot; + tenantId);
-	logger.info(&quot;requestUri: &quot; + requestUri);
-	logger.info(&quot;payloadJson: &quot; + payloadJson);
-	logger.info(&quot;operation: &quot; + operation);
-	
-	var DriverManager = java.sql.DriverManager;
-	var conn = null;
-	var stmt = null;
-	
-	try {
-	    logger.info(&quot;Inside DB Try&quot;);
-
-	    // Database connection details
-		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
-		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
-		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
-
-		//Devl
-	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-
-	    logger.info(&quot;Database connection established successfully.&quot;);
-	
-		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
-	    stmt = conn.prepareCall(sql);
-
-		stmt.setString(1, interactionId);
-		stmt.setString(2, requestUri);		
-		if(operation === &quot;saveOgCCDAPayload&quot;){
-			stmt.setObject(3, toJsonb(JSON.stringify({
-			    nature: &apos;Original CCDA Payload&apos;,
-			    tenant_id: tenantId
-			})), java.sql.Types.OTHER);
-			stmt.setString(4, &quot;NONE&quot;);	
-			stmt.setString(5, &quot;CCDA_ACCEPT&quot;);		
-		} else if (operation === &quot;saveValidationSuccess&quot;) {
-			stmt.setObject(3, toJsonb(JSON.stringify({
-			    nature: &apos;CCDA Validation Result&apos;,
-			    tenant_id: tenantId
-			})), java.sql.Types.OTHER);
-			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
-			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
-		} else if (operation === &quot;saveConversionSuccess&quot;) {
-			stmt.setObject(3, toJsonb(JSON.stringify({
-			    nature: &apos;Converted to FHIR&apos;,
-			    tenant_id: tenantId
-			})), java.sql.Types.OTHER);
-			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
-			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
-		} else {
-			stmt.setObject(3, toJsonb(JSON.stringify({
-			    nature: &apos;CCDA Validation Result&apos;,
-			    tenant_id: tenantId
-			})), java.sql.Types.OTHER);
-			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
-			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
-		}
-		stmt.setNull(6, java.sql.Types.VARCHAR);
-
-		if(operation === &quot;saveOgCCDAPayload&quot;){
-			stmt.setNull(7, java.sql.Types.OTHER);
-		} else {
-			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
-		}
-		
-		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
-			stmt.setNull(8, java.sql.Types.OTHER);
-		} else {
-			stmt.setString(8, payloadJson);
-		}			
-		stmt.setNull(9, java.sql.Types.VARCHAR);
-		stmt.setNull(10, java.sql.Types.OTHER);
-		stmt.setNull(11, java.sql.Types.VARCHAR);
-		stmt.setNull(12, java.sql.Types.VARCHAR);
-		stmt.setNull(13, java.sql.Types.VARCHAR);
-		stmt.setNull(14, java.sql.Types.VARCHAR);
-		stmt.setNull(15, java.sql.Types.VARCHAR);
-		stmt.setNull(16, java.sql.Types.VARCHAR);
-		stmt.setNull(17, java.sql.Types.VARCHAR);
-		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
-		stmt.setNull(19, java.sql.Types.VARCHAR);
-		stmt.setNull(20, java.sql.Types.BOOLEAN);
-		stmt.setNull(21, java.sql.Types.VARCHAR);
-		stmt.setNull(22, java.sql.Types.VARCHAR);
-		stmt.setNull(23, java.sql.Types.VARCHAR);
-		stmt.setNull(24, java.sql.Types.VARCHAR);
-		stmt.setNull(25, java.sql.Types.VARCHAR);
-		stmt.setNull(26, java.sql.Types.VARCHAR);
-		stmt.setNull(27, java.sql.Types.VARCHAR);
-		stmt.setNull(28, java.sql.Types.VARCHAR);
-		stmt.setString(29, channelMap.get(&apos;filename&apos;));
-
-	    var result = stmt.execute();
-	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
-	
-	} catch (e) {
-	    logger.error(&quot;Error executing stored procedure: &quot; + e);
-	} finally {
-	    if (stmt != null) stmt.close();
-	    if (conn != null) conn.close();
-	    logger.info(&quot;DB connection closed.&quot;);
-	}
-}</script>
-        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>API endpoint processing</name>
           <sequenceNumber>4</sequenceNumber>
           <enabled>true</enabled>
@@ -1345,30 +1417,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 
     try {
 		// Parse the XML content into an XML object
-		var interactionId = java.util.UUID.randomUUID().toString();
-		channelMap.put(&apos;interactionId&apos;, interactionId);
-		try{
-			//DB Save Original Payload
-		     logger.info(&quot;DB Save starts inside Validate&quot;);
-		     var tenantId = channelMap.get(&apos;tenantId&apos;);
-		     logger.info(&quot;tenant Id: &quot; + tenantId);
-		     var operation = &quot;saveOgCCDAPayload&quot;;
-		     var result = saveCcdaPayload(
-			    interactionId,
-			   tenantId,
-			   requestedPath,
-			   msg,
-			   operation
-			);
-		} catch (e) {
-			var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
-	            } else {
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-	            }
-	            throw new Error(&quot;Unexpected error during saving&quot;);
-		}
+		var interactionId = channelMap.get(&apos;interactionId&apos;);
 		try {
 			var ccda_msg = new XML(msg);
 			var sourceXml = ccda_msg.toXMLString();
@@ -1563,8 +1612,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	   });
 	
 	
-	    var interactionId = java.util.UUID.randomUUID().toString();
-	    channelMap.put(&quot;interactionId&quot;, interactionId);
+	    var interactionId = channelMap.get(&apos;interactionId&apos;);
 	    logger.info(&quot;InteractionId: &quot; + interactionId);
 	    var payload = JSON.stringify({
 	        executedAt: currentTimestampBegin,
@@ -1592,29 +1640,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		//*********** DATA LEDGER ***************
 			
 		channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
-
-		try{
-			//DB Save Original Payload
-		     logger.info(&quot;DB Save starts inside Validate&quot;);
-		     var tenantId = channelMap.get(&apos;tenantId&apos;);
-		     logger.info(&quot;tenant Id: &quot; + tenantId);
-		     var operation = &quot;saveOgCCDAPayload&quot;;
-		     var result = saveCcdaPayload(
-			    interactionId,
-			   tenantId,
-			   requestedPath,
-			   msg,
-			   operation
-			);
-		} catch (e) {
-			var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
-	            } else {
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-	            }
-	            throw new Error(&quot;Unexpected error during saving&quot;);
-		}
 
 		try {
 			var ccda_msg = new XML(msg);
@@ -2371,7 +2396,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758195433021</time>
+        <time>1758708742262</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
