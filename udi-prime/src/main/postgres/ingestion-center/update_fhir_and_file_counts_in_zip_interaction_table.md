@@ -1,4 +1,4 @@
-# Update file and FHIR counts into sat_interaction_zip_file_request table
+# Update FHIR counts into sat_interaction_zip_file_request table
 
 This repository contains the SQL script `update_fhir_count.psql` located in `udi-prime/src/main/postgres/ingestion-center/`.  
 
@@ -19,7 +19,7 @@ cd udi-prime/src/main/postgres/ingestion-center
 ```
 
 ### Step 2: Execute the SQL File (update_fhir_count.psql) to fill the `number_of_fhir_bundles_generated_from_zip_file` column
-Run the SQL script to fill the error details into the table:
+Run the SQL script to fill the new column:
 ```bash
 psql -h <hostname> -U <admin_user> -d <database_name> -f update_fhir_count.psql
 ```
