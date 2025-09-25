@@ -86,10 +86,7 @@ public class CsvBundleProcessorService {
                Constants.VALIDATION_SEVERITY_LEVEL,
                coreAppConfig.getValidationSeverityLevel()// Default to error if not specified
        );
-
-       // Add to request parameters for use throughout the chain
        requestParameters.put(Constants.VALIDATION_SEVERITY_LEVEL, severityLevel);
-
        LOG.debug("CsvBundleProcessorService:: Using validation severity level: {}", severityLevel);
 
         final List<Object> resultBundles = new ArrayList<>();
@@ -172,6 +169,10 @@ public class CsvBundleProcessorService {
             miscErrors.add(fileNotProcessedError);
             isAllCsvConvertedToFhir = false;
         }
+        if (CsvDataValidationStatus.FAILED.getDescription().equals(metricsBuilder.build().getDataValidationStatus())
+                && totalNumberOfBundlesGenerated.get() > 0) {
+            metricsBuilder.dataValidationStatus(CsvDataValidationStatus.PARTIAL_SUCCESS.getDescription());
+        }
         saveMiscErrorAndStatus(miscErrors, isAllCsvConvertedToFhir, masterInteractionId, requestParameters,metricsBuilder.build());
         addObservabilityHeadersToResponse(requestParameters, responseParameters);
         LOG.info("ProcessPayload: END for zipFileInteractionId: {}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, tenantId, baseFHIRUrl);
@@ -202,9 +203,11 @@ public class CsvBundleProcessorService {
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            initRIHR.setPDataValidationStatus(metrics.getDataValidationStatus());
+            initRIHR.setPNumberOfFhirBundlesGeneratedFromZipFile(metrics.getNumberOfFhirBundlesGeneratedFromZipFile());
+            initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
-            initRIHR.setElaboration(null != metrics ? (JsonNode) Configuration.objectMapper.valueToTree(metrics) : null);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();

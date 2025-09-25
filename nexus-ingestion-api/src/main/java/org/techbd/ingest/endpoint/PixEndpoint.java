@@ -1,12 +1,7 @@
 package org.techbd.ingest.endpoint;
 
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -21,6 +16,8 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
 import org.techbd.iti.schema.PRPAIN201302UV02;
@@ -46,15 +43,17 @@ import jakarta.servlet.http.HttpServletRequest;
 @Endpoint
 public class PixEndpoint extends AbstractMessageSourceProvider{
 
-    private static final Logger log = LoggerFactory.getLogger(PixEndpoint.class);
+    private static TemplateLogger log;
     private static final String NAMESPACE_URI = "urn:hl7-org:v3";
 
     private final AcknowledgementService ackService;
     private final AppConfig appConfig;
 
-    public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig) {
+    public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig, AppLogger appLogger) {
+        super(appConfig, appLogger);
         this.ackService = ackService;
         this.appConfig = appConfig;
+        log = appLogger.getLogger(PixEndpoint.class);
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")

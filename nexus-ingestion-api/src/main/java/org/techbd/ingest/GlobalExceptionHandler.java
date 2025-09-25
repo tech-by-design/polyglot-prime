@@ -1,7 +1,5 @@
 package org.techbd.ingest;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +14,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -23,8 +23,11 @@ import jakarta.servlet.http.HttpSession;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private TemplateLogger LOG;
 
+    public GlobalExceptionHandler(AppLogger appLogger) {
+        this.LOG = appLogger.getLogger(GlobalExceptionHandler.class);
+    }
     public record ErrorResponse(String status, String message) {}
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

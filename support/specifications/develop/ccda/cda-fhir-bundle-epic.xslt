@@ -1768,7 +1768,7 @@
   <xsl:template name="GrouperObservation">
     <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship"/>
     <xsl:variable name="grouperScreening" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation"/>
-    <xsl:if test="$grouperObs">
+    <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
             <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>

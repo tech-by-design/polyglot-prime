@@ -44,7 +44,7 @@ public class CCDAService {
 
     public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome) {
+            Map<String, Object> operationOutcome, String fileName) {
         try {
             logger.info("CCDAService saveOriginalCcdaPayload  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -67,6 +67,7 @@ public class CCDAService {
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -94,11 +95,12 @@ public class CCDAService {
      * @param requestUri       Request URI from which the payload originated
      * @param payloadJson      Original CCDA payload in JSON format as a string
      * @param operationOutcome A map containing operation outcome or metadata
+     * @param fileName         Original filename of the CCDA file
      * @return true if the data is successfully saved, false otherwise
      */
     public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome) {
+            Map<String, Object> operationOutcome, String fileName) {
         try {
             logger.info("CCDAService saveValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -121,6 +123,7 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            rihr.setPFileName(fileName);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -149,11 +152,12 @@ public class CCDAService {
      * @param tenantId          Tenant identifier for multi-tenancy support
      * @param requestUri        Request URI from which the payload originated
      * @param bundle            The FHIR bundle resulting from the conversion
+     * @param fileName          Original filename of the CCDA file
      * @return true if the data is successfully saved, false otherwise
      */
     public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
             String tenantId, String requestUri,
-            Map<String, Object> bundle) {
+            Map<String, Object> bundle, String fileName) {
         try {
             logger.info("CCDAService saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             logger.info("CCDAService Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
@@ -177,6 +181,7 @@ public class CCDAService {
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -205,11 +210,12 @@ public class CCDAService {
      * @param requestUri       The request URI
      * @param payloadJson      The raw CCDA payload as JSON
      * @param operationOutcome The operation outcome details
+     * @param fileName         Original filename of the CCDA file
      * @return true if saving was successful, false otherwise
      */
     public boolean saveCcdaValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome) {
+            Map<String, Object> operationOutcome, String fileName) {
         try {
             logger.info("CCDAService saveCcdaValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -231,6 +237,7 @@ public class CCDAService {
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();

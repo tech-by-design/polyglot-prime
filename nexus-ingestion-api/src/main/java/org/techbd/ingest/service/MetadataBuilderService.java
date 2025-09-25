@@ -1,7 +1,10 @@
 package org.techbd.ingest.service;
 
 import org.springframework.stereotype.Service;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +31,15 @@ import java.util.stream.Collectors;
 @Service
 public class MetadataBuilderService {
 
+    private final AppConfig appConfig;
+
+    private TemplateLogger LOG;
+
+    public MetadataBuilderService(AppLogger logger, AppConfig appConfig) {
+        this.LOG = logger.getLogger(MetadataBuilderService.class);
+        LOG.info("MetadataBuilderService initialized");
+        this.appConfig = appConfig;
+    }   
     /**
      * Builds a metadata map for S3 object upload from the provided request context.
      *
@@ -37,6 +49,7 @@ public class MetadataBuilderService {
     public Map<String, String> buildS3Metadata(RequestContext context) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("interactionId", context.getInteractionId());
+        metadata.put("ingestionApiVersion", appConfig.getVersion());
         metadata.put("tenantId", context.getTenantId());
         metadata.put("fileName", context.getFileName());
         metadata.put("FileSize", String.valueOf(context.getFileSize()));
@@ -60,6 +73,7 @@ public class MetadataBuilderService {
     public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
         jsonMetadata.put("tenantId", context.getTenantId());
+        jsonMetadata.put("ingestionApiVersion", appConfig.getVersion());
         jsonMetadata.put("interactionId", context.getInteractionId());
         jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
                 context.getUploadTime().getYear(), context.getUploadTime().getMonthValue(), context.getUploadTime().getDayOfMonth()));
@@ -98,6 +112,7 @@ public class MetadataBuilderService {
     public Map<String, Object> buildSqsMessage(RequestContext context) {
         Map<String, Object> message = new HashMap<>();
         message.put("interactionId", context.getInteractionId());
+        message.put("ingestionApiVersion", appConfig.getVersion());
         message.put("requestUrl", context.getRequestUrl());
         message.put("timestamp", context.getTimestamp());
         message.put("fileName", context.getFileName());

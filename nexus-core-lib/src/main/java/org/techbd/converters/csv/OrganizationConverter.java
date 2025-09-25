@@ -166,14 +166,25 @@ public class OrganizationConverter extends BaseConverter {
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityCity())) {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
             }
+            
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityState())) {
-                if(qrAdminData.getFacilityState().equalsIgnoreCase("New York")) {
-                    address.setState("NY");
-                    fullAddressText += ", " + address.getState();
+                String originalValue = qrAdminData.getFacilityState();
+                String code = fetchCode(originalValue, CsvConstants.STATE, interactionId);
+
+                if (!code.equals(originalValue)) {
+                    address.setState(code);
                 } else {
-                    fullAddressText += ", " + fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE, interactionId);
+                    String codeFromDisplay = fetchCodeFromDisplay(originalValue, CsvConstants.STATE, interactionId);
+                    if (codeFromDisplay != null) {
+                        address.setState(codeFromDisplay);
+                    } else {
+                        address.setState(originalValue);
+                    }
                 }
+
+                fullAddressText += ", " + address.getState();
             }
+
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
                 fullAddressText += " " + qrAdminData.getFacilityZip();
             }

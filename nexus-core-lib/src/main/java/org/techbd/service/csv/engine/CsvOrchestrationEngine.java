@@ -438,9 +438,11 @@ public class CsvOrchestrationEngine {
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+                initRIHR.setPDataValidationStatus(metrics.getDataValidationStatus());
+                initRIHR.setPNumberOfFhirBundlesGeneratedFromZipFile(metrics.getNumberOfFhirBundlesGeneratedFromZipFile());
+                initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
                 initRIHR.setValidationResultPayload(
-                        (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
-                initRIHR.setElaboration(null != metrics ? (JsonNode) Configuration.objectMapper.valueToTree(metrics) : null);        
+                        (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));      
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
@@ -541,6 +543,7 @@ public class CsvOrchestrationEngine {
         public Map<String, Object> processScreenings(final String masterInteractionId, final Instant initiatedAt,
                 final String originalFileName, final String tenantId) {
             try {
+                 metricsBuilder.dataValidationStatus(CsvDataValidationStatus.SUCCESS.getDescription());
                 log.info("Inbound Folder Path: {} for zipFileInteractionId :{} ",
                         coreAppConfig.getCsv().validation().inboundPath(), masterInteractionId);
                 log.info("Ingress Home Path: {} for zipFileInteractionId : {}",
@@ -572,14 +575,17 @@ public class CsvOrchestrationEngine {
 
                 final Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
+                int noOfValidGroups = 0;
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
+                        if (!entry.getValue().isEmpty()) {
                         this.filesNotProcessed = entry.getValue();
                         combinedValidationResults.add(
                                 createOperationOutcomeForFileNotProcessed(
                                         masterInteractionId, entry.getValue(), originalFileName));
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+                        }
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -600,6 +606,8 @@ public class CsvOrchestrationEngine {
                     }
                     if (!isGroupValid) {
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+                    } else {
+                        noOfValidGroups++;
                     }
                     combinedValidationResults.add(operationOutcomeForThisGroup);
                     if (generateBundle) {
@@ -609,7 +617,10 @@ public class CsvOrchestrationEngine {
                                         groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
                                         operationOutcomeForThisGroup));
                     }
-                }               
+                }
+                if (noOfValidGroups > 0 && CsvDataValidationStatus.FAILED.getDescription().equals(metricsBuilder.build().getDataValidationStatus())) {
+                    metricsBuilder.dataValidationStatus(CsvDataValidationStatus.PARTIAL_SUCCESS.getDescription());
+                }
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, requestParameters,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);

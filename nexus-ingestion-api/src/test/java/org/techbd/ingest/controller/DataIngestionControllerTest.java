@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +22,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,15 +41,21 @@ class DataIngestionControllerTest {
     private HttpServletRequest servletRequest;
 
     private ObjectMapper objectMapper;
+    @Mock
+    private static AppLogger appLogger;
 
-    @InjectMocks
+    @Mock
+    private static TemplateLogger templateLogger;
+
     private DataIngestionController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
-        controller = new DataIngestionController(messageProcessorService, objectMapper,appConfig);
+        when(appLogger.getLogger(DataIngestionController.class)).thenReturn(templateLogger);
+        when(appConfig.getVersion()).thenReturn("1.0.0");
+        controller = new DataIngestionController(messageProcessorService, objectMapper,appConfig, appLogger);
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/ingest"));
         when(servletRequest.getQueryString()).thenReturn("param=value");
         when(servletRequest.getProtocol()).thenReturn("HTTP/1.1");

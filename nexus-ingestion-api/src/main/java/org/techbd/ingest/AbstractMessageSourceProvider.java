@@ -7,23 +7,26 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.controller.DataIngestionController;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
+import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 public abstract class AbstractMessageSourceProvider implements MessageSourceProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractMessageSourceProvider.class.getName());
-    @Autowired
-    protected AppConfig appConfig;
+    private final TemplateLogger LOG;
+    private final AppConfig appConfig;
 
+    public AbstractMessageSourceProvider(AppConfig appConfig, AppLogger appLogger) {
+        this.appConfig = appConfig;
+        LOG = appLogger.getLogger(DataIngestionController.class);
+    }
     /**
      * Function to handle string content ingestion requests.
      *
@@ -39,7 +42,7 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
             HttpServletRequest request,
             long fileSize,
             String originalFileName) {
-        LOG.info("DataIngestionController:: Creating RequestContext. interactionId={}", interactionId);
+        LOG.info("DataIngestionController:: Creating RequestContext. interactionId={} TechBD Version {}", interactionId, appConfig.getVersion());
         Instant now = Instant.now();
         if (null == headers) {
             headers = new HashMap<>();
@@ -59,8 +62,7 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
         String localAddress = request.getLocalAddr();
         String remoteAddress = request.getRemoteAddr();
 
-        LOG.info("DataIngestionController:: RequestContext built for interactionId={}",
-                interactionId);
+        LOG.info("DataIngestionController:: RequestContext built for interactionId={} TechBD Version {}", interactionId, appConfig.getVersion());
 
         return new RequestContext(
                 headers,
@@ -71,9 +73,9 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
                 timestamp,
                 originalFileName,
                 fileSize,
-                getDataKey(interactionId, headers, originalFileName),
-                getMetaDataKey(interactionId, headers, originalFileName),
-                getFullS3DataPath(interactionId, headers, originalFileName),
+                getDataKey(interactionId, headers, originalFileName,timestamp),
+                getMetaDataKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3DataPath(interactionId, headers, originalFileName,timestamp),
                 userAgent,
                 fullRequestUrl,
                 queryParams,
@@ -83,11 +85,11 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
                 getSourceIp(headers),
                 getDestinationIp(headers),
                 getDestinationPort(headers), 
-                getAcknowledgementKey(interactionId, headers, originalFileName),
+                getAcknowledgementKey(interactionId, headers, originalFileName,timestamp),
                 (!MessageSourceType.HTTP_INGEST.equals(getMessageSource()) && !MessageSourceType.HTTP_HOLD.equals(getMessageSource()) ) ?  
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName) : null,
-                getFullS3MetadataPath(interactionId, headers, originalFileName),
-                getMessageSource(),getDataBucketName(),getMetadataBucketName());
+                getFullS3AcknowledgementPath(interactionId, headers, originalFileName,timestamp) : null,
+                getFullS3MetadataPath(interactionId, headers, originalFileName,timestamp),
+                getMessageSource(),getDataBucketName(),getMetadataBucketName(),appConfig.getVersion());
     }
     @Override
     public String getTenantId(Map<String, String> headers) {

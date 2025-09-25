@@ -2,19 +2,41 @@ package org.techbd.ingest.service;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.techbd.ingest.commons.MessageSourceType;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
-class MetadataBuilderServiceTest {
+public class MetadataBuilderServiceTest {
+    @Mock
+    private AppLogger appLogger;
 
-    private final MetadataBuilderService metadataBuilderService = new MetadataBuilderService();
+    @Mock
+    private AppConfig appConfig;
 
+    @Mock
+    private static TemplateLogger templateLogger;
+
+    private MetadataBuilderService metadataBuilderService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);        
+        when(appLogger.getLogger(MetadataBuilderService.class)).thenReturn(templateLogger);
+        metadataBuilderService = new MetadataBuilderService(appLogger, appConfig);
+        when(appConfig.getVersion()).thenReturn("0.700.0");
+    }
     private RequestContext createContext(Map<String, String> headers,String s3Response) {
         RequestContext context = new RequestContext(
                 headers,
@@ -42,7 +64,7 @@ class MetadataBuilderServiceTest {
                 null,
                 MessageSourceType.HTTP_INGEST,
                 "TEST",
-                "TEST"
+                "TEST","0.700.0"
         );
         context.setS3Response(s3Response);
         return context;
@@ -108,7 +130,6 @@ class MetadataBuilderServiceTest {
         Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
 
         assertThat(message)
-                .containsEntry("tenantId", "tenant1")
                 .containsEntry("interactionId", "interaction123")
                 .containsEntry("fileName", "file.txt")
                 .containsEntry("fileSize", 123L)
@@ -128,7 +149,6 @@ class MetadataBuilderServiceTest {
 
         assertThat(message)
                 .containsEntry("s3Response", "S3 upload success")
-                .containsEntry("tenantId", "tenant1")
                 .containsEntry("fileName", "file.txt")
                 .containsEntry("fileSize", 123L);
     }

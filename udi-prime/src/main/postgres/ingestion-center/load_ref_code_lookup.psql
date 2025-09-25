@@ -2181,7 +2181,125 @@ VALUES
 	 ('0c9721da-35d9-4d44-96e3-0a803c28e464','language','sq','Albanian','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD'),
 	 ('b2a1e3e5-de21-42a4-9d02-14e14f1cf0ff','language','yue','Cantonese','http://test.shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.6.1','2025-08-20 07:04:19.062343+00','neondb_owner','TechBD')
 ON CONFLICT DO NOTHING;
- 
+
+-- Update queries for state codes in ref_code_lookup table
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Alaska', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'AK' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Alabama', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'AL' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Arkansas', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'AR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'American Samoa', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'AS' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Arizona', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'AZ' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'California', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'CA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Colorado', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'CO' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Connecticut', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'CT' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'District of Columbia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'DC' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Delaware', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'DE' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Florida', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'FL' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Federated States of Micronesia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'FM' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Georgia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'GA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Guam', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'GU' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Hawaii', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'HI' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Iowa', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'IA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Idaho', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'ID' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Illinois', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'IL' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Indiana', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'IN' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Kansas', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'KS' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Kentucky', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'KY' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Louisiana', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'LA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Massachusetts', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Maryland', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MD' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Maine', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'ME' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Marshall Islands', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MH' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Michigan', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MI' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Minnesota', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MN' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Missouri', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MO' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Northern Mariana Islands', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MP' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Mississippi', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MS' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Montana', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'MT' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'North Carolina', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NC' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'North Dakota', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'ND' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Nebraska', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NE' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'New Hampshire', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NH' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'New Jersey', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NJ' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'New Mexico', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NM' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Nevada', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NV' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'New York', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'NY' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Ohio', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'OH' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Oklahoma', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'OK' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Oregon', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'OR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Pennsylvania', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'PA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Puerto Rico', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'PR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Palau', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'PW' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Rhode Island', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'RI' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'South Carolina', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'SC' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'South Dakota', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'SD' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Tennessee', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'TN' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Texas', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'TX' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Utah', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'UT' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Virginia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'VA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Virgin Islands of the U.S.', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'VI' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Vermont', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'VT' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Washington', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Wisconsin', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WI' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'West Virginia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WV' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Wyoming', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WY' AND (display_string IS NULL OR display_string = '');
 
 /*
 -- Step 1: Create TEMP staging table

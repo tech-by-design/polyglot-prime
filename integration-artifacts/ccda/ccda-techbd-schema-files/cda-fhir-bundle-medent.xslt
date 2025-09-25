@@ -1759,7 +1759,7 @@
       </xsl:choose>
     </xsl:variable>
 
-    <xsl:if test="$grouperObs">
+    <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
       <xsl:for-each select="$grouperObs[ccda:code/@code = $screeningCode]"> <!--'96777-8'-->
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
