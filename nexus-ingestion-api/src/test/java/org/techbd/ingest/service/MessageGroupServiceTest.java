@@ -1,23 +1,35 @@
 package org.techbd.ingest.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 class MessageGroupServiceTest {
 
     private MessageGroupService messageGroupService;
+    @Mock
+    private AppLogger appLogger;
+
+    @Mock
+    private static TemplateLogger templateLogger;
 
     @BeforeEach
     void setUp() {
-        messageGroupService = new MessageGroupService();
+        MockitoAnnotations.openMocks(this);        
+        when(appLogger.getLogger(MessageGroupService.class)).thenReturn(templateLogger);
+        messageGroupService = new MessageGroupService(appLogger);
     }
 
     private RequestContext buildContext(String tenantId,
@@ -46,7 +58,7 @@ class MessageGroupServiceTest {
                 sourceIp, // sourceIp
                 destinationIp, // destinationIp
                 destinationPort, null, null, null,
-                sourceType, "TEST", "TEST"
+                sourceType, "TEST", "TEST","0.700.0"
         );
     }
 
@@ -90,14 +102,14 @@ class MessageGroupServiceTest {
     void testCreateMessageGroupId_withAllBlank_returnsDefault() {
         var context = buildContext(null, "   ", "   ", "   ", MessageSourceType.HTTP_INGEST);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals(Constants.DEFAULT_MESSAGE_GROUP_ID, groupId);
+        assertEquals("unknown-tenantId", groupId);
     }
 
     @Test
     void testCreateMessageGroupId_withAllNull_returnsDefault() {
         var context = buildContext(null, null, null, null, MessageSourceType.HTTP_INGEST);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals(Constants.DEFAULT_MESSAGE_GROUP_ID, groupId);
+        assertEquals("unknown-tenantId", groupId);
     }
 }
 

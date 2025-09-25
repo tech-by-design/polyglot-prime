@@ -13,7 +13,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
@@ -21,8 +20,9 @@ import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
-import com.amazonaws.services.kms.model.MessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -54,7 +54,12 @@ class S3UploadStepTest {
     @Mock
     private AppConfig.Aws.S3.BucketConfig bucketConfig;
 
-    @InjectMocks
+    @Mock
+    private static AppLogger appLogger;
+
+    @Mock
+    private static TemplateLogger templateLogger;
+    
     private S3UploadStep s3UploadStep;
 
     private RequestContext context;
@@ -88,12 +93,14 @@ class S3UploadStepTest {
                 "192.168.1.1",
                 "192.168.1.1",
                 "192.168.1.2",
-                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST"
+                "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST","0.700.0"
         );
         S3ServiceClientConfiguration mockConfig = mock(S3ServiceClientConfiguration.class);
         when(s3Client.serviceClientConfiguration()).thenReturn(mockConfig);
         when(mockConfig.endpointOverride()).thenReturn(Optional.empty());
-        s3UploadStep = new S3UploadStep(metadataBuilderService, objectMapper, appConfig, s3Client);
+        when(appLogger.getLogger(S3UploadStep.class)).thenReturn(templateLogger);
+        when(appConfig.getVersion()).thenReturn("1.0.0");
+        s3UploadStep = new S3UploadStep(metadataBuilderService, objectMapper, appConfig, s3Client, appLogger);
     }
 
     @Test

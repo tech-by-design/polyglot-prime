@@ -55,7 +55,7 @@ BEGIN
 	
 	-- Check function: register_interaction_csv_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_csv_request',
-	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb'],
+	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'],
 	    'Function register_interaction_csv_request exists'
 	);
 
@@ -67,7 +67,7 @@ BEGIN
     
     RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');  
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
-   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb'], 
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
 	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
         'Function sat_interaction_ccda_request_upserted exists'
@@ -117,7 +117,7 @@ BEGIN
         'The foreign key from sat_interaction_http_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_http_request',
         ARRAY['sat_interaction_http_request_id', 'hub_interaction_id', 'nature', 'content_type', 'payload', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 
-			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number'],
+			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number', 'tenant_id'],
         'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -130,7 +130,7 @@ BEGIN
     RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
         ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
 			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number'],
-        'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
+        'The columns of techbd_udi_ingress.sat_interaction_user should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 	
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
@@ -157,7 +157,8 @@ BEGIN
         ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
-            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors', 'techbd_version_number', 'full_operation_outcome'],
+            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors', 'techbd_version_number', 'full_operation_outcome',
+			'total_number_of_files_in_zip_file', 'number_of_fhir_bundles_generated_from_zip_file', 'data_validation_status'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');   
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');

@@ -543,14 +543,28 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
     sqlNS: ingressSchema
 });
 
-const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
-  bundle_id: text(),
-  hub_interaction_id: textNullable(),
-  retry_interaction_id: textNullable(),
-  is_valid: boolean().default(false),
-  error_message: jsonbNullable(),
-  elaboration: jsonbNullable(),
-  retry_master_interaction_id: textNullable(),
+const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_errors", {
+  sat_validation_and_fhir_conversion_errors_id: primaryKey(),
+  category: text(),
+  flat_file_hub_interaction_id: textNullable(),
+  tenant_id: textNullable(),
+  uri: textNullable(),
+  zip_file_hub_interaction_id: textNullable(),
+  group_id: textNullable(),
+  section: textNullable(),
+  field_name: textNullable(),
+  value: textNullable(),
+  error_type: textNullable(),
+  error_subtype: textNullable(),
+  error: textNullable(),
+  description: textNullable(),
+  row_number: textNullable(),
+  field_number: textNullable(),
+  zip_file_name: textNullable(),
+  file_name: textNullable(),
+  origin: textNullable(),
+  user_agent: textNullable(),
+  techbd_version_number: textNullable(),
   ...dvts.housekeeping.columns
 }, {
   isIdempotent: true,
@@ -1088,6 +1102,27 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
       ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
+      ${csvFhirProcessingErrors}
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id);
+
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id);
+
+      CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_created_at
+          ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at DESC);
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'category_check'
+            AND conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+          ADD CONSTRAINT category_check
+          CHECK (category IN ('data_integrity', 'file_not_processed', 'incomplete_groups'));
+      END IF;
+
       ${linkNexusInteraction}
       IF NOT EXISTS (
           SELECT 1
@@ -1098,24 +1133,6 @@ const migrateSP = pgSQLa.storedProcedure(
           ADD CONSTRAINT link_nexus_interaction_pkey
           PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
       END IF;
-
-      ${ccdaReplayDetails}
-      CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
-      IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'ccda_replay_details_bundle_id_key'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.ccda_replay_details
-          ADD CONSTRAINT ccda_replay_details_bundle_id_key UNIQUE (bundle_id);
-      END IF;
-      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN retry_interaction_id DROP NOT NULL;
-      ALTER TABLE techbd_udi_ingress.ccda_replay_details ALTER COLUMN hub_interaction_id DROP NOT NULL;
-      ALTER TABLE techbd_udi_ingress.ccda_replay_details 
-          ADD COLUMN IF NOT EXISTS is_valid BOOLEAN DEFAULT FALSE,
-          ADD COLUMN IF NOT EXISTS error_message JSONB DEFAULT NULL,
-          ADD COLUMN IF NOT EXISTS elaboration JSONB DEFAULT NULL,
-          ADD COLUMN IF NOT EXISTS retry_master_interaction_id TEXT DEFAULT NULL;
 
       IF NOT EXISTS (
           SELECT 1
@@ -1231,6 +1248,21 @@ const migrateSP = pgSQLa.storedProcedure(
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS full_operation_outcome jsonb DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS data_validation_status TEXT DEFAULT NULL;
+
+      -- Adding tenant_id columns to all relevant tables for implementing RLS
+      ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_expectation_http_request ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
 
       ${dependenciesSQL}
 

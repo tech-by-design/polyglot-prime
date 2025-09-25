@@ -1,17 +1,14 @@
 <channel version="4.5.3">
-  <id>08e31e34-6359-4e92-b559-30ac50116ff8</id>
+  <id>540b8010-424c-45c1-bca3-62f11e284491</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>CcdaBundleValidate</name>
-  <description>Version: 0.7.0</description>
-  <revision>14</revision>
+  <description>Version: 0.9.0</description>
+  <revision>15</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -409,6 +409,7 @@ var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use r
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
+    channelMap.put(&apos;filename&apos;, filename);
 
     var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
@@ -1585,18 +1586,20 @@ var successResponse = {
             }
         };
 // Function 1: Save Original CCDA Payload
-function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse) {
+function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse, fileName) {
 try {
         logInfo(&quot;Attempting to save original CCDA payload for interactionId: &quot; + interactionId, channelMap);
          // Success: Create a structured OperationOutcome JSON response
         
-       
+       var actualFileName = channelMap.get(&apos;filename&apos;);
+
         var saveOriginalResult = ccdaService.saveOriginalCcdaPayload(
             interactionId,
             tenantId,
             requestedPath,
             sourceXml,
-            successResponse  
+            successResponse,
+            actualFileName 
         );
         
         if (saveOriginalResult) {
@@ -1615,9 +1618,10 @@ try {
 }
 
 // Function 2: Save Validation Result (Success)
-function saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse) {
+function saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, fileName) {
 try {
         logInfo(&quot;Attempting to save validation success for interactionId: &quot; + interactionId, channelMap);
+        var actualFileName = channelMap.get(&apos;filename&apos;);
         
         var validationResult = ccdaService.saveValidation(
             true, // isValid
@@ -1625,7 +1629,8 @@ try {
             tenantId,
             requestedPath,
             sourceXml,
-            successResponse
+            successResponse,
+            actualFileName
         );
 
         if (validationResult) {
@@ -1642,9 +1647,11 @@ try {
 
 }
 
-function saveValidationFailure(interactionId, tenantId, requestedPath, errorMessage, errorResponse) {
+function saveValidationFailure(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName) {
     try {
         logInfo(&quot;Attempting to save validation failure for interactionId: &quot; + interactionId, channelMap);
+        var actualFileName = channelMap.get(&apos;filename&apos;);
+        
 
         var validationResult = ccdaService.saveValidation(
             false, // Validation failed
@@ -1652,7 +1659,8 @@ function saveValidationFailure(interactionId, tenantId, requestedPath, errorMess
             tenantId,
             requestedPath,
             errorMessage,
-            errorResponse
+            errorResponse,
+            actualFileName
         );
 
         if (validationResult) {
@@ -1695,10 +1703,13 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     var sourceXml = null;
     var interactionId = channelMap.get(&apos;interactionId&apos;);
     var tenantId = channelMap.get(&apos;tenantId&apos;);
+    var FileName = channelMap.get(&apos;filename&apos;);
+       
     
     logger.info(&quot;***** STARTING DATABASE SAVE OPERATION *****&quot;);
     logger.info(&quot;***** interactionId: &quot; + interactionId + &quot; *****&quot;);
     logger.info(&quot;***** Using tenantId: &quot; + tenantId + &quot; *****&quot;);
+    logger.info(&quot;*************** filename passsed as argument : &quot; + filename + &quot; *********&quot;);
 
     try {
         // Add XML declaration if missing
@@ -1770,6 +1781,10 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             }
         };
 
+	// SUCCESS CASE - Save original payload and validation success
+        saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName);  
+
+        
         // Replace spaces in specific patterns
         sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;);
         sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
@@ -1816,8 +1831,8 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         validator.validate(xmlSource);
         
         // SUCCESS CASE - Save original payload and validation success
-        saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse);
-        saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse);
+       // saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName);  
+        saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName);
         
         responseMap.put(&apos;status&apos;, &apos;200&apos;);     
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
@@ -1836,20 +1851,21 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
 
         // Save original payload if we have it (this is the key fix)
-        if (sourceXml &amp;&amp; sourceXml.length &gt; 0) {
+        //if (sourceXml &amp;&amp; sourceXml.length &gt; 0) {
             try {
-                saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, errorResponse);
+                saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, errorResponse, FileName);
+
                 logger.info(&quot;Successfully saved original CCDA payload for failed validation&quot;);
             } catch (saveError) {
                 logger.error(&quot;Failed to save original CCDA payload: &quot; + saveError.message);
             }
-        } else {
-            logger.warn(&quot;No source XML available to save for interactionId: &quot; + interactionId);
-        }
+//        } else {
+//            logger.warn(&quot;No source XML available to save for interactionId: &quot; + interactionId);
+//        }
 
         // Save validation failure
         try {
-            saveValidationFailure(interactionId, tenantId, requestedPath, errorMsg, errorResponse);
+            saveValidationFailure(interactionId, tenantId, requestedPath, errorMsg, errorResponse, FileName);
             logger.info(&quot;Successfully saved validation failure information&quot;);
         } catch (saveError) {
             logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -2299,7 +2315,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755146695687</time>
+        <time>1758602140204</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

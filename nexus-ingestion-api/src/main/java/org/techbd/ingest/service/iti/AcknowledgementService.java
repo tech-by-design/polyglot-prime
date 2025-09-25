@@ -1,10 +1,5 @@
 package org.techbd.ingest.service.iti;
 
-import org.techbd.iti.schema.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.GregorianCalendar;
@@ -13,10 +8,36 @@ import java.util.UUID;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.springframework.stereotype.Service;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.iti.schema.AcknowledgementDetailType;
+import org.techbd.iti.schema.CS;
+import org.techbd.iti.schema.CommunicationFunctionType;
+import org.techbd.iti.schema.ED;
+import org.techbd.iti.schema.II;
+import org.techbd.iti.schema.MCCIIN000002UV01;
+import org.techbd.iti.schema.MCCIMT000100UV01Device;
+import org.techbd.iti.schema.MCCIMT000200UV01Acknowledgement;
+import org.techbd.iti.schema.MCCIMT000200UV01AcknowledgementDetail;
+import org.techbd.iti.schema.MCCIMT000200UV01Device;
+import org.techbd.iti.schema.MCCIMT000200UV01Receiver;
+import org.techbd.iti.schema.MCCIMT000200UV01Sender;
+import org.techbd.iti.schema.MCCIMT000200UV01TargetMessage;
+import org.techbd.iti.schema.ObjectFactory;
+import org.techbd.iti.schema.RegistryResponseType;
+import org.techbd.iti.schema.TEL;
+import org.techbd.iti.schema.TS;
+
 @Service
 public class AcknowledgementService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AcknowledgementService.class);
+    private TemplateLogger logger;
+
+    public AcknowledgementService(AppLogger appLogger) {
+        this.logger = appLogger.getLogger(AcknowledgementService.class);
+        logger.info("AcknowledgementService initialized");
+    }
 
     public MCCIIN000002UV01 createPixAcknowledgement(
             II originalRequestId,

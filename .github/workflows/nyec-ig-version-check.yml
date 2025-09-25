@@ -5,9 +5,10 @@ on:
     - cron: '0 11 * * *' # 6.00 AM EST
     - cron: '0 23 * * *' # 6:00 PM EST
   workflow_dispatch:
-  
+
 permissions:
   contents: write
+
 jobs:
   check_versions:
     runs-on: ubuntu-latest
@@ -18,10 +19,12 @@ jobs:
       PROD_VERSION_FILE: "support/nyec-ig-version/prod_version.txt"
       QA_VERSION_FILE: "support/nyec-ig-version/qa_version.txt"
       HELP_EMAIL: "help@techbd.org"
+      TARGET_BRANCH: "nyec-ig-version"
 
     steps:
     - name: Check out the repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+
 
     - name: Install tools
       run: sudo apt-get install -y jq grep
@@ -33,8 +36,8 @@ jobs:
         curl -sL "$PROD_URL" -o prod_response.json
         cat prod_response.json # DEBUG: Print the downloaded JSON
         PROD_VERSION=$(jq -r '.version' prod_response.json || echo "unknown")
-        echo "Fetched PROD version: $PROD_VERSION"
         echo "PROD_VERSION=$PROD_VERSION" >> $GITHUB_ENV
+        echo "Fetched PROD version: $PROD_VERSION"
 
     - name: Fetch and parse QA version
       id: fetch_qa
@@ -43,26 +46,32 @@ jobs:
         curl -sL "$QA_URL" -o qa_response.json
         cat qa_response.json # DEBUG
         QA_VERSION=$(jq -r '.version' qa_response.json || echo "unknown")
-        echo "Fetched QA version: $QA_VERSION"
         echo "QA_VERSION=$QA_VERSION" >> $GITHUB_ENV
+        echo "Fetched QA version: $QA_VERSION"
 
     - name: Compare versions
       id: compare_versions
       run: |
         echo "Comparing versions..."
-        PROD_UPDATED=false
-        QA_UPDATED=false
+        git fetch origin $TARGET_BRANCH
 
-        STORED_PROD_VERSION=$(cat $PROD_VERSION_FILE)
+        # Read stored versions from target branch
+        STORED_PROD_VERSION=$(git show origin/$TARGET_BRANCH:$PROD_VERSION_FILE || echo "none")
+        STORED_QA_VERSION=$(git show origin/$TARGET_BRANCH:$QA_VERSION_FILE || echo "none")
+
+        echo "Stored PROD version: $STORED_PROD_VERSION"
+        echo "Stored QA version:   $STORED_QA_VERSION"
+
         if [[ "$PROD_VERSION" != "$STORED_PROD_VERSION" ]]; then
-          echo "PROD version updated!"
           echo "PROD_UPDATED=true" >> $GITHUB_ENV
+        else
+          echo "PROD_UPDATED=false" >> $GITHUB_ENV
         fi
 
-        STORED_QA_VERSION=$(cat $QA_VERSION_FILE)
         if [[ "$QA_VERSION" != "$STORED_QA_VERSION" ]]; then
-          echo "QA version updated!"
           echo "QA_UPDATED=true" >> $GITHUB_ENV
+        else
+          echo "QA_UPDATED=false" >> $GITHUB_ENV
         fi
 
     - name: Create GitHub Issue for PROD
@@ -117,15 +126,18 @@ jobs:
           Issue Link: ${{ env.QA_ISSUE_URL }}
           Version: ${{ env.QA_VERSION }}
 
-    - name: Update stored version numbers
+    - name: Update stored version numbers at branch - $TARGET_BRANCH
       run: |
+        echo "Updating version files in $TARGET_BRANCH..."
+        git checkout $TARGET_BRANCH
+
         if [[ "$PROD_UPDATED" == "true" ]]; then
           echo "$PROD_VERSION" > $PROD_VERSION_FILE
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add $PROD_VERSION_FILE
           git commit -m "ci: update stored IG prod version"
-          git push
+          git push origin $TARGET_BRANCH
         fi
         if [[ "$QA_UPDATED" == "true" ]]; then
           echo "$QA_VERSION" > $QA_VERSION_FILE
@@ -133,7 +145,7 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add $QA_VERSION_FILE
           git commit -m "ci: update stored IG qa version"
-          git push
+          git push origin $TARGET_BRANCH
         fi
 
     - name: Handle errors

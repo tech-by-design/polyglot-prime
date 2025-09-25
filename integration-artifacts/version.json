@@ -17,16 +17,16 @@
     {
       "type": "CCDA",
       "channel": "CcdaBundle.xml",
-      "version": "0.13.0",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-08-26"
+      "version": "0.14.0",
+      "editedby": "jewelbonnie",
+      "date": "2025-09-17"
     },
     {
       "type": "CCDA",
       "channel": "CcdaBundleValidate.xml",
-      "version": "0.7.0",
+      "version": "0.9.0",
       "editedby": "jewelbonnie",
-      "date": "2025-08-14"
+      "date": "2025-09-23"
     },
     {
       "type": "FLAT FILE",
@@ -38,9 +38,9 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundleValidate.xml",
-      "version": "0.7.0",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-07-31"
+      "version": "0.8.0",
+      "editedby": "jewelbonnie",
+      "date": "2025-09-24"
     },
     {
       "type": "HL7v2",

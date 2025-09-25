@@ -406,11 +406,21 @@ public class PatientConverter extends BaseConverter {
             .filter(StringUtils::isNotEmpty)
             .ifPresent(address::addLine);
             address.setCity(data.getCity());
-            if(data.getState().equalsIgnoreCase("New York")) {
-                address.setState("NY");
+
+            String originalValue = data.getState();
+            String code = fetchCode(originalValue, CsvConstants.STATE, interactionId);
+
+            if (!code.equals(originalValue)) {
+                address.setState(code);
             } else {
-                address.setState(fetchCode(data.getState(), CsvConstants.STATE, interactionId));
+                String codeFromDisplay = fetchCodeFromDisplay(originalValue, CsvConstants.STATE, interactionId);
+                if (codeFromDisplay != null) {
+                    address.setState(codeFromDisplay);
+                } else {
+                    address.setState(originalValue);
+                }
             }
+
             Optional.ofNullable(data.getCounty())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setDistrict);

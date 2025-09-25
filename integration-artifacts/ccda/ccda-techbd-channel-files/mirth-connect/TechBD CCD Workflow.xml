@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>9185f9cf-a564-4ae8-b3f6-d4240d061dd5</id>
+  <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.30</description>
-  <revision>32</revision>
+  <description>Version: 0.4.32</description>
+  <revision>16</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -75,12 +75,144 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>Common JS functions</name>
+          <name>DB Save</name>
           <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var PGobject = Packages.org.postgresql.util.PGobject;
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    return jsonbObj;
+}
+
+
+function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	
+	logger.info(&quot;interactionId: &quot; + interactionId);
+	logger.info(&quot;tenantId: &quot; + tenantId);
+	logger.info(&quot;requestUri: &quot; + requestUri);
+	logger.info(&quot;payloadJson: &quot; + payloadJson);
+	logger.info(&quot;operation: &quot; + operation);
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    logger.info(&quot;Inside DB Try&quot;);
+
+	    // Database connection details
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+
+	    logger.info(&quot;Database connection established successfully.&quot;);
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original CCDA Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;CCDA_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(8, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(8, payloadJson);
+		}			
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		stmt.setNull(10, java.sql.Types.OTHER);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(19, java.sql.Types.VARCHAR);
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setNull(28, java.sql.Types.VARCHAR);
+		stmt.setString(29, channelMap.get(&apos;filename&apos;));
+
+	    var result = stmt.execute();
+	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	    logger.info(&quot;DB connection closed.&quot;);
+	}
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Common JS functions</name>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
 * Replacer function to remove empty values
 */
+
+var interactionId = java.util.UUID.randomUUID().toString();
+channelMap.put(&apos;interactionId&apos;, interactionId);
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+		
 function removeEmptyValues(key, value) {
   // Remove values that are empty strings, null, undefined, or empty objects/arrays
   if (value === &quot;&quot; || value === null || value === undefined || 
@@ -117,6 +249,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;error&quot;,
@@ -261,6 +394,7 @@ function extractClinicalDocument(rawXml) {
 		var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
 		var start = rawXml.indexOf(startTag);
 		var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+
 		
 		if (start !== -1 &amp;&amp; end !== -1) {
 		    end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
@@ -273,21 +407,86 @@ function extractClinicalDocument(rawXml) {
 		
 		    logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
 		    channelMap.put(&apos;fileContent&apos;, extractedXml);
+		    msg = channelMap.get(&apos;fileContent&apos;);
+
+		    try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   msg,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+		
 		} else {
+			try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   rawXml,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+			
 		    logger.error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;)));
+		    var errorResponse = getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    var operation = &quot;saveValidationFailed&quot;;
+		    saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
 		    throw new Error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
 		}
 	} catch (error) {
+		try{
+				//DB Save Original Payload
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   rawXml,
+				   &quot;saveOgCCDAPayload&quot;
+				);
+			} catch (e) {
+				var errorMsg;
+		            if (e instanceof JavaException) {
+		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		            } else {
+		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+		            }
+		            throw new Error(&quot;Unexpected error during saving&quot;);
+			}
+		
         logger.error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
-        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message)));
-	   throw new error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message)));
+	   var errorResponse = getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
+	   var operation = &quot;saveValidationFailed&quot;;
+	   saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+	   throw new error(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>Validate HTTP Request and collect headers</name>
-          <sequenceNumber>1</sequenceNumber>
+          <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
 
@@ -331,6 +530,10 @@ if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
 channelMap.put(&apos;userAgent&apos;, userAgent);
 logger.info(&quot;User-Agent: &quot; + userAgent);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
@@ -401,30 +604,6 @@ var parts = rawData.split(boundary);
 // Initialize variables to store file content
 var fileContent = null;
 
-// Loop through parts to find the file part
-/*var i = 0;
-for each (var part in parts) {
-    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
-        logger.info(&quot;Part count &quot; + ++i);
-        // Extract the file content (skip headers)
-        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
-        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
-        break;
-    }
-}
-
-// Validate the file content
-if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
-    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-    // Set the HTTP response status to 400 (Bad Request)
-    setErrorResponse(400, errorMessage);
-    throw errorMessage;
-} else {
-    logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
-    logger.info(&quot;File content: (input validation) - &quot; + fileContent);
-}*/
-//channelMap.put(&apos;fileContent&apos;, fileContent);
-
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -432,7 +611,9 @@ var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use r
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
+    channelMap.put(&apos;filename&apos;, filename);
 
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
@@ -551,11 +732,44 @@ function getManufacturerModelName(xmlData) {
 
         throw new Error(errorMsg);
      }
+}
+
+var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+if(jdbcUrl != null) {
+    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
+    logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
+} else {
+    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+if(jdbcUsername != null) {
+    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+    logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
+} else {
+    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
+if(jdbcPassword != null) {
+    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+} else {
+    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>step_validate_profile_urls_env_variables</name>
-          <sequenceNumber>2</sequenceNumber>
+          <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
@@ -1182,7 +1396,7 @@ function getConsentResourceStatus(sourceXml) {
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
           <name>API endpoint processing</name>
-          <sequenceNumber>3</sequenceNumber>
+          <sequenceNumber>4</sequenceNumber>
           <enabled>true</enabled>
           <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 logger.info(&quot;Request URL: &quot; + requestedPath);
@@ -1203,16 +1417,40 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 
     try {
 		// Parse the XML content into an XML object
-		var ccda_msg = new XML(msg);
-		var sourceXml = ccda_msg.toXMLString();    		
-          
-          if (!sourceXml || sourceXml.length === 0) {
-              logger.error(&quot;No XML data received in the request.&quot;);
-              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
-              throw new Error(&quot;No XML data received in the request.&quot;);
-          }
+		var interactionId = channelMap.get(&apos;interactionId&apos;);
+		try {
+			var ccda_msg = new XML(msg);
+			var sourceXml = ccda_msg.toXMLString();
 
-    		logger.info(&quot;Source XML Content: &quot; + sourceXml); 
+			if (!sourceXml || sourceXml.length === 0) {
+	              logger.error(&quot;No XML data received in the request.&quot;);
+	              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
+	              throw new Error(&quot;No XML data received in the request.&quot;);
+	          }
+	
+	    		logger.info(&quot;Source XML Content: &quot; + sourceXml);
+    		
+		} catch (e) {
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;XML Structure validation failed: &quot; + e.toString();
+				   var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+			        var operation = &quot;saveValidationFailed&quot;;
+			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+				   logger.info(&quot;Successfully saved validation failure information&quot;);
+				   
+				   logger.error(&quot;XML Structure validation failed.&quot;);
+		              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;XML Structure validation failed.&quot;)));
+		              throw new Error(&quot;XML Structure validation failed.&quot;);	 
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	            }
+	            
+	            // Failure: Return an OperationOutcome JSON response with validation errors
+	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+	            logger.error(errorMsg);
+	            throw new Error(errorMsg);
+		} 		
 
 		//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
 		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;);
@@ -1291,6 +1529,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;information&quot;,
@@ -1307,14 +1546,39 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             };
             responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
             logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+
+			// SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     logger.info(&quot;successResponse: &quot; + successResponse);
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveCcdaPayload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   successResponse,
+			   operation
+			);
+            
             return &apos;dest_bundle_validate&apos;; // Channel Writer 
         } catch (e) {
             var errorMsg;
             if (e instanceof JavaException) {
-                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();
+                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();  
             } else {
                 errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
             }
+
+            var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+				// Save Validation Failed
+	            try {
+			        var operation = &quot;saveValidationFailed&quot;;
+			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+				   logger.info(&quot;Successfully saved validation failure information&quot;);
+	            } catch (saveError) {
+	                logger.error(&quot;Failed to save validation failure information: &quot; + saveError.message);
+	            }
 
             // Failure: Return an OperationOutcome JSON response with validation errors
             responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
@@ -1323,6 +1587,11 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         }
     } catch (e) {
         var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
+
+        var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+        var operation = &quot;saveValidationFailed&quot;;
+        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+	   logger.info(&quot;Successfully saved validation failure information&quot;);
 
         // Failure: Return an OperationOutcome JSON response for general errors
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
@@ -1343,8 +1612,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	   });
 	
 	
-	    var interactionId = java.util.UUID.randomUUID().toString();
-	    channelMap.put(&quot;interactionId&quot;,interactionId);
+	    var interactionId = channelMap.get(&apos;interactionId&apos;);
 	    logger.info(&quot;InteractionId: &quot; + interactionId);
 	    var payload = JSON.stringify({
 	        executedAt: currentTimestampBegin,
@@ -1387,9 +1655,17 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML cleaning failed: &quot; + e.toString();
+	                errorMsg = &quot;XML Structure validation failed: &quot; + e.toString();
+				   var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+			        var operation = &quot;saveValidationFailed&quot;;
+			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+				   logger.info(&quot;Successfully saved validation failure information&quot;);
+				   
+				   logger.error(&quot;XML Structure validation failed.&quot;);
+		              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;XML Structure validation failed.&quot;)));
+		              throw new Error(&quot;XML Structure validation failed.&quot;);	 
 	            } else {
-	                errorMsg = &quot;Unexpected error during xml cleaning: &quot; + e.message;
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
 	            }
 	
 	            // Failure: Return an OperationOutcome JSON response with validation errors
@@ -1397,7 +1673,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	            logger.error(errorMsg);
 	            throw new Error(errorMsg);
 	     }
-	
+	     
 		//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
 		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;);
 		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
@@ -1461,11 +1737,48 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	        
 	        var validator = schema.newValidator(); // Set up the validator       
 	        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml)); // Set up the input source for the XML
+
+			// Success: Return a structured OperationOutcome JSON response
+            var successResponse = {
+                &quot;OperationOutcome&quot;: {
+                    &quot;validationResults&quot;: [
+                        {
+                            &quot;operationOutcome&quot;: {
+                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;issue&quot;: [
+                                    {
+                                        &quot;severity&quot;: &quot;information&quot;,
+                                        &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
+                                        &quot;code&quot;: &quot;informational&quot;,
+                                        &quot;details&quot;: {
+                                            &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            };
 	
 	        // Perform the validation
 	        try {
 	        	validator.validate(xmlSource);
-	          logger.info(&quot;CCD XML is valid according to the XSD.&quot;);            
+	          logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+
+			// SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Bundle&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveCcdaPayload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   successResponse,
+			   operation
+			);
+	                      
 	        } catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
@@ -1473,6 +1786,29 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	            } else {
 	                errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
 	            }
+
+	            var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+
+//	            if (sourceXml &amp;&amp; sourceXml.length &gt; 0) {
+//		            try {
+//		            	var operation = &quot;saveOgCCDAPayload&quot;;
+//		                saveCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, operation);
+//		                logger.info(&quot;Successfully saved original CCDA payload for failed validation&quot;);
+//		            } catch (saveError) {
+//		                logger.error(&quot;Failed to save original CCDA payload: &quot; + saveError.message);
+//		            }
+//		        } else {
+//		            logger.warn(&quot;No source XML available to save for interactionId: &quot; + interactionId);
+//		        }
+	
+				// Save Validation Failed
+		        try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
 	
 	            // Failure: Return an OperationOutcome JSON response with validation errors
 	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
@@ -1578,7 +1914,22 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	
 				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object
 				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
+				
 				logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+
+				//Save Converted FHIR
+				logger.info(&quot;FHIR Conversion Save inside Bundle&quot;);
+			     var tenantId = channelMap.get(&apos;tenantId&apos;);
+			     logger.info(&quot;tenant Id: &quot; + tenantId);
+			     var operation = &quot;saveConversionSuccess&quot;;
+			     var result = saveCcdaPayload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   cleanedJsonString,
+				   operation
+				);
+				
 			} catch (e) {
 				var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
 	        		// Failure: Return an OperationOutcome JSON response for general errors
@@ -1606,6 +1957,11 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		}
 	} catch (e) {
 	        var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
+
+	        var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+	        var operation = &quot;saveValidationFailed&quot;;
+	        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
+		   logger.info(&quot;Successfully saved validation failure information&quot;);
 	
 	        // Failure: Return an OperationOutcome JSON response for general errors
 	        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
@@ -1856,6 +2212,18 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
               <string>${elaboration}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-Correlation-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -2028,7 +2396,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1755255219307</time>
+        <time>1758708742262</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2037,6 +2405,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

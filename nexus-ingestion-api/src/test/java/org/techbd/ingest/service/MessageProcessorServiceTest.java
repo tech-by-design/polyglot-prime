@@ -11,22 +11,36 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.MessageSourceType;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.processor.MessageProcessingStep;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 public class MessageProcessorServiceTest {
 
     private MessageProcessorService service;
+    @Mock
     private MessageProcessingStep step1;
+    @Mock
     private MessageProcessingStep step2;
+    @Mock
+    private AppLogger appLogger;    
+    @Mock
+    private static TemplateLogger templateLogger;
 
+    @Mock
+    private AppConfig appConfig;
+ 
     @BeforeEach
     void setUp() {
-        step1 = mock(MessageProcessingStep.class);
-        step2 = mock(MessageProcessingStep.class);
-        service = new MessageProcessorService(List.of(step1, step2));
+        MockitoAnnotations.openMocks(this);        
+        when(appLogger.getLogger(MessageProcessorService.class)).thenReturn(templateLogger);
+        service = new MessageProcessorService(List.of(step1, step2), appLogger,appConfig);
     }
 
     @Test

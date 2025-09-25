@@ -8,8 +8,6 @@ import java.util.UUID;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
@@ -17,8 +15,8 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
-
-import com.amazonaws.services.kms.model.MessageType;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
@@ -29,17 +27,18 @@ import ca.uhn.hl7v2.util.Terser;
 
 public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(MllpRoute.class);
+    private TemplateLogger logger;
 
     private final int port;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private Map<String, String> headers;
-    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig) {
+    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.headers = new HashMap<>();
+        this.logger = appLogger.getLogger(MllpRoute.class);
     }
 
     @Override
@@ -55,7 +54,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
                         Message ack = hapiMsg.generateACK();
-                        String ackMessage = addNteWithInteractionId(ack, interactionId);
+                        String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
                         messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
@@ -66,7 +65,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         try {
                             Message partial = parser.parse(hl7Message);
                             Message generatedNack  = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
-                            nack = addNteWithInteractionId(generatedNack, interactionId);
+                            nack = addNteWithInteractionId(generatedNack, interactionId,appConfig.getVersion());
                         } catch (Exception ex2) {
                             logger.error("[PORT {}] Error generating NACK. interactionId= {} reason={}", port, interactionId, ex2.getMessage(),ex2);
                             nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r" +
@@ -80,11 +79,13 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 .log("[PORT " + port + "] ACK/NAK sent");
     }
 
-    public static String addNteWithInteractionId(Message ackMessage, String interactionId) throws HL7Exception {
+    public static String addNteWithInteractionId(Message ackMessage, String interactionId,String ingestionApiVersion) throws HL7Exception {
         Terser terser = new Terser(ackMessage);
         ackMessage.addNonstandardSegment("NTE");
         terser.set("/NTE(0)-1", "1");
-        terser.set("/NTE(0)-3", "InteractionID: " + interactionId);
+        terser.set("/NTE(0)-3",
+                "InteractionID: " + interactionId +
+                        " | TechBDIngestionApiVersion: " + ingestionApiVersion);
         PipeParser parser = new PipeParser();
         return parser.encode(ackMessage);
     }
@@ -96,7 +97,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
             if (v instanceof String) {
                 this.headers.put(k, (String) v);
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-                    log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
+                    logger.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
                 }
             }
         });
@@ -115,9 +116,9 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 timestamp,
                 originalFileName,
                 hl7Message.length(),
-                getDataKey(interactionId, headers, originalFileName),
-                getMetaDataKey(interactionId, headers, originalFileName),
-                getFullS3DataPath(interactionId, headers, originalFileName),
+                getDataKey(interactionId, headers, originalFileName,timestamp),
+                getMetaDataKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3DataPath(interactionId, headers, originalFileName,timestamp),
                 getUserAgentFromHL7(hl7Message, interactionId),
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
@@ -127,10 +128,10 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 null,
                 null,
                 getDestinationPort(headers),
-                getAcknowledgementKey(interactionId, headers, originalFileName),
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName), 
-                getFullS3MetadataPath(interactionId, headers, originalFileName),
-                MessageSourceType.MLLP,getDataBucketName(),getMetadataBucketName());
+                getAcknowledgementKey(interactionId, headers, originalFileName,timestamp),
+                getFullS3AcknowledgementPath(interactionId, headers, originalFileName,timestamp),
+                getFullS3MetadataPath(interactionId, headers, originalFileName,timestamp),
+                MessageSourceType.MLLP,getDataBucketName(),getMetadataBucketName(),appConfig.getVersion());
     }
 
     /**

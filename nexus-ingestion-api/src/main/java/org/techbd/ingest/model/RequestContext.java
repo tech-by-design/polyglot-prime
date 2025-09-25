@@ -59,6 +59,7 @@ public class RequestContext {
     private String messageGroupId;
     private String s3Response;
     private String messageId;
+    private String techBdIngestionApiVersion;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,
@@ -66,7 +67,7 @@ public class RequestContext {
                           String fullRequestUrl, String queryParams, String protocol,
                           String localAddress, String remoteAddress, String sourceIp, String destinationIp,
                           String destinationPort, String ackObjectKey,String fullS3AckMessagePath, 
-                          String fullS3MetadataPath, MessageSourceType messageSourceType,String dataBucketName,String metadataBucketName) {
+                          String fullS3MetadataPath, MessageSourceType messageSourceType,String dataBucketName,String metadataBucketName,String techBdIngestionApiVersion) {
         this.headers = headers;
         this.requestUrl = requestUrl;
         this.tenantId = tenantId;
@@ -93,6 +94,7 @@ public class RequestContext {
         this.messageSourceType = messageSourceType;
         this.dataBucketName = dataBucketName;
         this.metaDataBucketName = metadataBucketName;
+        this.techBdIngestionApiVersion = techBdIngestionApiVersion;
     }
 }
 
