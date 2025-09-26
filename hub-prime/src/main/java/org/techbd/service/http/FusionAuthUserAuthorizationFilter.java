@@ -1,7 +1,9 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +72,14 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                                 fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token, oAuth2User, faUser);
 
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
+                        if (!faUser.roles().isEmpty()) {
+                         String role = faUser.roles().get(0); // take first role
+                         Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role);
+                         request.getSession().setAttribute("rolePermissions", permissions);
+                         request.getSession().setAttribute("userRole", role);
+                         request.getSession().setAttribute("isSuperRole", faUser.isSuperRole());
+                         LOG.info("Role permissions cached in session for role {}: {}", role, permissions);
+                       }
                         fusionAuthUsersService.convertToJson(enrichedOAuth2User);
 
                         LOG.info("FusionAuth user authenticated: {} roles={}", faUser.email(), faUser.roles());

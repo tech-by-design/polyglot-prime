@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jooq.impl.DSL;
-import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -50,7 +48,7 @@ public class PrimeController {
     }
 
     @GetMapping("/home")
-    @RouteMapping(label = "Home", siblingOrder = 0)
+    @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/home", model, request);
     }
@@ -62,7 +60,7 @@ public class PrimeController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-        response.sendRedirect("/oauth2/authorization/github");
+        response.sendRedirect("/oauth2/authorization/fusionauth");
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
