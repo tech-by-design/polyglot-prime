@@ -191,7 +191,7 @@
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
                                 <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                            </xsl:choose>"
                         </xsl:if>
                         <xsl:if test="
                             ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
@@ -838,7 +838,7 @@
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
                                 <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                            </xsl:choose>"
                         </xsl:if>
                         <xsl:if test="
                             ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
@@ -1679,7 +1679,7 @@
                                 <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
                                 <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                            </xsl:choose>"
                         </xsl:if>
                         <xsl:if test="
                             ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
