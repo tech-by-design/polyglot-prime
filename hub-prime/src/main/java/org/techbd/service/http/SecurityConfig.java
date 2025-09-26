@@ -23,6 +23,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,6 +36,9 @@ public class SecurityConfig {
     
     @Autowired
     private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
+
+    @Autowired
+    private RolePermissionInterceptor rolePermissionInterceptor;
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -148,4 +153,18 @@ public class SecurityConfig {
     };
 }
 
+    /**
+     * Register RolePermissionInterceptor for all MVC requests.
+     */
+    @Bean
+    public WebMvcConfigurer mvcConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(rolePermissionInterceptor)
+                        .addPathPatterns("/**")
+                        .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS);
+            }
+        };
+    }
 }

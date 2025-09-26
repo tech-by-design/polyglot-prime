@@ -24,8 +24,40 @@ public class Constant {
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",
             "/docs/api/openapi/**",
+            "/api/permissions/**",
             "/error", "/error/**"
     };
+
+/** URLs excluded from RolePermissionInterceptor */
+public static final String[] INTERCEPTOR_EXCLUDED_URLS = {
+        // Auth & OAuth2
+        "/login/**",
+        "/logout/**",
+        "/oauth2/**",
+        "/login/oauth2/code/**",
+        "/oauth2/authorization/**",
+
+        "/",
+        "/public/**",
+
+        "/error",
+        "/error/**",
+
+        "/.well-known/**",
+        "/metadata",
+        "/docs/api/**",
+        "/support/**",
+
+        "/api/permissions/**",
+
+        "/favicon.ico",
+        "/css/**",
+        "/js/**",
+        "/images/**",
+        "/webjars/**",
+        "/fonts/**"
+};
+
 
     public static final String HOME_PAGE_URL = "/home";
     public static final String LOGIN_PAGE_URL = "/login";

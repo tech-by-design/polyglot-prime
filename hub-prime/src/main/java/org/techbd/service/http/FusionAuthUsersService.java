@@ -2,11 +2,15 @@ package org.techbd.service.http;
  
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
@@ -18,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -60,7 +65,8 @@ public class FusionAuthUsersService {
             String email,
             String name,
             List<String> roles,
-            List<String> groups
+            List<String> groups,
+            Boolean isSuperRole
             ) {
     }
    
@@ -103,6 +109,11 @@ public class FusionAuthUsersService {
     String userId = Optional.ofNullable(oAuth2User.getAttribute("sub"))
             .map(Object::toString)
             .orElseThrow();
+
+    boolean isSuperRole = Optional.ofNullable(oAuth2User.getAttribute("isSuperRole"))
+            .map(Object::toString)
+            .map(Boolean::parseBoolean)
+            .orElse(false);
     
     @SuppressWarnings("unchecked")
     List<String> roles = Optional.ofNullable((List<String>) oAuth2User.getAttribute("roles"))
@@ -117,7 +128,7 @@ public class FusionAuthUsersService {
             .toList();
 
     LOG.info("oAuth2User attributes: {}", oAuth2User.getAttributes());
-    return new AuthorizedUser(userId, email, name, roles, groupNames);
+    return new AuthorizedUser(userId, email, name, roles, groupNames ,isSuperRole);
    }
  
 
@@ -195,5 +206,33 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
         throw e;
     }
 }
+
+ public Map<String, Set<String>> getRolePermissions(String roleName) {
+        
+         String sql = "auth.get_login_role_permissions(?)::text";
+         String response = dsl.select(
+                  DSL.field(sql, String.class, roleName)
+         ).fetchOneInto(String.class);
+
+        LOG.info("Permissions fetched for role {}: {}", roleName, response);
+
+        if (response == null || response.isBlank()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            Map<String, List<String>> parsed = objectMapper.readValue(response,
+                    new TypeReference<Map<String, List<String>>>() {});
+
+            return parsed.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> new HashSet<>(e.getValue())
+                    ));
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse role permissions JSON from DB", e);
+        }
+    }
    
 }

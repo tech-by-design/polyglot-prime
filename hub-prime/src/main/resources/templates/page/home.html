@@ -25,7 +25,7 @@
 <body class="bg-gray-100">
     <div layout:fragment="content" class="flex flex-col items-center justify-center p-4 w-full max-w-9xl">
         <img src="/tech-by-design_full-color.svg" class="mb-4 h-auto max-w-xs" />
-        <div class="prose bg-white p-8 w-full max-w-6xl">
+        <div class="prose bg-white p-8 w-full max-w-6xl h-[510px]">
             <h1 class="text-3xl font-bold mb-4 text-center">Welcome to Tech by Design Collaboration Hub</h1>
             <p class="mb-4 text-center">The central place where New York's finest healthcare institutions can
                 collaborate, share, and manage HIE datasets and other assets.</p>
@@ -60,7 +60,7 @@
             <div>You're not logged in so you only have guest privileges.</div>
         </div>
 
-        <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
+        <!-- <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
             <div class="text-center font-bold">Recent Direct FHIR Bundles</div>
             <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 <div
@@ -79,9 +79,9 @@
                     th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/fhir/most-recent/hixny.html})}">
                 </div>
             </dl>
-        </div>
+        </div> -->
 
-        <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
+        <!-- <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
             <div class="text-center font-bold">Recent CSV FHIR Bundles</div>
             <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 <div
@@ -100,9 +100,9 @@
                     th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/csv/most-recent/hixny.html})}">
                 </div>
             </dl>
-        </div>        
+        </div>         -->
 
-         <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
+         <!-- <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
             <div class="text-center font-bold">Recent CCDA FHIR Bundles</div>
             <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 <div
@@ -121,7 +121,7 @@
                     th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/ccda/most-recent/hixny.html})}">
                 </div>
             </dl>
-        </div>  
+        </div>   -->
 
         <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
             <div th:replace="fragments/interactions :: serverTextStat"></div>
@@ -137,13 +137,13 @@
             </div>
         </div> -->
 
-        <div class="mt-12 w-full grid grid-cols-1 gap-8">
+        <!-- <div class="mt-12 w-full grid grid-cols-1 gap-8">
             <div>
                 <h3 class="text-xl font-bold mb-4" id="dashboard-date-range"></h3>
 
                 <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
                 <div id="mermaid-diagram"></div>
-            </div>
+            </div> -->
             <!-- <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
@@ -163,7 +163,7 @@
                         SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div> -->
-            <div>
+            <!-- <div>
                 <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md"> 
                 sequenceDiagram
@@ -202,7 +202,7 @@
                     end
                 </pre>
             </div>
-        </div>
+        </div> -->
 
         <!-- <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
@@ -222,7 +222,7 @@
         </div> -->
 
 
-        <script th:inline="javascript">
+        <!-- <script th:inline="javascript">
             /*<![CDATA[*/
             document.addEventListener('DOMContentLoaded', async function () {
 
@@ -438,7 +438,7 @@
                     .attr('dy', '0.35em');  // Adjust text vertical alignment
             }
             /*]]>*/
-        </script>
+        </script> -->
     </div>
 
 </body>
