@@ -8141,15 +8141,13 @@ BEGIN
 					zip.csv_zip_file_name,
 					NULL,
 					zip.origin, 
-    				flat.user_agent, 
+    				COALESCE(zip.user_agent, flat.user_agent), 
 					v_created_by, 
 					v_provenance, 
 					flat.techbd_version_number
-			FROM  
-				techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
-				CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
-				INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip 
-					ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
+			FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+			CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
+			INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
 			WHERE  
 				(flat.nature = 'CSV Validation Result' OR flat.nature = 'Converted to FHIR')
 				AND jsonb_array_length(
@@ -8200,18 +8198,19 @@ BEGIN
 					(error_payload.value ->> 'fieldNumber')::integer AS field_number,
 					zip.csv_zip_file_name,
 					CASE
-						WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
-						WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
-						WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
-						WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
-						ELSE NULL
-					END AS file_name,
+		                WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN orig.qe_admin_data_file_name
+		                WHEN tasks.value ->> 'name' = 'demographic_data' THEN orig.demographic_data_file_name
+		                WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN orig.screening_observation_data_file_name
+		                WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN orig.screening_profile_data_file_name
+		                ELSE NULL
+		            END AS file_name,
 					zip.origin,
-					flat.user_agent, 
+					COALESCE(zip.user_agent, orig.user_agent), 
 					v_created_by, 
 					v_provenance, 
 					flat.techbd_version_number 
 			FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+			LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request orig ON orig.hub_interaction_id = flat.hub_interaction_id AND orig.nature = 'Original Flat File CSV'
 			CROSS JOIN LATERAL jsonb_array_elements(((flat.validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') AS tasks(value)
 			LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') AS error_payload(value) ON true
 			LEFT JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errorsSummary') AS errors_summary(value) ON true
