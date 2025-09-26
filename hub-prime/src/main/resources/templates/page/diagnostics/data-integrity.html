@@ -85,13 +85,13 @@
 
         // Function to get CSV data integrity error details for drill-down
         function getCsvDataIntegrityErrorDetails(params) {
-            const hubInteractionId = params.data.hub_interaction_id;
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
 
-            console.log('Drill-down called for hub_interaction_id:', hubInteractionId);
+            console.log('Drill-down called for zip_file_hub_interaction_id:', zip_file_hub_interaction_id);
 
             // Use stored procedure with filtering parameters
             const storedProcParams = {
-                "p_zip_file_hub_interaction_id": hubInteractionId
+                "p_zip_file_hub_interaction_id": zip_file_hub_interaction_id
             };
 
             const gridRequestBody = {
@@ -180,7 +180,7 @@
                             },
                             {
                                 headerName: "TechBD Zip File Interaction ID",
-                                field: "hub_interaction_id",
+                                field: "zip_file_hub_interaction_id",
                                 filter: "agTextColumnFilter",
                                 cellRenderer: 'agGroupCellRenderer',
                                 headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."                                
