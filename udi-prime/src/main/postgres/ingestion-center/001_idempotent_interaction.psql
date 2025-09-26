@@ -243,11 +243,12 @@ AS SELECT  created_at AS interaction_created_at,
     CASE
     WHEN trim(elaboration->>'status') = 'TechBD-Generated' THEN 'TechBD Generated'
     ELSE ''
-	END AS is_consent_generated_by_techbd
+	END AS is_consent_generated_by_techbd,
+	ig_version,
+	techbd_version_number
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
   WHERE uri <> '/api/expect/fhir/bundle'::text
-  AND nature = 'Original FHIR Payload'
-  ORDER BY created_at DESC;
+  AND nature = 'Original FHIR Payload' ;
 
 
 -- techbd_udi_ingress.interaction_http_request_payload source
@@ -2310,7 +2311,9 @@ AS SELECT sat_interaction_fhir_request_id,
     	when (source_type = 'FHIR') then 'FHIR'
     	else 'FHIR'
     end as source_type,   
-    source_hub_interaction_id
+    source_hub_interaction_id,
+	ig_version,
+	techbd_version_number
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text;
 
@@ -4202,8 +4205,7 @@ BEGIN
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
         FROM techbd_udi_ingress.sat_interaction_user user_req
         WHERE user_req.uri !~~* '%/Bundle%'::text AND user_req.uri !~~* '%/Hl7/v2%'::text
-    ) combined_query
-    ORDER BY combined_query.interaction_created_at DESC;
+    ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -4378,14 +4380,13 @@ SELECT
 	COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
 	COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
 	sizfr.data_validation_status as data_validation_status,
-	'full_operation_outcome' AS selected_field_for_download
+	'full_operation_outcome' AS selected_field_for_download,
+	techbd_version_number
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
 LEFT JOIN
     fhir_summary
-    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id    
-ORDER BY 
-    sizfr.created_at DESC;
+    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id ;
 
 
 /*******************************************************************************************
@@ -4737,7 +4738,19 @@ WITH fhir_summary AS (
 ),
 ranked_sicr AS (
     SELECT
-        sicr.*,
+    sicr.sat_interaction_fhir_request_id,
+    sicr.hub_interaction_id,
+    sicr.tenant_id,
+    sicr.tenant_id_lower,
+    sicr.uri,
+    sicr.nature, 
+    sicr.client_ip_address,
+    sicr.user_agent,
+    sicr.from_state,
+    sicr.to_state, 
+    sicr.created_at,
+	sicr.ig_version,
+	sicr.techbd_version_number,
         ROW_NUMBER() OVER (PARTITION BY hub_interaction_id ORDER BY created_at DESC) AS rn
     FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
     WHERE  source_type = 'CCDA'::text
@@ -4755,11 +4768,13 @@ SELECT
     sicr.from_state,
     sicr.to_state,
     'CCDA' AS origin,
-    sicr.created_at
+    sicr.created_at,
+	sicr.ig_version,
+	sicr.techbd_version_number
 FROM ranked_sicr sicr
 JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
-WHERE sicr.rn = 1
-ORDER BY sicr.created_at DESC;
+WHERE sicr.rn = 1 ;
+
 
 /*******************************************************************************************
 This view retrieves the most recent HL7V2 interaction per `hub_interaction_id` from the 
@@ -4788,11 +4803,12 @@ SELECT
     sicr.state_transition_reason,
     'HL7V2' AS origin,
     sicr.created_at,
-    sicr.provenance
+    sicr.provenance,
+	sicr.ig_version,
+	sicr.techbd_version_number
 FROM techbd_udi_ingress.sat_interaction_fhir_request sicr  
 WHERE  
-  source_type = 'HL7V2'::text
-ORDER BY sicr.created_at DESC;
+  source_type = 'HL7V2'::text ;
 
     
 
