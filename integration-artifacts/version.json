@@ -3,9 +3,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundle.xml",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "editedby": "jewelbonnie",
-      "date": "2025-09-25"
+      "date": "2025-09-29"
     },
     {
       "type": "FHIR",
