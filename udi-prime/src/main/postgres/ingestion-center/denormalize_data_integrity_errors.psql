@@ -69,3 +69,49 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
 
 
 --SELECT count(*) AS data_integrity_errors FROM techbd_udi_ingress.sat_csv_fhir_processing_errors WHERE category = 'data_integrity';
+
+-- Update sat_csv_fhir_processing_errors table to fill missing fields for 'data_integrity' and 'incomplete_groups' error
+WITH latest_interactions AS (
+    SELECT flat_file_hub_interaction_id
+    FROM techbd_udi_ingress.sat_csv_fhir_processing_errors
+    WHERE category IN ('data_integrity', 'incomplete_groups')
+      AND (user_agent IS NULL OR file_name IS NULL OR zip_file_name IS NULL OR origin IS NULL)
+),
+validation_tasks AS (
+    SELECT
+        req.hub_interaction_id,
+        req.zip_file_hub_interaction_id,
+        req.validation_result_payload,
+        tasks.value ->> 'name' AS task_name
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request req
+    CROSS JOIN LATERAL jsonb_array_elements(
+        ((req.validation_result_payload -> 'validationResults') -> 'report') -> 'tasks'
+    ) tasks(value)
+    WHERE req.nature = 'CSV Validation Result'
+      AND (
+            ((((req.validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::int > 0
+         OR jsonb_array_length((req.validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
+      )
+)
+UPDATE techbd_udi_ingress.sat_csv_fhir_processing_errors err
+SET
+    user_agent = COALESCE(err.user_agent, zip.user_agent, orig.user_agent),
+    zip_file_name = COALESCE(err.zip_file_name, zip.csv_zip_file_name),
+    origin = COALESCE(err.origin, zip.origin),
+    file_name = COALESCE(
+        err.file_name,
+        CASE vt.task_name
+            WHEN 'qe_admin_data' THEN orig.qe_admin_data_file_name
+            WHEN 'demographic_data' THEN orig.demographic_data_file_name
+            WHEN 'screening_observation_data' THEN orig.screening_observation_data_file_name
+            WHEN 'screening_profile_data' THEN orig.screening_profile_data_file_name
+            ELSE NULL
+        END
+    )
+FROM latest_interactions li
+JOIN validation_tasks vt ON li.flat_file_hub_interaction_id = vt.hub_interaction_id
+LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request orig ON orig.hub_interaction_id = vt.hub_interaction_id AND orig.nature = 'Original Flat File CSV'
+JOIN techbd_udi_ingress.sat_interaction_zip_file_request zip ON zip.hub_interaction_id = vt.zip_file_hub_interaction_id
+WHERE err.flat_file_hub_interaction_id = vt.hub_interaction_id
+  AND err.category IN ('data_integrity', 'incomplete_groups')
+  AND (err.user_agent IS NULL OR err.file_name IS NULL OR err.zip_file_name IS NULL OR err.origin IS NULL);

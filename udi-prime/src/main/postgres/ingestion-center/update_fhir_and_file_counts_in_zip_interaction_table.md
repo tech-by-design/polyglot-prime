@@ -1,8 +1,8 @@
-# Update FHIR counts into sat_interaction_zip_file_request table
+# Update FHIR Count and CSV Validation Status in CSV via HTTPs page
 
-This repository contains the SQL script `update_fhir_count.psql` located in `udi-prime/src/main/postgres/ingestion-center/`.  
+This repository contains the SQL scripts `update_fhir_count.psql` and `update_csv_validation_status.psql` located in `udi-prime/src/main/postgres/ingestion-center/`.  
 
-The purpose of this script is to fill the `number_of_fhir_bundles_generated_from_zip_file` column into `sat_interaction_zip_file_request` table for showing the `FHIR count` in `CSV via HTTPs` page.
+The purpose of this script is to fill the `number_of_fhir_bundles_generated_from_zip_file` column and `data_validation_status` column into `sat_interaction_zip_file_request` table for showing the `FHIR Count` and `CSV Validation Status` in `CSV via HTTPs` page.
 
 ## Instructions
 
@@ -22,4 +22,10 @@ cd udi-prime/src/main/postgres/ingestion-center
 Run the SQL script to fill the new column:
 ```bash
 psql -h <hostname> -U <admin_user> -d <database_name> -f update_fhir_count.psql
+```
+
+### Step 3: Execute the SQL File (update_csv_validation_status.psql) to fill the `data_validation_status` column
+Run the SQL script to fill the new column:
+```bash
+psql -h <hostname> -U <admin_user> -d <database_name> -f update_csv_validation_status.psql
 ```
