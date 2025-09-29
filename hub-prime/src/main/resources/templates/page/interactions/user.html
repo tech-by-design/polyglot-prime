@@ -53,7 +53,7 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                  { headerName: "Session Start Time", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },
+                  { headerName: "Session Start Time", field: "created_at", sort: "desc", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },
                   { headerName: "Session ID", field: "user_session_hash", filter: "agTextColumnFilter", headerTooltip: "SessionID of the session" },
                   { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
                   { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },

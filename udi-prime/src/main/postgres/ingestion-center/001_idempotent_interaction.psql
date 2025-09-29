@@ -356,8 +356,7 @@ BEGIN
         duration_millisecs_val AS duration_millisecs,
         interaction_http_request_id_val AS interaction_http_request_id
     FROM ranked
-    WHERE rn = 1
-    ORDER BY duration_millisecs_val DESC;
+    WHERE rn = 1;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -1503,8 +1502,7 @@ SELECT tenant_id_lower,
        user_agent,
        hub_interaction_id,
        created_at as request_created_at
-FROM cte
-ORDER BY request_created_at DESC;
+FROM cte;
 
 
 
@@ -1712,8 +1710,7 @@ AS SELECT created_at,
     user_role,
     client_ip_address,
     user_agent
-   FROM techbd_udi_ingress.sat_interaction_user sai
-  ORDER BY created_at DESC;
+   FROM techbd_udi_ingress.sat_interaction_user sai;
 
 
 
@@ -1735,8 +1732,7 @@ AS SELECT min(created_at) AS created_at,
     user_session_hash
    FROM techbd_udi_ingress.interaction_user_details
   WHERE user_session IS NOT NULL
-  GROUP BY user_session, user_session_hash
-  ORDER BY (min(created_at)) DESC;
+  GROUP BY user_session, user_session_hash;
 
 /*******************************************************************************************************************************
 Procedure to handle the insertion or update of FHIR interaction data, managing default values and error handling.
@@ -8038,8 +8034,7 @@ BEGIN
           AND user_req.uri NOT ILIKE '%/Hl7/v2%'
           AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
           AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
-    ) combined_query
-    ORDER BY combined_query.interaction_created_at DESC;
+    ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -23,7 +23,7 @@
         const provenanceDetView = 'interaction_http_request_summary_details';
         const proveanceColumnDefs = [
             { headerName: "TechBD  Interaction ID", field: "hub_interaction_id", filter: "agTextColumnFilter" }, 
-            { headerName: "Submission Date", field: "request_created_at", filter: "agDateColumnFilter" } 
+            { headerName: "Submission Date", field: "request_created_at", sort: "desc", filter: "agDateColumnFilter" } 
         ];
         function getProveanceGridData(params) {
             const client_ip_address = params.data.client_ip_address;
