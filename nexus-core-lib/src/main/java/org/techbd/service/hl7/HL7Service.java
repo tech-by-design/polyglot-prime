@@ -53,7 +53,7 @@ public class HL7Service {
      */
     public boolean saveOriginalHl7Payload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome) {
+            Map<String, Object> operationOutcome, String fileName) {
         try {
             logger.info("HL7Service saveOriginalHl7Payload BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -75,6 +75,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
@@ -108,7 +109,7 @@ public class HL7Service {
      */
     public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome) {
+            Map<String, Object> operationOutcome, String fileName) {
         try {
             logger.info("HL7Service saveValidation BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -130,6 +131,7 @@ public class HL7Service {
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
@@ -147,6 +149,62 @@ public class HL7Service {
             return result >= 0;
         } catch (Exception e) {
             logger.error("Error saving HL7 validation for interactionId: {}", interactionId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Saves the result of the FHIR conversion process to the database.
+     *
+     * @param conversionSuccess Indicates whether the conversion was successful
+     * @param interactionId     Unique identifier for the interaction
+     * @param tenantId          Tenant identifier for multi-tenancy support
+     * @param requestUri        Request URI from which the payload originated
+     * @param bundle            The FHIR bundle resulting from the conversion
+     * @param fileName          Original filename of the Hl7 file
+     * @return true if the data is successfully saved, false otherwise
+     */
+    public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
+            String tenantId, String requestUri,
+            Map<String, Object> bundle, String fileName) {
+        try {
+            logger.info("Hl7Service saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
+            logger.info("Hl7Service Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
+            Map<String, Object> natureMap = Map.of(
+                    "nature", Nature.CONVERTED_TO_FHIR.getDescription(),
+                    "tenant_id", tenantId);
+            JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
+            JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
+            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var rihr = new RegisterInteractionHl7Request();
+            rihr.setPInteractionId(interactionId);
+            rihr.setPInteractionKey(requestUri);
+            rihr.setPNature(natureNode);
+            rihr.setPContentType("application/json");
+            rihr.setPPayload(bundleNode);
+            rihr.setPFromState(State.VALIDATION_SUCCESS.name());
+            rihr.setPToState(conversionSuccess ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
+            rihr.setPSourceType(SourceType.HL7.name());
+            rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedBy(HL7Service.class.getName());
+            rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
+            rihr.setPProvenance(provenance);
+            rihr.setPFileName(fileName);
+            final Instant start = Instant.now();
+            final int result = rihr.execute(jooqCfg);
+            final Instant end = Instant.now();
+            final JsonNode responseFromDB = rihr.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+            logger.info(
+                    "Hl7Service - saveFhirConversionResult : END | result: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}",
+                    result,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
+            return result >= 0;
+        } catch (Exception e) {
+            logger.error("Error saving FHIR conversion result for interactionId: {}", interactionId, e);
             return false;
         }
     }
