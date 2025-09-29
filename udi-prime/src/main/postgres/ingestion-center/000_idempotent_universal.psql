@@ -16,6 +16,7 @@
  * @return TEXT - The ID of the registered exception.
  */
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb, text, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
     IN exception_id TEXT,
     IN exception_key TEXT,
@@ -27,7 +28,9 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
     IN pg_context TEXT,
     IN created_by TEXT DEFAULT NULL,
     IN provenance TEXT DEFAULT NULL,
-    IN elaboration JSONB DEFAULT NULL
+    IN elaboration JSONB DEFAULT NULL,
+    IN p_tenant_id text DEFAULT NULL::text, 
+    IN p_hub_interaction_id text DEFAULT NULL::text
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -45,11 +48,11 @@ BEGIN
     -- Insert into sat_diagnostic_exception
     INSERT INTO techbd_udi_ingress.sat_diagnostic_exception (
         sat_diagnostic_exception_id, hub_diagnostic_id, exception_type, message, err_returned_sqlstate,
-        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance, tenant_id, hub_interaction_id
     )
     VALUES (
         gen_random_uuid()::text, v_exception_id, exception_type, error_msg, sqlstate,
-        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance
+        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance, p_tenant_id, p_hub_interaction_id
     );
 
     -- Return the exception ID

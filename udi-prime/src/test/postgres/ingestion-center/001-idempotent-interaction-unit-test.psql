@@ -65,7 +65,7 @@ BEGIN
 		'Function register_user_interaction exists'
 	);   
     
-    RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');  
+    RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text'], 'Function register_issue exists');  
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
    	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');

@@ -1264,6 +1264,9 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
       ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
 
+      ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
+
       ${dependenciesSQL}
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
