@@ -110,6 +110,7 @@
                     {
                         headerName: "Request Time",
                         field: "created_at",
+                        sort: "desc",
                         filter: "agDateColumnFilter",
                         headerTooltip: "The timestamp indicating when the interaction was initiated."
                     },
@@ -165,6 +166,7 @@
                             ? ''
                             : params.value;
                     } },
+                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
                     {
                         headerName: "Zip File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
                         headerTooltip: "Download Zip File", filter: false, suppressFilter: true

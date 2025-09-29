@@ -15,6 +15,7 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
                 SELECT e.flat_file_hub_interaction_id
                 FROM techbd_udi_ingress.sat_csv_fhir_processing_errors e
                 WHERE e.flat_file_hub_interaction_id IS NOT NULL
+                AND category = 'data_integrity'
             )
             AND r.nature = 'CSV Validation Result'
         ) t
@@ -24,45 +25,43 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
             'data_integrity',
             req.hub_interaction_id, --flat_file_hub_interaction_id
             req.created_at,
-            tenant_id,
-            uri,
-            zip_file_hub_interaction_id,
-            group_id,
+            req.tenant_id,
+            req.uri,
+            req.zip_file_hub_interaction_id,
+            req.group_id,
             tasks.value ->> 'name' AS section,
-            coalesce(error_payload.value ->> 'fieldName',
-                    errors_summary.value ->> 'fieldName') AS field_name,
+            coalesce(error_payload.value ->> 'fieldName', errors_summary.value ->> 'fieldName') AS field_name,
             error_payload.value ->> 'cell' AS value,
-            coalesce(error_payload.value ->> 'title',
-                    errors_summary.value ->> 'type') AS error_type,
+            coalesce(error_payload.value ->> 'title', errors_summary.value ->> 'type') AS error_type,
             NULL,
-            coalesce(error_payload.value ->> 'message',
-                    errors_summary.value ->> 'message') AS error,
+            coalesce(error_payload.value ->> 'message', errors_summary.value ->> 'message') AS error,
             error_payload.value ->> 'description' AS description,
             (error_payload.value ->> 'rowNumber')::integer AS row_number,
             (error_payload.value ->> 'fieldNumber')::integer AS field_number,
-            NULL,
+            zip.csv_zip_file_name,
             CASE
-                WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
-                WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
-                WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
-                WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
+                WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN orig.qe_admin_data_file_name
+                WHEN tasks.value ->> 'name' = 'demographic_data' THEN orig.demographic_data_file_name
+                WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN orig.screening_observation_data_file_name
+                WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN orig.screening_profile_data_file_name
                 ELSE NULL
             END AS file_name,
-            NULL,
-            user_agent, 
+            zip.origin,
+            COALESCE(zip.user_agent, orig.user_agent), 
             CURRENT_USER, 
             'CSV', 
-            techbd_version_number 
+            req.techbd_version_number 
     FROM latest_interactions li
-    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req
-        ON req.hub_interaction_id = li.hub_interaction_id
-    CROSS JOIN LATERAL jsonb_array_elements(((validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') tasks(value)
+    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req ON req.hub_interaction_id = li.hub_interaction_id
+    LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request orig ON orig.hub_interaction_id = req.hub_interaction_id AND orig.nature = 'Original Flat File CSV'
+    CROSS JOIN LATERAL jsonb_array_elements(((req.validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') tasks(value)
     LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') error_payload(value) ON true
-    LEFT JOIN LATERAL jsonb_array_elements((validation_result_payload -> 'validationResults') -> 'errorsSummary') errors_summary(value) ON true
-    WHERE nature = 'CSV Validation Result'
+    LEFT JOIN LATERAL jsonb_array_elements((req.validation_result_payload -> 'validationResults') -> 'errorsSummary') errors_summary(value) ON TRUE
+    INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip ON zip.hub_interaction_id = req.zip_file_hub_interaction_id
+    WHERE req.nature = 'CSV Validation Result'
         AND (
-            ((((validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
-            OR jsonb_array_length((validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
+            ((((req.validation_result_payload -> 'validationResults') -> 'report') -> 'stats') ->> 'errors')::integer > 0
+            OR jsonb_array_length((req.validation_result_payload -> 'validationResults') -> 'errorsSummary') > 0
             )
         AND coalesce(error_payload.value ->> 'title', errors_summary.value ->> 'type') IS NOT NULL;
 

@@ -33,6 +33,7 @@
                     {
                         headerName: "Request Time",
                         field: "created_at",
+                        sort: "desc",
                         filter: "agDateColumnFilter",
                         headerTooltip: "The timestamp indicating when the interaction was initiated."
                     },                    
@@ -50,6 +51,8 @@
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
                     { headerName: "Nature", field: "nature", headerTooltip: "The nature of the interaction", filter: "agTextColumnFilter" },
                     { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request " },
+                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
                     { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
                     // {
