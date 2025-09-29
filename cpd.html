@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-09-29<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.733.0</li>
+          <li id="projectVersion">Version: 0.734.0</li>
         <li class="pull-right"><a href="${project.url}">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -130,7 +130,7 @@
 <td>156</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>276</td></tr>
+<td>270</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>.description(&quot;CCDA endpoint to validate and convert XML to JSON, then store, and forward a payload to SHIN-NY.&quot;)
@@ -341,10 +341,10 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>224</td></tr>
+<td>218</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>344</td></tr>
+<td>332</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>.description(&quot;Multipart form-data containing the CCDA XML file for validation, conversion to JSON and submission to SHIN-NY.&quot;)
@@ -372,10 +372,10 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>254</td></tr>
+<td>248</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>374</td></tr>
+<td>362</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>.description(&quot;Multipart form-data containing the CCDA XML file for validation.&quot;)
@@ -394,37 +394,6 @@
                                             .addApiResponse(&quot;500&quot;,
                                                     new ApiResponse()
                                                             .description(&quot;Server error&quot;)))));</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>206</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>326</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>.description(&quot;Optional header to specify the Screening code for the Observation grouper resource. If provided, it will be used in the generated FHIR; otherwise, default value will be used.&quot;)
-                                            .required(false)
-                                            .in(&quot;header&quot;)
-                                            .schema(new StringSchema()))
-                                    .addParametersItem(new Parameter()
-                                            .name(&quot;X-TechBD-Validation-Severity-Level&quot;)
-                                            .description(
-                                                    &quot;Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).&quot;)
-                                            .required(false)
-                                            .in(&quot;header&quot;)
-                                            .schema(new StringSchema()))
-                                    .addParametersItem(new Parameter()
-                                            .name(&quot;X-SHIN-NY-IG-Version&quot;)
-                                            .description(&quot;Optional header to specify the SHIN-NY Implementation Guide version for validation.&quot;)
-                                            .required(false)
-                                            .in(&quot;header&quot;)
-                                            .schema(new StringSchema()))
-                                    .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                            .description(&quot;Multipart form-data containing the CCDA XML file for validation, conversion to JSON and submission to SHIN-NY.&quot;)</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
