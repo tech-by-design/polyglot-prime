@@ -134,6 +134,8 @@ WHERE disposition = 'REJECTION';
  *******************************************************************************************************************************/
 
 
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_diagnostic_log(text, text, text, text, text, text, text, text, text, int4, jsonb);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_diagnostic_log(text, text, text, text, text, text, text, text, text, int4, jsonb, text, text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
     diagnostic_id TEXT,
     key TEXT,
@@ -145,7 +147,9 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
     status TEXT,
     parent_diagnostic_log_id TEXT,
     hierarchy_level INT,
-    elaboration JSONB
+    elaboration JSONB,
+    p_tenant_id text DEFAULT NULL::text, 
+    p_hub_interaction_id text DEFAULT NULL::text
 )
 LANGUAGE plpgsql
 AS $$
@@ -179,7 +183,9 @@ BEGIN
         elaboration,
 		created_at,
         created_by,
-        provenance
+        provenance,
+		tenant_id,
+		hub_interaction_id
     ) VALUES (
         gen_random_uuid()::text,  -- Generate a unique ID for the satellite record
         diagnostic_id,
@@ -192,6 +198,8 @@ BEGIN
         elaboration,
         clock_timestamp(),
         created_by,
-        provenance
+        provenance,
+		p_tenant_id,
+		p_hub_interaction_id
     );
 END $$;

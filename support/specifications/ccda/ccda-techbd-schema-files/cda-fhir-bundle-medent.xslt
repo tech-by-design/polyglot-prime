@@ -205,19 +205,30 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                        <xsl:if test="
+                            ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
+                        ">
+                            , "text": "<xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:value-of select="normalize-space(.)"/>
+                                          <xsl:if test="position() != last()">, </xsl:if>
+                                      </xsl:for-each>
+                                      <xsl:if test="ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
+                                      </xsl:if>"
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
+                        <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                            , "line": [
+                                <xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                    "<xsl:value-of select="normalize-space(.)"/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]
@@ -970,19 +981,30 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                        <xsl:if test="
+                            ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
+                        ">
+                            , "text": "<xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:value-of select="normalize-space(.)"/>
+                                          <xsl:if test="position() != last()">, </xsl:if>
+                                      </xsl:for-each>
+                                      <xsl:if test="ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
+                                      </xsl:if>"
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
+                        <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                            , "line": [
+                                <xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                    "<xsl:value-of select="normalize-space(.)"/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]
@@ -1798,19 +1820,30 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                        <xsl:if test="
+                            ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
+                        ">
+                            , "text": "<xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:value-of select="normalize-space(.)"/>
+                                          <xsl:if test="position() != last()">, </xsl:if>
+                                      </xsl:for-each>
+                                      <xsl:if test="ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
+                                      </xsl:if>"
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
+                        <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                            , "line": [
+                                <xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                    "<xsl:value-of select="normalize-space(.)"/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]
@@ -1887,19 +1920,30 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
+                        <xsl:if test="
+                            ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
+                            or ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
+                        ">
+                            , "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:value-of select="normalize-space(.)"/>
+                                          <xsl:if test="position() != last()">, </xsl:if>
+                                      </xsl:for-each>
+                                      <xsl:if test="ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
+                                      </xsl:if>
+                                      <xsl:if test="ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
+                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
+                                      </xsl:if>"
                         </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
+                        <xsl:if test="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                            , "line": [
+                                <xsl:for-each select="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+                                    "<xsl:value-of select="normalize-space(.)"/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
                                 </xsl:for-each>
                             ]

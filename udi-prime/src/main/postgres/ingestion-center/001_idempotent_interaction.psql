@@ -243,11 +243,12 @@ AS SELECT  created_at AS interaction_created_at,
     CASE
     WHEN trim(elaboration->>'status') = 'TechBD-Generated' THEN 'TechBD Generated'
     ELSE ''
-	END AS is_consent_generated_by_techbd
+	END AS is_consent_generated_by_techbd,
+	ig_version,
+	techbd_version_number
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
   WHERE uri <> '/api/expect/fhir/bundle'::text
-  AND nature = 'Original FHIR Payload'
-  ORDER BY created_at DESC;
+  AND nature = 'Original FHIR Payload' ;
 
 
 -- techbd_udi_ingress.interaction_http_request_payload source
@@ -355,8 +356,7 @@ BEGIN
         duration_millisecs_val AS duration_millisecs,
         interaction_http_request_id_val AS interaction_http_request_id
     FROM ranked
-    WHERE rn = 1
-    ORDER BY duration_millisecs_val DESC;
+    WHERE rn = 1;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -1502,8 +1502,7 @@ SELECT tenant_id_lower,
        user_agent,
        hub_interaction_id,
        created_at as request_created_at
-FROM cte
-ORDER BY request_created_at DESC;
+FROM cte;
 
 
 
@@ -1575,7 +1574,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
-			'Input parameters into sat_interaction_user_upserted function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into sat_interaction_user_upserted function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, tenant_id, hub_interaction_id);
 	/*------------------------------*/  
 
     -- Verify hub_interaction details
@@ -1681,7 +1680,15 @@ EXCEPTION
 	        v_pg_context = PG_EXCEPTION_CONTEXT;
 	        v_error_type = 'SQL';
 		    
-	    -- Log the exception, reusing the previous exception ID if it exists
+	    v_elaboration := jsonb_build_object(
+							'interaction_id', hub_interaction_id,
+							'interaction_key', hub_interaction_key,
+							'nature', nature,	
+							'tenant_id', tenant_id,							
+							'p_additional_details', p_additional_details
+							);
+	
+		-- Log the exception, reusing the previous exception ID if it exists
 		v_exception_id := techbd_udi_ingress.register_issue(
         COALESCE(v_exception_id,NULL),
 		v_hub_interaction_key,
@@ -1692,7 +1699,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, v_elaboration, tenant_id, hub_interaction_id);
 	RETURN NULL;
 END;
 $function$
@@ -1711,8 +1718,7 @@ AS SELECT created_at,
     user_role,
     client_ip_address,
     user_agent
-   FROM techbd_udi_ingress.sat_interaction_user sai
-  ORDER BY created_at DESC;
+   FROM techbd_udi_ingress.sat_interaction_user sai;
 
 
 
@@ -1734,8 +1740,7 @@ AS SELECT min(created_at) AS created_at,
     user_session_hash
    FROM techbd_udi_ingress.interaction_user_details
   WHERE user_session IS NOT NULL
-  GROUP BY user_session, user_session_hash
-  ORDER BY (min(created_at)) DESC;
+  GROUP BY user_session, user_session_hash;
 
 /*******************************************************************************************************************************
 Procedure to handle the insertion or update of FHIR interaction data, managing default values and error handling.
@@ -1845,7 +1850,7 @@ BEGIN
  						'step', 'sat_interaction_fhir_request_upserted function parameters'
  						);
  	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, v_provenance, 'info'::text, 
-															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
+						'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
   	/*------------------------------*/
 	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
   		WHERE t.hub_interaction_id = p_hub_interaction_id 
@@ -1863,7 +1868,7 @@ BEGIN
  						'step', '- Insert into sat_interaction_fhir_request'
  						);
  	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, p_provenance, 'info'::text, 
-															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
+						'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
   	/*------------------------------*/
   
   	IF(LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
@@ -2259,8 +2264,15 @@ EXCEPTION
 	        v_pg_context = PG_EXCEPTION_CONTEXT;
 	        v_error_type = 'SQL';
 	
-	    --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
-	       
+	    v_elaboration := jsonb_build_object(
+ 						'interaction_id', p_hub_interaction_id,
+ 						'interaction_key', p_uri,
+ 						'nature', p_nature,
+ 						'from_state', p_from_state,
+ 						'to_state', p_to_state,
+						'techbd_version_number', p_techbd_version_number
+ 						);
+
 	    -- Log the exception, reusing the previous exception ID if it exists
 		v_exception_id := techbd_udi_ingress.register_issue(
         COALESCE(v_exception_id,NULL),
@@ -2272,7 +2284,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, v_elaboration, p_tenant_id, p_hub_interaction_id);
 		RETURN NULL;
 END;
 $function$
@@ -2310,7 +2322,9 @@ AS SELECT sat_interaction_fhir_request_id,
     	when (source_type = 'FHIR') then 'FHIR'
     	else 'FHIR'
     end as source_type,   
-    source_hub_interaction_id
+    source_hub_interaction_id,
+	ig_version,
+	techbd_version_number
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text;
 
@@ -3421,7 +3435,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, p_tenant_id, p_hub_interaction_id);
 		RETURN NULL;
 END;
 $function$
@@ -3747,7 +3761,8 @@ BEGIN
  						'step', '- Input parameters to sat_interaction_csv_request_upserted function'
  						);
  	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, uri, v_created_by, v_provenance, 'info'::text, 
-															'Input parameters to sat_interaction_csv_request_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+						'Input parameters to sat_interaction_csv_request_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, 
+						tenant_id, p_interaction_id);
   	/*------------------------------*/
 
 	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
@@ -3874,7 +3889,8 @@ BEGIN
 	 						'step', '- Insert into sat_interaction_zip_file_request'
 	 						);
 	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, uri, v_created_by, v_provenance, 'info'::text, 
-																'Insert into sat_interaction_zip_file_request'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+							'Insert into sat_interaction_zip_file_request'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration,
+							tenant_id, p_interaction_id);
 	  	/*------------------------------*/
     ELSE 
   	    -- The INSERT statement inserts a new record into the sat_interaction_flat_file_csv_request table, generating a UUID for the primary key.
@@ -3920,7 +3936,8 @@ BEGIN
 	 						'step', '- Insert into sat_interaction_flat_file_csv_request'
 	 						);
 	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, uri, v_created_by, v_provenance, 'info'::text, 
-																'Insert into sat_interaction_flat_file_csv_request'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+							'Insert into sat_interaction_flat_file_csv_request'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration,
+							tenant_id, p_interaction_id);
 	  	/*------------------------------*/
 
 		IF p_validation_result_payload IS NOT NULL THEN
@@ -3972,7 +3989,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance, v_elaboration);
+		v_provenance, v_elaboration, tenant_id, p_interaction_id);
 		RETURN NULL;
 END;
 $function$
@@ -4202,8 +4219,7 @@ BEGIN
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
         FROM techbd_udi_ingress.sat_interaction_user user_req
         WHERE user_req.uri !~~* '%/Bundle%'::text AND user_req.uri !~~* '%/Hl7/v2%'::text
-    ) combined_query
-    ORDER BY combined_query.interaction_created_at DESC;
+    ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -4378,14 +4394,13 @@ SELECT
 	COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
 	COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
 	sizfr.data_validation_status as data_validation_status,
-	'full_operation_outcome' AS selected_field_for_download
+	'full_operation_outcome' AS selected_field_for_download,
+	techbd_version_number
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
 LEFT JOIN
     fhir_summary
-    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id    
-ORDER BY 
-    sizfr.created_at DESC;
+    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id ;
 
 
 /*******************************************************************************************
@@ -4541,123 +4556,110 @@ where
 ORDER BY
     scfpe.created_at DESC;  
 
-/*****************************************
--- View: techbd_udi_ingress.csv_incomplete_groups_errors_summary 
--- Purpose: Summarizes CSV file requests that resulted in validation or conversion errors. 
--- Details:
---   - Joins zip file requests with their corresponding flat file CSV requests.
---   - Filters for records where the nature is either 'CSV Validation Result' or 'Converted to FHIR'.
---   - Ensures that validation results contain at least one error.
---   - Returns identifying details such as tenant, interaction, timestamp, URI,
---     user agent, and CSV zip file name.
---   - Groups by interaction metadata and orders results by most recent created_at.
-****************************************/
+/*******************************************************************************************
+This view summarizes CSV processing errors related to the "incomplete_groups" 
+category. It selects records from the sat_csv_fhir_processing_errors table 
+filtered by category = 'incomplete_groups'.  
 
+For each ZIP file interaction (identified by zip_file_hub_interaction_id), 
+it aggregates metadata such as tenant ID, creation time, request URI, 
+ZIP file name, and user agent.  
+
+The result provides a consolidated summary of errors where uploaded CSV files 
+contained incomplete or missing group data, making it easier to track and 
+investigate problematic uploads.
+*******************************************************************************************/
 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_incomplete_groups_errors_summary cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_incomplete_groups_errors_summary
 AS 
-SELECT 
-    sizfr.tenant_id,
-    sizfr.hub_interaction_id,
-    sizfr.created_at,
-    sizfr.uri,
-    sizfr.user_agent, 
-    sizfr.csv_zip_file_name
-FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-INNER JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
-    ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id      
-where
-	(siffcr.nature = 'CSV Validation Result'::text OR siffcr.nature = 'Converted to FHIR'::text)
-	and jsonb_array_length((siffcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text) > 0    	
-GROUP BY 
-    sizfr.hub_interaction_id,
-    sizfr.created_at,
-    sizfr.uri, 
-    sizfr.tenant_id,
-    sizfr.user_agent, 
-    sizfr.csv_zip_file_name 
-ORDER BY 
-    sizfr.created_at DESC;	
+SELECT
+    min(scfpe.tenant_id) as tenant_id,
+    scfpe.zip_file_hub_interaction_id,
+    min(scfpe.created_at) as created_at,  
+    min(scfpe.uri) as uri, 
+    min(scfpe.zip_file_name) as csv_zip_file_name, 
+    min(scfpe.user_agent) as user_agent
+FROM
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'incomplete_groups'    
+GROUP BY
+    scfpe.zip_file_hub_interaction_id	
+ORDER BY
+    created_at DESC; 
 
-/*****************************************
-The `csv_incomplete_groups` view identifies incomplete groups in CSV validation results from the `sat_interaction_flat_file_csv_request` table. 
+/*******************************************************************************************
+This view lists detailed CSV processing errors categorized as "incomplete_groups". 
+It retrieves record-level data from the sat_csv_fhir_processing_errors table 
+filtered by category = 'incomplete_groups'.  
 
-It extracts:
-- `created_at`, `tenant_id`, `uri`, and `zip_file_hub_interaction_id` for context.
-- `error_type`, `error`, and `description` for validation errors.
+The output includes creation time, tenant ID, request URI, interaction IDs 
+(for both ZIP file and flat file), group identifiers, error type, error message, 
+and descriptive details.  
 
-Only entries with `CSV Validation Result` as `nature` and validation errors in the `validation_result_payload` are included. 
-The `uri` is filtered to specific paths related to flat file CSV bundles.
-*****************************************/
+Unlike the summary view, this provides a granular view of each incomplete 
+group error, helping with debugging and root cause analysis of CSV uploads 
+that failed due to incomplete or missing group data.
+*******************************************************************************************/
+
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_incomplete_groups_errors cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_incomplete_groups_errors
 AS 
  select
-	sifcr.created_at,
-	sifcr.tenant_id,
-	sifcr.uri,
-	sifcr.zip_file_hub_interaction_id,
-    sifcr.hub_interaction_id,
-    sifcr.group_id,
-	error_payload.value ->> 'type'::text as error_type,
-	error_payload.value ->> 'message'::text as error,
-	error_payload.value ->> 'description'::text as description
-from
-	techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr,
-	lateral jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text) error_payload(value)
-where
-	(sifcr.nature = 'CSV Validation Result'::text OR sifcr.nature = 'Converted to FHIR'::text)
-	and jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text) > 0
-	and (sifcr.uri = any (array['/flatfile/csv/Bundle'::text,
-	'/flatfile/csv/Bundle/'::text,
-	'/flatfile/csv/Bundle/$validate'::text,
-	'/flatfile/csv/Bundle/$validate/'::text])) 
-    ORDER BY sifcr.created_at DESC;
+	scfpe.created_at,
+	scfpe.tenant_id,
+	scfpe.uri,
+	scfpe.zip_file_hub_interaction_id,
+    scfpe.flat_file_hub_interaction_id as hub_interaction_id,
+    scfpe.group_id,
+	scfpe.error_type,
+	scfpe.error,
+	scfpe.description
+FROM
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'incomplete_groups'   
+ORDER BY
+    created_at DESC; 	
 
 
-/*****************************************
--- Creates a view of CSV submissions that failed validation  
--- Joins zip file requests with CSV request details  
--- Filters for 'CSV Validation Result' with 'VALIDATION_FAILED' state  
--- Selects tenant, interaction, timestamp, URI, and file name  
--- Groups to remove duplicates for each submission  
--- Orders results by newest submissions first  
-*****************************************/
+/*******************************************************************************************
+This view summarizes CSV processing errors related to "data_integrity" issues. 
+It queries the sat_csv_fhir_processing_errors table filtered by 
+category = 'data_integrity'.  
+
+For each ZIP file interaction (identified by zip_file_hub_interaction_id), 
+it aggregates key metadata including tenant ID, creation time, request URI, 
+ZIP file name, and user agent.  
+
+The result provides a consolidated summary of data integrity errors in CSV uploads, 
+making it easier to identify and investigate problematic files that failed 
+validation or integrity checks.
+*******************************************************************************************/
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.csv_data_integrity_error_summary cascade;
 CREATE OR REPLACE view techbd_udi_ingress.csv_data_integrity_error_summary 
 AS 
-SELECT 
-    sizfr.tenant_id,
-    sizfr.hub_interaction_id,
-    sizfr.created_at,
-    sizfr.uri,
-    sizfr.user_agent, 
-    sizfr.csv_zip_file_name
-FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-INNER JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
-    ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id  
-WHERE siffcr.nature = 'CSV Validation Result' 
-  AND siffcr.to_state = 'VALIDATION_FAILED'
-  AND NOT EXISTS (
-        SELECT 1
-        FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
-        WHERE (sifcr.nature = 'CSV Validation Result' OR sifcr.nature = 'Converted to FHIR')
-          AND jsonb_array_length((sifcr.validation_result_payload -> 'validationResults') -> 'errors') > 0
-           AND sifcr.hub_interaction_id = siffcr.hub_interaction_id
-    )
-GROUP BY 
-    sizfr.hub_interaction_id,
-    sizfr.created_at,
-    sizfr.uri, 
-    sizfr.tenant_id,
-    sizfr.user_agent, 
-    sizfr.csv_zip_file_name 
-ORDER BY 
-    sizfr.created_at DESC;
+SELECT
+    min(scfpe.tenant_id) as tenant_id,
+    scfpe.zip_file_hub_interaction_id,
+    min(scfpe.created_at) as created_at,  
+    min(scfpe.uri) as uri, 
+    min(scfpe.zip_file_name) as csv_zip_file_name, 
+    min(scfpe.user_agent) as user_agent
+FROM
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'data_integrity'    
+GROUP BY
+    scfpe.zip_file_hub_interaction_id	
+ORDER BY
+    created_at DESC; 
+
 
  
 /*****************************************
@@ -4750,7 +4752,19 @@ WITH fhir_summary AS (
 ),
 ranked_sicr AS (
     SELECT
-        sicr.*,
+    sicr.sat_interaction_fhir_request_id,
+    sicr.hub_interaction_id,
+    sicr.tenant_id,
+    sicr.tenant_id_lower,
+    sicr.uri,
+    sicr.nature, 
+    sicr.client_ip_address,
+    sicr.user_agent,
+    sicr.from_state,
+    sicr.to_state, 
+    sicr.created_at,
+	sicr.ig_version,
+	sicr.techbd_version_number,
         ROW_NUMBER() OVER (PARTITION BY hub_interaction_id ORDER BY created_at DESC) AS rn
     FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
     WHERE  source_type = 'CCDA'::text
@@ -4768,11 +4782,13 @@ SELECT
     sicr.from_state,
     sicr.to_state,
     'CCDA' AS origin,
-    sicr.created_at
+    sicr.created_at,
+	sicr.ig_version,
+	sicr.techbd_version_number
 FROM ranked_sicr sicr
 JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
-WHERE sicr.rn = 1
-ORDER BY sicr.created_at DESC;
+WHERE sicr.rn = 1 ;
+
 
 /*******************************************************************************************
 This view retrieves the most recent HL7V2 interaction per `hub_interaction_id` from the 
@@ -4801,11 +4817,12 @@ SELECT
     sicr.state_transition_reason,
     'HL7V2' AS origin,
     sicr.created_at,
-    sicr.provenance
+    sicr.provenance,
+	sicr.ig_version,
+	sicr.techbd_version_number
 FROM techbd_udi_ingress.sat_interaction_fhir_request sicr  
 WHERE  
-  source_type = 'HL7V2'::text
-ORDER BY sicr.created_at DESC;
+  source_type = 'HL7V2'::text ;
 
     
 
@@ -5093,7 +5110,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, tenant_id, hub_interaction_id);
 		RETURN NULL;
 END;
 $function$
@@ -5693,7 +5710,7 @@ BEGIN
 							);
 		CALL techbd_udi_ingress.register_diagnostic_log(
 				v_exception_id, p_request_uri, p_created_by, p_provenance, 'info'::text, 
-				'Input parameters into register_interaction_nexus_ingestion function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+				'Input parameters into register_interaction_nexus_ingestion function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm);
 		/*------------------------------*/  
 
         -- Insert into hub_nexus_interaction if not exists
@@ -5720,7 +5737,7 @@ BEGIN
 										);
 				CALL techbd_udi_ingress.register_diagnostic_log(
 					v_exception_id, p_request_uri, p_created_by, p_provenance, 'info'::text, 
-					'Insert into hub_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+					'Insert into hub_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm);
 				/*------------------------------*/   
 		
             EXCEPTION WHEN OTHERS THEN
@@ -5742,7 +5759,7 @@ BEGIN
                 );
                 v_exception_id := techbd_udi_ingress.register_issue(
                     v_exception_id, p_request_uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context,
-                    p_created_by, p_provenance, v_elaboration
+                    p_created_by, p_provenance, v_elaboration, v_tenant_id_denorm
                 );                
                 return jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id);
@@ -5810,7 +5827,7 @@ BEGIN
         );
         CALL techbd_udi_ingress.register_diagnostic_log(
             v_exception_id, p_request_uri, p_created_by, p_provenance, 'info',
-            'Insert into sat_nexus_interaction_ingestion', v_user_id, 'success', NULL, 0, v_elaboration
+            'Insert into sat_nexus_interaction_ingestion', v_user_id, 'success', NULL, 0, v_elaboration, v_tenant_id_denorm
         );
 
         RETURN jsonb_build_object('hub_nexus_interaction_id', p_hub_nexus_interaction_id);
@@ -5835,7 +5852,7 @@ BEGIN
         );
         v_exception_id := techbd_udi_ingress.register_issue(
             v_exception_id, p_request_uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context,
-            p_created_by, p_provenance, v_elaboration
+            p_created_by, p_provenance, v_elaboration, v_tenant_id_denorm
         );
         return jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id);
@@ -5939,7 +5956,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	/*------------------------------*/  
 
 	IF v_nature_denorm NOT IN('Original FHIR Payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
@@ -5977,7 +5994,7 @@ BEGIN
          						'step', '1. Insert into hub_interaction'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
@@ -5993,7 +6010,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6020,7 +6037,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            RETURN jsonb_build_object('error', v_error_msg, 
 								  	 'payload', p_payload,
@@ -6048,7 +6065,7 @@ BEGIN
 								'step', '2. Insert into link_nexus_interaction'
 								);
 		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 		/*------------------------------*/  
 	END IF;
 	
@@ -6057,11 +6074,11 @@ BEGIN
 	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_id
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -6077,7 +6094,7 @@ BEGIN
          						'step', '3. Insert into sat_interaction_http_request'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'Original FHIR Payload') THEN
@@ -6112,7 +6129,7 @@ BEGIN
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       							'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       							'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	      	/*------------------------------*/
 	    END IF;
 	   
@@ -6138,7 +6155,7 @@ BEGIN
          						'step', '5. Get the techByDesignDisposition json after process_json_action_rules'
          						);
            		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       							'Get the techByDesignDisposition json after process_json_action_rules'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       							'Get the techByDesignDisposition json after process_json_action_rules'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
        	   		/*------------------------------*/
 			
 				v_payload = v_disposition_json;
@@ -6178,7 +6195,7 @@ BEGIN
          						'step', '6. Insert into sat_interaction_fhir_request'
          						);
            	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
        	   	/*------------------------------*/															
 	    
 	
@@ -6200,7 +6217,7 @@ BEGIN
  						'step', '7. Get the return json'
  						);
    		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-															'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+															'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
    		/*------------------------------*/
 			
 	EXCEPTION
@@ -6229,7 +6246,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -6348,7 +6365,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-			'Input parameters into register_interaction_ccda_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_interaction_ccda_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	/*------------------------------*/ 
 
 	IF v_nature_denorm NOT IN('Original CCDA Payload', 'CCDA Validation Result', 'Converted to FHIR') THEN
@@ -6393,7 +6410,7 @@ BEGIN
          						'step', '1. Insert into hub_interaction'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
@@ -6409,7 +6426,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6437,7 +6454,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            RETURN jsonb_build_object('error', 'Insert into hub_interaction failed', 
 								  	 'payload', null,
@@ -6467,7 +6484,7 @@ BEGIN
 								'step', '2. Insert into link_nexus_interaction'
 								);
 		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 		/*------------------------------*/   
 	END IF;
 	
@@ -6476,11 +6493,11 @@ BEGIN
 	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_id
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -6497,7 +6514,7 @@ BEGIN
          						'step', '3. Insert into sat_interaction_http_request'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'Original CCDA Payload')	THEN     		       	
@@ -6532,7 +6549,7 @@ BEGIN
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	      	/*------------------------------*/
 	    END IF;
 	   
@@ -6577,7 +6594,7 @@ BEGIN
 									'step', '5. Insert into sat_interaction_ccda_request table'
 									);
 			CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-																		'Insert into sat_interaction_ccda_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																		'Insert into sat_interaction_ccda_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 			/*------------------------------*/ 
        	ELSE
 			v_return := jsonb_build_object('error','Not a valid CCDA nature',
@@ -6612,7 +6629,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
 			v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -6753,7 +6770,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-			'Input parameters into register_interaction_csv_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_interaction_csv_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	/*------------------------------*/ 
 
 	IF v_nature_denorm NOT IN('Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
@@ -6797,7 +6814,7 @@ BEGIN
          						'step', '1. Insert into hub_interaction'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
@@ -6813,7 +6830,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6840,7 +6857,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            RETURN jsonb_build_object('error', v_error_msg, 
 								  	 'payload', p_payload,
@@ -6868,7 +6885,7 @@ BEGIN
 								'step', '2. Insert into link_nexus_interaction'
 								);
 		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 		/*------------------------------*/   
 	END IF;
 	
@@ -6877,11 +6894,11 @@ BEGIN
 	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_id
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -6897,7 +6914,7 @@ BEGIN
          						'step', '3. Insert into sat_interaction_http_request'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'Original CSV Zip Archive') THEN     		       	
@@ -6931,7 +6948,7 @@ BEGIN
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	      	/*------------------------------*/
 	    END IF;
 	   
@@ -6993,7 +7010,7 @@ BEGIN
          						'step',  '5. Insert into ' || CASE WHEN v_nature_denorm = 'Original CSV Zip Archive' THEN 'sat_interaction_flat_file_csv_request' ELSE 'sat_interaction_zip_file_request' END 
          						);
            	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
-       							('Insert into ' || CASE WHEN v_nature_denorm = 'Original CSV Zip Archive' THEN 'sat_interaction_flat_file_csv_request' ELSE 'sat_interaction_zip_file_request' END)::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       							('Insert into ' || CASE WHEN v_nature_denorm = 'Original CSV Zip Archive' THEN 'sat_interaction_flat_file_csv_request' ELSE 'sat_interaction_zip_file_request' END)::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
        	   	/*------------------------------*/ 
 		ELSE
 			v_return := jsonb_build_object('error','Not a CSV Interaction Key',
@@ -7027,7 +7044,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
 			v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7141,7 +7158,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, v_created_by, p_provenance, 'info'::text, 
-			'Input parameters into register_user_interaction function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_user_interaction function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	/*------------------------------*/  
 	
 	-- Check hub_nexus_interaction exists
@@ -7172,7 +7189,7 @@ BEGIN
          						'step', '1. Insert into hub_interaction'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
@@ -7188,7 +7205,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -7215,7 +7232,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            RETURN jsonb_build_object('error', v_error_msg, 
 								  	 'payload', p_payload,
@@ -7243,7 +7260,7 @@ BEGIN
 								'step', '2. Insert into link_nexus_interaction'
 								);
 		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 		/*------------------------------*/  
 	END IF;
 
@@ -7253,11 +7270,11 @@ BEGIN
 	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_id
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -7273,7 +7290,7 @@ BEGIN
          						'step', '3. Insert into sat_interaction_http_request'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/
 
        	--1) Call the function with the defined parameters to upsert user info
@@ -7307,7 +7324,7 @@ BEGIN
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       							'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       							'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	      	/*------------------------------*/
 			
 			v_return := jsonb_build_object('hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7339,7 +7356,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7417,7 +7434,7 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-			'Input parameters into register_interaction_hl7_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_interaction_hl7_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	/*------------------------------*/ 
 
 	IF v_nature_denorm NOT IN('Original HL7 Payload', 'HL7 Validation Result', 'Converted to FHIR') THEN
@@ -7462,7 +7479,7 @@ BEGIN
          						'step', '1. Insert into hub_interaction'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
@@ -7478,7 +7495,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -7506,7 +7523,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
            RETURN jsonb_build_object('error', 'Insert into hub_interaction failed', 
 								  	 'payload', null,
@@ -7535,7 +7552,7 @@ BEGIN
 								'step', '2. Insert into link_nexus_interaction'
 								);
 		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																	'Insert into link_nexus_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 		/*------------------------------*/   
 	END IF;
 	
@@ -7544,11 +7561,11 @@ BEGIN
 	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_id
         )
         VALUES (
             gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number
+            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
         );
         /*---register diagnostic log---*/
        	v_elaboration := jsonb_build_object(
@@ -7565,7 +7582,7 @@ BEGIN
          						'step', '3. Insert into sat_interaction_http_request'
          						);
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'Original HL7 Payload')	THEN     		       	
@@ -7600,7 +7617,7 @@ BEGIN
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 	      	/*------------------------------*/
 	    END IF;
 	   
@@ -7645,7 +7662,7 @@ BEGIN
 									'step', '5. Insert into sat_interaction_hl7_request table'
 									);
 			CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-																		'Insert into sat_interaction_hl7_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+																		'Insert into sat_interaction_hl7_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
 			/*------------------------------*/ 
        	ELSE
 			v_return := jsonb_build_object('error','Not a valid HL7 nature',
@@ -7680,7 +7697,7 @@ BEGIN
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+                v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
             );
 			v_return := jsonb_build_object('error', v_error_msg, 
 								  	 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7753,72 +7770,30 @@ RETURNS TABLE (
     fieldnumber INTEGER,
     file_name TEXT
 ) AS $$
-DECLARE
-    v_file_size BIGINT;
-    v_limit INT;
 BEGIN
-    -- Get the file size in bytes from sat_interaction_zip_file_request
-    SELECT octet_length(sizfr.csv_zip_file_content)
-    INTO v_file_size
-    FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-    WHERE sizfr.hub_interaction_id = p_zip_file_hub_interaction_id;
-
-    -- Decide the row limit based on file size
-    v_limit := CASE 
-                  WHEN v_file_size > 1024*1024 THEN 200   -- > 1MB
-                  ELSE 1000
-               END;
-
     RETURN QUERY
-    SELECT
-        sifcr.created_at,
-        sifcr.tenant_id,
-        sifcr.uri,
-        sifcr.zip_file_hub_interaction_id,
-        sifcr.hub_interaction_id,
-        sifcr.group_id,
-        tasks.value ->> 'name'::text as section,
-        coalesce(error_payload.value ->> 'fieldName'::text,
-        errors_summary.value ->> 'fieldName'::text) as fieldname,
-        error_payload.value ->> 'cell'::text as value,
-        coalesce(error_payload.value ->> 'title'::text, errors_summary.value ->> 'type'::text) as error_type, 
-		CASE 
-	    	WHEN error_payload.value ->> 'message' = 'Row Error' AND error_payload.value ? 'note'
-	    		THEN error_payload.value ->> 'note'
-	    	ELSE coalesce(error_payload.value ->> 'message', errors_summary.value ->> 'message')
-		END AS error,
-        error_payload.value ->> 'description'::text as description,
-        (error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
-        (error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
-        case
-            when tasks.value ->> 'name'::text = 'qe_admin_data'::text then original_csv.qe_admin_data_file_name
-            when tasks.value ->> 'name'::text = 'pt_info_data'::text then original_csv.demographic_data_file_name
-            when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
-            when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
-            else null::text
-        end as file_name 
-    FROM
-        techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
-    LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
-        ON sifcr.hub_interaction_id = original_csv.hub_interaction_id
-        AND original_csv.nature = 'Original Flat File CSV'::text
-    LEFT JOIN LATERAL jsonb_array_elements(
-        ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
-    ) tasks(value) ON true
-    LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value) ON true
-    LEFT JOIN LATERAL jsonb_array_elements((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) errors_summary(value) ON true
-    WHERE
-        sifcr.zip_file_hub_interaction_id = p_zip_file_hub_interaction_id
-        AND sifcr.nature = 'CSV Validation Result'::text
-        AND (
-            ((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer > 0
-            OR jsonb_array_length((sifcr.validation_result_payload -> 'validationResults'::text) -> 'errorsSummary'::text) > 0
-        ) 
-        AND coalesce(error_payload.value ->> 'title',
-        errors_summary.value ->> 'type') IS NOT NULL
-    ORDER BY
-        sifcr.created_at DESC
-    LIMIT v_limit;
+	SELECT
+			scfpe.created_at,
+			scfpe.tenant_id,
+			scfpe.uri,
+			scfpe.zip_file_hub_interaction_id,
+			scfpe.flat_file_hub_interaction_id,
+			scfpe.group_id,
+			scfpe.section,
+			scfpe.field_name as fieldname,
+			scfpe.value,
+			scfpe.error_type, 
+			scfpe.error,
+			scfpe.description,
+			scfpe."row_number"::integer  as rownumber,
+			scfpe.field_number::integer  as fieldnumber,
+			scfpe.file_name 
+	FROM
+		techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+	where  
+		scfpe.zip_file_hub_interaction_id = p_zip_file_hub_interaction_id 
+	ORDER BY
+	scfpe.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -8077,8 +8052,7 @@ BEGIN
           AND user_req.uri NOT ILIKE '%/Hl7/v2%'
           AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
           AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
-    ) combined_query
-    ORDER BY combined_query.interaction_created_at DESC;
+    ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -8196,15 +8170,13 @@ BEGIN
 					zip.csv_zip_file_name,
 					NULL,
 					zip.origin, 
-    				flat.user_agent, 
+    				COALESCE(zip.user_agent, flat.user_agent), 
 					v_created_by, 
 					v_provenance, 
 					flat.techbd_version_number
-			FROM  
-				techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
-				CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
-				INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip 
-					ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
+			FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+			CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
+			INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
 			WHERE  
 				(flat.nature = 'CSV Validation Result' OR flat.nature = 'Converted to FHIR')
 				AND jsonb_array_length(
@@ -8255,18 +8227,19 @@ BEGIN
 					(error_payload.value ->> 'fieldNumber')::integer AS field_number,
 					zip.csv_zip_file_name,
 					CASE
-						WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN qe_admin_data_file_name
-						WHEN tasks.value ->> 'name' = 'demographic_data' THEN demographic_data_file_name
-						WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN screening_observation_data_file_name
-						WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN screening_profile_data_file_name
-						ELSE NULL
-					END AS file_name,
+		                WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN orig.qe_admin_data_file_name
+		                WHEN tasks.value ->> 'name' = 'demographic_data' THEN orig.demographic_data_file_name
+		                WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN orig.screening_observation_data_file_name
+		                WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN orig.screening_profile_data_file_name
+		                ELSE NULL
+		            END AS file_name,
 					zip.origin,
-					flat.user_agent, 
+					COALESCE(zip.user_agent, orig.user_agent), 
 					v_created_by, 
 					v_provenance, 
 					flat.techbd_version_number 
 			FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
+			LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request orig ON orig.hub_interaction_id = flat.hub_interaction_id AND orig.nature = 'Original Flat File CSV'
 			CROSS JOIN LATERAL jsonb_array_elements(((flat.validation_result_payload -> 'validationResults') -> 'report') -> 'tasks') AS tasks(value)
 			LEFT JOIN LATERAL jsonb_array_elements(tasks.value -> 'errors') AS error_payload(value) ON true
 			LEFT JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errorsSummary') AS errors_summary(value) ON true

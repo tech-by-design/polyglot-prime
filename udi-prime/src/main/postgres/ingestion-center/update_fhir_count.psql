@@ -1,0 +1,23 @@
+
+-- Purpose: Back fill the 'number_of_fhir_bundles_generated_from_zip_file' value into `sat_interaction_zip_file_request` table
+
+-- File Not Processed Errors
+WITH fhir_bundle_counts AS (
+    SELECT 
+        source_hub_interaction_id AS hub_interaction_id,
+        COUNT(DISTINCT hub_interaction_id) AS fhir_bundle_count
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE source_type = 'CSV' AND nature = 'Original FHIR Payload'
+    GROUP BY source_hub_interaction_id
+)
+UPDATE techbd_udi_ingress.sat_interaction_zip_file_request zip
+SET number_of_fhir_bundles_generated_from_zip_file = COALESCE(fhir_bundle_counts.fhir_bundle_count, 0)
+FROM fhir_bundle_counts
+WHERE zip.hub_interaction_id = fhir_bundle_counts.hub_interaction_id
+  AND (zip.number_of_fhir_bundles_generated_from_zip_file IS NULL OR zip.number_of_fhir_bundles_generated_from_zip_file = 0);
+
+-- SELECT count(*) FROM techbd_udi_ingress.sat_interaction_zip_file_request WHERE number_of_fhir_bundles_generated_from_zip_file IS NOT NULL;
+
+UPDATE techbd_udi_ingress.sat_interaction_zip_file_request 
+SET number_of_fhir_bundles_generated_from_zip_file = 0
+WHERE number_of_fhir_bundles_generated_from_zip_file IS NULL;

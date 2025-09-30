@@ -12,6 +12,7 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
         WHERE hub_interaction_id NOT IN (
             SELECT zip_file_hub_interaction_id
             FROM techbd_udi_ingress.sat_csv_fhir_processing_errors
+            WHERE category = 'file_not_processed'
         )
         ORDER BY created_at DESC 
     )
@@ -60,6 +61,7 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
         WHERE hub_interaction_id NOT IN (
             SELECT flat_file_hub_interaction_id
             FROM techbd_udi_ingress.sat_csv_fhir_processing_errors
+            WHERE category = 'incomplete_groups'
         )
         AND (nature = 'CSV Validation Result' OR nature = 'Converted to FHIR')
         ORDER BY created_at DESC
@@ -82,23 +84,19 @@ INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
         error_payload.value ->> 'description' AS description,
         NULL,
         NULL,
+        zip.csv_zip_file_name,
         NULL,
-        NULL,
-        NULL, 
-        req.user_agent, 
+        zip.origin,
+        COALESCE(zip.user_agent, req.user_agent),
         CURRENT_USER, 
         'CSV', 
         req.techbd_version_number
     FROM latest_interactions li
-    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req
-        ON req.hub_interaction_id = li.hub_interaction_id
-    CROSS JOIN LATERAL jsonb_array_elements(
-        (req.validation_result_payload -> 'validationResults') -> 'errors'
-    ) AS error_payload(value)
+    JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request req ON req.hub_interaction_id = li.hub_interaction_id
+    INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip ON zip.hub_interaction_id = req.zip_file_hub_interaction_id
+    CROSS JOIN LATERAL jsonb_array_elements((req.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
     WHERE (req.nature = 'CSV Validation Result' OR req.nature = 'Converted to FHIR')
-        AND jsonb_array_length(
-            COALESCE((req.validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)
-            ) > 0;
+    AND jsonb_array_length(COALESCE((req.validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)) > 0;
 
 
 
