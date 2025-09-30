@@ -69,8 +69,8 @@ public class HL7Service {
             rihr.setPContentType("application/json");
             rihr.setPPayloadText(payloadJson);
             rihr.setPFromState(State.NONE.name());
-            rihr.setPToState(State.HL7_ACCEPT.name()); // Replace if HL7 state differs
-            rihr.setPSourceType(SourceType.HL7.name()); // Replace with HL7 if defined
+            rihr.setPToState(State.HL7_ACCEPT.name());
+            rihr.setPSourceType(SourceType.HL7V2.name());
             rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
@@ -126,7 +126,7 @@ public class HL7Service {
             rihr.setPPayload(payloadNode);
             rihr.setPFromState(State.HL7_ACCEPT.name());
             rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
-            rihr.setPSourceType(SourceType.HL7.name());
+            rihr.setPSourceType(SourceType.HL7V2.name());
             rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(HL7Service.class.getName());
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
@@ -184,7 +184,7 @@ public class HL7Service {
             rihr.setPPayload(bundleNode);
             rihr.setPFromState(State.VALIDATION_SUCCESS.name());
             rihr.setPToState(conversionSuccess ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
-            rihr.setPSourceType(SourceType.HL7.name());
+            rihr.setPSourceType(SourceType.HL7V2.name());
             rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(HL7Service.class.getName());
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
