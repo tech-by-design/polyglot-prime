@@ -23,8 +23,7 @@ AS SELECT hub_interaction_id,
         END AS survey_date_time,
     areas_of_interest,
     total_safety_score
-   FROM techbd_udi_ingress.sat_interaction_fhir_screening_info
-   ORDER BY submitted_date_time DESC;
+   FROM techbd_udi_ingress.sat_interaction_fhir_screening_info;
 
 /*============================================================================================================*/
 

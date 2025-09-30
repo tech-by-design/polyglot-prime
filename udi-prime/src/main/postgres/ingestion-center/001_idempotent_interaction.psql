@@ -87,7 +87,7 @@ SELECT interaction_id,
             user_req.interaction_start_time AS start_time,
             user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
-           FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri not ilike '%/Bundle%' and user_req.uri not ilike '%/Hl7/v2%') combined_query
+           FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri not ilike '%/Bundle%') combined_query
   ORDER BY interaction_created_at DESC;
 
 /*******************************************************************************************
@@ -333,8 +333,7 @@ BEGIN
             (EXTRACT(EPOCH FROM (user_req.interaction_end_time - user_req.interaction_start_time)) * 1000)::NUMERIC AS duration_millisecs_val,
             user_req.sat_interaction_user_id AS interaction_http_request_id_val
         FROM techbd_udi_ingress.sat_interaction_user user_req
-        WHERE user_req.uri NOT ILIKE '%/Bundle%'
-          AND user_req.uri NOT ILIKE '%/Hl7/v2%'
+        WHERE user_req.uri NOT ILIKE '%/Bundle%' 
           AND user_req.interaction_start_time IS NOT NULL
           AND user_req.interaction_end_time   IS NOT NULL
           AND user_req.interaction_start_time >= start_date::timestamp
@@ -4218,7 +4217,7 @@ BEGIN
             user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
         FROM techbd_udi_ingress.sat_interaction_user user_req
-        WHERE user_req.uri !~~* '%/Bundle%'::text AND user_req.uri !~~* '%/Hl7/v2%'::text
+        WHERE user_req.uri !~~* '%/Bundle%'::text 
     ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
@@ -8048,8 +8047,7 @@ BEGIN
             user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
         FROM techbd_udi_ingress.sat_interaction_user user_req
-        WHERE user_req.uri NOT ILIKE '%/Bundle%'
-          AND user_req.uri NOT ILIKE '%/Hl7/v2%'
+        WHERE user_req.uri NOT ILIKE '%/Bundle%' 
           AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
           AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
     ) combined_query;
