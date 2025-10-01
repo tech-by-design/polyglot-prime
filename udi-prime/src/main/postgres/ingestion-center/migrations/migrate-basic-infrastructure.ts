@@ -1275,6 +1275,15 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
       ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
 
+      CREATE TABLE IF NOT EXISTS techbd_udi_ingress.dashboard_widget_metadata (
+          id TEXT NOT NULL PRIMARY KEY,
+          widget_name TEXT NOT NULL CHECK (widget_name IN ('FHIR', 'CSV', 'CCDA', 'HL7V2')),
+          tenant_id TEXT NOT NULL,
+          last_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          last_updated_by TEXT DEFAULT CURRENT_USER,
+          CONSTRAINT uq_dashboard_widget_tenant UNIQUE (widget_name, tenant_id)
+      );
+
       ${dependenciesSQL}
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};

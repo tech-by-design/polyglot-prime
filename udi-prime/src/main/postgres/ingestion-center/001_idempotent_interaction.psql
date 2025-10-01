@@ -6049,7 +6049,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6237,7 +6237,21 @@ BEGIN
        																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
        	   	/*------------------------------*/															
 	    
-	
+		-- Update dashboard_widget_metadata
+       	IF (v_nature_denorm = 'Original FHIR Payload') THEN
+			PERFORM techbd_udi_ingress.upsert_dashboard_widget_metadata(
+			    CASE 
+		            WHEN p_interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/') THEN 'FHIR'
+		            WHEN p_interaction_key IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/') THEN 'CSV'
+		            WHEN p_interaction_key IN ('/ccda/Bundle', '/ccda/Bundle/') THEN 'CCDA'
+		            WHEN p_interaction_key IN ('/hl7v2/Bundle', '/hl7v2/Bundle/') THEN 'HL7V2'
+		            ELSE NULL
+		        END,
+			    v_tenant_id_denorm,
+				v_created_at, 
+				p_created_by);
+		END IF;
+
 		v_return := jsonb_build_object('payload', CASE WHEN v_nature_denorm = 'techByDesignDisposition' THEN v_payload ELSE NULL END,
 									 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 									 'interaction_id', p_interaction_id);
@@ -8336,3 +8350,88 @@ EXCEPTION
 		RETURN NULL;
 END;
 $function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_dashboard_widget_metadata(text, text, timestamptz, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_dashboard_widget_metadata(
+    p_widget_name TEXT,
+    p_tenant_id TEXT,
+    p_last_updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    p_last_updated_by TEXT DEFAULT CURRENT_USER
+)
+RETURNS TEXT AS $$
+DECLARE
+    allowed_widgets TEXT[] := ARRAY['FHIR', 'CSV', 'CCDA', 'HL7V2'];
+	v_exception_id	TEXT;
+    v_error_msg		TEXT;
+    v_error_type	TEXT;
+    v_sqlstate		TEXT;
+    v_pg_detail		TEXT;
+    v_pg_hint		TEXT;
+    v_pg_context	TEXT;
+BEGIN
+	/*
+	 * Inserts or updates dashboard widget metadata for a given widget_name and tenant_id. 
+	 * If either widget_name or tenant_id is NULL, the function returns without changes. 
+	 * Updates last_updated_at and last_updated_by if the record exists.
+	 */
+	-- Check for NULL required parameters
+	IF p_widget_name IS NULL OR p_tenant_id IS NULL THEN
+	    RETURN 'Error: Missing required field(s): ' ||
+	           CASE WHEN p_widget_name IS NULL AND p_tenant_id IS NULL THEN 'widget_name, tenant_id'
+	                WHEN p_widget_name IS NULL THEN 'widget_name'
+	                WHEN p_tenant_id IS NULL THEN 'tenant_id'
+	           END || '.';
+	END IF;
+
+	-- Validate widget_name
+    IF NOT UPPER(p_widget_name) = ANY (allowed_widgets) THEN
+        RETURN 'Error: Invalid widget_name. Allowed values are FHIR, CSV, CCDA, HL7V2.';
+    END IF;
+
+
+    INSERT INTO techbd_udi_ingress.dashboard_widget_metadata (
+		id,
+        widget_name,
+        tenant_id,
+        last_updated_at,
+        last_updated_by
+    )
+    VALUES (
+		gen_random_uuid()::text,
+        UPPER(p_widget_name),
+        LOWER(p_tenant_id),
+        COALESCE(p_last_updated_at, CURRENT_TIMESTAMP),
+        COALESCE(p_last_updated_by, CURRENT_USER)
+    )
+    ON CONFLICT (widget_name, tenant_id)
+    DO UPDATE SET
+        last_updated_at = COALESCE(EXCLUDED.last_updated_at, CURRENT_TIMESTAMP),
+        last_updated_by = COALESCE(EXCLUDED.last_updated_by, CURRENT_USER);
+	
+	RETURN 'Success: Dashboard widget metadata inserted/updated.';
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		      
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id, NULL),
+		null,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		p_last_updated_by,
+		'DashBoard-Widget', null::jsonb, p_tenant_id);
+	RETURN 'Error';
+END;
+$$ LANGUAGE plpgsql;
