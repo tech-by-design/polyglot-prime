@@ -4512,9 +4512,7 @@ FROM
 where 
 	scfpe.category = 'file_not_processed'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id
-ORDER BY
-    created_at DESC;
+    scfpe.zip_file_hub_interaction_id ;
 
 /*******************************************************************************************
 This view lists detailed CSV processing errors where uploaded ZIP files could 
@@ -4584,9 +4582,7 @@ FROM
 where 
 	scfpe.category = 'incomplete_groups'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id	
-ORDER BY
-    created_at DESC; 
+    scfpe.zip_file_hub_interaction_id; 
 
 /*******************************************************************************************
 This view lists detailed CSV processing errors categorized as "incomplete_groups". 
@@ -4655,9 +4651,7 @@ FROM
 where 
 	scfpe.category = 'data_integrity'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id	
-ORDER BY
-    created_at DESC; 
+    scfpe.zip_file_hub_interaction_id; 
 
 
  
