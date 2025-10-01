@@ -1,0 +1,17 @@
+# Rename this file `.envrc` and use it during development.
+# Secrets should be kept in a vault or passed through environments
+# and never stored in Git.
+
+# If you want use these, remember to start VSCode or your IDE after `direnv allow`
+
+# use Spring profiles as 'localopen' for testing locally with no authentication, `sandbox` for testing with auth in localhost , `devl`, `stage`, `prod`
+export SPRING_PROFILES_ACTIVE=sandbox
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL=jdbc:postgresql://aws.neon.tech/persistence-prime-test
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME=persistence-prime-test
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD=**********
+export TECHBD_OPEN_OBSERVE_URL=http://10.10.11.248:5080
+export TECHBD_OPEN_OBSERVE_PASSWORD=Y2l0cnVzQGNpdHJ1cy5jb206Y2l0cnVz
+export TECHBD_OPEN_OBSERVE_STREAM_NAME=local
+export TECHBD_ALLOWED_HOSTS=localhost:8080
+export TECHBD_BL_BASEURL=https://synthetic.fhir.api.devl.techbd.org
+export TECHBD_MAVEN_ROOT_DIR=/home/user/.m2

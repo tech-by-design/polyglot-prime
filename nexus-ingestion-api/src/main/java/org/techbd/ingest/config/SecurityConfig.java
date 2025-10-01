@@ -10,7 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Spring Security configuration for defining HTTP security rules.
- * <p>
+ * <p>p
  * This configuration sets up a {@link SecurityFilterChain} bean to specify
  * access rules for various endpoints and disables CSRF for stateless clients.
  * </p>
@@ -22,7 +22,7 @@ public class SecurityConfig {
     /**
      * Configures security settings for the application.
      * <p>
-     * This method sets up the security filter chain, disabling CSRF protection
+     * This method sets up the security filter chain, disabling CSRF promotection
      * and defining access rules for various endpoints.
      * </p>
      *

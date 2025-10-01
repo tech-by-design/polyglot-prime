@@ -1,0 +1,1488 @@
+{
+  "resourceType" : "Bundle",
+  "id" : "NYScreeningResponseExample",
+  "meta" : {
+    "lastUpdated" : "2024-02-23T00:00:00Z",
+    "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
+  },
+  "type" : "transaction",
+  "timestamp" : "2024-02-03T00:00:00Z",
+  "entry" : [{
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Patient/PatientExample",
+    "resource" : {
+      "resourceType" : "Patient",
+      "id" : "PatientExample",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00.00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Patient_PatientExample\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Patient PatientExample</b></p><a name=\"PatientExample\"> </a><a name=\"hcPatientExample\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-patient.html\">SHINNY Patient Profile</a></p></div><p style=\"border: 1px #661aff solid; background-color: #e6e6ff; padding: 10px;\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</p><hr/><table class=\"grid\"><tr><td style=\"background-color: #f3f5da\" title=\"Other Ids (see the one above)\">Other Ids:</td><td colspan=\"3\"><ul><li>Patient Medicaid number/AA12345C</li><li>Social Security Number/999-34-2964</li></ul></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Ways to contact the Patient\">Contact Detail</td><td colspan=\"3\"><ul><li>ph: 555-120-6047(Home)</li><li>115 Broadway Apt2 New York, NY 10032</li></ul></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Language spoken\">Language:</td><td colspan=\"3\"><span title=\"Codes:{urn:ietf:bcp:47 en}\">English</span> (preferred)</td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Nominated Contact: Mother\">Mother:</td><td colspan=\"3\"><ul><li>Joyce Doe </li><li><a href=\"tel:+1234567890\">+1234567890</a></li></ul></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Personal Pronouns\"><a href=\"StructureDefinition-shinny-personal-pronouns.html\">SHINNY Personal Pronouns</a></td><td colspan=\"3\"><span title=\"Codes:{http://loinc.org LA29518-0}\">he/him/his/his/himself</span></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"This extension represents an individual's sense of being a man, woman, boy, girl, nonbinary, or something else, ascertained by asking them what that identity is.\"><a href=\"StructureDefinition-shinny-gender-identity.html\">SHINNYGenderIdentityExtension</a></td><td colspan=\"3\"><span title=\"Codes:{http://snomed.info/sct 446151000124109}\">Identifies as male gender (finding)</span></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Concepts classifying the person into a named category of humans sharing common history, traits, geographical origin or nationality.  The ethnicity codes used to represent these concepts are based upon the [CDC ethnicity and Ethnicity Code Set Version 1.0](http://www.cdc.gov/phin/resources/vocabulary/index.html) which includes over 900 concepts for representing race and ethnicity of which 43 reference ethnicity.  The ethnicity concepts are grouped by and pre-mapped to the 2 OMB ethnicity categories: - Hispanic or Latino - Not Hispanic or Latino.\">US Core Ethnicity Extension:</td><td colspan=\"3\"><ul><li>ombCategory: <a href=\"http://hl7.org/fhir/us/core/STU3.1.1/CodeSystem-cdcrec.html#cdcrec-2135-2\">Race &amp; Ethnicity - CDC 2135-2</a>: Hispanic or Latino</li><li>text: Hispanic or Latino</li></ul></td></tr><tr><td style=\"background-color: #f3f5da\" title=\"A code classifying the person's sex assigned at birth  as specified by the [Office of the National Coordinator for Health IT (ONC)](https://www.healthit.gov/newsroom/about-onc). This extension aligns with the C-CDA Birth Sex Observation (LOINC 76689-9).\"><a href=\"http://hl7.org/fhir/us/core/STU3.1.1/StructureDefinition-us-core-birthsex.html\">US Core Birth Sex Extension</a></td><td colspan=\"3\">M</td></tr><tr><td style=\"background-color: #f3f5da\" title=\"Concepts classifying the person into a named category of humans sharing common history, traits, geographical origin or nationality.  The race codes used to represent these concepts are based upon the [CDC Race and Ethnicity Code Set Version 1.0](http://www.cdc.gov/phin/resources/vocabulary/index.html) which includes over 900 concepts for representing race and ethnicity of which 921 reference race.  The race concepts are grouped by and pre-mapped to the 5 OMB race categories:\n\n - American Indian or Alaska Native\n - Asian\n - Black or African American\n - Native Hawaiian or Other Pacific Islander\n - White.\">US Core Race Extension:</td><td colspan=\"3\"><ul><li>ombCategory: <a href=\"http://hl7.org/fhir/us/core/STU3.1.1/CodeSystem-cdcrec.html#cdcrec-2028-9\">Race &amp; Ethnicity - CDC 2028-9</a>: Asian</li><li>ombCategory: <a href=\"http://hl7.org/fhir/us/core/STU3.1.1/CodeSystem-cdcrec.html#cdcrec-1002-5\">Race &amp; Ethnicity - CDC 1002-5</a>: American Indian or Alaska Native</li><li>detailed: <a href=\"http://hl7.org/fhir/us/core/STU3.1.1/CodeSystem-cdcrec.html#cdcrec-1010-8\">Race &amp; Ethnicity - CDC 1010-8</a>: Apache</li><li>text: Asian, American Indian, Apache</li></ul></td></tr></table></div>"
+      },
+      "extension" : [{
+        "extension" : [{
+          "url" : "ombCategory",
+          "valueCoding" : {
+            "system" : "urn:oid:2.16.840.1.113883.6.238",
+            "code" : "2028-9",
+            "display" : "Asian"
+          }
+        },
+        {
+          "url" : "ombCategory",
+          "valueCoding" : {
+            "system" : "urn:oid:2.16.840.1.113883.6.238",
+            "code" : "1002-5",
+            "display" : "American Indian or Alaska Native"
+          }
+        },
+        {
+          "url" : "detailed",
+          "valueCoding" : {
+            "system" : "urn:oid:2.16.840.1.113883.6.238",
+            "code" : "1010-8",
+            "display" : "Apache"
+          }
+        },
+        {
+          "url" : "text",
+          "valueString" : "Asian, American Indian, Apache"
+        }],
+        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+      },
+      {
+        "extension" : [{
+          "url" : "ombCategory",
+          "valueCoding" : {
+            "system" : "urn:oid:2.16.840.1.113883.6.238",
+            "code" : "2135-2",
+            "display" : "Hispanic or Latino"
+          }
+        },
+        {
+          "url" : "text",
+          "valueString" : "Hispanic or Latino"
+        }],
+        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+      },
+      {
+        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+        "valueCode" : "M"
+      },
+      {
+        "url" : "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns",
+        "valueCodeableConcept" : {
+          "coding" : [{
+            "system" : "http://loinc.org",
+            "code" : "LA29518-0",
+            "display" : "he/him/his/his/himself"
+          }]
+        }
+      },
+      {
+        "url" : "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity",
+        "valueCodeableConcept" : {
+          "coding" : [{
+            "system" : "http://snomed.info/sct",
+            "code" : "446151000124109",
+            "display" : "Identifies as male gender (finding)"
+          }]
+        }
+      }],
+      "identifier" : [{
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code" : "MR"
+          }]
+        },
+        "system" : "http://www.scn.gov/facility/CUMC",
+        "value" : "11223344",
+        "assigner" : {
+          "reference" : "Organization/OrganizationExampleOther-SCN1"
+        }
+      },
+      {
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code" : "MA"
+          }]
+        },
+        "system" : "http://www.medicaid.gov/",
+        "value" : "AA12345C"
+      },
+      {
+        "type" : {
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code" : "SS",
+            "display" : "Social Security Number"
+          }],
+          "text" : "Social Security Number"
+        },
+        "system" : "http://www.ssa.gov/",
+        "value" : "999-34-2964"
+      }],
+      "name" : [{
+        "extension" : [{
+          "url" : "http://test.shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+          "valueString" : "Bob"
+        }],
+        "family" : "Doe",
+        "given" : ["Jon"],
+        "prefix" : ["Mr.",
+        "Dr.",
+        "PhD",
+        "CCNA"],
+        "suffix" : ["Jr.",
+        "III"]
+      }],
+      "telecom" : [{
+        "system" : "phone",
+        "value" : "555-120-6047",
+        "use" : "home"
+      }],
+      "gender" : "male",
+      "birthDate" : "1981-07-16",
+      "address" : [{
+        "text" : "115 Broadway Apt2 New York, NY 10032",
+        "line" : ["115 Broadway Apt2"],
+        "city" : "New York",
+        "district" : "MANHATTAN",
+        "state" : "NY",
+        "postalCode" : "10032"
+      }],
+      "contact" : [{
+        "relationship" : [{
+          "coding" : [{
+            "system" : "http://terminology.hl7.org/CodeSystem/v2-0063",
+            "code" : "MTH",
+            "display" : "Mother"
+          }]
+        }],
+        "name" : {
+          "family" : "Doe",
+          "given" : ["Joyce"]
+        },
+        "telecom" : [{
+          "system" : "phone",
+          "value" : "+1234567890"
+        }]
+      }],
+      "communication" : [{
+        "language" : {
+          "coding" : [{
+            "system" : "urn:ietf:bcp:47",
+            "code" : "en"
+          }]
+        },
+        "preferred" : true
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Patient/PatientExample"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/SexualOrientationExample",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "SexualOrientationExample",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Observation_SexualOrientationExample\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation SexualOrientationExample</b></p><a name=\"SexualOrientationExample\"> </a><a name=\"hcSexualOrientationExample\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-sexual-orientation.html\">SHINNYObservationSexualOrientationProfile</a></p></div><p><b>status</b>: Final</p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 76690-7}\">Sexual orientation</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>value</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-NullFlavor UNK}\">Unknown</span></p></div>"
+      },
+      "status" : "final",
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "76690-7",
+          "display" : "Sexual orientation"
+        }]
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+          "code" : "UNK",
+          "display" : "Unknown"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/SexualOrientationExample"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Organization/OrganizationExampleOther-SCN1",
+    "resource" : {
+      "resourceType" : "Organization",
+      "id" : "OrganizationExampleOther-SCN1",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Organization_OrganizationExampleOther-SCN1\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Organization OrganizationExampleOther-SCN1</b></p><a name=\"OrganizationExampleOther-SCN1\"> </a><a name=\"hcOrganizationExampleOther-SCN1\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shin-ny-organization.html\">SHINNY Organization Profile</a></p></div><p><b>identifier</b>: Care Ridge/SCNExample, NPI/1234567890</p><p><b>active</b>: true</p><p><b>type</b>: <span title=\"Codes:{https://hl7.org/fhir/R4/codesystem-organization-type.html other}\">Other</span></p><p><b>name</b>: Care Ridge SCN</p><p><b>address</b>: 111 Care Ridge St, Plainview, NY 11803</p></div>"
+      },
+      "identifier" : [{
+        "type" : {
+          "coding" : [{
+            "display" : "Care Ridge"
+          }]
+        },
+        "system" : "http://www.scn.ny.gov/",
+        "value" : "SCNExample"
+      },
+      {
+        "type" : {
+          "coding" : [{
+            "system" : "http://hl7.org/fhir/sid/us-npi",
+            "code" : "NPI"
+          }]
+        },
+        "system" : "http://hl7.org/fhir/sid/us-npi",
+        "value" : "1234567890"
+      }],
+      "active" : true,
+      "type" : [{
+        "coding" : [{
+          "system" : "https://hl7.org/fhir/R4/codesystem-organization-type.html",
+          "code" : "other",
+          "display" : "Other"
+        }]
+      }],
+      "name" : "Care Ridge SCN",
+      "address" : [{
+        "text" : "111 Care Ridge St, Plainview, NY 11803",
+        "line" : ["111 Care Ridge St"],
+        "city" : "Plainview",
+        "district" : "Nassau County",
+        "state" : "NY",
+        "postalCode" : "11803"
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Organization/OrganizationExampleOther-SCN1"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Consent/ConsentExample",
+    "resource" : {
+      "resourceType" : "Consent",
+      "id" : "ConsentExample",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Consent_ConsentExample\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Consent ConsentExample</b></p><a name=\"ConsentExample\"> </a><a name=\"hcConsentExample\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-Consent.html\">SHINNY Consent Profile</a></p></div><p><b>status</b>: Active</p><p><b>scope</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/consentscope treatment}\">treatment</span></p><p><b>category</b>: <span title=\"Codes:{http://loinc.org 59284-0}\">Consent Document</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ActCode IDSCL}\">information disclosure</span></p><p><b>patient</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>dateTime</b>: 2024-02-23 00:00:00+0000</p><p><b>organization</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p><p><b>source</b>: </p><h3>Policies</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Authority</b></td></tr><tr><td style=\"display: none\">*</td><td>urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5</td></tr></table><h3>Provisions</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Type</b></td></tr><tr><td style=\"display: none\">*</td><td>Opt In</td></tr></table></div>"
+      },
+      "status" : "active",
+      "scope" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/consentscope",
+          "code" : "treatment",
+          "display" : "Treatment"
+        }],
+        "text" : "treatment"
+      },
+      "category" : [{
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "59284-0",
+          "display" : "Consent Document"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code" : "IDSCL"
+        }]
+      }],
+      "patient" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "dateTime" : "2024-02-23T00:00:00Z",
+      "organization" : [{
+        "reference" : "Organization/OrganizationExampleOther-SCN1"
+      }],
+      "sourceAttachment" : {
+        "contentType" : "application/pdf",
+        "language" : "en"
+      },
+      "policy" : [{
+        "authority" : "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
+      }],
+      "provision" : {
+        "type" : "permit"
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Consent/ConsentExample"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Encounter/EncounterExample",
+    "resource" : {
+      "resourceType" : "Encounter",
+      "id" : "EncounterExample",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Encounter_EncounterExample\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Encounter EncounterExample</b></p><a name=\"EncounterExample\"> </a><a name=\"hcEncounterExample\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-encounter.html\">SHINNY Encounter Profile</a></p></div><p><b>status</b>: Finished</p><p><b>class</b>: <a href=\"http://terminology.hl7.org/6.0.2/CodeSystem-v3-ActCode.html#v3-ActCode-FLD\">ActCode FLD</a>: field</p><p><b>type</b>: <span title=\"Codes:{http://snomed.info/sct 405672008}\">Direct questioning (procedure)</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>period</b>: 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</p><h3>Locations</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Location</b></td></tr><tr><td style=\"display: none\">*</td><td><a href=\"Location-LocationExample-SCN.html\">Location downtown location</a></td></tr></table></div>"
+      },
+      "status" : "finished",
+      "class" : {
+        "system" : "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+        "code" : "FLD"
+      },
+      "type" : [{
+        "coding" : [{
+          "system" : "http://snomed.info/sct",
+          "code" : "405672008",
+          "display" : "Direct questioning (procedure)"
+        }],
+        "text" : "Direct questioning (procedure)"
+      }],
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "period" : {
+        "start" : "2024-02-23T00:00:00Z",
+        "end" : "2024-02-23T01:00:00Z"
+      },
+      "location" : [{
+        "location" : {
+          "reference" : "Location/LocationExample-SCN"
+        }
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Encounter/EncounterExample"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Location/LocationExample-SCN",
+    "resource" : {
+      "resourceType" : "Location",
+      "id" : "LocationExample-SCN",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Location_LocationExample-SCN\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Location LocationExample-SCN</b></p><a name=\"LocationExample-SCN\"> </a><a name=\"hcLocationExample-SCN\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.2/StructureDefinition-SDOHCC-Location.html\">SDOHCC Location</a></p></div><p><b>status</b>: Active</p><p><b>name</b>: downtown location</p><p><b>type</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-RoleCode CSC}\">community service center</span></p><p><b>address</b>: 115 Broadway Suite #1601 New York NY 10006 </p><p><b>physicalType</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/location-physical-type bu}\">Building</span></p><p><b>managingOrganization</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p></div>"
+      },
+      "status" : "active",
+      "name" : "downtown location",
+      "type" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+          "code" : "CSC"
+        }]
+      }],
+      "address" : {
+        "id" : "SCNAddressLocation",
+        "type" : "physical",
+        "line" : ["115 Broadway Suite #1601"],
+        "city" : "New York",
+        "district" : "MANHATTAN",
+        "state" : "NY",
+        "postalCode" : "10006"
+      },
+      "physicalType" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/location-physical-type",
+          "code" : "bu"
+        }]
+      },
+      "managingOrganization" : {
+        "reference" : "Organization/OrganizationExampleOther-SCN1"
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Location/LocationExample-SCN"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseHousingInstability71802-3",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseHousingInstability71802-3",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseHousingInstability71802-3\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseHousingInstability71802-3</b></p><a name=\"ObservationResponseHousingInstability71802-3\"> </a><a name=\"hcObservationResponseHousingInstability71802-3\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes housing-instability}\">Housing Instability</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 71802-3}\">What is your living situation today?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA31993-1}\">I have a steady place to live</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "housing-instability",
+          "display" : "Housing Instability"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "71802-3",
+          "display" : "Housing status"
+        }],
+        "text" : "What is your living situation today?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA31993-1",
+          "display" : "I have a steady place to live"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseHousingInstability71802-3"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInadequateHousing96778-6",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInadequateHousing96778-6",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInadequateHousing96778-6\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInadequateHousing96778-6</b></p><a name=\"ObservationResponseInadequateHousing96778-6\"> </a><a name=\"hcObservationResponseInadequateHousing96778-6\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes inadequate-housing}\">Inadequate Housing</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96778-6}\">Think about the place you live. Do you have problems with any of the following?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p><h3>Components</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Code</b></td><td><b>Value[x]</b></td></tr><tr><td style=\"display: none\">*</td><td><span title=\"Codes:{http://loinc.org 96778-6}\">Problems with place where you live</span></td><td><span title=\"Codes:\">Mold</span></td></tr></table></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "inadequate-housing",
+          "display" : "Inadequate Housing"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "96778-6",
+          "display" : "Problems with place where you live"
+        }],
+        "text" : "Think about the place you live. Do you have problems with any of the following?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }],
+      "component" : [{
+        "code" : {
+          "coding" : [{
+            "system" : "http://loinc.org",
+            "code" : "96778-6",
+            "display" : "Problems with place where you live"
+          }]
+        },
+        "valueCodeableConcept" : {
+          "coding" : [{
+            "code" : "LA28580-1",
+            "display" : "Mold"
+          },
+          {
+            "code" : "LA31998-0",
+            "display" : "Lack of heat"
+          },
+          {
+            "code" : "LA32001-2",
+            "display" : "Water leaks"
+          }]
+        }
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInadequateHousing96778-6"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseUtilityInsecurity96779-4",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseUtilityInsecurity96779-4",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseUtilityInsecurity96779-4\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseUtilityInsecurity96779-4</b></p><a name=\"ObservationResponseUtilityInsecurity96779-4\"> </a><a name=\"hcObservationResponseUtilityInsecurity96779-4\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes utility-insecurity}\">Utility Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96779-4}\">In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA32-8}\">No</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "utility-insecurity",
+          "display" : "Utility Insecurity"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "96779-4",
+          "display" : "Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months"
+        }],
+        "text" : "In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA32-8",
+          "display" : "No"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseUtilityInsecurity96779-4"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseFoodInsecurity88122-7",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseFoodInsecurity88122-7",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseFoodInsecurity88122-7\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseFoodInsecurity88122-7</b></p><a name=\"ObservationResponseFoodInsecurity88122-7\"> </a><a name=\"hcObservationResponseFoodInsecurity88122-7\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes food-insecurity}\">Food Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 88122-7}\">Within the past 12 months, you worried that your food would run out before you got money to buy more.</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA28397-0}\">Often true</span></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "food-insecurity",
+          "display" : "Food Insecurity"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "88122-7",
+          "display" : "Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]"
+        }],
+        "text" : "Within the past 12 months, you worried that your food would run out before you got money to buy more."
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA28397-0",
+          "display" : "Often true"
+        }],
+        "text" : "Often true"
+      },
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseFoodInsecurity88122-7"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseFoodInsecurity88123-5",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseFoodInsecurity88123-5",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseFoodInsecurity88123-5\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseFoodInsecurity88123-5</b></p><a name=\"ObservationResponseFoodInsecurity88123-5\"> </a><a name=\"hcObservationResponseFoodInsecurity88123-5\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes food-insecurity}\">Food Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 88123-5}\">Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA28397-0}\">Often true</span></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "food-insecurity",
+          "display" : "Food Insecurity"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "88123-5",
+          "display" : "Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]"
+        }],
+        "text" : "Within the past 12 months, the food you bought just didn't last and you didn't have money to get more."
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA28397-0",
+          "display" : "Often true"
+        }]
+      },
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseFoodInsecurity88123-5"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseTransportationInsecurity93030-5",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseTransportationInsecurity93030-5",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseTransportationInsecurity93030-5\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseTransportationInsecurity93030-5</b></p><a name=\"ObservationResponseTransportationInsecurity93030-5\"> </a><a name=\"hcObservationResponseTransportationInsecurity93030-5\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes transportation-insecurity}\">Transportation Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 93030-5}\">In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA32-8}\">No</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "transportation-insecurity",
+          "display" : "Transportation Insecurity"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "93030-5",
+          "display" : "Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living"
+        }],
+        "text" : "In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA32-8",
+          "display" : "No"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseTransportationInsecurity93030-5"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseEmploymentStatus96780-2",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseEmploymentStatus96780-2",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseEmploymentStatus96780-2\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseEmploymentStatus96780-2</b></p><a name=\"ObservationResponseEmploymentStatus96780-2\"> </a><a name=\"hcObservationResponseEmploymentStatus96780-2\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes employment-status}\">Employment Status</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96780-2}\">Do you want help finding or keeping work or a job?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>performer</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA31981-6}\">Yes, help finding work</span></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "employment-status",
+          "display" : "Employment Status"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "96780-2",
+          "display" : "Wants help finding or keeping work or a job"
+        }],
+        "text" : "Do you want help finding or keeping work or a job?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "performer" : [{
+        "reference" : "Organization/OrganizationExampleOther-SCN1"
+      }],
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA31981-6",
+          "display" : "Yes, help finding work"
+        }]
+      },
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseEmploymentStatus96780-2"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseEducation96782-8",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseEducation96782-8",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseEducation96782-8\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseEducation96782-8</b></p><a name=\"ObservationResponseEducation96782-8\"> </a><a name=\"hcObservationResponseEducation96782-8\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">SDOH Category Unspecified</span>, <span title=\"Codes:{http://snomed.info/sct 365458002}\">Education and/or schooling finding</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96782-8}\">Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>performer</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA33-6}\">Yes</span></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://snomed.info/sct",
+          "code" : "365458002",
+          "display" : "Education and/or schooling finding"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "96782-8",
+          "display" : "Wants help with school or training"
+        }],
+        "text" : "Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent."
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "performer" : [{
+        "reference" : "Organization/OrganizationExampleOther-SCN1"
+      }],
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA33-6",
+          "display" : "Yes"
+        }]
+      },
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseEducation96782-8"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95618-5",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInterpersonalSafety95618-5",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInterpersonalSafety95618-5\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInterpersonalSafety95618-5</b></p><a name=\"ObservationResponseInterpersonalSafety95618-5\"> </a><a name=\"hcObservationResponseInterpersonalSafety95618-5\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">Interpersonal Safety</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 95618-5}\">How often does anyone, including family and friends, physically hurt you?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA6270-8}\">Never</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }],
+        "text" : "Interpersonal Safety"
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "95618-5",
+          "display" : "Physically hurt you"
+        }],
+        "text" : "How often does anyone, including family and friends, physically hurt you?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA6270-8",
+          "display" : "Never"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95618-5"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95617-7",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInterpersonalSafety95617-7",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInterpersonalSafety95617-7\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInterpersonalSafety95617-7</b></p><a name=\"ObservationResponseInterpersonalSafety95617-7\"> </a><a name=\"hcObservationResponseInterpersonalSafety95617-7\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">Interpersonal Safety</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 95617-7}\">How often does anyone, including family and friends, insult or talk down to you?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA6270-8}\">Never</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }],
+        "text" : "Interpersonal Safety"
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "95617-7",
+          "display" : "Insult you or talk down to you"
+        }],
+        "text" : "How often does anyone, including family and friends, insult or talk down to you?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA6270-8",
+          "display" : "Never"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95617-7"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95616-9",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInterpersonalSafety95616-9",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInterpersonalSafety95616-9\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInterpersonalSafety95616-9</b></p><a name=\"ObservationResponseInterpersonalSafety95616-9\"> </a><a name=\"hcObservationResponseInterpersonalSafety95616-9\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">Interpersonal Safety</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 95616-9}\">How often does anyone, including family and friends, threaten you with harm?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA6270-8}\">Never</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }],
+        "text" : "Interpersonal Safety"
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "95616-9",
+          "display" : "Threaten you with physical harm"
+        }],
+        "text" : "How often does anyone, including family and friends, threaten you with harm?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA6270-8",
+          "display" : "Never"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95616-9"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95615-1",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInterpersonalSafety95615-1",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInterpersonalSafety95615-1\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInterpersonalSafety95615-1</b></p><a name=\"ObservationResponseInterpersonalSafety95615-1\"> </a><a name=\"hcObservationResponseInterpersonalSafety95615-1\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">Interpersonal Safety</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 95615-1}\">How often does anyone, including family and friends, scream or curse at you?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA6270-8}\">Never</span></p></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }],
+        "text" : "Interpersonal Safety"
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "95615-1",
+          "display" : "Scream or curse at you"
+        }],
+        "text" : "How often does anyone, including family and friends, scream or curse at you?"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "LA6270-8",
+          "display" : "Never"
+        }]
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95615-1"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95614-4",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseInterpersonalSafety95614-4",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseInterpersonalSafety95614-4\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseInterpersonalSafety95614-4</b></p><a name=\"ObservationResponseInterpersonalSafety95614-4\"> </a><a name=\"hcObservationResponseInterpersonalSafety95614-4\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}\">Interpersonal Safety</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 95614-4}\">Safety total score</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:\">4</span></p><p><b>derivedFrom</b>: </p><ul><li><a href=\"Observation-ObservationResponseInterpersonalSafety95618-5.html\">Observation Physically hurt you</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95617-7.html\">Observation Insult you or talk down to you</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95616-9.html\">Observation Threaten you with physical harm</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95615-1.html\">Observation Scream or curse at you</a></li></ul></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "sdoh-category-unspecified",
+          "display" : "SDOH Category Unspecified"
+        }],
+        "text" : "Interpersonal Safety"
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "95614-4",
+          "display" : "Total score [HITS]"
+        }],
+        "text" : "Safety total score"
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
+      "issued" : "2023-07-12T16:08:00.000Z",
+      "valueCodeableConcept" : {
+        "coding" : [{
+          "system" : "http://unitsofmeasure.org",
+          "display" : "{Number}"
+        }],
+        "text" : "4"
+      },
+      "derivedFrom" : [{
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95618-5"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95617-7"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95616-9"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95615-1"
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseInterpersonalSafety95614-4"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseNYSAHCHRSNScreeningGroup",
+    "resource" : {
+      "resourceType" : "Observation",
+      "id" : "ObservationResponseNYSAHCHRSNScreeningGroup",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+      },
+      "language" : "en",
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_ObservationResponseNYSAHCHRSNScreeningGroup\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation ObservationResponseNYSAHCHRSNScreeningGroup</b></p><a name=\"ObservationResponseNYSAHCHRSNScreeningGroup\"> </a><a name=\"hcObservationResponseNYSAHCHRSNScreeningGroup\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes employment-status}\">Employment Status</span>, <span title=\"Codes:{http://snomed.info/sct 365458002}\">Education and/or schooling finding</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96777-8}\">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2020-09-10 21:56:54+0000</p><p><b>issued</b>: 2020-09-10 21:56:54+0000</p><p><b>performer</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p><p><b>hasMember</b>: </p><ul><li><a href=\"Observation-ObservationResponseHousingInstability71802-3.html\">Observation Housing status</a></li><li><a href=\"Observation-ObservationResponseInadequateHousing96778-6.html\">Observation Problems with place where you live</a></li><li><a href=\"Observation-ObservationResponseUtilityInsecurity96779-4.html\">Observation Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months</a></li><li><a href=\"Observation-ObservationResponseFoodInsecurity88122-7.html\">Observation Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</a></li><li><a href=\"Observation-ObservationResponseFoodInsecurity88123-5.html\">Observation Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</a></li><li><a href=\"Observation-ObservationResponseTransportationInsecurity93030-5.html\">Observation Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living</a></li><li><a href=\"Observation-ObservationResponseEmploymentStatus96780-2.html\">Observation Wants help finding or keeping work or a job</a></li><li><a href=\"Observation-ObservationResponseEducation96782-8.html\">Observation Wants help with school or training</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95618-5.html\">Observation Physically hurt you</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95617-7.html\">Observation Insult you or talk down to you</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95616-9.html\">Observation Threaten you with physical harm</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95615-1.html\">Observation Scream or curse at you</a></li><li><a href=\"Observation-ObservationResponseInterpersonalSafety95614-4.html\">Observation Total score [HITS]</a></li></ul></div>"
+      },
+      "status" : "final",
+      "category" : [{
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "employment-status",
+          "display" : "Employment Status"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://snomed.info/sct",
+          "code" : "365458002",
+          "display" : "Education and/or schooling finding"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "social-history"
+        }]
+      },
+      {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code" : "survey"
+        }]
+      }],
+      "code" : {
+        "coding" : [{
+          "system" : "http://loinc.org",
+          "code" : "96777-8",
+          "display" : "Accountable health communities (AHC) health-related social needs screening (HRSN) tool"
+        }]
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "effectiveDateTime" : "2020-09-10T21:56:54.671Z",
+      "issued" : "2020-09-10T21:56:54.671Z",
+      "performer" : [{
+        "reference" : "Organization/OrganizationExampleOther-SCN1"
+      }],
+      "interpretation" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code" : "POS",
+          "display" : "Positive"
+        }]
+      }],
+      "hasMember" : [{
+        "reference" : "Observation/ObservationResponseHousingInstability71802-3"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInadequateHousing96778-6"
+      },
+      {
+        "reference" : "Observation/ObservationResponseUtilityInsecurity96779-4"
+      },
+      {
+        "reference" : "Observation/ObservationResponseFoodInsecurity88122-7"
+      },
+      {
+        "reference" : "Observation/ObservationResponseFoodInsecurity88123-5"
+      },
+      {
+        "reference" : "Observation/ObservationResponseTransportationInsecurity93030-5"
+      },
+      {
+        "reference" : "Observation/ObservationResponseEmploymentStatus96780-2"
+      },
+      {
+        "reference" : "Observation/ObservationResponseEducation96782-8"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95618-5"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95617-7"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95616-9"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95615-1"
+      },
+      {
+        "reference" : "Observation/ObservationResponseInterpersonalSafety95614-4"
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseNYSAHCHRSNScreeningGroup"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/QuestionnaireResponse/SHINNYDisablityQuestionnaireResponse",
+    "resource" : {
+      "resourceType" : "QuestionnaireResponse",
+      "id" : "SHINNYDisablityQuestionnaireResponse",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"QuestionnaireResponse_SHINNYDisablityQuestionnaireResponse\"> </a><p class=\"res-header-id\"><b>Generated Narrative: QuestionnaireResponse SHINNYDisablityQuestionnaireResponse</b></p><a name=\"SHINNYDisablityQuestionnaireResponse\"> </a><a name=\"hcSHINNYDisablityQuestionnaireResponse\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"http://hl7.org/fhir/uv/sdc/STU3/StructureDefinition-sdc-questionnaireresponse.html\">SDC Questionnaire Response</a></p></div><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border: 1px #F0F0F0 solid; font-size: 11px; font-family: verdana; vertical-align: top;\"><tr style=\"border: 2px #F0F0F0 solid; font-size: 11px; font-family: verdana; vertical-align: top\"><th style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; padding-top: 3px; padding-bottom: 3px\" class=\"hierarchy\"><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"The linkID for the item\">LinkID</a></th><th style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; padding-top: 3px; padding-bottom: 3px\" class=\"hierarchy\"><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"Text for the item\">Text</a></th><th style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; padding-top: 3px; padding-bottom: 3px\" class=\"hierarchy\"><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"Minimum and Maximum # of times the item can appear in the instance\">Definition</a></th><th style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; padding-top: 3px; padding-bottom: 3px\" class=\"hierarchy\"><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"The type of the item\">Answer</a><span style=\"float: right\"><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"Legend for this format\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3goXBCwdPqAP0wAAAldJREFUOMuNk0tIlFEYhp9z/vE2jHkhxXA0zJCMitrUQlq4lnSltEqCFhFG2MJFhIvIFpkEWaTQqjaWZRkp0g26URZkTpbaaOJkDqk10szoODP//7XIMUe0elcfnPd9zsfLOYplGrpRwZaqTtw3K7PtGem7Q6FoidbGgqHVy/HRb669R+56zx7eRV1L31JGxYbBtjKK93cxeqfyQHbehkZbUkK20goELEuIzEd+dHS+qz/Y8PTSif0FnGkbiwcAjHaU1+QWOptFiyCLp/LnKptpqIuXHx6rbR26kJcBX3yLgBfnd7CxwJmflpP2wUg0HIAoUUpZBmKzELGWcN8nAr6Gpu7tLU/CkwAaoKTWRSQyt89Q8w6J+oVQkKnBoblH7V0PPvUOvDYXfopE/SJmALsxnVm6LbkotrUtNowMeIrVrBcBpaMmdS0j9df7abpSuy7HWehwJdt1lhVwi/J58U5beXGAF6c3UXLycw1wdFklArBn87xdh0ZsZtArghBdAA3+OEDVubG4UEzP6x1FOWneHh2VDAHBAt80IbdXDcesNoCvs3E5AFyNSU5nbrDPZpcUEQQTFZiEVx+51fxMhhyJEAgvlriadIJZZksRuwBYMOPBbO3hePVVqgEJhFeUuFLhIPkRP6BQLIBrmMenujm/3g4zc398awIe90Zb5A1vREALqneMcYgP/xVQWlG+Ncu5vgwwlaUNx+3799rfe96u9K0JSDXcOzOTJg4B6IgmXfsygc7/Bvg9g9E58/cDVmGIBOP/zT8Bz1zqWqpbXIsd0O9hajXfL6u4BaOS6SeWAAAAAElFTkSuQmCC\" alt=\"doco\" style=\"background-color: inherit\"/></a></span></th></tr><tr style=\"border: 1px #F0F0F0 solid; padding:0px; vertical-align: top; background-color: white\"><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; white-space: nowrap; background-image: url(tbl_bck1.png)\" class=\"hierarchy\"><img src=\"tbl_spacer.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"icon_q_root.gif\" alt=\".\" style=\"background-color: white; background-color: inherit\" title=\"QuestionnaireResponseRoot\" class=\"hierarchy\"/> SHINNYDisablityQuestionnaireResponse</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"></td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"></td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\">Questionnaire:<a href=\"Questionnaire-SHINNYDisablityQuestionnaire.html\">Questionnaire[http://test.shinny.org/us/ny/hrsn/Questionnaire/SHINNYDisablityQuestionnaire|1.6.3]</a></td></tr>\r\n<tr style=\"border: 1px #F0F0F0 solid; padding:0px; vertical-align: top; background-color: #F7F7F7\"><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; white-space: nowrap; background-image: url(tbl_bck01.png)\" class=\"hierarchy\"><img src=\"tbl_spacer.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_vjoin_end.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"icon-q-group.png\" alt=\".\" style=\"background-color: #F7F7F7; background-color: inherit\" title=\"Group\" class=\"hierarchy\"/> disability-questionnaire</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\">Captures responses about a patient's disability mobility.</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"/><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"/></tr>\r\n<tr style=\"border: 1px #F0F0F0 solid; padding:0px; vertical-align: top; background-color: white\"><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; white-space: nowrap; background-image: url(tbl_bck001.png)\" class=\"hierarchy\"><img src=\"tbl_spacer.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_blank.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_vjoin_end.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"icon-q-group.png\" alt=\".\" style=\"background-color: white; background-color: inherit\" title=\"Group\" class=\"hierarchy\"/> disability-questions</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\">Captures a collection of screening responses about a patient's mobility and self-care.</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"/><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: white; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"/></tr>\r\n<tr style=\"border: 1px #F0F0F0 solid; padding:0px; vertical-align: top; background-color: #F7F7F7\"><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px; white-space: nowrap; background-image: url(tbl_bck0000.png)\" class=\"hierarchy\"><img src=\"tbl_spacer.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_blank.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_blank.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"tbl_vjoin_end.png\" alt=\".\" style=\"background-color: inherit\" class=\"hierarchy\"/><img src=\"icon-q-string.png\" alt=\".\" style=\"background-color: #F7F7F7; background-color: inherit\" title=\"Item\" class=\"hierarchy\"/> 69859-7</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\">Do you have serious difficulty walking or climbing stairs? (5 years old or older)</td><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"/><td style=\"vertical-align: top; text-align : var(--ig-left,left); background-color: #F7F7F7; border: 1px #F0F0F0 solid; padding:0px 4px 0px 4px\" class=\"hierarchy\"><span><span><a href=\"https://loinc.org/LA32-8\">LOINC LA32-8</a>: No</span></span></td></tr>\r\n<tr><td colspan=\"4\" class=\"hierarchy\"><br/><a href=\"https://hl7.org/fhir/R4/formats.html#table\" title=\"Legend for this format\"><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3goXBCwdPqAP0wAAAldJREFUOMuNk0tIlFEYhp9z/vE2jHkhxXA0zJCMitrUQlq4lnSltEqCFhFG2MJFhIvIFpkEWaTQqjaWZRkp0g26URZkTpbaaOJkDqk10szoODP//7XIMUe0elcfnPd9zsfLOYplGrpRwZaqTtw3K7PtGem7Q6FoidbGgqHVy/HRb669R+56zx7eRV1L31JGxYbBtjKK93cxeqfyQHbehkZbUkK20goELEuIzEd+dHS+qz/Y8PTSif0FnGkbiwcAjHaU1+QWOptFiyCLp/LnKptpqIuXHx6rbR26kJcBX3yLgBfnd7CxwJmflpP2wUg0HIAoUUpZBmKzELGWcN8nAr6Gpu7tLU/CkwAaoKTWRSQyt89Q8w6J+oVQkKnBoblH7V0PPvUOvDYXfopE/SJmALsxnVm6LbkotrUtNowMeIrVrBcBpaMmdS0j9df7abpSuy7HWehwJdt1lhVwi/J58U5beXGAF6c3UXLycw1wdFklArBn87xdh0ZsZtArghBdAA3+OEDVubG4UEzP6x1FOWneHh2VDAHBAt80IbdXDcesNoCvs3E5AFyNSU5nbrDPZpcUEQQTFZiEVx+51fxMhhyJEAgvlriadIJZZksRuwBYMOPBbO3hePVVqgEJhFeUuFLhIPkRP6BQLIBrmMenujm/3g4zc398awIe90Zb5A1vREALqneMcYgP/xVQWlG+Ncu5vgwwlaUNx+3799rfe96u9K0JSDXcOzOTJg4B6IgmXfsygc7/Bvg9g9E58/cDVmGIBOP/zT8Bz1zqWqpbXIsd0O9hajXfL6u4BaOS6SeWAAAAAElFTkSuQmCC\" alt=\"doco\" style=\"background-color: inherit\"/> Documentation for this format</a></td></tr></table></div>"
+      },
+      "questionnaire" : "http://test.shinny.org/us/ny/hrsn/Questionnaire/SHINNYDisablityQuestionnaire",
+      "status" : "completed",
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExample"
+      },
+      "authored" : "2024-01-01T00:00:00Z",
+      "item" : [{
+        "linkId" : "disability-questionnaire",
+        "text" : "Captures responses about a patient's disability mobility.",
+        "item" : [{
+          "linkId" : "disability-questions",
+          "text" : "Captures a collection of screening responses about a patient's mobility and self-care.",
+          "item" : [{
+            "linkId" : "69859-7",
+            "text" : "Do you have serious difficulty walking or climbing stairs? (5 years old or older)",
+            "answer" : [{
+              "valueCoding" : {
+                "system" : "http://loinc.org",
+                "code" : "LA32-8",
+                "display" : "No"
+              }
+            }]
+          }]
+        }]
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/QuestionnaireResponse/SHINNYDisablityQuestionnaireResponse"
+    }
+  }]
+}
