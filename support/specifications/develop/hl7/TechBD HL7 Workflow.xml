@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>e8a2a67d-94c4-4208-bc74-dfb555ced84c</id>
+  <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.2.0</description>
-  <revision>45</revision>
+  <description>Version: 0.1.4</description>
+  <revision>20</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -55,7 +55,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name</string>
           </list>
         </entry>
         <entry>
@@ -75,12 +75,23 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>FileName Validation</name>
+          <name>FileName validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
+function getOutcome(text, severity, code, interactionId) {
+    return JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
+        result: [{
+            severity: severity,
+            code: code,
+            details: { text: text }
+        }]
+    });
+}
 /**
-* Util function to generate json string wit hstatus and message
+* Util function to generate json string with status and message
 */
 function createJsonResponse(status, message) {
     return JSON.stringify({ status: status, message: message });
@@ -94,12 +105,23 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }
-&#xd;var rawData = connectorMessage.getRawData();var filename = null;
-var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+
+var interactionId = java.util.UUID.randomUUID().toString();
+globalMap.put(&apos;interactionId&apos;, interactionId);
+
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
+&#xd;var rawData = connectorMessage.getRawData();
+var xml = new XML(rawData);
+var hl7Message = xml.Content.Part.Content.toString();
+logger.info(&quot;hl7Message : &quot; + hl7Message);
+
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/);
 
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
+    globalMap.put(&apos;filename&apos;, filename);
 
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
@@ -112,6 +134,91 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
+}
+
+
+		try{
+			//DB Save Original Payload
+		     logger.info(&quot;DB Save inside Source transformer&quot;);
+		     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     channelMap.put(&apos;tenantId&apos;, tenantId);
+		     var interactionId = globalMap.get(&apos;interactionId&apos;);
+		     logger.info(&quot;interactionId: &quot; + interactionId);
+		     var operation = &quot;saveOgHL7Payload&quot;;
+		     var result = saveHL7Payload(
+			   interactionId,
+			   tenantId,
+			   sourceMap.get(&apos;contextPath&apos;),
+			   hl7Message,
+			   operation
+			);
+		} catch (e) {
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;HL7 Og Payload save: &quot; + e.toString();
+	                throw errorMessage;
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	                throw errorMessage;
+	            }
+		}
+
+
+// ---------------- HL7 VALIDATION ----------------
+
+// Parse request as XML
+var requestXml = new XML(connectorMessage.getRawData());
+
+// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+
+// Safety check
+if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+    var errorMessage = &quot;No HL7 content found in uploaded file.&quot;;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;missing-hl7&quot;, interactionId);
+	try {
+	        var operation = &quot;saveValidationFailed&quot;;
+	        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+	        logger.info(&quot;Successfully saved validation failure information&quot;);
+	    } catch (saveError) {
+	        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+	    }
+	 responseMap.put(&apos;finalResponse&apos;, outcome);
+      throw outcome;
+}
+
+// Now validate HL7 lines
+var lines = hl7Data.split(/\r?\n/);
+if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
+    var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
+	try {
+        var operation = &quot;saveValidationFailed&quot;;
+        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+        logger.info(&quot;Successfully saved validation failure information&quot;);
+    } catch (saveError) {
+        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+    }
+    responseMap.put(&apos;finalResponse&apos;, outcome);
+    throw outcome;
+}
+
+for (var i = 0; i &lt; lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith(&quot;|&quot;)) {
+        var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
+        var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;line-error&quot;, interactionId);
+	try {
+            var operation = &quot;saveValidationFailed&quot;;
+            saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+            logger.info(&quot;Successfully saved validation failure information&quot;);
+        } catch (saveError) {
+            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+        }
+        responseMap.put(&apos;finalResponse&apos;, outcome);
+    	 throw outcome;
+    }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
@@ -243,9 +350,10 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
             <script>// --------------------
 // Helper: Get JSON Outcome
 // --------------------
-function getOutcome(text, severity, code) {
+function getOutcome(text, severity, code, interactionId) {
     return JSON.stringify({
         resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
         result: [{
             severity: severity,
             code: code,
@@ -253,6 +361,7 @@ function getOutcome(text, severity, code) {
         }]
     });
 }
+
 
 // --------------------
 // Helper: Extract HL7 body from raw data
@@ -352,6 +461,7 @@ function getRequiredSegmentsAndFieldsFromXml(xmlPath) {
     var segmentDefs = segmentsSection.getChildren(&quot;SegmentDef&quot;);
 
     var requiredFields = [];
+    var oneOfGroups = [];
 
     for each (var segDef in segmentDefs) {
         var segmentName = segDef.getAttributeValue(&quot;Name&quot;);
@@ -414,12 +524,78 @@ function getRequiredSegmentsAndFieldsFromXml(xmlPath) {
 		
 		    logger.info(&quot;✅ Extracted required field: &quot; + seg + &quot;-&quot; + fieldIndex + (componentIndex ? &quot;.&quot; + componentIndex : &quot;&quot;));
 		}
+
+		// Handle &lt;OneOfGroup&gt;
+        var groups = segDef.getChildren(&quot;OneOfGroup&quot;);
+        for each (var group in groups) {
+            var groupFields = [];
+            var groupDesc = group.getAttributeValue(&quot;Description&quot;) || &quot;&quot;;
+
+            for each (var field in group.getChildren(&quot;Field&quot;)) {
+                var fieldName = String(field.getAttributeValue(&quot;Name&quot;)).trim();
+                var description = String(field.getAttributeValue(&quot;Description&quot;) || &quot;&quot;).trim();
+
+                var parts = fieldName.split(&quot;-&quot;);
+                var seg = parts[0];
+                var idxComp = parts[1].split(&quot;.&quot;);
+                var fieldIndex = parseInt(idxComp[0], 10);
+                var componentIndex = idxComp.length &gt; 1 ? parseInt(idxComp[1], 10) : null;
+
+                groupFields.push({
+                    segment: seg,
+                    fieldIndex: fieldIndex,
+                    componentIndex: componentIndex,
+                    fieldName: fieldName,
+                    description: description
+                });
+            }
+
+            oneOfGroups.push({
+                segment: segmentName,
+                description: groupDesc,
+                fields: groupFields
+            });
+        }
     }
+
 
     return {
         requiredSegments: requiredSegments,
-        requiredFields: requiredFields
+        requiredFields: requiredFields,
+        oneOfGroups: oneOfGroups
     };
+}
+
+function validateOneOfGroups(groups, hl7Text) {
+    var violations = [];
+
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+
+    for each (var group in groups) {
+        var satisfied = false;
+
+        for each (var f in group.fields) {
+            var fieldViolations = validateFieldsInAllSegments(
+                f.segment, f.fieldIndex, f.componentIndex, hl7Text,
+                f.fieldName, f.description
+            );
+            if (fieldViolations.length === 0) {
+                satisfied = true;
+                break;
+            }
+        }
+
+        if (!satisfied) {
+            violations.push({
+                segment: group.segment,
+                fieldName: group.fields.map(f =&gt; f.fieldName).join(&quot; OR &quot;),
+                description: group.description,
+                lineNumber: &quot;-&quot;, // optional: could inspect the first PID line
+                lineContent: &quot;&quot;  // optional
+            });
+        }
+    }
+    return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -456,6 +632,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interactionId&quot; : channelMap.get(interactionId),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;error&quot;,
@@ -556,6 +733,7 @@ function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
         missingHeaders.push(&quot;Missing required header &quot; + displayName);
     } else if (storeInMap) {
         channelMap.put(mapKey || headerName, value);
+        globalMap.put(mapKey || headerName, value);
     }
 
     return value;
@@ -581,6 +759,10 @@ logger.info(&quot;User-Agent: &quot; + userAgent);
 var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
 channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
 logger.info(&quot;OrganizationName: &quot; + OrganizationName);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
@@ -658,7 +840,7 @@ logger.info(&quot;HTTP request validation ended.&quot;);</script>
             <name>step_validate_profile_urls_env_variables</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
-            <script>connectorMessage.getRawData()/**
+            <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
 */
 
@@ -1085,7 +1267,9 @@ function getMultipleAnswersForComponent(transformer, observations) {
             <name>API endpoint processing</name>
             <sequenceNumber>4</sequenceNumber>
             <enabled>true</enabled>
-            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);logger.info(&quot;Request URL: &quot; + requestedPath);
+            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 
 if (requestedPath == &quot;/&quot;) {
 	return;
@@ -1093,15 +1277,27 @@ if (requestedPath == &quot;/&quot;) {
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 	requestedPath == &quot;/hl7v2/Bundle/$validate&quot;){
-	try {
+
+try {
     // Step 1: Get HL7 Input
     var raw = connectorMessage.getRawData();
     if (!raw || raw.trim().length === 0) {
         throw new Error(&quot;Empty HL7 message received.&quot;);
     }
 
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
+
+
     var hl7Body = extractHL7Body(raw);
     logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
+	    logger.error(msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
 
     // Step 2: Extract input segments
     var inputSegments = extractSegments(hl7Body);
@@ -1109,7 +1305,7 @@ if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
     logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
 
     // Step 3: Load required segments from XML template
-    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-validation-schema.xml&quot;;
     logger.info(&quot;Extracted template:\n&quot; + xmlPath);
 
 	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
@@ -1118,20 +1314,56 @@ if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 
 	var allViolations = [];
 
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
 	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
 	    var check = profile.requiredFields[i];
 	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
 	    allViolations = allViolations.concat(violations);
 	}
 
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
 	if (allViolations.length &gt; 0) {
-	    var errorDetails = allViolations.map(function(v) {
-	        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName + (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;) + &quot; in segment &apos;&quot; + v.segment + &quot;&apos;\n  → &quot; + v.lineContent;
-	    }).join(&quot;\n\n&quot;);
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
+		    }
+		}).join(&quot;\n\n&quot;);
 	
 	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
 	    logger.error(msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
 	}
 	
@@ -1139,14 +1371,37 @@ if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
 
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
-    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
     logger.info(success);
+
+    			// SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
 	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
-	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));	        
 	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    logger.error(&quot;Validation error: &quot; + errorMsg);
 	    throw e;
 	}	
@@ -1166,8 +1421,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
   });
 
 
-    var interactionId = java.util.UUID.randomUUID().toString();
-    channelMap.put(&quot;interactionId&quot;,interactionId);
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
     logger.info(&quot;InteractionId: &quot; + interactionId);
     var payload = JSON.stringify({
         executedAt: currentTimestampBegin,
@@ -1198,9 +1452,11 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 
 	
 	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
 
 	/////
 	var rawMessage = connectorMessage.getTransformedData(); // msg contains the entire raw message
+	var raw = connectorMessage.getRawData();
 	
 	// Extract the XML content from the form-data (i.e., skip the metadata)
 	var xmlStartIndex = rawMessage.indexOf(&apos;&lt;?xml&apos;); // Find the XML declaration
@@ -1221,6 +1477,13 @@ try {
 
     var hl7Body = extractHL7Body(raw);
     logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
+	    logger.error(msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
 
     // Step 2: Extract input segments
     var inputSegments = extractSegments(hl7Body);
@@ -1228,7 +1491,7 @@ try {
     logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
 
     // Step 3: Load required segments from XML template
-    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-validation-schema.xml&quot;;
     logger.info(&quot;Extracted template:\n&quot; + xmlPath);
 
 	var profile = getRequiredSegmentsAndFieldsFromXml(xmlPath);
@@ -1237,34 +1500,94 @@ try {
 
 	var allViolations = [];
 
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
 	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
 	    var check = profile.requiredFields[i];
-	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName);
+	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
 	    allViolations = allViolations.concat(violations);
 	}
 
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
 	if (allViolations.length &gt; 0) {
-	    var errorDetails = allViolations.map(function(v) {
-	        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName + &quot; in segment &apos;&quot; + v.segment + &quot;&apos;\n  → &quot; + v.lineContent;
-	    }).join(&quot;\n\n&quot;);
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
+		    }
+		}).join(&quot;\n\n&quot;);
 	
 	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
-	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;));
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
 	    logger.error(msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
 	}
+	
 
 
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
-    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
     logger.info(success);
+
+    // SAVE VALIDATION RESULT
+			logger.info(&quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(&quot;tenant Id: &quot; + tenantId);
+		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
 	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
-	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));
 	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
 	    logger.error(&quot;Validation error: &quot; + errorMsg);
 	    throw e;
 	}
@@ -1293,7 +1616,7 @@ try {
     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
     transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
 
-    var bundleId = java.util.UUID.randomUUID().toString();
+    var bundleId = globalMap.get(&apos;interactionId&apos;);
     transformer.setParameter(&quot;bundleId&quot;, bundleId);
 
     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
@@ -1352,10 +1675,32 @@ try {
     var output = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
 
     try {
-    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);&#xd;		} catch (e) {
+    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+
+			//Save Converted FHIR
+				logger.info(&quot;FHIR Conversion Save inside Bundle&quot;);
+			     var tenantId = channelMap.get(&apos;tenantId&apos;);
+			     logger.info(&quot;tenant Id: &quot; + tenantId);
+			     var operation = &quot;saveConversionSuccess&quot;;
+			     var result = saveHL7Payload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   cleanedJsonString,
+				   operation
+				);
+			&#xd;		} catch (e) {
 			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
         		// Failure: Return an OperationOutcome JSON response for general errors
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
+
+		    try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(&quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
 			        &#xd;		    logger.error(&quot;Error during HL7 FHIR bundle transformation: &quot; + e);&#xd;		    throw e;&#xd;		}
 
 		// Convert the XML document to JSON
@@ -1371,6 +1716,15 @@ try {
 } catch (e) {
     var errorMsg = &quot;Error during XSLT transformation: &quot; + e.message + &quot;\nDetails: &quot; + e;
     logger.error(errorMsg);
+
+	try {
+		 var operation = &quot;saveValidationFailed&quot;;
+		 saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		  logger.info(&quot;Successfully saved validation failure information&quot;);
+		} catch (saveError) {
+		    logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
+		}
+    
     channelMap.put(&apos;xslt_result&apos;, errorMsg);
     throw e;
 }
@@ -1573,6 +1927,18 @@ return value; // Keep the value as is
               <string>${elaboration}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-Correlation-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -1674,7 +2040,7 @@ return value; // Keep the value as is
       <filter version="4.5.0">
         <elements>
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
-            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos;</name>
+            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <field>sourceMap.get(&apos;contextPath&apos;)</field>
@@ -1692,10 +2058,11 @@ return value; // Keep the value as is
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>var index = message.indexOf(&quot;MSH|&quot;);
+  <preprocessingScript>// Check filename in HTTP content
+var index = message.indexOf(&quot;MSH|&quot;);
 if (index !== -1) {
     message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
-}&#xd;
+}
 return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
@@ -1769,7 +2136,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754982933457</time>
+        <time>1759315579356</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1778,5 +2145,28 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
+        <name>Active</name>
+        <channelIds>
+          <string>313844b0-70d9-4598-9806-027faea9ca75</string>
+          <string>0cd48777-dcd0-4495-a565-6191c01a9c6d</string>
+          <string>c9a033dd-6709-45c6-9197-e5b2ad7af027</string>
+          <string>28c4c91e-ecc2-4619-b19d-5a680df00fdd</string>
+          <string>e8a2a67d-94c4-4208-bc74-dfb555ced84c</string>
+          <string>c2dff4cb-c127-4751-8b4c-462d771100cb</string>
+          <string>d420cd39-41fe-42a4-842e-ca1a375bc32b</string>
+          <string>6b056724-d5c4-48ac-84e4-92b9c3768212</string>
+          <string>13bbec36-ef81-4ecd-bef7-62e8b464f270</string>
+        </channelIds>
+        <backgroundColor>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
