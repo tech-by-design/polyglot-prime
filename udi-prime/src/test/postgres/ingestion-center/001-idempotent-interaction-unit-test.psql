@@ -129,7 +129,7 @@ BEGIN
         'The foreign key from sat_interaction_user.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
         ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
-			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number'],
+			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number', 'ig_version'],
         'The columns of techbd_udi_ingress.sat_interaction_user should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 	
@@ -158,7 +158,7 @@ BEGIN
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
             'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors', 'techbd_version_number', 'full_operation_outcome',
-			'total_number_of_files_in_zip_file', 'number_of_fhir_bundles_generated_from_zip_file', 'data_validation_status'],
+			'total_number_of_files_in_zip_file', 'number_of_fhir_bundles_generated_from_zip_file', 'data_validation_status', 'ig_version'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');   
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
@@ -168,7 +168,7 @@ BEGIN
     RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
         ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
-			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name'],
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name', 'ig_version'],
         'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
     );
 
@@ -178,7 +178,7 @@ BEGIN
 	RETURN NEXT columns_are(schema_name, 'sat_interaction_hl7_request',
 	    ARRAY['sat_interaction_hl7_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 
 	        'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 
-	        'created_by', 'provenance', 'hl7_payload_text', 'origin', 'techbd_version_number', 'file_name'],
+	        'created_by', 'provenance', 'hl7_payload_text', 'origin', 'techbd_version_number', 'file_name', 'ig_version'],
 	    'The columns of techbd_udi_ingress.sat_interaction_hl7_request should match the expected structure.'
 	);
 
