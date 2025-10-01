@@ -294,7 +294,7 @@
 				],
 				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
 			  }
-			  <xsl:if test="//PID.22.1"><xsl:text>,</xsl:text></xsl:if>
+			  <xsl:if test="//PID.22.1 or //PID.8.1"><xsl:text>,</xsl:text></xsl:if>
 			</xsl:if>
 
 			<!-- ETHNICITY extension -->
