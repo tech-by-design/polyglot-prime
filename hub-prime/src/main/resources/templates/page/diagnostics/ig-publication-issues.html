@@ -54,7 +54,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
-                    { headerName: "Issue Identified On", field: "issue_date", filter: "agDateColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems." },
+                    { headerName: "Issue Identified On", field: "issue_date", sort:"desc", filter: "agDateColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems." },
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
                     { headerName: "Count Of URLs With Issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
                 ]) 
@@ -86,7 +86,7 @@
             agGridInstance.init('serverDataGrid');
             // Add date-range text 
             // Inject the date range into the HTML
-            helpers.injectDateRangeText('date-range', 'This widget provides a comprehensive overview of IG (Implementation Guide) publication issues by           displaying HTTP interactions that encountered validation problems. The grid includes columns such as IG Version, Issue Identified On, Validation Engine, and Count, with the ability to filter records based on a selected date range from <b>{startDate}</b> to <b>{endDate}</b>.',2);
+            helpers.injectDateRangeText('date-range', 'This widget provides a comprehensive overview of IG (Implementation Guide) publication issues by           displaying HTTP interactions that encountered validation problems. The grid includes columns such as IG Version, Issue Identified On, Validation Engine, and Count, with the ability to filter records based on a selected date range from <b>{startDate}</b> to <b>{endDate}</b>.',5);
         });
     </script>
 </head>
