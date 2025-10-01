@@ -9,7 +9,7 @@
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="CCDA_Bundle_Smoke_Test_Stage">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Hl7_Bundle_Smoke_Test_PHI_QA">
         <intProp name="ThreadGroup.num_threads">2</intProp>
         <intProp name="ThreadGroup.ramp_time">2</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
@@ -20,11 +20,11 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CCDA_BUNDLE_Stage_Request">
-          <stringProp name="TestPlan.comments">CCDA Bundle API test</stringProp>
-          <stringProp name="HTTPSampler.domain">synthetic.fhir.api.stage.techbd.org</stringProp>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HL7_BUNDLE_PHI_QA_Request">
+          <stringProp name="TestPlan.comments">HL7 Bundle API test</stringProp>
+          <stringProp name="HTTPSampler.domain">phi.fhir.api.qa.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
-          <stringProp name="HTTPSampler.path">/ccda/Bundle</stringProp>
+          <stringProp name="HTTPSampler.path">/hl7v2/Bundle</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -44,7 +44,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="CCDA_Payload_Headers">
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HL7_Payload_Headers">
             <collectionProp name="HeaderManager.headers">
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">Content-Type</stringProp>
@@ -56,7 +56,7 @@
               </elementProp>
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">X-TechBD-CIN</stringProp>
-                <stringProp name="Header.value">AB12345C</stringProp>
+                <stringProp name="Header.value">CM12345E</stringProp>
               </elementProp>
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">X-TechBD-OrgTIN</stringProp>
@@ -68,7 +68,7 @@
               </elementProp>
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">X-TechBD-Encounter-Type</stringProp>
-                <stringProp name="Header.value">23918007</stringProp>
+                <stringProp name="Header.value">405672008</stringProp>
               </elementProp>
             </collectionProp>
           </HeaderManager>
@@ -76,7 +76,7 @@
           <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Tenant ID">
             <stringProp name="delimiter">,</stringProp>
             <stringProp name="fileEncoding"></stringProp>
-            <stringProp name="filename">./test-automation/CCDA-Bundle-SmokeTest-Stage/TenantIds.csv</stringProp>
+            <stringProp name="filename">./test-automation/HL7-Bundle-SmokeTest-PHI-QA/TenantIds.csv</stringProp>
             <boolProp name="ignoreFirstLine">false</boolProp>
             <boolProp name="quotedData">false</boolProp>
             <boolProp name="recycle">false</boolProp>
@@ -86,7 +86,7 @@
           </CSVDataSet>
           <hashTree/>
           <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Upload File Path">
-            <stringProp name="filename">./test-automation/CCDA-Bundle-SmokeTest-Stage/Input_files.csv</stringProp>
+            <stringProp name="filename">./test-automation/HL7-Bundle-SmokeTest-PHI-QA/Input_files.csv</stringProp>
             <stringProp name="fileEncoding"></stringProp>
             <stringProp name="variableNames">FilePath</stringProp>
             <boolProp name="ignoreFirstLine">false</boolProp>

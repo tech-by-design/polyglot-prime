@@ -2,8 +2,8 @@
   <id>540b8010-424c-45c1-bca3-62f11e284491</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>CcdaBundleValidate</name>
-  <description>Version: 0.9.0</description>
-  <revision>15</revision>
+  <description>Version: 0.9.2</description>
+  <revision>29</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -411,7 +411,8 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     logger.info(&quot;Filename: &quot; + filename);
     channelMap.put(&apos;filename&apos;, filename);
 
-    var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+   // var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+   var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
 
@@ -1571,6 +1572,7 @@ var successResponse = {
                     {
                         &quot;operationOutcome&quot;: {
                             &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                             &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                             &quot;issue&quot;: [
                                 {
                                     &quot;severity&quot;: &quot;information&quot;,
@@ -1766,6 +1768,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                     {
                         &quot;operationOutcome&quot;: {
                             &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                            &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                             &quot;issue&quot;: [
                                 {
                                     &quot;severity&quot;: &quot;information&quot;,
@@ -2315,7 +2318,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758602140204</time>
+        <time>1759216052934</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
