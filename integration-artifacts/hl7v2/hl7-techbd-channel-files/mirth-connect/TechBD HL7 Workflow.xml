@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>7d90deb4-b0bf-4397-b0ed-736d52c063fb</id>
+  <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.4</description>
-  <revision>31</revision>
+  <revision>20</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -632,7 +632,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
-                                &quot;interactionId&quot; : ChannelMap.get(interactionId),
+                                &quot;interactionId&quot; : channelMap.get(interactionId),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;error&quot;,
@@ -2136,7 +2136,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758708435911</time>
+        <time>1759315579356</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2145,5 +2145,28 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
+        <name>Active</name>
+        <channelIds>
+          <string>313844b0-70d9-4598-9806-027faea9ca75</string>
+          <string>0cd48777-dcd0-4495-a565-6191c01a9c6d</string>
+          <string>c9a033dd-6709-45c6-9197-e5b2ad7af027</string>
+          <string>28c4c91e-ecc2-4619-b19d-5a680df00fdd</string>
+          <string>e8a2a67d-94c4-4208-bc74-dfb555ced84c</string>
+          <string>c2dff4cb-c127-4751-8b4c-462d771100cb</string>
+          <string>d420cd39-41fe-42a4-842e-ca1a375bc32b</string>
+          <string>6b056724-d5c4-48ac-84e4-92b9c3768212</string>
+          <string>13bbec36-ef81-4ecd-bef7-62e8b464f270</string>
+        </channelIds>
+        <backgroundColor>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
