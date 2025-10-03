@@ -12,14 +12,14 @@
             text-indent: -1.5rem;
         }
     </style>
-    <script type="module">
+    <!-- <script type="module">
         import { Helpers } from '@presentation/shell/helpers.js';
         document.addEventListener('DOMContentLoaded', async function () {
             const helpers = new Helpers();
             // Inject the date range into the HTML
             helpers.injectDateRangeText('dashboard-date-range', 'Submissions from {startDate} to {endDate}');
         });
-    </script>
+    </script> -->
 </head>
 
 <body class="bg-gray-100">
@@ -139,12 +139,12 @@
         </div> -->
 
         <div class="mt-12 w-full grid grid-cols-1 gap-8">
-            <div>
+          <!--  <div>
                 <h3 class="text-xl font-bold mb-4" id="dashboard-date-range"></h3>
 
                 <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
                 <div id="mermaid-diagram"></div>
-            </div>
+            </div> -->
             <!-- <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
@@ -164,7 +164,7 @@
                         SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div> -->
-            <div>
+            <!-- <div>
                 <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md"> 
                 sequenceDiagram
@@ -202,7 +202,7 @@
                         SCN ->> QE: SCN Picks it<br>up asynchronously
                     end
                 </pre>
-            </div>
+            </div> -->
         </div>
 
         <!-- <div class="mt-12 w-full grid grid-cols-2 gap-8">
@@ -225,90 +225,90 @@
 
         <script th:inline="javascript">
             /*<![CDATA[*/
-            document.addEventListener('DOMContentLoaded', async function () {
+        //     document.addEventListener('DOMContentLoaded', async function () {
 
-                const loader = document.getElementById('loader');
-                const mermaidDiagram = document.getElementById('mermaid-diagram');
+        //         const loader = document.getElementById('loader');
+        //         const mermaidDiagram = document.getElementById('mermaid-diagram');
 
-                try {
-                    // Show loader
-                    loader.style.display = 'block';
-                    mermaidDiagram.style.display = 'none';
+        //         try {
+        //             // Show loader
+        //             loader.style.display = 'block';
+        //             mermaidDiagram.style.display = 'none';
 
-                    const response = await fetch('/dashboard/stat/fhir/mermaid');
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    const data = await response.json();
-                    // console.log('Fetched data:', data);
+        //             const response = await fetch('/dashboard/stat/fhir/mermaid');
+        //             if (!response.ok) {
+        //                 throw new Error('Network response was not ok');
+        //             }
+        //             const data = await response.json();
+        //             // console.log('Fetched data:', data);
 
-                    // Helper function to safely find a count by label
-                    const getCountByLabel = (label) => {
-                        const item = data.find(item => item.label === label);
-                        if (item) {
-                            return item.count;
-                        } else {
-                            console.warn(`Label "${label}" not found in data`);
-                            return 0; // or any default value you prefer
-                        }
-                    };
+        //             // Helper function to safely find a count by label
+        //             const getCountByLabel = (label) => {
+        //                 const item = data.find(item => item.label === label);
+        //                 if (item) {
+        //                     return item.count;
+        //                 } else {
+        //                     console.warn(`Label "${label}" not found in data`);
+        //                     return 0; // or any default value you prefer
+        //                 }
+        //             };
 
-                    // Extract counts using the helper function 
-                    const healthelink = getCountByLabel('healthelink_total_submissions');
-                    const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
-                    const healthix = getCountByLabel('healthix_total_submissions');
-                    const grrhio = getCountByLabel('grrhio_total_submissions');
-                    const hixny = getCountByLabel('hixny_total_submissions');
-                    const healthelink_shinny_datalake_submissions = getCountByLabel('healthelink_shinny_datalake_submissions');
-                    const healtheconnections_shinny_datalake_submissions = getCountByLabel('healtheconnections_shinny_datalake_submissions');
-                    const healthix_shinny_datalake_submissions = getCountByLabel('healthix_shinny_datalake_submissions');
-                    const grrhio_shinny_datalake_submissions = getCountByLabel('grrhio_shinny_datalake_submissions');
-                    const hixny_shinny_datalake_submissions = getCountByLabel('hixny_shinny_datalake_submissions');
+        //             // Extract counts using the helper function 
+        //             const healthelink = getCountByLabel('healthelink_total_submissions');
+        //             const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
+        //             const healthix = getCountByLabel('healthix_total_submissions');
+        //             const grrhio = getCountByLabel('grrhio_total_submissions');
+        //             const hixny = getCountByLabel('hixny_total_submissions');
+        //             const healthelink_shinny_datalake_submissions = getCountByLabel('healthelink_shinny_datalake_submissions');
+        //             const healtheconnections_shinny_datalake_submissions = getCountByLabel('healtheconnections_shinny_datalake_submissions');
+        //             const healthix_shinny_datalake_submissions = getCountByLabel('healthix_shinny_datalake_submissions');
+        //             const grrhio_shinny_datalake_submissions = getCountByLabel('grrhio_shinny_datalake_submissions');
+        //             const hixny_shinny_datalake_submissions = getCountByLabel('hixny_shinny_datalake_submissions');
 
-                    // Construct Mermaid diagram code with fetched data
-                    const mermaidCode = `
-            sequenceDiagram 
-                participant QE as QE
-                participant Tech by Design as Tech by Design
-                participant SHIN-NY Data Lake as SHIN-NY Data Lake 
+        //             // Construct Mermaid diagram code with fetched data
+        //             const mermaidCode = `
+        //     sequenceDiagram 
+        //         participant QE as QE
+        //         participant Tech by Design as Tech by Design
+        //         participant SHIN-NY Data Lake as SHIN-NY Data Lake 
 
-                QE ->> Tech by Design: HEALTHeLINK Proxy FHIR JSON (${healthelink})
-                QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
-                QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
-                QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
-                QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
-                Tech by Design ->> SHIN-NY Data Lake: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_shinny_datalake_submissions})
-                Tech by Design ->> SHIN-NY Data Lake: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_shinny_datalake_submissions})
-                Tech by Design ->> SHIN-NY Data Lake: Healthix Proxy Validated FHIR JSON (${healthix_shinny_datalake_submissions})
-                Tech by Design ->> SHIN-NY Data Lake: Rochester Proxy Validated FHIR JSON (${grrhio_shinny_datalake_submissions})
-                Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions}) 
-        `;
+        //         QE ->> Tech by Design: HEALTHeLINK Proxy FHIR JSON (${healthelink})
+        //         QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
+        //         QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
+        //         QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
+        //         QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
+        //         Tech by Design ->> SHIN-NY Data Lake: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_shinny_datalake_submissions})
+        //         Tech by Design ->> SHIN-NY Data Lake: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_shinny_datalake_submissions})
+        //         Tech by Design ->> SHIN-NY Data Lake: Healthix Proxy Validated FHIR JSON (${healthix_shinny_datalake_submissions})
+        //         Tech by Design ->> SHIN-NY Data Lake: Rochester Proxy Validated FHIR JSON (${grrhio_shinny_datalake_submissions})
+        //         Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions}) 
+        // `;
 
-                    // Inject the Mermaid code into the HTML
-                    mermaidDiagram.innerHTML = `<pre class="mermaid bg-white p-4 rounded-lg shadow-md">${mermaidCode}</pre>`;
+        //             // Inject the Mermaid code into the HTML
+        //             mermaidDiagram.innerHTML = `<pre class="mermaid bg-white p-4 rounded-lg shadow-md">${mermaidCode}</pre>`;
 
-                    // Initialize Mermaid after setting the diagram code
-                    mermaid.contentLoaded();
+        //             // Initialize Mermaid after setting the diagram code
+        //             mermaid.contentLoaded();
 
-                    // Wait for Mermaid to render and then add click event listeners
-                    setTimeout(function () { 
-                        const { todayFormatted, pastDateFormatted } =  getDateRange(7);
-                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-                    }, 500);
+        //             // Wait for Mermaid to render and then add click event listeners
+        //             setTimeout(function () { 
+        //                 const { todayFormatted, pastDateFormatted } =  getDateRange(7);
+        //                 addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+        //                 addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+        //                 addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+        //                 addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+        //                 addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+        //             }, 500);
 
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                } finally {
-                    // Hide loader and show diagram
-                    loader.style.display = 'none';
-                    mermaidDiagram.style.display = 'block';
-                }
+        //         } catch (error) {
+        //             console.error('Error fetching data:', error);
+        //         } finally {
+        //             // Hide loader and show diagram
+        //             loader.style.display = 'none';
+        //             mermaidDiagram.style.display = 'block';
+        //         }
 
-            });
+        //     });
             // Optional: Use JavaScript to fetch data dynamically if needed
             async function fetchRecentData() {
                 try {
