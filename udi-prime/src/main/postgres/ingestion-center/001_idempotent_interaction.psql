@@ -2187,8 +2187,7 @@ BEGIN
                     p_provenance,
                     p_elaboration,
 					p_tenant_id,
-					p_techbd_version_number,
-					v_profile_url
+					p_techbd_version_number
                 );
             END IF;              
             IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN

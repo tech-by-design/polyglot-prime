@@ -57,7 +57,6 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<Void> healthCheck() {
         try {
-            LOG.info("Health check requested via HEAD /ingest");
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             LOG.error("Health check failed", e);
