@@ -42,9 +42,6 @@ SELECT pg_advisory_lock(hashtext('sat_interaction_user'));
   ALTER TABLE techbd_udi_ingress.sat_interaction_user 
     ADD COLUMN IF NOT EXISTS user_session_hash TEXT NULL,
     ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-
-  UPDATE techbd_udi_ingress.sat_interaction_user 
-    SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;      
 SELECT pg_advisory_unlock(hashtext('sat_interaction_user'));  
 
 SELECT pg_advisory_lock(hashtext('sat_diagnostic_dataledger_api'));
@@ -94,3 +91,6 @@ SELECT pg_advisory_unlock(hashtext('sat_interaction_fhir_validation_issue'));
 SELECT pg_advisory_lock(hashtext('sat_interaction_ccda_request'));
   ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
 SELECT pg_advisory_unlock(hashtext('sat_interaction_ccda_request'));
+
+UPDATE techbd_udi_ingress.sat_interaction_user 
+    SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;      
