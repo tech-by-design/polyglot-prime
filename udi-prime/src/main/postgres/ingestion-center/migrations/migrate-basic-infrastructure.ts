@@ -1238,10 +1238,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_user 
 	      ADD COLUMN IF NOT EXISTS user_session_hash TEXT NULL;   
 
-      SELECT pg_advisory_lock(hashtext('sat_interaction_user'));
-        UPDATE techbd_udi_ingress.sat_interaction_user 
-          SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;       
-      SELECT pg_advisory_unlock(hashtext('sat_interaction_user')); 
+      --SELECT pg_advisory_lock(hashtext('sat_interaction_user'));
+        --UPDATE techbd_udi_ingress.sat_interaction_user 
+        --  SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;       
+      --SELECT pg_advisory_unlock(hashtext('sat_interaction_user')); 
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_user 
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
