@@ -776,6 +776,8 @@ const migrateSP = pgSQLa.storedProcedure(
           EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL';
       END IF;
 
+      PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
+
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
       ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
 
@@ -794,6 +796,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_patient_mrn_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (patient_mrn);
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
 
       ${interactionUserRequestSat}
 
@@ -853,6 +857,8 @@ const migrateSP = pgSQLa.storedProcedure(
           EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ALTER COLUMN user_agent DROP NOT NULL';
       END IF;
       
+      PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
+
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_hl7_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (from_state);
@@ -880,6 +886,7 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
 
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -968,6 +975,7 @@ const migrateSP = pgSQLa.storedProcedure(
               DROP COLUMN primary_org_id;
           END IF;
         
+      PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);
@@ -998,7 +1006,9 @@ const migrateSP = pgSQLa.storedProcedure(
       ON techbd_udi_ingress.sat_interaction_http_request 
       USING btree ((payload->'nature'->>'tenant_id'));
 
-      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+      --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       ${jsonActionRule}
       -- Add description column if it does not exist
@@ -1254,14 +1264,18 @@ const migrateSP = pgSQLa.storedProcedure(
       SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
       WHERE json_path LIKE '$.response.responseBody%';
 
+      PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
       CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
       CREATE INDEX IF NOT EXISTS json_action_rule_last_applied_at_idx ON techbd_udi_ingress.json_action_rule USING btree (last_applied_at DESC);
       CREATE INDEX IF NOT EXISTS json_action_rule_namespace_idx ON techbd_udi_ingress.json_action_rule USING btree (namespace);
       CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
-
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
+    
       ${refCodeLookUp}
+      PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
       CREATE INDEX IF NOT EXISTS ref_code_lookup_code_type_idx ON techbd_udi_ingress.ref_code_lookup USING btree (code_type);
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
       IF NOT EXISTS (
         SELECT 1
         FROM pg_constraint
@@ -1285,11 +1299,13 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
       END IF;
 
+      PERFORM pg_advisory_lock(hashtext('islm_migration_nexus_index_creation'));
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_nexus_req_uq_hub_nexus_int_tnt_nat 
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_nexus_req_hub_nexus_inter_id_idx 
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id);
-      
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_nexus_index_creation'));
+
       -- Add request_source column if not exists
       IF NOT EXISTS (
           SELECT 1
@@ -1335,6 +1351,7 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${csvFhirProcessingErrors}
+      PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
       CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
           ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id);
 
@@ -1343,6 +1360,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_created_at
           ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at DESC);
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
 
       IF NOT EXISTS (
           SELECT 1
