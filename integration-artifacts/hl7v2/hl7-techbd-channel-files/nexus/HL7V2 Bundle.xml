@@ -2,8 +2,8 @@
   <id>37b4eb27-9ced-4307-8e25-1c94500c9b50</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.3.2</description>
-  <revision>43</revision>
+  <description>Version: 0.3.3</description>
+  <revision>49</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -131,6 +131,14 @@ function setErrorResponse(statusCode, errorMessage) {
 
 var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 &#xd;var rawData = connectorMessage.getRawData();
+
+	if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+	    errorMessage = &quot;No file provided in the request.&quot;;
+	    setErrorResponse(400, errorMessage);
+	    throw errorMessage;
+	}
+
+
 var xml = new XML(rawData);
 var hl7Message = xml.Content.Part.Content.toString();
 logger.info(&quot;hl7Message : &quot; + hl7Message);
@@ -154,6 +162,9 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;File not found.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
 }
 
 	var successResponse = {
@@ -2207,7 +2218,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759236753670</time>
+        <time>1759831789508</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
