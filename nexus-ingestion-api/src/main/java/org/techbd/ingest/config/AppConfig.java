@@ -54,6 +54,7 @@ public class AppConfig {
             private String prefix;
             private String action;
             private String to;
+            private String understoodNamespaces;
         }
 
         @Data
