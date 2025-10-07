@@ -26,6 +26,7 @@ org:
         prefix: "wsa"
         action: "urn:hl7-org:v3:MCCI_IN000002UV01"
         to: "http://www.w3.org/2005/08/addressing/anonymous"
+        understood-namespaces: ${UNDERSTOOD_NAMESPACES:http://www.w3.org/2005/08/addressing}
       techbd:
         namespace: "urn:techbd:custom"
         prefix: "techbd"    
