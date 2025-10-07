@@ -56,7 +56,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveOriginalCcdaPayload("int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata");
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
 
             assertTrue(result);
         }
@@ -72,7 +72,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata");
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
 
             assertTrue(result);
         }
@@ -88,7 +88,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveFhirConversionResult(true, "int123", "tenantA",
-                    "/test-uri", Map.of("fhir", "bundle"), "metadata");
+                    "/test-uri", Map.of("fhir", "bundle"), "metadata", "testUser", "testSystem");
 
             assertTrue(result);
         }
@@ -104,7 +104,7 @@ class CCDAServiceTest {
                              })) {
 
             boolean result = ccdaService.saveCcdaValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata");
+                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
 
             assertTrue(result);
         }
@@ -117,7 +117,7 @@ class CCDAServiceTest {
 
         CCDAService errorService = new CCDAService(faultyConfig, appLogger,coreAppConfig);
 
-        boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata");
+        boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata", "testUser", "testSystem");
 
         assertFalse(result);
     }

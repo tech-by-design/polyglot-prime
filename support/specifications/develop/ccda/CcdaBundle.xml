@@ -1,14 +1,17 @@
 <channel version="4.5.3">
-  <id>1b2ba78e-6109-4eb6-a28f-c92733d84b51</id>
+  <id>9a71141e-b1fa-4f16-aaa8-bf1eea08f68e</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.14.0</description>
-  <revision>6</revision>
+  <description>Version: 0.15.0</description>
+  <revision>4</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -1271,7 +1271,7 @@ var successResponse = {
 
 
 // Function 1: Save Original CCDA Payload
-function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse , fileName) {
+function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse , fileName, userAgent, clientIpAddress) {
 try {
         logInfo(&quot;Attempting to save original CCDA payload for interactionId1: &quot; + interactionId, channelMap);
          // Success: Create a structured OperationOutcome JSON response
@@ -1286,7 +1286,9 @@ try {
             requestedPath,
             sourceXml,
             successResponse,
-            actualFileName  
+            actualFileName,
+            userAgent,        // NEW
+            clientIpAddress  
         );
         
         if (saveOriginalResult) {
@@ -1305,7 +1307,7 @@ try {
 }&#xd;
 
 // Function 2: Save Validation Result (Success)
-function saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, fileName) {
+function saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, fileName, userAgent, clientIpAddress) {
 try {
         logInfo(&quot;Attempting to save validation success for interactionId: &quot; + interactionId, channelMap);
         // Get fileName from parameter or use default
@@ -1318,7 +1320,8 @@ try {
             requestedPath,
             sourceXml,
             successResponse,
-            actualFileName
+            actualFileName,&#xd;            userAgent,        // NEW
+            clientIpAddress
             
         );
 
@@ -1337,7 +1340,7 @@ try {
 }&#xd;
 
 // Function 3: Save Validation Failure
-function saveValidationFailure(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName) {
+function saveValidationFailure(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName, userAgent, clientIpAddress) {
     try {
         logInfo(&quot;Attempting to save validation failure for interactionId: &quot; + interactionId, channelMap);
         // Get fileName from parameter or use default
@@ -1351,7 +1354,8 @@ function saveValidationFailure(interactionId, tenantId, requestedPath, errorMess
             requestedPath,
             errorMessage,
             errorResponse,
-            actualFileName
+            actualFileName,&#xd;            userAgent,        // NEW
+            clientIpAddress
         );
 
         if (validationResult) {
@@ -1369,7 +1373,7 @@ function saveValidationFailure(interactionId, tenantId, requestedPath, errorMess
 
 
 // Function 4: Save FHIR Conversion Success
-function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson, fileName) {
+function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson, fileName, userAgent, clientIpAddress) {
  try {
         logInfo(&quot;Attempting to save FHIR conversion success for interactionId: &quot; + interactionId, channelMap);
         // Get fileName from parameter or use default
@@ -1380,7 +1384,8 @@ function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, clean
             interactionId,
             tenantId,
             requestedPath,
-            cleanedJsonStringJson,&#xd;            actualFileName
+            cleanedJsonStringJson,&#xd;            actualFileName,&#xd;            userAgent,        // NEW
+            clientIpAddress
         );
 
         if (conversionSuccess) {
@@ -1418,7 +1423,7 @@ function getJsonInvalidOperationOutcome(errorMessage, code) {
 }
 
 // Function 5: Save FHIR Conversion Failure
-function saveFhirConversionFailure(interactionId, tenantId, requestedPath, errorResponse, fileName) {
+function saveFhirConversionFailure(interactionId, tenantId, requestedPath, errorResponse, fileName, userAgent, clientIpAddress) {
     try {
         
         logInfo(&quot;Attempting to save FHIR conversion failure for interactionId: &quot; + interactionId, channelMap);
@@ -1432,7 +1437,8 @@ function saveFhirConversionFailure(interactionId, tenantId, requestedPath, error
             interactionId,
             tenantId,
             requestedPath,
-            errorResponse,&#xd;            actualFileName
+            errorResponse,&#xd;            actualFileName,&#xd;            userAgent,        // NEW
+            clientIpAddress
         );
 
         if (conversionResult) {
@@ -1500,7 +1506,7 @@ function getTenantInfo(tenantId) {
 
 
 // Function 6: Save All Error Information (Comprehensive Error Handler)
-function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName) {
+function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName, userAgent, clientIpAddress) {
    // Get fileName from parameter or use default
 //var actualFileName = fileName || channelMap.get(&quot;originalFileName&quot;);
      var actualFileName = channelMap.get(&apos;filename&apos;);
@@ -1519,7 +1525,7 @@ function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMe
             
             // 1. FIRST: Save the original CCDA payload so it&apos;s available for viewing
             if (sourceXml) {
-                saveResults.originalPayloadSaved = saveOriginalCcdaPayload(interactionId, validTenantId, requestedPath, sourceXml, successResponse, fileName);
+                saveResults.originalPayloadSaved = saveOriginalCcdaPayload(interactionId, validTenantId, requestedPath, sourceXml, successResponse, fileName, userAgent, clientIpAddress);
                 logInfo(&quot;********Original payload save result: &quot; + saveResults.originalPayloadSaved, channelMap);
             } else {
                 logError(&quot;***** No sourceXml provided - cannot save original payload *****&quot;, channelMap);
@@ -1527,7 +1533,7 @@ function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMe
             
             
             // Only save validation failure - no FHIR conversion failure since conversion was never attempted
-            saveResults.validationSaved = saveValidationFailure(interactionId, validTenantId, requestedPath, errorMessage, errorResponse , fileName);
+            saveResults.validationSaved = saveValidationFailure(interactionId, validTenantId, requestedPath, errorMessage, errorResponse , fileName, userAgent, clientIpAddress);
             
             logInfo(&quot;***** Saved validation failure only - no conversion was attempted *****&quot;, channelMap);
             
@@ -1572,6 +1578,14 @@ if (logInfo == null) {
 }
 
 logger.info(&quot;IP::::::&quot; + channelMap.get(&apos;clientIpAddress&apos;));
+// Get userAgent and clientIpAddress from channelMap
+var userAgent = channelMap.get(&apos;userAgent&apos;) || &apos;Unknown&apos;;
+var clientIpAddress = channelMap.get(&apos;clientIpAddress&apos;) || &apos;Unknown&apos;;
+
+logger.info(&quot;User Agent: &quot; + userAgent);
+logger.info(&quot;Client IP Address: &quot; + clientIpAddress);
+
+
 
 //###################################################################
 // Get DB Save Functions from globalMap
@@ -1741,7 +1755,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
         
         //*************************************
         if (saveOriginalCcdaPayload) {
-            saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName);
+            saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName, userAgent, clientIpAddress);
         } else {
             logError(&quot;saveOriginalCcdaPayload function not found in globalMap&quot;, channelMap);
         }
@@ -1798,7 +1812,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
     
     var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
     if (saveValidationFailure) {
-        saveValidationFailure(interactionId, tenantId, requestedPath, e.message, errorResponse, FileName);
+        saveValidationFailure(interactionId, tenantId, requestedPath, e.message, errorResponse, FileName, userAgent, clientIpAddress);
     }
     
     logger.error(errorMsg);
@@ -1831,7 +1845,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 			// STEP ?: Save the validation result using separated function  
 			//#############################################################
 			if (saveValidationSuccess) {
-				saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName);
+				saveValidationSuccess(interactionId, tenantId, requestedPath, sourceXml, successResponse, FileName, userAgent, clientIpAddress);
 			} else {
 				logError(&quot;saveValidationSuccess function not found in globalMap&quot;, channelMap);
 			}
@@ -1853,7 +1867,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
     
     var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
     if (saveValidationFailure) {
-        saveValidationFailure(interactionId, tenantId, requestedPath, e.message, errorResponse , FileName);
+        saveValidationFailure(interactionId, tenantId, requestedPath, e.message, errorResponse , FileName, userAgent, clientIpAddress);
     }
     
     // Data ledger tracking for failed validation
@@ -1954,7 +1968,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
                 // STEP 4: Save the FHIR conversion result using separated function
 //#####################################################################################################
                 if (saveFhirConversionSuccess) {
-                    var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson , FileName);
+                    var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, cleanedJsonStringJson , FileName, userAgent, clientIpAddress);
                    // var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject);
                     if (conversionSuccess) {
                         // Setup request parameters
@@ -2011,7 +2025,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 //###########################################################################################################
                 var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
                 if (saveFhirConversionFailure) {
-                    saveFhirConversionFailure(interactionId, tenantId, requestedPath, errorResponse , FileName);
+                    saveFhirConversionFailure(interactionId, tenantId, requestedPath, errorResponse , FileName, userAgent, clientIpAddress);
                 } else {
                     logError(&quot;saveFhirConversionFailure function not found in globalMap&quot;, channelMap);
                 }				        
@@ -2050,7 +2064,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
         // Get the XML from wherever it&apos;s stored in your flow
 var sourceXml = channelMap.get(&quot;sourceXml&quot;) || channelMap.get(&quot;originalXml&quot;) || msg.toString();
 logInfo(&quot;Found sourceXml: &quot; + (sourceXml ? &quot;YES (length: &quot; + sourceXml.length + &quot;)&quot; : &quot;NO&quot;), channelMap);
-saveAllErrorInformation(interactionId, tenantId, requestedPath, sourceXml, errorMessage, errorResponse, FileName);
+saveAllErrorInformation(interactionId, tenantId, requestedPath, sourceXml, errorMessage, errorResponse, FileName, userAgent, clientIpAddress);
         }
 	
 //#######################################################################################################################################
@@ -2602,7 +2616,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758089794269</time>
+        <time>1759826090870</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
