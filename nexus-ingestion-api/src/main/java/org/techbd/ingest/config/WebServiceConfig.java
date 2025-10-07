@@ -26,6 +26,7 @@ import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
 import org.techbd.ingest.interceptors.WsaHeaderInterceptor;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.SoapResponseUtil;
 
 import jakarta.xml.soap.MessageFactory;
@@ -39,16 +40,18 @@ public class WebServiceConfig extends WsConfigurationSupport {
     private final SoapResponseUtil soapResponseUtil;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
+    private final AppLogger LOG;
 
-    public WebServiceConfig(SoapResponseUtil soapResponseUtil, MessageProcessorService messageProcessorService, AppConfig appConfig) {
+    public WebServiceConfig(SoapResponseUtil soapResponseUtil, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger) {
         this.soapResponseUtil = soapResponseUtil;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
+        this.LOG = appLogger;
     }
 
     @Override
     protected void addInterceptors(List<EndpointInterceptor> interceptors) {
-        interceptors.add(new WsaHeaderInterceptor(soapResponseUtil, messageProcessorService, appConfig));
+        interceptors.add(new WsaHeaderInterceptor(soapResponseUtil, messageProcessorService, appConfig,LOG));
     }
 
     @Bean
