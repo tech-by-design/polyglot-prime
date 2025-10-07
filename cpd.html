@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-10-07<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.745.0</li>
+          <li id="projectVersion">Version: 0.746.0</li>
         <li class="pull-right"><a href="${project.url}">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -68,59 +68,6 @@
 <h1>CPD Results</h1><a id="CPD_Results"></a>
 <p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p><section>
 <h2>Duplications</h2><a id="Duplications"></a>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
-<td>363</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
-<td>414</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List&lt;Map&lt;String, Object&gt;&gt; recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-               // .where(DSL.upper(typableTable.column(&quot;tenant_id&quot;).cast(String.class)).eq(tenantId.toUpperCase()))
-               .where(typableTable.column(&quot;tenant_id_lower&quot;).cast(String.class).eq(tenantId))
-                .fetch()
-                .intoMaps();
-
-        if (recentInteractions != null &amp;&amp; recentInteractions.size() &gt; 0) {
-
-            String mre = recentInteractions.get(0).get(&quot;interaction_created_at&quot;).toString();
-
-            String interactionCount = recentInteractions.get(0).get(&quot;interaction_count&quot;).toString();
-
-            String formattedTime = getrecentInteractioString(mre);
-
-            if (&quot;html&quot;.equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() &gt; 0
-                                ? &quot;&lt;span title=\&quot;%s sessions found, most recent %s \&quot;&gt;%s&lt;/span&gt;&quot;.formatted(
-                                        interactionCount,
-                                        convertToEST(mre),
-                                        formattedTime)
-                                : &quot;&lt;span title=\&quot;No data found in %s\&quot;&gt;&#x26a0;&#xfe0f;&lt;/span&gt;&quot;.formatted(tenantId));
-
-            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if (&quot;html&quot;.equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(&quot;&lt;span title=\&quot;No data found in %s\&quot; class=\&quot;text-lg\&quot;&gt;No records available&lt;/span&gt;&quot;.formatted(tenantId));
-            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -189,39 +136,32 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
-<td>118</td></tr>
+<td>334</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
-<td>363</td></tr>
+<td>385</td></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
-<td>414</td></tr>
-<tr class="a">
 <td colspan="2" style="text-align: left;">
-<pre>final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List&lt;Map&lt;String, Object&gt;&gt; recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                //.where(DSL.upper(typableTable.column(&quot;tenant_id&quot;).cast(String.class)).eq(tenantId.toUpperCase()))                
-                .where(typableTable.column(&quot;tenant_id_lower&quot;).cast(String.class).eq(tenantId))
+<pre>.and(typableTable.column(&quot;widget_name&quot;).cast(String.class).eq(&quot;CSV&quot;))
+                       )
                 .fetch()
                 .intoMaps();
 
         if (recentInteractions != null &amp;&amp; recentInteractions.size() &gt; 0) {
 
-            String mre = recentInteractions.get(0).get(&quot;interaction_created_at&quot;).toString();
+            String mre = recentInteractions.get(0).get(&quot;last_updated_at&quot;).toString();
 
-            String interactionCount = recentInteractions.get(0).get(&quot;interaction_count&quot;).toString();
+            //String interactionCount = recentInteractions.get(0).get(&quot;interaction_count&quot;).toString();
 
             String formattedTime = getrecentInteractioString(mre);
 
             if (&quot;html&quot;.equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                         .body(mre.length() &gt; 0
-                                ? &quot;&lt;span title=\&quot;%s sessions found, most recent %s \&quot;&gt;%s&lt;/span&gt;&quot;.formatted(
-                                        interactionCount,
+                                ? &quot;&lt;span title=\&quot;Most recent %s \&quot;&gt;%s&lt;/span&gt;&quot;.formatted(                                       
                                         convertToEST(mre),
                                         formattedTime)
-                                : &quot;&lt;span title=\&quot;No data found in %s\&quot;&gt;&#x26a0;&#xfe0f;&lt;/span&gt;&quot;.formatted(tenantId));
+                                : &quot;&lt;span title=\&quot;No data found in %s\&quot;&gt;??&lt;/span&gt;&quot;.formatted(tenantId));
 
             } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
@@ -231,7 +171,72 @@
         } else {
             if (&quot;html&quot;.equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(&quot;&lt;span title=\&quot;No data found in %s\&quot;&gt;&#x26a0;&#xfe0f;&lt;/span&gt;&quot;.formatted(tenantId));</pre></td></tr></table>
+                        .body(&quot;&lt;span title=\&quot;No data found in %s\&quot; class=\&quot;text-lg\&quot;&gt;No records available&lt;/span&gt;&quot;.formatted(tenantId));
+            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+    }    
+
+
+    @GetMapping(value = &quot;/dashboard/stat/ccda/most-recent/{tenantId}.{extension}&quot;, produces = {</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>89</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>334</td></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>385</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>435</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>.and(typableTable.column(&quot;widget_name&quot;).cast(String.class).eq(&quot;FHIR&quot;))
+                       )
+                .fetch()
+                .intoMaps();
+
+        if (recentInteractions != null &amp;&amp; recentInteractions.size() &gt; 0) {
+
+            String mre = recentInteractions.get(0).get(&quot;last_updated_at&quot;).toString();
+
+            //  String interactionCount = recentInteractions.get(0).get(&quot;interaction_count&quot;).toString();
+
+            String formattedTime = getrecentInteractioString(mre);
+
+            if (&quot;html&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body(mre.length() &gt; 0
+                                ? &quot;&lt;span title=\&quot;Most recent %s \&quot;&gt;%s&lt;/span&gt;&quot;.formatted( 
+                                        convertToEST(mre),
+                                        formattedTime)
+                                : &quot;&lt;span title=\&quot;No data found in %s\&quot;&gt;??&lt;/span&gt;&quot;.formatted(tenantId));
+
+            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            if (&quot;html&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body(&quot;&lt;span title=\&quot;No data found in %s\&quot; class=\&quot;text-lg\&quot;&gt;No records available&lt;/span&gt;&quot;.formatted(tenantId));
+            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+    }</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -464,7 +469,37 @@
                                         + &quot;}&quot;)))
         })
         @ResponseBody
-        public Object validateBundleAndForward(</pre></td></tr></table></section></section>
+        public Object validateBundleAndForward(</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>78</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>324</td></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>375</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>425</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>public ResponseEntity&lt;?&gt; handleFHRequest(@PathVariable String tenantId, @PathVariable String extension) {
+        String schemaName = &quot;techbd_udi_ingress&quot;;
+        String viewName = &quot;interaction_recent_widget_new&quot;;
+
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                viewName);
+        List&lt;Map&lt;String, Object&gt;&gt; recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                 //.where(DSL.upper(typableTable.column(&quot;tenant_id&quot;).cast(String.class)).eq(tenantId.toUpperCase())) 
+                 .where( typableTable.column(&quot;tenant_id&quot;).cast(String.class).eq(tenantId)
+                         .and(typableTable.column(&quot;widget_name&quot;).cast(String.class).eq(&quot;FHIR&quot;))</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>
