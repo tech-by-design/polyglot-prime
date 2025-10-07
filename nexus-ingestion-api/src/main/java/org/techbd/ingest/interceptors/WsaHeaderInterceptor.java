@@ -47,7 +47,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, soapXml);
 
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
-        LOG.info("handleRequest: Captured SOAP request. interactionId={}, payload={}", interactionId, soapXml);
+        LOG.info("handleRequest: Captured SOAP request. interactionId={}", interactionId);
 
         return true;
     }
