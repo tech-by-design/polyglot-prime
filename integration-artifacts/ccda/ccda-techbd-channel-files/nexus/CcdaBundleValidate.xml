@@ -1,14 +1,17 @@
 <channel version="4.5.3">
-  <id>4836e115-99e0-4811-a992-05b8d828d36e</id>
+  <id>73398276-49b7-41f4-8c03-db0feb63642c</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>CcdaBundleValidate</name>
-  <description>Version: 0.10.0</description>
-  <revision>5</revision>
+  <description>Version: 0.11.0</description>
+  <revision>3</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -129,6 +129,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                         {
                             &quot;operationOutcome&quot;: {
                                 &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                                 &quot;issue&quot;: [
                                     {
                                         &quot;severity&quot;: &quot;error&quot;,
@@ -2261,6 +2262,30 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     </connector>
   </destinationConnectors>
   <preprocessingScript>// Modify the message variable below to pre process data
+
+////////////////////////////////////////////////////////////////
+// Get remote client address (could be IPv4 or IPv6, with port)
+var clientAddr = $(&apos;remoteAddress&apos;);
+var clientIp = clientAddr;
+
+
+logger.info(&quot;remoteAddress: &quot; + clientAddr);
+
+// Handle IPv6: [address]:port
+if (clientAddr != null &amp;&amp; clientAddr.startsWith(&quot;[&quot;)) {
+    // Extract between [ and ]
+    var start = clientAddr.indexOf(&quot;[&quot;) + 1;
+    var end = clientAddr.indexOf(&quot;]&quot;);
+    clientIp = clientAddr.substring(start, end);
+}
+// Handle IPv4: address:port
+else if (clientAddr != null &amp;&amp; clientAddr.indexOf(&quot;:&quot;) !== -1) {
+    clientIp = clientAddr.split(&quot;:&quot;)[0];
+}
+
+// Store into channel map
+channelMap.put(&apos;clientIpAddress&apos;, clientIp);
+//////////////////////////////////////////////////////////////
 return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
@@ -2334,7 +2359,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759833722689</time>
+        <time>1759851471076</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
