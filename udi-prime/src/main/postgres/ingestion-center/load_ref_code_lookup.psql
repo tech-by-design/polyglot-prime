@@ -1,3 +1,5 @@
+PERFORM pg_advisory_lock_shared(hashtext('insert_code_lookup_data'));
+
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('f6f51d10-51fa-4479-93da-05ee7205287b','state','AK',NULL,NULL,NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD'),
 	 ('1eed409c-565e-4049-b62b-27c6cb0948ac','state','AL',NULL,NULL,NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD'),
@@ -1492,8 +1494,11 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('8d5c4e35-d232-48f2-a577-2b4ce2944de9','answer_code','LA13902-4','Quite a bit','http://loinc.org',NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD'),
 	 ('3bcfaba9-c86d-4280-aa13-e60494768a9f','answer_code','LA13914-9','Very much','http://loinc.org',NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD'),
 	 ('20bc8c0b-dc39-4da7-8e14-5a8b06214751','answer_code','LA30122-8','I choose not to answer this question','http://loinc.org',NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD') ON CONFLICT DO NOTHING;
- 
+
+PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
+
 --- Update queries for question codes display strings
+PERFORM pg_advisory_lock_shared(hashtext('update_code_lookup_data'));
 
 UPDATE techbd_udi_ingress.ref_code_lookup
 SET display_string = 'What is your living situation today?'
@@ -2300,6 +2305,8 @@ UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Wisconsin', syst
 UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'West Virginia', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WV' AND (display_string IS NULL OR display_string = '');
 
 UPDATE techbd_udi_ingress.ref_code_lookup SET display_string = 'Wyoming', system_value = 'https://www.usps.com/' WHERE code_type = 'state' AND code = 'WY' AND (display_string IS NULL OR display_string = '');
+
+PERFORM pg_advisory_unlock_shared(hashtext('update_code_lookup_data'));
 
 /*
 -- Step 1: Create TEMP staging table

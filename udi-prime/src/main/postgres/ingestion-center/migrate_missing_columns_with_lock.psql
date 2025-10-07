@@ -1,0 +1,459 @@
+
+DO $$
+BEGIN
+    -- Acquire lock
+    PERFORM pg_advisory_lock(hashtext('islm_migration'));
+
+    -- sat_interaction_flat_file_csv_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_flat_file_csv_request'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
+        ADD COLUMN techbd_version_number TEXT NULL;
+    END IF;
+
+    -- sat_interaction_zip_file_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='origin'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN origin TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='validation_result_payload'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN validation_result_payload JSONB NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='sftp_session_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN sftp_session_id TEXT NULL;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='misc_errors'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request DROP COLUMN misc_errors;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='general_errors'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN general_errors JSONB NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN techbd_version_number TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='full_operation_outcome'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN full_operation_outcome JSONB DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='total_number_of_files_in_zip_file'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN total_number_of_files_in_zip_file INTEGER DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='number_of_fhir_bundles_generated_from_zip_file'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='data_validation_status'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN data_validation_status TEXT DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_zip_file_request'
+          AND column_name='ig_version'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN ig_version TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_hl7_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='client_ip_address'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN client_ip_address TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='hl7_payload_text'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN hl7_payload_text TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='origin'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN origin TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN techbd_version_number TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='file_name'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN file_name TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_hl7_request'
+          AND column_name='ig_version'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN ig_version TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='patient_mrn_source_system'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN patient_mrn_source_system TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='source_type'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN source_type TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='source_hub_interaction_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN source_hub_interaction_id TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='group_hub_interaction_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN group_hub_interaction_id TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='is_bundle_valid'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN is_bundle_valid BOOLEAN NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='bundle_type'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN bundle_type TEXT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_session_diagnostic
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_session_diagnostic'
+          AND column_name='ig_version'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN ig_version TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_session_diagnostic'
+          AND column_name='validation_engine'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN validation_engine TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_session_diagnostic'
+          AND column_name='bundle_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN bundle_id TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_session_diagnostic'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN techbd_version_number TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_user
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_user'
+          AND column_name='user_session_hash'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_user ADD COLUMN user_session_hash TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_user'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_user ADD COLUMN techbd_version_number TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_user'
+          AND column_name='ig_version'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_user ADD COLUMN ig_version TEXT NULL;
+    END IF;
+
+    -- sat_diagnostic_dataledger_api
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_diagnostic_dataledger_api'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_expectation_http_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_expectation_http_request'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_expectation_http_request ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_file_exchange
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_file_exchange'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_screening_info
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_screening_info'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_screening_organization
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_screening_organization'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_screening_patient
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_screening_patient'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_http_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_http_request'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_diagnostic_log
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_diagnostic_log'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_diagnostic_log'
+          AND column_name='hub_interaction_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN hub_interaction_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_diagnostic_exception
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_diagnostic_exception'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_diagnostic_exception'
+          AND column_name='hub_interaction_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN hub_interaction_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_fhir_validation_issue
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_validation_issue'
+          AND column_name='profile_url'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN profile_url TEXT DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_validation_issue'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN techbd_version_number TEXT DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_validation_issue'
+          AND column_name='tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN tenant_id TEXT DEFAULT NULL;
+    END IF;
+
+    -- sat_interaction_ccda_request
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_ccda_request'
+          AND column_name='techbd_version_number'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN techbd_version_number TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_ccda_request'
+          AND column_name='file_name'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN file_name TEXT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_ccda_request'
+          AND column_name='ig_version'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN ig_version TEXT DEFAULT NULL;
+    END IF;
+
+    -- Release lock
+    PERFORM pg_advisory_unlock(hashtext('islm_migration'));
+END $$;

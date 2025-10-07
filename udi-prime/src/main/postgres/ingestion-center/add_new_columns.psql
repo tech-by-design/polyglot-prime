@@ -7,8 +7,8 @@ SELECT pg_advisory_lock(hashtext('sat_interaction_zip_file_request'));
     DROP COLUMN IF EXISTS misc_errors,
     ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
     ADD COLUMN IF NOT EXISTS full_operation_outcome jsonb DEFAULT NULL,
-    ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT NULL,
-    ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT 0,
     ADD COLUMN IF NOT EXISTS data_validation_status TEXT DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
 SELECT pg_advisory_unlock(hashtext('sat_interaction_zip_file_request'));
@@ -26,7 +26,7 @@ SELECT pg_advisory_unlock(hashtext('sat_interaction_hl7_request'));
 SELECT pg_advisory_lock(hashtext('sat_interaction_fhir_request'));
   ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
     ADD COLUMN IF NOT EXISTS group_hub_interaction_id TEXT NULL,
-    ADD COLUMN IF NOT EXISTS is_bundle_valid BOOLEAN NULL,
+    ADD COLUMN IF NOT EXISTS is_bundle_valid BOOLEAN FALSE,
     ADD COLUMN IF NOT EXISTS bundle_type TEXT NULL;
 SELECT pg_advisory_unlock(hashtext('sat_interaction_fhir_request'));
 
