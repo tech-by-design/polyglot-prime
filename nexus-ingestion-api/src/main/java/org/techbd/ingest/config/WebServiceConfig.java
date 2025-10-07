@@ -108,7 +108,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
 
     static class SmartSoapMessageFactory extends SaajSoapMessageFactory {
 
-        @Override
+       @Override
         public SaajSoapMessage createWebServiceMessage(InputStream inputStream) throws IOException {
             try {
                 // Get HTTP request to check Content-Type
@@ -128,26 +128,48 @@ public class WebServiceConfig extends WsConfigurationSupport {
                     // Handle MTOM - create MIME headers from HTTP request
                     MimeHeaders mimeHeaders = new MimeHeaders();
                     mimeHeaders.addHeader("Content-Type", httpContentType);
-                    MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
+                    MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                     SOAPMessage soapMessage = msgFactory.createMessage(mimeHeaders, bis);
                     return new SaajSoapMessage(soapMessage);
                 } else {
                     // Regular SOAP handling
                     MimeHeaders headers = extractHeaders(bytes);
-                    String contentType = getContentType(headers);
-                    MessageFactory msgFactory;
-                    if (contentType != null && contentType.contains("application/soap+xml")) {
-                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
-                    } else {
-                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
-                    }
+                    MessageFactory msgFactory =
+                    MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                     SOAPMessage soapMessage = msgFactory.createMessage(headers, bis);
                     return new SaajSoapMessage(soapMessage);
                 }
             } catch (Exception e) {
                 throw new IOException("Unable to create SOAP message", e);
+            }
+        }
+ 
+        @Override
+        public SaajSoapMessage createWebServiceMessage() {
+            try {
+                // Default to SOAP 1.1
+                MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
+
+                // Check if HTTP request is available
+                var transportContext = TransportContextHolder.getTransportContext();
+                if (transportContext != null) {
+                    var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext
+                            .getConnection();
+                    String contentType = connection.getHttpServletRequest().getContentType();
+
+                    if (contentType != null && contentType.contains("application/soap+xml")) {
+                        // SOAP 1.2 request
+                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+                    }
+                }
+
+                SOAPMessage soapMessage = msgFactory.createMessage();
+                return new SaajSoapMessage(soapMessage);
+
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create SOAP message", e);
             }
         }
 

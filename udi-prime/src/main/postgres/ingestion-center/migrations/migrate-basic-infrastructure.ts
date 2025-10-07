@@ -1238,8 +1238,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_user 
 	      ADD COLUMN IF NOT EXISTS user_session_hash TEXT NULL;   
 
-      UPDATE techbd_udi_ingress.sat_interaction_user 
-        SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;        
+      --SELECT pg_advisory_lock(hashtext('sat_interaction_user'));
+        --UPDATE techbd_udi_ingress.sat_interaction_user 
+        --  SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;       
+      --SELECT pg_advisory_unlock(hashtext('sat_interaction_user')); 
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_user 
         ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
@@ -1266,6 +1268,23 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
       ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS profile_url TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS techbd_version_number TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN IF NOT EXISTS techbd_version_number TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_user ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
+
+      CREATE TABLE IF NOT EXISTS techbd_udi_ingress.dashboard_widget_metadata (
+          id TEXT NOT NULL PRIMARY KEY,
+          widget_name TEXT NOT NULL CHECK (widget_name IN ('FHIR', 'CSV', 'CCDA', 'HL7V2')),
+          tenant_id TEXT NOT NULL,
+          last_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          last_updated_by TEXT DEFAULT CURRENT_USER,
+          CONSTRAINT uq_dashboard_widget_tenant UNIQUE (widget_name, tenant_id)
+      );
 
       ${dependenciesSQL}
 

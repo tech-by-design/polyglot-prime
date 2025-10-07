@@ -1,0 +1,12 @@
+
+-- Purpose: Back fill the newly added 'tenant_id' columns for the following tables
+-- sat_interaction_fhir_validation_issue 
+-- sat_interaction_http_request 
+
+UPDATE techbd_udi_ingress.sat_interaction_http_request SET tenant_id = tenant_id_denorm WHERE tenant_id IS NULL;
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_validation_issue issue
+SET tenant_id = fhir.tenant_id
+FROM techbd_udi_ingress.sat_interaction_fhir_request fhir 
+WHERE issue.hub_interaction_id = fhir.hub_interaction_id
+AND issue.tenant_id IS NULL;

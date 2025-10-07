@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Publicly permitted endpoints
 
-                        .requestMatchers(HttpMethod.GET, "/actuator/health/mllp").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/ingest").permitAll()
