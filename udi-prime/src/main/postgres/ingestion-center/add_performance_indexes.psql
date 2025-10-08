@@ -34,7 +34,11 @@ CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_created_at
 CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_hub_interaction_id 
     ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id);
 
--- 9. Remove all materialized views
+-- 9. Remove unused views
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request CASCADE;
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;  
+
+-- 10. Remove all materialized views
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat;
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat;
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat;
@@ -48,7 +52,7 @@ DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_res
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_observe_mat;
 
 
--- 10. Remove all indexes created for materialized views 
+-- 11. Remove all indexes created for materialized views 
 DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_composite_idx;
 DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_sat_interaction_http_request_i_idx;
 DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_sat_id_idx;
