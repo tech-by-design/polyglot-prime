@@ -78,6 +78,9 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
     to_state: textNullable(),
     state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
+    request_source: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -119,6 +122,15 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
     passed: boolean().default(false),
     medicaid_cin: textNullable(),
     elaboration: jsonbNullable(),
+    additional_details: jsonbNullable(),
+    techbd_disposition_action: textNullable(),
+    techbd_version_number: textNullable(),
+    patient_mrn_source_system: textNullable(),
+    source_type: textNullable(),
+    source_hub_interaction_id: textNullable(),
+    group_hub_interaction_id: textNullable(),
+    is_bundle_valid: boolean().default(false),
+    bundle_type: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -141,6 +153,8 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
     interaction_start_time: dateTimeNullable(),
     interaction_end_time: dateTimeNullable(),
     elaboration: jsonbNullable(),
+    user_session_hash: textNullable(),
+    techbd_version_number: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -162,6 +176,10 @@ const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
     diagnostics: textNullable(),
     encountered_at: textNullable(),
     elaboration: jsonbNullable(),
+    ig_version: textNullable(),
+    validation_engine: textNullable(),
+    bundle_id: textNullable(),
+    techbd_version_number: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -185,6 +203,7 @@ const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
     total_safety_score: textNullable(),
     areas_of_interest: textNullable(),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -213,6 +232,7 @@ const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
     patient_ssn: textNullable(),
     org_id: textNullable(),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -234,6 +254,7 @@ const interactionFhirScreeninOrganizationSat = interactionHub.satelliteTable(
     org_state: textNullable(),
     org_postal_code: textNullable(),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -250,6 +271,10 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
     validation_engine: textNullable(),
     ig_version: textNullable(),
     elaboration: jsonbNullable(),
+    severity : textNullable(),
+    profile_url: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -280,6 +305,12 @@ const interactionCsvRequestSat = interactionHub.satelliteTable(
     to_state: textNullable(),
     state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
+    screening_observation_data_payload_text: textNullable(),
+    screening_profile_data_payload_text: textNullable(),
+    screening_observation_data_file_name: textNullable(),
+    screening_profile_data_file_name: textNullable(),
+    zip_file_hub_interaction_id: textNullable(),
+    techbd_version_number: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -300,6 +331,16 @@ const interactionZipRequestSat = interactionHub.satelliteTable(
     client_ip_address: textNullable(),
     user_agent: textNullable(),
     elaboration: jsonbNullable(),
+    origin: textNullable(),
+    validation_result_payload: jsonbNullable(),
+    sftp_session_id: textNullable(),
+    general_errors: jsonbNullable(),
+    techbd_version_number: textNullable(),
+    full_operation_outcome: jsonbNullable(),
+    total_number_of_files_in_zip_file: integer().default(0),
+    number_of_fhir_bundles_generated_from_zip_file: integer().default(0),
+    data_validation_status: textNullable(),
+    ig_version: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -323,6 +364,7 @@ const interactionfileExchangeSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     protocol: fileExchangeProtocol.references.code(),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -341,6 +383,7 @@ const expectationHttpRequestSat = hubExpectation.satelliteTable(
     hub_expectation_id: hubExpectation.references.hub_expectation_id(),
     content_type: textNullable(), // eg: Permission Denied to the file
     payload: jsonB,
+    tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -363,6 +406,8 @@ const diagnosticsSat = hubDiagnostics.satelliteTable(
     parent_diagnostic_log_id: textNullable(),
     hierarchy_level: integer().default(0),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    hub_interaction_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -380,6 +425,8 @@ const exceptionDiagnosticSat = hubDiagnostics.satelliteTable(
     err_pg_exception_hint: textNullable(),
     err_pg_exception_context: textNullable(),
     elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    hub_interaction_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -406,6 +453,7 @@ const diagnosticDataledgerSat = hubDiagnostics.satelliteTable(
 	dataledger_sent_status_code: textNullable(),
 	source: textNullable(),
 	additional_details: jsonbNullable(),
+  tenant_id: textNullable(),
   	...dvts.housekeeping.columns,
 },
 );
@@ -461,6 +509,11 @@ const interactionHl7RequestSat = interactionHub.satelliteTable(
     to_state: textNullable(),
     state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
+    hl7_payload_text: textNullable(),
+    origin: textNullable(),
+    techbd_version_number: textNullable(),
+    file_name: textNullable(),
+    ig_version: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -485,6 +538,9 @@ const interactionCcdaRequestSat = interactionHub.satelliteTable(
     state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
     origin: textNullable(),
+    techbd_version_number: textNullable(),
+    file_name: textNullable(),
+    ig_version : textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -530,6 +586,7 @@ const nexusInteractionIngestionSat = nexusInteractionHub.satelliteTable(
     additional_details: jsonbNullable(),
     general_errors: jsonbNullable(),
     elaboration: jsonbNullable(),
+    techbd_version_number: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -589,6 +646,7 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
 
 // List of dependencies and test dependencies
 const dependencies = [
+  "../migrate_missing_columns_with_lock.psql",
   "../000_idempotent_universal.psql",
   "../001_idempotent_interaction.psql",
   "../002_idempotent_diagnostics.psql",
@@ -694,8 +752,31 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${diagnosticDataledgerSat}
 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
+      -- Check and drop NOT NULL for 'passed' column
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'passed'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL';
+      END IF;
+
+      -- Check and drop NOT NULL for 'user_agent' column
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'user_agent'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL';
+      END IF;
+
+      PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
       ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
@@ -715,6 +796,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_patient_mrn_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (patient_mrn);
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
 
       ${interactionUserRequestSat}
 
@@ -738,10 +821,44 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ${interactionCcdaRequestSat}    
 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ALTER COLUMN user_agent DROP NOT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ALTER COLUMN user_agent DROP NOT NULL;
+      -- Drop NOT NULL on user_agent in sat_interaction_fhir_request
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'user_agent'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL';
+      END IF;
+
+      -- Drop NOT NULL on user_agent in sat_interaction_flat_file_csv_request
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_flat_file_csv_request'
+            AND column_name = 'user_agent'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ALTER COLUMN user_agent DROP NOT NULL';
+      END IF;
+
+      -- Drop NOT NULL on user_agent in sat_interaction_zip_file_request
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_zip_file_request'
+            AND column_name = 'user_agent'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ALTER COLUMN user_agent DROP NOT NULL';
+      END IF;
       
+      PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
+
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_hl7_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (from_state);
@@ -769,9 +886,7 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request 
-        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
-        ADD COLUMN IF NOT EXISTS file_name TEXT NULL;
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -808,7 +923,16 @@ const migrateSP = pgSQLa.storedProcedure(
             ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
         END IF;
 
-        ALTER TABLE techbd_udi_ingress.sat_interaction_http_request	ADD COLUMN IF NOT EXISTS payload_text text NULL;
+        -- Add payload_text column if it does not exist
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'sat_interaction_http_request'
+              AND column_name = 'payload_text'
+        ) THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN payload_text text;
+        END IF;
 
         
         -- Check and add 'nature_denorm' column if it does not exist
@@ -851,6 +975,7 @@ const migrateSP = pgSQLa.storedProcedure(
               DROP COLUMN primary_org_id;
           END IF;
         
+      PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);
@@ -881,23 +1006,89 @@ const migrateSP = pgSQLa.storedProcedure(
       ON techbd_udi_ingress.sat_interaction_http_request 
       USING btree ((payload->'nature'->>'tenant_id'));
 
-      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+      --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       ${jsonActionRule}
-      ALTER TABLE techbd_udi_ingress.json_action_rule ADD COLUMN IF NOT EXISTS description TEXT NULL;
-      ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_check;
+      -- Add description column if it does not exist
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'json_action_rule'
+            AND column_name = 'description'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.json_action_rule ADD COLUMN description TEXT;
+      END IF;
+      
+      -- Drop and recreate action_check constraint
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'json_action_rule'
+            AND constraint_name = 'json_action_rule_action_check'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT json_action_rule_action_check;
+      END IF;
       ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_check CHECK ((action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text, 'discard'::text])));
 
-      ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_rule_id_pkey;
-      ALTER TABLE techbd_udi_ingress.json_action_rule
-        ADD CONSTRAINT json_action_rule_action_rule_id_pkey
-        PRIMARY KEY (action_rule_id);
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;  
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS severity TEXT NULL;     
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS csv_zip_file_content Bytea NULL;   
+      -- Drop and recreate primary key constraint
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'json_action_rule'
+            AND constraint_name = 'json_action_rule_action_rule_id_pkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT json_action_rule_action_rule_id_pkey;
+      END IF;
+      ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_rule_id_pkey PRIMARY KEY (action_rule_id);
+
+      -- Add techbd_disposition_action column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'techbd_disposition_action'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN techbd_disposition_action TEXT NULL; 
+      END IF;
+
+      -- Add techbd_version_number column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'techbd_version_number'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
+      END IF;
+
+      -- Add severity column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_validation_issue'
+            AND column_name = 'severity'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN severity TEXT NULL;   
+      END IF;  
+            
+      -- Add csv_zip_file_content column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_zip_file_request'
+            AND column_name = 'csv_zip_file_content'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN csv_zip_file_content Bytea NULL;
+      END IF;
       
       TRUNCATE TABLE techbd_udi_ingress.json_action_rule;
 
@@ -1073,14 +1264,18 @@ const migrateSP = pgSQLa.storedProcedure(
       SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
       WHERE json_path LIKE '$.response.responseBody%';
 
+      PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
       CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
       CREATE INDEX IF NOT EXISTS json_action_rule_last_applied_at_idx ON techbd_udi_ingress.json_action_rule USING btree (last_applied_at DESC);
       CREATE INDEX IF NOT EXISTS json_action_rule_namespace_idx ON techbd_udi_ingress.json_action_rule USING btree (namespace);
       CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
-
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
+    
       ${refCodeLookUp}
+      PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
       CREATE INDEX IF NOT EXISTS ref_code_lookup_code_type_idx ON techbd_udi_ingress.ref_code_lookup USING btree (code_type);
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
       IF NOT EXISTS (
         SELECT 1
         FROM pg_constraint
@@ -1092,17 +1287,71 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${nexusInteractionHub}
       ${nexusInteractionIngestionSat}
-      ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS payload Bytea NOT NULL;  
+      
+      -- Add payload column if it does not exist
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_nexus_interaction_ingestion'
+            AND column_name = 'payload'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
+      END IF;
+
+      PERFORM pg_advisory_lock(hashtext('islm_migration_nexus_index_creation'));
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_nexus_req_uq_hub_nexus_int_tnt_nat 
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_nexus_req_hub_nexus_inter_id_idx 
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id);
-      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS additional_details JSONB DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_nexus_index_creation'));
+
+      -- Add request_source column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_http_request'
+            AND column_name = 'request_source'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
+      END IF;
+      
+      -- Add additional_details column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'additional_details'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN additional_details JSONB DEFAULT NULL;
+      END IF;
+      
+      -- Add techbd_version_number to sat_interaction_http_request if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_http_request'
+            AND column_name = 'techbd_version_number'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN techbd_version_number TEXT NULL;
+      END IF;
+      
+      -- Add techbd_version_number to sat_nexus_interaction_ingestion if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_nexus_interaction_ingestion'
+            AND column_name = 'techbd_version_number'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN techbd_version_number TEXT NULL;
+      END IF;
 
       ${csvFhirProcessingErrors}
+      PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
       CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
           ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id);
 
@@ -1111,6 +1360,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       CREATE INDEX IF NOT EXISTS idx_sat_csv_fhir_processing_errors_created_at
           ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at DESC);
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
 
       IF NOT EXISTS (
           SELECT 1
@@ -1181,103 +1431,12 @@ const migrateSP = pgSQLa.storedProcedure(
         DROP COLUMN IF EXISTS screening_data_payload_text,
         DROP COLUMN IF EXISTS screening_data_file_name;
 
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS patient_mrn_source_system TEXT NULL;
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
       DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
-        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
       
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
-        ADD COLUMN IF NOT EXISTS source_type text NULL, 
-        ADD COLUMN IF NOT EXISTS source_hub_interaction_id text NULL; 
-        
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request  
-        ADD COLUMN IF NOT EXISTS origin text NULL, 
-        ADD COLUMN IF NOT EXISTS validation_result_payload jsonb NULL;
 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request 
-        ADD COLUMN IF NOT EXISTS client_ip_address TEXT NULL, 
-            ADD COLUMN IF NOT EXISTS hl7_payload_text TEXT NULL,
-            ADD COLUMN IF NOT EXISTS origin TEXT NULL; 
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request 
-        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
-        ADD COLUMN IF NOT EXISTS file_name TEXT NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
-	      ADD COLUMN IF NOT EXISTS group_hub_interaction_id TEXT NULL;      
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
-	      ADD COLUMN IF NOT EXISTS is_bundle_valid BOOLEAN NULL;      
-        
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request  
-        ADD COLUMN IF NOT EXISTS sftp_session_id text NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
-        DROP COLUMN IF EXISTS misc_errors;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
-        ADD COLUMN IF NOT EXISTS general_errors jsonb NULL;
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
-        ADD COLUMN IF NOT EXISTS ig_version text NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
-        ADD COLUMN IF NOT EXISTS validation_engine text NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
-        ADD COLUMN IF NOT EXISTS bundle_id text NULL;
-        
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
-	      ADD COLUMN IF NOT EXISTS bundle_type TEXT NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_user 
-	      ADD COLUMN IF NOT EXISTS user_session_hash TEXT NULL;   
-
-      --SELECT pg_advisory_lock(hashtext('sat_interaction_user'));
-        --UPDATE techbd_udi_ingress.sat_interaction_user 
-        --  SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;       
-      --SELECT pg_advisory_unlock(hashtext('sat_interaction_user')); 
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_user 
-        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-      
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
-        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS full_operation_outcome jsonb DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS total_number_of_files_in_zip_file INTEGER DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS data_validation_status TEXT DEFAULT NULL;
-
-      -- Adding tenant_id columns to all relevant tables for implementing RLS
-      ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_expectation_http_request ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_diagnostic_log ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception ADD COLUMN IF NOT EXISTS hub_interaction_id TEXT DEFAULT NULL;
-
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS profile_url TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS techbd_version_number TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ADD COLUMN IF NOT EXISTS techbd_version_number TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_user ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
-      ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN IF NOT EXISTS ig_version TEXT DEFAULT NULL;
-
-      CREATE TABLE IF NOT EXISTS techbd_udi_ingress.dashboard_widget_metadata (
+        CREATE TABLE IF NOT EXISTS techbd_udi_ingress.dashboard_widget_metadata (
           id TEXT NOT NULL PRIMARY KEY,
           widget_name TEXT NOT NULL CHECK (widget_name IN ('FHIR', 'CSV', 'CCDA', 'HL7V2')),
           tenant_id TEXT NOT NULL,

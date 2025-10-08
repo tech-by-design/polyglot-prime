@@ -1833,7 +1833,7 @@ DECLARE
     v_techbd_disposition_action		TEXT 	:= NULL;
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
-   	v_is_bundle_valid				BOOLEAN	:= NULL;
+   	v_is_bundle_valid				BOOLEAN	:= false;
    	v_bundle_type				    TEXT 	:= NULL;
 
 BEGIN
@@ -6753,8 +6753,8 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_csv_request(
 	p_zip_file_processing_errors jsonb DEFAULT NULL::jsonb,
 	p_techbd_version_number text DEFAULT NULL::text, 
 	p_full_operation_outcome jsonb DEFAULT NULL::jsonb,
-    p_total_number_of_files_in_zip_file INTEGER DEFAULT NULL::INTEGER, 
-    p_number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL::INTEGER, 
+    p_total_number_of_files_in_zip_file INTEGER DEFAULT 0, 
+    p_number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT 0, 
     p_data_validation_status TEXT DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
