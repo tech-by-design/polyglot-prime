@@ -886,6 +886,14 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
 
+      --   Zip file request by created_at
+      CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_created_at 
+          ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (created_at);
+
+      --  Zip file request by hub_interaction_id
+      CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_hub_interaction_id 
+          ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id);
+
       PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
 
       BEGIN
