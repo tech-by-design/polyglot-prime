@@ -25,7 +25,7 @@ import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
-
+import org.techbd.ingest.config.PortConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,13 +37,15 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+    private final PortConfig portConfig;
 
     public DataHoldController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper,
-            AppConfig appConfig, AppLogger appLogger) {
-        super(appConfig, appLogger);        
+            AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+        super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
+        this.portConfig = portConfig;
         LOG = appLogger.getLogger(DataHoldController.class);
         LOG.info("DataHoldController initialized");
     }
@@ -78,6 +80,13 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             HttpServletRequest request) throws Exception {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataHoldController:: Received ingest request. interactionId={}", interactionId);
+
+        // Print the content of the config JSON loaded from S3
+        if (portConfig.isLoaded()) {
+            LOG.info("PortConfig loaded from S3: {}", objectMapper.writeValueAsString(portConfig.getPortConfigurationList()));
+        } else {
+            LOG.warn("PortConfig not loaded from S3!");
+        }
 
         Map<String, String> responseMap;
 

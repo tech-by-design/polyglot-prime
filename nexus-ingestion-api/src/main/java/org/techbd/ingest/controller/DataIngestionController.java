@@ -27,6 +27,7 @@ import org.techbd.ingest.util.TemplateLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.techbd.ingest.config.PortConfig;
 
 /**
  * Controller for handling data ingestion requests.
@@ -35,16 +36,17 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class DataIngestionController extends AbstractMessageSourceProvider {
     private final TemplateLogger LOG;
-    
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+    private final PortConfig portConfig;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger) {
+    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
+        this.portConfig = portConfig;
         LOG = appLogger.getLogger(DataIngestionController.class);
         LOG.info("DataIngestionController initialized");
     }
@@ -96,6 +98,40 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             HttpServletRequest request) throws Exception {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+
+        // Get the request port from x-server-port header
+        String portHeader = headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null));
+        int requestPort = -1;
+        if (portHeader != null) {
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                LOG.error("Invalid x-server-port header value: {}", portHeader);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Header 'x-server-port' is not set properly with a valid port number");
+            }
+        } else {
+            LOG.error("Missing x-server-port header");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Header 'x-server-port' is not set properly with a valid port number");
+        }
+        LOG.info("DataIngestionController:: Request received on port {}", requestPort);
+
+        // Check port config for matching port and routeTo == "/hold"
+        if (portConfig.isLoaded()) {
+            for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                if (entry.port == requestPort && "/hold".equals(entry.routeTo)) {
+                    LOG.info("DataIngestionController redirecting to /hold for port {}", requestPort);
+                    // Forward the request to /hold (internal forward, not HTTP redirect)
+                    request.getRequestDispatcher("/hold").forward(request, null);
+                    return null; // Response handled by /hold
+                }
+            }
+        } else {
+            String errorMsg = "Failed to load port configuration JSON from S3";
+            LOG.error(errorMsg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMsg);
+        }
 
         Map<String, String> responseMap;
 

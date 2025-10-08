@@ -1,5 +1,7 @@
 package org.techbd.ingest.controller;
 
+import org.techbd.ingest.config.PortConfig;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,7 +57,9 @@ class DataIngestionControllerTest {
         objectMapper = new ObjectMapper();
         when(appLogger.getLogger(DataIngestionController.class)).thenReturn(templateLogger);
         when(appConfig.getVersion()).thenReturn("1.0.0");
-        controller = new DataIngestionController(messageProcessorService, objectMapper,appConfig, appLogger);
+        // Add PortConfig mock
+        PortConfig portConfig = mock(PortConfig.class);
+        controller = new DataIngestionController(messageProcessorService, objectMapper, appConfig, appLogger, portConfig);
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/ingest"));
         when(servletRequest.getQueryString()).thenReturn("param=value");
         when(servletRequest.getProtocol()).thenReturn("HTTP/1.1");
@@ -66,10 +70,10 @@ class DataIngestionControllerTest {
         AppConfig.Aws.S3 s3Mock = mock(AppConfig.Aws.S3.class);
         AppConfig.Aws.S3.BucketConfig defaultConfigMock = mock(AppConfig.Aws.S3.BucketConfig.class);
         when(s3Mock.getDefaultConfig()).thenReturn(defaultConfigMock);
-        when(defaultConfigMock.getBucket()).thenReturn("test-bucket");  
+        when(defaultConfigMock.getBucket()).thenReturn("test-bucket");
         when(appConfig.getAws()).thenReturn(awsMock);
         when(awsMock.getS3()).thenReturn(s3Mock);
-        when(s3Mock.getDefaultConfig().getBucket()).thenReturn("test-bucket"); 
+        when(s3Mock.getDefaultConfig().getBucket()).thenReturn("test-bucket");
     }
 
     static Stream<String> fileNames() {
@@ -86,7 +90,10 @@ class DataIngestionControllerTest {
         }
         byte[] fileBytes = inputStream.readAllBytes();
         MockMultipartFile mockFile = new MockMultipartFile("file", fileName, null, fileBytes);
-        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "8080"
+        );
         Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
 
         when(messageProcessorService.processMessage(any(RequestContext.class), eq(mockFile)))
@@ -102,7 +109,10 @@ class DataIngestionControllerTest {
     @Test
     void testIngestRawData_shouldStoreAsDat() throws Exception {
         String rawData = "some raw test data";
-        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -127,7 +137,9 @@ class DataIngestionControllerTest {
         String rawData = "<note><to>User</to><from>Tester</from></note>";
         Map<String, String> mockHeaders = Map.of(
                 "X-Tenant-Id", "test-tenant",
-                "Content-Type", "application/xml");
+                "Content-Type", "application/xml",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -152,7 +164,9 @@ class DataIngestionControllerTest {
         String rawData = "{ \"name\": \"tester\", \"type\": \"json\" }";
         Map<String, String> mockHeaders = Map.of(
                 "X-Tenant-Id", "test-tenant",
-                "Content-Type", "application/json");
+                "Content-Type", "application/json",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -170,5 +184,26 @@ class DataIngestionControllerTest {
         assertThat(response.getBody()).contains("messageId");
 
         verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
+    }
+
+    @Test
+    void testIngest_withMissingPortHeader_shouldReturnBadRequest() throws Exception {
+        String rawData = "test";
+        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+        assertThat(response.getStatusCodeValue()).isEqualTo(400);
+        assertThat(response.getBody()).contains("x-server-port");
+    }
+
+    @Test
+    void testIngest_withInvalidPortHeader_shouldReturnBadRequest() throws Exception {
+        String rawData = "test";
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "notaport"
+        );
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+        assertThat(response.getStatusCodeValue()).isEqualTo(400);
+        assertThat(response.getBody()).contains("x-server-port");
     }
 }
