@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.5</description>
-  <revision>21</revision>
+  <description>Version: 0.1.6</description>
+  <revision>26</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -113,7 +113,7 @@ var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 
 	var rawData = connectorMessage.getRawData();
 	if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
-	    errorMessage = &quot;No file provided in the request.&quot;;
+	    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
 	    setErrorResponse(400, errorMessage);
 	    throw errorMessage;
 	}&#xd;
@@ -141,7 +141,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
-    errorMessage = &quot;File not found.&quot;;
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
@@ -185,17 +185,10 @@ var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Con
 
 // Safety check
 if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
-    var errorMessage = &quot;No HL7 content found in uploaded file.&quot;;
-    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;missing-hl7&quot;, interactionId);
-	try {
-	        var operation = &quot;saveValidationFailed&quot;;
-	        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
-	        logger.info(&quot;Successfully saved validation failure information&quot;);
-	    } catch (saveError) {
-	        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
-	    }
-	 responseMap.put(&apos;finalResponse&apos;, outcome);
-      throw outcome;
+	logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
+    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    	setErrorResponse(400, errorMessage);
+    	throw errorMessage;
 }
 
 // Now validate HL7 lines
@@ -2145,7 +2138,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759831569558</time>
+        <time>1759919446678</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
