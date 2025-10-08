@@ -58,6 +58,7 @@ public class PortConfig implements InitializingBean {
         public String routeTo;
         public String queue;
         public String dataDir;
+        public String metadataDir;
 
     }
 
@@ -81,8 +82,8 @@ public class PortConfig implements InitializingBean {
             S3Client s3 = (this.s3Client != null)
                     ? this.s3Client
                     : S3Client.builder().region(software.amazon.awssdk.regions.Region.of(region)).build();
-            software.amazon.awssdk.services.s3.model.GetObjectRequest req =
-                    software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+            software.amazon.awssdk.services.s3.model.GetObjectRequest req
+                    = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
                             .bucket(bucket)
                             .key(key)
                             .build();

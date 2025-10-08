@@ -1,3 +1,4 @@
+
 package org.techbd.ingest.controller;
 
 import java.time.Instant;
@@ -29,7 +30,11 @@ import org.techbd.ingest.config.PortConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import lombok.extern.slf4j.Slf4j;
+
+
 @RestController
 @Slf4j
 public class DataHoldController extends AbstractMessageSourceProvider {
@@ -124,12 +129,108 @@ public class DataHoldController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        return appConfig.getAws().getS3().getHoldConfig().getBucket();
+        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getBucket();
+
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) {
+                return defaultBucket;
+            }
+            HttpServletRequest req = attrs.getRequest();
+            String portHeader = req.getHeader("x-server-port");
+            if (portHeader == null) {
+                portHeader = req.getHeader("X-Server-Port");
+            }
+            if (portHeader == null) {
+                return defaultBucket;
+            }
+            int requestPort;
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid x-server-port header value: {}. Using default hold bucket", portHeader);
+                return defaultBucket;
+            }
+
+            if (!portConfig.isLoaded()) {
+                portConfig.loadConfig();
+            }
+
+            if (portConfig.isLoaded()) {
+                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                    if (entry.port == requestPort) {
+                        String dataDir = entry.dataDir;
+                        if (dataDir != null && !dataDir.isBlank()) {
+                            String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                            if (normalized.isEmpty()) {
+                                return defaultBucket;
+                            }
+                            return defaultBucket + "/" + normalized;
+                        }
+                        break; // found entry but no dataDir
+                    }
+                }
+            } else {
+                log.warn("PortConfig not loaded; using default hold bucket");
+            }
+        } catch (Exception e) {
+            log.error("Error while resolving data bucket name from port config", e);
+        }
+
+        return defaultBucket;
     }
 
     @Override
     public String getMetadataBucketName() {
-        return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) {
+                return defaultBucket;
+            }
+            HttpServletRequest req = attrs.getRequest();
+            String portHeader = req.getHeader("x-server-port");
+            if (portHeader == null) {
+                portHeader = req.getHeader("X-Server-Port");
+            }
+            if (portHeader == null) {
+                return defaultBucket;
+            }
+            int requestPort;
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid x-server-port header value: {}. Using default hold metadata bucket", portHeader);
+                return defaultBucket;
+            }
+
+            if (!portConfig.isLoaded()) {
+                portConfig.loadConfig();
+            }
+
+            if (portConfig.isLoaded()) {
+                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                    if (entry.port == requestPort) {
+                        String metadataDir = entry.metadataDir;
+                        if (metadataDir != null && !metadataDir.isBlank()) {
+                            String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                            if (normalized.isEmpty()) {
+                                return defaultBucket;
+                            }
+                            return defaultBucket + "/" + normalized;
+                        }
+                        break; // found entry but no metadataDir
+                    }
+                }
+            } else {
+                log.warn("PortConfig not loaded; using default hold metadata bucket");
+            }
+        } catch (Exception e) {
+            log.error("Error while resolving metadata bucket name from port config", e);
+        }
+
+        return defaultBucket;
     }
 
     @Override
