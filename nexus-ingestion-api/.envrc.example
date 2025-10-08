@@ -6,8 +6,13 @@
 
 export SPRING_PROFILES_ACTIVE=sandbox
 export AWS_S3_BUCKET_NAME=local-bucket
-export HOLD_S3_BUCKET_NAME=s3://local-hold-bucket
+export HOLD_S3_BUCKET_NAME=local-hold-bucket
 export AWS_S3_METADATA_BUCKET_NAME=local-metadata-bucket
 export AWS_SQS_QUEUE_NAME=http://localhost:4566/000000000000/local-queue.fifo
 export HL7_MLLP_PORTS=2575,2576-2580
 export UNDERSTOOD_NAMESPACES="http://www.w3.org/2005/08/addressing"
+
+# portConfig related
+export PORT_CONFIG_S3_BUCKET=s3-bucket-name
+export PORT_CONFIG_S3_KEY=full-s3-path-of-portConfig.json
+export AWS_REGION=us-east-1
