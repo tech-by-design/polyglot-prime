@@ -53,7 +53,7 @@ public class HL7Service {
      */
     public boolean saveOriginalHl7Payload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress) {
         try {
             logger.info("HL7Service saveOriginalHl7Payload BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -76,6 +76,8 @@ public class HL7Service {
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
@@ -109,7 +111,7 @@ public class HL7Service {
      */
     public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress) {
         try {
             logger.info("HL7Service saveValidation BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -132,6 +134,8 @@ public class HL7Service {
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
@@ -166,7 +170,7 @@ public class HL7Service {
      */
     public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
             String tenantId, String requestUri,
-            Map<String, Object> bundle, String fileName) {
+            Map<String, Object> bundle, String fileName, String userAgent, String clientIpAddress) {
         try {
             logger.info("Hl7Service saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             logger.info("Hl7Service Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
@@ -191,6 +195,8 @@ public class HL7Service {
             String provenance = "%s.saveHl7Validation".formatted(HL7Service.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
