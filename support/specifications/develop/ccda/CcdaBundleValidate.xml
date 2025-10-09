@@ -1,17 +1,14 @@
 <channel version="4.5.3">
-  <id>73398276-49b7-41f4-8c03-db0feb63642c</id>
+  <id>f914bfc8-3ef5-4b20-958a-e427440f321a</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>CcdaBundleValidate</name>
-  <description>Version: 0.11.0</description>
-  <revision>3</revision>
+  <description>Version: 0.12.0</description>
+  <revision>5</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -230,7 +230,7 @@ function validateAddrDates(addr, contextTag) {
 		}
      } catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        throw new Error(&quot;Validation Error: &quot; + error.message);
      }
 }
     
@@ -258,7 +258,7 @@ function validateLowHighDates(xmlData) {
 	    }
 	} catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        throw new Error(&quot;Validation Error: &quot; + error.message);
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
@@ -367,7 +367,7 @@ logger.info(&quot;rawData full **********: &quot; + rawData);
 
 // Check if rawData is empty
 if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
-    errorMessage = &quot;No file provided in the request.&quot;;
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage;
 }
@@ -2359,7 +2359,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759851471076</time>
+        <time>1759981379511</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
