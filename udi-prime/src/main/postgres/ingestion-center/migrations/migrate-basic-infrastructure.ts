@@ -626,6 +626,24 @@ const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_er
   sqlNS: ingressSchema
 });
 
+const users = SQLa.tableDefinition("users", {
+    id: primaryKey(),
+    github_id:text(),
+    name:text(),
+    tenant_id:textNullable(),
+    role:textNullable(),
+    ...dvts.housekeeping.columns
+  }, {
+    isIdempotent: true,
+    sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("github_id"),
+    ];
+  },
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1732,6 +1750,8 @@ const migrateSP = pgSQLa.storedProcedure(
           ADD CONSTRAINT category_check
           CHECK (category IN ('data_integrity', 'file_not_processed', 'incomplete_groups'));
       END IF;
+
+      ${users}
 
       ${linkNexusInteraction}
       IF NOT EXISTS (
