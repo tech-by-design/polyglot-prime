@@ -137,9 +137,9 @@ public class DataHoldController extends AbstractMessageSourceProvider {
                 return defaultBucket;
             }
             HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader("x-server-port");
+            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             if (portHeader == null) {
-                portHeader = req.getHeader("X-Server-Port");
+                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             }
             if (portHeader == null) {
                 return defaultBucket;
@@ -148,7 +148,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             try {
                 requestPort = Integer.parseInt(portHeader);
             } catch (NumberFormatException e) {
-                log.warn("Invalid x-server-port header value: {}. Using default hold bucket", portHeader);
+                log.warn("Invalid x-forwarded-port header value: {}. Using default hold bucket", portHeader);
                 return defaultBucket;
             }
 
@@ -190,9 +190,9 @@ public class DataHoldController extends AbstractMessageSourceProvider {
                 return defaultBucket;
             }
             HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader("x-server-port");
+            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             if (portHeader == null) {
-                portHeader = req.getHeader("X-Server-Port");
+                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             }
             if (portHeader == null) {
                 return defaultBucket;
@@ -201,7 +201,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             try {
                 requestPort = Integer.parseInt(portHeader);
             } catch (NumberFormatException e) {
-                log.warn("Invalid x-server-port header value: {}. Using default hold metadata bucket", portHeader);
+                log.warn("Invalid x-forwarded-port header value: {}. Using default hold metadata bucket", portHeader);
                 return defaultBucket;
             }
 

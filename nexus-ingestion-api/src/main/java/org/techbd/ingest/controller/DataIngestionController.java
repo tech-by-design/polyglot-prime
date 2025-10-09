@@ -103,21 +103,21 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
 
-        // Get the request port from x-server-port header
-        String portHeader = headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null));
+        // Get the request port from x-forwarded-port header
+        String portHeader = headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault("x-forwarded-port", null));
         int requestPort = -1;
         if (portHeader != null) {
             try {
                 requestPort = Integer.parseInt(portHeader);
             } catch (NumberFormatException e) {
-                LOG.error("Invalid x-server-port header value: {}", portHeader);
+                LOG.error("Invalid x-forwarded-port header value: {}", portHeader);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Header 'x-server-port' is not set properly with a valid port number");
+                        .body("Header 'x-forwarded-port' is not set properly with a valid port number");
             }
         } else {
-            LOG.error("Missing x-server-port header");
+            LOG.error("Missing x-forwarded-port header");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Header 'x-server-port' is not set properly with a valid port number");
+                    .body("Header 'x-forwarded-port' is not set properly with a valid port number");
         }
         LOG.info("DataIngestionController:: Request received on port {}", requestPort);
 
@@ -180,9 +180,9 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
                 return defaultBucket;
             }
             HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader("x-server-port");
+            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             if (portHeader == null) {
-                portHeader = req.getHeader("X-Server-Port");
+                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             }
             if (portHeader == null) {
                 return defaultBucket;
@@ -191,7 +191,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             try {
                 requestPort = Integer.parseInt(portHeader);
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid x-server-port header value: {}. Using default bucket", portHeader);
+                LOG.warn("Invalid x-forwarded-port header value: {}. Using default bucket", portHeader);
                 return defaultBucket;
             }
 
@@ -235,9 +235,9 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
                 return defaultBucket;
             }
             HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader("x-server-port");
+            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             if (portHeader == null) {
-                portHeader = req.getHeader("X-Server-Port");
+                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
             }
             if (portHeader == null) {
                 return defaultBucket;
@@ -246,7 +246,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             try {
                 requestPort = Integer.parseInt(portHeader);
             } catch (NumberFormatException e) {
-                LOG.warn("Invalid x-server-port header value: {}. Using default metadata bucket", portHeader);
+                LOG.warn("Invalid x-forwarded-port header value: {}. Using default metadata bucket", portHeader);
                 return defaultBucket;
             }
 

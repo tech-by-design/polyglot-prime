@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -81,8 +82,8 @@ class DataHoldControllerTest {
     @Test
     void testGetDataBucketName_withDataDir_appendsDataDir() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("6060");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("6060");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 6060;
@@ -97,8 +98,8 @@ class DataHoldControllerTest {
     @Test
     void testGetDataBucketName_withNoDataDir_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("5050");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("5050");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 5050;
@@ -113,8 +114,8 @@ class DataHoldControllerTest {
     @Test
     void testGetDataBucketName_withInvalidPortHeader_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("nope");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("nope");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
         when(portConfig.isLoaded()).thenReturn(true);
 
         String bucket = controller.getDataBucketName();
