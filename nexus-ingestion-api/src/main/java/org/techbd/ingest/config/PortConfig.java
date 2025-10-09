@@ -7,13 +7,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
-// import javax.annotation.PostConstruct;
-import java.io.InputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 /**
  * Singleton Spring Boot component to load port configuration from AWS S3.
@@ -90,31 +96,53 @@ public class PortConfig implements InitializingBean {
         if (loaded.get()) {
             return;
         }
+        String bucket = System.getenv(ENV_BUCKET);
+        String key = System.getenv(ENV_KEY);
+        String region = System.getenv(ENV_REGION) != null ? System.getenv(ENV_REGION) : "us-east-1";
+
+        if (bucket == null || key == null) {
+            log.error("PortConfig: Missing required environment variables {} or {}. Example values: {}='my-config-bucket', {}='configs/port-config.json'",
+                    ENV_BUCKET, ENV_KEY, ENV_BUCKET, ENV_KEY);
+            return;
+        }
+
+        S3Client s3 = (this.s3Client != null)
+                ? this.s3Client
+                : S3Client.builder().region(software.amazon.awssdk.regions.Region.of(region)).build();
+
+        GetObjectRequest req = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        String rawJson = null;
         try {
-            String bucket = System.getenv(ENV_BUCKET);
-            String key = System.getenv(ENV_KEY);
-            String region = System.getenv(ENV_REGION) != null ? System.getenv(ENV_REGION) : "us-east-1";
-            if (bucket == null || key == null) {
-                log.error("PortConfig: Missing required environment variables {} or {}", ENV_BUCKET, ENV_KEY);
-                return;
-            }
-            S3Client s3 = (this.s3Client != null)
-                    ? this.s3Client
-                    : S3Client.builder().region(software.amazon.awssdk.regions.Region.of(region)).build();
-            software.amazon.awssdk.services.s3.model.GetObjectRequest req
-                    = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(key)
-                            .build();
-            try (InputStream is = s3.getObject(req)) {
-                ObjectMapper mapper = new ObjectMapper();
-                portConfigurationList = mapper.readValue(is, new TypeReference<List<PortEntry>>() {
-                });
-                loaded.set(true);
-                log.info("PortConfig: Loaded {} port entries from s3://{}/{}", portConfigurationList.size(), bucket, key);
-            }
+            log.info("PortConfig: Attempting to load port config from s3://{}/{} (region={})", bucket, key, region);
+            ResponseBytes<GetObjectResponse> bytes = s3.getObjectAsBytes(req);
+            byte[] data = bytes.asByteArray();
+            log.debug("PortConfig: Fetched {} bytes from s3://{}/{}", data.length, bucket, key);
+
+            rawJson = new String(data, StandardCharsets.UTF_8);
+            // Log up to first 2KB to avoid huge logs
+            String preview = rawJson.length() > 2048 ? rawJson.substring(0, 2048) + "...(truncated)" : rawJson;
+            log.trace("PortConfig: JSON preview: {}", preview);
+
+            ObjectMapper mapper = new ObjectMapper();
+            portConfigurationList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
+            });
+            loaded.set(true);
+            log.info("PortConfig: Loaded {} port entries from s3://{}/{}", portConfigurationList.size(), bucket, key);
+        } catch (JsonProcessingException jpe) {
+            log.error("PortConfig: Failed to parse port config JSON (json length={}). JSON (truncated): {}",
+                    rawJson == null ? 0 : rawJson.length(),
+                    (rawJson != null && rawJson.length() > 0 ? rawJson.substring(0, Math.min(1024, rawJson.length())) + (rawJson.length() > 1024 ? "...(truncated)" : "") : "<empty>"),
+                    jpe);
+        } catch (SdkException sdkEx) {
+            log.error("PortConfig: AWS SDK error while fetching s3://{}/{} (region={}). Exception: {}", bucket, key, region, sdkEx.toString(), sdkEx);
+        } catch (IOException ioEx) {
+            log.error("PortConfig: IO error while reading S3 object s3://{}/{} - message: {}", bucket, key, ioEx.getMessage(), ioEx);
         } catch (Exception e) {
-            log.error("PortConfig: Failed to load port config from S3", e);
+            log.error("PortConfig: Unexpected error while loading port config from s3://{}/{} (region={}).", bucket, key, region, e);
         }
     }
 
