@@ -8434,3 +8434,85 @@ EXCEPTION
 	RETURN 'Error';
 END;
 $$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user(text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_user(
+    p_name TEXT,
+    p_github_id TEXT,
+	p_tenant_id TEXT DEFAULT NULL,
+	p_role TEXT DEFAULT NULL
+)
+RETURNS TEXT AS $$
+DECLARE
+    v_exception_id	TEXT;
+    v_error_msg		TEXT;
+    v_error_type	TEXT;
+    v_sqlstate		TEXT;
+    v_pg_detail		TEXT;
+    v_pg_hint		TEXT;
+    v_pg_context	TEXT;
+BEGIN
+	-- Check for NULL required parameters
+	IF p_name IS NULL OR p_github_id IS NULL THEN
+	    RETURN 'Error: Missing required field(s): ' ||
+	           CASE WHEN p_name IS NULL AND p_github_id IS NULL THEN 'name, github_id'
+	                WHEN p_name IS NULL THEN 'name'
+	                WHEN p_github_id IS NULL THEN 'github_id'
+	           END || '.';
+	END IF;
+
+    INSERT INTO techbd_udi_ingress.users (
+		id,
+        github_id,
+		name,
+        tenant_id,
+		role,
+        created_at,
+        created_by,
+		provenance
+    )
+    VALUES (
+		gen_random_uuid()::text,
+        p_github_id,
+        p_name,
+		p_tenant_id,
+		p_role,
+        CURRENT_TIMESTAMP,
+        CURRENT_USER,
+		'user'
+    )
+    ON CONFLICT (github_id)
+    DO UPDATE SET
+		name = EXCLUDED.name,
+        tenant_id = EXCLUDED.tenant_id,
+        role = EXCLUDED.role,
+        created_at = EXCLUDED.created_at,
+        created_by = EXCLUDED.created_by;
+	
+	RETURN 'Success: user inserted/updated.';
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		      
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id, NULL),
+		null,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		CURRENT_USER,
+		'User', null::jsonb, p_tenant_id);
+	RETURN format('Error: %s (SQLSTATE %s)', v_error_msg, v_sqlstate);
+END;
+$$ LANGUAGE plpgsql;
