@@ -50,16 +50,35 @@ public class PortConfig implements InitializingBean {
         public int port;
         public String responseType;
         public String protocol;
+
+        // legacy single-ip fields (keep for backward compatibility)
         public String ipAddress;
         public String cidrBlock;
+
+        // JSON may provide multiple whitelist entries
+        public List<String> whitelistIps;
+
+        // mtls may be represented as a boolean or as a string/id in different configs
         public boolean mtlsEnabled;
+        public String mtls;
+
         public String execType;
         public String trafficTo;
+
+        // support both "route" and "routeTo" JSON keys
         public String route;
+
         public String queue;
         public String dataDir;
         public String metadataDir;
 
+        // Convenience: consider mtls enabled if boolean true or mtls string present
+        public boolean isMtlsEnabled() {
+            if (mtlsEnabled) {
+                return true;
+            }
+            return mtls != null && !mtls.isBlank();
+        }
     }
 
     @Override
