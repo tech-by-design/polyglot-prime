@@ -124,7 +124,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         // Check port config for matching port and routeTo == "/hold"
         if (portConfig.isLoaded()) {
             for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                if (entry.port == requestPort && "/hold".equals(entry.routeTo)) {
+                if (entry.port == requestPort && "/hold".equals(entry.route)) {
                     LOG.info("DataIngestionController redirecting to /hold for port {}", requestPort);
                     // Forward the request to /hold (internal forward, not HTTP redirect)
                     request.getRequestDispatcher("/hold").forward(request, null);

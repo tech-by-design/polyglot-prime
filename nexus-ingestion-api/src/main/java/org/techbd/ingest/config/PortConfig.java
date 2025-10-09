@@ -55,7 +55,7 @@ public class PortConfig implements InitializingBean {
         public boolean mtlsEnabled;
         public String execType;
         public String trafficTo;
-        public String routeTo;
+        public String route;
         public String queue;
         public String dataDir;
         public String metadataDir;
