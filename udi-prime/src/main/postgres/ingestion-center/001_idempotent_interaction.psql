@@ -1833,7 +1833,7 @@ DECLARE
     v_techbd_disposition_action		TEXT 	:= NULL;
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
-   	v_is_bundle_valid				BOOLEAN	:= NULL;
+   	v_is_bundle_valid				BOOLEAN	:= false;
    	v_bundle_type				    TEXT 	:= NULL;
 
 BEGIN
@@ -2176,7 +2176,8 @@ BEGIN
                     v_ig_version,
                     v_validation_engine,
                     v_bundle_id,
-                    v_created_at
+                    v_created_at,
+					p_techbd_version_number
                 );
                 CALL techbd_udi_ingress.insert_validation_issues(
                     p_hub_interaction_id, 
@@ -2184,7 +2185,9 @@ BEGIN
                     p_payload, 
                     v_created_by, 
                     p_provenance,
-                    p_elaboration
+                    p_elaboration,
+					p_tenant_id,
+					p_techbd_version_number
                 );
             END IF;              
             IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN
@@ -2242,6 +2245,28 @@ BEGIN
 			                                   ELSE interaction_end_time 
 			                                END
 		WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
+		
+		--Update ig_version in sat_interaction_user table
+		IF(p_uri='/Bundle' OR p_uri='/Bundle/') THEN
+			UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_hub_interaction_id;
+		ELSE
+			UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+		END IF;
+
+		--Update ig_version in sat_interaction_zip_file_request table
+		IF(p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/') THEN			
+			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+		END IF;
+
+		--Update ig_version in sat_interaction_ccda_request table
+		IF (p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/') THEN 			
+			UPDATE techbd_udi_ingress.sat_interaction_ccda_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+		END IF;
+
+		--Update ig_version in sat_interaction_hl7_request table
+		IF (p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN			
+			UPDATE techbd_udi_ingress.sat_interaction_hl7_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+		END IF;
 	END IF;  
 
     -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
@@ -2549,7 +2574,8 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
     IN ig_version TEXT,
     IN validation_engine TEXT,
     IN bundle_id TEXT, 
-    IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone
+    IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
+	IN p_techbd_version_number text DEFAULT NULL::text
 )
 LANGUAGE plpgsql
 AS $$
@@ -2600,7 +2626,8 @@ BEGIN
             provenance,
             ig_version,
             validation_engine,
-            bundle_id
+            bundle_id,
+			techbd_version_number
         )
         VALUES (
             gen_random_uuid()::TEXT, 
@@ -2619,7 +2646,8 @@ BEGIN
             insert_fhir_session_diagnostic.provenance,
             insert_fhir_session_diagnostic.ig_version,
             insert_fhir_session_diagnostic.validation_engine,
-            insert_fhir_session_diagnostic.bundle_id
+            insert_fhir_session_diagnostic.bundle_id,
+			p_techbd_version_number
         );
     END LOOP;
 EXCEPTION
@@ -2646,7 +2674,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, tenant_id, hub_interaction_id);
 END;
 $$;
 
@@ -2690,7 +2718,8 @@ BEGIN
         total_safety_score,
         elaboration,
         created_by,
-        provenance
+        provenance,
+		tenant_id
     )
     SELECT 
         gen_random_uuid()::TEXT,
@@ -2745,7 +2774,8 @@ BEGIN
          LIMIT 1) AS total_safety_score,
         insert_fhir_screening_info.elaboration,
         insert_fhir_screening_info.created_by,
-        insert_fhir_screening_info.provenance
+        insert_fhir_screening_info.provenance,
+		insert_fhir_screening_info.tenant_id
     WHERE (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
            FROM jsonb_array_elements(payload -> 'entry') entry(value)
           WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
@@ -2765,7 +2795,7 @@ EXCEPTION
 	       
 	    -- Log the exception, reusing the previous exception ID if it exists
 		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
+        COALESCE(v_exception_id, NULL),
 		insert_fhir_screening_info.uri,
 		v_error_msg,
 		v_error_type,
@@ -2774,18 +2804,22 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, 
+		null::jsonb, insert_fhir_screening_info.tenant_id, insert_fhir_screening_info.hub_interaction_id);
 END;         
 $$;
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_validation_issues(text,text,jsonb,text,text,jsonb);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_validation_issues(text, text, jsonb, text, text, jsonb, text, text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_validation_issues (
     IN hub_interaction_id TEXT,
     IN uri TEXT,
     IN payload JSONB,
     IN created_by TEXT,
     IN provenance TEXT,
-    IN elaboration JSONB
+    IN elaboration JSONB,
+	IN p_tenant_id text DEFAULT NULL::text, 
+	IN p_techbd_version_number text DEFAULT NULL::text
 )
 LANGUAGE plpgsql
 AS $$
@@ -2798,8 +2832,8 @@ DECLARE
     v_pg_detail 					TEXT;
     v_pg_hint 						TEXT;
     v_pg_context 					TEXT;
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+    v_created_by 					TEXT 	:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 	:= COALESCE(provenance, 'unknown');
 BEGIN
     -- Extract values from the JSONB payload variable
     FOR issue_set IN
@@ -2807,6 +2841,7 @@ BEGIN
             jsonb_array_elements(validation_result -> 'operationOutcome'::text -> 'issue'::text) AS issue,
             to_timestamp(((validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
             validation_result ->> 'igVersion'::text AS ig_version,
+			validation_result ->> 'profileUrl'::text AS profile_url,
             TRIM(BOTH FROM regexp_replace(
                 (validation_result -> 'observability'::text) ->> 'name'::text, 
                 '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
@@ -2823,7 +2858,10 @@ BEGIN
             elaboration,
             created_by,
             provenance,
-            severity
+            severity,
+			tenant_id,
+			techbd_version_number,
+			profile_url
         )
         VALUES (
             gen_random_uuid()::TEXT, 
@@ -2835,7 +2873,10 @@ BEGIN
             insert_validation_issues.elaboration,
             v_created_by,
             insert_validation_issues.provenance,
-            issue_set.issue ->> 'severity'::text
+            issue_set.issue ->> 'severity'::text,
+			p_tenant_id,
+			p_techbd_version_number,
+			issue_set.profile_url
         );
     END LOOP;
 EXCEPTION
@@ -2860,7 +2901,7 @@ EXCEPTION
             v_pg_hint,
             v_pg_context,
             v_created_by,
-            v_provenance
+            v_provenance, null::jsonb, p_tenant_id, insert_validation_issues.hub_interaction_id
         );
 END;       
 $$;
@@ -3121,7 +3162,8 @@ BEGIN
         elaboration,
         created_by,
         provenance,
-        primary_org_id
+        primary_org_id,
+		tenant_id
     )
     SELECT gen_random_uuid()::TEXT,
         filtered_data.hub_interaction_id,
@@ -3144,7 +3186,8 @@ BEGIN
         filtered_data.elaboration,
         filtered_data.v_created_by,
         filtered_data.v_provenance,
-        primary_org_id
+        primary_org_id,
+		filtered_data.tenant_id
     FROM filtered_data;
 EXCEPTION
    WHEN OTHERS THEN
@@ -3170,7 +3213,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, insert_fhir_screening_patient.tenant_id, insert_fhir_screening_patient.hub_interaction_id);
 END;         
 $$;
 
@@ -3232,7 +3275,8 @@ BEGIN
         org_postal_code,
         elaboration,
         created_by,
-        provenance 
+        provenance,
+		tenant_id 
     )
     SELECT gen_random_uuid()::TEXT,
         filtered_data.hub_interaction_id,
@@ -3247,7 +3291,8 @@ BEGIN
         filtered_data.org_postal_code,
         filtered_data.elaboration,
         filtered_data.v_created_by,
-        filtered_data.v_provenance 
+        filtered_data.v_provenance,
+		filtered_data.tenant_id 
     FROM filtered_data;
 EXCEPTION
    WHEN OTHERS THEN
@@ -3273,7 +3318,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, insert_fhir_screening_organization.tenant_id, insert_fhir_screening_organization.hub_interaction_id);
 END;         
 $$;
 
@@ -4512,9 +4557,7 @@ FROM
 where 
 	scfpe.category = 'file_not_processed'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id
-ORDER BY
-    created_at DESC;
+    scfpe.zip_file_hub_interaction_id ;
 
 /*******************************************************************************************
 This view lists detailed CSV processing errors where uploaded ZIP files could 
@@ -4584,9 +4627,7 @@ FROM
 where 
 	scfpe.category = 'incomplete_groups'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id	
-ORDER BY
-    created_at DESC; 
+    scfpe.zip_file_hub_interaction_id; 
 
 /*******************************************************************************************
 This view lists detailed CSV processing errors categorized as "incomplete_groups". 
@@ -4655,9 +4696,7 @@ FROM
 where 
 	scfpe.category = 'data_integrity'    
 GROUP BY
-    scfpe.zip_file_hub_interaction_id	
-ORDER BY
-    created_at DESC; 
+    scfpe.zip_file_hub_interaction_id; 
 
 
  
@@ -5594,7 +5633,7 @@ EXCEPTION
 		v_pg_hint,
 		v_pg_context,
 		v_created_by,
-		v_provenance);
+		v_provenance, null::jsonb, null::text, sat_diagnostic_dataledger_api_upserted.hub_interaction_id);
 		RETURN NULL;
 END;
 $function$
@@ -6009,7 +6048,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6197,7 +6236,21 @@ BEGIN
        																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
        	   	/*------------------------------*/															
 	    
-	
+		-- Update dashboard_widget_metadata
+       	IF (v_nature_denorm = 'Original FHIR Payload') THEN
+			PERFORM techbd_udi_ingress.upsert_dashboard_widget_metadata(
+			    CASE 
+		            WHEN p_interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/') THEN 'FHIR'
+		            WHEN p_interaction_key IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/') THEN 'CSV'
+		            WHEN p_interaction_key IN ('/ccda/Bundle', '/ccda/Bundle/') THEN 'CCDA'
+		            WHEN p_interaction_key IN ('/hl7v2/Bundle', '/hl7v2/Bundle/') THEN 'HL7V2'
+		            ELSE NULL
+		        END,
+			    v_tenant_id_denorm,
+				v_created_at, 
+				p_created_by);
+		END IF;
+
 		v_return := jsonb_build_object('payload', CASE WHEN v_nature_denorm = 'techByDesignDisposition' THEN v_payload ELSE NULL END,
 									 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 									 'interaction_id', p_interaction_id);
@@ -6425,7 +6478,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -6700,8 +6753,8 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_csv_request(
 	p_zip_file_processing_errors jsonb DEFAULT NULL::jsonb,
 	p_techbd_version_number text DEFAULT NULL::text, 
 	p_full_operation_outcome jsonb DEFAULT NULL::jsonb,
-    p_total_number_of_files_in_zip_file INTEGER DEFAULT NULL::INTEGER, 
-    p_number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT NULL::INTEGER, 
+    p_total_number_of_files_in_zip_file INTEGER DEFAULT 0, 
+    p_number_of_fhir_bundles_generated_from_zip_file INTEGER DEFAULT 0, 
     p_data_validation_status TEXT DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -6829,7 +6882,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, p_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -7204,7 +7257,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -7494,7 +7547,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_tenant_id_denorm, p_interaction_id
+                    v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, null::jsonb, v_tenant_id_denorm, p_interaction_id
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -8296,3 +8349,170 @@ EXCEPTION
 		RETURN NULL;
 END;
 $function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_dashboard_widget_metadata(text, text, timestamptz, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_dashboard_widget_metadata(
+    p_widget_name TEXT,
+    p_tenant_id TEXT,
+    p_last_updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    p_last_updated_by TEXT DEFAULT CURRENT_USER
+)
+RETURNS TEXT AS $$
+DECLARE
+    allowed_widgets TEXT[] := ARRAY['FHIR', 'CSV', 'CCDA', 'HL7V2'];
+	v_exception_id	TEXT;
+    v_error_msg		TEXT;
+    v_error_type	TEXT;
+    v_sqlstate		TEXT;
+    v_pg_detail		TEXT;
+    v_pg_hint		TEXT;
+    v_pg_context	TEXT;
+BEGIN
+	/*
+	 * Inserts or updates dashboard widget metadata for a given widget_name and tenant_id. 
+	 * If either widget_name or tenant_id is NULL, the function returns without changes. 
+	 * Updates last_updated_at and last_updated_by if the record exists.
+	 */
+	-- Check for NULL required parameters
+	IF p_widget_name IS NULL OR p_tenant_id IS NULL THEN
+	    RETURN 'Error: Missing required field(s): ' ||
+	           CASE WHEN p_widget_name IS NULL AND p_tenant_id IS NULL THEN 'widget_name, tenant_id'
+	                WHEN p_widget_name IS NULL THEN 'widget_name'
+	                WHEN p_tenant_id IS NULL THEN 'tenant_id'
+	           END || '.';
+	END IF;
+
+	-- Validate widget_name
+    IF NOT UPPER(p_widget_name) = ANY (allowed_widgets) THEN
+        RETURN 'Error: Invalid widget_name. Allowed values are FHIR, CSV, CCDA, HL7V2.';
+    END IF;
+
+
+    INSERT INTO techbd_udi_ingress.dashboard_widget_metadata (
+		id,
+        widget_name,
+        tenant_id,
+        last_updated_at,
+        last_updated_by
+    )
+    VALUES (
+		gen_random_uuid()::text,
+        UPPER(p_widget_name),
+        LOWER(p_tenant_id),
+        COALESCE(p_last_updated_at, CURRENT_TIMESTAMP),
+        COALESCE(p_last_updated_by, CURRENT_USER)
+    )
+    ON CONFLICT (widget_name, tenant_id)
+    DO UPDATE SET
+        last_updated_at = COALESCE(EXCLUDED.last_updated_at, CURRENT_TIMESTAMP),
+        last_updated_by = COALESCE(EXCLUDED.last_updated_by, CURRENT_USER);
+	
+	RETURN 'Success: Dashboard widget metadata inserted/updated.';
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		      
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id, NULL),
+		null,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		p_last_updated_by,
+		'DashBoard-Widget', null::jsonb, p_tenant_id);
+	RETURN 'Error';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user(text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_user(
+    p_name TEXT,
+    p_github_id TEXT,
+	p_tenant_id TEXT DEFAULT NULL,
+	p_role TEXT DEFAULT NULL
+)
+RETURNS TEXT AS $$
+DECLARE
+    v_exception_id	TEXT;
+    v_error_msg		TEXT;
+    v_error_type	TEXT;
+    v_sqlstate		TEXT;
+    v_pg_detail		TEXT;
+    v_pg_hint		TEXT;
+    v_pg_context	TEXT;
+BEGIN
+	-- Check for NULL required parameters
+	IF p_name IS NULL OR p_github_id IS NULL THEN
+	    RETURN 'Error: Missing required field(s): ' ||
+	           CASE WHEN p_name IS NULL AND p_github_id IS NULL THEN 'name, github_id'
+	                WHEN p_name IS NULL THEN 'name'
+	                WHEN p_github_id IS NULL THEN 'github_id'
+	           END || '.';
+	END IF;
+
+    INSERT INTO techbd_udi_ingress.users (
+		id,
+        github_id,
+		name,
+        tenant_id,
+		role,
+        created_at,
+        created_by,
+		provenance
+    )
+    VALUES (
+		gen_random_uuid()::text,
+        p_github_id,
+        p_name,
+		p_tenant_id,
+		p_role,
+        CURRENT_TIMESTAMP,
+        CURRENT_USER,
+		'user'
+    )
+    ON CONFLICT (github_id)
+    DO UPDATE SET
+		name = EXCLUDED.name,
+        tenant_id = EXCLUDED.tenant_id,
+        role = EXCLUDED.role,
+        created_at = EXCLUDED.created_at,
+        created_by = EXCLUDED.created_by;
+	
+	RETURN 'Success: user inserted/updated.';
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		      
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id, NULL),
+		null,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		CURRENT_USER,
+		'User', null::jsonb, p_tenant_id);
+	RETURN format('Error: %s (SQLSTATE %s)', v_error_msg, v_sqlstate);
+END;
+$$ LANGUAGE plpgsql;

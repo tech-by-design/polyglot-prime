@@ -25,3 +25,66 @@ CREATE INDEX IF NOT EXISTS sat_interaction_fhir_screening_patient_created_at_idx
 -- 6. Screening organizations by created_at
 CREATE INDEX IF NOT EXISTS idx_sat_interaction_fhir_screening_organization_created_at_desc
     ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC);
+
+-- 7. Zip file request by created_at
+CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_created_at 
+    ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (created_at);
+
+-- 8. Zip file request by hub_interaction_id
+CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_hub_interaction_id 
+    ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id);
+
+-- 9. Remove unused views
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request CASCADE;
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;  
+
+-- 10. Remove all materialized views
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostic_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_multiple_3_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_observe_mat;
+
+
+-- 11. Remove all indexes created for materialized views 
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_composite_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_sat_interaction_http_request_i_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_sat_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat_composite_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_observe_mat_request_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_observe_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat_row_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_observe_mat_row_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_observe_mat_start_time_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat_sat_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat_sat_interaction_http_reque;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat_tenant_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat_encounteredat_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_sat_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_row_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_patient_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_created_at_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_nature_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_tenant_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_from_state_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_request_mat_to_state_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat_composite_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat_sat_interaction_http;
+DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat_sat_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_screening_info_mat_hub_interaction_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat_hub_interaction_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_date_time_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_hub_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_row_id_idx;
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_sat_id_idx;    

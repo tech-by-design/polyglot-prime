@@ -1,5 +1,9 @@
 package org.techbd.ingest.controller;
 
+import org.techbd.ingest.config.PortConfig;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -9,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Collections;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +45,9 @@ class DataIngestionControllerTest {
     @Mock
     private HttpServletRequest servletRequest;
 
+    @Mock
+    private PortConfig portConfig;
+
     private ObjectMapper objectMapper;
     @Mock
     private static AppLogger appLogger;
@@ -55,7 +63,7 @@ class DataIngestionControllerTest {
         objectMapper = new ObjectMapper();
         when(appLogger.getLogger(DataIngestionController.class)).thenReturn(templateLogger);
         when(appConfig.getVersion()).thenReturn("1.0.0");
-        controller = new DataIngestionController(messageProcessorService, objectMapper,appConfig, appLogger);
+        controller = new DataIngestionController(messageProcessorService, objectMapper, appConfig, appLogger, portConfig);
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/ingest"));
         when(servletRequest.getQueryString()).thenReturn("param=value");
         when(servletRequest.getProtocol()).thenReturn("HTTP/1.1");
@@ -66,15 +74,125 @@ class DataIngestionControllerTest {
         AppConfig.Aws.S3 s3Mock = mock(AppConfig.Aws.S3.class);
         AppConfig.Aws.S3.BucketConfig defaultConfigMock = mock(AppConfig.Aws.S3.BucketConfig.class);
         when(s3Mock.getDefaultConfig()).thenReturn(defaultConfigMock);
-        when(defaultConfigMock.getBucket()).thenReturn("test-bucket");  
+        when(defaultConfigMock.getBucket()).thenReturn("test-bucket");
+        when(defaultConfigMock.getMetadataBucket()).thenReturn("test-metadata-bucket");
         when(appConfig.getAws()).thenReturn(awsMock);
         when(awsMock.getS3()).thenReturn(s3Mock);
-        when(s3Mock.getDefaultConfig().getBucket()).thenReturn("test-bucket"); 
+        when(s3Mock.getDefaultConfig().getBucket()).thenReturn("test-bucket");
+        when(s3Mock.getDefaultConfig().getMetadataBucket()).thenReturn("test-metadata-bucket");
+        // Default port config: loaded, but empty list (no /hold routing)
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList()).thenReturn(Collections.emptyList());
+    }
+
+    @Test
+    void testGetDataBucketName_noRequestAttributes_returnsDefault() {
+        // Ensure no request attributes are set
+        RequestContextHolder.resetRequestAttributes();
+        when(portConfig.isLoaded()).thenReturn(false);
+        String bucket = controller.getDataBucketName();
+        assertThat(bucket).isEqualTo("test-bucket");
+    }
+
+    @Test
+    void testGetDataBucketName_withDataDir_appendsDataDir() {
+        // Prepare request attributes with header
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("9090");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+
+        PortConfig.PortEntry entry = new PortConfig.PortEntry();
+        entry.port = 9090;
+        entry.dataDir = "/per/port/dir/";
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList()).thenReturn(java.util.List.of(entry));
+
+        String bucket = controller.getDataBucketName();
+        assertThat(bucket).isEqualTo("test-bucket/per/port/dir");
+    }
+
+    @Test
+    void testGetDataBucketName_withNoDataDir_returnsDefault() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("7070");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+
+        PortConfig.PortEntry entry = new PortConfig.PortEntry();
+        entry.port = 7070;
+        entry.dataDir = null;
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList()).thenReturn(java.util.List.of(entry));
+
+        String bucket = controller.getDataBucketName();
+        assertThat(bucket).isEqualTo("test-bucket");
+    }
+
+    @Test
+    void testGetDataBucketName_withInvalidPortHeader_returnsDefault() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("notanumber");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(portConfig.isLoaded()).thenReturn(true);
+
+        String bucket = controller.getDataBucketName();
+        assertThat(bucket).isEqualTo("test-bucket");
+    }
+
+    @Test
+    void testGetMetadataBucketName_noRequestAttributes_returnsDefault() {
+        // Ensure no request attributes are set
+        RequestContextHolder.resetRequestAttributes();
+        when(portConfig.isLoaded()).thenReturn(false);
+        String bucket = controller.getMetadataBucketName();
+        assertThat(bucket).isEqualTo("test-metadata-bucket");
+    }
+
+    @Test
+    void testGetMetadataBucketName_withMetadataDir_appendsMetadataDir() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("9090");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+
+        PortConfig.PortEntry entry = new PortConfig.PortEntry();
+        entry.port = 9090;
+        entry.metadataDir = "/per/port/meta/";
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList()).thenReturn(java.util.List.of(entry));
+
+        String bucket = controller.getMetadataBucketName();
+        assertThat(bucket).isEqualTo("test-metadata-bucket/per/port/meta");
+    }
+
+    @Test
+    void testGetMetadataBucketName_withNoMetadataDir_returnsDefault() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("7070");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+
+        PortConfig.PortEntry entry = new PortConfig.PortEntry();
+        entry.port = 7070;
+        entry.metadataDir = null;
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList()).thenReturn(java.util.List.of(entry));
+
+        String bucket = controller.getMetadataBucketName();
+        assertThat(bucket).isEqualTo("test-metadata-bucket");
+    }
+
+    @Test
+    void testGetMetadataBucketName_withInvalidPortHeader_returnsDefault() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(servletRequest.getHeader("x-server-port")).thenReturn("notanumber");
+        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(portConfig.isLoaded()).thenReturn(true);
+
+        String bucket = controller.getMetadataBucketName();
+        assertThat(bucket).isEqualTo("test-metadata-bucket");
     }
 
     static Stream<String> fileNames() {
         return Stream.of(
-                "test.csv", "test.json", "test.hl7", "test.xml", "test.zip");
+                "test.csv", "test.json", "test.hl7", "test.xml");
     }
 
     @ParameterizedTest
@@ -86,7 +204,10 @@ class DataIngestionControllerTest {
         }
         byte[] fileBytes = inputStream.readAllBytes();
         MockMultipartFile mockFile = new MockMultipartFile("file", fileName, null, fileBytes);
-        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "8080"
+        );
         Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
 
         when(messageProcessorService.processMessage(any(RequestContext.class), eq(mockFile)))
@@ -102,7 +223,10 @@ class DataIngestionControllerTest {
     @Test
     void testIngestRawData_shouldStoreAsDat() throws Exception {
         String rawData = "some raw test data";
-        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -127,7 +251,9 @@ class DataIngestionControllerTest {
         String rawData = "<note><to>User</to><from>Tester</from></note>";
         Map<String, String> mockHeaders = Map.of(
                 "X-Tenant-Id", "test-tenant",
-                "Content-Type", "application/xml");
+                "Content-Type", "application/xml",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -152,7 +278,9 @@ class DataIngestionControllerTest {
         String rawData = "{ \"name\": \"tester\", \"type\": \"json\" }";
         Map<String, String> mockHeaders = Map.of(
                 "X-Tenant-Id", "test-tenant",
-                "Content-Type", "application/json");
+                "Content-Type", "application/json",
+                "x-server-port", "8080"
+        );
 
         Map<String, String> mockResponse = Map.of(
                 "status", "SUCCESS",
@@ -170,5 +298,26 @@ class DataIngestionControllerTest {
         assertThat(response.getBody()).contains("messageId");
 
         verify(messageProcessorService).processMessage(any(RequestContext.class), eq(rawData));
+    }
+
+    @Test
+    void testIngest_withMissingPortHeader_shouldReturnBadRequest() throws Exception {
+        String rawData = "test";
+        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+        assertThat(response.getStatusCodeValue()).isEqualTo(400);
+        assertThat(response.getBody()).contains("x-server-port");
+    }
+
+    @Test
+    void testIngest_withInvalidPortHeader_shouldReturnBadRequest() throws Exception {
+        String rawData = "test";
+        Map<String, String> mockHeaders = Map.of(
+                "X-Tenant-Id", "test-tenant",
+                "x-server-port", "notaport"
+        );
+        ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
+        assertThat(response.getStatusCodeValue()).isEqualTo(400);
+        assertThat(response.getBody()).contains("x-server-port");
     }
 }

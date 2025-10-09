@@ -373,7 +373,7 @@ AS
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
-    date_time >= CURRENT_DATE - INTERVAL '2 days'
+    date_time >= CURRENT_DATE - INTERVAL '5 days'
     AND (
         issue LIKE '%has not been checked because it is unknown%'
         OR issue LIKE '%Unknown profile%'
@@ -391,7 +391,20 @@ WHERE
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
-    date_time::date
-ORDER BY
-    issue_date DESC;
+    date_time::date;
 
+
+-- ============================================================
+-- View: interaction_recent_widget_new
+-- Purpose: Exposes recent widget metadata for all widget types 
+--          (FHIR, CSV, CCDA, HL7V2) across all tenants.
+-- Columns: widget_name, tenant_id, last_updated_at
+-- ============================================================
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_widget_new CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_widget_new AS
+SELECT 
+    widget_name,
+    tenant_id,
+    last_updated_at
+FROM techbd_udi_ingress.dashboard_widget_metadata;

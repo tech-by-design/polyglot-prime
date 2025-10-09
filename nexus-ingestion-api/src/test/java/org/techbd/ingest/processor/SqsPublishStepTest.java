@@ -1,4 +1,7 @@
+
 package org.techbd.ingest.processor;
+import static org.mockito.Mockito.mock;
+import org.techbd.ingest.config.PortConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,8 +94,10 @@ class SqsPublishStepTest {
                 "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST","0.700.0");
         when(appLogger.getLogger(SqsPublishStep.class)).thenReturn(templateLogger);
         when(appConfig.getVersion()).thenReturn("1.0.0");
-        sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
-                messageGroupService,appLogger);
+    // Add PortConfig mock
+    PortConfig portConfig = mock(PortConfig.class);
+    sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
+        messageGroupService, appLogger, portConfig);
     }
 
     @Test

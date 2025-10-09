@@ -26,16 +26,19 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(final HttpServletRequest origRequest, final HttpServletResponse origResponse,
                                     final FilterChain chain) throws IOException, ServletException {
-        String interactionId = UUID.randomUUID().toString();
-        origRequest.setAttribute("interactionId", interactionId);
-        LOG.info("Incoming Request - interactionId={}", interactionId);
+        if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)
+                && !origRequest.getRequestURI().equals("/")
+                && !origRequest.getRequestURI().startsWith("/actuator/health")) {
+            String interactionId = UUID.randomUUID().toString();
+            origRequest.setAttribute("interactionId", interactionId);
+            LOG.info("Incoming Request - interactionId={}", interactionId);
 
-        if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
             var headerNames = origRequest.getHeaderNames();
             while (headerNames.hasMoreElements()) {
                 var headerName = headerNames.nextElement();
                 var headerValue = origRequest.getHeader(headerName);
-                LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, headerName, headerValue, interactionId);
+                LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,
+                        headerName, headerValue, interactionId);
             }
         }
         chain.doFilter(origRequest, origResponse);

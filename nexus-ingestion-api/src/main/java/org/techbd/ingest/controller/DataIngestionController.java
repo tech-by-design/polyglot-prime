@@ -1,3 +1,4 @@
+
 package org.techbd.ingest.controller;
 
 import java.util.Map;
@@ -27,24 +28,29 @@ import org.techbd.ingest.util.TemplateLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.techbd.ingest.config.PortConfig;
 
 /**
- * Controller for handling data ingestion requests.
- * This controller processes file uploads and string content ingestion.
+ * Controller for handling data ingestion requests. This controller processes
+ * file uploads and string content ingestion.
  */
+
 @RestController
 public class DataIngestionController extends AbstractMessageSourceProvider {
     private final TemplateLogger LOG;
-    
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
     private final AppConfig appConfig;
+    private final PortConfig portConfig;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger) {
+    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         this.appConfig = appConfig;
+        this.portConfig = portConfig;
         LOG = appLogger.getLogger(DataIngestionController.class);
         LOG.info("DataIngestionController initialized");
     }
@@ -57,7 +63,6 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<Void> healthCheck() {
         try {
-            LOG.info("Health check requested via HEAD /ingest");
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             LOG.error("Health check failed", e);
@@ -98,6 +103,40 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
 
+        // Get the request port from x-server-port header
+        String portHeader = headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null));
+        int requestPort = -1;
+        if (portHeader != null) {
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                LOG.error("Invalid x-server-port header value: {}", portHeader);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Header 'x-server-port' is not set properly with a valid port number");
+            }
+        } else {
+            LOG.error("Missing x-server-port header");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Header 'x-server-port' is not set properly with a valid port number");
+        }
+        LOG.info("DataIngestionController:: Request received on port {}", requestPort);
+
+        // Check port config for matching port and routeTo == "/hold"
+        if (portConfig.isLoaded()) {
+            for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                if (entry.port == requestPort && "/hold".equals(entry.routeTo)) {
+                    LOG.info("DataIngestionController redirecting to /hold for port {}", requestPort);
+                    // Forward the request to /hold (internal forward, not HTTP redirect)
+                    request.getRequestDispatcher("/hold").forward(request, null);
+                    return null; // Response handled by /hold
+                }
+            }
+        } else {
+            String errorMsg = "Failed to load port configuration JSON from S3";
+            LOG.error(errorMsg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMsg);
+        }
+
         Map<String, String> responseMap;
 
     if (file != null && !file.isEmpty()) {
@@ -133,11 +172,109 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
+        String defaultBucket = appConfig.getAws().getS3().getDefaultConfig().getBucket();
+
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) {
+                return defaultBucket;
+            }
+            HttpServletRequest req = attrs.getRequest();
+            String portHeader = req.getHeader("x-server-port");
+            if (portHeader == null) {
+                portHeader = req.getHeader("X-Server-Port");
+            }
+            if (portHeader == null) {
+                return defaultBucket;
+            }
+            int requestPort;
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                LOG.warn("Invalid x-server-port header value: {}. Using default bucket", portHeader);
+                return defaultBucket;
+            }
+
+            if (!portConfig.isLoaded()) {
+                // attempt to load if not loaded
+                portConfig.loadConfig();
+            }
+
+            if (portConfig.isLoaded()) {
+                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                    if (entry.port == requestPort) {
+                        String dataDir = entry.dataDir;
+                        if (dataDir != null && !dataDir.isBlank()) {
+                            // normalize: strip leading/trailing slashes
+                            String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                            if (normalized.isEmpty()) {
+                                return defaultBucket;
+                            }
+                            return defaultBucket + "/" + normalized;
+                        }
+                        break; // found entry but no dataDir
+                    }
+                }
+            } else {
+                LOG.warn("PortConfig not loaded; using default bucket");
+            }
+        } catch (Exception e) {
+            LOG.error("Error while resolving data bucket name from port config", e);
+        }
+
+        return defaultBucket;
     }
 
     @Override
     public String getMetadataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
+        String defaultBucket = appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
+
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) {
+                return defaultBucket;
+            }
+            HttpServletRequest req = attrs.getRequest();
+            String portHeader = req.getHeader("x-server-port");
+            if (portHeader == null) {
+                portHeader = req.getHeader("X-Server-Port");
+            }
+            if (portHeader == null) {
+                return defaultBucket;
+            }
+            int requestPort;
+            try {
+                requestPort = Integer.parseInt(portHeader);
+            } catch (NumberFormatException e) {
+                LOG.warn("Invalid x-server-port header value: {}. Using default metadata bucket", portHeader);
+                return defaultBucket;
+            }
+
+            if (!portConfig.isLoaded()) {
+                portConfig.loadConfig();
+            }
+
+            if (portConfig.isLoaded()) {
+                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                    if (entry.port == requestPort) {
+                        String metadataDir = entry.metadataDir;
+                        if (metadataDir != null && !metadataDir.isBlank()) {
+                            String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                            if (normalized.isEmpty()) {
+                                return defaultBucket;
+                            }
+                            return defaultBucket + "/" + normalized;
+                        }
+                        break; // found entry but no metadataDir
+                    }
+                }
+            } else {
+                LOG.warn("PortConfig not loaded; using default metadata bucket");
+            }
+        } catch (Exception e) {
+            LOG.error("Error while resolving metadata bucket name from port config", e);
+        }
+
+        return defaultBucket;
     }
 }

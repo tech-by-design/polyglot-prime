@@ -17,16 +17,16 @@
     {
       "type": "CCDA",
       "channel": "CcdaBundle.xml",
-      "version": "0.14.0",
+      "version": "0.16.0",
       "editedby": "jewelbonnie",
-      "date": "2025-09-17"
+      "date": "2025-10-09"
     },
     {
       "type": "CCDA",
       "channel": "CcdaBundleValidate.xml",
-      "version": "0.9.2",
+      "version": "0.12.0",
       "editedby": "jewelbonnie",
-      "date": "2025-09-30"
+      "date": "2025-10-09"
     },
     {
       "type": "FLAT FILE",
