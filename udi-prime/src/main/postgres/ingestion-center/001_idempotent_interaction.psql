@@ -2260,12 +2260,22 @@ BEGIN
 
 		--Update ig_version in sat_interaction_ccda_request table
 		IF (p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/') THEN 			
-			UPDATE techbd_udi_ingress.sat_interaction_ccda_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+			UPDATE techbd_udi_ingress.sat_interaction_ccda_request 
+				SET ig_version 			  = v_ig_version,
+					user_agent 			  = COALESCE(user_agent, v_user_agent),
+					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
+        			techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number)
+				WHERE hub_interaction_id  = p_source_hub_interaction_id;
 		END IF;
 
 		--Update ig_version in sat_interaction_hl7_request table
 		IF (p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN			
-			UPDATE techbd_udi_ingress.sat_interaction_hl7_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+			UPDATE techbd_udi_ingress.sat_interaction_hl7_request 
+				SET ig_version 			  = v_ig_version, 
+					user_agent 			  = COALESCE(user_agent, v_user_agent),
+					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
+					techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number) 
+				WHERE hub_interaction_id  = p_source_hub_interaction_id;
 		END IF;
 	END IF;  
 
@@ -3451,7 +3461,7 @@ BEGIN
         p_created_by,
         p_provenance,
         p_elaboration, 
-        p_origin,
+        COALESCE(p_origin, 'http'),
 		p_techbd_version_number, 
 		p_file_name
     ) RETURNING sat_interaction_hl7_request_id INTO v_return;  -- Return the generated UUID
@@ -5118,7 +5128,7 @@ BEGIN
         elaboration,
         client_ip_address, 
         user_agent,
-        origin,
+        COALESCE(origin, 'http'),
 		p_techbd_version_number,
 		p_file_name
     ) RETURNING sat_interaction_ccda_request_id INTO v_return;  -- Return the generated UUID
@@ -5967,7 +5977,10 @@ DECLARE
    	v_payload					JSONB := NULL;
     v_elaboration 				JSONB := NULL;
     v_user_id 					TEXT  := COALESCE(p_user_id, CURRENT_USER);	
-   
+	v_source_hub_interaction_id TEXT  := CASE 
+								            WHEN p_interaction_key IN ('/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/') THEN p_interaction_id
+								            ELSE p_source_hub_interaction_id
+								        END;
 BEGIN 
 	/*
 	 This function handles the registration of FHIR interaction requests into various hub and satellite tables within the techbd_udi_ingress schema.
@@ -6214,7 +6227,7 @@ BEGIN
 		        p_provenance 					=> v_provenance,
 		        p_elaboration					=> p_elaboration,	     
 		      	p_source_type					=> p_source_type, 
-		      	p_source_hub_interaction_id		=> p_source_hub_interaction_id,
+		      	p_source_hub_interaction_id		=> v_source_hub_interaction_id,
 		      	p_group_hub_interaction_id		=> p_group_hub_interaction_id,
 				p_additional_details			=> p_additional_details,
 				p_techbd_version_number			=> p_techbd_version_number
