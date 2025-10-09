@@ -14,8 +14,8 @@
 
     <artifactId>nexus-core-lib</artifactId>
     <packaging>jar</packaging>
-    <name>Java Mirth Changes</name>
-    <description>Standalone JAR for Mirth</description>
+    <name>Java Core Library for Hub Prime</name>
+    <description>Standalone JAR for Hub - Core Library</description>
     <properties>
         <aws.sdk.version>2.28.0</aws.sdk.version>
 	</properties>
