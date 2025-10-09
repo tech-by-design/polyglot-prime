@@ -19,6 +19,7 @@ public class Constants {
     public static final String REQ_HEADER_X_REAL_IP = "x-real-ip";
     public static final String REQ_X_SERVER_IP= "x-server-ip";
     public static final String REQ_X_SERVER_PORT = "x-server-port";
+    public static final String REQ_X_FORWARDED_PORT = "x-forwarded-port";
     public static final String REQ_HEADER_USER_AGENT = "user-agent";
     public static final String REQ_HEADER_CONTENT_DISPOSITION = "content-disposition";
 

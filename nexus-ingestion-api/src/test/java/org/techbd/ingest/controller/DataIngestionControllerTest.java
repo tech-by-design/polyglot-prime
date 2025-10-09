@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
@@ -98,8 +99,8 @@ class DataIngestionControllerTest {
     void testGetDataBucketName_withDataDir_appendsDataDir() {
         // Prepare request attributes with header
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("9090");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("9090");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 9090;
@@ -114,8 +115,8 @@ class DataIngestionControllerTest {
     @Test
     void testGetDataBucketName_withNoDataDir_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("7070");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("7070");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 7070;
@@ -130,8 +131,8 @@ class DataIngestionControllerTest {
     @Test
     void testGetDataBucketName_withInvalidPortHeader_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("notanumber");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("notanumber");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
         when(portConfig.isLoaded()).thenReturn(true);
 
         String bucket = controller.getDataBucketName();
@@ -150,8 +151,8 @@ class DataIngestionControllerTest {
     @Test
     void testGetMetadataBucketName_withMetadataDir_appendsMetadataDir() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("9090");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("9090");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 9090;
@@ -166,8 +167,8 @@ class DataIngestionControllerTest {
     @Test
     void testGetMetadataBucketName_withNoMetadataDir_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("7070");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("7070");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 7070;
@@ -182,8 +183,8 @@ class DataIngestionControllerTest {
     @Test
     void testGetMetadataBucketName_withInvalidPortHeader_returnsDefault() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
-        when(servletRequest.getHeader("x-server-port")).thenReturn("notanumber");
-        when(servletRequest.getHeader("X-Server-Port")).thenReturn(null);
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn("notanumber");
+        when(servletRequest.getHeader(Constants.REQ_X_FORWARDED_PORT)).thenReturn(null);
         when(portConfig.isLoaded()).thenReturn(true);
 
         String bucket = controller.getMetadataBucketName();
@@ -306,7 +307,7 @@ class DataIngestionControllerTest {
         Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
         ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
         assertThat(response.getStatusCodeValue()).isEqualTo(400);
-        assertThat(response.getBody()).contains("x-server-port");
+        assertThat(response.getBody()).contains("x-forwarded-port");
     }
 
     @Test
@@ -314,10 +315,10 @@ class DataIngestionControllerTest {
         String rawData = "test";
         Map<String, String> mockHeaders = Map.of(
                 "X-Tenant-Id", "test-tenant",
-                "x-server-port", "notaport"
+                Constants.REQ_X_FORWARDED_PORT, "notaport"
         );
         ResponseEntity<String> response = controller.ingest(null, rawData, mockHeaders, servletRequest);
         assertThat(response.getStatusCodeValue()).isEqualTo(400);
-        assertThat(response.getBody()).contains("x-server-port");
+        assertThat(response.getBody()).contains("x-forwarded-port");
     }
 }

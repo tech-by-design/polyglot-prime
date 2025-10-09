@@ -5,6 +5,7 @@ import java.util.Map;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
@@ -120,8 +121,8 @@ public class SqsPublishStep implements MessageProcessingStep {
      */
     private String resolveQueueUrl(RequestContext context) {
         /**
-         * Resolves the SQS queue URL based on the x-server-port header in the
-         * request context. - Always prefers the x-server-port header
+         * Resolves the SQS queue URL based on the x-forwarded-port header in the
+         * request context. - Always prefers the x-forwarded-port header
          * (case-insensitive). - Falls back to portConfig if available and
          * loaded. - Logs all decisions for traceability.
          */
@@ -130,20 +131,20 @@ public class SqsPublishStep implements MessageProcessingStep {
             Map<String, String> headers = context.getHeaders();
             String portHeader = null;
             if (headers != null) {
-                // Case-insensitive lookup for x-server-port
-                portHeader = headers.get("x-server-port");
+                // Case-insensitive lookup for x-forwarded-port
+                portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
                 if (portHeader == null) {
-                    portHeader = headers.get("X-Server-Port");
+                    portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
                 }
             }
             if (portHeader != null && !portHeader.isBlank()) {
                 requestPort = Integer.parseInt(portHeader);
-                LOG.info("SqsPublishStep:: Using x-server-port header value: {}", requestPort);
+                LOG.info("SqsPublishStep:: Using x-forwarded-port header value: {}", requestPort);
             } else {
-                LOG.warn("SqsPublishStep:: x-server-port header missing or blank; cannot resolve port for SQS queue selection.");
+                LOG.warn("SqsPublishStep:: x-forwarded-port header missing or blank; cannot resolve port for SQS queue selection.");
             }
         } catch (Exception e) {
-            LOG.warn("SqsPublishStep:: Could not parse request port from x-server-port header: {}", e.getMessage());
+            LOG.warn("SqsPublishStep:: Could not parse request port from x-forwarded-port header: {}", e.getMessage());
         }
         if (portConfig != null && portConfig.isLoaded() && requestPort > 0) {
             for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
