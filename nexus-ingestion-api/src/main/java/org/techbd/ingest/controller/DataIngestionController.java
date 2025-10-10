@@ -1,4 +1,3 @@
-
 package org.techbd.ingest.controller;
 
 import java.util.Map;
@@ -28,6 +27,7 @@ import org.techbd.ingest.util.TemplateLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.techbd.ingest.config.PortConfig;
@@ -36,9 +36,9 @@ import org.techbd.ingest.config.PortConfig;
  * Controller for handling data ingestion requests. This controller processes
  * file uploads and string content ingestion.
  */
-
 @RestController
 public class DataIngestionController extends AbstractMessageSourceProvider {
+
     private final TemplateLogger LOG;
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
@@ -73,33 +73,34 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
     /**
      * Endpoint to handle ingestion requests.
      *
-     * This endpoint can accept either:
-     * - a file upload (multipart/form-data)
-     * - raw data in the body (JSON, XML, plain text, HL7, etc.)
+     * This endpoint can accept either: - a file upload (multipart/form-data) -
+     * raw data in the body (JSON, XML, plain text, HL7, etc.)
      *
-     * If raw body data is provided, a filename is generated
-     * based on the Content-Type header.
+     * If raw body data is provided, a filename is generated based on the
+     * Content-Type header.
      *
-     * @param file    The optional file to be ingested (when multipart/form-data).
-     * @param body    The optional raw payload (when Content-Type is JSON/XML/Text).
+     * @param file The optional file to be ingested (when multipart/form-data).
+     * @param body The optional raw payload (when Content-Type is
+     * JSON/XML/Text).
      * @param headers The request headers containing metadata.
      * @param request The HTTP servlet request.
      * @return A response entity containing the result of the ingestion process.
      * @throws Exception If an error occurs during processing.
      */
-    @PostMapping(value = "/ingest", consumes = { 
-        MediaType.MULTIPART_FORM_DATA_VALUE, 
-        "multipart/related", 
-        "application/xop+xml", 
+    @PostMapping(value = "/ingest", consumes = {
+        MediaType.MULTIPART_FORM_DATA_VALUE,
+        "multipart/related",
+        "application/xop+xml",
         MediaType.TEXT_XML_VALUE,
         MediaType.APPLICATION_XML_VALUE,
-        MediaType.ALL_VALUE 
+        MediaType.ALL_VALUE
     })
     public ResponseEntity<String> ingest(
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestBody(required = false) String body,
             @RequestHeader Map<String, String> headers,
-            HttpServletRequest request) throws Exception {
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
 
@@ -125,10 +126,18 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         if (portConfig.isLoaded()) {
             for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
                 if (entry.port == requestPort && "/hold".equals(entry.route)) {
-                    LOG.info("DataIngestionController redirecting to /hold for port {}", requestPort);
-                    // Forward the request to /hold (internal forward, not HTTP redirect)
-                    request.getRequestDispatcher("/hold").forward(request, null);
-                    return null; // Response handled by /hold
+                    LOG.info("DataIngestionController: Matched /hold route for port {}. Forwarding to /hold. request={}, response={}", requestPort, request, response);
+                    if (response == null) {
+                        LOG.error("DataIngestionController: HttpServletResponse is null before forwarding to /hold! This will cause a NullPointerException.");
+                    }
+                    try {
+                        request.getRequestDispatcher("/hold").forward(request, response);
+                        LOG.info("DataIngestionController: Successfully forwarded to /hold for port {}", requestPort);
+                    } catch (Exception ex) {
+                        LOG.error("DataIngestionController: Exception while forwarding to /hold for port {}: {}", requestPort, ex.getMessage(), ex);
+                        throw ex;
+                    }
+                    return ResponseEntity.status(HttpStatus.OK).body("Forwarded to /hold");
                 }
             }
         } else {
@@ -139,32 +148,33 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
         Map<String, String> responseMap;
 
-    if (file != null && !file.isEmpty()) {
-        LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
-            file.getOriginalFilename(), file.getSize(), interactionId);
-        RequestContext context = createRequestContext(interactionId,
-            headers, request, file.getSize(), file.getOriginalFilename());
-        responseMap = messageProcessorService.processMessage(context, file);
+        if (file != null && !file.isEmpty()) {
+            LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
+                    file.getOriginalFilename(), file.getSize(), interactionId);
+            RequestContext context = createRequestContext(interactionId,
+                    headers, request, file.getSize(), file.getOriginalFilename());
+            responseMap = messageProcessorService.processMessage(context, file);
 
-    } else if (body != null && !body.isBlank()) {
-        String contentType = request.getContentType();
-        String extension = HttpUtil.resolveExtension(contentType);
-        String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-        LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
-            contentType, body.substring(0, Math.min(200, body.length())), interactionId);
-        RequestContext context = createRequestContext(interactionId,
-            headers, request, body.length(), generatedFileName);
-        responseMap = messageProcessorService.processMessage(context, body);
+        } else if (body != null && !body.isBlank()) {
+            String contentType = request.getContentType();
+            String extension = HttpUtil.resolveExtension(contentType);
+            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+            LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
+                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
+            RequestContext context = createRequestContext(interactionId,
+                    headers, request, body.length(), generatedFileName);
+            responseMap = messageProcessorService.processMessage(context, body);
 
-    } else {
-        LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
-        throw new IllegalArgumentException("Request must contain either a file or body data");
-    }
+        } else {
+            LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
+            throw new IllegalArgumentException("Request must contain either a file or body data");
+        }
         LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
         String responseJson = objectMapper.writeValueAsString(responseMap);
         LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
         return ResponseEntity.ok(responseJson);
     }
+
     @Override
     public MessageSourceType getMessageSource() {
         return MessageSourceType.HTTP_INGEST;
