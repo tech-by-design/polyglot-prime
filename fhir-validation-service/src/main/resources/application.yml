@@ -41,14 +41,14 @@ org:
             # 2. Download latest examples to hub-prime/src/test/resources/org/techbd/ig-examples/test-shinny-examples
             # 3. Verify OrchestrationEngineTest and IgPublicationIssuesTest pass
             ig-version: 1.6.3
-          shinny-v1-5-3:
+          shinny-v1-6-3:
             profile-base-url: http://shinny.org/us/ny/hrsn
-            package-path: ig-packages/shin-ny-ig/shinny/v1.5.3
+            package-path: ig-packages/shin-ny-ig/shinny/v1.6.3
             # NOTE: When updating this IG version:
             # 1. Update BaseIgValidationTest.getIgPackages()
             # 2. Download latest examples to hub-prime/src/test/resources/org/techbd/ig-examples/shinny-examples
             # 3. Verify OrchestrationEngineTest and IgPublicationIssuesTest pass
-            ig-version: 1.5.3
+            ig-version: 1.6.3
         base-packages:
         # Base packages for external dependencies 
           us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
