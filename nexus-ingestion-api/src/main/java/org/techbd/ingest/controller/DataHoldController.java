@@ -1,4 +1,3 @@
-
 package org.techbd.ingest.controller;
 
 import java.time.Instant;
@@ -129,137 +128,110 @@ public class DataHoldController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getBucket();
-
-        try {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return defaultBucket;
-            }
-            HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
-            if (portHeader == null) {
-                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
-            }
-            if (portHeader == null) {
-                return defaultBucket;
-            }
-            int requestPort;
-            try {
-                requestPort = Integer.parseInt(portHeader);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid x-forwarded-port header value: {}. Using default hold bucket", portHeader);
-                return defaultBucket;
-            }
-
-            if (!portConfig.isLoaded()) {
-                portConfig.loadConfig();
-            }
-
-            if (portConfig.isLoaded()) {
-                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                    if (entry.port == requestPort) {
-                        String dataDir = entry.dataDir;
-                        if (dataDir != null && !dataDir.isBlank()) {
-                            String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                            if (normalized.isEmpty()) {
-                                return defaultBucket;
-                            }
-                            return defaultBucket + "/" + normalized;
-                        }
-                        break; // found entry but no dataDir
-                    }
-                }
-            } else {
-                log.warn("PortConfig not loaded; using default hold bucket");
-            }
-        } catch (Exception e) {
-            log.error("Error while resolving data bucket name from port config", e);
-        }
-
-        return defaultBucket;
+        // return default hold bucket only
+        return appConfig.getAws().getS3().getHoldConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
-        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+        // return default hold metadata bucket only
+        return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+    }
 
+    /**
+     * For hold controller, build full S3 data path using per-port dataDir prefix if present.
+     */
+    @Override
+    public String getFullS3DataPath(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+        String bucket = getDataBucketName();
+        String prefix = "";
         try {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return defaultBucket;
-            }
-            HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
+            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
             if (portHeader == null) {
-                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
+                portHeader = HttpUtil.extractDestinationPort(headers);
             }
-            if (portHeader == null) {
-                return defaultBucket;
-            }
-            int requestPort;
-            try {
-                requestPort = Integer.parseInt(portHeader);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid x-forwarded-port header value: {}. Using default hold metadata bucket", portHeader);
-                return defaultBucket;
-            }
-
-            if (!portConfig.isLoaded()) {
-                portConfig.loadConfig();
-            }
-
-            if (portConfig.isLoaded()) {
-                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                    if (entry.port == requestPort) {
-                        String metadataDir = entry.metadataDir;
-                        if (metadataDir != null && !metadataDir.isBlank()) {
-                            String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                            if (normalized.isEmpty()) {
-                                return defaultBucket;
-                            }
-                            return defaultBucket + "/" + normalized;
-                        }
-                        break; // found entry but no metadataDir
+            if (portHeader != null) {
+                try {
+                    int requestPort = Integer.parseInt(portHeader);
+                    if (!portConfig.isLoaded()) {
+                        portConfig.loadConfig();
                     }
+                    if (portConfig.isLoaded()) {
+                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                            if (entry.port == requestPort) {
+                                String dataDir = entry.dataDir;
+                                if (dataDir != null && !dataDir.isBlank()) {
+                                    String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                                    if (!normalized.isEmpty()) {
+                                        prefix = normalized + "/";
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        log.warn("PortConfig not loaded; using default hold bucket and no prefix");
+                    }
+                } catch (NumberFormatException nfe) {
+                    log.warn("Invalid x-server-port header value: {} — using default hold bucket and no prefix", portHeader);
                 }
-            } else {
-                log.warn("PortConfig not loaded; using default hold metadata bucket");
             }
         } catch (Exception e) {
-            log.error("Error while resolving metadata bucket name from port config", e);
+            log.error("Error resolving per-port dataDir prefix for hold full S3 data path", e);
         }
 
-        return defaultBucket;
+        String key = getDataKey(interactionId, headers, originalFileName, timestamp);
+        String fullKey = (prefix.isEmpty() ? "" : prefix) + key;
+        return Constants.S3_PREFIX + bucket + "/" + fullKey;
     }
 
-    @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        // Build S3 key:
-        // hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-        Instant currentTime = Instant.now();
-        ZonedDateTime now = currentTime.atZone(ZoneOffset.UTC);
-        String yyyy = String.format("%04d", now.getYear());
-        String mm = String.format("%02d", now.getMonthValue());
-        String dd = String.format("%02d", now.getDayOfMonth());
-        String extension = "";
-        int dotIdx = originalFileName.lastIndexOf('.');
-        if (dotIdx > 0 && dotIdx < originalFileName.length() - 1) {
-            extension = originalFileName.substring(dotIdx + 1);
-        }
-        String timestampFileName = timestamp + "_" + originalFileName;
-        return String.format("hold/%s/%s/%s/%s/%s%s%s",
-                getDestinationPort(headers), yyyy, mm, dd, timestampFileName,
-                extension.isEmpty() ? "" : ".", extension);
-    }
-
+    /**
+     * For hold controller, metadata key should include per-port metadataDir prefix if present.
+     */
     @Override
     public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        return getDataKey(interactionId, headers, originalFileName,timestamp) + "_metadata.json";
-    }
+        String prefix = "";
+        try {
+            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
+            if (portHeader == null) {
+                portHeader = HttpUtil.extractDestinationPort(headers);
+            }
+            if (portHeader != null) {
+                try {
+                    int requestPort = Integer.parseInt(portHeader);
+                    if (!portConfig.isLoaded()) {
+                        portConfig.loadConfig();
+                    }
+                    if (portConfig.isLoaded()) {
+                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                            if (entry.port == requestPort) {
+                                String metadataDir = entry.metadataDir;
+                                if (metadataDir != null && !metadataDir.isBlank()) {
+                                    String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                                    if (!normalized.isEmpty()) {
+                                        prefix = normalized + "/";
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        log.warn("PortConfig not loaded; using default hold metadata key and no prefix");
+                    }
+                } catch (NumberFormatException nfe) {
+                    log.warn("Invalid x-server-port header value: {} — using default hold metadata key and no prefix", portHeader);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error resolving per-port metadataDir prefix for hold metadata key", e);
+        }
 
-    @Override
-    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        return getDataKey(interactionId, headers, originalFileName,timestamp) + ".ack.json";
+        // build metadata relative key (same semantics as previous default)
+        Instant now = Instant.now();
+        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String metaKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
+
+        return (prefix.isEmpty() ? "" : prefix) + metaKey;
     }
 }
