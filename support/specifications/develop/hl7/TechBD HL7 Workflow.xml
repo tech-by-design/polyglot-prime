@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.6</description>
-  <revision>26</revision>
+  <description>Version: 0.1.7</description>
+  <revision>28</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -146,6 +146,20 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     throw errorMessage;
 }
 
+// Parse request as XML
+var requestXml = new XML(connectorMessage.getRawData());
+
+// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+
+// Safety check
+if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+	logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
+    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    	setErrorResponse(400, errorMessage);
+    	throw errorMessage;
+}
+
 
 		try{
 			//DB Save Original Payload
@@ -176,20 +190,6 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 
 
 // ---------------- HL7 VALIDATION ----------------
-
-// Parse request as XML
-var requestXml = new XML(connectorMessage.getRawData());
-
-// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
-var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
-
-// Safety check
-if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
-	logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
-    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-    	setErrorResponse(400, errorMessage);
-    	throw errorMessage;
-}
 
 // Now validate HL7 lines
 var lines = hl7Data.split(/\r?\n/);
@@ -2138,7 +2138,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759919446678</time>
+        <time>1760090469901</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
