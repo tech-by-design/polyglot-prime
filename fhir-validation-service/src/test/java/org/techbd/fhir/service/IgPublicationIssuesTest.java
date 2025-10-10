@@ -85,6 +85,12 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
 
         @Test
         @DisplayName("Validate SHIN-NY IG Task Output Procedure ExampleFile")
+        void testValidateShinnyIG_TaskExampleMultipleEncountersFile() throws IOException {
+                validateFile("shinny-examples/Bundle-TaskExampleMultipleEncounters.json");
+        }
+        
+        @Test
+        @DisplayName("Validate SHIN-NY IG Task Output Procedure ExampleFile")
         void testValidateShinnyIG_TaskOutputProcedureExampleFile() throws IOException {
             validateFile("shinny-examples/Bundle-TaskOutputProcedureExample.json");
         }
