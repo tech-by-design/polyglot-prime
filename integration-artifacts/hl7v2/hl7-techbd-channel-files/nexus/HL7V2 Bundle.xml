@@ -2,8 +2,8 @@
   <id>37b4eb27-9ced-4307-8e25-1c94500c9b50</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.3.4</description>
-  <revision>61</revision>
+  <description>Version: 0.3.5</description>
+  <revision>65</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -199,6 +199,20 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 
 		var userAgent = channelMap.get(&apos;userAgent&apos;);
 
+		// Parse request as XML
+		var requestXml = new XML(connectorMessage.getRawData());
+		
+		// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+		var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+		
+		// Safety check
+		if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+		    logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
+		    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+		    	setErrorResponse(400, errorMessage);
+		    	throw errorMessage;
+		}
+
 
 		try{
 			//DB Save Original Payload
@@ -232,19 +246,6 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 
 // ---------------- HL7 VALIDATION ----------------
 
-// Parse request as XML
-var requestXml = new XML(connectorMessage.getRawData());
-
-// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
-var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
-
-// Safety check
-if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
-    logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
-    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-    	setErrorResponse(400, errorMessage);
-    	throw errorMessage;
-}
 
 // Now validate HL7 lines
 var lines = hl7Data.split(/\r?\n/);
@@ -2232,7 +2233,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759919485195</time>
+        <time>1760091572791</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
