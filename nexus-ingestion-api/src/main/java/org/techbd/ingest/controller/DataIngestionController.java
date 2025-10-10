@@ -186,25 +186,22 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        // return default bucket only — do not append per-port dataDir here
         return appConfig.getAws().getS3().getDefaultConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
-        // return default metadata bucket only — do not append per-port metadataDir here
         return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 
     /**
-     * Build the full S3 data path (bucket + optional per-port dataDir + key)
+     * Build the metadata key including optional per-port metadataDir prefix.
      */
     @Override
-    public String getFullS3DataPath(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        String bucket = getDataBucketName();
+    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
         try {
-            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
                 portHeader = HttpUtil.extractDestinationPort(headers);
             }
@@ -228,29 +225,33 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
                             }
                         }
                     } else {
-                        LOG.warn("PortConfig not loaded; using default data bucket and no prefix");
+                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
                     }
                 } catch (NumberFormatException nfe) {
-                    LOG.warn("Invalid x-server-port header value: {} — using default bucket and no prefix", portHeader);
+                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
                 }
             }
         } catch (Exception e) {
-            LOG.error("Error resolving per-port dataDir prefix for full S3 data path", e);
+            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
-        String key = getDataKey(interactionId, headers, originalFileName,timestamp);
-        String fullKey = (prefix.isEmpty() ? "" : prefix) + key;
-        return Constants.S3_PREFIX + bucket + "/" + fullKey;
+        // build metadata relative key (same semantics as previous default)
+        Instant now = Instant.now();
+        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String dataKey = String.format("data/%s/%s_%s_ack", datePath, interactionId, timestamp);
+
+        return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
 
     /**
      * Build the metadata key including optional per-port metadataDir prefix.
      */
     @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
         try {
-            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
                 portHeader = HttpUtil.extractDestinationPort(headers);
             }
@@ -277,7 +278,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
                         LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
                     }
                 } catch (NumberFormatException nfe) {
-                    LOG.warn("Invalid x-server-port header value: {} — using default metadata key and no prefix", portHeader);
+                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
                 }
             }
         } catch (Exception e) {

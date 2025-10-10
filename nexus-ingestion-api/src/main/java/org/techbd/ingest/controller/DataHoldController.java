@@ -33,10 +33,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import lombok.extern.slf4j.Slf4j;
 
-
 @RestController
 @Slf4j
 public class DataHoldController extends AbstractMessageSourceProvider {
+
     private static TemplateLogger LOG;
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
@@ -57,25 +57,25 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     /**
      * Endpoint to handle /hold requests.
      *
-     * This endpoint can accept either:
-     * - a file upload (multipart/form-data)
-     * - raw data in the body (JSON, XML, plain text, HL7, etc.)
+     * This endpoint can accept either: - a file upload (multipart/form-data) -
+     * raw data in the body (JSON, XML, plain text, HL7, etc.)
      *
-     * If raw body data is provided, a filename is generated
-     * based on the Content-Type header.
+     * If raw body data is provided, a filename is generated based on the
+     * Content-Type header.
      *
-     * @param file    The optional file to be ingested (when multipart/form-data).
-     * @param body    The optional raw payload (when Content-Type is JSON/XML/Text).
+     * @param file The optional file to be ingested (when multipart/form-data).
+     * @param body The optional raw payload (when Content-Type is
+     * JSON/XML/Text).
      * @param headers The request headers containing metadata.
      * @param request The HTTP servlet request.
      * @return A response entity containing the result of the ingestion process.
      * @throws Exception If an error occurs during processing.
      */
     @PostMapping(value = "/hold", consumes = {
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            "multipart/related", // MTOM support
-            "application/xop+xml", // XOP support
-            MediaType.ALL_VALUE
+        MediaType.MULTIPART_FORM_DATA_VALUE,
+        "multipart/related", // MTOM support
+        "application/xop+xml", // XOP support
+        MediaType.ALL_VALUE
     })
     public ResponseEntity<String> hold(
             @RequestParam(value = "file", required = false) MultipartFile file,
@@ -128,25 +128,22 @@ public class DataHoldController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        // return default hold bucket only
         return appConfig.getAws().getS3().getHoldConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
-        // return default hold metadata bucket only
         return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
     }
 
     /**
-     * For hold controller, build full S3 data path using per-port dataDir prefix if present.
+     * Build the metadata key including optional per-port metadataDir prefix.
      */
     @Override
-    public String getFullS3DataPath(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        String bucket = getDataBucketName();
+    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
         try {
-            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
                 portHeader = HttpUtil.extractDestinationPort(headers);
             }
@@ -170,29 +167,33 @@ public class DataHoldController extends AbstractMessageSourceProvider {
                             }
                         }
                     } else {
-                        log.warn("PortConfig not loaded; using default hold bucket and no prefix");
+                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
                     }
                 } catch (NumberFormatException nfe) {
-                    log.warn("Invalid x-server-port header value: {} — using default hold bucket and no prefix", portHeader);
+                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
                 }
             }
         } catch (Exception e) {
-            log.error("Error resolving per-port dataDir prefix for hold full S3 data path", e);
+            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
-        String key = getDataKey(interactionId, headers, originalFileName, timestamp);
-        String fullKey = (prefix.isEmpty() ? "" : prefix) + key;
-        return Constants.S3_PREFIX + bucket + "/" + fullKey;
+        // build metadata relative key (same semantics as previous default)
+        Instant now = Instant.now();
+        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String dataKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
+
+        return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
 
     /**
-     * For hold controller, metadata key should include per-port metadataDir prefix if present.
+     * Build the metadata key including optional per-port metadataDir prefix.
      */
     @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
+    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
         try {
-            String portHeader = headers != null ? headers.getOrDefault("x-server-port", headers.getOrDefault("X-Server-Port", null)) : null;
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
                 portHeader = HttpUtil.extractDestinationPort(headers);
             }
@@ -216,14 +217,14 @@ public class DataHoldController extends AbstractMessageSourceProvider {
                             }
                         }
                     } else {
-                        log.warn("PortConfig not loaded; using default hold metadata key and no prefix");
+                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
                     }
                 } catch (NumberFormatException nfe) {
-                    log.warn("Invalid x-server-port header value: {} — using default hold metadata key and no prefix", portHeader);
+                    LOG.warn("Invalid x-server-port header value: {} — using default metadata key and no prefix", portHeader);
                 }
             }
         } catch (Exception e) {
-            log.error("Error resolving per-port metadataDir prefix for hold metadata key", e);
+            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
         // build metadata relative key (same semantics as previous default)
