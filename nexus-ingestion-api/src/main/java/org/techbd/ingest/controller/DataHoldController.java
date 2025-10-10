@@ -142,6 +142,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     @Override
     public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
+        int requestPort = -1;
         try {
             String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
@@ -149,7 +150,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             }
             if (portHeader != null) {
                 try {
-                    int requestPort = Integer.parseInt(portHeader);
+                    requestPort = Integer.parseInt(portHeader);
                     if (!portConfig.isLoaded()) {
                         portConfig.loadConfig();
                     }
@@ -177,11 +178,32 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
-        // build metadata relative key (same semantics as previous default)
+        // compute upload date parts (UTC)
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String dataKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
+        String yyyy = String.format("%04d", uploadTime.getYear());
+        String mm = String.format("%02d", uploadTime.getMonthValue());
+        String dd = String.format("%02d", uploadTime.getDayOfMonth());
+
+        // prepare filename and extension
+        String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
+        String baseName = original;
+        String extension = "";
+
+        int lastDot = original.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < original.length() - 1) {
+            baseName = original.substring(0, lastDot);
+            extension = original.substring(lastDot + 1);
+        }
+
+        // build timestamped filename: {timestamp}_{basename}.{extension}
+        String timestampedName = timestamp + "_" + baseName;
+        if (!extension.isBlank()) {
+            timestampedName = timestampedName + "." + extension;
+        }
+
+        // final path: /hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
+        String dataKey = String.format("/hold/%d/%s/%s/%s/%s", requestPort, yyyy, mm, dd, timestampedName);
 
         return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
