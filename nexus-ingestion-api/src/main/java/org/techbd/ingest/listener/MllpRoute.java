@@ -21,6 +21,7 @@ import org.techbd.ingest.util.TemplateLogger;
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
@@ -55,7 +56,20 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         Message hapiMsg = parser.parse(hl7Message);
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
-                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage);
+                        Terser terser = new Terser(hapiMsg);
+                        String messageCode = extractZntFieldSafely(hapiMsg, terser, 2, 0);
+                        String deliveryType = extractZntFieldSafely(hapiMsg, terser, 4, 0);
+                        String facility = extractZntFieldSafely(hapiMsg, terser, 8, 0);
+                        RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
+                        Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
+                        if (additionalDetails == null) {
+                            additionalDetails = new HashMap<>();
+                            requestContext.setAdditionalParameters(additionalDetails);
+                        }
+                        additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+                        additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+                        additionalDetails.put(Constants.FACILITY, facility);
+                        messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
@@ -77,6 +91,33 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                     }
                 })
                 .log("[PORT " + port + "] ACK/NAK sent");
+    }
+    
+    
+    private String extractZntFieldSafely(Message message, Terser terser, int field, int repetition)
+            throws HL7Exception {
+        try {
+            String value = terser.getSegment("ZNT").getField(field, repetition).encode();
+            log.debug("Successfully extracted ZNT field [{}] repetition [{}] using Terser. Value='{}'", field,
+                    repetition, value);
+            return value;
+        } catch (HL7Exception e) {
+            log.warn(
+                    "Failed to extract ZNT field [{}] repetition [{}] using Terser. Attempting fallback via message.get(). Cause: {}",
+                    field, repetition, e.getMessage());
+            try {
+                Segment znt = (Segment) message.get("ZNT", 0);
+                String value = znt.getField(field, repetition).encode();
+                log.debug("Fallback succeeded for ZNT field [{}] repetition [{}]. Value='{}'", field, repetition,
+                        value);
+                return value;
+            } catch (Exception inner) {
+                log.error(
+                        "Fallback failed for ZNT field [{}] repetition [{}]. No ZNT segment found or unable to extract. Root cause: {}",
+                        field, repetition, inner.getMessage(), inner);
+                throw new HL7Exception("Unable to extract ZNT field " + field + " repetition " + repetition, inner);
+            }
+        }
     }
 
     public static String addNteWithInteractionId(Message ackMessage, String interactionId,String ingestionApiVersion) throws HL7Exception {
