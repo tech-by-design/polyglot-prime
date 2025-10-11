@@ -34,4 +34,7 @@ public class Constants {
     public static final String CAMEL_MLLP_LOCAL_ADDRESS = "CamelMllpLocalAddress";
     public static final String CAMEL_MLLP_REMOTE_ADDRESS = "CamelMllpRemoteAddress";
     public static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+    public static final String DELIVERY_TYPE = "deliveryType";
+    public static final String FACILITY = "facility";   
+    public static final String MESSAGE_CODE = "messageCode";
     }

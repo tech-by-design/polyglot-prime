@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,24 +21,33 @@ import org.techbd.ingest.util.TemplateLogger;
 class MessageGroupServiceTest {
 
     private MessageGroupService messageGroupService;
+
     @Mock
     private AppLogger appLogger;
 
     @Mock
-    private static TemplateLogger templateLogger;
+    private TemplateLogger templateLogger;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);        
+        MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(MessageGroupService.class)).thenReturn(templateLogger);
-        messageGroupService = new MessageGroupService(appLogger);
+
+        // Inject strategies in the order of precedence
+        List varStrategies = List.of(
+                new MllpMessageGroupStrategy(),
+                new TenantMessageGroupStrategy(),
+                new IpPortMessageGroupStrategy()
+        );
+        messageGroupService = new MessageGroupService(varStrategies, appLogger);
     }
 
     private RequestContext buildContext(String tenantId,
                                         String sourceIp,
                                         String destinationIp,
                                         String destinationPort,
-                                        MessageSourceType sourceType) {
+                                        MessageSourceType sourceType,
+                                        Map<String, String> additionalParams) {
         return new RequestContext(
                 Map.of("User-Agent", "JUnit"),
                 "/upload",
@@ -53,63 +64,98 @@ class MessageGroupServiceTest {
                 "http://localhost/upload",
                 "",
                 "HTTP/1.1",
-                "127.0.0.1", // localAddress
-                "192.168.1.1", // remoteAddress
-                sourceIp, // sourceIp
-                destinationIp, // destinationIp
-                destinationPort, null, null, null,
-                sourceType, "TEST", "TEST","0.700.0"
-        );
+                "127.0.0.1",
+                "192.168.1.1",
+                sourceIp,
+                destinationIp,
+                destinationPort,
+                null,
+                null,
+                null,
+                sourceType,
+                "TEST",
+                "TEST",
+                "0.700.0"
+        ) {{
+            setAdditionalParameters(additionalParams != null ? additionalParams : new HashMap<>());
+        }};
     }
 
     @Test
-    void testCreateMessageGroupId_withSourceTypeMLLP_andPort_usesPort() {
-        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP);
+    void testMllpWithAdditionalDetails_buildsCompositeGroupId() {
+        Map<String, String> additional = Map.of(
+                "deliveryType", "DEL",
+                "facility", "FAC",
+                "messageCode", "MSG"
+        );
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("DEL_FAC_MSG", groupId);
+    }
+
+    @Test
+    void testMllpWithNoAdditionalDetails_usesPort() {
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("9090", groupId);
     }
 
     @Test
-    void testCreateMessageGroupId_withSourceTypeMLLP_missingPort_returnsDefault() {
-        var context = buildContext(null, "192.168.1.1", "192.168.1.2", null, MessageSourceType.MLLP);
+    void testMllpWithNoAdditionalAndNoPort_returnsDefault() {
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", null, MessageSourceType.MLLP, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals(Constants.DEFAULT_MESSAGE_GROUP_ID, groupId);
     }
 
     @Test
-    void testCreateMessageGroupId_withTenantIdPresent_nonMLLP_usesTenantId() {
-        var context = buildContext("tenantX", "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST);
+    void testTenantStrategy_usedWhenNotMllpAndTenantPresent() {
+        var context = buildContext("tenantX", "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("tenantX", groupId);
     }
-
     @Test
-    void testCreateMessageGroupId_withAllFieldsPresent_buildsComposite() {
-        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST);
+    void testIpPortFallback_buildsCompositeFromAvailableFields() {
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("192.168.1.1_192.168.1.2_8080", groupId);
     }
 
     @Test
-    void testCreateMessageGroupId_withOneMissingField_stillBuildsComposite() {
-        var context = buildContext(null, "192.168.1.1", null, "8080", MessageSourceType.HTTP_INGEST);
+    void testIpPortFallback_withMissingFields_buildsPartialComposite() {
+        var context = buildContext(null, "192.168.1.1", null, "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        // Should still return composite from available fields
         assertEquals("192.168.1.1_8080", groupId);
     }
 
     @Test
-    void testCreateMessageGroupId_withAllBlank_returnsDefault() {
-        var context = buildContext(null, "   ", "   ", "   ", MessageSourceType.HTTP_INGEST);
+    void testIpPortFallback_withAllBlank_returnsUnknownTenantId() {
+        var context = buildContext(null, "   ", "   ", "   ", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("unknown-tenantId", groupId);
     }
 
     @Test
-    void testCreateMessageGroupId_withAllNull_returnsDefault() {
-        var context = buildContext(null, null, null, null, MessageSourceType.HTTP_INGEST);
+    void testIpPortFallback_withAllNull_returnsUnknownTenantId() {
+        var context = buildContext(null, null, null, null, MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("unknown-tenantId", groupId);
     }
-}
 
+    @Test
+    void testMllpWithPartialAdditionalDetails_usesAvailableFields() {
+        Map<String, String> additional = Map.of(
+                "deliveryType", "DEL",
+                "facility", ""
+        );
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("DEL", groupId);
+    }
+
+    @Test
+    void testTenantStrategy_withDefaultTenantId_fallbacksToIpPort() {
+        var context = buildContext(Constants.DEFAULT_TENANT_ID, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("192.168.1.1_192.168.1.2_8080", groupId);
+    }
+}
