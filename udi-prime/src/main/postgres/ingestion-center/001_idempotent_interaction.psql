@@ -931,7 +931,7 @@ WHERE
  * Comprehensive view of SFTP interactions and their associated requests. * 
  ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_sftp CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_sftp AS 
+/* CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_sftp AS 
 WITH issue_count AS (
 SELECT
 	osi.session_id,
@@ -998,7 +998,7 @@ GROUP BY
 	ic.issue_count,
 	rc.rejection_count,
 	wc.warning_count;
-
+*/
 
 /*******************************************************************************************
 This view selects the most recent FHIR interaction per tenant from the 
@@ -8529,3 +8529,208 @@ EXCEPTION
 	RETURN format('Error: %s (SQLSTATE %s)', v_error_msg, v_sqlstate);
 END;
 $$ LANGUAGE plpgsql;
+
+
+/**
+-- View: interaction_ccda_https_request
+-- This view lists all "Original CCDA Payload" interactions from the sat_interaction_ccda_request table.
+-- It includes additional metadata such as file name, user agent, and client IP address.
+-- The 'fhir_generated' column indicates whether the payload was converted to FHIR, and 
+-- the 'ccda_validation_status' column shows whether CCDA validation succeeded or failed.
+**/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_https_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_https_request AS
+SELECT
+    sicr.hub_interaction_id AS interaction_id,
+	sicr.sat_interaction_ccda_request_id,
+    sicr.tenant_id,
+    sicr.uri,
+    sicr.origin,
+    sicr.created_at,
+    sicr.techbd_version_number,
+    sicr.ig_version,
+    sicr.file_name, 
+	sicr.user_agent,
+    sicr.client_ip_address, 
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_ccda_request s2
+            WHERE s2.hub_interaction_id = sicr.hub_interaction_id
+              AND s2.to_state = 'CONVERTED_TO_FHIR'
+        ) THEN 'Yes'
+        ELSE 'No'
+    END AS fhir_generated,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_ccda_request s3
+            WHERE s3.hub_interaction_id = sicr.hub_interaction_id
+              AND s3.to_state = 'VALIDATION_SUCCESS'
+        ) THEN 'Success'
+        ELSE 'Failed'
+    END AS ccda_validation_status  
+FROM
+    techbd_udi_ingress.sat_interaction_ccda_request sicr
+WHERE 
+    sicr.nature = 'Original CCDA Payload';
+
+/*******************************************************************************************
+This view takes data from sat_interaction_fhir_request table to 
+provide a consolidated view of HTTP FHIR requests via CCDA, including resource types, 
+interaction details, request attributes, and validation issues.
+******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_http_fhir_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_http_fhir_request
+AS SELECT hub_interaction_id AS interaction_id,
+    uri,
+    bundle_id,
+    created_at AS interaction_created_at,
+    created_by AS interaction_created_by,
+    provenance AS interaction_provenance,
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,
+    user_agent,
+    client_ip_address,
+    'application/json'::text AS content_type, 
+    elaboration,
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count,
+    resource_type_set AS resource_types,
+    interaction_start_time::text AS start_time,
+    interaction_end_time::text AS finish_time,
+    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+    patient_id,
+    patient_mrn,
+    patient_mrn_source_system,
+    organization_id,
+    organization_name,
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,  
+    bundle_type AS bundle_resource_type,
+    source_hub_interaction_id,
+	CASE
+		WHEN is_bundle_valid = true THEN 'Valid'::text
+		WHEN is_bundle_valid = false THEN 'Invalid'::text
+		ELSE NULL::text
+	END AS is_bundle_valid  
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE source_type='CCDA';	
+
+
+/**
+-- View: interaction_ccda_https_request
+-- This view lists all "Original HL7 Payload" interactions from the sat_interaction_ccda_request table.
+-- It includes additional metadata such as file name, user agent, and client IP address.
+-- The 'fhir_generated' column indicates whether the payload was converted to FHIR, and 
+-- the 'ccda_validation_status' column shows whether HL7 validation succeeded or failed.
+**/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_hl7v2_https_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_hl7v2_https_request AS
+SELECT
+    sicr.hub_interaction_id AS interaction_id,
+	sicr.sat_interaction_hl7_request_id,
+    sicr.tenant_id,
+    sicr.uri,
+    sicr.origin,
+    sicr.created_at,
+    sicr.techbd_version_number,
+    sicr.ig_version,
+    sicr.file_name, 
+	sicr.user_agent,
+    sicr.client_ip_address, 
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_hl7_request s2
+            WHERE s2.hub_interaction_id = sicr.hub_interaction_id
+              AND s2.to_state = 'CONVERTED_TO_FHIR'
+        ) THEN 'Yes'
+        ELSE 'No'
+    END AS fhir_generated,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_hl7_request s3
+            WHERE s3.hub_interaction_id = sicr.hub_interaction_id
+              AND s3.to_state = 'VALIDATION_SUCCESS'
+        ) THEN 'Success'
+        ELSE 'Failed'
+    END AS ccda_validation_status  
+FROM
+    techbd_udi_ingress.sat_interaction_hl7_request sicr
+WHERE 
+    sicr.nature = 'Original HL7 Payload';
+
+/*******************************************************************************************
+This view takes data from sat_interaction_fhir_request table to 
+provide a consolidated view of HTTP FHIR requests via HL7V2, including resource types, 
+interaction details, request attributes, and validation issues.
+******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_hl7v2_http_fhir_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_hl7v2_http_fhir_request
+AS SELECT hub_interaction_id AS interaction_id,
+    uri,
+    bundle_id,
+    created_at AS interaction_created_at,
+    created_by AS interaction_created_by,
+    provenance AS interaction_provenance,
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,
+    user_agent,
+    client_ip_address,
+    'application/json'::text AS content_type, 
+    elaboration,
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count,
+    resource_type_set AS resource_types,
+    interaction_start_time::text AS start_time,
+    interaction_end_time::text AS finish_time,
+    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+    patient_id,
+    patient_mrn,
+    patient_mrn_source_system,
+    organization_id,
+    organization_name,
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,  
+    bundle_type AS bundle_resource_type,
+    source_hub_interaction_id,
+	CASE
+		WHEN is_bundle_valid = true THEN 'Valid'::text
+		WHEN is_bundle_valid = false THEN 'Invalid'::text
+		ELSE NULL::text
+	END AS is_bundle_valid  
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE source_type='HL7V2';	
+
+/**
+-- View: interaction_ccda_payload
+-- This view retrieves the payloads of CCDA interactions that failed validation.
+-- It selects the hub_interaction_id and corresponding payload from the sat_interaction_ccda_request table.
+-- Used to analyze or reprocess CCDA payloads that did not pass the validation stage.
+**/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_payload CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_payload AS
+select 
+sicr.hub_interaction_id,
+sicr.payload
+FROM
+    techbd_udi_ingress.sat_interaction_ccda_request sicr
+WHERE 
+    sicr.to_state = 'VALIDATION_FAILED';
