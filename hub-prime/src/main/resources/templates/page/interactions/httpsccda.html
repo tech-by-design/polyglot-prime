@@ -2,15 +2,20 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{layout/prime}">
 
-<head> 
- 
-    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+<head>
     <!-- Include Font Awesome in your HTML -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <style>
         .grid-description {
             font-size: 14px;
             margin: 8px 0px 10px 15px;
+        }
+
+        .ag-cell.capitalize-first-letter::first-letter {
+            text-transform: uppercase;
         }
     </style>
     <script type="module">
@@ -18,14 +23,67 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_ccda_request';   
-        const viewdetail = 'interaction_http_request_payload';
+        const viewName = 'interaction_ccda_https_request';  
+        const viewdetail = 'interaction_ccda_http_fhir_request'; 
+        const pipupviewName = 'interaction_http_fhir_request_payload_details';
         const modalAide = new ModalAide();
-               
+        const fhirColumnDefs = [
+            {
+                headerName: "TechBD Interaction ID", field: "interaction_id", filter: "agTextColumnFilter",
+                cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                    modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${pipupviewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
+                }, modalAide)
+            },
+            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },
+            { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
+            { 
+                headerName: "Operation Outcome Status", 
+                field: "is_bundle_valid", 
+                filter: "agTextColumnFilter", 
+                headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')" 
+            }, 
+            { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" },
+            { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
+            { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },
+            { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
+            { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
+            { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
+            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" }, 
+            { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },
+        ];
+        function getFhirGridData(params) {
+            const interaction_id = params.data.interaction_id;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
 
          document.addEventListener('DOMContentLoaded', function () {
+
+            function downloadCellRenderer(params) {
+                const sat_interaction_ccda_request_id = params.data.sat_interaction_ccda_request_id;
+                const file_name = params.data.file_name || '';
+
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_ccda_request/ccda_payload_text/sat_interaction_ccda_request_id/${sat_interaction_ccda_request_id}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
+            }            
            
-            const agGridInstance = new AGGridAideBuilder()
+            const agGridInstance = new AGGridAideBuilder() 
                 .withColumnDefs([
                     {
                         headerName: "Request Time",
@@ -33,31 +91,48 @@
                         sort: "desc",
                         filter: "agDateColumnFilter",
                         headerTooltip: "The timestamp indicating when the interaction was initiated."
-                    },                    
+                    },
                     {
                         headerName: "TechBD Interaction ID",
-                        field: "hub_interaction_id",
+                        field: "interaction_id",
                         filter: "agTextColumnFilter",
-                        headerTooltip: "The unique identifier for each interaction.",
-                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
-                        }, modalAide)
+                        headerTooltip: "The unique identifier for each interaction."
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
-                    { headerName: "FHIR Conversion Status", field: "fhir_conversion_status", headerTooltip: "The status of the FHIR conversion", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
-                    { headerName: "Nature", field: "nature", headerTooltip: "The nature of the interaction", filter: "agTextColumnFilter" },
-                    { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
-                    { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request " },
+                    { headerName: "CCDA Validation Status", field: "ccda_validation_status", headerTooltip: "Indicates whether the CCDA validation succeeded or failed.", filter: "agTextColumnFilter",
+                        cellRenderer: (params) => {
+                        const value = params.value;
+                        if (value === "Failed") {
+                        const link = document.createElement("a");
+                        link.href = "#";
+                        link.innerText = value;
+                        link.className = "text-blue-600 underline hover:text-blue-800 font-medium";
+                        link.onclick = (e) => {
+                            e.preventDefault();
+                            modalAide.viewFetchedJsonValue(
+                            window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_ccda_payload/hub_interaction_id/${params.data.interaction_id}.json`)
+                            );
+                        };
+                        return link;
+                        } else {
+                        return document.createTextNode(value);
+                        }
+                    } 
+                    },
+                    { headerName: "FHIR Generated", field: "fhir_generated", filter: "agNumberColumnFilter", headerTooltip: "Indicates whether the payload was converted to FHIR (Yes/No)",
+                         cellRenderer: 'agGroupCellRenderer'
+                     },
                     { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },
+                    { headerName: "Origin", field: "origin", headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
-                    // {
-                    //     headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                    //     headerTooltip: "Download Payload", filter: false, suppressFilter: true
-                    // }
-                    
-                ])
+                    {
+                        headerName: "CCDA File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download CCDA File", filter: false, suppressFilter: true
+                    }                   
+                ]) 
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
@@ -67,6 +142,19 @@
                         }));
                     },
                 ) 
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: fhirColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getFhirGridData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
@@ -79,11 +167,13 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">             
-            This widget offers a clear and concise overview of CCDA-based HTTP interactions, highlighting essential details such as the Hub Interaction ID and Tenant ID to identify and link each interaction. 
-            It provides information about the Request URI, the Nature of the interaction, and metadata like Client IP Address and User Agent to trace the origin and context of requests. 
-            Users can track State Transitions, including changes from one state to another and the reasons for those transitions.
-            <!--  The widget also includes detailed Payload Information, such as the CCDA payload text, to provide visibility into the data being processed. 
-            Additionally, users have the option to **download the CCDA payload** as an XML file for further analysis. --> With interactive filtering and sorting options, users can efficiently analyze interactions, identify issues, and ensure seamless data flow for CCDA requests. 
+            <div class="grid-description">
+    This dashboard provides a comprehensive overview of CCDA-based HTTP interactions, allowing users to easily track and analyze each request. Key details such as the Hub Interaction ID and Tenant ID help identify and link interactions, while the Request URI, Client IP Address, and User Agent provide context about the origin and environment of each request. 
+
+    <strong>CCDA Validation Status</strong> indicates whether the submitted CCDA payload meets required standards. Click to view detailed validation errors and help identify data quality issues. The <strong>FHIR Generated</strong> column shows whether the CCDA payload was successfully converted to FHIR format, ensuring interoperability and readiness for downstream processing.
+
+    Additional features include interactive filtering and sorting, state transition tracking, and the ability to view detailed information for each interaction by clicking the TechBD Interaction ID. This enables efficient validation, troubleshooting, and assurance of seamless data flow for CCDA requests.
+ 
             Users can click on the TechBD Interaction ID to view detailed information in a popup.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>        
