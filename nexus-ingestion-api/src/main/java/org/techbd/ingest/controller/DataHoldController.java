@@ -1,4 +1,3 @@
-
 package org.techbd.ingest.controller;
 
 import java.time.Instant;
@@ -34,10 +33,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import lombok.extern.slf4j.Slf4j;
 
-
 @RestController
 @Slf4j
 public class DataHoldController extends AbstractMessageSourceProvider {
+
     private static TemplateLogger LOG;
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
@@ -58,25 +57,25 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     /**
      * Endpoint to handle /hold requests.
      *
-     * This endpoint can accept either:
-     * - a file upload (multipart/form-data)
-     * - raw data in the body (JSON, XML, plain text, HL7, etc.)
+     * This endpoint can accept either: - a file upload (multipart/form-data) -
+     * raw data in the body (JSON, XML, plain text, HL7, etc.)
      *
-     * If raw body data is provided, a filename is generated
-     * based on the Content-Type header.
+     * If raw body data is provided, a filename is generated based on the
+     * Content-Type header.
      *
-     * @param file    The optional file to be ingested (when multipart/form-data).
-     * @param body    The optional raw payload (when Content-Type is JSON/XML/Text).
+     * @param file The optional file to be ingested (when multipart/form-data).
+     * @param body The optional raw payload (when Content-Type is
+     * JSON/XML/Text).
      * @param headers The request headers containing metadata.
      * @param request The HTTP servlet request.
      * @return A response entity containing the result of the ingestion process.
      * @throws Exception If an error occurs during processing.
      */
     @PostMapping(value = "/hold", consumes = {
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            "multipart/related", // MTOM support
-            "application/xop+xml", // XOP support
-            MediaType.ALL_VALUE
+        MediaType.MULTIPART_FORM_DATA_VALUE,
+        "multipart/related", // MTOM support
+        "application/xop+xml", // XOP support
+        MediaType.ALL_VALUE
     })
     public ResponseEntity<String> hold(
             @RequestParam(value = "file", required = false) MultipartFile file,
@@ -129,137 +128,133 @@ public class DataHoldController extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
-        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getBucket();
-
-        try {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return defaultBucket;
-            }
-            HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
-            if (portHeader == null) {
-                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
-            }
-            if (portHeader == null) {
-                return defaultBucket;
-            }
-            int requestPort;
-            try {
-                requestPort = Integer.parseInt(portHeader);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid x-forwarded-port header value: {}. Using default hold bucket", portHeader);
-                return defaultBucket;
-            }
-
-            if (!portConfig.isLoaded()) {
-                portConfig.loadConfig();
-            }
-
-            if (portConfig.isLoaded()) {
-                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                    if (entry.port == requestPort) {
-                        String dataDir = entry.dataDir;
-                        if (dataDir != null && !dataDir.isBlank()) {
-                            String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                            if (normalized.isEmpty()) {
-                                return defaultBucket;
-                            }
-                            return defaultBucket + "/" + normalized;
-                        }
-                        break; // found entry but no dataDir
-                    }
-                }
-            } else {
-                log.warn("PortConfig not loaded; using default hold bucket");
-            }
-        } catch (Exception e) {
-            log.error("Error while resolving data bucket name from port config", e);
-        }
-
-        return defaultBucket;
+        return appConfig.getAws().getS3().getHoldConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
-        String defaultBucket = appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+        return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+    }
 
+    /**
+     * Build the metadata key including optional per-port metadataDir prefix.
+     */
+    @Override
+    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
+        String prefix = "";
+        int requestPort = -1;
         try {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return defaultBucket;
-            }
-            HttpServletRequest req = attrs.getRequest();
-            String portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
-                portHeader = req.getHeader(Constants.REQ_X_FORWARDED_PORT);
+                portHeader = HttpUtil.extractDestinationPort(headers);
             }
-            if (portHeader == null) {
-                return defaultBucket;
-            }
-            int requestPort;
-            try {
-                requestPort = Integer.parseInt(portHeader);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid x-forwarded-port header value: {}. Using default hold metadata bucket", portHeader);
-                return defaultBucket;
-            }
-
-            if (!portConfig.isLoaded()) {
-                portConfig.loadConfig();
-            }
-
-            if (portConfig.isLoaded()) {
-                for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                    if (entry.port == requestPort) {
-                        String metadataDir = entry.metadataDir;
-                        if (metadataDir != null && !metadataDir.isBlank()) {
-                            String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                            if (normalized.isEmpty()) {
-                                return defaultBucket;
-                            }
-                            return defaultBucket + "/" + normalized;
-                        }
-                        break; // found entry but no metadataDir
+            if (portHeader != null) {
+                try {
+                    requestPort = Integer.parseInt(portHeader);
+                    if (!portConfig.isLoaded()) {
+                        portConfig.loadConfig();
                     }
+                    if (portConfig.isLoaded()) {
+                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                            if (entry.port == requestPort) {
+                                String dataDir = entry.dataDir;
+                                if (dataDir != null && !dataDir.isBlank()) {
+                                    String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                                    if (!normalized.isEmpty()) {
+                                        prefix = normalized + "/";
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
+                    }
+                } catch (NumberFormatException nfe) {
+                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
                 }
-            } else {
-                log.warn("PortConfig not loaded; using default hold metadata bucket");
             }
         } catch (Exception e) {
-            log.error("Error while resolving metadata bucket name from port config", e);
+            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
-        return defaultBucket;
-    }
+        // compute upload date parts (UTC)
+        Instant now = Instant.now();
+        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+        String yyyy = String.format("%04d", uploadTime.getYear());
+        String mm = String.format("%02d", uploadTime.getMonthValue());
+        String dd = String.format("%02d", uploadTime.getDayOfMonth());
 
-    @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        // Build S3 key:
-        // hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-        Instant currentTime = Instant.now();
-        ZonedDateTime now = currentTime.atZone(ZoneOffset.UTC);
-        String yyyy = String.format("%04d", now.getYear());
-        String mm = String.format("%02d", now.getMonthValue());
-        String dd = String.format("%02d", now.getDayOfMonth());
+        // prepare filename and extension
+        String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
+        String baseName = original;
         String extension = "";
-        int dotIdx = originalFileName.lastIndexOf('.');
-        if (dotIdx > 0 && dotIdx < originalFileName.length() - 1) {
-            extension = originalFileName.substring(dotIdx + 1);
+
+        int lastDot = original.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < original.length() - 1) {
+            baseName = original.substring(0, lastDot);
+            extension = original.substring(lastDot + 1);
         }
-        String timestampFileName = timestamp + "_" + originalFileName;
-        return String.format("hold/%s/%s/%s/%s/%s%s%s",
-                getDestinationPort(headers), yyyy, mm, dd, timestampFileName,
-                extension.isEmpty() ? "" : ".", extension);
+
+        // build timestamped filename: {timestamp}_{basename}.{extension}
+        String timestampedName = timestamp + "_" + baseName;
+        if (!extension.isBlank()) {
+            timestampedName = timestampedName + "." + extension;
+        }
+
+        // final path: /hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
+        String dataKey = String.format("/hold/%d/%s/%s/%s/%s", requestPort, yyyy, mm, dd, timestampedName);
+
+        return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
 
+    /**
+     * Build the metadata key including optional per-port metadataDir prefix.
+     */
     @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        return getDataKey(interactionId, headers, originalFileName,timestamp) + "_metadata.json";
-    }
+    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
+        String prefix = "";
+        try {
+            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
+            if (portHeader == null) {
+                portHeader = HttpUtil.extractDestinationPort(headers);
+            }
+            if (portHeader != null) {
+                try {
+                    int requestPort = Integer.parseInt(portHeader);
+                    if (!portConfig.isLoaded()) {
+                        portConfig.loadConfig();
+                    }
+                    if (portConfig.isLoaded()) {
+                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
+                            if (entry.port == requestPort) {
+                                String metadataDir = entry.metadataDir;
+                                if (metadataDir != null && !metadataDir.isBlank()) {
+                                    String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
+                                    if (!normalized.isEmpty()) {
+                                        prefix = normalized + "/";
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
+                    }
+                } catch (NumberFormatException nfe) {
+                    LOG.warn("Invalid x-server-port header value: {} — using default metadata key and no prefix", portHeader);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
+        }
 
-    @Override
-    public String getAcknowledgementKey(String interactionId, Map<String, String> headers, String originalFileName,String timestamp) {
-        return getDataKey(interactionId, headers, originalFileName,timestamp) + ".ack.json";
+        // build metadata relative key (same semantics as previous default)
+        Instant now = Instant.now();
+        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String metaKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
+
+        return (prefix.isEmpty() ? "" : prefix) + metaKey;
     }
 }
