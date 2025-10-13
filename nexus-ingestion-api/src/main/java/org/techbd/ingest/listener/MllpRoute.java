@@ -2,7 +2,9 @@ package org.techbd.ingest.listener;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,9 +24,11 @@ import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
+import ca.uhn.hl7v2.validation.impl.NoValidation;
 
 public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
@@ -50,6 +54,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 .process(exchange -> {
                     String hl7Message = exchange.getIn().getBody(String.class);
                     GenericParser parser = new GenericParser();
+                    parser.setValidationContext(new NoValidation()); 
                     String interactionId = UUID.randomUUID().toString();
                     String nack;
                     try {
@@ -57,9 +62,23 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
                         Terser terser = new Terser(hapiMsg);
-                        String messageCode = extractZntFieldSafely(hapiMsg, terser, 2, 0);
-                        String deliveryType = extractZntFieldSafely(hapiMsg, terser, 4, 0);
-                        String facility = extractZntFieldSafely(hapiMsg, terser, 8, 0);
+                        Segment znt = terser.getSegment(".ZNT");
+
+                         // Extract individual fields
+                        String messageCode = terser.get("/.ZNT-2");
+                        String triggerEvent = terser.get("/.ZNT-3");
+                        String deliveryType = terser.get("/.ZNT-4");
+
+                         // Collect facilities from ZNT-9 repetitions and join with hyphen
+                        Type[] field9Reps = znt.getField(9);
+                        List<String> facilitiesList = new ArrayList<>();
+                        for (int i = 0; i < field9Reps.length; i++) {
+                             String comp2 = terser.get("/.ZNT-9(" + i + ")-2");
+                             if (comp2 != null && !comp2.isEmpty()) {
+                                 facilitiesList.add(comp2);
+                             }
+                        }
+                        String facilities = String.join("-", facilitiesList);
                         RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
                         Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
                         if (additionalDetails == null) {
@@ -68,7 +87,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         }
                         additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
                         additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
-                        additionalDetails.put(Constants.FACILITY, facility);
+                        additionalDetails.put(Constants.FACILITY, facilities);
                         messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
@@ -93,33 +112,6 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 .log("[PORT " + port + "] ACK/NAK sent");
     }
     
-    
-    private String extractZntFieldSafely(Message message, Terser terser, int field, int repetition)
-            throws HL7Exception {
-        try {
-            String value = terser.getSegment("ZNT").getField(field, repetition).encode();
-            log.debug("Successfully extracted ZNT field [{}] repetition [{}] using Terser. Value='{}'", field,
-                    repetition, value);
-            return value;
-        } catch (HL7Exception e) {
-            log.warn(
-                    "Failed to extract ZNT field [{}] repetition [{}] using Terser. Attempting fallback via message.get(). Cause: {}",
-                    field, repetition, e.getMessage());
-            try {
-                Segment znt = (Segment) message.get("ZNT", 0);
-                String value = znt.getField(field, repetition).encode();
-                log.debug("Fallback succeeded for ZNT field [{}] repetition [{}]. Value='{}'", field, repetition,
-                        value);
-                return value;
-            } catch (Exception inner) {
-                log.error(
-                        "Fallback failed for ZNT field [{}] repetition [{}]. No ZNT segment found or unable to extract. Root cause: {}",
-                        field, repetition, inner.getMessage(), inner);
-                throw new HL7Exception("Unable to extract ZNT field " + field + " repetition " + repetition, inner);
-            }
-        }
-    }
-
     public static String addNteWithInteractionId(Message ackMessage, String interactionId,String ingestionApiVersion) throws HL7Exception {
         Terser terser = new Terser(ackMessage);
         ackMessage.addNonstandardSegment("NTE");
