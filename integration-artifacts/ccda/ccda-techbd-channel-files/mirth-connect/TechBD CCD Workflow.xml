@@ -2,8 +2,9 @@
   <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.32</description>
-  <revision>16</revision>
+  <description>Version: 0.4.34
+Updated to handle AthenaHealth CCD XML files.</description>
+  <revision>38</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -591,9 +592,9 @@ if (missingHeaders.length &gt; 0) {
 var rawData = connectorMessage.getRawData();
 
 // Check if rawData is empty
-if (!rawData || rawData.trim().length === 0) {
-    errorMessage = &quot;No file provided in the request.&quot;;
-    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
 
@@ -602,8 +603,46 @@ var boundary = rawData.split(&quot;\r\n&quot;)[0];
 var parts = rawData.split(boundary);
 
 // Initialize variables to store file content
-var fileContent = null;
-
+//var fileContent = null;
+////------------------------------------------------------------------------------------
+//// Loop through parts to find the file part
+//var i = 0;
+//for each (var part in parts) {
+//    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
+//        logger.info(&quot;Part count &quot; + ++i);
+//        // Extract the file content (skip headers)
+//        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
+//        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
+//        break;
+//    }
+//}
+//
+//// Validate the file content
+//if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length == 0) {
+//    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+//    // Set the HTTP response status to 400 (Bad Request)
+//    setErrorResponse(400, errorMessage);
+//    throw errorMessage;
+//} else {
+//    logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
+//    logger.info(&quot;File content: (input validation) - &quot; + fileContent);
+//}
+//------------------------------------------------------------------------------------
+//var xml = new XML(rawData);
+//var CCDAMessage = xml.Content.Part.Content.toString();
+//logger.info(&quot;CCDAMessage : &quot; + CCDAMessage);
+//
+//var CCDAMessage = String(rawData[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+//logger.info(&quot;CCDA DATA : &quot; + CCDAMessage);
+//
+// Safety check
+//if (CCDAMessage == null || CCDAMessage.trim() === &quot;&quot;) {
+//	logger.warn(&quot;No CCDA content found in uploaded file.&quot;);
+//    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+//    	setErrorResponse(400, errorMessage);
+//    	throw errorMessage;
+//}
+//------------------------------------------------------------------------------------
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -625,6 +664,9 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
 }
 
 extractClinicalDocument(rawData);
@@ -700,6 +742,10 @@ function getManufacturerModelName(xmlData) {
 			    	ehrVendor = &quot;Medent&quot;;
 			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-medent.xslt&quot;;
 				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-medent.xslt&quot;;
+			} else if (lowerName.indexOf(&quot;athenahealth&quot;) !== -1) {
+			    	ehrVendor = &quot;Athenahealth&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-athenahealth.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-athenahealth.xslt&quot;;
 			} else {
 			    	ehrVendor = &quot;Other&quot;;
 			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
@@ -797,6 +843,7 @@ function getPatientMRN(patientRoles) {
 
     function isSSNFormat(ext) {
     	    return (
+	        ext &amp;&amp; 
 	        String.fromCharCode(ext.charCodeAt(3)) == &apos;-&apos; &amp;&amp;
 	        String.fromCharCode(ext.charCodeAt(6)) == &apos;-&apos; &amp;&amp;
 	        /^\d{3}-\d{2}-\d{4}$/.test(ext)
@@ -820,8 +867,25 @@ function getPatientMRN(patientRoles) {
                 }
             }
         }
+	   // Step 2: Athenahealth MRN (from first ID, after &quot;P-&quot;)
+        else if (ehrVendor == &apos;Athenahealth&apos;) {
+            for each (var idNode in idNodes) {
+                var ext = idNode.@extension.toString();
+
+                // Only process if &quot;P-&quot; exists
+                if (ext.indexOf(&quot;P-&quot;) &gt; -1) {
+                    var mrnPart = ext.split(&quot;P-&quot;)[1]; // part after &quot;P-&quot;
+                    // Check if the extracted part is not SSN
+                    if (!isSSNFormat(mrnPart)) {
+                        extensionAttr = mrnPart;
+                        logger.info(&quot;Patient MRN (Athenahealth): &quot; + extensionAttr);
+                        break; // Only first valid occurrence
+                    }
+                }
+            }
+        }
 	   else {	
-        // Step 2: If Epic not found, fallback to Epic logic
+        // Step 3: If Epic not found, fallback to Epic logic
             for each (var idNode in idNodes) {
                 var root = idNode.@root.toString();
                 var ext = idNode.@extension.toString();
@@ -962,7 +1026,7 @@ function getObservationCategoryCodes(transformer, observations) {
     default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
 
     // Extract all observation code attributes
-    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos; || channelMap.get(&apos;ehrVendor&apos;)  == &apos;Athenahealth&apos;) {
 	    var codes = xml..component
 	                   .structuredBody
 	                   .component
@@ -1044,7 +1108,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
 
     // Extract all observation code attributes
     try {
-	    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+	    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos; || channelMap.get(&apos;ehrVendor&apos;)  == &apos;Athenahealth&apos;) {
 		    matchingObservations = xml..component
 		        .structuredBody
 		        .component
@@ -1200,7 +1264,8 @@ function setResourceIdParameters(transformer) {
      //For Epic files, use the value of the header variable,&apos;X-TechBD-Screening-Code&apos;, as the Grouper Screening Code, otherwise use the LOINC code &apos;100698-0&apos;
      //For Medent files, take the value from code.code
      var grouperScreeningCode = channelMap.get(&apos;X-TechBD-Screening-Code&apos;);
-     if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Epic&apos; &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+     if ((channelMap.get(&apos;ehrVendor&apos;) == &apos;Epic&apos; || channelMap.get(&apos;ehrVendor&apos;) == &apos;Athenahealth&apos;)
+     	&amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
 	    grouperScreeningCode = &apos;100698-0&apos;;
 	    logger.info(&quot;Defaulting grouperScreeningCode to 100698-0 for Epic&quot;);
 	}
@@ -2396,7 +2461,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1758708742262</time>
+        <time>1760435471684</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2405,5 +2470,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
