@@ -35,7 +35,7 @@ class MessageGroupServiceTest {
 
         // Inject strategies in the order of precedence
         List varStrategies = List.of(
-                new MllpMessageGroupStrategy(),
+                new MllpMessageGroupStrategy(appLogger),
                 new TenantMessageGroupStrategy(),
                 new IpPortMessageGroupStrategy()
         );
