@@ -57,32 +57,42 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
                         Terser terser = new Terser(hapiMsg);
-                        Segment znt = terser.getSegment(".ZNT");
-                        // Extract individual fields
-                        String messageCode = terser.get("/.ZNT-2");
-                        String facility = terser.get("/.ZNT-8");
-                        String deliveryType = terser.get("/.ZNT-4");
-                        String facilityCode = null;
-                        if (facility != null && facility.contains(":")) {
-                            String[] parts = facility.split(":");
-                            facilityCode = parts.length > 1 ? parts[1] : parts[0];
-                        } else if (facility != null) {
-                            facilityCode = facility;
-                        }   
                         RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
                         Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
                         if (additionalDetails == null) {
                             additionalDetails = new HashMap<>();
                             requestContext.setAdditionalParameters(additionalDetails);
                         }
-                        additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
-                        additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
-                        additionalDetails.put(Constants.FACILITY, facilityCode);
+                        try {
+                            Segment znt = terser.getSegment(".ZNT");
+                            if (znt != null) {
+                                 // Extract individual fields
+                                String messageCode = terser.get("/.ZNT-2");
+                                String facility = terser.get("/.ZNT-8");
+                                String deliveryType = terser.get("/.ZNT-4");
+
+                                String facilityCode = null;
+                                if (facility != null && facility.contains(":")) {
+                                    String[] parts = facility.split(":");
+                                    facilityCode = parts.length > 1 ? parts[1] : parts[0];
+                                } else if (facility != null) {
+                                    facilityCode = facility;
+                                }                               
+                                additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+                                additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+                                additionalDetails.put(Constants.FACILITY, facilityCode);
+                            } else {
+                                logger.warn("ZNT segment not found in HL7 message. interactionId={}", interactionId);
+                            }
+                        } catch (HL7Exception e) {
+                            logger.error("Error extracting ZNT segment from HL7 message: {} for interaction id :{}",
+                                     e.getMessage(), interactionId);
+                        }
                         messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
-                        logger.info("[PORT {}] Processed HL7 message successfully. Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
+                        logger.info("[PORT {}] Processed HL7 message successfully. Ack message  : {} interactionId= {}", port,  interactionId);
                     } catch (Exception e) {
                         logger.error("[PORT {}] Error processing HL7 message. interactionId= {} reason={}", port, interactionId, e.getMessage(),e);
                         try {

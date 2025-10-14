@@ -33,18 +33,12 @@ public class MllpMessageGroupStrategy implements MessageGroupStrategy {
         String deliveryType = StringUtils.trimToEmpty(params.get("deliveryType"));
         String facility = StringUtils.trimToEmpty(params.get("facility"));
         String messageCode = StringUtils.trimToEmpty(params.get("messageCode"));
-        // System.out.println("**************  **************");
-        // System.out.println("deliveryType: " + deliveryType);
-        // System.out.println("facility: " + facility);
-        // System.out.println("messageCode: " + messageCode);
-        // System.out.println("interactionId: " + interactionId);
         LOG.info(
                 "Delivery Type: " + (StringUtils.isBlank(deliveryType) ? "Not Available" : "Available") + " | " +
                 "Facility: " + (StringUtils.isBlank(facility) ? "Not Available" : "Available") + " | " +
                 "Message Code: " + (StringUtils.isBlank(messageCode) ? "Not Available" : "Available") + " | " +
                 "InteractionId: " + (StringUtils.isBlank(interactionId) ? "Not Available" : "Available")
         );
-
         List<String> parts = new ArrayList<>();
         if (StringUtils.isNotBlank(deliveryType)) parts.add(deliveryType);
         if (StringUtils.isNotBlank(facility)) parts.add(facility);
