@@ -21,6 +21,7 @@ import org.techbd.ingest.util.TemplateLogger;
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
@@ -55,7 +56,29 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         Message hapiMsg = parser.parse(hl7Message);
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
-                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message, ackMessage);
+                        Terser terser = new Terser(hapiMsg);
+                        Segment znt = terser.getSegment(".ZNT");
+                        // Extract individual fields
+                        String messageCode = terser.get("/.ZNT-2");
+                        String facility = terser.get("/.ZNT-8");
+                        String deliveryType = terser.get("/.ZNT-4");
+                        String facilityCode = null;
+                        if (facility != null && facility.contains(":")) {
+                            String[] parts = facility.split(":");
+                            facilityCode = parts.length > 1 ? parts[1] : parts[0];
+                        } else if (facility != null) {
+                            facilityCode = facility;
+                        }   
+                        RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
+                        Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
+                        if (additionalDetails == null) {
+                            additionalDetails = new HashMap<>();
+                            requestContext.setAdditionalParameters(additionalDetails);
+                        }
+                        additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+                        additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+                        additionalDetails.put(Constants.FACILITY, facilityCode);
+                        messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
@@ -78,7 +101,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 })
                 .log("[PORT " + port + "] ACK/NAK sent");
     }
-
+    
     public static String addNteWithInteractionId(Message ackMessage, String interactionId,String ingestionApiVersion) throws HL7Exception {
         Terser terser = new Terser(ackMessage);
         ackMessage.addNonstandardSegment("NTE");

@@ -60,6 +60,7 @@ public class RequestContext {
     private String s3Response;
     private String messageId;
     private String techBdIngestionApiVersion;
+    private Map<String,String> additionalParameters;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,
