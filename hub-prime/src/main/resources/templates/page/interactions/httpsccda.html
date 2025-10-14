@@ -120,12 +120,34 @@
                         }
                     } 
                     },
-                    { headerName: "FHIR Generated", field: "fhir_generated", filter: "agNumberColumnFilter", headerTooltip: "Indicates whether the payload was converted to FHIR (Yes/No)",
-                         cellRenderer: 'agGroupCellRenderer'
-                     },
+                    { headerName: "FHIR Generated", field: "fhir_generated", filter: "agTextColumnFilter", headerTooltip: "Indicates whether the payload was converted to FHIR (Yes/No)",
+                         cellRendererSelector: params => {
+                        const uri = params.data?.uri;
+                        const value = params.data?.fhir_generated;
+
+                        const isValidateUri =
+                        uri === '/ccda/Bundle/$validate' ||
+                        uri === '/ccda/Bundle/$validate/';
+
+                        if ( !isValidateUri) {
+                        return { component: 'agGroupCellRenderer' };
+                        }
+
+                        return { component: undefined }; // No drill-down, no value
+                    },
+                    valueGetter: params => {
+                        const uri = params.data?.uri;
+                        const value = params.data?.fhir_generated;
+
+                        const isValidateUri =
+                        uri === '/ccda/Bundle/$validate' ||
+                        uri === '/ccda/Bundle/$validate/';
+
+                        return isValidateUri ? null : value;
+                    }
+                    },
                     { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },
-                    { headerName: "Origin", field: "origin", headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },                  
                     { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
                     {
