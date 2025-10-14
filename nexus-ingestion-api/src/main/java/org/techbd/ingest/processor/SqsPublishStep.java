@@ -6,6 +6,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
@@ -135,12 +136,17 @@ public class SqsPublishStep implements MessageProcessingStep {
                 portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
                 if (portHeader == null) {
                     portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
-                }
+                } 
             }
             if (portHeader != null && !portHeader.isBlank()) {
                 requestPort = Integer.parseInt(portHeader);
                 LOG.info("SqsPublishStep:: Using x-forwarded-port header value: {}", requestPort);
             } else {
+                if (MessageSourceType.MLLP == context.getMessageSourceType() && context.getDestinationPort() != null && !context.getDestinationPort().isBlank()) {
+                    requestPort = Integer.parseInt(context.getDestinationPort());
+                } else {
+                    LOG.info("SqsPublishStep:: x-forwarded-port header missing or blank; messageSourceType=null");
+                }
                 LOG.warn("SqsPublishStep:: x-forwarded-port header missing or blank; cannot resolve port for SQS queue selection.");
             }
         } catch (Exception e) {
