@@ -28,6 +28,7 @@ public class MessageProcessorServiceTest {
     private MessageProcessingStep step1;
     @Mock
     private MessageProcessingStep step2;
+
     @Mock
     private AppLogger appLogger;    
     @Mock
