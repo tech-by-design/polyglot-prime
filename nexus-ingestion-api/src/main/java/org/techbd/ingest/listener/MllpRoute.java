@@ -2,9 +2,7 @@ package org.techbd.ingest.listener;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,11 +22,9 @@ import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
-import ca.uhn.hl7v2.validation.impl.NoValidation;
 
 public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
@@ -54,7 +50,6 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 .process(exchange -> {
                     String hl7Message = exchange.getIn().getBody(String.class);
                     GenericParser parser = new GenericParser();
-                    parser.setValidationContext(new NoValidation()); 
                     String interactionId = UUID.randomUUID().toString();
                     String nack;
                     try {
@@ -63,22 +58,17 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         String ackMessage = addNteWithInteractionId(ack, interactionId,appConfig.getVersion());
                         Terser terser = new Terser(hapiMsg);
                         Segment znt = terser.getSegment(".ZNT");
-
-                         // Extract individual fields
+                        // Extract individual fields
                         String messageCode = terser.get("/.ZNT-2");
-                        String triggerEvent = terser.get("/.ZNT-3");
+                        String facility = terser.get("/.ZNT-8");
                         String deliveryType = terser.get("/.ZNT-4");
-
-                         // Collect facilities from ZNT-9 repetitions and join with hyphen
-                        Type[] field9Reps = znt.getField(9);
-                        List<String> facilitiesList = new ArrayList<>();
-                        for (int i = 0; i < field9Reps.length; i++) {
-                             String comp2 = terser.get("/.ZNT-9(" + i + ")-2");
-                             if (comp2 != null && !comp2.isEmpty()) {
-                                 facilitiesList.add(comp2);
-                             }
-                        }
-                        String facilities = String.join("-", facilitiesList);
+                        String facilityCode = null;
+                        if (facility != null && facility.contains(":")) {
+                            String[] parts = facility.split(":");
+                            facilityCode = parts.length > 1 ? parts[1] : parts[0];
+                        } else if (facility != null) {
+                            facilityCode = facility;
+                        }   
                         RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
                         Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
                         if (additionalDetails == null) {
@@ -87,7 +77,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         }
                         additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
                         additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
-                        additionalDetails.put(Constants.FACILITY, facilities);
+                        additionalDetails.put(Constants.FACILITY, facilityCode);
                         messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                         exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
