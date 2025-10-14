@@ -4,7 +4,7 @@
   <name>TechBD CCD Workflow</name>
   <description>Version: 0.4.34
 Updated to handle AthenaHealth CCD XML files.</description>
-  <revision>29</revision>
+  <revision>38</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -604,8 +604,46 @@ var boundary = rawData.split(&quot;\r\n&quot;)[0];
 var parts = rawData.split(boundary);
 
 // Initialize variables to store file content
-var fileContent = null;
-
+//var fileContent = null;
+////------------------------------------------------------------------------------------
+//// Loop through parts to find the file part
+//var i = 0;
+//for each (var part in parts) {
+//    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
+//        logger.info(&quot;Part count &quot; + ++i);
+//        // Extract the file content (skip headers)
+//        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
+//        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
+//        break;
+//    }
+//}
+//
+//// Validate the file content
+//if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length == 0) {
+//    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+//    // Set the HTTP response status to 400 (Bad Request)
+//    setErrorResponse(400, errorMessage);
+//    throw errorMessage;
+//} else {
+//    logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
+//    logger.info(&quot;File content: (input validation) - &quot; + fileContent);
+//}
+//------------------------------------------------------------------------------------
+//var xml = new XML(rawData);
+//var CCDAMessage = xml.Content.Part.Content.toString();
+//logger.info(&quot;CCDAMessage : &quot; + CCDAMessage);
+//
+//var CCDAMessage = String(rawData[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+//logger.info(&quot;CCDA DATA : &quot; + CCDAMessage);
+//
+// Safety check
+//if (CCDAMessage == null || CCDAMessage.trim() === &quot;&quot;) {
+//	logger.warn(&quot;No CCDA content found in uploaded file.&quot;);
+//    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+//    	setErrorResponse(400, errorMessage);
+//    	throw errorMessage;
+//}
+//------------------------------------------------------------------------------------
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -2424,7 +2462,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1760087940298</time>
+        <time>1760435471684</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
