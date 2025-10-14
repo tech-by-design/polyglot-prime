@@ -626,6 +626,43 @@ const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_er
   sqlNS: ingressSchema
 });
 
+const ccdaValidationErrorsSat = interactionHub.satelliteTable(
+  "ccda_validation_errors",
+  {
+    sat_ccda_validation_errors_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: textNullable(),
+    error_type: textNullable(),
+    error: textNullable(),
+    file_name: textNullable(),
+    origin: textNullable(),
+    user_agent: textNullable(),
+    techbd_version_number: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const hl7ValidationErrorsSat = interactionHub.satelliteTable(
+  "hl7_validation_errors",
+  {
+    sat_hl7_validation_errors_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: textNullable(),
+    error_type: textNullable(),
+    error: textNullable(),
+    file_name: textNullable(),
+    origin: textNullable(),
+    user_agent: textNullable(),
+    techbd_version_number: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 const users = SQLa.tableDefinition("users", {
     id: primaryKey(),
     github_id:text(),
@@ -1752,6 +1789,44 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${users}
+
+      ${ccdaValidationErrorsSat}
+      IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ccda_validation_errors'
+                AND indexname = 'idx_sat_ccda_validation_errors_created_at'
+          ) THEN
+              CREATE INDEX idx_sat_ccda_validation_errors_created_at ON techbd_udi_ingress.sat_interaction_ccda_validation_errors USING btree (created_at DESC);
+          END IF;
+
+      IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ccda_validation_errors'
+                AND indexname = 'idx_sat_ccda_validation_errors_hub_interaction_id'
+          ) THEN
+              CREATE INDEX idx_sat_ccda_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_ccda_validation_errors USING btree (hub_interaction_id);
+          END IF;
+
+      ${hl7ValidationErrorsSat}
+      IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_hl7_validation_errors'
+                AND indexname = 'idx_sat_hl7_validation_errors_created_at'
+          ) THEN
+              CREATE INDEX idx_sat_hl7_validation_errors_created_at ON techbd_udi_ingress.sat_interaction_hl7_validation_errors USING btree (created_at DESC);
+          END IF;
+
+      IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_hl7_validation_errors'
+                AND indexname = 'idx_sat_hl7_validation_errors_hub_interaction_id'
+          ) THEN
+              CREATE INDEX idx_sat_hl7_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_hl7_validation_errors USING btree (hub_interaction_id);
+          END IF;
 
       ${linkNexusInteraction}
       IF NOT EXISTS (
