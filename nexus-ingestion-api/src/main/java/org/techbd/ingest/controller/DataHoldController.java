@@ -202,8 +202,8 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             timestampedName = timestampedName + "." + extension;
         }
 
-        // final path: /hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-        String dataKey = String.format("/hold/%d/%s/%s/%s/%s", requestPort, yyyy, mm, dd, timestampedName);
+        // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
+        String dataKey = String.format("hold/%d/%s/%s/%s/%s", requestPort, yyyy, mm, dd, timestampedName);
 
         return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }

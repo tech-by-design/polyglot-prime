@@ -3466,6 +3466,36 @@ BEGIN
 		p_file_name
     ) RETURNING sat_interaction_hl7_request_id INTO v_return;  -- Return the generated UUID
 
+	INSERT INTO techbd_udi_ingress.sat_interaction_hl7_validation_errors(
+           sat_hl7_validation_errors_id, 
+           hub_interaction_id, 
+           tenant_id, 
+           uri, 
+           error_type, 
+           "error",           
+           file_name, 
+           origin, 
+           user_agent, 
+           techbd_version_number, 
+           created_at, 
+           created_by, 
+           provenance
+    )
+      VALUES(
+          gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+          p_hub_interaction_id,
+          p_tenant_id,
+          p_uri,
+          'hl7_validation_errors',
+          (p_payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
+          p_file_name,
+          COALESCE(p_origin, 'http'),
+          p_user_agent,
+          p_techbd_version_number,
+          v_created_at,
+          v_created_by,
+          v_provenance);
+
     RETURN v_return;
 EXCEPTION
    WHEN OTHERS THEN
@@ -5133,6 +5163,35 @@ BEGIN
 		p_file_name
     ) RETURNING sat_interaction_ccda_request_id INTO v_return;  -- Return the generated UUID
 
+	INSERT INTO techbd_udi_ingress.sat_interaction_ccda_validation_errors(
+          sat_ccda_validation_errors_id, 
+          hub_interaction_id, 
+          tenant_id, 
+          uri, 
+          error_type, 
+          "error", 
+          file_name, 
+          origin, 
+          user_agent, 
+          techbd_version_number, 
+          created_at, 
+          created_by, 
+          provenance)
+      VALUES(
+          gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+          hub_interaction_id,
+          tenant_id,
+          uri,
+          'ccda_validation_errors',
+          (payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
+          p_file_name,
+          COALESCE(origin, 'http'),
+          user_agent,
+          p_techbd_version_number,
+          v_created_at,
+          v_created_by,
+          v_provenance);
+      
     RETURN v_return;
 EXCEPTION
    WHEN OTHERS THEN
