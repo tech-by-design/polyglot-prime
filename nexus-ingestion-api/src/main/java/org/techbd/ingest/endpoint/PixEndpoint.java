@@ -216,12 +216,37 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
      */
     @Override
     public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
+        PortConfig.PortEntry entry = currentPortEntry.get();
+
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
         String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String baseKey;
+        if (entry != null && "/hold".equals(entry.route)) {
+            // prepare filename and extension
+            String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
+            String baseName = original;
+            String extension = "";
 
-        String baseKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
-        PortConfig.PortEntry entry = currentPortEntry.get();
+            int lastDot = original.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < original.length() - 1) {
+                baseName = original.substring(0, lastDot);
+                extension = original.substring(lastDot + 1);
+            }
+
+            // build timestamped filename: {timestamp}_{basename}.{extension}
+            String timestampedName = timestamp + "_" + baseName;
+            if (!extension.isBlank()) {
+                timestampedName = timestampedName + "." + extension;
+            }
+
+            // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
+            baseKey = String.format("hold/%d/%s/%s", entry.port, datePath, timestampedName);
+
+        } else {
+            baseKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
+        }
+
         if (entry != null && entry.dataDir != null && !entry.dataDir.isBlank()) {
             String prefix = entry.dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
             if (!prefix.isEmpty()) {
@@ -237,12 +262,37 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
      */
     @Override
     public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
+        PortConfig.PortEntry entry = currentPortEntry.get();
+
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
         String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
+        String baseKey;
+        if (entry != null && "/hold".equals(entry.route)) {
+            // prepare filename and extension
+            String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
+            String baseName = original;
+            String extension = "";
 
-        String baseKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
-        PortConfig.PortEntry entry = currentPortEntry.get();
+            int lastDot = original.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < original.length() - 1) {
+                baseName = original.substring(0, lastDot);
+                extension = original.substring(lastDot + 1);
+            }
+
+            // build timestamped filename: {timestamp}_{basename}.{extension}
+            String timestampedName = timestamp + "_" + baseName;
+            if (!extension.isBlank()) {
+                timestampedName = timestampedName + "." + extension;
+            }
+
+            // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}_metadata.json
+            baseKey = String.format("hold/%d/%s/%s_metadata.json", entry.port, datePath, timestampedName);
+
+        } else {
+            baseKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
+        }
+
         if (entry != null && entry.metadataDir != null && !entry.metadataDir.isBlank()) {
             String prefix = entry.metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
             if (!prefix.isEmpty()) {
@@ -263,11 +313,19 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
 
     @Override
     public String getDataBucketName() {
+        PortConfig.PortEntry entry = currentPortEntry.get();
+        if (entry != null && "/hold".equals(entry.route)) {
+            return appConfig.getAws().getS3().getHoldConfig().getBucket();
+        }
         return appConfig.getAws().getS3().getDefaultConfig().getBucket();
     }
 
     @Override
     public String getMetadataBucketName() {
+        PortConfig.PortEntry entry = currentPortEntry.get();
+        if (entry != null && "/hold".equals(entry.route)) {
+            return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
+        }
         return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 }
