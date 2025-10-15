@@ -181,9 +181,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
         // compute upload date parts (UTC)
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String yyyy = String.format("%04d", uploadTime.getYear());
-        String mm = String.format("%02d", uploadTime.getMonthValue());
-        String dd = String.format("%02d", uploadTime.getDayOfMonth());
+        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
 
         // prepare filename and extension
         String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
@@ -203,7 +201,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
         }
 
         // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-        String dataKey = String.format("hold/%d/%s/%s/%s/%s", requestPort, yyyy, mm, dd, timestampedName);
+        String dataKey = String.format("hold/%d/%s/%s", requestPort, datePath, timestampedName);
 
         return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
@@ -214,6 +212,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
     @Override
     public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
         String prefix = "";
+        int requestPort = -1;
         try {
             String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
             if (portHeader == null) {
@@ -221,7 +220,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             }
             if (portHeader != null) {
                 try {
-                    int requestPort = Integer.parseInt(portHeader);
+                    requestPort = Integer.parseInt(portHeader);
                     if (!portConfig.isLoaded()) {
                         portConfig.loadConfig();
                     }
@@ -249,11 +248,30 @@ public class DataHoldController extends AbstractMessageSourceProvider {
             LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
         }
 
-        // build metadata relative key (same semantics as previous default)
+        // build metadata relative key
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
         String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String metaKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
+
+        // prepare filename and extension
+        String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
+        String baseName = original;
+        String extension = "";
+
+        int lastDot = original.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < original.length() - 1) {
+            baseName = original.substring(0, lastDot);
+            extension = original.substring(lastDot + 1);
+        }
+
+        // build timestamped filename: {timestamp}_{basename}.{extension}
+        String timestampedName = timestamp + "_" + baseName;
+        if (!extension.isBlank()) {
+            timestampedName = timestampedName + "." + extension;
+        }
+
+        // final path: hold/metadata/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}_metadata.json
+        String metaKey = String.format("hold/metadata/%d/%s/%s_metadata.json", requestPort, datePath, timestampedName);
 
         return (prefix.isEmpty() ? "" : prefix) + metaKey;
     }
