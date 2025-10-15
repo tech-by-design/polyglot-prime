@@ -419,34 +419,42 @@ private List<Object> processScreening(final String groupKey,
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
+                        // Add sourceType with the correct key for FHIR validation service client
+                        requestParameters.put("sourceType", SourceType.CSV.name());
+                        requestParameters.put("groupInteractionId", groupInteractionId);
+                        requestParameters.put("masterInteractionId", masterInteractionId);
                         requestParameters.putAll(headers);
                         // Call FHIR validation service
                         try {
-                            Object validationResult = fhirValidationServiceClient.validateBundle(bundle, interactionId);
+
+                            Object validationResult = fhirValidationServiceClient.validateBundle(
+                                    bundle, // FHIR bundle JSON string
+                                    interactionId, // Current interaction ID
+                                    tenantId, // Tenant ID
+                                    requestParameters // Map containing ALL headers and parameters
+                            );
+
                             results.add(validationResult);
-                            
-                            // Save FHIR conversion status with validation results
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> validationResultMap = (Map<String, Object>) validationResult;
-                            // saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
-                            //         interactionId, requestParameters, bundle, validationResultMap, tenantId);
-                            
-                            LOG.info("Bundle validated and result saved to database for patient MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId: {}",
-                                    profile.getPatientMrIdValue(), interactionId, masterInteractionId, groupInteractionId);
+                            LOG.info(
+                                    "Bundle validated and result saved to database for patient MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId: {}",
+                                    profile.getPatientMrIdValue(), interactionId, masterInteractionId,
+                                    groupInteractionId);
                         } catch (Exception validationException) {
-                            LOG.error("FHIR validation failed for patient MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId: {}, error: {}",
-                                    profile.getPatientMrIdValue(), interactionId, masterInteractionId, groupInteractionId, validationException.getMessage(), validationException);
-                            final Map<String, Object> validationError = createOperationOutcomeForError(masterInteractionId, interactionId,
+                            LOG.error(
+                                    "FHIR validation failed for patient MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId: {}, error: {}",
+                                    profile.getPatientMrIdValue(), interactionId, masterInteractionId,
+                                    groupInteractionId, validationException.getMessage(), validationException);
+                            final Map<String, Object> validationError = createOperationOutcomeForError(
+                                    masterInteractionId, interactionId,
                                     profile.getPatientMrIdValue(), profile.getEncounterId(), validationException,
-                                    payloadAndValidationOutcome.provenance(), payloadAndValidationOutcome.fileDetails(), requestParameters);
+                                    payloadAndValidationOutcome.provenance(), payloadAndValidationOutcome.fileDetails(),
+                                    requestParameters);
                             results.add(validationError);
-                            
-                            // // Save FHIR conversion status with validation error
-                            // saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
-                            //         interactionId, requestParameters, bundle, validationError, tenantId);
+
                         }
-                        LOG.error("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
-                                profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);        
+                        LOG.error(
+                                "Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
+                                profile.getPatientMrIdValue(), interactionId, masterInteractionId, groupInteractionId);
                     } else {
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",

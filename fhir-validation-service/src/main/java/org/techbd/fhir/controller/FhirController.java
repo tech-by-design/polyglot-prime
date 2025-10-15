@@ -133,6 +133,9 @@ public class FhirController {
                         // "profile" is the same name that HL7 validator uses
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(description = "Optional header to specify IG version.", required = false) @RequestHeader(value = "X-SHIN-NY-IG-Version", required = false) String requestedIgVersion,
+                        @Parameter(description = "Optional header to specify source type.", required = false) @RequestHeader(value = "X-TechBD-Source-Type", required = false) String sourceType,
+                        @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Master-Interaction-ID", required = false) String masterInteractionId,
+                        @Parameter(description = "Optional header to specify group interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Group-Interaction-ID", required = false) String groupInteractionId,
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
@@ -149,9 +152,11 @@ public class FhirController {
                         Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
                                         null, null, null, null, null,requestedIgVersion );
                         Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);            
+                        LOG.debug("FhirController.validateBundle - sourceType: '{}', groupInteractionId: '{}', masterInteractionId: '{}'", 
+                                sourceType, groupInteractionId, masterInteractionId);
                         CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
-                                        null, null,
-                                        null, null, request.getRequestURI());
+                                        null, sourceType,
+                                        groupInteractionId, masterInteractionId, request.getRequestURI());
                         requestDetailsMap.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
                         requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
                         requestDetailsMap.putAll(headers);
