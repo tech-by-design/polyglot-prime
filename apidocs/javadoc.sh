@@ -1,1 +1,1 @@
-/opt/hostedtoolcache/Java_Corretto_jdk/21.0.8-9.1/x64/bin/javadoc -J-Duser.language= -J-Duser.country= @options @packages
+/opt/hostedtoolcache/Java_Corretto_jdk/21.0.8-9.1/x64/bin/javadoc @options @packages
