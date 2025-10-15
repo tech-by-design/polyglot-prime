@@ -58,14 +58,6 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
     private final PortConfig portConfig;
     private final ThreadLocal<PortConfig.PortEntry> currentPortEntry = new ThreadLocal<>();
 
-    public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig, AppLogger appLogger) {
-        super(appConfig, appLogger);
-        this.ackService = ackService;
-        this.appConfig = appConfig;
-        this.portConfig = null;
-        log = appLogger.getLogger(PixEndpoint.class);
-    }
-
     public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         super(appConfig, appLogger);
         this.ackService = ackService;
