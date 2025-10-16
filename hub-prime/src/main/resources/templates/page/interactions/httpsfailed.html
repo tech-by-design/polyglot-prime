@@ -99,7 +99,7 @@
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
                     {
                         headerName: "Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, headerTooltip: "Option to download the FHIR payload for detailed inspection"
+                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, sortable: false, headerTooltip: "Option to download the FHIR payload for detailed inspection"
                     }
                 ])
                 .withServerSideDatasource(

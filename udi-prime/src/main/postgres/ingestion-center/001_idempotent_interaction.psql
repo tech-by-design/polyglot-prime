@@ -231,7 +231,10 @@ AS SELECT  created_at AS interaction_created_at,
     client_ip_address,
     resource_type_set AS resource_types,
     source_hub_interaction_id,
-	profile_url,
+	CASE
+        WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
+        ELSE 'shinny.org'
+    END AS source,
         CASE
             WHEN source_type = ANY (ARRAY['CSV'::text, 'CCDA'::text, 'HL7V2'::text]) THEN source_type
             ELSE 'FHIR'::text

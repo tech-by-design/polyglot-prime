@@ -330,7 +330,8 @@ AS SELECT validation_engine,
     count(*) AS issue_count,
     max(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
-    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date
+    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date,
+    profile_url
       FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
    WHERE  
    date_time >= CURRENT_DATE - INTERVAL '2 days'
@@ -348,12 +349,102 @@ AS SELECT validation_engine,
             AND severity !=''
    GROUP BY validation_engine,
     issue, severity,
+    profile_url,
      (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
    ORDER BY	(max(date_time)) DESC;
 
+/*******************************************************************************************
+ * Stored Procedure for FHIR Validation Issue Details (Replacement for View)
+ *
+ * This stored procedure replaces the fhir_validation_issue_details view by accepting
+ * ig_version, validation_engine, issue_date, and profile_url as parameters.
+ *
+ * Parameters:
+ * - p_ig_version: The IG version filter
+ * - p_validation_engine: The validation engine filter
+ * - p_issue_date: The issue date filter (format: MM-DD-YYYY)
+ * - p_profile_url: The profile URL filter
+ *
+ * Returns: Detailed FHIR validation issue records for the specified filters
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_validation_issue_detail(
+    TEXT, TEXT, TEXT, TEXT
+);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_validation_issue_detail(
+    p_ig_version TEXT DEFAULT NULL,
+    p_validation_engine TEXT DEFAULT NULL,
+    p_issue_date TEXT DEFAULT NULL,
+    p_source TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    validation_engine TEXT,
+    issue TEXT,
+    issue_severity TEXT,
+    issue_count BIGINT,
+    most_recent_date TIMESTAMP WITH TIME ZONE,
+    ig_version TEXT,
+    issue_date TEXT,
+    source TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sifvi.validation_engine,
+        sifvi.issue,
+        sifvi.severity AS issue_severity,
+        COUNT(*) AS issue_count,
+        MAX(sifvi.date_time) AS most_recent_date,
+        COALESCE(sifvi.ig_version, 'Unknown') AS ig_version,
+        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') AS issue_date,
+        CASE
+            WHEN sifvi.profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
+            ELSE 'shinny.org'
+        END AS source
+    FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue sifvi
+    WHERE
+        sifvi.date_time >= CURRENT_DATE - INTERVAL '2 days'
+        AND (
+            sifvi.issue ILIKE '%has not been checked because it is unknown%' OR
+            sifvi.issue ILIKE '%Unknown profile%' OR
+            sifvi.issue ILIKE '%Unknown extension%' OR
+            sifvi.issue ILIKE '%Unknown Code System%' OR
+            sifvi.issue ILIKE '%not found%' OR
+            sifvi.issue ILIKE '%has not been checked because it could not be found%' OR
+            sifvi.issue ILIKE '%Unable to find a match for profile%' OR
+            sifvi.issue ILIKE '%None of the codings provided%' OR
+            sifvi.issue ILIKE '%Unable to expand ValueSet%' OR
+            sifvi.issue ILIKE '%Slicing cannot be evaluated%' OR
+            sifvi.issue ILIKE '%could not be resolved%'
+        )
+        AND sifvi.severity != ''
+        AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(sifvi.ig_version, 'Unknown') = p_ig_version)
+        AND (NULLIF(p_validation_engine, '') IS NULL OR sifvi.validation_engine = p_validation_engine)
+        AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') = p_issue_date)
+        AND (
+            NULLIF(p_source, '') IS NULL
+            OR (
+                (p_source = 'test.shinny.org' AND sifvi.profile_url ILIKE '%test.shinny.org%')
+                OR (p_source = 'shinny.org' AND sifvi.profile_url NOT ILIKE '%test.shinny.org%')
+            )
+        )
+    GROUP BY
+        sifvi.validation_engine,
+        sifvi.issue,
+        sifvi.severity,
+        CASE
+            WHEN sifvi.profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
+            ELSE 'shinny.org'
+        END,
+        COALESCE(sifvi.ig_version, 'Unknown'),
+        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY')
+    ORDER BY MAX(sifvi.date_time) DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 
 /****************************************************************************************
- * This view provides a straightforward way to access consolidated validation issues. 
+ * This view provides a straightforward way to access consolidated validation issues.
  * It includes key fields related to FHIR validation issues, such as the validation engine, 
  * formatted issue date, most recent timestamp of the issue, IG (Implementation Guide) version, 
  * and the count of distinct issues. This view helps in quickly identifying and analyzing validation 
@@ -364,13 +455,16 @@ AS SELECT validation_engine,
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
 AS 
-   SELECT
+ SELECT
     validation_engine,
     MAX(date_time::date) AS issue_date,
     MAX(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown') AS ig_version,
     COUNT(DISTINCT issue) AS distinct_issue_count,
-    MIN(profile_url) as  profile_url
+    CASE
+        WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
+        ELSE 'shinny.org'
+    END AS source
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
@@ -388,10 +482,11 @@ WHERE
         OR issue LIKE '%Slicing cannot be evaluated%'
         OR issue LIKE '%could not be resolved%'
     )
-    AND severity !=''
+    AND severity <> ''
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
+    source,
     date_time::date;
 
 
