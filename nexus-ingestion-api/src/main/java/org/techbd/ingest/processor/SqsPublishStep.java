@@ -18,7 +18,10 @@ import org.techbd.ingest.util.TemplateLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SqsException;
 
 /**
  * {@code SqsPublishStep} is a {@link MessageProcessingStep} implementation
@@ -85,7 +88,7 @@ public class SqsPublishStep implements MessageProcessingStep {
                     messageId);
         } catch (Exception e) {
             LOG.error("SqsPublishStep:: SQS Publish Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId +" with error: " + e.getMessage(), e);
+            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -120,22 +123,20 @@ public class SqsPublishStep implements MessageProcessingStep {
      * Resolves the SQS queue URL based on the port config and request context.
      * Falls back to default if no match.
      */
-        private String resolveQueueUrl(RequestContext context) {
-        /**
-         * Resolves the SQS queue URL based on the x-forwarded-port header in the
-         * request context. - Always prefers the x-forwarded-port header
-         * (case-insensitive). - Falls back to portConfig if available and
-         * loaded. - Logs all decisions for traceability.
-         */
+    private String resolveQueueUrl(RequestContext context) {
         int requestPort = -1;
         try {
             Map<String, String> headers = context.getHeaders();
 
-            // helper: case-insensitive lookup from headers map
+            // case-insensitive header lookup helper
             java.util.function.BiFunction<Map<String, String>, String, String> findHeader = (h, name) -> {
-                if (h == null) return null;
+                if (h == null) {
+                    return null;
+                }
                 String v = h.get(name);
-                if (v != null) return v;
+                if (v != null) {
+                    return v;
+                }
                 for (Map.Entry<String, String> e : h.entrySet()) {
                     if (e.getKey() != null && e.getKey().equalsIgnoreCase(name)) {
                         return e.getValue();
@@ -144,14 +145,26 @@ public class SqsPublishStep implements MessageProcessingStep {
                 return null;
             };
 
-            // First, allow explicit override via header X-TechBd-Queue-Name (case-insensitive)
+            // 1) Check X-TechBd-Queue-Name override first (case-insensitive).
             String overrideQueue = findHeader.apply(headers, "X-TechBd-Queue-Name");
             if (overrideQueue != null && !overrideQueue.isBlank()) {
-                LOG.info("SqsPublishStep:: Using X-TechBd-Queue-Name header to override SQS queue: {}", overrideQueue);
-                return overrideQueue;
+                try {
+                    // Try to resolve the queue via SQS API (treat header value as queue name).
+                    GetQueueUrlResponse resp = sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(overrideQueue).build());
+                    String resolvedQueueUrl = resp.queueUrl();
+                    LOG.info("SqsPublishStep:: Using X-TechBd-Queue-Name override, resolved queue url: {}", resolvedQueueUrl);
+                    //return resolvedQueueUrl;
+                    return overrideQueue;
+                } catch (SqsException e) {
+                    LOG.warn("SqsPublishStep:: X-TechBd-Queue-Name '{}' could not be resolved by SQS: {}. Falling back to default queue.", overrideQueue, e.getMessage());
+                    // fall through to default/port-config resolution
+                } catch (RuntimeException e) {
+                    LOG.warn("SqsPublishStep:: Error while resolving X-TechBd-Queue-Name '{}': {}. Falling back to default queue.", overrideQueue, e.getMessage());
+                    // fall through to default/port-config resolution
+                }
             }
 
-            // Next, resolve port from x-forwarded-port (case-insensitive)
+            // 2) Resolve port from x-forwarded-port (case-insensitive)
             String portHeader = findHeader.apply(headers, Constants.REQ_X_FORWARDED_PORT);
             if (portHeader == null) {
                 portHeader = findHeader.apply(headers, "x-forwarded-port");
@@ -161,7 +174,8 @@ public class SqsPublishStep implements MessageProcessingStep {
                 requestPort = Integer.parseInt(portHeader);
                 LOG.info("SqsPublishStep:: Using x-forwarded-port header value: {}", requestPort);
             } else {
-                if (MessageSourceType.MLLP == context.getMessageSourceType() && context.getDestinationPort() != null && !context.getDestinationPort().isBlank()) {
+                if (MessageSourceType.MLLP == context.getMessageSourceType()
+                        && context.getDestinationPort() != null && !context.getDestinationPort().isBlank()) {
                     requestPort = Integer.parseInt(context.getDestinationPort());
                 } else {
                     LOG.info("SqsPublishStep:: x-forwarded-port header missing or blank; messageSourceType=null");
@@ -171,6 +185,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         } catch (Exception e) {
             LOG.warn("SqsPublishStep:: Could not parse request port from x-forwarded-port header: {}", e.getMessage());
         }
+
         if (portConfig != null && portConfig.isLoaded() && requestPort > 0) {
             for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
                 if (entry.port == requestPort && entry.queue != null && !entry.queue.isBlank()) {
@@ -182,6 +197,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         } else if (requestPort > 0) {
             LOG.warn("SqsPublishStep:: Port config unavailable or not loaded. Falling back to default queue for port {}.", requestPort);
         }
+
         // Fallback to default
         LOG.info("SqsPublishStep:: Using default SQS queue from AppConfig");
         return appConfig.getAws().getSqs().getFifoQueueUrl();
