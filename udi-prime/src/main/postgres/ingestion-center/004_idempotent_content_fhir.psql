@@ -369,7 +369,8 @@ AS
     MAX(date_time::date) AS issue_date,
     MAX(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown') AS ig_version,
-    COUNT(DISTINCT issue) AS distinct_issue_count
+    COUNT(DISTINCT issue) AS distinct_issue_count,
+    MIN(profile_url) as  profile_url
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
