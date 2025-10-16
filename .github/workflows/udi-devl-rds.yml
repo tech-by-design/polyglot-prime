@@ -16,7 +16,7 @@ jobs:
         run: echo "Running schema generation"
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create .pgpass file
         run: |
