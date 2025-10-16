@@ -104,6 +104,7 @@ public class S3UploadStep implements MessageProcessingStep {
             LOG.info("S3UploadStep:: File and metadata uploaded successfully. interactionId={}", interactionId);
         } catch (Exception e) {
             LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
+            throw new RuntimeException("S3UploadStep:: S3 Upload Step Failed. interactionId=" + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -144,6 +145,7 @@ public class S3UploadStep implements MessageProcessingStep {
             }
         } catch (Exception e) {
             LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
+            throw new RuntimeException("S3 Upload Step Failed for interactionId=" + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 

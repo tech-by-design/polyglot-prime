@@ -85,7 +85,7 @@ public class SqsPublishStep implements MessageProcessingStep {
                     messageId);
         } catch (Exception e) {
             LOG.error("SqsPublishStep:: SQS Publish Step Failed. interactionId={}", interactionId, e);
-            // throw new RuntimeException("SQS Publish Step Failed", e);
+            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId +" with error: " + e.getMessage(), e);
         }
     }
 
@@ -112,7 +112,7 @@ public class SqsPublishStep implements MessageProcessingStep {
                     messageId);
         } catch (Exception e) {
             LOG.error("SqsPublishStep:: SQS Publish Step Failed. interactionId={}", interactionId, e);
-            // throw new RuntimeException("SQS Publish Step Failed", e);
+            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -120,7 +120,7 @@ public class SqsPublishStep implements MessageProcessingStep {
      * Resolves the SQS queue URL based on the port config and request context.
      * Falls back to default if no match.
      */
-    private String resolveQueueUrl(RequestContext context) {
+        private String resolveQueueUrl(RequestContext context) {
         /**
          * Resolves the SQS queue URL based on the x-forwarded-port header in the
          * request context. - Always prefers the x-forwarded-port header
@@ -130,14 +130,33 @@ public class SqsPublishStep implements MessageProcessingStep {
         int requestPort = -1;
         try {
             Map<String, String> headers = context.getHeaders();
-            String portHeader = null;
-            if (headers != null) {
-                // Case-insensitive lookup for x-forwarded-port
-                portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
-                if (portHeader == null) {
-                    portHeader = headers.get(Constants.REQ_X_FORWARDED_PORT);
-                } 
+
+            // helper: case-insensitive lookup from headers map
+            java.util.function.BiFunction<Map<String, String>, String, String> findHeader = (h, name) -> {
+                if (h == null) return null;
+                String v = h.get(name);
+                if (v != null) return v;
+                for (Map.Entry<String, String> e : h.entrySet()) {
+                    if (e.getKey() != null && e.getKey().equalsIgnoreCase(name)) {
+                        return e.getValue();
+                    }
+                }
+                return null;
+            };
+
+            // First, allow explicit override via header X-TechBd-Queue-Name (case-insensitive)
+            String overrideQueue = findHeader.apply(headers, "X-TechBd-Queue-Name");
+            if (overrideQueue != null && !overrideQueue.isBlank()) {
+                LOG.info("SqsPublishStep:: Using X-TechBd-Queue-Name header to override SQS queue: {}", overrideQueue);
+                return overrideQueue;
             }
+
+            // Next, resolve port from x-forwarded-port (case-insensitive)
+            String portHeader = findHeader.apply(headers, Constants.REQ_X_FORWARDED_PORT);
+            if (portHeader == null) {
+                portHeader = findHeader.apply(headers, "x-forwarded-port");
+            }
+
             if (portHeader != null && !portHeader.isBlank()) {
                 requestPort = Integer.parseInt(portHeader);
                 LOG.info("SqsPublishStep:: Using x-forwarded-port header value: {}", requestPort);
