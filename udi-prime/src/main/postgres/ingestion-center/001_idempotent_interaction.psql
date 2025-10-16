@@ -2267,6 +2267,10 @@ BEGIN
 					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
         			techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number)
 				WHERE hub_interaction_id  = p_source_hub_interaction_id;
+				
+			UPDATE techbd_udi_ingress.sat_interaction_ccda_validation_errors
+                SET ig_version            = v_ig_version
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;
 		END IF;
 
 		--Update ig_version in sat_interaction_hl7_request table
@@ -2277,6 +2281,10 @@ BEGIN
 					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
 					techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number) 
 				WHERE hub_interaction_id  = p_source_hub_interaction_id;
+		   
+		    UPDATE techbd_udi_ingress.sat_interaction_hl7_validation_errors
+                SET ig_version            = v_ig_version
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;      
 		END IF;
 	END IF;  
 
