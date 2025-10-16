@@ -152,7 +152,10 @@
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
                     {
                         headerName: "CCDA File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download CCDA File", filter: false, suppressFilter: true
+                        headerTooltip: "Download CCDA File",   
+                         filter: false,
+                        suppressFilter: true,
+                        sortable: false
                     }                   
                 ]) 
                 .withServerSideDatasource(

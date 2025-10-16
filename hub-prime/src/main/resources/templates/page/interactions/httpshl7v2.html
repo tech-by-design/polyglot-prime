@@ -151,7 +151,7 @@
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
                     {
                         headerName: "HL7v2 File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download HL7v2 File", filter: false, suppressFilter: true
+                        headerTooltip: "Download HL7v2 File", filter: false, suppressFilter: true, sortable: false
                     }
                 ])
                 .withServerSideDatasource(
