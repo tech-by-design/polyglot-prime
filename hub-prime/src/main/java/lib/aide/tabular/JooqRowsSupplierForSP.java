@@ -473,6 +473,26 @@ public class JooqRowsSupplierForSP {
                         encounteredDate != null ? "'" + encounteredDate + "'" : "NULL");
                 return DSL.table(functionCall);
             }
+            case "get_fhir_validation_issue_details" -> {
+                // Parse parameters from JSON
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String igVersion = paramMap.get("p_ig_version");
+                String validationEngine = paramMap.get("p_validation_engine");
+                String issueDate = paramMap.get("p_issue_date");
+                String source = paramMap.get("p_source");
+
+                // Build the function call with proper null handling and quoting
+                String functionCall = String.format(
+                    "techbd_udi_ingress.get_fhir_validation_issue_details(%s, %s, %s, %s)",
+                    igVersion != null ? "'" + igVersion.replace("'", "''") + "'" : "NULL",
+                    validationEngine != null ? "'" + validationEngine.replace("'", "''") + "'" : "NULL",
+                    issueDate != null ? "'" + issueDate.replace("'", "''") + "'" : "NULL",
+                    source != null ? "'" + source.replace("'", "''") + "'" : "NULL"
+                );
+                return DSL.table(functionCall);
+            }
             case "get_interaction_http_request" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
