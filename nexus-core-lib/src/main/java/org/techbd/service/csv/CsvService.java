@@ -169,6 +169,13 @@ public class CsvService {
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(zipFileInteractionId);
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            // RETRIEVE CLIENT_IP_ADDRESS from requestParameters
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                    clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            // SET IT IN THE JOOQ OBJECT
+            initRIHR.setPClientIpAddress(clientIpAddress);
             setUserDetails(initRIHR, requestParameters);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
