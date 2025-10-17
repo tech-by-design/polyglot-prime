@@ -367,11 +367,11 @@ AS SELECT validation_engine,
  *
  * Returns: Detailed FHIR validation issue records for the specified filters
  ******************************************************************************************/
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_validation_issue_detail(
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_validation_issue_details(
     TEXT, TEXT, TEXT, TEXT
 );
 
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_validation_issue_detail(
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_validation_issue_details(
     p_ig_version TEXT DEFAULT NULL,
     p_validation_engine TEXT DEFAULT NULL,
     p_issue_date TEXT DEFAULT NULL,
@@ -403,7 +403,7 @@ BEGIN
         END AS source
     FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue sifvi
     WHERE
-        sifvi.date_time >= CURRENT_DATE - INTERVAL '2 days'
+        sifvi.date_time >= CURRENT_DATE - INTERVAL '5 days'
         AND (
             sifvi.issue ILIKE '%has not been checked because it is unknown%' OR
             sifvi.issue ILIKE '%Unknown profile%' OR
