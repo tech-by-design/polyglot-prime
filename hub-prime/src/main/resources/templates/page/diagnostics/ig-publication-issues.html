@@ -23,7 +23,7 @@
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_validation_issue';
         const igPublication = 'fhir_validation_issue_details';
-        const detailStoredProcName = 'get_fhir_validation_issue_detail';
+        const detailStoredProcName = 'get_fhir_validation_issue_details';
         const igPublicationColumnDefs = [
             { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", tooltipValueGetter: (params) => `${params.value}`, headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
             { headerName: "Severity", field: "issue_severity", filter: "agTextColumnFilter"  },
@@ -75,10 +75,24 @@
                 return response.json();
             })
             .then(response => {
-                params.successCallback(response);
+                let rowData = response;
+
+                if (!Array.isArray(rowData)) {
+                    if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                        rowData = rowData.rows;
+                    } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        rowData = rowData.data;
+                    } else {
+                        console.error("Unexpected response format:", response);
+                        rowData = [];
+                    }
+                }
+
+                params.successCallback(rowData, rowData.length);
             })
             .catch(error => {
-                console.error('Error fetching details data:', error);
+                console.error('Error fetching FHIR validation issue details: ' + error);
+                params.failCallback();
             });
         }
         document.addEventListener('DOMContentLoaded', function () {

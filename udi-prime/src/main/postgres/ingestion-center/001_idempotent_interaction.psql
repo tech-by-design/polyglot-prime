@@ -230,7 +230,7 @@ AS SELECT  created_at AS interaction_created_at,
     user_agent,
     client_ip_address,
     resource_type_set AS resource_types,
-    source_hub_interaction_id,
+    source_hub_interaction_id, 
 	CASE
         WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
         ELSE 'shinny.org'
