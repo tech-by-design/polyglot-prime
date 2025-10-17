@@ -351,7 +351,7 @@ function validateAddrDates(addr, contextTag) {
 		}
      } catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        throw new Error(&quot;Validation Error: &quot; + error.message);
      }
 }
     
@@ -379,7 +379,7 @@ function validateLowHighDates(xmlData) {
 	    }
 	} catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new error(&quot;Validation Error: &quot; + error.message);
+        throw new Error(&quot;Validation Error: &quot; + error.message);
      }
 }
 
@@ -481,7 +481,7 @@ function extractClinicalDocument(rawXml) {
 	   var errorResponse = getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
 	   var operation = &quot;saveValidationFailed&quot;;
 	   saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-	   throw new error(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
+	   throw new Error(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
