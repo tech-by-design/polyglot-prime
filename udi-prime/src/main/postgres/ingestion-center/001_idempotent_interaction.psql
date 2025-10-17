@@ -7531,6 +7531,7 @@ BEGIN
 		techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
 	where  
 		scfpe.zip_file_hub_interaction_id = p_zip_file_hub_interaction_id 
+		AND scfpe.category = 'data_integrity'
 	ORDER BY
 	scfpe.created_at DESC;
 END;
@@ -8392,3 +8393,27 @@ FROM
     techbd_udi_ingress.sat_interaction_ccda_request sicr
 WHERE 
     sicr.to_state = 'VALIDATION_FAILED';
+
+
+/* -------------------------------------------------------------
+-- View: interaction_ccda_validation_errors
+-- This view provides detailed records of CCDA validation errors for each interaction.
+-- It includes tenant, file, and environment metadata along with who created the record and its provenance.
+-- Useful for diagnosing CCDA validation failures and tracking error trends across tenants.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_validation_errors CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_validation_errors AS
+SELECT
+    s.sat_ccda_validation_errors_id,
+    s.hub_interaction_id,
+    s.tenant_id,
+    s.uri, 
+    s.error,
+    s.file_name, 
+    s.created_at 
+FROM
+    techbd_udi_ingress.sat_interaction_ccda_validation_errors s
+where
+    s.error != '';

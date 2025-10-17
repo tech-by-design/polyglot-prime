@@ -84,14 +84,24 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/data-integrity", model, request);
     }       
 
+    @GetMapping("/data-quality/ccda-validations-issues") 
+    @RouteMapping(label = "CCDA Data Quality", title = "CCDA Data Quality", siblingOrder = 50)    
+    public String diagnosticsHttpsViaCCDAValidationIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/ccda-validations-issues", model, request);
+    }   
+    // @GetMapping("/data-quality/hltv2-validations-issues") 
+    // @RouteMapping(label = "HL7v2 Data Quality", title = "HL7v2 Data Quality", siblingOrder = 60)    
+    // public String diagnosticsHttpsViaHL7v2ValidationIssues(final Model model, final HttpServletRequest request) {
+    //     return "redirect:/data-quality/hltv2-validations-issues";
+    // }   
     @GetMapping("/data-quality/ig-publication-issues")
-    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 50)
+    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 70)
     public String igPublicationIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/ig-publication-issues", model, request);
     }
 
     @GetMapping("/data-quality/fhir-rules")
-    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 60)
+    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 80)
     public String fhirRules(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
     }
