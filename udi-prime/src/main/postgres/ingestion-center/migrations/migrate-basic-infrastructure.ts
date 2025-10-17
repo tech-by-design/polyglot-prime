@@ -1817,7 +1817,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND table_name = 'sat_interaction_ccda_validation_errors'
                 AND column_name = 'ig_version'
           ) THEN
-              ALTER TABLE sat_interaction_ccda_validation_errors ADD COLUMN ig_version text Null;
+              ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors ADD COLUMN ig_version text Null;
           END IF;
 
       ${hl7ValidationErrorsSat}
@@ -1845,7 +1845,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND table_name = 'sat_interaction_hl7_validation_errors'
                 AND column_name = 'ig_version'
           ) THEN
-              ALTER TABLE sat_interaction_hl7_validation_errors ADD COLUMN ig_version text Null;
+              ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors ADD COLUMN ig_version text Null;
           END IF;
 
       ${linkNexusInteraction}
