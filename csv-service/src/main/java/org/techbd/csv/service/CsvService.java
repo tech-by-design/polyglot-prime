@@ -117,6 +117,17 @@ public class CsvService {
             updateRIHR.setStatus(state.name());
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             updateRIHR.setPTechbdVersionNumber(appConfig.getVersion());
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            updateRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            updateRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = updateRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -399,6 +410,17 @@ public class CsvService {
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
                     initRIHR.setPTechbdVersionNumber(appConfig.getVersion());
+                    // Extract and set client IP address and user agent for consistency with other services
+                    String clientIpAddress = null;
+                    if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                        clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+                    }
+                    initRIHR.setClientIpAddress(clientIpAddress);
+                    String userAgent = null;
+                    if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                        userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+                    }
+                    initRIHR.setUserAgent(userAgent);
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -433,6 +455,17 @@ public class CsvService {
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
                     initRIHR.setPTechbdVersionNumber(appConfig.getVersion());
+                    // Extract and set client IP address and user agent for consistency with other services
+                    String clientIpAddress = null;
+                    if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                        clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+                    }
+                    initRIHR.setClientIpAddress(clientIpAddress);
+                    String userAgent = null;
+                    if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                        userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+                    }
+                    initRIHR.setUserAgent(userAgent);
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -474,6 +507,17 @@ public class CsvService {
                     (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
             initRIHR.setElaboration((JsonNode) Configuration.objectMapper.valueToTree(metricsBuilder));
             initRIHR.setPTechbdVersionNumber(appConfig.getVersion());
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
