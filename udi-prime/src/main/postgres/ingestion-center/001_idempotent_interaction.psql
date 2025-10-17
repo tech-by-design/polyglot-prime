@@ -3420,6 +3420,8 @@ DECLARE
 	v_is_exception					BOOLEAN := false;
 	v_elaboration 					JSONB 	:= NULL;
 	v_elaboration_steps 			JSONB	:= '[]'::jsonb;
+	v_validation_error              TEXT;
+
 
 BEGIN	
 	/* This function is designed to insert a new record into the sat_interaction_hl7_request table if it does not already exist. 
@@ -3492,38 +3494,44 @@ BEGIN
 		    ) RETURNING sat_interaction_hl7_request_id INTO v_return;  -- Return the generated UUID
 
 			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_hl7_request'));
-		
-			INSERT INTO techbd_udi_ingress.sat_interaction_hl7_validation_errors(
-		           sat_hl7_validation_errors_id, 
-		           hub_interaction_id, 
-		           tenant_id, 
-		           uri, 
-		           error_type, 
-		           "error",           
-		           file_name, 
-		           origin, 
-		           user_agent, 
-		           techbd_version_number, 
-		           created_at, 
-		           created_by, 
-		           provenance
-		    )
-		      VALUES(
-		          gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-		          p_hub_interaction_id,
-		          p_tenant_id,
-		          p_uri,
-		          'hl7_validation_errors',
-		          (p_payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
-		          p_file_name,
-		          COALESCE(p_origin, 'http'),
-		          p_user_agent,
-		          p_techbd_version_number,
-		          v_created_at,
-		          v_created_by,
-		          v_provenance);
-			
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_hl7_validation_errors'));
+
+			v_validation_error := (p_payload -> 'result' -> 0-> 'details' ->> 'text')::text;
+
+			IF(nature = 'HL7 Validation Result' AND to_state = 'VALIDATION_FAILED'
+				AND v_validation_error IS NOT NULL AND v_validation_error != '')
+    		THEN		
+				INSERT INTO techbd_udi_ingress.sat_interaction_hl7_validation_errors(
+					sat_hl7_validation_errors_id, 
+					hub_interaction_id, 
+					tenant_id, 
+					uri, 
+					error_type, 
+					"error",           
+					file_name, 
+					origin, 
+					user_agent, 
+					techbd_version_number, 
+					created_at, 
+					created_by, 
+					provenance
+				)
+				VALUES(
+					gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+					p_hub_interaction_id,
+					p_tenant_id,
+					p_uri,
+					'hl7_validation_errors',
+					(p_payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
+					p_file_name,
+					COALESCE(p_origin, 'http'),
+					p_user_agent,
+					p_techbd_version_number,
+					v_created_at,
+					v_created_by,
+					v_provenance);	
+
+				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_hl7_validation_errors'));				
+            END IF;
 		END IF;
 	EXCEPTION
 	   WHEN OTHERS THEN
@@ -5142,6 +5150,7 @@ DECLARE
 	v_is_exception					BOOLEAN := false;
 	v_elaboration 					JSONB 	:= NULL;
 	v_elaboration_steps 			JSONB	:= '[]'::jsonb;
+	v_validation_error				TEXT;    
 
 BEGIN
 	BEGIN
@@ -5205,39 +5214,43 @@ BEGIN
 		    ) RETURNING sat_interaction_ccda_request_id INTO v_return;  -- Return the generated UUID
 	
 			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_ccda_request'));
+
+			v_validation_error := (payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text;
+
+		    IF (nature = 'CCDA Validation Result' AND to_state = 'VALIDATION_FAILED' AND 
+				v_validation_error IS NOT NULL AND v_validation_error != '')
+			THEN
+				INSERT INTO techbd_udi_ingress.sat_interaction_ccda_validation_errors(
+					sat_ccda_validation_errors_id, 
+					hub_interaction_id, 
+					tenant_id, 
+					uri, 
+					error_type, 
+					"error", 
+					file_name, 
+					origin, 
+					user_agent, 
+					techbd_version_number, 
+					created_at, 
+					created_by, 
+					provenance)
+				VALUES(
+					gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+					hub_interaction_id,
+					tenant_id,
+					uri,
+					'ccda_validation_errors',
+					(payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
+					p_file_name,
+					COALESCE(origin, 'http'),
+					user_agent,
+					p_techbd_version_number,
+					v_created_at,
+					v_created_by,
+					v_provenance);
 		
-			INSERT INTO techbd_udi_ingress.sat_interaction_ccda_validation_errors(
-		          sat_ccda_validation_errors_id, 
-		          hub_interaction_id, 
-		          tenant_id, 
-		          uri, 
-		          error_type, 
-		          "error", 
-		          file_name, 
-		          origin, 
-		          user_agent, 
-		          techbd_version_number, 
-		          created_at, 
-		          created_by, 
-		          provenance)
-		      VALUES(
-		          gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-		          hub_interaction_id,
-		          tenant_id,
-		          uri,
-		          'ccda_validation_errors',
-		          (payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
-		          p_file_name,
-		          COALESCE(origin, 'http'),
-		          user_agent,
-		          p_techbd_version_number,
-		          v_created_at,
-		          v_created_by,
-		          v_provenance);
-	
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_ccda_validation_errors'));
-		      
-		    --RETURN v_return;
+				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_ccda_validation_errors'));
+		    END IF;
 		END IF;
 	EXCEPTION
 	   WHEN OTHERS THEN
