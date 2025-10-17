@@ -640,6 +640,7 @@ const ccdaValidationErrorsSat = interactionHub.satelliteTable(
     origin: textNullable(),
     user_agent: textNullable(),
     techbd_version_number: textNullable(),
+    ig_version: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -659,6 +660,7 @@ const hl7ValidationErrorsSat = interactionHub.satelliteTable(
     origin: textNullable(),
     user_agent: textNullable(),
     techbd_version_number: textNullable(),
+    ig_version: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -1809,6 +1811,15 @@ const migrateSP = pgSQLa.storedProcedure(
               CREATE INDEX idx_sat_ccda_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_ccda_validation_errors USING btree (hub_interaction_id);
           END IF;
 
+      IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'sat_interaction_ccda_validation_errors'
+                AND column_name = 'ig_version'
+          ) THEN
+              ALTER TABLE sat_interaction_ccda_validation_errors ADD COLUMN ig_version text Null;
+          END IF;
+
       ${hl7ValidationErrorsSat}
       IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -1826,6 +1837,15 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND indexname = 'idx_sat_hl7_validation_errors_hub_interaction_id'
           ) THEN
               CREATE INDEX idx_sat_hl7_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_hl7_validation_errors USING btree (hub_interaction_id);
+          END IF;
+
+      IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'sat_interaction_hl7_validation_errors'
+                AND column_name = 'ig_version'
+          ) THEN
+              ALTER TABLE sat_interaction_hl7_validation_errors ADD COLUMN ig_version text Null;
           END IF;
 
       ${linkNexusInteraction}
