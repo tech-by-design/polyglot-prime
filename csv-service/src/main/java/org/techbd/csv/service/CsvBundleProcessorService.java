@@ -210,6 +210,17 @@ public class CsvBundleProcessorService {
             initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -289,6 +300,17 @@ public class CsvBundleProcessorService {
                     : Configuration.objectMapper.readTree(payload));
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCreatedBy(CsvService.class.getName());
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setPClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setPUserAgent(userAgent);
             initRIHR.setPFromState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             initRIHR.setPToState(StringUtils.isNotEmpty(payload) ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
