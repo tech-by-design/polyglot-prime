@@ -5158,7 +5158,7 @@ DECLARE
     v_pg_context 					TEXT;   
     v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
     v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'CCDA');  -- Set default provenance
     v_exception_id 					TEXT		:= gen_random_uuid()::text;
     
     -- Additional variables for extracting and holding data from the payload JSONB
@@ -5167,7 +5167,7 @@ DECLARE
 	v_is_exception					BOOLEAN := false;
 	v_elaboration 					JSONB 	:= NULL;
 	v_elaboration_steps 			JSONB	:= '[]'::jsonb;
-	v_validation_error				TEXT;    
+	v_validation_error 				TEXT 	:= NULL;
 
 BEGIN
 	BEGIN
@@ -5221,7 +5221,7 @@ BEGIN
 		        state_transition_reason,
 				v_created_at,
 		        v_created_by,
-		        provenance,
+		        v_provenance,
 		        elaboration,
 		        client_ip_address, 
 		        user_agent,
@@ -5231,40 +5231,46 @@ BEGIN
 		    ) RETURNING sat_interaction_ccda_request_id INTO v_return;  -- Return the generated UUID
 	
 			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_ccda_request'));
+			
+			IF (nature = 'CCDA Validation Result') THEN
+				UPDATE techbd_udi_ingress.sat_interaction_ccda_request AS t
+				SET    provenance = v_provenance 
+				WHERE  t.hub_interaction_id = sat_interaction_ccda_request_upserted.hub_interaction_id
+				AND    t.nature = 'Original CCDA Payload';
+			END IF;
 
 			v_validation_error := (payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text;
-
-		    IF (nature = 'CCDA Validation Result' AND to_state = 'VALIDATION_FAILED' AND 
+			IF (nature = 'CCDA Validation Result' AND to_state = 'VALIDATION_FAILED' AND 
 				v_validation_error IS NOT NULL AND v_validation_error != '')
 			THEN
 				INSERT INTO techbd_udi_ingress.sat_interaction_ccda_validation_errors(
-					sat_ccda_validation_errors_id, 
-					hub_interaction_id, 
-					tenant_id, 
-					uri, 
-					error_type, 
-					"error", 
-					file_name, 
-					origin, 
-					user_agent, 
-					techbd_version_number, 
-					created_at, 
-					created_by, 
-					provenance)
-				VALUES(
-					gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-					hub_interaction_id,
-					tenant_id,
-					uri,
-					'ccda_validation_errors',
-					(payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
-					p_file_name,
-					COALESCE(origin, 'http'),
-					user_agent,
-					p_techbd_version_number,
-					v_created_at,
-					v_created_by,
-					v_provenance);
+			          sat_ccda_validation_errors_id, 
+			          hub_interaction_id, 
+			          tenant_id, 
+			          uri, 
+			          error_type, 
+			          "error", 
+			          file_name, 
+			          origin, 
+			          user_agent, 
+			          techbd_version_number, 
+			          created_at, 
+			          created_by, 
+			          provenance)
+			      VALUES(
+			          gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+			          hub_interaction_id,
+			          tenant_id,
+			          uri,
+			          'ccda_validation_errors',
+			          v_validation_error,
+			          p_file_name,
+			          COALESCE(origin, 'http'),
+			          user_agent,
+			          p_techbd_version_number,
+			          v_created_at,
+			          v_created_by,
+			          v_provenance);
 		
 				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_ccda_validation_errors'));
 		    END IF;
@@ -6400,10 +6406,11 @@ DECLARE
     v_pg_context 		TEXT;
     v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
 	v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
-    v_provenance 		TEXT 		:= COALESCE(p_provenance, 'CCDA');
+    v_provenance 		TEXT 		:= 'CCDA'; --COALESCE(p_provenance, 'CCDA');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
    	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';
+	v_ccda_source 		TEXT 		:= COALESCE(p_provenance, 'CCDA');
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -6570,7 +6577,7 @@ BEGIN
 				        state_transition_reason	=> p_state_transition_reason,
 				        created_at				=> v_created_at,
 				        created_by				=> v_created_by,
-				        provenance				=> v_provenance,
+				        provenance				=> v_ccda_source,
 				        elaboration				=> p_elaboration,
 						client_ip_address		=> p_client_ip_address,
 						user_agent				=> p_user_agent,
@@ -6619,6 +6626,7 @@ BEGIN
 	         						'to_state', p_to_state,
 									'techbd_version_number', p_techbd_version_number,
 									'file_name', p_file_name,
+									'ccda_source', v_ccda_source,
 									'additional_details', v_additional_details
 	         						);
 	IF v_elaboration_steps IS NOT NULL THEN
