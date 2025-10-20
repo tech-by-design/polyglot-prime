@@ -1795,178 +1795,159 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upser
  LANGUAGE plpgsql
 AS $function$
 DECLARE
-	--source_type : fhir/hl7/ccda/csv
-	--source_hub_interaction_id : first interaction_id for the registration process, 'zip_file_hub_interaction_id' in case of csv.
+    --source_type : fhir/hl7/ccda/csv
+    --source_hub_interaction_id : first interaction_id for the registration process, 'zip_file_hub_interaction_id' in case of csv.
 
     -- Declare variables to hold error and extracted data
-	v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;
-    v_created_at 					TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
-    v_created_by 					TEXT 		:= COALESCE(p_created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(p_provenance, 'unknown');  -- Set default provenance
-    v_exception_id 					TEXT;
+    v_error_msg                     TEXT;
+    v_error_type                    TEXT;
+    v_sqlstate                      TEXT;
+    v_pg_detail                     TEXT;
+    v_pg_hint                       TEXT;
+    v_pg_context                    TEXT;
+    v_created_at                    TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by                    TEXT        := COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
+    v_provenance                    TEXT        := COALESCE(p_provenance, 'unknown');  -- Set default provenance
+    v_exception_id                  TEXT;
     
     -- Additional variables for extracting and holding data from the payload JSONB
-    v_client_ip_address 			TEXT 	:= NULL;
-   	v_client_ip_address_forwarded	TEXT 	:= NULL;
-    v_user_agent 					TEXT 	:= NULL;
-    v_outbound_http_message 		TEXT 	:= NULL;
-    v_error_message 				TEXT 	:= NULL;
-    v_issues_count 					INTEGER	:= 0;
-   	v_passed 						BOOLEAN	:= NULL;
-    v_bundle_id 					TEXT 	:= NULL;
-    v_bundle_session_id 			TEXT 	:= NULL;
-    v_bundle_last_updated 			TEXT 	:= NULL;
-    v_organization_id 				TEXT 	:= NULL;
-    v_organization_name 			TEXT 	:= NULL;
-    v_patient_id 					TEXT 	:= NULL;
-    v_patient_mrn 					TEXT 	:= NULL;
-    v_patient_mrn_source_system 	TEXT 	:= NULL;
-   	v_medicaid_cin 					TEXT 	:= NULL;
-   	v_ssn 							TEXT 	:= NULL;
-    v_resource_type_set 			TEXT 	:= NULL;   
-   	v_validation_initiated_at 		TEXT 	:= NULL;
-    v_validation_completed_at 		TEXT 	:= NULL;   
-    v_validation_engine 			TEXT 	:= NULL;
-   	v_ig_version 					TEXT 	:= NULL;
-   	v_profile_url 					TEXT 	:= NULL;
-   	v_interaction_start_time 		TEXT 	:= NULL;
-   	v_interaction_end_time 			TEXT 	:= NULL;
-   	v_duration_millisecs 			TEXT 	:= NULL;
-   	v_response_status				TEXT 	:= NULL;
-   	v_return 						TEXT 	:= NULL;
-    v_techbd_disposition_action		TEXT 	:= NULL;
-    v_elaboration 					JSONB 	:= NULL;
-    v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
-   	v_is_bundle_valid				BOOLEAN	:= false;
-   	v_bundle_type				    TEXT 	:= NULL;
+    v_client_ip_address             TEXT    := NULL;
+    v_client_ip_address_forwarded   TEXT    := NULL;
+    v_user_agent                    TEXT    := NULL;
+    v_outbound_http_message         TEXT    := NULL;
+    v_error_message                 TEXT    := NULL;
+    v_issues_count                  INTEGER := 0;
+    v_passed                        BOOLEAN := NULL;
+    v_bundle_id                     TEXT    := NULL;
+    v_bundle_session_id             TEXT    := NULL;
+    v_bundle_last_updated           TEXT    := NULL;
+    v_organization_id               TEXT    := NULL;
+    v_organization_name             TEXT    := NULL;
+    v_patient_id                    TEXT    := NULL;
+    v_patient_mrn                   TEXT    := NULL;
+    v_patient_mrn_source_system     TEXT    := NULL;
+    v_medicaid_cin                  TEXT    := NULL;
+    v_ssn                           TEXT    := NULL;
+    v_resource_type_set             TEXT    := NULL;   
+    v_validation_initiated_at       TEXT    := NULL;
+    v_validation_completed_at       TEXT    := NULL;   
+    v_validation_engine             TEXT    := NULL;
+    v_ig_version                    TEXT    := NULL;
+    v_profile_url                   TEXT    := NULL;
+    v_interaction_start_time        TEXT    := NULL;
+    v_interaction_end_time          TEXT    := NULL;
+    v_duration_millisecs            TEXT    := NULL;
+    v_response_status               TEXT    := NULL;
+    v_return                        TEXT    := NULL;
+    v_techbd_disposition_action     TEXT    := NULL;
+    v_elaboration_steps             JSONB   := '[]'::jsonb;
+    v_elaboration                   JSONB   := NULL;
+    v_diagnostic_id                 TEXT    := gen_random_uuid()::text;
+    v_is_bundle_valid               BOOLEAN := false;
+    v_bundle_type                   TEXT    := NULL;
+    v_return_status                 BOOLEAN := false;
+    v_is_exception                  BOOLEAN := false;
 
 BEGIN
+    BEGIN    
+    v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('0', 'sat_interaction_fhir_request_upserted function parameters'));
 
-   	/*---register diagnostic log---*/
-  	v_elaboration := jsonb_build_object(
- 						'interaction_id', p_hub_interaction_id,
- 						'interaction_key', p_uri,
- 						'nature', p_nature,
- 						'from_state', p_from_state,
- 						'to_state', p_to_state,
-						'techbd_version_number', p_techbd_version_number,
- 						'step', 'sat_interaction_fhir_request_upserted function parameters'
- 						);
- 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, v_provenance, 'info'::text, 
-						'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
-  	/*------------------------------*/
-	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
-  		WHERE t.hub_interaction_id = p_hub_interaction_id 
-  		AND t."key" = p_uri) THEN
-  		RETURN NULL;	
-  	END IF;
-    /*---register diagnostic log---*/
-  	v_elaboration := jsonb_build_object(
- 						'interaction_id', p_hub_interaction_id,
- 						'interaction_key', p_uri,
- 						'nature', p_nature,
- 						'from_state', p_from_state,
- 						'to_state', p_to_state,
-						'techbd_version_number', p_techbd_version_number,
- 						'step', '- Insert into sat_interaction_fhir_request'
- 						);
- 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, p_provenance, 'info'::text, 
-						'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
-  	/*------------------------------*/
+    IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+        WHERE t.hub_interaction_id = p_hub_interaction_id 
+        AND t."key" = p_uri) then
+            v_return_status := true; 
+            v_return := NULL;
+			v_error_msg := 'hub_interaction_id is not in the hub_interaction table.';
+    END IF;
   
-  	IF(LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
-		SELECT 
-		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
-		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
-		fhir_req.patient_id, 				fhir_req.patient_mrn,				fhir_req.resource_type_set, 
-		fhir_req.validation_initiated_at, 	fhir_req.validation_completed_at,	fhir_req.validation_engine,
-		fhir_req.ig_version,				fhir_req.profile_url,				fhir_req.medicaid_cin,
-		fhir_req.interaction_start_time,	fhir_req.interaction_end_time,		fhir_req.bundle_session_id,
+    IF(NOT v_return_status AND LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
+        SELECT 
+        fhir_req.client_ip_address,         fhir_req.user_agent,                fhir_req.bundle_id, 
+        fhir_req.bundle_last_updated,       fhir_req.organization_id,           fhir_req.organization_name, 
+        fhir_req.patient_id,                fhir_req.patient_mrn,               fhir_req.resource_type_set, 
+        fhir_req.validation_initiated_at,   fhir_req.validation_completed_at,   fhir_req.validation_engine,
+        fhir_req.ig_version,                fhir_req.profile_url,               fhir_req.medicaid_cin,
+        fhir_req.interaction_start_time,    fhir_req.interaction_end_time,      fhir_req.bundle_session_id,
         fhir_req.patient_mrn_source_system, fhir_req.is_bundle_valid,           fhir_req.bundle_type
-		INTO 		
-		v_client_ip_address,				v_user_agent,						v_bundle_id,
-		v_bundle_last_updated,				v_organization_id,					v_organization_name,
-		v_patient_id,						v_patient_mrn,						v_resource_type_set,
-		v_validation_initiated_at,			v_validation_completed_at,			v_validation_engine,
-		v_ig_version,						v_profile_url,						v_medicaid_cin,
-		v_interaction_start_time,			v_interaction_end_time,				v_bundle_session_id,
-        v_patient_mrn_source_system,        v_is_bundle_valid,                  v_bundle_type 	
-		FROM
-		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
-		WHERE 1 = 1
-		AND fhir_req.hub_interaction_id = p_hub_interaction_id
-		AND fhir_req.nature = 'Original FHIR Payload';	
-  	END IF;  	
+        INTO        
+        v_client_ip_address,                v_user_agent,                       v_bundle_id,
+        v_bundle_last_updated,              v_organization_id,                  v_organization_name,
+        v_patient_id,                       v_patient_mrn,                      v_resource_type_set,
+        v_validation_initiated_at,          v_validation_completed_at,          v_validation_engine,
+        v_ig_version,                       v_profile_url,                      v_medicaid_cin,
+        v_interaction_start_time,           v_interaction_end_time,             v_bundle_session_id,
+        v_patient_mrn_source_system,        v_is_bundle_valid,                  v_bundle_type   
+        FROM
+        techbd_udi_ingress.sat_interaction_fhir_request fhir_req
+        WHERE 1 = 1
+        AND fhir_req.hub_interaction_id = p_hub_interaction_id
+        AND fhir_req.nature = 'Original FHIR Payload';  
+    END IF;     
 
-	IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN				   
-    	
-		v_user_agent 				:= p_additional_details->'request'->>'User-Agent';    
-    	v_client_ip_address 		:= p_additional_details->'request'->>'remoteAddr';
+    IF(NOT v_return_status AND LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN                  
+        
+        v_user_agent                := p_additional_details->'request'->>'User-Agent';    
+        v_client_ip_address         := p_additional_details->'request'->>'remoteAddr';
 
-    	/*SELECT hdrs->>'value'
-		INTO v_client_ip_address_forwarded
-    	FROM jsonb_array_elements(p_additional_details->'request'->'headers') AS hdrs
-    	WHERE hdrs->>'name' = 'x-forwarded-for';*/
+        /*SELECT hdrs->>'value'
+        INTO v_client_ip_address_forwarded
+        FROM jsonb_array_elements(p_additional_details->'request'->'headers') AS hdrs
+        WHERE hdrs->>'name' = 'x-forwarded-for';*/
     
-    	-- Extract the value of X-Observability-Metric-Interaction-Start-Time
-		v_interaction_start_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
-	
-		-- Extract the value of X-Observability-Metric-Interaction-Finish-Time
-		/*SELECT header->>'value' 
-		INTO v_interaction_end_time
-		FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
-		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';*/
-        v_interaction_end_time := CURRENT_TIMESTAMP;
+        -- Extract the value of X-Observability-Metric-Interaction-Start-Time
+        v_interaction_start_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
+    
+        -- Extract the value of X-Observability-Metric-Interaction-Finish-Time
+        /*SELECT header->>'value' 
+        INTO v_interaction_end_time
+        FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
+        WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';*/
+        v_interaction_end_time := v_created_at;
 
-	    SELECT entry->'resource'->>'id'
-	    INTO v_patient_id
-	    FROM jsonb_array_elements(p_payload->'entry') AS entry
-	    WHERE entry->'resource'->>'resourceType' = 'Patient'
-	    LIMIT 1;
-	   	   		   
-	    SELECT 
-	    identifier_element->>'value', 
-	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', ''),
+        SELECT entry->'resource'->>'id'
+        INTO v_patient_id
+        FROM jsonb_array_elements(p_payload->'entry') AS entry
+        WHERE entry->'resource'->>'resourceType' = 'Patient'
+        LIMIT 1;
+                   
+        SELECT 
+        identifier_element->>'value', 
+        regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', ''),
         identifier_element->>'system'
-	    INTO v_patient_mrn, v_organization_id, v_patient_mrn_source_system
-	    FROM jsonb_array_elements(p_payload->'entry') AS entry,
-	    jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-	    WHERE entry->'resource'->>'resourceType' = 'Patient'
-	    AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
-	    LIMIT 1;	  	   
-	  
-	  	SELECT entry.value->'resource'->>'name' 
-	  	INTO v_organization_name
-    	FROM jsonb_array_elements(p_payload->'entry') AS entry(value)
-   	 	WHERE 
+        INTO v_patient_mrn, v_organization_id, v_patient_mrn_source_system
+        FROM jsonb_array_elements(p_payload->'entry') AS entry,
+        jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
+        WHERE entry->'resource'->>'resourceType' = 'Patient'
+        AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
+        LIMIT 1;           
+      
+        SELECT entry.value->'resource'->>'name' 
+        INTO v_organization_name
+        FROM jsonb_array_elements(p_payload->'entry') AS entry(value)
+        WHERE 
         entry.value->'resource'->>'resourceType' = 'Organization' 
         AND entry.value->'resource'->>'id' = v_organization_id;
-   	          
-	    SELECT identifier_element->>'value'
-	    INTO v_medicaid_cin
-	   	FROM jsonb_array_elements(p_payload->'entry') AS entry,
-		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-		WHERE entry->'resource'->>'resourceType' = 'Patient'
-		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
-		LIMIT 1;	   	   			   	
-	   	
-	   	SELECT
+              
+        SELECT identifier_element->>'value'
+        INTO v_medicaid_cin
+        FROM jsonb_array_elements(p_payload->'entry') AS entry,
+        jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
+        WHERE entry->'resource'->>'resourceType' = 'Patient'
+        AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
+        LIMIT 1;                        
+        
+        SELECT
         p_payload->>'id',
         p_payload->'meta'->>'lastUpdated'
         INTO v_bundle_id, v_bundle_last_updated
-   	 	WHERE
+        WHERE
         p_payload->>'resourceType' = 'Bundle'
-       	LIMIT 1;		
-	
-		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
-		INTO v_resource_type_set
-		FROM jsonb_array_elements(p_payload->'entry') AS entry
-		WHERE entry ? 'resource';	
+        LIMIT 1;        
+    
+        SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
+        INTO v_resource_type_set
+        FROM jsonb_array_elements(p_payload->'entry') AS entry
+        WHERE entry ? 'resource';   
 
         WITH categories AS (
             SELECT 
@@ -2015,162 +1996,166 @@ BEGIN
                     ))
             ) AS category_list
         )
-        SELECT bundle_type INTO v_bundle_type FROM categories;	
-	
-	END IF; /*End of : Original FHIR Payload*/
-	
-	-- Save the action from the OperationOutcome->techByDesignDisposition
-	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
-		v_issues_count 				:= jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);			
-    	v_outbound_http_message 	:= "substring"((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
-		v_bundle_session_id 		:= p_payload->'OperationOutcome'->>'bundleSessionId';	 				  
-    	v_validation_engine 		:= (p_payload->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
-    	v_ig_version				:= (p_payload->'OperationOutcome'->'validationResults'->0->>'igVersion');        
-    	v_profile_url				:= (p_payload->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
-    	v_is_bundle_valid			:= (p_payload->'OperationOutcome'->'validationResults'->0->>'valid');      
-    	v_validation_initiated_at 	:= to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
-    	v_validation_completed_at 	:= to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
-    	
-		v_techbd_disposition_action	:= p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
+        SELECT bundle_type INTO v_bundle_type FROM categories;  
+    
+    END IF; /*End of : Original FHIR Payload*/
+    
+    -- Save the action from the OperationOutcome->techByDesignDisposition
+    IF (NOT v_return_status) AND LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
+        v_issues_count              := jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);            
+        v_outbound_http_message     := "substring"((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);    
+        v_bundle_session_id         := p_payload->'OperationOutcome'->>'bundleSessionId';                     
+        v_validation_engine         := (p_payload->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
+        v_ig_version                := (p_payload->'OperationOutcome'->'validationResults'->0->>'igVersion');        
+        v_profile_url               := (p_payload->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
+        v_is_bundle_valid           := (p_payload->'OperationOutcome'->'validationResults'->0->>'valid');      
+        v_validation_initiated_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
+        v_validation_completed_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
+        
+        v_techbd_disposition_action := p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
         IF v_techbd_disposition_action = 'discard' THEN
-			v_interaction_end_time  := CURRENT_TIMESTAMP;
-            v_issues_count 			:= jsonb_array_length((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);
-		END IF;
-	END IF;
+            v_interaction_end_time  := v_created_at;
+            v_issues_count          := jsonb_array_length((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);
+        END IF;
+    END IF;
 
-	IF(LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
-		v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
+    IF(NOT v_return_status AND LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
+        v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 
-		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
-			v_passed := FALSE;
-			v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
-		END IF;
-			
-		IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN	
-			v_response_status := substring(p_payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');					
-			IF v_response_status IS NOT NULL AND v_response_status = 'PASS' THEN
-			    v_passed := TRUE;
-			ELSE
-				IF v_error_message IS NULL THEN 
-					v_error_message := p_payload->> 'insertScreeningsResponse';
-					SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected error occurred: (\d+)'))[1]::INTEGER;
-				ELSE					
-					v_error_message := substring(p_payload->> 'scoredcardResponse' FROM 'Exception:\s*(.*)$');
-					SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected validation error occurred parsing FHIR: (\d+)'))[1]::INTEGER;
-				END IF;				
-			    v_passed := FALSE;
-			END IF;
-		END IF;		
-			
-	END IF; /*End of: Forwarded HTTP Response Error. Forwarded HTTP Response*/
-	
-    IF v_interaction_end_time IS NULL AND POSITION('$validate' IN p_uri) > 0 THEN
-	    v_interaction_end_time := CURRENT_TIMESTAMP;
-	END IF;
+        IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
+            v_passed := FALSE;
+            v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);              
+        END IF;
+            
+        IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN 
+            v_response_status := substring(p_payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');                   
+            IF v_response_status IS NOT NULL AND v_response_status = 'PASS' THEN
+                v_passed := TRUE;
+            ELSE
+                IF v_error_message IS NULL THEN 
+                    v_error_message := p_payload->> 'insertScreeningsResponse';
+                    SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected error occurred: (\d+)'))[1]::INTEGER;
+                ELSE                    
+                    v_error_message := substring(p_payload->> 'scoredcardResponse' FROM 'Exception:\s*(.*)$');
+                    SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected validation error occurred parsing FHIR: (\d+)'))[1]::INTEGER;
+                END IF;             
+                v_passed := FALSE;
+            END IF;
+        END IF;     
+            
+    END IF; /*End of: Forwarded HTTP Response Error. Forwarded HTTP Response*/
+    
+    IF NOT v_return_status AND v_interaction_end_time IS NULL AND POSITION('$validate' IN p_uri) > 0 THEN
+        v_interaction_end_time := v_created_at;
+    END IF;
 
-	BEGIN
-		v_bundle_last_updated := v_bundle_last_updated::TIMESTAMPTZ;
-	EXCEPTION
-	    WHEN others THEN v_bundle_last_updated := NULL;  -- Set to NULL if it's an invalid timestamp
-	END;
+    BEGIN
+        v_bundle_last_updated := v_bundle_last_updated::TIMESTAMPTZ;
+    EXCEPTION
+        WHEN others THEN v_bundle_last_updated := NULL;  -- Set to NULL if it's an invalid timestamp
+    END;
 
+    IF NOT v_return_status THEN
     -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
     -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
     -- If the operation succeeds, the generated UUID is returned.
-    INSERT INTO techbd_udi_ingress.sat_interaction_fhir_request (
-        sat_interaction_fhir_request_id,
-        hub_interaction_id,
-        tenant_id,
-        tenant_id_lower,
-        uri,
-        nature,
-        payload,
-        client_ip_address,
-        user_agent,
-        from_state,
-        to_state,
-        state_transition_reason,
-        outbound_http_message,
-        error_message,
-        issues_count,
-        bundle_id,
-        bundle_session_id,
-        bundle_last_updated,
-        organization_id,
-        organization_name,
-        patient_id,
-        patient_mrn,
-        resource_type_set,
-        validation_initiated_at,
-        validation_completed_at,
-        validation_engine,
-        elaboration,
-        created_by,
-        provenance,
-        ig_version,
-        profile_url,
-        passed,
-        medicaid_cin,
-        interaction_start_time,
-        interaction_end_time,
-        techbd_disposition_action,
-        patient_mrn_source_system,
-        source_type,
-        source_hub_interaction_id,
-        group_hub_interaction_id,
-        is_bundle_valid,
-        bundle_type,
-		additional_details,
-		techbd_version_number
-    )
-    VALUES (
-        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-        p_hub_interaction_id,
-        p_tenant_id,
-        LOWER(p_tenant_id),  -- Store the tenant ID in lowercase for consistency
-        p_uri,
-        p_nature,
-        p_payload,
-        COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
-        COALESCE(v_user_agent,''),
-        p_from_state,
-        p_to_state,
-        p_state_transition_reason,
-        v_outbound_http_message,
-        v_error_message,
-        COALESCE(v_issues_count,0),
-        v_bundle_id,
-        v_bundle_session_id,
-        COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
-        v_organization_id,
-        v_organization_name,
-        v_patient_id,
-        v_patient_mrn,
-        v_resource_type_set,
-        COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
-        COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
-        v_validation_engine,
-        p_elaboration,
-        v_created_by,
-        p_provenance,
-        v_ig_version,
-        v_profile_url,
-        v_passed,
-        v_medicaid_cin,
-        COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
-        COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
-        v_techbd_disposition_action,
-        v_patient_mrn_source_system,
-        p_source_type,
-        p_source_hub_interaction_id,
-        p_group_hub_interaction_id,
-        v_is_bundle_valid,
-        v_bundle_type,
-		p_additional_details,
-		p_techbd_version_number
-    ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
+        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_request (
+            sat_interaction_fhir_request_id,
+            hub_interaction_id,
+            tenant_id,
+            tenant_id_lower,
+            uri,
+            nature,
+            payload,
+            client_ip_address,
+            user_agent,
+            from_state,
+            to_state,
+            state_transition_reason,
+            outbound_http_message,
+            error_message,
+            issues_count,
+            bundle_id,
+            bundle_session_id,
+            bundle_last_updated,
+            organization_id,
+            organization_name,
+            patient_id,
+            patient_mrn,
+            resource_type_set,
+            validation_initiated_at,
+            validation_completed_at,
+            validation_engine,
+            elaboration,
+            created_by,
+            provenance,
+            ig_version,
+            profile_url,
+            passed,
+            medicaid_cin,
+            interaction_start_time,
+            interaction_end_time,
+            techbd_disposition_action,
+            patient_mrn_source_system,
+            source_type,
+            source_hub_interaction_id,
+            group_hub_interaction_id,
+            is_bundle_valid,
+            bundle_type,
+            additional_details,
+            techbd_version_number
+        )
+        VALUES (
+            gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+            p_hub_interaction_id,
+            p_tenant_id,
+            LOWER(p_tenant_id),  -- Store the tenant ID in lowercase for consistency
+            p_uri,
+            p_nature,
+            p_payload,
+            COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
+            COALESCE(v_user_agent,''),
+            p_from_state,
+            p_to_state,
+            p_state_transition_reason,
+            v_outbound_http_message,
+            v_error_message,
+            COALESCE(v_issues_count,0),
+            v_bundle_id,
+            v_bundle_session_id,
+            COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
+            v_organization_id,
+            v_organization_name,
+            v_patient_id,
+            v_patient_mrn,
+            v_resource_type_set,
+            COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
+            COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
+            v_validation_engine,
+            p_elaboration,
+            v_created_by,
+            p_provenance,
+            v_ig_version,
+            v_profile_url,
+            v_passed,
+            v_medicaid_cin,
+            COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
+            COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
+            v_techbd_disposition_action,
+            v_patient_mrn_source_system,
+            p_source_type,
+            p_source_hub_interaction_id,
+            p_group_hub_interaction_id,
+            v_is_bundle_valid,
+            v_bundle_type,
+            p_additional_details,
+            p_techbd_version_number
+        ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
-    IF (v_return IS NOT NULL) THEN
+        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Insert into sat_interaction_fhir_request'));
+    END IF;
+
+    IF (NOT v_return_status AND v_return IS NOT NULL) THEN
         IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/' OR p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN
             IF(LOWER(p_nature) = LOWER('techByDesignDisposition')) THEN
                 CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
@@ -2186,8 +2171,11 @@ BEGIN
                     v_validation_engine,
                     v_bundle_id,
                     v_created_at,
-					p_techbd_version_number
+                    p_techbd_version_number,
+					v_profile_url
                 );
+                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('2', 'Insert into sat_interaction_fhir_session_diagnostic'));
+
                 CALL techbd_udi_ingress.insert_validation_issues(
                     p_hub_interaction_id, 
                     p_uri, 
@@ -2195,9 +2183,10 @@ BEGIN
                     v_created_by, 
                     p_provenance,
                     p_elaboration,
-					p_tenant_id,
-					p_techbd_version_number
+                    p_tenant_id,
+                    p_techbd_version_number
                 );
+                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('3', 'Insert into sat_interaction_fhir_validation_issue'));
             END IF;              
             IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN
                 CALL techbd_udi_ingress.insert_fhir_screening_info(
@@ -2210,6 +2199,8 @@ BEGIN
                     p_provenance,
                     p_elaboration
                 );
+                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('4', 'Insert into sat_interaction_fhir_screening_info'));
+
                 CALL techbd_udi_ingress.insert_fhir_screening_patient(
                     p_hub_interaction_id, 
                     p_tenant_id, 
@@ -2221,6 +2212,8 @@ BEGIN
                     p_elaboration,
                     v_organization_id
                 );
+                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('5', 'Insert into sat_interaction_fhir_screening_patient'));
+
                 CALL techbd_udi_ingress.insert_fhir_screening_organization(
                     p_hub_interaction_id, 
                     p_tenant_id, 
@@ -2231,113 +2224,137 @@ BEGIN
                     p_provenance,
                     p_elaboration 
                 );
+                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('6', 'Insert into sat_interaction_fhir_screening_organization'));
             END IF;                  
         END IF;         
     END IF; 
 
-	-- Save the details from the techByDesignDisposition to other natures also
-	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
-		UPDATE techbd_udi_ingress.sat_interaction_fhir_request
-			SET --issues_count 			= COALESCE(v_issues_count, 0),			
-    			outbound_http_message 	= v_outbound_http_message,  	
-				bundle_session_id 		= v_bundle_session_id,	 				  
-    			validation_engine 		= v_validation_engine,   
-    			ig_version				= v_ig_version,
-    			profile_url				= v_profile_url,    
-    			is_bundle_valid			= v_is_bundle_valid,    
-    			validation_initiated_at = v_validation_initiated_at::TIMESTAMPTZ,
-    			validation_completed_at = v_validation_completed_at::TIMESTAMPTZ,    	
-				techbd_disposition_action = v_techbd_disposition_action,
-    			interaction_end_time    = CASE 
-			                                   WHEN v_techbd_disposition_action = 'discard' 
-			                                   THEN CURRENT_TIMESTAMP 
-			                                   ELSE interaction_end_time 
-			                                END
-		WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
-		
-		--Update ig_version in sat_interaction_user table
-		IF(p_uri='/Bundle' OR p_uri='/Bundle/') THEN
-			UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_hub_interaction_id;
-		ELSE
-			UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
-		END IF;
+    -- Save the details from the techByDesignDisposition to other natures also
+    IF (NOT v_return_status) AND LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
+        UPDATE techbd_udi_ingress.sat_interaction_fhir_request
+            SET --issues_count          = COALESCE(v_issues_count, 0),          
+                outbound_http_message   = v_outbound_http_message,      
+                bundle_session_id       = v_bundle_session_id,                    
+                validation_engine       = v_validation_engine,   
+                ig_version              = v_ig_version,
+                profile_url             = v_profile_url,    
+                is_bundle_valid         = v_is_bundle_valid,    
+                validation_initiated_at = v_validation_initiated_at::TIMESTAMPTZ,
+                validation_completed_at = v_validation_completed_at::TIMESTAMPTZ,       
+                techbd_disposition_action = v_techbd_disposition_action,
+                interaction_end_time    = CASE 
+                                               WHEN v_techbd_disposition_action = 'discard' 
+                                               THEN v_created_at 
+                                               ELSE interaction_end_time 
+                                            END
+        WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
+        
+        --Update ig_version in sat_interaction_user table
+        IF(p_uri='/Bundle' OR p_uri='/Bundle/') THEN
+            UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_hub_interaction_id;
+        ELSE
+            UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+        END IF;
 
-		--Update ig_version in sat_interaction_zip_file_request table
-		IF(p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/') THEN			
-			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
-		END IF;
+        --Update ig_version in sat_interaction_zip_file_request table
+        IF(p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/') THEN          
+            UPDATE techbd_udi_ingress.sat_interaction_zip_file_request SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
+        END IF;
 
-		--Update ig_version in sat_interaction_ccda_request table
-		IF (p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/') THEN 			
-			UPDATE techbd_udi_ingress.sat_interaction_ccda_request 
-				SET ig_version 			  = v_ig_version,
-					user_agent 			  = COALESCE(user_agent, v_user_agent),
-					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
-        			techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number)
-				WHERE hub_interaction_id  = p_source_hub_interaction_id;
-			UPDATE techbd_udi_ingress.sat_interaction_ccda_validation_errors
+        --Update ig_version in sat_interaction_ccda_request table
+        IF (p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/') THEN             
+            UPDATE techbd_udi_ingress.sat_interaction_ccda_request 
+                SET ig_version            = v_ig_version,
+                    user_agent            = COALESCE(user_agent, v_user_agent),
+                    client_ip_address     = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
+                    techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number)
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;
+            
+            UPDATE techbd_udi_ingress.sat_interaction_ccda_validation_errors
                 SET ig_version            = v_ig_version
-                WHERE hub_interaction_id  = p_source_hub_interaction_id;   
-		END IF;
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;
+        END IF;
 
-		--Update ig_version in sat_interaction_hl7_request table
-		IF (p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN			
-			UPDATE techbd_udi_ingress.sat_interaction_hl7_request 
-				SET ig_version 			  = v_ig_version, 
-					user_agent 			  = COALESCE(user_agent, v_user_agent),
-					client_ip_address 	  = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
-					techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number) 
-				WHERE hub_interaction_id  = p_source_hub_interaction_id;
-			UPDATE techbd_udi_ingress.sat_interaction_hl7_validation_errors
+        --Update ig_version in sat_interaction_hl7_request table
+        IF (p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN           
+            UPDATE techbd_udi_ingress.sat_interaction_hl7_request 
+                SET ig_version            = v_ig_version, 
+                    user_agent            = COALESCE(user_agent, v_user_agent),
+                    client_ip_address     = COALESCE(client_ip_address, v_client_ip_address_forwarded, v_client_ip_address),
+                    techbd_version_number = COALESCE(techbd_version_number, p_techbd_version_number) 
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;
+            
+            UPDATE techbd_udi_ingress.sat_interaction_hl7_validation_errors
                 SET ig_version            = v_ig_version
-                WHERE hub_interaction_id  = p_source_hub_interaction_id;  	
-		END IF;
-	END IF;  
+                WHERE hub_interaction_id  = p_source_hub_interaction_id;            
+        END IF;
 
+        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('7', 'Update ig_version, user_agent, client_ip_address and techbd_version_number to various tables'));
+    END IF;    
+    
     -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
-	IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'))) THEN
-		UPDATE techbd_udi_ingress.sat_interaction_fhir_request
-			SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
-		WHERE hub_interaction_id = p_hub_interaction_id;
-	END IF;   
-
-    RETURN v_return;
+    IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'))) THEN
+        UPDATE techbd_udi_ingress.sat_interaction_fhir_request
+            SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
+        WHERE hub_interaction_id = p_hub_interaction_id;
+    END IF;                        
+    
 EXCEPTION
    WHEN OTHERS THEN
-	    -- Capture exception details
-	    GET STACKED DIAGNOSTICS
-	        v_error_msg = MESSAGE_TEXT,
-	        v_sqlstate = RETURNED_SQLSTATE,
-	        v_pg_detail = PG_EXCEPTION_DETAIL,
-	        v_pg_hint = PG_EXCEPTION_HINT,
-	        v_pg_context = PG_EXCEPTION_CONTEXT;
-	        v_error_type = 'SQL';
-	
-	    v_elaboration := jsonb_build_object(
- 						'interaction_id', p_hub_interaction_id,
- 						'interaction_key', p_uri,
- 						'nature', p_nature,
- 						'from_state', p_from_state,
- 						'to_state', p_to_state,
-						'techbd_version_number', p_techbd_version_number
- 						);
-
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-		p_uri,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance, v_elaboration, p_tenant_id, p_hub_interaction_id);
-		RETURN NULL;
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+            v_error_type = 'SQL';
+            
+            v_is_exception := true;				
+			v_return_status := true;
 END;
-$function$
-;
+        
+        v_elaboration := jsonb_build_object(
+                        'interaction_id', p_hub_interaction_id,
+                        'interaction_key', p_uri,
+                        'nature', p_nature,
+                        'tenant_id', p_tenant_id,
+                        'from_state', p_from_state,
+                        'to_state', p_to_state,
+                        'techbd_version_number', p_techbd_version_number
+                        );
+
+    IF  v_elaboration_steps IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
+        IF v_error_msg IS NOT NULL THEN --Add error details, if any
+            v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
+        END IF;
+
+        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, v_provenance, 'info'::text, 
+                        'sat_interaction_fhir_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
+    END IF;
+
+    IF v_is_exception = true THEN
+        -- Log the exception, reusing the previous exception ID if it exists
+        v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
+        v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+        p_uri,
+        v_error_msg,
+        v_error_type,
+        v_sqlstate,
+        v_pg_detail,
+        v_pg_hint,
+        v_pg_context,
+        v_created_by,
+        v_provenance, v_elaboration, p_tenant_id, p_hub_interaction_id);
+       
+        v_return := NULL;
+    END IF;                    
+                        
+    RETURN v_return;
+END;
+$function$;
 /*******************************************************************************************
   This view provides a consolidated view of failed HTTP requests and associated interactions.
 ******************************************************************************************/
