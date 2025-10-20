@@ -206,7 +206,7 @@ public class FHIRService {
 				}
                 if (StringUtils.isNotEmpty(requestUri)
                         && (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
-                    return result;
+                    return payloadWithDisposition;
                 }
 
                 if ("true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
