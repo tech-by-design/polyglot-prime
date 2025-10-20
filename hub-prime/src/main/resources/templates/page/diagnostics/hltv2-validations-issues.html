@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style> 
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_hl7v2_validation_errors';
+ 
+        document.addEventListener('DOMContentLoaded', function () {
+ 
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                 .withColumnDefs([
+                            {
+                                headerName: "Request Time",
+                                field: "created_at",
+                                sort: "desc",
+                                filter: "agDateColumnFilter",
+                                headerTooltip: "Timestamp when the validation error was recorded"
+                            },
+                            {
+                                headerName: "TechBD Interaction ID",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Unique interaction identifier associated with this validation error"
+                            },
+                            {
+                                headerName: "TechBD Tenant ID",
+                                field: "tenant_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "ID of the tenant involved in this HL7v2 interaction"
+                            },
+                            {
+                                headerName: "URI",
+                                field: "uri",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "The URI linked to the HL7v2 validation request or response"
+                            },
+                            {
+                                headerName: "Error Details",
+                                field: "error",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Detailed description of the validation error encountered"
+                            },
+                            {
+                                headerName: "File Name",
+                                field: "file_name",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Name of the file where the validation error occurred"
+                            }
+                        ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+          This widget provides an overview of HL7v2 validation errors encountered during the data processing pipeline. It displays columns such as Request Time, Interaction ID, Tenant ID, URI, Error Details and File Name.
+           Users can filter or sort the grid to analyze errors by tenant, file, or timeframe. Clicking on the Interaction ID can be extended to open a detailed view showing the full validation context and associated payload for troubleshooting purposes.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

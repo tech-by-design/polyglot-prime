@@ -230,11 +230,7 @@ AS SELECT  created_at AS interaction_created_at,
     user_agent,
     client_ip_address,
     resource_type_set AS resource_types,
-    source_hub_interaction_id, 
-	CASE
-        WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
-        ELSE 'shinny.org'
-    END AS source,
+    source_hub_interaction_id,
         CASE
             WHEN source_type = ANY (ARRAY['CSV'::text, 'CCDA'::text, 'HL7V2'::text]) THEN source_type
             ELSE 'FHIR'::text
@@ -8453,5 +8449,28 @@ SELECT
     s.created_at 
 FROM
     techbd_udi_ingress.sat_interaction_ccda_validation_errors s
+where
+    s.error != '';
+
+/* -------------------------------------------------------------
+-- View: interaction_hl7v2_validation_errors
+-- This view provides detailed records of HL7v2 validation errors for each interaction.
+-- It includes tenant, file, and environment metadata along with who created the record and its provenance.
+-- Useful for diagnosing HL7v2 validation failures and tracking error trends across tenants.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_hl7v2_validation_errors CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_hl7v2_validation_errors AS
+SELECT
+    s.sat_hl7_validation_errors_id,
+    s.hub_interaction_id,
+    s.tenant_id,
+    s.uri, 
+    s.error,
+    s.file_name, 
+    s.created_at 
+FROM
+    techbd_udi_ingress.sat_interaction_hl7_validation_errors s
 where
     s.error != '';
