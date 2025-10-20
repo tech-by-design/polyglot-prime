@@ -3514,7 +3514,7 @@ BEGIN
 
 			v_validation_error := (p_payload -> 'result' -> 0-> 'details' ->> 'text')::text;
 
-			IF(nature = 'HL7 Validation Result' AND to_state = 'VALIDATION_FAILED'
+			IF(p_nature = 'HL7 Validation Result' AND p_to_state = 'VALIDATION_FAILED'
 				AND v_validation_error IS NOT NULL AND v_validation_error != '')
     		THEN		
 				INSERT INTO techbd_udi_ingress.sat_interaction_hl7_validation_errors(
