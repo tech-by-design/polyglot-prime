@@ -2167,8 +2167,7 @@ BEGIN
                     v_validation_engine,
                     v_bundle_id,
                     v_created_at,
-                    p_techbd_version_number,
-					v_profile_url
+                    p_techbd_version_number
                 );
                 v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('2', 'Insert into sat_interaction_fhir_session_diagnostic'));
 
