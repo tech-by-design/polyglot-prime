@@ -49,7 +49,7 @@ BEGIN
 	
 	-- Check function: register_interaction_ccda_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_ccda_request',
-	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
 	    'Function register_interaction_ccda_request exists'
 	);
 	
@@ -69,7 +69,7 @@ BEGIN
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
    	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
-	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
+	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function sat_interaction_ccda_request_upserted exists'
     );
 	RETURN NEXT has_function('techbd_udi_ingress', 'register_interaction_hl7_request',
@@ -168,7 +168,7 @@ BEGIN
     RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
         ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
-			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name', 'ig_version'],
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name', 'ig_version', 'ccda_authoring_device'],
         'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
     );
 
@@ -728,7 +728,8 @@ BEGIN
 		p_source_type			   => 'CCDA',
 		p_group_hub_interaction_id => NULL,	
 		p_request_source		   => 'nexus',
-		p_techbd_version_number    => v_techbd_version_number
+		p_techbd_version_number    => v_techbd_version_number,
+		p_ccda_authoring_device	   => 'Epic'	
     );
     
     RETURN NEXT ok(

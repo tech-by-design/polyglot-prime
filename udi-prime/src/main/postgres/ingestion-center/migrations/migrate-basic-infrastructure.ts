@@ -539,7 +539,8 @@ const interactionCcdaRequestSat = interactionHub.satelliteTable(
     origin: textNullable(),
     techbd_version_number: textNullable(),
     file_name: textNullable(),
-    ig_version : textNullable(),
+    ig_version: textNullable(),
+    ccda_authoring_device: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -1418,6 +1419,19 @@ const migrateSP = pgSQLa.storedProcedure(
             ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN profile_url_domain TEXT NULL;   
         END IF;
       PERFORM pg_advisory_unlock(hashtext('profile_url_domain_column_creation'));
+
+      -- Add ccda_authoring_device column if not exists
+      PERFORM pg_advisory_lock(hashtext('ccda_authoring_device_column_creation'));
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'sat_interaction_ccda_request'
+              AND column_name = 'ccda_authoring_device'
+        ) THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN ccda_authoring_device TEXT NULL;   
+        END IF;
+      PERFORM pg_advisory_unlock(hashtext('ccda_authoring_device_column_creation'));
             
       -- Add csv_zip_file_content column if not exists
       IF NOT EXISTS (
