@@ -3537,7 +3537,7 @@ BEGIN
 					p_tenant_id,
 					p_uri,
 					'hl7_validation_errors',
-					(p_payload -> 'OperationOutcome' -> 'validationResults' -> 0-> 'operationOutcome' -> 'issue' -> 0 -> 'details' ->> 'text')::text,
+					v_validation_error,
 					p_file_name,
 					COALESCE(p_origin, 'http'),
 					p_user_agent,
