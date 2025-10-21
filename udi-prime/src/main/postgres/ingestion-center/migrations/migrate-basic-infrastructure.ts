@@ -275,6 +275,7 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
     profile_url: textNullable(),
     techbd_version_number: textNullable(),
     tenant_id: textNullable(),
+    profile_url_domain: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -1404,6 +1405,19 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
           ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN severity TEXT NULL;   
       END IF;  
+
+      -- Add profile_url_domain column if not exists
+      PERFORM pg_advisory_lock(hashtext('profile_url_domain_column_creation'));
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'sat_interaction_fhir_validation_issue'
+              AND column_name = 'profile_url_domain'
+        ) THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN profile_url_domain TEXT NULL;   
+        END IF;
+      PERFORM pg_advisory_unlock(hashtext('profile_url_domain_column_creation'));
             
       -- Add csv_zip_file_content column if not exists
       IF NOT EXISTS (
