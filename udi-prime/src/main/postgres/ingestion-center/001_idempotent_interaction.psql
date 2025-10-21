@@ -2879,7 +2879,8 @@ BEGIN
             jsonb_array_elements(validation_result -> 'operationOutcome'::text -> 'issue'::text) AS issue,
             to_timestamp(((validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
             validation_result ->> 'igVersion'::text AS ig_version,
-			validation_result ->> 'profileUrl'::text AS profile_url,
+			validation_result ->> 'profileUrl'::text AS profile_url,			
+			regexp_replace(validation_result ->> 'profileUrl'::text, '^https?://([^/]+)/.*$', '\1') AS profile_url_domain,
             TRIM(BOTH FROM regexp_replace(
                 (validation_result -> 'observability'::text) ->> 'name'::text, 
                 '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
@@ -2899,7 +2900,8 @@ BEGIN
             severity,
 			tenant_id,
 			techbd_version_number,
-			profile_url
+			profile_url,
+			profile_url_domain
         )
         VALUES (
             gen_random_uuid()::TEXT, 
@@ -2914,7 +2916,8 @@ BEGIN
             issue_set.issue ->> 'severity'::text,
 			p_tenant_id,
 			p_techbd_version_number,
-			issue_set.profile_url
+			issue_set.profile_url,
+			issue_set.profile_url_domain
         );
     END LOOP;
 EXCEPTION
