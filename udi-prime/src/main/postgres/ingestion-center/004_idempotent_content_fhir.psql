@@ -461,10 +461,7 @@ AS
     MAX(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown') AS ig_version,
     COUNT(DISTINCT issue) AS distinct_issue_count,
-    CASE
-        WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
-        ELSE 'shinny.org'
-    END AS source
+    profile_url_domain AS source
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
@@ -486,7 +483,7 @@ WHERE
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
-    source,
+    profile_url_domain,
     date_time::date;
 
 
