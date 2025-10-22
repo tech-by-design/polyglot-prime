@@ -3,7 +3,7 @@
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
   <description>Version: 0.4.36</description>
-  <revision>60</revision>
+  <revision>73</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -101,6 +101,18 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	logger.info(&quot;requestUri: &quot; + requestUri);
 	logger.info(&quot;payloadJson: &quot; + payloadJson);
 	logger.info(&quot;operation: &quot; + operation);
+
+	var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+	logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	//If any error happens in between, find the ccda source type from the input file
+	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
+		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
+		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
+		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
+		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	}
+	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
 	
 	var DriverManager = java.sql.DriverManager;
 	var conn = null;
@@ -188,7 +200,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(27, java.sql.Types.VARCHAR);
 		stmt.setNull(28, java.sql.Types.VARCHAR);
 		stmt.setString(29, channelMap.get(&apos;filename&apos;));
-		stmt.setString(30, channelMap.get(&apos;ehrVendor&apos;));
+		stmt.setString(30, ccdaAuthoringDevice);
 
 	    var result = stmt.execute();
 	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
@@ -2463,7 +2475,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1761110307110</time>
+        <time>1761133001665</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2472,6 +2484,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

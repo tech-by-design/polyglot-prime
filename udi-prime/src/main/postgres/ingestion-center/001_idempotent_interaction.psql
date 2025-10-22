@@ -6419,7 +6419,7 @@ DECLARE
     v_exception_id    TEXT        	:= gen_random_uuid()::text;
     v_nature_denorm   TEXT 		  	:= trim(COALESCE(p_nature->>'nature', ''));
     v_tenant_id_denorm TEXT 	  	:= p_nature->>'tenant_id';
-    v_ccda_source     TEXT 		  	:= COALESCE(p_ccda_authoring_device, 'CCDA');
+    v_ccda_source     TEXT 		  	:= p_ccda_authoring_device;
 
     v_return          JSONB 	  	:= NULL;
     v_return_status   BOOLEAN 	  	:= false;
