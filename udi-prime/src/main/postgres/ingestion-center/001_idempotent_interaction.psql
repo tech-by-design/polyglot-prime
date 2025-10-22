@@ -3582,7 +3582,7 @@ BEGIN
 			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
 		END IF;
         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_uri, v_created_by, v_provenance, 'info'::text, 
-       																'sat_interaction_ccda_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
+       																'sat_interaction_hl7_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
 	END IF;
 
 	IF v_is_exception = true THEN    
@@ -5235,7 +5235,7 @@ BEGIN
 
 			IF (nature = 'CCDA Validation Result') THEN
 				UPDATE techbd_udi_ingress.sat_interaction_ccda_request AS t
-				SET    provenance = v_provenance 
+				SET    ccda_authoring_device = p_ccda_authoring_device 
 				WHERE  t.hub_interaction_id = sat_interaction_ccda_request_upserted.hub_interaction_id AND t.nature = 'Original CCDA Payload';
 			END IF;
 
