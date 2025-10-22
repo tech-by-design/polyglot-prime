@@ -8339,6 +8339,7 @@ SELECT
     sicr.file_name, 
 	sicr.user_agent,
     sicr.client_ip_address, 
+    sicr.ccda_authoring_device,	
     CASE 
         WHEN EXISTS (
             SELECT 1
