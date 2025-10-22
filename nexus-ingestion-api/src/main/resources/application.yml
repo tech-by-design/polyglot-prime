@@ -54,12 +54,3 @@ togglz:
   features: 
     DEBUG_LOG_REQUEST_HEADERS: 
       enabled: true  
-mtls:
-  enabled-ports: [443, 8443, 9203, 9000, 9001,9002,9003,9004,9005]  # List of ports where mTLS is required (from port config)
-  trust-store-mapping-param: /nexus/mtls/trust-store-mappings  # SSM parameter name for JSON map
-  s3-region: us-east-1
-  cache-ttl-minutes: 60  # Cache CA bundle to reduce S3 calls
-
-aws:
-  ssm:
-    endpoint: https://ssm.us-east-1.amazonaws.com  # Optional override

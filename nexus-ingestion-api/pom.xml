@@ -197,13 +197,6 @@
         </dependency>
 
         <!-- mTLS related -->
-        <!-- AWS SDK for S3 access -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ssm</artifactId>
-            <version>${aws.sdk.version}</version> <!-- For fetching configs from SSM if needed -->
-        </dependency>
-
         <!-- Bouncy Castle for certificate parsing and verification -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
