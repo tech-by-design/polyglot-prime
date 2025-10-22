@@ -145,8 +145,8 @@
                         return isValidateUri ? null : value;
                     }
                     },
-                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },                    
+                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" }, 
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },                     
                     { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
                     {
@@ -189,7 +189,7 @@
     <div layout:fragment="content">
         <div class="grid-description">
             <div class="grid-description">
-    This dashboard provides a comprehensive overview of HL7v2-based HTTP interactions, allowing users to easily track and analyze each request. Key details such as the Hub Interaction ID and Tenant ID help identify and link interactions, while the Request URI, Client IP Address, and User Agent provide context about the origin and environment of each request.
+    This dashboard provides a comprehensive overview of HL7v2-based interactions, allowing users to easily track and analyze each request. Key details such as the Hub Interaction ID and Tenant ID help identify and link interactions, while the Request URI, Client IP Address, and User Agent provide context about the origin and environment of each request.
 
     <strong>HL7v2 Validation Status</strong> indicates whether the submitted HL7v2 payload meets required standards. Click to view detailed validation errors and help identify data quality issues. The <strong>FHIR Generated</strong> column shows whether the HL7v2 payload was successfully converted to FHIR format, ensuring interoperability and readiness for downstream processing.
 

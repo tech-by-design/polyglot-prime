@@ -397,10 +397,7 @@ BEGIN
         MAX(sifvi.date_time) AS most_recent_date,
         COALESCE(sifvi.ig_version, 'Unknown') AS ig_version,
         TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') AS issue_date,
-        CASE
-            WHEN sifvi.profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
-            ELSE 'shinny.org'
-        END AS source
+        profile_url_domain AS source
     FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue sifvi
     WHERE
         sifvi.date_time >= CURRENT_DATE - INTERVAL '5 days'
@@ -421,21 +418,12 @@ BEGIN
         AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(sifvi.ig_version, 'Unknown') = p_ig_version)
         AND (NULLIF(p_validation_engine, '') IS NULL OR sifvi.validation_engine = p_validation_engine)
         AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') = p_issue_date)
-        AND (
-            NULLIF(p_source, '') IS NULL
-            OR (
-                (p_source = 'test.shinny.org' AND sifvi.profile_url ILIKE '%test.shinny.org%')
-                OR (p_source = 'shinny.org' AND sifvi.profile_url NOT ILIKE '%test.shinny.org%')
-            )
-        )
+        AND (NULLIF(p_source, '') IS NULL OR sifvi.profile_url_domain = p_source)
     GROUP BY
         sifvi.validation_engine,
         sifvi.issue,
         sifvi.severity,
-        CASE
-            WHEN sifvi.profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
-            ELSE 'shinny.org'
-        END,
+        sifvi.profile_url_domain,
         COALESCE(sifvi.ig_version, 'Unknown'),
         TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY')
     ORDER BY MAX(sifvi.date_time) DESC;
@@ -455,16 +443,13 @@ $$ LANGUAGE plpgsql;
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
 AS 
- SELECT
+SELECT
     validation_engine,
     MAX(date_time::date) AS issue_date,
     MAX(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown') AS ig_version,
     COUNT(DISTINCT issue) AS distinct_issue_count,
-    CASE
-        WHEN profile_url ILIKE '%test.shinny.org%' THEN 'test.shinny.org'
-        ELSE 'shinny.org'
-    END AS source
+    profile_url_domain AS source
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
@@ -486,7 +471,7 @@ WHERE
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
-    source,
+    profile_url_domain,
     date_time::date;
 
 

@@ -122,9 +122,8 @@
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },                    
                     { headerName: "TechBD Bundle Source Interaction Id", field: "source_hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "The orginal Bundle source interaction ID(CSV Zip file Interaction Id,CCDA file Interaction Id etc.)" },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request " },
-                    { headerName: "IG Source", field: "source", filter: "agTextColumnFilter", headerTooltip: "IG Source" }, 
-                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request "},                    
+                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },     
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" }
                 ])
@@ -162,7 +161,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This widget provides an overview of HTTP interactions, including details on processed requests. It features
+            This widget provides an overview of the FHIR interactions, including details on processed requests. It features
             columns such as Request Time, Patient MRN, TechBD Interaction ID, and more.  Additionally, the widget supports filtering and sorting by various
             criteria to enable thorough analysis of the interactions.
             A drill-down feature has been implemented based on the TechBD Interaction ID, allowing users to explore the various states of a given interaction. This grouped view helps in understanding the end-to-end flow of a single interaction across different stages, offering deeper insights into the processing lifecycle and potential issues encountered during the interaction.
