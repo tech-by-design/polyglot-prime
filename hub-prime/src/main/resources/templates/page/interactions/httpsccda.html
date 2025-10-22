@@ -100,6 +100,7 @@
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "Source System", field: "ccda_authoring_device", headerTooltip: "The source system that authored the CCDA", filter: "agTextColumnFilter" },
                     { headerName: "CCDA Validation Status", field: "ccda_validation_status", headerTooltip: "Indicates whether the CCDA validation succeeded or failed.", filter: "agTextColumnFilter",
                         cellRenderer: (params) => {
                         const value = params.value;
