@@ -7687,6 +7687,7 @@ RETURNS TABLE (
     severity TEXT,
     message TEXT,
     ig_version TEXT,
+    techbd_version_number TEXT,
     validation_engine TEXT,
     issue_count BIGINT
 ) AS $$
@@ -7698,6 +7699,7 @@ BEGIN
         lower(sifsd.severity) as severity,
         sifsd.message as message,
         sifsd.ig_version,
+        sifsd.techbd_version_number,
         MAX(sifsd.validation_engine) as validation_engine,
         COUNT(*) as issue_count
     FROM
@@ -7712,7 +7714,8 @@ BEGIN
         sifsd.tenant_id,
         lower(sifsd.severity),
         sifsd.message,
-        sifsd.ig_version
+        sifsd.ig_version,
+        sifsd.techbd_version_number
     ORDER BY
         sifsd.created_at::date DESC;
 END;
