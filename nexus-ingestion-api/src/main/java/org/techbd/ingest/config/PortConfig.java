@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -42,12 +43,7 @@ public class PortConfig implements InitializingBean {
     private List<PortEntry> portConfigurationList = Collections.emptyList();
     private final S3Client s3Client;
 
-    // Default constructor for Spring
-    public PortConfig() {
-        this.s3Client = null;
-    }
-
-    // Constructor for test injection (not used by Spring)
+    @Autowired
     public PortConfig(S3Client s3Client) {
         this.s3Client = s3Client;
     }
@@ -107,20 +103,12 @@ public class PortConfig implements InitializingBean {
             return;
         }
 
-        // S3Client s3 = (this.s3Client != null)
-        //         ? this.s3Client
-        //         : S3Client.builder()
-        //         .endpointOverride(URI.create("http://localhost:4566"))
-        //         .region(software.amazon.awssdk.regions.Region.of(region))
-        //         .build();
-
-        S3Client s3 = (this.s3Client != null)
-                ? this.s3Client
-                : S3Client.builder()
-                .endpointOverride(URI.create("http://localhost:4566"))
-                .region(software.amazon.awssdk.regions.Region.of(region))
-               .forcePathStyle(true)
-                .build();
+        // Use injected S3Client (configured centrally in AwsConfig)
+        if (this.s3Client == null) {
+            log.error("PortConfig: S3Client bean not available - cannot load port config");
+            return;
+        }
+        S3Client s3 = this.s3Client;
 
         GetObjectRequest req = GetObjectRequest.builder()
                 .bucket(bucket)
