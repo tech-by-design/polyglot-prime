@@ -73,9 +73,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.4.34",
+      "version": "0.4.36",
       "editedby": "cibijacob",
-      "date": "2025-10-14"
+      "date": "2025-10-22"
     }
   ],
   "transformations": {

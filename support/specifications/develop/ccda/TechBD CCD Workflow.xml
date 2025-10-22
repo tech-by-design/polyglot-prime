@@ -2,8 +2,8 @@
   <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.35</description>
-  <revision>49</revision>
+  <description>Version: 0.4.36</description>
+  <revision>60</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -119,7 +119,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 
 	    logger.info(&quot;Database connection established successfully.&quot;);
 	
-		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
 	    stmt = conn.prepareCall(sql);
 
 		stmt.setString(1, interactionId);
@@ -177,7 +177,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(17, java.sql.Types.VARCHAR);
 		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
 		//stmt.setNull(19, java.sql.Types.VARCHAR); 
-		stmt.setString(19, channelMap.get(&apos;ehrVendor&apos;)); //provenance  
+		stmt.setString(19, &quot;CCDA&quot;); //provenance  
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
 		stmt.setNull(21, java.sql.Types.VARCHAR);
 		stmt.setNull(22, java.sql.Types.VARCHAR);
@@ -188,6 +188,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(27, java.sql.Types.VARCHAR);
 		stmt.setNull(28, java.sql.Types.VARCHAR);
 		stmt.setString(29, channelMap.get(&apos;filename&apos;));
+		stmt.setString(30, channelMap.get(&apos;ehrVendor&apos;));
 
 	    var result = stmt.execute();
 	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
@@ -2462,7 +2463,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1760961159609</time>
+        <time>1761110307110</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
