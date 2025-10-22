@@ -47,7 +47,7 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
+import org.techbd.ingest.commons.Constants;
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
 
@@ -89,13 +89,11 @@ public class InteractionsFilter extends OncePerRequestFilter {
             //     LOG.error("InteractionsFilter: unable to read enabled ports from MtlsConfig", ex);
             // }
             // LOG.info("InteractionsFilter: mtls enabled ports={}", enabledPorts);
-
             // if (!enabledPorts.contains(requestPort)) {
             //     LOG.info("InteractionsFilter: port {} not enabled for mTLS -> continuing chain", requestPort);
             //     chain.doFilter(origRequest, origResponse);
             //     return;
             // }
-
             // 2) find port config entry that matches the request port
             PortConfig.PortEntry portEntry = null;
             if (portConfig != null && portConfig.isLoaded()) {
@@ -108,7 +106,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
             }
 
             if (portEntry == null) {
-                LOG.warn("InteractionsFilter: no PortConfig entry found for port {} - rejecting request", requestPort);
+                LOG.error("InteractionsFilter: no PortConfig entry found for port {} - rejecting request", requestPort);
                 origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "No port configuration for mTLS");
                 return;
             }
@@ -116,10 +114,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
             // 3) If this port config requires mtls via mtls field, client must supply header
             String mtlsName = portEntry.mtls;
-            String mtlsBucket = System.getenv("MTLS_BUCKET");
+            String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
             LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
 
-            String clientCertHeader = origRequest.getHeader("X-Amzn-Mtls-Clientcert");
+            String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
             // Accept header value encoded as base64 (recommended) or raw PEM (less reliable).
             String clientCertPem = null;
             if (clientCertHeader != null) {
@@ -132,13 +130,13 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 } catch (IllegalArgumentException iae) {
                     // Not base64 — treat as raw (may still fail if it contains forbidden header chars)
                     clientCertPem = v;
-                    LOG.info("InteractionsFilter: client cert header not base64, using raw header length={}", clientCertPem.length());
+                    LOG.error("InteractionsFilter: client cert header not base64, using raw header length={}", clientCertPem.length());
                 }
             }
 
             if (mtlsName != null && !mtlsName.isBlank()) {
                 if (clientCertHeader == null) {
-                    LOG.warn("InteractionsFilter: mtls configured for port {} (name={}) but client certificate header missing - rejecting",
+                    LOG.error("InteractionsFilter: mtls configured for port {} (name={}) but client certificate header missing - rejecting",
                             requestPort, mtlsName);
                     origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "Missing client certificate header");
                     return;
@@ -194,7 +192,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     }
 
                     if (s3Uri == null) {
-                        LOG.warn("InteractionsFilter: no trust-store mapping for '{}' - rejecting request", trustStoreName);
+                        LOG.error("InteractionsFilter: no trust-store mapping for '{}' - rejecting request", trustStoreName);
                         origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "Invalid mTLS trust-store mapping");
                         return;
                     }
@@ -230,8 +228,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error: " + ioe.getMessage());
                 return;
             } catch (CertificateException ce) {
-                LOG.warn("InteractionsFilter: mTLS verification failed for port={} - {}", requestPort, ce.getMessage());
-                origResponse.sendError(HttpStatus.UNAUTHORIZED.value(), "mTLS verification failed: " + ce.getMessage());
+                // Log full details (stack trace and cause) and return a JSON body with a descriptive message.
+                LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:", requestPort, ce);
+                origResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+                origResponse.setContentType("application/json;charset=UTF-8");
+                String description = ce.getMessage() != null ? ce.getMessage() : "mTLS verification failed";
+                // escape backslashes, quotes and newlines for safe JSON embedding
+                description = description.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+                String json = String.format("{\"error\":\"mTLS verification failed\",\"description\":\"%s\"}", description);
+                try {
+                    origResponse.getWriter().write(json);
+                    origResponse.getWriter().flush();
+                } catch (IOException ioe) {
+                    LOG.error("InteractionsFilter: failed to write error response", ioe);
+                }
                 return;
             } catch (RuntimeException re) {
                 LOG.error("InteractionsFilter: unexpected runtime error during mTLS processing", re);
@@ -264,7 +274,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 // fallback generic error
                 origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error");
                 return;
-             }
+            }
 
             // success: proceed
             String interactionId = UUID.randomUUID().toString();
@@ -297,7 +307,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     String val = req.getHeader(hn);
                     try {
                         return Integer.parseInt(val);
-                    } catch (Exception ignored) { }
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
@@ -336,8 +347,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Verify certificate chain against provided CA certs.
-     * Wraps underlying checked exceptions into CertificateException to simplify callers.
+     * Verify certificate chain against provided CA certs. Wraps underlying
+     * checked exceptions into CertificateException to simplify callers.
      */
     private void verifyCertificateChain(X509Certificate[] clientChain, X509Certificate[] caCerts)
             throws CertificateException {
@@ -370,7 +381,23 @@ public class InteractionsFilter extends OncePerRequestFilter {
             params.setRevocationEnabled(false);
             CertPathValidator.getInstance("PKIX").validate(certPath, params);
         } catch (CertPathValidatorException | java.security.NoSuchAlgorithmException | java.security.InvalidAlgorithmParameterException e) {
-            throw new CertificateException("Certificate chain validation failed", e);
+            // Build a more detailed diagnostic message for logs / internal use
+            StringBuilder details = new StringBuilder();
+            details.append(e.getClass().getSimpleName());
+            if (e instanceof CertPathValidatorException) {
+                CertPathValidatorException cpve = (CertPathValidatorException) e;
+                details.append(": reason=").append(cpve.getReason());
+                try {
+                    int idx = cpve.getIndex();
+                    details.append(", certIndex=").append(idx);
+                } catch (Throwable ignored) { }
+            }
+            if (e.getMessage() != null) {
+                details.append(", message=").append(e.getMessage());
+            }
+            // Throw CertificateException with the detailed message as internal diagnostic.
+            // Note: callers should log the exception (including cause) but return a generic message to clients.
+            throw new CertificateException("Certificate chain validation failed: " + details.toString(), e);
         }
     }
 

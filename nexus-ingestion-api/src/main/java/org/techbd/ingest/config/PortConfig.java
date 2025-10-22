@@ -132,12 +132,12 @@ public class PortConfig implements InitializingBean {
             log.info("PortConfig: Attempting to load port config from s3://{}/{} (region={})", bucket, key, region);
             ResponseBytes<GetObjectResponse> bytes = s3.getObjectAsBytes(req);
             byte[] data = bytes.asByteArray();
-            log.debug("PortConfig: Fetched {} bytes from s3://{}/{}", data.length, bucket, key);
+            log.info("PortConfig: Fetched {} bytes from s3://{}/{}", data.length, bucket, key);
 
             rawJson = new String(data, StandardCharsets.UTF_8);
             // Log up to first 2KB to avoid huge logs
             String preview = rawJson.length() > 2048 ? rawJson.substring(0, 2048) + "...(truncated)" : rawJson;
-            log.trace("PortConfig: JSON preview: {}", preview);
+            log.info("PortConfig: JSON preview: {}", preview);
 
             ObjectMapper mapper = new ObjectMapper();
             portConfigurationList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {

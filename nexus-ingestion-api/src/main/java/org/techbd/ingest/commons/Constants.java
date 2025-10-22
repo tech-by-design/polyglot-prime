@@ -22,6 +22,7 @@ public class Constants {
     public static final String REQ_X_FORWARDED_PORT = "x-forwarded-port";
     public static final String REQ_HEADER_USER_AGENT = "user-agent";
     public static final String REQ_HEADER_CONTENT_DISPOSITION = "content-disposition";
+    public static final String REQ_HEADER_MTLS_CLIENT_CERT = "X-Amzn-Mtls-Clientcert";
 
     public static final String DEFAULT_TENANT_ID = "unknown-tenant";
     public static final String DEFAULT_USER_AGENT = "unknown-user-agent";
@@ -37,4 +38,8 @@ public class Constants {
     public static final String DELIVERY_TYPE = "deliveryType";
     public static final String FACILITY = "facility";   
     public static final String MESSAGE_CODE = "messageCode";
+    
+    public static final String MTLS_BUCKET_NAME = "MTLS_BUCKET";
+
+
     }
