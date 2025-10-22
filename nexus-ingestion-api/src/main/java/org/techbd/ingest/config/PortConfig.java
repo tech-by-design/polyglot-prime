@@ -8,6 +8,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -106,9 +107,20 @@ public class PortConfig implements InitializingBean {
             return;
         }
 
+        // S3Client s3 = (this.s3Client != null)
+        //         ? this.s3Client
+        //         : S3Client.builder()
+        //         .endpointOverride(URI.create("http://localhost:4566"))
+        //         .region(software.amazon.awssdk.regions.Region.of(region))
+        //         .build();
+
         S3Client s3 = (this.s3Client != null)
                 ? this.s3Client
-                : S3Client.builder().region(software.amazon.awssdk.regions.Region.of(region)).build();
+                : S3Client.builder()
+                .endpointOverride(URI.create("http://localhost:4566"))
+                .region(software.amazon.awssdk.regions.Region.of(region))
+               .forcePathStyle(true)
+                .build();
 
         GetObjectRequest req = GetObjectRequest.builder()
                 .bucket(bucket)
