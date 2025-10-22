@@ -16,10 +16,8 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -30,7 +28,6 @@ import org.bouncycastle.openssl.PEMParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.techbd.ingest.config.MtlsConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.util.AppLogger;
@@ -48,20 +45,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.techbd.ingest.commons.Constants;
+
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
 
     private final TemplateLogger LOG;
 
-    private final MtlsConfig mtlsConfig;
     private final PortConfig portConfig;
     private final S3Client s3Client;
     private final Cache<String, X509Certificate[]> caCache;  // Use Caffeine or Guava for caching
 
     // constructor now accepts PortConfig
-    public InteractionsFilter(AppLogger appLogger, MtlsConfig mtlsConfig, PortConfig portConfig, S3Client s3Client) {
+    public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, S3Client s3Client) {
         this.LOG = appLogger.getLogger(InteractionsFilter.class);
-        this.mtlsConfig = mtlsConfig;
         this.portConfig = portConfig;
         this.s3Client = s3Client;
         this.caCache = CacheBuilder.newBuilder().expireAfterWrite(Duration.ofMinutes(60)).build();
@@ -81,19 +77,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
             int requestPort = resolveRequestPort(origRequest);
             LOG.info("InteractionsFilter: resolved request port={}", requestPort);
 
-            // // If this port is not in enabled ports -> skip mTLS enforcement for this request
-            // Set<Integer> enabledPorts = Collections.emptySet();
-            // try {
-            //     enabledPorts = mtlsConfig.getEnabledPorts();
-            // } catch (Exception ex) {
-            //     LOG.error("InteractionsFilter: unable to read enabled ports from MtlsConfig", ex);
-            // }
-            // LOG.info("InteractionsFilter: mtls enabled ports={}", enabledPorts);
-            // if (!enabledPorts.contains(requestPort)) {
-            //     LOG.info("InteractionsFilter: port {} not enabled for mTLS -> continuing chain", requestPort);
-            //     chain.doFilter(origRequest, origResponse);
-            //     return;
-            // }
             // 2) find port config entry that matches the request port
             PortConfig.PortEntry portEntry = null;
             if (portConfig != null && portConfig.isLoaded()) {
@@ -106,8 +89,17 @@ public class InteractionsFilter extends OncePerRequestFilter {
             }
 
             if (portEntry == null) {
-                LOG.error("InteractionsFilter: no PortConfig entry found for port {} - rejecting request", requestPort);
-                origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "No port configuration for mTLS");
+                String msg = String.format("No port configuration entry found for port %d - rejecting request", requestPort);
+                LOG.warn("InteractionsFilter: {}", msg);
+                origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+                origResponse.setContentType("application/json;charset=UTF-8");
+                String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                try {
+                    origResponse.getWriter().write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
+                    origResponse.getWriter().flush();
+                } catch (IOException ioe) {
+                    LOG.error("InteractionsFilter: failed to write Bad Request response", ioe);
+                }
                 return;
             }
             LOG.info("InteractionsFilter: found PortConfig entry for port {} -> {}", requestPort, portEntry);
@@ -136,9 +128,17 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
             if (mtlsName != null && !mtlsName.isBlank()) {
                 if (clientCertHeader == null) {
-                    LOG.error("InteractionsFilter: mtls configured for port {} (name={}) but client certificate header missing - rejecting",
-                            requestPort, mtlsName);
-                    origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "Missing client certificate header");
+                    String msg = String.format("Missing required header '%s' for mTLS on port %d", Constants.REQ_HEADER_MTLS_CLIENT_CERT, requestPort);
+                    LOG.warn("InteractionsFilter: {}", msg);
+                    origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+                    origResponse.setContentType("application/json;charset=UTF-8");
+                    String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                    try {
+                        origResponse.getWriter().write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
+                        origResponse.getWriter().flush();
+                    } catch (IOException ioe) {
+                        LOG.error("InteractionsFilter: failed to write Bad Request response for missing mTLS header", ioe);
+                    }
                     return;
                 }
             } else {
@@ -152,13 +152,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     ? (mtlsName + "-bundle.pem")
                     : null;
 
+            // If mtls is not configured for this port, skip mTLS processing entirely.
+            if (mtlsName == null || mtlsName.isBlank()) {
+                LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS", requestPort);
+                chain.doFilter(origRequest, origResponse);
+                return;
+            }
+
             try {
                 // parse client certificate chain (if header present)
                 X509Certificate[] clientChain = clientCertPem != null ? parsePemChain(clientCertPem) : new X509Certificate[0];
                 LOG.info("InteractionsFilter: parsed client certificate chain length={}", clientChain.length);
 
                 // 4) obtain CA/server cert(s) to validate client against:
-                final X509Certificate[] caCerts;
+                X509Certificate[] caCerts = null;
                 if (serverBundleKey != null) {
                     final String bucketFinal = mtlsBucket;
                     final String keyFinal = serverBundleKey;
@@ -181,39 +188,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         }
                     });
                     LOG.info("InteractionsFilter: loaded CA bundle from S3, cert count={}", caCerts != null ? caCerts.length : 0);
-                } else {
-                    // fallback: use MtlsConfig SSM mapping (trust-store name derived from mtlsName or default)
-                    String trustStoreName = (mtlsName == null || mtlsName.isBlank()) ? "default-trust-store" : (mtlsName + "-trust-store");
-                    String s3Uri = null;
-                    try {
-                        s3Uri = mtlsConfig.getTrustStoreMappings().get(trustStoreName);
-                    } catch (Exception ex) {
-                        LOG.error("InteractionsFilter: error reading trust-store mappings from MtlsConfig", ex);
-                    }
-
-                    if (s3Uri == null) {
-                        LOG.error("InteractionsFilter: no trust-store mapping for '{}' - rejecting request", trustStoreName);
-                        origResponse.sendError(HttpStatus.BAD_REQUEST.value(), "Invalid mTLS trust-store mapping");
-                        return;
-                    }
-
-                    final String s3UriFinal = s3Uri;
-                    LOG.info("InteractionsFilter: fetching CA bundle from uri fallback {}", s3UriFinal);
-                    X509Certificate[] cached = caCache.getIfPresent(s3UriFinal);
-                    if (cached != null) {
-                        LOG.info("InteractionsFilter: CA bundle cache hit for {}", s3UriFinal);
-                    } else {
-                        LOG.info("InteractionsFilter: CA bundle cache miss for {}", s3UriFinal);
-                    }
-                    caCerts = caCache.get(s3UriFinal, () -> {
-                        try {
-                            return fetchCaBundleFromS3Uri(s3UriFinal);
-                        } catch (Exception ex) {
-                            LOG.error("InteractionsFilter: error fetching CA bundle from S3 uri {}", s3UriFinal, ex);
-                            throw new RuntimeException(ex);
-                        }
-                    });
-                    LOG.info("InteractionsFilter: loaded CA bundle from fallback s3 uri, cert count={}", caCerts != null ? caCerts.length : 0);
                 }
 
                 // 5) verify client chain against CA certs (server bundle is used as trust anchors)
@@ -353,7 +327,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private void verifyCertificateChain(X509Certificate[] clientChain, X509Certificate[] caCerts)
             throws CertificateException {
         if (clientChain == null || clientChain.length == 0) {
-            throw new CertificateException("No client certificates provided");
+            throw new CertificateException("No valid client certificates provided");
         }
         if (caCerts == null || caCerts.length == 0) {
             throw new CertificateException("No CA certificates provided for validation");
@@ -390,7 +364,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 try {
                     int idx = cpve.getIndex();
                     details.append(", certIndex=").append(idx);
-                } catch (Throwable ignored) { }
+                } catch (Throwable ignored) {
+                }
             }
             if (e.getMessage() != null) {
                 details.append(", message=").append(e.getMessage());
@@ -400,11 +375,4 @@ public class InteractionsFilter extends OncePerRequestFilter {
             throw new CertificateException("Certificate chain validation failed: " + details.toString(), e);
         }
     }
-
-    // private String getMtlsValueFromConfig(HttpServletRequest req) {
-    //     String val = req.getParameter("mtls");
-    //     if (val != null && !val.isBlank()) return val;
-    //     String h = req.getHeader("X-Mtls-Profile");
-    //     return h != null ? h : "default";
-    // }
 }
