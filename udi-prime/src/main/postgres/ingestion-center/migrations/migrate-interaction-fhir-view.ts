@@ -118,16 +118,6 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ${dependenciesSQL}
       PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
-          --DROP INDEX IF EXISTS techbd_udi_ingress.sat_interaction_http_request_created_at_idx;
-          -- 1. Create index: sat_interaction_http_request_jsonb_extracted_nature_nature_idx
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_nature_nature_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_jsonb_extracted_nature_nature_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree((nature ->> ''nature''))';
-          END IF;
 
           -- 3. Recreate new created_at index
           IF NOT EXISTS (
@@ -137,77 +127,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_created_at_idx 
                       ON techbd_udi_ingress.sat_interaction_http_request USING btree (created_at DESC)';
-          END IF;
-
-          -- 4. GIN index: payload_user_agent
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_user_agent_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_user_agent_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> ''request'' -> ''userAgent''))';
-          END IF;
-
-          -- 5. GIN index: payload_clientip
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_clientip_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_clientip_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> ''request'' -> ''clientIpAddress''))';
-          END IF;
-
-          -- 6. GIN index: payload_issues
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_issues_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_issues_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin (((payload -> ''response'' -> ''responseBody'' -> ''OperationOutcome'' -> ''validationResults'' -> 0) -> ''issues''))';
-          END IF;
-
-          -- 7. GIN index: payload_response_header
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_response_header_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_response_header_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> ''response'' -> ''headers''))';
-          END IF;
-
-          -- 8. GIN index: payload_entry
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_entry_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_entry_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> ''entry''))';
-          END IF;
-
-          -- 9. BTREE index: payload_user_agent_text
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_user_agent_text_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_user_agent_text_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree ((payload -> ''request'' ->> ''userAgent''))';
-          END IF;
-
-          -- 10. BTREE index: payload_clientip_text
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_payload_clientip_text_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_payload_clientip_text_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree ((payload -> ''request'' ->> ''clientIpAddress''))';
-          END IF;
+          END IF;         
 
           -- 11. BTREE index: from_state
           IF NOT EXISTS (
@@ -228,17 +148,7 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'CREATE INDEX sat_interaction_http_request_to_state_idx 
                       ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state)';
           END IF;
-
-          -- 13. BTREE index: jsonb_extracted_nature
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_nature_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_jsonb_extracted_nature_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (((payload ->> ''nature''::text)))';
-          END IF;
-
+         
           -- 14. GIN index: jsonb_extracted_payload
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -247,27 +157,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_jsonb_extracted_payload_idx 
                       ON techbd_udi_ingress.sat_interaction_http_request USING gin (payload)';
-          END IF;
-
-          -- 15. BTREE index: jsonb_extracted_tenant_id
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_tenant_id_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_jsonb_extracted_tenant_id_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree ((((payload -> ''nature''::text) ->> ''tenant_id''::text)))';
-          END IF;
-
-          -- 16. GIN index: nature
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_nature_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_nature_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin (nature)';
-          END IF;
+          END IF;         
 
           ANALYZE techbd_udi_ingress.hub_interaction;
           --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
