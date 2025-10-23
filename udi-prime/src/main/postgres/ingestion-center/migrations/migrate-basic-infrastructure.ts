@@ -685,6 +685,25 @@ const users = SQLa.tableDefinition("users", {
   },
 });
 
+const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
+    bundle_id:text(),
+    hub_interaction_id:text(),
+    replay_master_id:text(),
+    replay_status:textNullable(),
+    error_message:jsonbNullable(),
+    elaboration:jsonbNullable(),
+    ...dvts.housekeeping.columns
+  }, {
+    isIdempotent: true,
+    sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("bundle_id"),
+    ];
+  },
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1819,6 +1838,8 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${users}
+
+      ${fhirReplayDetails}
 
       ${ccdaValidationErrorsSat}
       IF NOT EXISTS (
