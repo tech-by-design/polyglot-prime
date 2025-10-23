@@ -6122,8 +6122,9 @@ DECLARE
    	v_disposition_json			JSONB 	:= NULL;
    	v_payload					JSONB 	:= NULL;
     v_elaboration 				JSONB 	:= NULL;
-	v_elaboration_steps 		JSONB	:= '[]'::jsonb;
-    v_user_id 					TEXT  	:= COALESCE(p_user_id, CURRENT_USER);	
+	v_elaboration_steps_text 	TEXT[]  := ARRAY[]::text[]; 
+	v_elaboration_steps_jsonb 	JSONB 	:= '[]'::jsonb;
+	v_user_id 					TEXT  	:= COALESCE(p_user_id, CURRENT_USER);	
 	v_source_hub_interaction_id TEXT  	:= CASE 
 								            WHEN p_interaction_key IN ('/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/') THEN p_interaction_id
 								            ELSE p_source_hub_interaction_id
@@ -6141,9 +6142,18 @@ BEGIN
 	 - source_type: fhir/hl7/csv/ccda
 	*/
 
-	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In register_interaction_fhir_request function'));
-
-	IF v_nature_denorm NOT IN('Original FHIR Payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
+	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_fhir_request function');
+    
+	IF v_nature_denorm NOT IN(
+			'Original FHIR Payload', 
+			'techByDesignDisposition', 
+			'Forward HTTP Request', 
+			'Forwarded HTTP Response', 
+			'Forwarded HTTP Response Error', 
+			'Forwarded HTTP Request Replay',
+			'Forwarded HTTP Response Replay',
+			'Forwarded HTTP Response Replay Error'
+	) THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid FHIR nature',
 								  'payload', p_payload,
@@ -6169,7 +6179,7 @@ BEGIN
 	        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
 	        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance);
 
-	        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into hub_interaction'));   
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_interaction');  
 	    EXCEPTION
 	        WHEN unique_violation THEN
 	            IF NOT p_hub_upsert_behavior THEN
@@ -6209,7 +6219,7 @@ BEGIN
 				p_hub_nexus_interaction_id, p_interaction_id, v_created_by, v_created_at, v_provenance
 			) ON CONFLICT DO NOTHING;
 
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into link_nexus_interaction'));	 
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into link_nexus_interaction');
 		END IF;
 		
 		IF NOT v_return_status THEN
@@ -6225,7 +6235,7 @@ BEGIN
 		            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
 		        );
 
-		        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{3}', jsonb_build_object('3', 'Insert into sat_interaction_http_request'));
+		        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_interaction_http_request');
 
 		       	--1) Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'Original FHIR Payload') THEN
@@ -6246,8 +6256,8 @@ BEGIN
 				        provenance 					=> v_provenance,
 						p_additional_details		=> COALESCE(p_additional_details, '{}'::jsonb) || jsonb_build_object('version', p_techbd_version_number) /*Add the version number to the additional_details json*/
 			       	); 
-
-			      	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{4}', jsonb_build_object('4', 'Insert into user info'));			        	
+					
+			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Called sat_interaction_user_upserted');			        	
 			    END IF;
 			   
 				v_payload := p_payload;
@@ -6258,7 +6268,7 @@ BEGIN
 							p_interaction_key
 						);
 					
-						v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{5}', jsonb_build_object('5', 'Get the techByDesignDisposition json after process_json_action_rules'));
+						v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Get the techByDesignDisposition json after process_json_action_rules');
 						v_payload = v_disposition_json;
 				END IF;
 		
@@ -6282,7 +6292,7 @@ BEGIN
 						p_additional_details			=> p_additional_details,
 						p_techbd_version_number			=> p_techbd_version_number
 			       	);
-			       	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{6}', jsonb_build_object('6', 'Insert into sat_interaction_fhir_request'));															
+			       	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '6: Inserted into sat_interaction_fhir_request');														
 			    
 				-- Update dashboard_widget_metadata
 		       	IF (v_nature_denorm = 'Original FHIR Payload') THEN
@@ -6303,7 +6313,7 @@ BEGIN
 											 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 											 'interaction_id', p_interaction_id);
 			
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{7}', jsonb_build_object('7', 'Get the return json'));															
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '7: Get the return json');															
 			    
 			EXCEPTION
 		        WHEN OTHERS THEN
@@ -6336,22 +6346,41 @@ BEGIN
 		         						'disposition_json', v_disposition_json::TEXT,
 										'techbd_version_number', p_techbd_version_number
 		         						);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
-       																'register_interaction_fhir_request Logs'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
-	END IF;
 
-	IF v_is_exception = true THEN    
-        -- Log the exception, reusing the previous exception ID if it exists
-        v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-        v_exception_id := techbd_udi_ingress.register_issue(
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(
+        v_exception_id,
+        p_interaction_key,
+        v_created_by,
+        v_provenance,
+        'info'::text,
+        'register_interaction_fhir_request Logs'::text,
+        COALESCE(p_user_id, v_created_by),
+        (CASE WHEN v_is_exception THEN 'failure' ELSE 'success' END),
+        NULL::text,
+        0,
+        v_elaboration,
+        v_tenant_id_denorm,
+        p_interaction_id
+    );
+
+    -- If exception occurred, register issue
+    IF v_is_exception THEN
+		v_exception_id := techbd_udi_ingress.register_issue(
             v_exception_id, p_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_id_denorm, p_interaction_id
         );
-	END IF;
+    END IF;
    	RETURN v_return;
 END;
 $function$
@@ -8585,64 +8614,79 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     v_return jsonb := '{}'::jsonb;
-    v_bundle_ids TEXT[];
-    v_interaction_ids TEXT[];
-    v_count INTEGER;
 BEGIN
-    -- Insert data and collect IDs
-    WITH inserted AS (
-        INSERT INTO techbd_udi_ingress.fhir_replay_details (
-            bundle_id,
-            hub_interaction_id,
-            replay_master_id,
-            replay_status,
-            error_message,
-            elaboration,
-            created_at,
-            created_by,
-            provenance
-        )
-        SELECT 
-            bundle_id,
-            hub_interaction_id,
-            p_replay_master_id,
-            NULL,
-            NULL,
-            NULL,
-            CURRENT_TIMESTAMP,
-            CURRENT_USER,
-            'fhir_replay'
-        FROM techbd_udi_ingress.sat_interaction_fhir_request
-        WHERE nature = 'Forwarded HTTP Response Error'
-          AND to_state = 'FAIL'
-          AND (
+    -- Step 1: Insert only new rows (do not overwrite existing ones)
+    INSERT INTO techbd_udi_ingress.fhir_replay_details (
+        bundle_id,
+        hub_interaction_id,
+        replay_master_id,
+        replay_status,
+        error_message,
+        elaboration,
+        created_at,
+        created_by,
+        provenance
+    )
+    SELECT 
+        bundle_id,
+        hub_interaction_id,
+        p_replay_master_id,
+        NULL,
+        NULL,
+        NULL,
+        CURRENT_TIMESTAMP,
+        CURRENT_USER,
+        'fhir_replay'
+    FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+    WHERE nature = 'Forwarded HTTP Response Error'
+      AND to_state = 'FAIL'
+      AND (
                 (start_time IS NULL AND end_time IS NULL)
                 OR (
                     (start_time IS NOT NULL AND end_time IS NOT NULL)
-                    AND created_at >= start_time
-                    AND created_at < end_time
+                    AND fhir.created_at >= start_time
+                    AND fhir.created_at < end_time
                 )
-            )
-		ORDER BY created_at 
-        ON CONFLICT (bundle_id) DO NOTHING
-        RETURNING bundle_id, hub_interaction_id
-    )
-    SELECT 
-        array_agg(bundle_id),
-        array_agg(hub_interaction_id),
-        count(*) 
-    INTO v_bundle_ids, v_interaction_ids, v_count
-    FROM inserted;
+           )
+    ON CONFLICT (bundle_id) DO NOTHING;
 
-    -- Ensure non-null JSON structure
-    v_return := jsonb_build_object(
+    -- Step 2: Return replay master ID + bundles info (with existing error_message if any)
+    SELECT jsonb_build_object(
+        'bundle_count', COUNT(rq.bundle_id),
         'replay_master_id', p_replay_master_id,
-        'bundle_ids', COALESCE(v_bundle_ids, ARRAY[]::text[]),
-        'hub_interaction_ids', COALESCE(v_interaction_ids, ARRAY[]::text[]),
-        'bundle_count', COALESCE(v_count, 0)
-    );
+        'bundles', jsonb_agg(
+            jsonb_build_object(
+                'bundleid', rq.bundle_id,
+                'interactionid', rq.hub_interaction_id,
+                'tenantID', rq.tenant_id,
+                'source', rq.source_type,
+                'errorMessage', CASE WHEN rd.replay_status IS NOT NULL THEN 'already replayed | status: ' || rd.replay_status || ' | error: ' || rd.error_message ELSE NULL END,
+                'groupInteractionId', CASE WHEN rq.source_type = 'CSV' THEN rq.group_hub_interaction_id ELSE NULL END,
+                'zipInteractionID', CASE WHEN rq.source_type = 'CSV' THEN rq.source_hub_interaction_id ELSE NULL END
+            )
+        )
+    )
+    INTO v_return
+    FROM techbd_udi_ingress.sat_interaction_fhir_request rq
+    LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
+       ON rq.bundle_id = rd.bundle_id
+       OR rq.hub_interaction_id = rd.hub_interaction_id
+    WHERE rq.nature = 'Forwarded HTTP Response Error'
+      AND rq.to_state = 'FAIL'
+      AND (
+                (start_time IS NULL AND end_time IS NULL)
+                OR (
+                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+                    AND rq.created_at >= start_time
+                    AND rq.created_at < end_time
+                )
+           );
 
-    RETURN v_return;
+    RETURN COALESCE(v_return, jsonb_build_object(
+        'bundle_count', 0,
+        'replay_master_id', p_replay_master_id,
+        'bundles', '[]'::jsonb
+    ));
 END;
 $function$;
 
@@ -8668,7 +8712,7 @@ DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text,
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_fhir_replay_status(
     p_interaction_id TEXT, 
     p_status TEXT,
-    p_error_message JSONB DEFAULT NULL,
+    p_error_message TEXT DEFAULT NULL,
     p_elaboration JSONB DEFAULT NULL
 ) 
 RETURNS TEXT
