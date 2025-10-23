@@ -690,7 +690,7 @@ const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
     hub_interaction_id:text(),
     replay_master_id:text(),
     replay_status:textNullable(),
-    error_message:jsonbNullable(),
+    error_message:textNullable(),
     elaboration:jsonbNullable(),
     ...dvts.housekeeping.columns
   }, {
