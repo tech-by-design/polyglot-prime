@@ -2354,8 +2354,9 @@ $function$;
   This view provides a consolidated view of failed HTTP requests and associated interactions.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_failure;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failure
-AS SELECT sat_interaction_fhir_request_id,
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failure as
+SELECT DISTINCT ON (hub_interaction_id)
+    sat_interaction_fhir_request_id,
     hub_interaction_id AS interaction_id,
     tenant_id,
     uri,
@@ -2374,20 +2375,20 @@ AS SELECT sat_interaction_fhir_request_id,
     resource_type_set AS resource_types,
     patient_id,
     patient_mrn,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    case 
-    	when (source_type = 'CSV') then 'CSV'
-        WHEN (source_type = 'CCDA') then 'CCDA'
-        WHEN (source_type = 'HL7V2') then 'HL7V2'
-    	when (source_type = 'fhir') then 'FHIR'
-    	when (source_type = 'FHIR') then 'FHIR'
-    	else 'FHIR'
-    end as source_type,   
+    concat_ws('-', tenant_id, organization_id, patient_mrn) AS source_mrn,
+    CASE 
+        WHEN source_type IN ('CSV', 'CCDA', 'HL7V2') THEN source_type
+        WHEN lower(source_type) = 'fhir' THEN 'FHIR'
+        ELSE 'FHIR'
+    END AS source_type,
     source_hub_interaction_id,
-	ig_version,
-	techbd_version_number
-   FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
-WHERE to_state = 'FAIL'::text;
+    ig_version,
+    techbd_version_number
+FROM techbd_udi_ingress.sat_interaction_fhir_request
+WHERE 
+  nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')  and 
+  to_state = 'FAIL' 
+ORDER BY hub_interaction_id, created_at DESC;
 
 /*******************************************************************************************************************************
 Function to process a set of JSON action rules on a given JSON input.
