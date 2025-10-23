@@ -8571,3 +8571,122 @@ FROM
     techbd_udi_ingress.sat_interaction_hl7_validation_errors s
 where
     s.error != '';
+
+/*FHIR Replay Process*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_bundles_to_replay(text, timestamptz, timestamptz);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_bundles_to_replay(
+	p_replay_master_id TEXT,
+    start_time timestamptz DEFAULT NULL,
+    end_time timestamptz DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_return jsonb := '{}'::jsonb;
+    v_bundle_ids TEXT[];
+    v_interaction_ids TEXT[];
+    v_count INTEGER;
+BEGIN
+    -- Insert data and collect IDs
+    WITH inserted AS (
+        INSERT INTO techbd_udi_ingress.fhir_replay_details (
+            bundle_id,
+            hub_interaction_id,
+            replay_master_id,
+            replay_status,
+            error_message,
+            elaboration,
+            created_at,
+            created_by,
+            provenance
+        )
+        SELECT 
+            bundle_id,
+            hub_interaction_id,
+            p_replay_master_id,
+            NULL,
+            NULL,
+            NULL,
+            CURRENT_TIMESTAMP,
+            CURRENT_USER,
+            'fhir_replay'
+        FROM techbd_udi_ingress.sat_interaction_fhir_request
+        WHERE nature = 'Forwarded HTTP Response Error'
+          AND to_state = 'FAIL'
+          AND (
+                (start_time IS NULL AND end_time IS NULL)
+                OR (
+                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+                    AND created_at >= start_time
+                    AND created_at < end_time
+                )
+            )
+		ORDER BY created_at 
+        ON CONFLICT (bundle_id) DO NOTHING
+        RETURNING bundle_id, hub_interaction_id
+    )
+    SELECT 
+        array_agg(bundle_id),
+        array_agg(hub_interaction_id),
+        count(*) 
+    INTO v_bundle_ids, v_interaction_ids, v_count
+    FROM inserted;
+
+    -- Ensure non-null JSON structure
+    v_return := jsonb_build_object(
+        'replay_master_id', p_replay_master_id,
+        'bundle_ids', COALESCE(v_bundle_ids, ARRAY[]::text[]),
+        'hub_interaction_ids', COALESCE(v_interaction_ids, ARRAY[]::text[]),
+        'bundle_count', COALESCE(v_count, 0)
+    );
+
+    RETURN v_return;
+END;
+$function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_payload_for_nyec(text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_payload_for_nyec(p_interaction_id TEXT) 
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$ 
+DECLARE
+    v_payload jsonb;
+BEGIN
+    SELECT payload
+    INTO v_payload
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature = 'Forward HTTP Request'
+      AND hub_interaction_id = p_interaction_id;
+
+    RETURN COALESCE(v_payload, '{}'::jsonb);
+END;
+$function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, jsonb, jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_fhir_replay_status(
+    p_interaction_id TEXT, 
+    p_status TEXT,
+    p_error_message JSONB DEFAULT NULL,
+    p_elaboration JSONB DEFAULT NULL
+) 
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    UPDATE techbd_udi_ingress.fhir_replay_details
+    SET 
+        replay_status = p_status,
+        elaboration   = p_elaboration,
+        error_message = p_error_message
+    WHERE hub_interaction_id = p_interaction_id;
+
+    -- Check if any row was updated
+    IF NOT FOUND THEN
+        RETURN 'No record found for hub_interaction_id: %', p_interaction_id;
+    END IF;
+
+    RETURN p_interaction_id;
+END;
+$function$;
+/*End Of FHIR Replay Process*/
