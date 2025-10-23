@@ -8640,6 +8640,7 @@ BEGIN
     FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
     WHERE nature = 'Forwarded HTTP Response Error'
       AND to_state = 'FAIL'
+	  AND fhir.bundle_id IS NOT NULL
       AND (
                 (start_time IS NULL AND end_time IS NULL)
                 OR (
@@ -8673,6 +8674,7 @@ BEGIN
        OR rq.hub_interaction_id = rd.hub_interaction_id
     WHERE rq.nature = 'Forwarded HTTP Response Error'
       AND rq.to_state = 'FAIL'
+	  AND rq.bundle_id IS NOT NULL
       AND (
                 (start_time IS NULL AND end_time IS NULL)
                 OR (
@@ -8708,7 +8710,7 @@ BEGIN
 END;
 $function$;
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, jsonb, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, text, jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_fhir_replay_status(
     p_interaction_id TEXT, 
     p_status TEXT,
