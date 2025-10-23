@@ -1849,8 +1849,8 @@ BEGIN
     v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('0', 'sat_interaction_fhir_request_upserted function parameters'));
 
     IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
-        WHERE t.hub_interaction_id = p_hub_interaction_id 
-        AND t."key" = p_uri) then
+        WHERE t.hub_interaction_id = p_hub_interaction_id) THEN
+        --AND t."key" = p_uri) then
             v_return_status := true; 
             v_return := NULL;
 			v_error_msg := 'hub_interaction_id is not in the hub_interaction table.';
@@ -8661,6 +8661,7 @@ BEGIN
                 'interactionid', rq.hub_interaction_id,
                 'tenantID', rq.tenant_id,
                 'source', rq.source_type,
+                'uri', rq.uri,
                 'errorMessage', CASE WHEN rd.replay_status IS NOT NULL THEN 'already replayed | status: ' || rd.replay_status || ' | error: ' || rd.error_message ELSE NULL END,
                 'groupInteractionId', CASE WHEN rq.source_type = 'CSV' THEN rq.group_hub_interaction_id ELSE NULL END,
                 'zipInteractionID', CASE WHEN rq.source_type = 'CSV' THEN rq.source_hub_interaction_id ELSE NULL END
