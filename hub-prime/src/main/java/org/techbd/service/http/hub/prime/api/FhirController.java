@@ -374,12 +374,7 @@ public class FhirController {
 
         @PostMapping(value = { "/Bundle/replay", "/Bundle/replay/" })
         @Operation(summary = "Replay FHIR Bundles between a date or datetime range", description = """
-                        Accepts either:
-                        - Date only (e.g., 2025-09-09)
-                        - DateTime with or without timezone:
-                            • 2025-09-09T16:16:42.248+05:30 (ISO-8601)
-                            • 2025-09-09 16:16:42.248 +0530 (PostgreSQL style)
-                        Timezone offsets are supported and automatically normalized to UTC.
+                        Accepts startDate and endDate
                         """)
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Replay triggered successfully."),
