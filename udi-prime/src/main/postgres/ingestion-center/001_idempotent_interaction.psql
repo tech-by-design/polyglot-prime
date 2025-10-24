@@ -2384,11 +2384,34 @@ SELECT DISTINCT ON (hub_interaction_id)
     source_hub_interaction_id,
     ig_version,
     techbd_version_number
-FROM techbd_udi_ingress.sat_interaction_fhir_request
+FROM techbd_udi_ingress.sat_interaction_fhir_request as r1
 WHERE 
-  nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')  and 
-  to_state = 'FAIL' 
+  to_state = 'FAIL'
+  AND (
+        -- ✅ Failed after resubmission
+        (
+          nature = 'Forwarded HTTP Response Replay Error'
+          AND EXISTS (
+              SELECT 1 
+              FROM techbd_udi_ingress.sat_interaction_fhir_request r2
+              WHERE r2.hub_interaction_id = r1.hub_interaction_id
+                AND r2.nature = 'Forwarded HTTP Response Error'
+          )
+        )
+        OR
+        -- ✅ Failed without resubmission
+        (
+          nature = 'Forwarded HTTP Response Error'
+          AND NOT EXISTS (
+              SELECT 1 
+              FROM techbd_udi_ingress.sat_interaction_fhir_request r3
+              WHERE r3.hub_interaction_id = r1.hub_interaction_id
+                AND r3.nature = 'Forwarded HTTP Request Replay'
+          )
+        )
+     )
 ORDER BY hub_interaction_id, created_at DESC;
+
 
 /*******************************************************************************************************************************
 Function to process a set of JSON action rules on a given JSON input.
