@@ -388,6 +388,11 @@ public class FhirController {
 
                 UUID interactionId = UUID.randomUUID();
                  try {
+                         if (startDateStr.equals(endDateStr)) {
+                                 throw new IllegalArgumentException(
+                                                 "startDate cannot be same as endDate for interactionId: "
+                                                                 + interactionId);
+                         }
                         OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
                         OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
 
@@ -402,16 +407,13 @@ public class FhirController {
 
                         return fhirReplayService.replayBundles(request,interactionId.toString(), startDate, endDate);
 
-                } catch (DateTimeParseException | IllegalArgumentException e) {
+                } catch (DateTimeParseException e) {
                         LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for interactionId {}",
                                         startDateStr, endDateStr, interactionId, e);
                         return Map.of(
                                         "status", "Error",
                                         "message",
-                                        "Invalid date-time format. Expected one of: yyyy-MM-dd, yyyy-MM-dd'T'HH:mm:ss.SSSXXX, or yyyy-MM-dd HH:mm:ss.SSS Z");
-                } catch (Exception e) {
-                        LOG.error("Error in replayBundles for interactionId {}", interactionId, e);
-                        return Map.of("status", "Error", "message", "An unexpected system error occurred.");
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
                 } 
         }
 

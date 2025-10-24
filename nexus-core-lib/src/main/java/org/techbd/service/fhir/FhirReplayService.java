@@ -3,11 +3,11 @@ package org.techbd.service.fhir;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -66,12 +66,32 @@ public class FhirReplayService {
         }
         List<Map<String, Object>> bundlesList = (List<Map<String, Object>>) bundlesResponse.get("bundles");
         Map<String, Object> interimResponse = new HashMap<>();
-        interimResponse.put("total_bundles", bundlesList.size()); // clearer key name
+
+        int bundleCount = Optional.ofNullable(bundlesResponse.get("bundle_count"))
+        .map(obj -> {
+            if (obj instanceof Number) {
+                return ((Number) obj).intValue();
+            } else {
+                try {
+                    return Integer.parseInt(obj.toString());
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        })
+        .orElse(0);
+        interimResponse.put("total_bundles", bundleCount);
         interimResponse.put("replay_id", replayId);
-        interimResponse.put("message",
-                "Replay started. Please refer to the Hub UI Interactions > FHIR Data tab for detailed status updates.");
+
+        if (bundleCount == 0) {
+            interimResponse.put("message", "No bundles to replay during this period.");
+        } else {
+            interimResponse.put("message",
+                    "Replay started. Please refer to the Hub UI Interactions > FHIR Data tab for detailed status updates.");
+        }
+
         LOG.info("FHIR-REPLAY Replay started for replayId={} | bundle_count={}",
-                replayId, bundlesList.size());
+                replayId, bundleCount);
         CompletableFuture.runAsync(() -> {
             for (Map<String, Object> bundle : bundlesList) {
                 boolean alreadyReplayed = false;
@@ -95,12 +115,11 @@ public class FhirReplayService {
                             bundleId,
                             tenantId,
                             source);
-                    // If errorMessage already exists, mark as Failed
                     if (errorMessage != null && !errorMessage.isEmpty()) {
                         status = "Failed";
-                        LOG.info("FHIR-REPLAY Skipping replay due to existing error | replayId={} | bundleInteractionId={} | errorMessage={}", 
-                                 replayId, bundleInteractionId, errorMessage);
-                        alreadyReplayed = true;     
+                        LOG.info("FHIR-REPLAY Skipping replay due to existing error | replayId={} | bundleInteractionId={} | zipInteractionId={} | groupInteractionId={} | bundleId={} | errorMessage={}",
+                                 replayId, bundleInteractionId, zipInteractionId, groupInteractionId, bundleId, errorMessage);
+                        alreadyReplayed = true;
                     } else {
                         // Call scoring engine
 
