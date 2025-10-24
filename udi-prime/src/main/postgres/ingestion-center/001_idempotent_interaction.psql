@@ -2015,15 +2015,15 @@ BEGIN
         END IF;
     END IF;
 
-    IF(NOT v_return_status AND LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
+    IF(NOT v_return_status AND LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'), LOWER('Forwarded HTTP Request Replay'), LOWER('Forwarded HTTP Response Replay'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
         v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 
-        IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
+        IF(LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
             v_passed := FALSE;
             v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);              
         END IF;
             
-        IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN 
+        IF(LOWER(p_nature) IN (LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay'))) THEN 
             v_response_status := substring(p_payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');                   
             IF v_response_status IS NOT NULL AND v_response_status = 'PASS' THEN
                 v_passed := TRUE;
