@@ -8669,7 +8669,7 @@ BEGIN
                 OR (
                     (start_time IS NOT NULL AND end_time IS NOT NULL)
                     AND fhir.created_at >= start_time
-                    AND fhir.created_at < end_time
+                    AND fhir.created_at <= end_time
                 )
            )
     ON CONFLICT (bundle_id) DO NOTHING;
@@ -8704,7 +8704,7 @@ BEGIN
                 OR (
                     (start_time IS NOT NULL AND end_time IS NOT NULL)
                     AND rq.created_at >= start_time
-                    AND rq.created_at < end_time
+                    AND rq.created_at <= end_time
                 )
            );
 
