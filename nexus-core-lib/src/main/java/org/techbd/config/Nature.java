@@ -14,7 +14,9 @@ public enum Nature {
     FORWARD_HTTP_REQUEST("Forward HTTP Request"),
     FORWARDED_HTTP_RESPONSE("Forwarded HTTP Response"),
     FORWARDED_HTTP_RESPONSE_ERROR("Forwarded HTTP Response Error"),
-
+    FORWARDED_HTTP_REQUEST_REPLAY("Forwarded HTTP Request Replay"),
+    FORWARDED_HTTP_RESPONSE_REPLAY("Forwarded HTTP Response Replay"),
+    FORWARDED_HTTP_RESPONSE_REPLAY_ERROR("Forwarded HTTP Response Replay Error"),
     // CSV
     ORIGINAL_CSV_ZIP_ARCHIVE("Original CSV Zip Archive"),
     ORIGINAL_FLAT_FILE_CSV("Original Flat File CSV"),
