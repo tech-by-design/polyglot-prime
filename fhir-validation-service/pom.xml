@@ -13,9 +13,8 @@
     </parent>
 
     <artifactId>fhir-validation-service</artifactId>
-    <packaging>war</packaging>
     <name>Fhir Validation Service</name>
-    <description>Standalone WAR for FHIR Validation</description>
+    <description>Standalone application for FHIR Validation</description>
     <properties>
         <aws.sdk.version>2.28.0</aws.sdk.version>
 	</properties>
@@ -46,7 +45,7 @@
             <artifactId>udi-jooq-ingress</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <systemPath>${basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
+            <systemPath>${project.basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
