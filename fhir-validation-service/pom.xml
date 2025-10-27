@@ -24,7 +24,7 @@
 		<repository>
 			<id>root-m2-repository</id>
 			<name>Root .m2 Repository</name>
-			<url>file:/${env.ORG_TECHBD_MAVEN_ROOT_DIR}/.m2/repository</url>
+			<url>file:/${env.TECHBD_MAVEN_ROOT_DIR}/.m2/repository</url>
 		</repository>
 		<!-- Default local Maven repository for developer machines -->
 		<repository>
