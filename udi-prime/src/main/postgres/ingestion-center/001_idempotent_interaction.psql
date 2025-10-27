@@ -4529,16 +4529,46 @@ of throughput, success vs. failure, and data validation results.
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http AS
-WITH fhir_summary AS (
+ WITH success_flags AS (
     SELECT
         source_hub_interaction_id,
-        SUM(CASE WHEN nature = 'Forwarded HTTP Response' AND source_type = 'CSV' THEN 1 ELSE 0 END) AS fhir_count_success,
-        SUM(CASE WHEN nature = 'Forwarded HTTP Response Error' AND source_type = 'CSV' THEN 1 ELSE 0 END) AS fhir_count_failed,
-        COUNT(hub_interaction_id) AS fhir_count
+        MAX(CASE WHEN nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay') THEN 1 ELSE 0 END) AS has_success
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Error')
-      AND source_type = 'CSV'
+    WHERE 
+        nature IN (
+            'Forwarded HTTP Response',
+            'Forwarded HTTP Response Replay',
+            'Forwarded HTTP Response Error',
+            'Forwarded HTTP Response Replay Error'
+        )
+        AND source_type = 'CSV'
     GROUP BY source_hub_interaction_id
+),
+fhir_summary AS (
+    SELECT
+        r.source_hub_interaction_id,
+        SUM(CASE WHEN r.nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay') THEN 1 ELSE 0 END) AS fhir_count_success,
+        SUM(
+            CASE 
+                WHEN r.nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')
+                     AND COALESCE(f.has_success, 0) = 0
+                THEN 1 
+                ELSE 0 
+            END
+        ) AS fhir_count_failed,
+        COUNT(r.hub_interaction_id) AS fhir_count
+    FROM techbd_udi_ingress.sat_interaction_fhir_request r
+    LEFT JOIN success_flags f
+        ON r.source_hub_interaction_id = f.source_hub_interaction_id
+    WHERE 
+        r.nature IN (
+            'Forwarded HTTP Response',
+            'Forwarded HTTP Response Replay',
+            'Forwarded HTTP Response Error',
+            'Forwarded HTTP Response Replay Error'
+        )
+        AND r.source_type = 'CSV'
+    GROUP BY r.source_hub_interaction_id
 )
 SELECT 
     sizfr.tenant_id_lower,
@@ -4549,19 +4579,19 @@ SELECT
     sizfr.csv_zip_file_name,
     sizfr.origin,
     sizfr.sftp_session_id,
-	INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) as status,
-	sizfr.total_number_of_files_in_zip_file as total_number_of_files_in_zip_file,
-	sizfr.number_of_fhir_bundles_generated_from_zip_file as number_of_fhir_bundles_generated_from_zip_file,
-	COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
-	COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
-	sizfr.data_validation_status as data_validation_status,
-	'full_operation_outcome' AS selected_field_for_download,
-	techbd_version_number
+    INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) AS status,
+    sizfr.total_number_of_files_in_zip_file,
+    sizfr.number_of_fhir_bundles_generated_from_zip_file,
+    COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
+    COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
+    sizfr.data_validation_status,
+    'full_operation_outcome' AS selected_field_for_download,
+    techbd_version_number
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
 LEFT JOIN
     fhir_summary
-    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id ;
+    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id;
 
 
 /*******************************************************************************************
