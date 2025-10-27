@@ -69,6 +69,24 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(), origRequest.getRequestURI());
 
+        // DEBUG: list all headers received (temporary - remove this later)
+        try {
+            Enumeration<String> headerNames = origRequest.getHeaderNames();
+            if (headerNames != null) {
+                while (headerNames.hasMoreElements()) {
+                    String name = headerNames.nextElement();
+                    List<String> values = new ArrayList<>();
+                    Enumeration<String> vals = origRequest.getHeaders(name);
+                    while (vals.hasMoreElements()) {
+                        values.add(vals.nextElement());
+                    }
+                    LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
+        }
+
         if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)
                 && !origRequest.getRequestURI().equals("/")
                 && !origRequest.getRequestURI().startsWith("/actuator/health")) {
@@ -196,7 +214,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
             } catch (ExecutionException ee) {
                 LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
-                throw new IOException("Failed to load CA bundle from cache/S3", ee);
+                // return 500 with a small JSON body (similar handling as IOException)
+                origResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                origResponse.setContentType("application/json;charset=UTF-8");
+                String msg = "Failed to load CA bundle from cache/S3";
+                String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                try {
+                    origResponse.getWriter().write(String.format("{\"error\":\"Internal Server Error\",\"description\":\"%s\"}", safe));
+                    origResponse.getWriter().flush();
+                } catch (IOException ioe2) {
+                    LOG.error("InteractionsFilter: failed to write Internal Server Error response", ioe2);
+                }
+                return;
             } catch (IOException ioe) {
                 LOG.error("InteractionsFilter: IO error during mTLS processing", ioe);
                 origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error: " + ioe.getMessage());
