@@ -13,7 +13,6 @@
     </parent>
 
     <artifactId>csv-service</artifactId>
-    <packaging>war</packaging>
     <name>CSV Service</name>
     <description>Standalone WAR for CSV Processing</description>
     <repositories>
@@ -46,7 +45,7 @@
             <artifactId>udi-jooq-ingress</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <systemPath>${basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
+            <systemPath>${project.basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -253,20 +252,10 @@
 
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
-      	<resources>
+        <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <excludes>
-                    <exclude>ig-packages/**/*</exclude>
-                </excludes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>ig-packages/**/*</include>
-                </includes>
-                <filtering>false</filtering>
+                <filtering>true</filtering> <!-- enable filtering -->
             </resource>
         </resources>
         <testSourceDirectory>src/test/java</testSourceDirectory>
@@ -279,46 +268,6 @@
              <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.2</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.example.app.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>false</overWriteIfNewer>
-                            <excludeTransitive>false</excludeTransitive>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <configuration>
-                    <testFailureIgnore>true</testFailureIgnore>
-                </configuration>
             </plugin>
         </plugins>
     </build>
