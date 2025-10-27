@@ -3,7 +3,7 @@
 This document describes the **step-by-step process** for converting **HL7v2 messages** into **FHIR-compliant bundles** using **Mirth Connect**.  
 It includes schema validation, XML conversion, and transformation based on the **SHINNY Implementation Guide (IG)**.
 
----
+
 
 ## Overview
 
@@ -14,7 +14,7 @@ The conversion process ensures that every HL7v2 message:
 
 The resulting FHIR Bundle contains **Patient**, **Encounter**, **Consent**, **Organization**, and **Observation** resources.
 
----
+
 
 ## Folder Structure
 
@@ -29,15 +29,13 @@ integration-artifacts/
             └── TechBD HL7 Workflow.xml          # Mirth channel configuration
 ```
 
----
-
 ## Step-by-Step Process
 
 ### **Step 1: Receive HL7v2 Message**
 - The process begins when an **HL7v2 message** is received through the **TechBD HL7 Workflow** Mirth Connect channel.
 - Mirth triggers the pipeline for transformation and validation.
 
----
+
 
 ### **Step 2: Schema Validation Setup**
 - The file **`hl7v2-validation-schema.xml`** defines mandatory **segments** and **fields** for HL7v2 messages.
@@ -47,13 +45,13 @@ integration-artifacts/
   integration-artifacts/hl7v2/hl7-techbd-schema-files/hl7v2-validation-schema.xml
   ```
 
----
+
 
 ### **Step 3: Convert HL7v2 to XML**
 - Mirth Connect converts the raw HL7 message into **XML format**.
 - This XML acts as an intermediate representation for validation and transformation.
 
----
+
 
 ### **Step 4: Validate XML**
 - The generated XML is validated using the schema file `hl7v2-validation-schema.xml`.
@@ -62,7 +60,7 @@ integration-artifacts/
   - Mandatory fields are not empty.
 - If validation **fails**, the error is logged and the process stops.
 
----
+
 
 ### **Step 5: Transform to FHIR**
 - Upon successful validation, the XML is converted to **FHIR JSON** using the XSLT:
@@ -76,7 +74,7 @@ integration-artifacts/
   integration-artifacts/hl7v2/hl7-techbd-schema-files/hl7v2-fhir-bundle.xslt
   ```
 
----
+
 
 ### **Step 6: Generate FHIR Bundle**
 - The transformation produces a **FHIR Bundle** containing:
@@ -88,7 +86,7 @@ integration-artifacts/
 
 - The final output is a **FHIR-compliant JSON bundle**, ready for downstream systems.
 
----
+
 
 ### **Step 7: Mirth Channel Configuration**
 - All processes (conversion, validation, transformation) are handled by the **Mirth Connect Channel**:
@@ -100,7 +98,7 @@ integration-artifacts/
   integration-artifacts/hl7v2/hl7-techbd-channel-files/mirth-connect/TechBD HL7 Workflow.xml
   ```
 
----
+
 
 ## Notes
 
