@@ -32,7 +32,7 @@ The first step in this project is to understand what 1115 Waiver data elements a
 - **Transformations and Changes**: This mapping will clearly indicate transformations, data type changes, and conditions where the mapping might differ from the NYeC FHIR IG.
 
 ## Files Overview
-XSD files define the structure and rules for XML documents, ensuring data adheres to a specified schema. They help validate and enforce consistency in XML data. The XSD files from Gravity are kept under the title 'CCDA Gravity Schema Files,' while an updated version of XSD files, which additionally includes the namespace 'sdtc,' is kept under 'CCDA TechBd Schema Files.' The TechBd schema files will be used for validating the CCDA XML files. 
+XSD files define the structure and rules for XML documents, ensuring data adheres to a specified schema. They help validate and enforce consistency in XML data. The XSD files from Gravity are kept under the title `CCDA Gravity Schema Files`, while an updated version of XSD files, which additionally includes the namespace 'sdtc,' is kept under `CCDA TechBd Schema Files`. The TechBd schema files will be used for validating the CCDA XML files. 
 
 ### CCDA Gravity Schema Files
 
@@ -222,3 +222,21 @@ This document focuses on the preparation of the XSLT file which is used for prot
 - Implement logging and notification mechanisms to ensure all CCD files adhere to the expected structure.
 
 - Periodically review logs and metrics to confirm compliance with data submission guidelines.
+
+## Required HTTP Headers
+
+When sending the CCDA file to the conversion endpoint, include the following **HTTP headers** in the request.  
+These headers are required for correct routing, validation, and FHIR bundle generation.
+
+| Header Name | Example Value | Description |
+|--------------|----------------|--------------|
+| **X-TechBD-Tenant-ID** | `QE-CR` | Identifies the tenant for which the CCDA message belongs. |
+| **X-TechBD-CIN** | `AB12345C` | Customer identification number. |
+| **X-TechBD-OrgNPI** | `NPI123456` | Organization’s NPI (National Provider Identifier). |
+| **X-TechBD-OrgTIN** | `TIN1231423` | Organization’s Tax Identification Number. |
+| **X-TechBD-Facility-ID** | `FacilityID-123` | The ID of the submitting facility. |
+| **X-TechBD-Encounter-Type** | `405672008` | Encounter type code. |
+| **X-TechBD-Validation-Severity-Level** | `error` | Determines how validation errors are handled. |
+| **X-TechBD-Screening-Code** | `100698-0` | Grouper Screening code linked to the Observation resources. |
+
+> **Note:** All these headers must be provided in every CCDA submission request. Missing or incorrect headers may cause the transformation to fail or produce incomplete FHIR bundles.
