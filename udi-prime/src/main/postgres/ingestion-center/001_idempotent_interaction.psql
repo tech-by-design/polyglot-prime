@@ -4529,47 +4529,6 @@ of throughput, success vs. failure, and data validation results.
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http AS
- WITH success_flags AS (
-    SELECT
-        source_hub_interaction_id,
-        MAX(CASE WHEN nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay') THEN 1 ELSE 0 END) AS has_success
-    FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE 
-        nature IN (
-            'Forwarded HTTP Response',
-            'Forwarded HTTP Response Replay',
-            'Forwarded HTTP Response Error',
-            'Forwarded HTTP Response Replay Error'
-        )
-        AND source_type = 'CSV'
-    GROUP BY source_hub_interaction_id
-),
-fhir_summary AS (
-    SELECT
-        r.source_hub_interaction_id,
-        SUM(CASE WHEN r.nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay') THEN 1 ELSE 0 END) AS fhir_count_success,
-        SUM(
-            CASE 
-                WHEN r.nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')
-                     AND COALESCE(f.has_success, 0) = 0
-                THEN 1 
-                ELSE 0 
-            END
-        ) AS fhir_count_failed,
-        COUNT(r.hub_interaction_id) AS fhir_count
-    FROM techbd_udi_ingress.sat_interaction_fhir_request r
-    LEFT JOIN success_flags f
-        ON r.source_hub_interaction_id = f.source_hub_interaction_id
-    WHERE 
-        r.nature IN (
-            'Forwarded HTTP Response',
-            'Forwarded HTTP Response Replay',
-            'Forwarded HTTP Response Error',
-            'Forwarded HTTP Response Replay Error'
-        )
-        AND r.source_type = 'CSV'
-    GROUP BY r.source_hub_interaction_id
-)
 SELECT 
     sizfr.tenant_id_lower,
     sizfr.tenant_id,
@@ -4581,17 +4540,12 @@ SELECT
     sizfr.sftp_session_id,
     INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) AS status,
     sizfr.total_number_of_files_in_zip_file,
-    sizfr.number_of_fhir_bundles_generated_from_zip_file,
-    COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
-    COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed,
+    sizfr.number_of_fhir_bundles_generated_from_zip_file, 
     sizfr.data_validation_status,
     'full_operation_outcome' AS selected_field_for_download,
     techbd_version_number
 FROM
-    techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-LEFT JOIN
-    fhir_summary
-    ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id;
+    techbd_udi_ingress.sat_interaction_zip_file_request sizfr ;
 
 
 /*******************************************************************************************
@@ -4601,46 +4555,25 @@ interaction details, request attributes, and validation issues.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_fhir_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http_fhir_request
-AS SELECT hub_interaction_id AS interaction_id,
+AS SELECT DISTINCT ON (bundle_id)
+    hub_interaction_id AS interaction_id,
     uri,
     bundle_id,
-    created_at AS interaction_created_at,
-    created_by AS interaction_created_by,
-    provenance AS interaction_provenance,
-    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
-    nature,
-    tenant_id,
-    user_agent,
-    client_ip_address,
-    'application/json'::text AS content_type, 
-    elaboration,
-    from_state,
-    to_state,
-    state_transition_reason,
-    created_at AS request_created_at,
-    created_by AS request_created_by,
-    provenance AS request_provenance,
-    issues_count,
-    resource_type_set AS resource_types,
-    interaction_start_time::text AS start_time,
-    interaction_end_time::text AS finish_time,
-    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+    created_at AS interaction_created_at, 
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id, 
+    tenant_id, 
+    created_at AS request_created_at,  
     patient_id,
-    patient_mrn,
-    patient_mrn_source_system,
-    organization_id,
-    organization_name,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,  
-    bundle_type AS bundle_resource_type,
+    patient_mrn,     
     source_hub_interaction_id,
-	CASE
-		WHEN is_bundle_valid = true THEN 'Valid'::text
-		WHEN is_bundle_valid = false THEN 'Invalid'::text
-		ELSE NULL::text
-	END AS is_bundle_valid  
-   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
-   WHERE source_type='CSV'; 
-
+    CASE
+        WHEN is_bundle_valid = true THEN 'Valid'
+        WHEN is_bundle_valid = false THEN 'Invalid'
+        ELSE NULL
+    END AS is_bundle_valid
+FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+WHERE source_type = 'CSV'
+ORDER BY bundle_id, created_at DESC;
 
 /*******************************************************************************************
   This view provides a consolidated view of failed CSV HTTP requests and associated interactions.
@@ -8412,7 +8345,7 @@ $$ LANGUAGE plpgsql;
 **/
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_https_request CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_https_request AS
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_https_request as
 SELECT
     sicr.hub_interaction_id AS interaction_id,
 	sicr.sat_interaction_ccda_request_id,
@@ -8426,6 +8359,7 @@ SELECT
 	sicr.user_agent,
     sicr.client_ip_address, 
     sicr.ccda_authoring_device,	
+    htt_req.bundle_id,
     CASE 
         WHEN EXISTS (
             SELECT 1
@@ -8446,6 +8380,8 @@ SELECT
     END AS ccda_validation_status  
 FROM
     techbd_udi_ingress.sat_interaction_ccda_request sicr
+left join   techbd_udi_ingress.sat_interaction_fhir_request htt_req
+on  sicr.hub_interaction_id = htt_req.hub_interaction_id  and  htt_req.nature = 'Original FHIR Payload'
 WHERE 
     sicr.nature = 'Original CCDA Payload';
 
@@ -8520,6 +8456,7 @@ SELECT
     sicr.file_name, 
 	sicr.user_agent,
     sicr.client_ip_address, 
+    htt_req.bundle_id,
     CASE 
         WHEN EXISTS (
             SELECT 1
@@ -8540,6 +8477,8 @@ SELECT
     END AS ccda_validation_status  
 FROM
     techbd_udi_ingress.sat_interaction_hl7_request sicr
+left join   techbd_udi_ingress.sat_interaction_fhir_request htt_req
+on  sicr.hub_interaction_id = htt_req.hub_interaction_id  and  htt_req.nature = 'Original FHIR Payload'    
 WHERE 
     sicr.nature = 'Original HL7 Payload';
 
