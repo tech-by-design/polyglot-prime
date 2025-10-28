@@ -10,16 +10,15 @@ public class MllpRouteFactory {
 
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
-    private AppLogger logger;
+    private final AppLogger logger;
 
     public MllpRouteFactory(MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger) {
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
-        this.logger = appLogger;;
+        this.logger = appLogger;
     }
 
     public MllpRoute create(int port) {
-        return new MllpRoute(port, messageProcessorService,appConfig, logger);
+        return new MllpRoute(port, messageProcessorService, appConfig, logger);
     }
 }
-
