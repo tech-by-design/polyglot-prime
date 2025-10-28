@@ -2,9 +2,8 @@
   <id>f7653712-b3a2-4ccc-9018-b7077bd5bc6b</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.17.0
-AthenaHealth CCD Included.</description>
-  <revision>14</revision>
+  <description>Version: 0.18.0</description>
+  <revision>20</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1238,7 +1237,28 @@ function getConsentResourceStatus(sourceXml) {
           <name>DataBase saves</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
-          <script>//###################################################################
+          <script>/**
+* Function to get the ccda source system
+*/
+function get_ccda_source_system(xml_content) {
+	var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+	logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	//If any error happens in between, find the ccda source type from the input file
+	if (typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
+		var sourceXml = xml_content;
+		if (sourceXml = &apos;&apos;) { sourceXml = channelMap.get(&quot;sourceXml&quot;) || channelMap.get(&quot;originalXml&quot;) || msg.toString(); }
+		if (/epic/i.test(sourceXml)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
+		if (/medent/i.test(sourceXml)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
+		if (/athenahealth/i.test(sourceXml)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
+		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	}
+	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
+	
+  	return ccdaAuthoringDevice; // Keep the value as is
+}
+
+//###################################################################
 // DB Save Step - Separate Database Operations
 //###################################################################
 
@@ -1326,7 +1346,8 @@ try {
             successResponse,
             actualFileName,
             userAgent,        // NEW
-            clientIpAddress  
+            clientIpAddress,
+            get_ccda_source_system(sourceXml)
         );
         
         if (saveOriginalResult) {
@@ -1359,8 +1380,8 @@ try {
             sourceXml,
             successResponse,
             actualFileName,&#xd;            userAgent,        // NEW
-            clientIpAddress
-            
+            clientIpAddress,
+            get_ccda_source_system(sourceXml)
         );
 
         if (validationResult) {
@@ -1393,7 +1414,8 @@ function saveValidationFailure(interactionId, tenantId, requestedPath, errorMess
             errorMessage,
             errorResponse,
             actualFileName,&#xd;            userAgent,        // NEW
-            clientIpAddress
+            clientIpAddress,
+            get_ccda_source_system(&apos;&apos;) //Pass the content of the xml file
         );
 
         if (validationResult) {
@@ -1423,7 +1445,8 @@ function saveFhirConversionSuccess(interactionId, tenantId, requestedPath, clean
             tenantId,
             requestedPath,
             cleanedJsonStringJson,&#xd;            actualFileName,&#xd;            userAgent,        // NEW
-            clientIpAddress
+            clientIpAddress,
+            get_ccda_source_system(&apos;&apos;)
         );
 
         if (conversionSuccess) {
@@ -1476,7 +1499,8 @@ function saveFhirConversionFailure(interactionId, tenantId, requestedPath, error
             tenantId,
             requestedPath,
             errorResponse,&#xd;            actualFileName,&#xd;            userAgent,        // NEW
-            clientIpAddress
+            clientIpAddress,
+            get_ccda_source_system(&apos;&apos;) //Pass the content of the xml file
         );
 
         if (conversionResult) {
@@ -1544,7 +1568,7 @@ function getTenantInfo(tenantId) {
 
 
 // Function 6: Save All Error Information (Comprehensive Error Handler)
-function saveAllErrorInformation(interactionId, tenantId, requestedPath, errorMessage, errorResponse, fileName, userAgent, clientIpAddress) {
+function saveAllErrorInformation(interactionId, tenantId, requestedPath, sourceXml, errorMessage, errorResponse, fileName, userAgent, clientIpAddress) {
    // Get fileName from parameter or use default
 //var actualFileName = fileName || channelMap.get(&quot;originalFileName&quot;);
      var actualFileName = channelMap.get(&apos;filename&apos;);
@@ -2662,7 +2686,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1760443769800</time>
+        <time>1761656826629</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
