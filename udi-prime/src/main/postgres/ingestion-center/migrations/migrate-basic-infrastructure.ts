@@ -694,14 +694,8 @@ const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
     elaboration:jsonbNullable(),
     ...dvts.housekeeping.columns
   }, {
-    isIdempotent: true,
-    sqlNS: ingressSchema,
-    constraints: (props, tableName) => {
-    const c = SQLa.tableConstraints(tableName, props);
-    return [
-      c.unique("bundle_id"),
-    ];
-  },
+  isIdempotent: true,
+  sqlNS: ingressSchema
 });
 
 // Function to read SQL from a list of .psql files
@@ -1840,7 +1834,27 @@ const migrateSP = pgSQLa.storedProcedure(
       ${users}
 
       ${fhirReplayDetails}
+      IF EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'fhir_replay_details_bundle_id_key'
+                AND conrelid = 'techbd_udi_ingress.fhir_replay_details'::regclass
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.fhir_replay_details
+              DROP CONSTRAINT fhir_replay_details_bundle_id_key;
+      END IF;
 
+      IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'fhir_replay_details_unique_combo_key'
+                AND conrelid = 'techbd_udi_ingress.fhir_replay_details'::regclass
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.fhir_replay_details
+              ADD CONSTRAINT fhir_replay_details_unique_combo_key
+              UNIQUE (bundle_id, hub_interaction_id, replay_master_id);
+      END IF;
+      
       ${ccdaValidationErrorsSat}
       IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
