@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -41,6 +43,7 @@ public class PortConfig implements InitializingBean {
 
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private List<PortEntry> portConfigurationList = Collections.emptyList();
+    private List<Integer> mllpPorts = Collections.emptyList();
     private final S3Client s3Client;
 
     @Autowired
@@ -89,7 +92,7 @@ public class PortConfig implements InitializingBean {
         loadConfig();
     }
 
-    public void loadConfig() {
+    public synchronized void loadConfig() {
         if (loaded.get()) {
             return;
         }
@@ -130,8 +133,25 @@ public class PortConfig implements InitializingBean {
             ObjectMapper mapper = new ObjectMapper();
             portConfigurationList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
             });
+            // compute MLLP ports list (case-insensitive match)
+            List<Integer> mports = new ArrayList<>();
+            if (portConfigurationList != null) {
+                mports = portConfigurationList.stream()
+                        .filter(p -> p != null)
+                        .filter(p -> {
+                            String rt = p.responseType == null ? "" : p.responseType.trim();
+                            String proto = p.protocol == null ? "" : p.protocol.trim();
+                            return "mllp".equalsIgnoreCase(rt) && "tcp".equalsIgnoreCase(proto);
+                        })
+                        .map(p -> p.port)
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
+            this.mllpPorts = Collections.unmodifiableList(mports);
+
             loaded.set(true);
-            log.info("PortConfig: Loaded {} port entries from s3://{}/{}", portConfigurationList.size(), bucket, key);
+            log.info("PortConfig: Loaded {} port entries from s3://{}/{} ; mllp ports={}", portConfigurationList.size(), bucket, key, mllpPorts);
         } catch (JsonProcessingException jpe) {
             log.error("PortConfig: Failed to parse port config JSON (json length={}). JSON (truncated): {}",
                     rawJson == null ? 0 : rawJson.length(),
@@ -155,5 +175,16 @@ public class PortConfig implements InitializingBean {
             loadConfig();
         }
         return portConfigurationList;
+    }
+
+    /**
+     * Return list of ports configured for MLLP over TCP.
+     * If config is not loaded or empty, returns empty list.
+     */
+    public List<Integer> getMllpPorts() {
+        if (!isLoaded()) {
+            loadConfig();
+        }
+        return mllpPorts != null ? mllpPorts : Collections.emptyList();
     }
 }
