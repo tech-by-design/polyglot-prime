@@ -2052,103 +2052,154 @@ BEGIN
     END;
 
     IF NOT v_return_status THEN
-    -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
-    -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
-    -- If the operation succeeds, the generated UUID is returned.
-        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_request (
-            sat_interaction_fhir_request_id,
-            hub_interaction_id,
-            tenant_id,
-            tenant_id_lower,
-            uri,
-            nature,
-            payload,
-            client_ip_address,
-            user_agent,
-            from_state,
-            to_state,
-            state_transition_reason,
-            outbound_http_message,
-            error_message,
-            issues_count,
-            bundle_id,
-            bundle_session_id,
-            bundle_last_updated,
-            organization_id,
-            organization_name,
-            patient_id,
-            patient_mrn,
-            resource_type_set,
-            validation_initiated_at,
-            validation_completed_at,
-            validation_engine,
-            elaboration,
-            created_by,
-            provenance,
-            ig_version,
-            profile_url,
-            passed,
-            medicaid_cin,
-            interaction_start_time,
-            interaction_end_time,
-            techbd_disposition_action,
-            patient_mrn_source_system,
-            source_type,
-            source_hub_interaction_id,
-            group_hub_interaction_id,
-            is_bundle_valid,
-            bundle_type,
-            additional_details,
-            techbd_version_number
-        )
-        VALUES (
-            gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-            p_hub_interaction_id,
-            p_tenant_id,
-            LOWER(p_tenant_id),  -- Store the tenant ID in lowercase for consistency
-            p_uri,
-            p_nature,
-            p_payload,
-            COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
-            COALESCE(v_user_agent,''),
-            p_from_state,
-            p_to_state,
-            p_state_transition_reason,
-            v_outbound_http_message,
-            v_error_message,
-            COALESCE(v_issues_count,0),
-            v_bundle_id,
-            v_bundle_session_id,
-            COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
-            v_organization_id,
-            v_organization_name,
-            v_patient_id,
-            v_patient_mrn,
-            v_resource_type_set,
-            COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
-            COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
-            v_validation_engine,
-            p_elaboration,
-            v_created_by,
-            p_provenance,
-            v_ig_version,
-            v_profile_url,
-            v_passed,
-            v_medicaid_cin,
-            COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
-            COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
-            v_techbd_disposition_action,
-            v_patient_mrn_source_system,
-            p_source_type,
-            p_source_hub_interaction_id,
-            p_group_hub_interaction_id,
-            v_is_bundle_valid,
-            v_bundle_type,
-            p_additional_details,
-            p_techbd_version_number
-        ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
+		IF ((p_nature = 'Forwarded HTTP Response Replay Error' OR p_nature = 'Forwarded HTTP Response Replay')
+		   	AND EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_fhir_request t
+	        			WHERE t.hub_interaction_id = p_hub_interaction_id AND nature = 'Forwarded HTTP Response Replay Error')) THEN
+				-- If p_to_state = 'COMPLETE' THEN update with nature 'Forwarded HTTP Response Replay'
+				UPDATE techbd_udi_ingress.sat_interaction_fhir_request SET
+	            	nature 						= CASE WHEN p_to_state = 'COMPLETE' THEN 'Forwarded HTTP Response Replay' ELSE p_nature END,
+	            	payload						= p_payload,
+		            client_ip_address			= COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
+		            user_agent					= COALESCE(v_user_agent,''),
+		            from_state					= p_from_state,
+		            to_state					= p_to_state,
+		            state_transition_reason		= p_state_transition_reason,
+		            outbound_http_message		= v_outbound_http_message,
+		            error_message				= v_error_message,
+		            issues_count				= COALESCE(v_issues_count,0),
+		            bundle_id					= v_bundle_id,
+		            bundle_session_id			= v_bundle_session_id,
+		            bundle_last_updated			= COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
+		            organization_id				= v_organization_id,
+		            organization_name			= v_organization_name,
+		            patient_id					= v_patient_id,
+		            patient_mrn					= v_patient_mrn,
+		            resource_type_set			= v_resource_type_set,
+		            validation_initiated_at		= COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
+		            validation_completed_at		= COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
+		            validation_engine			= v_validation_engine,
+		            elaboration					= p_elaboration,
+		            created_by					= v_created_by,
+		            provenance					= p_provenance,
+		            ig_version					= v_ig_version,
+		            profile_url					= v_profile_url,
+		            passed						= v_passed,
+		            medicaid_cin				= v_medicaid_cin,
+		            interaction_start_time		= COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
+		            interaction_end_time		= COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
+		            techbd_disposition_action	= v_techbd_disposition_action,
+		            patient_mrn_source_system	= v_patient_mrn_source_system,
+		            source_type					= p_source_type,
+		            source_hub_interaction_id	= p_source_hub_interaction_id,
+		            group_hub_interaction_id	= p_group_hub_interaction_id,
+		            is_bundle_valid				= COALESCE(v_is_bundle_valid, false),
+		            bundle_type					= v_bundle_type,
+		            additional_details			= p_additional_details,
+		            techbd_version_number		= p_techbd_version_number
+				WHERE hub_interaction_id 		= p_hub_interaction_id
+				AND nature = 'Forwarded HTTP Response Replay Error'
+				AND tenant_id = p_tenant_id;
 
-        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Insert into sat_interaction_fhir_request'));
+			v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Updated the row in sat_interaction_fhir_request'));
+    	ELSE
+		    -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
+		    -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
+		    -- If the operation succeeds, the generated UUID is returned.
+	        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_request (
+	            sat_interaction_fhir_request_id,
+	            hub_interaction_id,
+	            tenant_id,
+	            tenant_id_lower,
+	            uri,
+	            nature,
+	            payload,
+	            client_ip_address,
+	            user_agent,
+	            from_state,
+	            to_state,
+	            state_transition_reason,
+	            outbound_http_message,
+	            error_message,
+	            issues_count,
+	            bundle_id,
+	            bundle_session_id,
+	            bundle_last_updated,
+	            organization_id,
+	            organization_name,
+	            patient_id,
+	            patient_mrn,
+	            resource_type_set,
+	            validation_initiated_at,
+	            validation_completed_at,
+	            validation_engine,
+	            elaboration,
+	            created_by,
+	            provenance,
+	            ig_version,
+	            profile_url,
+	            passed,
+	            medicaid_cin,
+	            interaction_start_time,
+	            interaction_end_time,
+	            techbd_disposition_action,
+	            patient_mrn_source_system,
+	            source_type,
+	            source_hub_interaction_id,
+	            group_hub_interaction_id,
+	            is_bundle_valid,
+	            bundle_type,
+	            additional_details,
+	            techbd_version_number
+	        )
+	        VALUES (
+	            gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+	            p_hub_interaction_id,
+	            p_tenant_id,
+	            LOWER(p_tenant_id),  -- Store the tenant ID in lowercase for consistency
+	            p_uri,
+	            p_nature,
+	            p_payload,
+	            COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
+	            COALESCE(v_user_agent,''),
+	            p_from_state,
+	            p_to_state,
+	            p_state_transition_reason,
+	            v_outbound_http_message,
+	            v_error_message,
+	            COALESCE(v_issues_count,0),
+	            v_bundle_id,
+	            v_bundle_session_id,
+	            COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
+	            v_organization_id,
+	            v_organization_name,
+	            v_patient_id,
+	            v_patient_mrn,
+	            v_resource_type_set,
+	            COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
+	            COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
+	            v_validation_engine,
+	            p_elaboration,
+	            v_created_by,
+	            p_provenance,
+	            v_ig_version,
+	            v_profile_url,
+	            v_passed,
+	            v_medicaid_cin,
+	            COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
+	            COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
+	            v_techbd_disposition_action,
+	            v_patient_mrn_source_system,
+	            p_source_type,
+	            p_source_hub_interaction_id,
+	            p_group_hub_interaction_id,
+	            COALESCE(v_is_bundle_valid, false),
+	            v_bundle_type,
+	            p_additional_details,
+	            p_techbd_version_number
+	        ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
+	
+	        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Insert into sat_interaction_fhir_request'));
+		END IF;
     END IF;
 
     IF (NOT v_return_status AND v_return IS NOT NULL) THEN
@@ -2233,7 +2284,7 @@ BEGIN
                 validation_engine       = v_validation_engine,   
                 ig_version              = v_ig_version,
                 profile_url             = v_profile_url,    
-                is_bundle_valid         = v_is_bundle_valid,    
+                is_bundle_valid         = COALESCE(v_is_bundle_valid, false),    
                 validation_initiated_at = v_validation_initiated_at::TIMESTAMPTZ,
                 validation_completed_at = v_validation_completed_at::TIMESTAMPTZ,       
                 techbd_disposition_action = v_techbd_disposition_action,
@@ -2288,7 +2339,7 @@ BEGIN
     END IF;    
     
     -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
-    IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'))) THEN
+    IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
         UPDATE techbd_udi_ingress.sat_interaction_fhir_request
             SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
         WHERE hub_interaction_id = p_hub_interaction_id;
@@ -8668,7 +8719,39 @@ AS $function$
 DECLARE
     v_return jsonb := '{}'::jsonb;
 BEGIN
-    -- Step 1: Insert only new rows (do not overwrite existing ones)
+    -- Step 1: Insert only new rows (prioritize Replay Error over Response Error)
+    WITH prioritized AS (
+        SELECT
+            bundle_id,
+            hub_interaction_id,
+            p_replay_master_id AS replay_master_id,
+            NULL::text AS replay_status,
+            NULL::text AS error_message,
+            NULL::jsonb AS elaboration,
+            fhir.created_at,
+            CURRENT_USER AS created_by,
+            'fhir_replay' AS provenance,
+            CASE 
+                WHEN nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+        WHERE fhir.to_state = 'FAIL'
+          AND fhir.bundle_id IS NOT NULL
+          AND (fhir.nature = 'Forwarded HTTP Response Replay Error' OR 
+				(fhir.nature = 'Forwarded HTTP Response Error'
+		         AND (
+		                (start_time IS NULL AND end_time IS NULL)
+		                OR (
+		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+		                    AND fhir.created_at >= start_time
+		                    AND fhir.created_at <= end_time
+		                )
+		         )
+				)
+			  )
+    )
     INSERT INTO techbd_udi_ingress.fhir_replay_details (
         bundle_id,
         hub_interaction_id,
@@ -8680,63 +8763,92 @@ BEGIN
         created_by,
         provenance
     )
-    SELECT 
+    SELECT DISTINCT ON (bundle_id, hub_interaction_id)
         bundle_id,
         hub_interaction_id,
-        p_replay_master_id,
-        NULL,
-        NULL,
-        NULL,
-        CURRENT_TIMESTAMP,
-        CURRENT_USER,
-        'fhir_replay'
-    FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
-    WHERE nature = 'Forwarded HTTP Response Error'
-      AND to_state = 'FAIL'
-	  AND fhir.bundle_id IS NOT NULL
-      AND (
-                (start_time IS NULL AND end_time IS NULL)
-                OR (
-                    (start_time IS NOT NULL AND end_time IS NOT NULL)
-                    AND fhir.created_at >= start_time
-                    AND fhir.created_at <= end_time
-                )
-           )
-    ON CONFLICT (bundle_id) DO NOTHING;
+        replay_master_id,
+        replay_status,
+        error_message,
+        elaboration,
+        created_at,
+        created_by,
+        provenance
+    FROM prioritized
+    ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ON CONFLICT (bundle_id, hub_interaction_id, replay_master_id) DO NOTHING;
 
-    -- Step 2: Return replay master ID + bundles info (with existing error_message if any)
+    -- Step 2: Build JSON response (with the same prioritization condition)
+    WITH prioritized_json AS (
+        SELECT
+            rq.bundle_id,
+            rq.hub_interaction_id,
+            rq.tenant_id,
+            rq.source_type,
+            rq.uri,
+            rq.group_hub_interaction_id,
+            rq.source_hub_interaction_id,
+            rd.replay_status,
+            rd.error_message,
+			rq.created_at,
+			rq.nature,
+            CASE 
+                WHEN rq.nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN rq.nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request rq
+        LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
+          ON rq.bundle_id = rd.bundle_id
+         AND rq.hub_interaction_id = rd.hub_interaction_id
+        WHERE rq.to_state = 'FAIL'
+          AND rq.bundle_id IS NOT NULL
+          AND (rq.nature = 'Forwarded HTTP Response Replay Error' OR 
+				(rq.nature = 'Forwarded HTTP Response Error'
+		         AND (
+		                (start_time IS NULL AND end_time IS NULL)
+		                OR (
+		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+		                    AND rq.created_at >= start_time
+		                    AND rq.created_at <= end_time
+		                )
+		         ))
+				)
+    )
     SELECT jsonb_build_object(
-        'bundle_count', COUNT(rq.bundle_id),
+        'bundle_count', COUNT(bundle_id),
         'replay_master_id', p_replay_master_id,
         'bundles', jsonb_agg(
             jsonb_build_object(
-                'bundleid', rq.bundle_id,
-                'interactionid', rq.hub_interaction_id,
-                'tenantID', rq.tenant_id,
-                'source', rq.source_type,
-                'uri', rq.uri,
-                'errorMessage', CASE WHEN rd.replay_status IS NOT NULL THEN 'already replayed | status: ' || rd.replay_status || ' | error: ' || rd.error_message ELSE NULL END,
-                'groupInteractionId', CASE WHEN rq.source_type = 'CSV' THEN rq.group_hub_interaction_id ELSE NULL END,
-                'zipInteractionID', CASE WHEN rq.source_type = 'CSV' THEN rq.source_hub_interaction_id ELSE NULL END
+                'bundleid', bundle_id,
+				'created_at', created_at,
+				'nature', nature,
+                'interactionid', hub_interaction_id,
+                'tenantID', tenant_id,
+                'source', source_type,
+                'uri', uri,
+                'errorMessage',
+                    CASE 
+                        WHEN replay_status IS NOT NULL THEN
+                            'already replayed | status: '
+                            || COALESCE(replay_status, '')
+                            || ' | error: '
+                            || COALESCE(error_message::text, '')
+                        ELSE NULL
+                    END,
+                'groupInteractionId',
+                    CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
+                'zipInteractionID',
+                    CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END
             )
         )
     )
     INTO v_return
-    FROM techbd_udi_ingress.sat_interaction_fhir_request rq
-    LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
-       ON rq.bundle_id = rd.bundle_id
-       OR rq.hub_interaction_id = rd.hub_interaction_id
-    WHERE rq.nature = 'Forwarded HTTP Response Error'
-      AND rq.to_state = 'FAIL'
-	  AND rq.bundle_id IS NOT NULL
-      AND (
-                (start_time IS NULL AND end_time IS NULL)
-                OR (
-                    (start_time IS NOT NULL AND end_time IS NOT NULL)
-                    AND rq.created_at >= start_time
-                    AND rq.created_at <= end_time
-                )
-           );
+    FROM (
+        SELECT DISTINCT ON (bundle_id, hub_interaction_id)
+            *
+        FROM prioritized_json
+        ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ) final_json;
 
     RETURN COALESCE(v_return, jsonb_build_object(
         'bundle_count', 0,
@@ -8765,14 +8877,16 @@ END;
 $function$;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, text, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, text, jsonb, text, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_fhir_replay_status(
-    p_interaction_id TEXT, 
-    p_status TEXT,
-    p_error_message TEXT DEFAULT NULL,
-    p_elaboration JSONB DEFAULT NULL
-) 
-RETURNS TEXT
-LANGUAGE plpgsql
+    p_interaction_id text,
+    p_status text,
+    p_error_message text DEFAULT NULL::text,
+    p_elaboration jsonb DEFAULT NULL::jsonb,
+    p_bundle_id text DEFAULT NULL::text,
+    p_replay_master_id text DEFAULT NULL::text
+) RETURNS text
+ LANGUAGE plpgsql
 AS $function$
 BEGIN
     UPDATE techbd_udi_ingress.fhir_replay_details
@@ -8780,14 +8894,22 @@ BEGIN
         replay_status = p_status,
         elaboration   = p_elaboration,
         error_message = p_error_message
-    WHERE hub_interaction_id = p_interaction_id;
+    WHERE hub_interaction_id = p_interaction_id
+	AND bundle_id = p_bundle_id 
+	AND replay_master_id = p_replay_master_id;
 
     -- Check if any row was updated
     IF NOT FOUND THEN
-        RETURN 'No record found for hub_interaction_id: %', p_interaction_id;
+        RETURN 'No record found for hub_interaction_id: ' 
+               || p_interaction_id 
+               || ' and replay_master_id: ' 
+               || p_replay_master_id;
     END IF;
 
-    RETURN p_interaction_id;
+    RETURN 'Updated successfully for hub_interaction_id: ' 
+           || p_interaction_id 
+           || ' and replay_master_id: ' 
+           || p_replay_master_id;
 END;
 $function$;
 /*End Of FHIR Replay Process*/
