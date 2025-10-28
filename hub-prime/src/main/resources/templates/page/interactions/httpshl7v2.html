@@ -119,32 +119,39 @@
                             }
                         }
                      },
-                    { headerName: "FHIR Generated", field: "fhir_generated", filter: "agTextColumnFilter", headerTooltip: "Indicates whether the payload was converted to FHIR (Yes/No)",
-                          cellRendererSelector: params => {
-                        const uri = params.data?.uri;
-                        const value = params.data?.fhir_generated;
-
-                        const isValidateUri =
-                        uri === '/hl7v2/Bundle/$validate' ||
-                        uri === '/hl7v2/Bundle/$validate/';
-
-                        if ( !isValidateUri) {
-                        return { component: 'agGroupCellRenderer' };
+                     { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction", 
+                        cellRenderer: params => {
+                            if (params.value) {
+                                return `<a href="/interactions/httpsfhir" placeholder="Click to view FHIR details" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                            }
                         }
+                     },
+                    // { headerName: "FHIR Generated", field: "fhir_generated", filter: "agTextColumnFilter", headerTooltip: "Indicates whether the payload was converted to FHIR (Yes/No)",
+                    //       cellRendererSelector: params => {
+                    //     const uri = params.data?.uri;
+                    //     const value = params.data?.fhir_generated;
 
-                        return { component: undefined }; // No drill-down, no value
-                    },
-                    valueGetter: params => {
-                        const uri = params.data?.uri;
-                        const value = params.data?.fhir_generated;
+                    //     const isValidateUri =
+                    //     uri === '/hl7v2/Bundle/$validate' ||
+                    //     uri === '/hl7v2/Bundle/$validate/';
 
-                        const isValidateUri =
-                        uri === '/hl7v2/Bundle/$validate' ||
-                        uri === '/hl7v2/Bundle/$validate/';
+                    //     if ( !isValidateUri) {
+                    //     return { component: 'agGroupCellRenderer' };
+                    //     }
 
-                        return isValidateUri ? null : value;
-                    }
-                    },
+                    //     return { component: undefined }; // No drill-down, no value
+                    // },
+                    // valueGetter: params => {
+                    //     const uri = params.data?.uri;
+                    //     const value = params.data?.fhir_generated;
+
+                    //     const isValidateUri =
+                    //     uri === '/hl7v2/Bundle/$validate' ||
+                    //     uri === '/hl7v2/Bundle/$validate/';
+
+                    //     return isValidateUri ? null : value;
+                    // }
+                    // },
                     { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" }, 
                     { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request" },                     
                     { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
@@ -163,7 +170,7 @@
                         }));
                     },
                 )
-                .withMasterDetail(true)
+                .withMasterDetail(false)
                 .withDetailCellRendererParams({
                     detailGridOptions: {
                         columnDefs: fhirColumnDefs,
@@ -191,7 +198,7 @@
             <div class="grid-description">
     This dashboard provides a comprehensive overview of HL7v2-based interactions, allowing users to easily track and analyze each request. Key details such as the Hub Interaction ID and Tenant ID help identify and link interactions, while the Request URI, Client IP Address, and User Agent provide context about the origin and environment of each request.
 
-    <strong>HL7v2 Validation Status</strong> indicates whether the submitted HL7v2 payload meets required standards. Click to view detailed validation errors and help identify data quality issues. The <strong>FHIR Generated</strong> column shows whether the HL7v2 payload was successfully converted to FHIR format, ensuring interoperability and readiness for downstream processing.
+    <strong>HL7v2 Validation Status</strong> indicates whether the submitted HL7v2 payload meets required standards. Click to view detailed validation errors and help identify data quality issues. The <strong>Bundle ID</strong> column shows whether the HL7v2 payload was successfully transformed into a FHIR bundle. Click the Bundle ID to view specific FHIR details.
 
     Additional features include interactive filtering and sorting, state transition tracking, and the ability to view detailed information for each interaction by clicking the TechBD Interaction ID. This enables efficient validation, troubleshooting, and assurance of seamless data flow for HL7v2 requests.
 
