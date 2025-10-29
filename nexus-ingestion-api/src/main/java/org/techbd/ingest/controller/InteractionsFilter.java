@@ -91,6 +91,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 && !origRequest.getRequestURI().equals("/")
                 && !origRequest.getRequestURI().startsWith("/actuator/health")) {
 
+            String interactionId = UUID.randomUUID().toString();
+            origRequest.setAttribute("interactionId", interactionId);
+            LOG.info("Incoming Request - interactionId={}", interactionId);
+
             // 1) determine request port (prefer X-Forwarded-Port header)
             int requestPort = resolveRequestPort(origRequest);
             LOG.info("InteractionsFilter: resolved request port={}", requestPort);
@@ -280,10 +284,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
             }
 
             // success: proceed
-            String interactionId = UUID.randomUUID().toString();
-            origRequest.setAttribute("interactionId", interactionId);
-            LOG.info("Incoming Request - interactionId={}", interactionId);
-
             Enumeration<String> headerNames = origRequest.getHeaderNames();
             while (headerNames.hasMoreElements()) {
                 String headerName = headerNames.nextElement();
