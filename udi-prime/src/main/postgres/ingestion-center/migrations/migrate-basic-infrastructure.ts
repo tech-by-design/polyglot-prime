@@ -882,16 +882,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND indexname = 'sat_inter_fhir_req_created_idx'
           ) THEN
               CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request (created_at timestamptz_ops DESC);
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_fhir_request'
-                AND indexname = 'sat_inter_fhir_req_frm_state_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (from_state);
-          END IF;
+          END IF;          
           
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -909,16 +900,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND indexname = 'sat_inter_fhir_req_nature_idx'
           ) THEN
               CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_nature_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (nature);
-          END IF;
-          
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_fhir_request'
-                AND indexname = 'sat_inter_fhir_req_payload_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_payload_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING gin (payload);
-          END IF;
+          END IF;         
           
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -936,16 +918,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND indexname = 'sat_inter_fhir_req_bund_id_idx'
           ) THEN
               CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_id);
-          END IF;
-          
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_fhir_request'
-                AND indexname = 'sat_inter_fhir_req_bund_sess_id_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_sess_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_session_id);
-          END IF;
+          END IF;          
           
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -954,24 +927,6 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND indexname = 'sat_inter_fhir_req_org_id_idx'
           ) THEN
               CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_id);
-          END IF;
-          
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_fhir_request'
-                AND indexname = 'sat_inter_fhir_req_org_name_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_name_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_name);
-          END IF;
-          
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_fhir_request'
-                AND indexname = 'sat_inter_fhir_req_patient_mrn_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_patient_mrn_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (patient_mrn);
           END IF;
 
           IF NOT EXISTS (
@@ -1043,35 +998,15 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
       
       PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
-          -- HL7 indexes
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_int_hl7_req_uq_hub_int_tnt_nat') THEN
-              EXECUTE 'CREATE UNIQUE INDEX sat_int_hl7_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id, tenant_id, nature)';
-          END IF;
+          -- HL7 indexes         
 
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_created_at_idx') THEN
               EXECUTE 'CREATE INDEX sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC)';
           END IF;
 
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_frm_state_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_hl7_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (from_state)';
-          END IF;
-
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_hub_inter_id_idx') THEN
               EXECUTE 'CREATE INDEX sat_inter_hl7_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_nature_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_hl7_req_nature_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (nature)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_payload_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_hl7_req_payload_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING gin (payload)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_to_state_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_hl7_req_to_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (to_state)';
-          END IF;
-
+          END IF;          
 
           -- Drop obsolete index if exists
           IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_issue_idx_date_issue') THEN
@@ -1083,27 +1018,6 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'CREATE INDEX sat_interaction_fhir_validation_idx_date_time ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time)';
           END IF;
 
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_idx_issue_partial') THEN
-              EXECUTE $$CREATE INDEX sat_interaction_fhir_validation_idx_issue_partial 
-                        ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue)
-                        WHERE issue LIKE '%has not been checked because it is unknown%'
-                          OR issue LIKE '%Unknown profile%'
-                          OR issue LIKE '%Unknown extension%'
-                          OR issue LIKE '%Unknown Code System%'
-                          OR issue LIKE '%not found%'
-                          OR issue LIKE '%has not been checked because it could not be found%'
-                          OR issue LIKE '%Unable to find a match for profile%'
-                          OR issue LIKE '%None of the codings provided%'
-                          OR issue LIKE '%Unable to expand ValueSet%'
-                          OR issue LIKE '%Slicing cannot be evaluated%'
-                          OR issue LIKE '%could not be resolved%';$$;
-          END IF;
-
-          -- FHIR session diagnostic indexes
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_idx_encountered_at') THEN
-              EXECUTE 'CREATE INDEX sat_interaction_fhir_session_diagnostic_idx_encountered_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (encountered_at)';
-          END IF;
-
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_created_at') THEN
               EXECUTE 'CREATE INDEX sat_interaction_fhir_session_diagnostic_created_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (created_at DESC)';
           END IF;
@@ -1113,28 +1027,9 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;
 
           -- CCDA indexes
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_int_ccda_req_uq_hub_int_tnt_nat') THEN
-              EXECUTE 'CREATE UNIQUE INDEX sat_int_ccda_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id, tenant_id, nature)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_created_at_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_ccda_req_created_at_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (created_at DESC)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_frm_state_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_ccda_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (from_state)';
-          END IF;
-
+         
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_hub_inter_id_idx') THEN
               EXECUTE 'CREATE INDEX sat_inter_ccda_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_nature_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_ccda_req_nature_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (nature)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_payload_idx') THEN
-              EXECUTE 'CREATE INDEX sat_inter_ccda_req_payload_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING gin (payload)';
           END IF;
 
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_to_state_idx') THEN
@@ -1148,19 +1043,6 @@ const migrateSP = pgSQLa.storedProcedure(
 
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_screening_info_submitted_date_time_idx') THEN
               EXECUTE 'CREATE INDEX sat_interaction_fhir_screening_info_submitted_date_time_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_info (submitted_date_time DESC)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_screening_patient_created_at_idx') THEN
-              EXECUTE 'CREATE INDEX sat_interaction_fhir_screening_patient_created_at_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_patient (created_at DESC)';
-          END IF;
-
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='idx_sat_interaction_fhir_screening_organization_created_at_desc') THEN
-              EXECUTE 'CREATE INDEX idx_sat_interaction_fhir_screening_organization_created_at_desc ON techbd_udi_ingress.sat_interaction_fhir_screening_organization (created_at DESC)';
-          END IF;  
-          
-          --   Zip file request by created_at
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'techbd_udi_ingress' AND indexname = 'idx_sat_interaction_zip_file_request_created_at') THEN
-              EXECUTE 'CREATE INDEX idx_sat_interaction_zip_file_request_created_at ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (created_at)';
           END IF;
 
           --  Zip file request by hub_interaction_id
@@ -1266,17 +1148,7 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'CREATE INDEX sat_interaction_http_request_hub_interaction_id_idx 
                       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id)';
           END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_nature_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_nature_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin (nature)';
-          END IF;
-
+          
           IF NOT EXISTS (
               SELECT 1
               FROM pg_indexes
@@ -1301,54 +1173,12 @@ const migrateSP = pgSQLa.storedProcedure(
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_created_at_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_created_at_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (created_at)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
                 AND indexname = 'sat_interaction_http_request_provenance_idx'
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_provenance_idx 
                       ON techbd_udi_ingress.sat_interaction_http_request USING btree (provenance)';
           END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_payload_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_interaction_http_request_jsonb_extracted_payload_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request USING gin (payload)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_nature_idx'
-          ) THEN
-              EXECUTE $$CREATE INDEX sat_interaction_http_request_jsonb_extracted_nature_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request 
-                      USING btree ((payload->>'nature'));$$;
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_interaction_http_request_jsonb_extracted_tenant_id_idx'
-          ) THEN
-              EXECUTE $$CREATE INDEX sat_interaction_http_request_jsonb_extracted_tenant_id_idx 
-                      ON techbd_udi_ingress.sat_interaction_http_request 
-                      USING btree ((payload->'nature'->>'tenant_id'));$$;
-          END IF;
-
+         
           --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
@@ -1631,16 +1461,7 @@ const migrateSP = pgSQLa.storedProcedure(
       SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
       WHERE json_path LIKE '$.response.responseBody%';
 
-      PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'json_action_rule_action_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX json_action_rule_action_idx 
-                      ON techbd_udi_ingress.json_action_rule USING btree (action)';
-          END IF;
+      PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));          
 
           IF NOT EXISTS (
               SELECT 1
@@ -1650,37 +1471,8 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               EXECUTE 'CREATE INDEX json_action_rule_json_path_idx 
                       ON techbd_udi_ingress.json_action_rule USING btree (json_path)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'json_action_rule_last_applied_at_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX json_action_rule_last_applied_at_idx 
-                      ON techbd_udi_ingress.json_action_rule USING btree (last_applied_at DESC)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'json_action_rule_namespace_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX json_action_rule_namespace_idx 
-                      ON techbd_udi_ingress.json_action_rule USING btree (namespace)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'json_action_rule_priority_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX json_action_rule_priority_idx 
-                      ON techbd_udi_ingress.json_action_rule USING btree (priority)';
-          END IF;
+          END IF;          
+          
       PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
     
       ${refCodeLookUp}
@@ -1719,17 +1511,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
       END IF;
 
-      PERFORM pg_advisory_lock(hashtext('islm_migration_nexus_index_creation'));
-          -- 1. Unique index: sat_int_nexus_req_uq_hub_nexus_int_tnt_nat
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_int_nexus_req_uq_hub_nexus_int_tnt_nat'
-          ) THEN
-              EXECUTE 'CREATE UNIQUE INDEX sat_int_nexus_req_uq_hub_nexus_int_tnt_nat 
-                      ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id, tenant_id, nature)';
-          END IF;
+      PERFORM pg_advisory_lock(hashtext('islm_migration_nexus_index_creation'));          
 
           -- 2. Regular index: sat_inter_nexus_req_hub_nexus_inter_id_idx
           IF NOT EXISTS (
@@ -1807,17 +1589,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id
                       ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id)';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'idx_sat_csv_fhir_processing_errors_created_at'
-          ) THEN
-              EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_created_at
-                      ON techbd_udi_ingress.sat_csv_fhir_processing_errors (created_at DESC)';
-          END IF;
+          END IF;         
       PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
 
       IF NOT EXISTS (
@@ -1855,24 +1627,7 @@ const migrateSP = pgSQLa.storedProcedure(
               UNIQUE (bundle_id, hub_interaction_id, replay_master_id);
       END IF;
       
-      ${ccdaValidationErrorsSat}
-      IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_ccda_validation_errors'
-                AND indexname = 'idx_sat_ccda_validation_errors_created_at'
-          ) THEN
-              CREATE INDEX idx_sat_ccda_validation_errors_created_at ON techbd_udi_ingress.sat_interaction_ccda_validation_errors USING btree (created_at DESC);
-          END IF;
-
-      IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_ccda_validation_errors'
-                AND indexname = 'idx_sat_ccda_validation_errors_hub_interaction_id'
-          ) THEN
-              CREATE INDEX idx_sat_ccda_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_ccda_validation_errors USING btree (hub_interaction_id);
-          END IF;
+      ${ccdaValidationErrorsSat}     
 
       IF NOT EXISTS (
               SELECT 1 FROM information_schema.columns 
@@ -1883,24 +1638,7 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors ADD COLUMN ig_version text Null;
           END IF;
 
-      ${hl7ValidationErrorsSat}
-      IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_hl7_validation_errors'
-                AND indexname = 'idx_sat_hl7_validation_errors_created_at'
-          ) THEN
-              CREATE INDEX idx_sat_hl7_validation_errors_created_at ON techbd_udi_ingress.sat_interaction_hl7_validation_errors USING btree (created_at DESC);
-          END IF;
-
-      IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'sat_interaction_hl7_validation_errors'
-                AND indexname = 'idx_sat_hl7_validation_errors_hub_interaction_id'
-          ) THEN
-              CREATE INDEX idx_sat_hl7_validation_errors_hub_interaction_id ON techbd_udi_ingress.sat_interaction_hl7_validation_errors USING btree (hub_interaction_id);
-          END IF;
+      ${hl7ValidationErrorsSat}      
 
       IF NOT EXISTS (
               SELECT 1 FROM information_schema.columns 
