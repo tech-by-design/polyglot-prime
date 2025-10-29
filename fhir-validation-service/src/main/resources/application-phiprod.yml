@@ -2,13 +2,7 @@
 org:
   techbd:
     baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
-    defaultDatalakeApiUrl: https://hrsn.nyehealth.org/HRSNBundle
     dataLedgerApiUrl: https://6z5cce0m4h.execute-api.us-east-1.amazonaws.com/production/DataLedger 
     dataLedgerTracking: true
     dataLedgerDiagnostics: true
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
-    defaultDataLakeApiAuthn:
-      mTlsStrategy: aws-secrets
-      mTlsAwsSecrets: 
-        mTlsKeySecretName: techbd-prd-client-key # The name of the AWS Secrets Manager secret that holds the mTLS private key
-        mTlsCertSecretName: techbd-prd-client-certificate  # The name of the AWS Secrets Manager secret that holds the mTLS client certificate

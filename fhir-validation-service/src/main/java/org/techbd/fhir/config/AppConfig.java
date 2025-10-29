@@ -20,7 +20,6 @@ public class AppConfig {
     private String operationOutcomeHelpUrl;
     private Map<String, String> structureDefinitionsUrls;
     private String baseFHIRURL;
-    private DefaultDataLakeApiAuthn defaultDataLakeApiAuthn;
     private String fhirVersion;
     private String igVersion;
     private CsvValidation csv;
@@ -35,25 +34,6 @@ public class AppConfig {
     public static class FhirV4Config {
         private Map<String, Map<String, String>> shinnyPackages;
         private Map<String, String> basePackages;
-    }
-
-    public record DefaultDataLakeApiAuthn(String mTlsStrategy,
-            MTlsAwsSecrets mTlsAwsSecrets,
-            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal,
-            MTlsResources mTlsResources,
-            WithApiKeyAuth withApiKeyAuth) {
-    }
-
-    public record WithApiKeyAuth(String apiKeyHeaderName,String apiKeySecretName) {
-    }
-
-    public record MTlsResources( String mTlsKeyResourceName, String mTlsCertResourceName) {
-    }
-
-    public record MTlsAwsSecrets(String mTlsKeySecretName, String mTlsCertSecretName) {
-    }
-
-    public record PostStdinPayloadToNyecDataLakeExternal(String cmd, int timeout) {
     }
 
     public record CsvValidation(Validation validation) {
