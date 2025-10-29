@@ -1,11 +1,8 @@
 
 package org.techbd.service.ccda;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Map;
 
@@ -55,8 +52,8 @@ class CCDAServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = ccdaService.saveOriginalCcdaPayload("int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
+        boolean result = ccdaService.saveOriginalCcdaPayload("int123", "tenantA",
+            "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "127.0.0.1", "testSystem");
 
             assertTrue(result);
         }
@@ -71,8 +68,8 @@ class CCDAServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = ccdaService.saveValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
+        boolean result = ccdaService.saveValidation(true, "int123", "tenantA",
+            "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "127.0.0.1", "testSystem");
 
             assertTrue(result);
         }
@@ -87,8 +84,8 @@ class CCDAServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = ccdaService.saveFhirConversionResult(true, "int123", "tenantA",
-                    "/test-uri", Map.of("fhir", "bundle"), "metadata", "testUser", "testSystem");
+        boolean result = ccdaService.saveFhirConversionResult(true, "int123", "tenantA",
+            "/test-uri", Map.of("fhir", "bundle"), "metadata", "testUser", "127.0.0.1", "testSystem");
 
             assertTrue(result);
         }
@@ -103,8 +100,8 @@ class CCDAServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = ccdaService.saveCcdaValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "testSystem");
+        boolean result = ccdaService.saveCcdaValidation(true, "int123", "tenantA",
+            "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata", "testUser", "127.0.0.1", "testSystem");
 
             assertTrue(result);
         }
@@ -117,7 +114,7 @@ class CCDAServiceTest {
 
         CCDAService errorService = new CCDAService(faultyConfig, appLogger,coreAppConfig);
 
-        boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata", "testUser", "testSystem");
+    boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata", "testUser", "127.0.0.1", "testSystem");
 
         assertFalse(result);
     }
