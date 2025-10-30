@@ -34,6 +34,7 @@ import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.csv.config.AppConfig;
 import org.techbd.csv.config.CsvProcessingState;
 import org.techbd.csv.config.Nature;
+import org.techbd.csv.feature.FeatureEnum;
 import org.techbd.csv.model.CsvProcessingMetrics;
 import org.techbd.csv.model.FileDetail;
 import org.techbd.csv.service.engine.CsvOrchestrationEngine;
@@ -234,7 +235,7 @@ public class CsvService {
                 interactionId);
 
         coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, provenance,
-                SourceType.CSV.name(), null);
+                SourceType.CSV.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
         saveArchiveInteraction(interactionId, jooqCfg, requestParams, file, CsvProcessingState.RECEIVED);
     }
 

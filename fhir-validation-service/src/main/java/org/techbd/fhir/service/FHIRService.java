@@ -36,6 +36,7 @@ import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.config.Constants;
 import org.techbd.fhir.exceptions.ErrorCode;
 import org.techbd.fhir.exceptions.JsonValidationException;
+import org.techbd.fhir.feature.FeatureEnum;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
 import org.techbd.fhir.service.engine.OrchestrationEngine.Device;
 import org.techbd.fhir.util.FHIRUtil;
@@ -152,7 +153,7 @@ public class FHIRService {
 				}
 				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
 				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
-						SourceType.FHIR.name(), null);
+				SourceType.FHIR.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
 			}
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			final var dslContext = coreUdiPrimeJpaConfig.dsl();

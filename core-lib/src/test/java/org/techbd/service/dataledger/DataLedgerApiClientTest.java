@@ -87,7 +87,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
     @Test
@@ -113,7 +113,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
     @Test
@@ -139,7 +139,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
     @Test
@@ -165,7 +165,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, false);
     }
 
     @Test
@@ -190,7 +190,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
     @Test
@@ -217,7 +217,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
     @Test
@@ -238,7 +238,7 @@ class DataLedgerApiClientTest {
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
         Map<String, Object> additionalData = new HashMap<>();
-        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        coreDataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData, true, true);
     }
 
 }
