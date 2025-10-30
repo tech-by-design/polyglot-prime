@@ -842,6 +842,125 @@ BEGIN
      
 	/*======================END of CCDA Testing==========================*/
 
+	/*=================== Testing with HL7 File ========================*/  
+	/* First call to insert HL7 text and json converted from HL7 */
+    v_interaction_id            := 'a45ccd45-9a4f-5cc8-9c5d-b45245d90fb0';    
+
+    PERFORM techbd_udi_ingress.register_interaction_hl7_request(
+        p_interaction_id           => v_interaction_id,
+        p_interaction_key          => '/hl7v2/Bundle'::text,
+        p_payload                  => null,
+        p_payload_text             => 'MSH|^~\&|SendingApp1|SendingFac1|ReceivingApp1|ReceivingFac|2023100412||ADT^A01|124445678|P|2.4||||
+PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Main St^^Anytown^USA^12345||(555)555-5555||S||123456789|987654^NC||||2135-2^Hispanic or Latino'::text,
+        p_rule_namespace           => NULL,
+        p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+        p_content_type             => 'application/json',
+        p_nature                   => '{"nature":"Original HL7 Payload", "tenant_id":"QE-123456"}'::jsonb,
+        p_from_state               => 'NONE',
+        p_to_state                 => 'HL7_ACCEPT',
+        p_state_transition_reason  => NULL,
+        p_created_at               => CURRENT_TIMESTAMP,
+        p_created_by               => CURRENT_USER,
+        p_provenance               => 'HL7',
+        p_hub_upsert_behavior      => true
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = '/hl7v2/Bundle'
+                            AND hub_intr.provenance              = 'HL7'
+                   ),
+            'HL7 - Successfully inserted into the table hub_interaction'
+        );
+        
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.provenance               = 'HL7'
+                    ),
+             'HL7 - Successfully inserted one record into the table sat_interaction_http_request with "Original HL7 Payload" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_hl7_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_hl7_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+							 AND sat_intr.uri                      = '/hl7v2/Bundle'
+                             AND sat_intr.provenance               = 'HL7'
+                    ),
+             'HL7 - Successfully inserted one record into the table sat_interaction_hl7_request with "Original HL7 Payload" as nature'
+         );
+
+    /*Test one record is inserted into sat_interaction_user table*/
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = '/hl7v2/Bundle'
+                            AND sat_intr.provenance				= 'HL7'
+                   ),
+            'HL7 - Successfully inserted into the table sat_interaction_user'
+        );
+   
+   /* Second call to insert the validation result for the HL7 file with interaction_key = '/hl7v2/Bundle'*/
+    PERFORM techbd_udi_ingress.register_interaction_hl7_request(
+        p_interaction_id           => v_interaction_id,
+        p_interaction_key          => '/hl7v2/Bundle'::text,
+        p_payload                  => '{"hl7": "hl7 json", "status": "ok"}'::jsonb,
+        p_payload_text             => null,
+        p_rule_namespace           => NULL,
+        p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+        p_content_type             => 'application/json',
+        p_nature                   => '{"nature": "HL7 Validation Result", "tenant_id": "QE-123456"}'::jsonb,
+        p_from_state               => 'HL7_ACCEPT',
+        p_to_state                 => 'VALIDATION_SUCCESS',
+        p_state_transition_reason  => NULL,
+        p_created_at               => CURRENT_TIMESTAMP,
+        p_created_by               => CURRENT_USER,
+        p_provenance               => 'HL7',
+        p_hub_upsert_behavior      => true
+    );
+   
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id     = v_interaction_id
+                            AND hub_intr."key"                    = '/hl7v2/Bundle'
+                            AND hub_intr.provenance               = 'HL7'
+                   ),
+            'HL7 - Successfully inserted into the table hub_interaction'
+        );
+        
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.provenance               = 'HL7'
+                    ),
+             'HL7 - Successfully inserted one record into the table sat_interaction_http_request with "HL7 Validation Result" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_hl7_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_hl7_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+							 AND sat_intr.uri                      = '/hl7v2/Bundle'
+                             AND sat_intr.provenance               = 'HL7'
+                    ),
+             'HL7 - Successfully inserted one record into the table sat_interaction_hl7_request with "HL7 Validation Result" as nature'
+         );
+
+   /*Test record is NOT inserted into sat_interaction_user table at second call*/
+   RETURN NEXT ok(
+            NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
+	               AND sat_intr.uri                  = '/hl7v2/Bundle'
+				   AND sat_intr.provenance           = 'HL7'
+				   AND nature 						 = 'HL7 Validation Result'),
+            'HL7 - Success, Not inserted into the table sat_interaction_user while second call.'
+	);
+	/*======================END of HL7 Testing==========================*/
+
 	/*===================================================================*/
 	/*Test the exception handling with Unique Constraint Violation*/
        
