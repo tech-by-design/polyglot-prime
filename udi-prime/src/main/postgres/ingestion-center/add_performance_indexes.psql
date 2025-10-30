@@ -1,7 +1,11 @@
-
 -- Purpose: Add indexes to improve query performance
 -- Idempotent: uses IF NOT EXISTS for safe re-runs
+\echo '============================================================'
+\echo 'Starting ...'
+\echo '============================================================'
+\set start_time :TIME
 
+\echo '➡️  Step 1: Creating indexes (only if missing)...'
 -- 1. User interactions by created_at
 CREATE INDEX IF NOT EXISTS idx_sat_interaction_user_created_at_desc
     ON techbd_udi_ingress.sat_interaction_user (created_at DESC);
@@ -22,9 +26,13 @@ CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_severity_lowe
 CREATE INDEX  IF NOT EXISTS  idx_sat_interaction_zip_file_request_hub_interaction_id 
     ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id);
 
+\echo '➡️  Step 2: Dropping old views if present...'
+
 -- 9. Remove unused views
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request CASCADE;
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;  
+
+\echo '➡️  Step 3: Dropping old materialized views if present...'
 
 -- 10. Remove all materialized views
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat;
@@ -39,7 +47,7 @@ DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_obs
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat;
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_observe_mat;
 
-
+\echo '➡️  Step 4: Dropping existing performance indexes associated with materialized views (if any)...'
 -- 11. Remove all indexes created for materialized views 
 DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_composite_idx;
 DROP INDEX IF EXISTS techbd_udi_ingress.interaction_http_request_mat_sat_interaction_http_request_i_idx;
@@ -75,4 +83,434 @@ DROP INDEX IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat_hub_interact
 DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_date_time_idx;
 DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_hub_id_idx;
 DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_row_id_idx;
-DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_sat_id_idx;    
+DROP INDEX IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat_sat_id_idx; 
+
+\echo '➡️  Step 5: please wait till cleanup complete...'
+
+SET client_min_messages TO NOTICE;
+DO $unused_index$
+BEGIN
+PERFORM pg_advisory_lock(hashtext('perfomance_index'));
+        BEGIN
+        RAISE NOTICE 'Starting cleanup: Removing old or unused indexes (if any exist)...';
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_jsonb_extracted_payload_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_jsonb_extracted_payload_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_request'
+              AND indexname = 'sat_inter_fhir_req_payload_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_fhir_req_payload_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_entry_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_entry_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_response_header_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_response_header_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_issues_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_issues_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_session_diagnostic'
+              AND indexname = 'sat_interaction_fhir_session_diagnostic_idx_encountered_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_fhir_session_diagnostic_idx_encountered_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_session_diagnostic'
+              AND indexname = 'idx_sat_interaction_fhir_session_diagnostic_created_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_interaction_fhir_session_diagnostic_created_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_validation_issue'
+              AND indexname = 'sat_interaction_fhir_validation_idx_issue_partial'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_idx_issue_partial;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_created_at_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_created_at_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_jsonb_extracted_nature_nature_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_jsonb_extracted_nature_nature_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_user_agent_text_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_user_agent_text_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_clientip_text_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_clientip_text_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_jsonb_extracted_tenant_id_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_jsonb_extracted_tenant_id_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_jsonb_extracted_nature_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_jsonb_extracted_nature_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_nature_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_nature_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_request'
+              AND indexname = 'sat_inter_fhir_req_bund_sess_id_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_fhir_req_bund_sess_id_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_user_agent_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_user_agent_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_http_request'
+              AND indexname = 'sat_interaction_http_request_payload_clientip_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_http_request_payload_clientip_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_request'
+              AND indexname = 'sat_inter_fhir_req_patient_mrn_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_fhir_req_patient_mrn_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_request'
+              AND indexname = 'sat_inter_fhir_req_org_name_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_fhir_req_org_name_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_request'
+              AND indexname = 'sat_inter_fhir_req_frm_state_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_fhir_req_frm_state_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_screening_organization'
+              AND indexname = 'idx_sat_interaction_fhir_screening_organization_created_at_desc'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_interaction_fhir_screening_organization_created_at_desc;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_fhir_screening_patient'
+              AND indexname = 'sat_interaction_fhir_screening_patient_created_at_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_interaction_fhir_screening_patient_created_at_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_request'
+              AND indexname = 'sat_inter_ccda_req_payload_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_ccda_req_payload_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_request'
+              AND indexname = 'sat_inter_hl7_req_payload_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_hl7_req_payload_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_zip_file_request'
+              AND indexname = 'idx_sat_interaction_zip_file_request_created_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_interaction_zip_file_request_created_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_csv_fhir_processing_errors'
+              AND indexname = 'idx_sat_csv_fhir_processing_errors_created_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_csv_fhir_processing_errors_created_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_request'
+              AND indexname = 'sat_int_ccda_req_uq_hub_int_tnt_nat'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_int_ccda_req_uq_hub_int_tnt_nat;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_request'
+              AND indexname = 'sat_int_hl7_req_uq_hub_int_tnt_nat'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_int_hl7_req_uq_hub_int_tnt_nat;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_request'
+              AND indexname = 'sat_inter_ccda_req_created_at_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_ccda_req_created_at_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_nexus_interaction_ingestion'
+              AND indexname = 'sat_int_nexus_req_uq_hub_nexus_int_tnt_nat'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_int_nexus_req_uq_hub_nexus_int_tnt_nat;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_request'
+              AND indexname = 'sat_inter_ccda_req_frm_state_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_ccda_req_frm_state_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_request'
+              AND indexname = 'sat_inter_ccda_req_nature_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_ccda_req_nature_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'json_action_rule'
+              AND indexname = 'json_action_rule_action_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.json_action_rule_action_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_request'
+              AND indexname = 'sat_inter_hl7_req_frm_state_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_hl7_req_frm_state_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'json_action_rule'
+              AND indexname = 'json_action_rule_last_applied_at_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.json_action_rule_last_applied_at_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'json_action_rule'
+              AND indexname = 'json_action_rule_namespace_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.json_action_rule_namespace_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'json_action_rule'
+              AND indexname = 'json_action_rule_priority_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.json_action_rule_priority_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_request'
+              AND indexname = 'sat_inter_hl7_req_nature_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_hl7_req_nature_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_request'
+              AND indexname = 'sat_inter_hl7_req_to_state_idx'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.sat_inter_hl7_req_to_state_idx;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_validation_errors'
+              AND indexname = 'idx_sat_ccda_validation_errors_created_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_ccda_validation_errors_created_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_ccda_validation_errors'
+              AND indexname = 'idx_sat_ccda_validation_errors_hub_interaction_id'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_ccda_validation_errors_hub_interaction_id;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_validation_errors'
+              AND indexname = 'idx_sat_hl7_validation_errors_created_at'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_hl7_validation_errors_created_at;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+              AND tablename = 'sat_interaction_hl7_validation_errors'
+              AND indexname = 'idx_sat_hl7_validation_errors_hub_interaction_id'
+        ) THEN
+            DROP INDEX techbd_udi_ingress.idx_sat_hl7_validation_errors_hub_interaction_id;
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'ccda_replay_details'
+                AND indexname = 'ccda_replay_details_bundle_id_idx'
+            ) THEN
+              DROP INDEX techbd_udi_ingress.ccda_replay_details_bundle_id_idx; 
+        END IF;
+        
+        IF EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'ccda_replay_details'
+                AND indexname = 'ccda_replay_details_bundle_id_key'
+            ) THEN
+              DROP INDEX techbd_udi_ingress.ccda_replay_details_bundle_id_key; 
+        END IF;
+        RAISE NOTICE 'Cleanup complete: All unused indexes were handled successfully.';
+            EXCEPTION
+                WHEN OTHERS THEN
+                    RAISE WARNING 'Error while dropping unused indexes: %', SQLERRM;
+        END;
+    PERFORM pg_advisory_unlock(hashtext('perfomance_index'));
+END;
+$unused_index$;
