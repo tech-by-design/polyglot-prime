@@ -8679,18 +8679,32 @@ BEGIN
         FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
         WHERE fhir.to_state = 'FAIL'
           AND fhir.bundle_id IS NOT NULL
-          AND (fhir.nature = 'Forwarded HTTP Response Replay Error' OR 
-				(fhir.nature = 'Forwarded HTTP Response Error'
-		         AND (
+		  AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (fhir.nature = 'Forwarded HTTP Response Replay Error' AND fhir.to_state = 'FAIL')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            fhir.nature = 'Forwarded HTTP Response Error'
+		            AND fhir.to_state = 'FAIL'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = fhir.bundle_id
+		                  AND sub.nature LIKE 'Forwarded HTTP Response Replay%'
+		                  AND sub.to_state IN ('FAIL', 'COMPLETE')
+		            )
+		            -- Apply date filter only for Response Error
+		            AND (
 		                (start_time IS NULL AND end_time IS NULL)
 		                OR (
 		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
-		                    AND fhir.created_at >= start_time
-		                    AND fhir.created_at <= end_time
+				            AND fhir.created_at >= start_time
+				            AND fhir.created_at <= end_time
 		                )
-		         )
-				)
-			  )
+		            )
+		        )
+		     )
     )
     INSERT INTO techbd_udi_ingress.fhir_replay_details (
         bundle_id,
@@ -8710,7 +8724,7 @@ BEGIN
         replay_status,
         error_message,
         elaboration,
-        created_at,
+        CURRENT_TIMESTAMP,
         created_by,
         provenance
     FROM prioritized
@@ -8742,17 +8756,32 @@ BEGIN
          AND rq.hub_interaction_id = rd.hub_interaction_id
         WHERE rq.to_state = 'FAIL'
           AND rq.bundle_id IS NOT NULL
-          AND (rq.nature = 'Forwarded HTTP Response Replay Error' OR 
-				(rq.nature = 'Forwarded HTTP Response Error'
-		         AND (
+          AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (rq.nature = 'Forwarded HTTP Response Replay Error' AND rq.to_state = 'FAIL')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            rq.nature = 'Forwarded HTTP Response Error'
+		            AND rq.to_state = 'FAIL'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = rq.bundle_id
+		                  AND sub.nature LIKE 'Forwarded HTTP Response Replay%'
+		                  AND sub.to_state IN ('FAIL', 'COMPLETE')
+		            )
+		            -- Apply date filter only for Response Error
+		            AND (
 		                (start_time IS NULL AND end_time IS NULL)
 		                OR (
 		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
-		                    AND rq.created_at >= start_time
-		                    AND rq.created_at <= end_time
+				            AND rq.created_at >= start_time
+				            AND rq.created_at <= end_time
 		                )
-		         ))
-				)
+		            )
+		        )
+		     )
     )
     SELECT jsonb_build_object(
         'bundle_count', COUNT(bundle_id),
