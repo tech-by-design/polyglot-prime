@@ -248,6 +248,22 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+         <!-- Togglz Feature Toggle Dependencies -->
+        <dependency>
+            <groupId>org.togglz</groupId>
+            <artifactId>togglz-console-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.togglz</groupId>
+            <artifactId>togglz-spring-web</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+        <!-- Hibernate Validator for Bean Validation -->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

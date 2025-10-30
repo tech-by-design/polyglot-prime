@@ -25,8 +25,6 @@ public class AppConfig {
     private CsvValidation csv;
     private Map<String, FhirV4Config> igPackages;
     private String dataLedgerApiUrl;
-    private boolean dataLedgerTracking;
-    private boolean dataLedgerDiagnostics;    
     private String validationSeverityLevel;
     private String dataLedgerApiKeySecretName;
     @Getter

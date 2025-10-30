@@ -295,6 +295,23 @@
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
         </dependency>
+
+        <!-- Togglz Feature Toggle Dependencies -->
+        <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-console-spring-boot-starter</artifactId> 
+            <version>4.4.0</version> 
+        </dependency> 
+        <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-spring-web</artifactId> 
+            <version>4.4.0</version> 
+        </dependency>
+        <!-- Hibernate Validator for Bean Validation -->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -325,6 +342,11 @@
              <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.checkerframework.checker.units.qual.m;
+import org.checkerframework.checker.units.qual.t;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.corelib.config.Configuration;
@@ -30,6 +31,7 @@ import org.techbd.csv.config.Nature;
 import org.techbd.corelib.config.SourceType;
 import org.techbd.corelib.config.State;
 import org.techbd.csv.converters.CsvToFhirConverter;
+import org.techbd.csv.feature.FeatureEnum;
 import org.techbd.csv.model.CsvDataValidationStatus;
 import org.techbd.csv.model.CsvProcessingMetrics;
 import org.techbd.csv.model.CsvProcessingMetrics.CsvProcessingMetricsBuilder;
@@ -137,7 +139,7 @@ public class CsvBundleProcessorService {
                         DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
                         DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
                         final var dataLedgerProvenance = "%s.processPayload".formatted(CsvBundleProcessorService.class.getName());
-                        coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),createAdditionalDetails(outcome));
+                        coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),createAdditionalDetails(outcome),FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
                         isAllCsvConvertedToFhir = false;
                         resultBundles.add(outcome.validationResults());
                 }
@@ -150,7 +152,7 @@ public class CsvBundleProcessorService {
                 DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
                 DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
                 final var dataLedgerProvenance = "%s.processPayload".formatted(CsvBundleProcessorService.class.getName());
-                coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),errors);
+                coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),errors,FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
                 resultBundles.add(errors);
                 miscErrors.add(errors);
                 isAllCsvConvertedToFhir = false;
@@ -166,7 +168,7 @@ public class CsvBundleProcessorService {
             DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
             DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
             final var dataLedgerProvenance = "%s.sendPostRequest".formatted(CsvBundleProcessorService.class.getName());
-            coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,null,dataLedgerProvenance,SourceType.CSV.name(),fileNotProcessedError);
+            coreDataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,null,dataLedgerProvenance,SourceType.CSV.name(),fileNotProcessedError,FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
             resultBundles.add(fileNotProcessedError);
             miscErrors.add(fileNotProcessedError);
             isAllCsvConvertedToFhir = false;
@@ -491,7 +493,7 @@ private List<Object> processScreening(final String groupKey,
                         DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
                         DataLedgerApiClient.Actor.INVALID_CSV.getValue(), bundleId != null ? bundleId : masterInteractionId);
                         final var dataLedgerProvenance = "%s.processScreening".formatted(CsvBundleProcessorService.class.getName());
-                        coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result);        
+                        coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result,FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING),FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
                         results.add(result);
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
                                 interactionId, requestParameters,
@@ -508,7 +510,7 @@ private List<Object> processScreening(final String groupKey,
                     DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
                     DataLedgerApiClient.Actor.INVALID_CSV.getValue(), bundleId != null ? bundleId : masterInteractionId);
                     final var dataLedgerProvenance = "%s.processScreening".formatted(CsvBundleProcessorService.class.getName());
-                    coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result);
+                    coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result,FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
                     LOG.error("Error processing patient data for MrId:{}, interactionId: {}, masterInteractionId:{} , groupInteractionId:{}, Error:{}",
                             profile.getPatientMrIdValue(), interactionId,masterInteractionId,groupInteractionId, e.getMessage(), e);
                     results.add(result);

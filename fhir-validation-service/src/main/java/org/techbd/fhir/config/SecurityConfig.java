@@ -36,11 +36,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // CSRF off for non-browser clients
                 .authorizeHttpRequests(auth -> auth
                         // Publicly permitted endpoints
-
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/Bundle/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/metadata").permitAll()
+                        // Feature toggle endpoints - allow all methods
+                        .requestMatchers("/api/features/**").permitAll()
+                        .requestMatchers("/feature").permitAll()
+                        .requestMatchers("/core-lib/features/**").permitAll()
                         .anyRequest().denyAll());
 
         return http.build();

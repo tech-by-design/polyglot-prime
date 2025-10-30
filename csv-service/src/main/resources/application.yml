@@ -71,8 +71,8 @@ org:
     defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
     operationOutcomeHelpUrl: "https://techbd.org/get-help/"
     dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-    dataLedgerTracking: false
-    dataLedgerDiagnostics: true
+    # dataLedgerTracking: false
+    # dataLedgerDiagnostics: true
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
     defaultDataLakeApiAuthn:
       # The allowed values for mTlsStrategy are as follows:
@@ -100,3 +100,10 @@ org:
         cmd: /usr/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-via-mtls.sh
         # Wait time to receive response from scoring engine
         timeout: 180
+togglz: 
+  enabled: true 
+  features: 
+    FEATURE_DATA_LEDGER_TRACKING: 
+      enabled: false
+    FEATURE_DATA_LEDGER_DIAGNOSTICS: 
+      enabled: true

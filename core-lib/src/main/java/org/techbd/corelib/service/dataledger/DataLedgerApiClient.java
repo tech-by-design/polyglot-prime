@@ -41,13 +41,13 @@ public class DataLedgerApiClient {
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,
-            String source, Map<String, Object> additionalDetails) {
-        processRequest(dataLedgerPayload, interactionId, null, null, provenance, source, additionalDetails);
+            String source, Map<String, Object> additionalDetails, boolean isTrackingEnabled, boolean isDiagnosticsEnabled) {
+        processRequest(dataLedgerPayload, interactionId, null, null, provenance, source, additionalDetails, isTrackingEnabled, isDiagnosticsEnabled);
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String sourceHubInteractionId,
-            String groupHubInteractionId, String provenance, String source, Map<String, Object> additionalDetails) {
-        if (appConfig.isDataLedgerTracking()) {
+            String groupHubInteractionId, String provenance, String source, Map<String, Object> additionalDetails, boolean isTrackingEnabled, boolean isDiagnosticsEnabled) {
+        if (isTrackingEnabled) {
             String apiUrl = appConfig.getDataLedgerApiUrl(); // Read API URL from AppConfig
             String jsonPayload = StringUtils.EMPTY;
             try {
@@ -55,7 +55,7 @@ public class DataLedgerApiClient {
             } catch (JsonProcessingException ex) {
                 LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId,
                         ex.getMessage());
-                if (appConfig.isDataLedgerDiagnostics()) {
+                if (isDiagnosticsEnabled) {
                     processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
                             groupHubInteractionId, sourceHubInteractionId, dataLedgerPayload.action, provenance, source,
                             additionalDetails);
@@ -64,11 +64,11 @@ public class DataLedgerApiClient {
             try {
                 LOG.info("DataLedgerApiClient:: Sending to DataLedger BEGIN for interactionId: {}", interactionId);
                 sendRequestAsync(apiUrl, jsonPayload, interactionId, sourceHubInteractionId, groupHubInteractionId,
-                        dataLedgerPayload.action, provenance, source, additionalDetails);
+                        dataLedgerPayload.action, provenance, source, additionalDetails, isDiagnosticsEnabled);
             } catch (Exception ex) {
                 LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId,
                         ex.getMessage());
-                if (appConfig.isDataLedgerDiagnostics()) {
+                if (isDiagnosticsEnabled) {
                     processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null,
                             ex.getMessage() + "\n" + java.util.Arrays.stream(ex.getStackTrace())
                                     .map(StackTraceElement::toString)
@@ -87,7 +87,7 @@ public class DataLedgerApiClient {
 
     public void sendRequestAsync(String apiUrl, String jsonPayload, String interactionId, String sourceHubInteractionId,
             String groupHubInteractionId, String action, String provenance, String source,
-            Map<String, Object> additionalDetails) {
+            Map<String, Object> additionalDetails, boolean isDiagnosticsEnabled ) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .header("Content-Type", "application/json")
@@ -117,16 +117,16 @@ public class DataLedgerApiClient {
                             + interactionId);
                     // LOG.info("Data Ledger API response body : " + response.body() + " for interactionId : "
                     //         + interactionId);
-                    if (appConfig.isDataLedgerDiagnostics()) {
+                    if (isDiagnosticsEnabled) {
                         processActionDiagnosticData(interactionId, apiUrl, jsonPayload, response, null,
                                 groupHubInteractionId, sourceHubInteractionId, action, provenance, source,
                                 additionalDetails);
-                    }
+                   }
                 })
                 .exceptionally(ex -> {
                     LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId,
                             ex.getMessage());
-                    if (appConfig.isDataLedgerDiagnostics()) {
+                    if (isDiagnosticsEnabled) {
                         processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
                                 groupHubInteractionId, sourceHubInteractionId, action, provenance, source,
                                 additionalDetails);

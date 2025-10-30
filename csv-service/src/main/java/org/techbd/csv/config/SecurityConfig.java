@@ -40,6 +40,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/flatfile/csv/**").permitAll()
+                        .requestMatchers("/api/features/**").permitAll()
+                        .requestMatchers("/feature").permitAll()
+                        .requestMatchers("/csv-service/features/**").permitAll()
                         .anyRequest().denyAll());
         return http.build();
     }
