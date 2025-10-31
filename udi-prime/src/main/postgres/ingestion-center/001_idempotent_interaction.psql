@@ -874,6 +874,7 @@ $function$
 /*******************************************************************************************
  * Comprehensive view of Orchctl issue classification. * 
  ******************************************************************************************/
+ /*
 DROP VIEW IF EXISTS techbd_udi_ingress.orch_session_issue_classification CASCADE;
 CREATE OR REPLACE
 VIEW techbd_udi_ingress.orch_session_issue_classification as
@@ -926,6 +927,8 @@ LEFT JOIN cte_business_rule br ON
 WHERE
 	isi.orch_session_issue_id is not null
 ;
+
+*/
 
 /*******************************************************************************************
  * Comprehensive view of SFTP interactions and their associated requests. * 
