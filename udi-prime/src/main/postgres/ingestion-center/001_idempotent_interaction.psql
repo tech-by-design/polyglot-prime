@@ -1859,7 +1859,8 @@ BEGIN
 			v_error_msg := 'hub_interaction_id is not in the hub_interaction table.';
     END IF;
   
-    IF(NOT v_return_status AND LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
+	IF (NOT v_return_status) THEN
+    IF(LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
         SELECT 
         fhir_req.client_ip_address,         fhir_req.user_agent,                fhir_req.bundle_id, 
         fhir_req.bundle_last_updated,       fhir_req.organization_id,           fhir_req.organization_name, 
@@ -1881,9 +1882,7 @@ BEGIN
         WHERE 1 = 1
         AND fhir_req.hub_interaction_id = p_hub_interaction_id
         AND fhir_req.nature = 'Original FHIR Payload';  
-    END IF;     
-
-    IF(NOT v_return_status AND LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN                  
+    ELSE
         
         v_user_agent                := p_additional_details->'request'->>'User-Agent';    
         v_client_ip_address         := p_additional_details->'request'->>'remoteAddr';
@@ -2000,7 +1999,7 @@ BEGIN
     END IF; /*End of : Original FHIR Payload*/
     
     -- Save the action from the OperationOutcome->techByDesignDisposition
-    IF (NOT v_return_status) AND LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
+    IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
         v_issues_count              := jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);            
         v_outbound_http_message     := "substring"((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);    
         v_bundle_session_id         := p_payload->'OperationOutcome'->>'bundleSessionId';                     
@@ -2018,7 +2017,7 @@ BEGIN
         END IF;
     END IF;
 
-    IF(NOT v_return_status AND LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'), LOWER('Forwarded HTTP Request Replay'), LOWER('Forwarded HTTP Response Replay'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
+    IF (LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'), LOWER('Forwarded HTTP Request Replay'), LOWER('Forwarded HTTP Response Replay'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
         v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 
         IF(LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
@@ -2054,7 +2053,6 @@ BEGIN
         WHEN others THEN v_bundle_last_updated := NULL;  -- Set to NULL if it's an invalid timestamp
     END;
 
-    IF NOT v_return_status THEN
 		IF ((p_nature = 'Forwarded HTTP Response Replay Error' OR p_nature = 'Forwarded HTTP Response Replay')
 		   	AND EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_fhir_request t
 	        			WHERE t.hub_interaction_id = p_hub_interaction_id AND nature = 'Forwarded HTTP Response Replay Error')) THEN
@@ -2203,9 +2201,8 @@ BEGIN
 	
 	        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Insert into sat_interaction_fhir_request'));
 		END IF;
-    END IF;
 
-    IF (NOT v_return_status AND v_return IS NOT NULL) THEN
+    IF (v_return IS NOT NULL) THEN
         IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/' OR p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN
             IF(LOWER(p_nature) = LOWER('techByDesignDisposition')) THEN
                 CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
@@ -2279,7 +2276,7 @@ BEGIN
     END IF; 
 
     -- Save the details from the techByDesignDisposition to other natures also
-    IF (NOT v_return_status) AND LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
+    IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
         UPDATE techbd_udi_ingress.sat_interaction_fhir_request
             SET --issues_count          = COALESCE(v_issues_count, 0),          
                 outbound_http_message   = v_outbound_http_message,      
@@ -2342,11 +2339,21 @@ BEGIN
     END IF;    
     
     -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
-    IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
+    IF (LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
         UPDATE techbd_udi_ingress.sat_interaction_fhir_request
             SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
         WHERE hub_interaction_id = p_hub_interaction_id;
-    END IF;                        
+
+		IF (LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
+			--Update nyec_submitted_status and submitted_on values in 'Forwarded HTTP Response Error'
+			UPDATE techbd_udi_ingress.sat_interaction_fhir_request
+	            SET nyec_submitted_status = CASE WHEN p_to_state = 'COMPLETE' THEN True ELSE False END,
+					submitted_on  = v_created_at
+	        WHERE hub_interaction_id = p_hub_interaction_id
+			AND nature = 'Forwarded HTTP Response Error';
+		END IF;
+    END IF;
+	END IF;
     
 EXCEPTION
    WHEN OTHERS THEN
