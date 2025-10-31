@@ -75,9 +75,7 @@ class DataLedgerApiClientTest {
 
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
-
+       
         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
@@ -101,8 +99,8 @@ class DataLedgerApiClientTest {
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
 
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
+        // when(appConfig.isDataLedgerTracking()).thenReturn(true);
+        // when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
 
         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
@@ -123,13 +121,8 @@ class DataLedgerApiClientTest {
         String destination = Actor.TECHBD.getValue();
         String dataId = "testDataId";
         String interactionId = "testInteractionId";
-
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
-
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
-
         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
@@ -149,18 +142,13 @@ class DataLedgerApiClientTest {
         String destination = "testDestination";
         String dataId = "testDataId";
         String interactionId = "testInteractionId";
-
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
-
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(false);
-
-        @SuppressWarnings("unchecked")
+         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
         when(mockResponse.body()).thenReturn("Success");
-
+        
         CompletableFuture<HttpResponse<String>> mockFuture = CompletableFuture.completedFuture(mockResponse);
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);
 
@@ -179,8 +167,6 @@ class DataLedgerApiClientTest {
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
 
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(false);
-
         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
@@ -204,9 +190,6 @@ class DataLedgerApiClientTest {
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
 
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
-
         // Mock failure response
         @SuppressWarnings("unchecked")
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
@@ -228,11 +211,8 @@ class DataLedgerApiClientTest {
         String dataId = "testDataId";
 
         DataLedgerPayload payload = DataLedgerPayload.create(actor, action, destination, dataId);
-
         when(appConfig.getDataLedgerApiUrl()).thenReturn("http://mock-endpoint");
-        when(appConfig.isDataLedgerTracking()).thenReturn(true);
-        when(appConfig.isDataLedgerDiagnostics()).thenReturn(true);
-
+        
         CompletableFuture<HttpResponse<String>> mockFuture = new CompletableFuture<>();
         mockFuture.completeExceptionally(new IOException("Mocked IOException"));
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockFuture);

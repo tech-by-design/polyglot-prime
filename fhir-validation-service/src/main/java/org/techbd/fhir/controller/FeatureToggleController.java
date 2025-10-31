@@ -34,4 +34,15 @@ public class FeatureToggleController {
         boolean active = featureManager.isActive(feature);
         return name + " is " + (active ? "enabled" : "disabled");
     }
+    
+    @GetMapping("/all/feature/status")
+    @ResponseBody    
+    public String checkFeature() {
+        boolean trackingActive = featureManager.isActive(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING);
+        boolean diagnosticsActive = featureManager.isActive(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS);
+        
+        return String.format("DATA_LEDGER_TRACKING: %s, DATA_LEDGER_DIAGNOSTICS: %s", 
+            trackingActive ? "ACTIVE" : "NOT ACTIVE",
+            diagnosticsActive ? "ACTIVE" : "NOT ACTIVE");
+    }
 }
