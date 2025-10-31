@@ -2345,10 +2345,10 @@ BEGIN
         WHERE hub_interaction_id = p_hub_interaction_id;
 
 		IF (LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
-			--Update nyec_submitted_status and submitted_on values in 'Forwarded HTTP Response Error'
+			--Update replay_status and replay_on values in 'Forwarded HTTP Response Error'
 			UPDATE techbd_udi_ingress.sat_interaction_fhir_request
-	            SET nyec_submitted_status = CASE WHEN p_to_state = 'COMPLETE' THEN True ELSE False END,
-					submitted_on  = v_created_at
+	            SET replay_status = CASE WHEN p_to_state = 'COMPLETE' THEN 'True' ELSE 'False' END,
+					replay_on  = v_created_at
 	        WHERE hub_interaction_id = p_hub_interaction_id
 			AND nature = 'Forwarded HTTP Response Error';
 		END IF;
