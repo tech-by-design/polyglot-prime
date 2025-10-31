@@ -105,7 +105,7 @@ BEGIN
 			'state_transition_reason', 'outbound_http_message', 'error_message', 'issues_count', 'bundle_id', 'bundle_session_id', 'bundle_last_updated', 'organization_id', 
 			'organization_name', 'patient_id', 'patient_mrn', 'resource_type_set', 'validation_initiated_at', 'validation_completed_at', 'interaction_start_time', 'interaction_end_time', 
 			'validation_engine', 'ig_version', 'profile_url', 'passed', 'medicaid_cin', 'elaboration', 'created_at', 'created_by', 'provenance', 'techbd_disposition_action', 'patient_mrn_source_system', 
-			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details', 'techbd_version_number', 'nyec_submitted_status', 'submitted_on'],
+			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details', 'techbd_version_number', 'replay_status', 'replay_on'],
         'The columns of techbd_udi_ingress.sat_interaction_fhir_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
