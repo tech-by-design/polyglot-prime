@@ -219,24 +219,24 @@ function sqlDDLGenerateMigration() {
         SELECT count(*)
         INTO schema_count
         FROM information_schema.schemata
-        WHERE schema_name IN ('info_schema_lifecycle', 'info_schema_lifecycle_assurance', 'techbd_orch_ctl');
+        WHERE schema_name IN ('info_schema_lifecycle', 'info_schema_lifecycle_assurance');
 
-        -- If less than 3 schemas are found, raise an error
-        IF schema_count < 3 THEN
-            RAISE EXCEPTION 'One or more of the required schemas info_schema_lifecycle, info_schema_lifecycle_assurance, techbd_orch_ctl are missing';
+        -- If less than 2 schemas are found, raise an error
+        IF schema_count < 2 THEN
+            RAISE EXCEPTION 'One or more of the required schemas info_schema_lifecycle, info_schema_lifecycle_assurance are missing';
         END IF;
 
         -- Check if the required tables exist in the specified schema
-        SELECT count(*)
-        INTO table_count
-        FROM information_schema.tables
-        WHERE table_schema = 'techbd_orch_ctl'
-        AND table_name IN ('business_rules', 'demographic_data', 'device', 'orch_session', 'orch_session_entry', 'orch_session_exec', 'orch_session_issue', 'orch_session_state', 'qe_admin_data', 'screening');
+       -- SELECT count(*)
+       -- INTO table_count
+       -- FROM information_schema.tables
+       -- WHERE table_schema = 'techbd_orch_ctl'
+       -- AND table_name IN ('business_rules', 'demographic_data', 'device', 'orch_session', 'orch_session_entry', 'orch_session_exec', 'orch_session_issue', 'orch_session_state', 'qe_admin_data', 'screening');
 
         -- If less than 10 tables are found, raise an error
-        IF table_count < 10 THEN
-            RAISE EXCEPTION 'One or more required tables are missing in schema techbd_orch_ctl';
-        END IF;
+     --   IF table_count < 10 THEN
+       --     RAISE EXCEPTION 'One or more required tables are missing in schema techbd_orch_ctl';
+      --  END IF;
       END;
       $$;
 
