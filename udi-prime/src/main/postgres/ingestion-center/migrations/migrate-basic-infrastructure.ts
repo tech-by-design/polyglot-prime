@@ -131,6 +131,8 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
     group_hub_interaction_id: textNullable(),
     is_bundle_valid: boolean().default(false),
     bundle_type: textNullable(),
+    nyec_submitted_status: boolean().default(false),
+    submitted_on: dateTimeNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -819,6 +821,23 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHttpRequestSat}
 
       ${interactionFhirRequestSat}
+      -- Check and add 'nyec_submitted_status' column if it does not exist
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                    AND table_name='sat_interaction_fhir_request' 
+                    AND column_name='nyec_submitted_status') THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
+          ADD COLUMN nyec_submitted_status boolean DEFAULT false;
+      END IF;
+
+      -- Check and add 'submitted_on' column if it does not exist
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                    WHERE table_schema = 'techbd_udi_ingress'
+                    AND table_name='sat_interaction_fhir_request' 
+                    AND column_name='submitted_on') THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
+          ADD COLUMN submitted_on timestamptz DEFAULT null;
+      END IF;
 
       ${diagnosticDataledgerSat}
 
