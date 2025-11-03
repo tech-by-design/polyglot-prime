@@ -11,16 +11,30 @@ import org.springframework.context.annotation.Configuration;
 import lombok.extern.slf4j.Slf4j;
 import org.techbd.ingest.config.PortConfig;
 
+/**
+ * Registers routes for ports defined in PortConfig.
+ *
+ * Behavior:
+ * - For entries with protocol == "TCP" && responseType equalsIgnoreCase("mllp")
+ *   -> register an MLLP route (MllpRoute created by MllpRouteFactory).
+ * - For entries with protocol == "TCP" && responseType is null/blank/any-other-than-mllp
+ *   -> register a plain TCP route (TcpRoute created by TcpRouteFactory).
+ *
+ * Other entries are ignored.
+ */
 @Configuration
 @Slf4j
 public class MllpRouteRegistrar {
 
-    private final MllpRouteFactory routeFactory;
+    private final MllpRouteFactory mllpFactory;
+    private final TcpRouteFactory tcpFactory;
     private final ConfigurableBeanFactory beanFactory;
     private final PortConfig portConfig;
 
-    public MllpRouteRegistrar(MllpRouteFactory routeFactory, ConfigurableBeanFactory beanFactory, PortConfig portConfig) {
-        this.routeFactory = routeFactory;
+    public MllpRouteRegistrar(MllpRouteFactory mllpFactory, TcpRouteFactory tcpFactory,
+            ConfigurableBeanFactory beanFactory, PortConfig portConfig) {
+        this.mllpFactory = mllpFactory;
+        this.tcpFactory = tcpFactory;
         this.beanFactory = beanFactory;
         this.portConfig = portConfig;
     }
@@ -28,29 +42,52 @@ public class MllpRouteRegistrar {
     @Bean
     public List<RouteBuilder> registerMllpRoutes() {
         if (portConfig == null || !portConfig.isLoaded()) {
-            log.warn("PortConfig not available or not loaded — no MLLP routes will be created.");
+            log.warn("PortConfig not available or not loaded — no routes will be created.");
             return List.of();
         }
 
-        List<Integer> ports = portConfig.getMllpPorts();
-        if (ports == null || ports.isEmpty()) {
-            log.warn("No ports in PortConfig configured with responseType='mllp' and protocol='TCP' — no MLLP routes will be created.");
+        List<PortConfig.PortEntry> entries = portConfig.getPortConfigurationList();
+        if (entries == null || entries.isEmpty()) {
+            log.warn("PortConfig has no entries — no routes will be created.");
             return List.of();
         }
 
-        return ports.stream()
-                .map(port -> {
+        List<RouteBuilder> routes = entries.stream()
+                .filter(e -> e != null)
+                .filter(e -> {
+                    String proto = e.protocol == null ? "" : e.protocol.trim();
+                    return "tcp".equalsIgnoreCase(proto);
+                })
+                .map(entry -> {
+                    int port = entry.port;
+                    String resp = entry.responseType == null ? "" : entry.responseType.trim();
                     try {
-                        MllpRoute route = routeFactory.create(port);
-                        String beanName = "mllpRoute_" + port;
-                        beanFactory.registerSingleton(beanName, route);
-                        log.info("Registered MllpRoute bean '{}' for port {}", beanName, port);
-                        return (RouteBuilder) route;
-                    } catch (Exception e) {
-                        log.error("Failed to create or register MLLP route on port {}: {}", port, e.getMessage(), e);
-                        throw new IllegalStateException("Failed to initialize MLLP route on port " + port, e);
+                        if ("mllp".equalsIgnoreCase(resp)) {
+                            MllpRoute route = mllpFactory.create(port);
+                            String beanName = "mllpRoute_" + port;
+                            beanFactory.registerSingleton(beanName, route);
+                            log.info("Registered MLLP route bean '{}' for port {}", beanName, port);
+                            return (RouteBuilder) route;
+                        } else {
+                            // For protocol=TCP and any responseType other than "mllp" (including blank/null),
+                            // create a plain TCP route.
+                            TcpRoute route = tcpFactory.create(port);
+                            String beanName = "tcpRoute_" + port;
+                            beanFactory.registerSingleton(beanName, route);
+                            log.info("Registered TCP route bean '{}' for port {} (responseType='{}')", beanName, port, entry.responseType);
+                            return (RouteBuilder) route;
+                        }
+                    } catch (Exception ex) {
+                        log.error("Failed to create/register route for port {} : {}", port, ex.getMessage(), ex);
+                        throw new IllegalStateException("Failed to initialize route on port " + port, ex);
                     }
                 })
+                .filter(r -> r != null)
                 .collect(Collectors.toList());
+
+        if (routes.isEmpty()) {
+            log.warn("No TCP/MLLP routes were registered from PortConfig.");
+        }
+        return routes;
     }
 }

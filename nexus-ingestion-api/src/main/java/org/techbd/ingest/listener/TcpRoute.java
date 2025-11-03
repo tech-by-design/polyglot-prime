@@ -6,10 +6,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
@@ -31,56 +29,70 @@ import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
 
-public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
+/**
+ * Plain TCP route (no MLLP framing). Sends HL7 ACK/NACK back as raw bytes on the TCP socket.
+ */
+public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
 
-    private TemplateLogger logger;
-
+    private final TemplateLogger logger;
     private final int port;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortConfig portConfig;
-    private Map<String, String> headers;
+    private Map<String, String> headers = new HashMap<>();
 
-    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+    public TcpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.portConfig = portConfig;
-        this.headers = new HashMap<>();
-        this.logger = appLogger.getLogger(MllpRoute.class);
+        this.logger = appLogger.getLogger(TcpRoute.class);
     }
 
     @Override
     public void configure() throws Exception {
-        from("mllp://0.0.0.0:" + port + "?autoAck=false")
-                .routeId("hl7-mllp-listener-" + port)
-                .log("[PORT " + port + "] Received HL7 message")
+        // Determine available Camel TCP-like component at runtime and choose an endpoint URI.
+        // If none are present, skip creating the route to avoid Camel failing to start.
+        String endpointUri = null;
+        // Use getComponent(...) and check for null to avoid boolean-theory issues across Camel versions.
+        if (getContext().getComponent("tcp") != null) {
+            endpointUri = "tcp://0.0.0.0:" + port + "?sync=true";
+        } else if (getContext().getComponent("netty4") != null) {
+            endpointUri = "netty4:tcp://0.0.0.0:" + port + "?sync=true";
+        } else if (getContext().getComponent("netty") != null) {
+            endpointUri = "netty:tcp://0.0.0.0:" + port + "?sync=true";
+        } else {
+            logger.warn("[TCP PORT {}] No TCP-capable Camel component (tcp/netty4/netty) found on classpath — skipping TCP route creation", port);
+            return;
+        }
+
+        from(endpointUri)
+                .routeId("hl7-tcp-listener-" + port)
+                .log("[TCP PORT " + port + "] Received HL7 message")
                 .process(exchange -> {
-                    // Wrap entire processor to guarantee a safe NACK on any unexpected error and to log acknowledgement presence
-                    String hl7Message = null;
+                    String hl7Message = exchange.getIn().getBody(String.class);
                     GenericParser parser = new GenericParser();
                     String interactionId = UUID.randomUUID().toString();
-                    String nack = null;
+                    String response = null;
+
                     String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
                     String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
-                    logger.info("[PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
+                    logger.info("[TCP PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
 
                     try {
-                        hl7Message = exchange.getIn().getBody(String.class);
-
-                        // MLLP route: only handle MLLP framing/ACK/NACK logic here.
-                        // Selection of whether this port is MLLP vs plain TCP is done in MllpRouteRegistrar.
                         Message hapiMsg = parser.parse(hl7Message);
                         Message ack = hapiMsg.generateACK();
-                        String ackMessage = addNteWithInteractionId(ack, interactionId, appConfig.getVersion());
-                        Terser terser = new Terser(hapiMsg);
+                        String ackMessage = MllpRoute.addNteWithInteractionId(ack, interactionId, appConfig.getVersion());
+
                         RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
                         Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
                         if (additionalDetails == null) {
                             additionalDetails = new HashMap<>();
                             requestContext.setAdditionalParameters(additionalDetails);
                         }
+
                         try {
+                            Terser terser = new Terser(hapiMsg);
                             Segment znt = terser.getSegment(".ZNT");
                             if (znt != null) {
                                 String messageCode = terser.get("/.ZNT-2");
@@ -96,58 +108,49 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                                 additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
                                 additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
                                 additionalDetails.put(Constants.FACILITY, facilityCode);
-                            } else {
-                                logger.warn("ZNT segment not found in HL7 message. interactionId={}", interactionId);
                             }
                         } catch (HL7Exception e) {
-                            logger.error("Error extracting ZNT segment from HL7 message: {} for interaction id :{}", e.getMessage(), interactionId);
+                            logger.error("[TCP PORT {}] Error extracting ZNT: {} interactionId={}", port, e.getMessage(), interactionId);
                         }
-                        messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
-                        logger.info("[PORT {}] Ack generated for interactionId={} ackPreview={}", port, interactionId, truncate(ackMessage, 1024));
-                        // Ensure Camel MLLP component will use this ACK
-                        exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
-                        exchange.getMessage().setBody(ackMessage);
-                        exchange.getIn().setBody(ackMessage);
-                        logger.info("[PORT {}] Processed HL7 message successfully; ACK set for interactionId={}", port, interactionId);
-                    } catch (Throwable t) {
-                        logger.error("[PORT {}] Unexpected error processing connection interactionId={}. Will send safe NACK. error={}", port, interactionId, t.getMessage(), t);
-                        try {
-                            if (nack == null) {
-                                String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                                String baseAck = "MSH|^~\\&|MLLP_LISTENER|LOCAL|BRIDGE|REMOTE|" + timestamp + "||ACK^O01|1|P|2.3\r";
-                                String msa = "MSA|AE|1\r";
-                                String nte = "NTE|1||Internal error processing message\r";
-                                nack = baseAck + msa + nte;
-                            }
-                            exchange.setProperty("CamelMllpAcknowledgementString", nack);
-                            exchange.getMessage().setBody(nack);
-                            exchange.getIn().setBody(nack);
-                            logger.info("[PORT {}] Safe NACK set for interactionId={} preview={}", port, interactionId, truncate(nack, 256));
-                        } catch (Exception ex2) {
-                            logger.error("[PORT {}] Failed to set NACK after unexpected error interactionId={}: {}", port, interactionId, ex2.getMessage(), ex2);
-                        }
-                    } finally {
-                        // Always log whether CamelMllpAcknowledgementString is present
-                        Object ackProp = exchange.getProperty("CamelMllpAcknowledgementString");
-                        logger.info("[PORT {}] Ack property present={} interactionId={}", port, ackProp != null, interactionId);
-                        logger.info("[PORT {}] Connection processing completed: {} -> {} interactionId={}", port, remote, local, interactionId);
-                    }
-                 })
-                 .log("[PORT " + port + "] ACK/NAK sent");
-     }
 
-    public static String addNteWithInteractionId(Message ackMessage, String interactionId, String ingestionApiVersion) throws HL7Exception {
-        Terser terser = new Terser(ackMessage);
-        ackMessage.addNonstandardSegment("NTE");
-        terser.set("/NTE(0)-1", "1");
-        terser.set("/NTE(0)-3",
-                "InteractionID: " + interactionId
-                + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
-        PipeParser parser = new PipeParser();
-        return parser.encode(ackMessage);
+                        messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
+                        response = ackMessage;
+                        // For plain TCP, set body to raw ACK (no MLLP framing)
+                        // If client sent MLLP framed message, wrap the response in MLLP frame so MLLP-capable clients (eg. Mirth) will detect it.
+                        boolean inboundWasMllp = hl7Message != null && hl7Message.length() > 0 && hl7Message.charAt(0) == '\u000B';
+                        if (inboundWasMllp) {
+                            String framed = "\u000B" + response + "\u001C\r";
+                            exchange.getMessage().setBody(framed);
+                            logger.info("[TCP PORT {}] Sent TCP ACK (MLLP-wrapped) for interactionId={} preview={}", port, interactionId, truncate(framed, 512));
+                        } else {
+                            exchange.getMessage().setBody(response);
+                            logger.info("[TCP PORT {}] Sent TCP ACK for interactionId={} preview={}", port, interactionId, truncate(response, 512));
+                        }
+                    } catch (Exception e) {
+                        logger.error("[TCP PORT {}] Error processing message interactionId={} : {}", port, interactionId, e.getMessage(), e);
+                        try {
+                            Message partial = parser.parse(hl7Message == null ? "" : hl7Message);
+                            Message generatedNack = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
+                            response = addNteWithInteractionId(generatedNack, interactionId, appConfig.getVersion());
+                        } catch (Throwable ex2) {
+                            logger.error("[TCP PORT {}] Failed to generate NACK interactionId={}: {}", port, interactionId, ex2.getMessage(), ex2);
+                            response = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN||ACK^O01|1|P|2.3\rMSA|AE|1\rNTE|1||InteractionID:" + interactionId + "\r";
+                        }
+                        exchange.getMessage().setBody(response);
+                        logger.info("[TCP PORT {}] Sent TCP NACK for interactionId={} preview={}", port, interactionId, truncate(response, 512));
+                    } finally {
+                        logger.info("[TCP PORT {}] Connection processing completed: {} -> {} interactionId={}", port, remote, local, interactionId);
+                    }
+                });
     }
 
-    private RequestContext buildRequestContext(Exchange exchange, String hl7Message, String interactionId) {
+    private RequestContext buildRequestContext(org.apache.camel.Exchange exchange, String hl7Message, String interactionId) {
+        // reuse same RequestContext builder as MllpRoute by delegating to a simplified approach
+        // minimal metadata: keep headers, source type and port etc.
+        // Note: keep implementation same as MllpRoute.buildRequestContext to ensure metadata is populated.
+        // For brevity call into MllpRoute's helper via shared logic if available; otherwise replicate minimal required fields.
+        // Here replicate required pieces similar to MllpRoute.buildRequestContext
+
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
         exchange.getIn().getHeaders().forEach((k, v) -> {
@@ -172,14 +175,14 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 uploadTime,
                 timestamp,
                 originalFileName,
-                hl7Message.length(),
+                hl7Message == null ? 0 : hl7Message.length(),
                 getDataKey(interactionId, headers, originalFileName, timestamp),
                 getMetaDataKey(interactionId, headers, originalFileName, timestamp),
                 getFullS3DataPath(interactionId, headers, originalFileName, timestamp),
                 getUserAgentFromHL7(hl7Message, interactionId),
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
-                "MLLP",
+                "TCP",
                 getSourceIp(headers),
                 getDestinationIp(headers),
                 null,
@@ -191,97 +194,39 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                 MessageSourceType.MLLP, getDataBucketName(), getMetadataBucketName(), appConfig.getVersion());
     }
 
-    /**
-     * Extracts a user-agent-like identifier from the HL7 message.
-     * <p>
-     * This method parses the MSH (Message Header) segment of the HL7 message
-     * and builds a string in the format: {@code SendingApp@SendingFacility}.
-     * </p>
-     *
-     * <p>
-     * <b>Return behavior:</b>
-     * </p>
-     * <ul>
-     * <li>If both MSH-3 (Sending App) and MSH-4 (Sending Facility) are present:
-     *
-     * <pre>{@code
-     * "SendingApp@SendingFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If MSH-3 is missing but MSH-4 is present:
-     *
-     * <pre>{@code
-     * "UnknownApp@SendingFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If MSH-3 is present but MSH-4 is missing:
-     *
-     * <pre>{@code
-     * "SendingApp@UnknownFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If both fields are missing or parsing fails:
-     *
-     * <pre>{@code
-     * "MLLP Listener"
-     * }</pre>
-     *
-     * (default fallback)</li>
-     * </ul>
-     *
-     * @param hl7Message The raw HL7 message as a String
-     * @return A user-agent-like identifier string derived from the message
-     */
+    // Reuse helper from MllpRoute (addNteWithInteractionId and helper methods)
+    public static String addNteWithInteractionId(Message ackMessage, String interactionId, String ingestionApiVersion) throws HL7Exception {
+        Terser terser = new Terser(ackMessage);
+        ackMessage.addNonstandardSegment("NTE");
+        terser.set("/NTE(0)-1", "1");
+        terser.set("/NTE(0)-3",
+                "InteractionID: " + interactionId
+                + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
+        PipeParser parser = new PipeParser();
+        return parser.encode(ackMessage);
+    }
+
     private String getUserAgentFromHL7(String hl7Message, String interactionId) {
         if (hl7Message == null || !hl7Message.startsWith("MSH")) {
-            return "MLLP Listener";
+            return "TCP Listener";
         }
-
         try {
             String[] lines = hl7Message.split("\r|\n");
             String mshLine = lines[0];
             char fieldSeparator = mshLine.charAt(3);
-
             String[] fields = mshLine.split("\\" + fieldSeparator, -1);
             String sendingApp = (fields.length > 2) ? fields[2] : null;
             String sendingFacility = (fields.length > 3) ? fields[3] : null;
-
-            if ((sendingApp == null || sendingApp.isBlank())
-                    && (sendingFacility == null || sendingFacility.isBlank())) {
-                return "MLLP Listener";
+            if ((sendingApp == null || sendingApp.isBlank()) && (sendingFacility == null || sendingFacility.isBlank())) {
+                return "TCP Listener";
             }
-
-            if (sendingApp == null || sendingApp.isBlank()) {
-                sendingApp = "UnknownApp";
-            }
-
-            if (sendingFacility == null || sendingFacility.isBlank()) {
-                sendingFacility = "UnknownFacility";
-            }
-
+            if (sendingApp == null || sendingApp.isBlank()) sendingApp = "UnknownApp";
+            if (sendingFacility == null || sendingFacility.isBlank()) sendingFacility = "UnknownFacility";
             return sendingApp + "@" + sendingFacility;
         } catch (Exception e) {
             logger.error("Error extracting sending facility from HL7 message: {} for interaction id :{}", e.getMessage(), interactionId);
-            return "MLLP Listener";
+            return "TCP Listener";
         }
-    }
-
-    @Override
-    public MessageSourceType getMessageSource() {
-        return MessageSourceType.MLLP;
-    }
-
-    @Override
-    public String getDataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
-    }
-
-    @Override
-    public String getMetadataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 
     /**
@@ -385,6 +330,21 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
     }
 
     @Override
+    public MessageSourceType getMessageSource() {
+        return MessageSourceType.MLLP;
+    }
+
+    @Override
+    public String getDataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
+    }
+
+    @Override
+    public String getMetadataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
+    }
+
+    @Override
     public String getTenantId(Map<String, String> headers) {
         return null;
     }
@@ -408,14 +368,9 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
         return null;
     }
 
-    // small helper for safe, truncated logging of ACK/NACK bodies
     private static String truncate(String s, int max) {
-        if (s == null) {
-            return null;
-        }
-        if (s.length() <= max) {
-            return s;
-        }
+        if (s == null) return null;
+        if (s.length() <= max) return s;
         return s.substring(0, max) + "...(truncated)";
     }
 }

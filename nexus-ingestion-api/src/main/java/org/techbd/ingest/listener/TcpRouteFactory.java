@@ -7,25 +7,26 @@ import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 
+/**
+ * Factory to create plain TCP routes (non-MLLP).
+ */
 @Component
-public class MllpRouteFactory {
+public class TcpRouteFactory {
 
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final AppLogger appLogger;
     private final PortConfig portConfig;
 
-    // Constructor injection — Spring will use this to create the bean
     @Autowired
-    public MllpRouteFactory(MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+    public TcpRouteFactory(MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.appLogger = appLogger;
         this.portConfig = portConfig;
     }
 
-    // Keep a single create(...) method
-    public MllpRoute create(int port) {
-        return new MllpRoute(port, messageProcessorService, appConfig, appLogger, portConfig);
+    public TcpRoute create(int port) {
+        return new TcpRoute(port, messageProcessorService, appConfig, appLogger, portConfig);
     }
 }

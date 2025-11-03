@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +24,8 @@ import org.techbd.ingest.config.AppConfig;
 
 public class MllpRouteRegistrarTest {
 
-    private MllpRouteFactory factory;
+    private MllpRouteFactory mllpFactory;
+    private TcpRouteFactory tcpFactory;
     private ConfigurableBeanFactory beanFactory;
     private PortConfig portConfig;
 
@@ -32,19 +34,27 @@ public class MllpRouteRegistrarTest {
         MessageProcessorService mockRouter = mock(MessageProcessorService.class);
         AppConfig config = mock(AppConfig.class);
         AppLogger appLogger = mock(AppLogger.class);
-        factory = new MllpRouteFactory(mockRouter, config, appLogger);
-        beanFactory = mock(ConfigurableBeanFactory.class);
-
         portConfig = mock(PortConfig.class);
+
+        // create factories with mocks
+        mllpFactory = new MllpRouteFactory(mockRouter, config, appLogger, portConfig);
+        tcpFactory = new TcpRouteFactory(mockRouter, config, appLogger, portConfig);
+
+        beanFactory = mock(ConfigurableBeanFactory.class);
     }
 
     @Test
     public void testRegisterMllpRoutes() {
-        // portConfig loaded and returns three mllp ports
+        // portConfig loaded and returns three mllp ports entries
         when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getMllpPorts()).thenReturn(List.of(2575, 2576, 2577));
+        List<PortConfig.PortEntry> entries = new ArrayList<>();
+        PortConfig.PortEntry e1 = new PortConfig.PortEntry(); e1.port = 2575; e1.protocol = "TCP"; e1.responseType = "mllp";
+        PortConfig.PortEntry e2 = new PortConfig.PortEntry(); e2.port = 2576; e2.protocol = "TCP"; e2.responseType = "mllp";
+        PortConfig.PortEntry e3 = new PortConfig.PortEntry(); e3.port = 2577; e3.protocol = "TCP"; e3.responseType = "mllp";
+        entries.add(e1); entries.add(e2); entries.add(e3);
+        when(portConfig.getPortConfigurationList()).thenReturn(entries);
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory, portConfig);
+        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
 
         List<RouteBuilder> routes = registrar.registerMllpRoutes();
         assertEquals(3, routes.size());
@@ -57,7 +67,7 @@ public class MllpRouteRegistrarTest {
         // PortConfig not loaded -> no routes
         when(portConfig.isLoaded()).thenReturn(false);
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory, portConfig);
+        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
 
         List<RouteBuilder> result = registrar.registerMllpRoutes();
 
@@ -67,11 +77,11 @@ public class MllpRouteRegistrarTest {
 
     @Test
     public void testNoRoutesWhenPortConfigLoadedButEmpty() {
-        // PortConfig loaded but returns no mllp ports -> no routes
+        // PortConfig loaded but returns no entries -> no routes
         when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getMllpPorts()).thenReturn(List.of());
+        when(portConfig.getPortConfigurationList()).thenReturn(List.of());
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory, portConfig);
+        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
 
         List<RouteBuilder> result = registrar.registerMllpRoutes();
 
@@ -80,30 +90,20 @@ public class MllpRouteRegistrarTest {
     }
 
     @Test
-    public void testRegisterMllpRoutesWithPortRange() {
-        // portConfig loaded and returns a range of mllp ports
+    public void testRegisterMixedTcpAndMllpRoutes() {
         when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getMllpPorts()).thenReturn(List.of(2575, 2576, 2577));
+        List<PortConfig.PortEntry> entries = new ArrayList<>();
+        PortConfig.PortEntry e1 = new PortConfig.PortEntry(); e1.port = 2575; e1.protocol = "TCP"; e1.responseType = "mllp";
+        PortConfig.PortEntry e2 = new PortConfig.PortEntry(); e2.port = 16010; e2.protocol = "TCP"; e2.responseType = ""; // plain TCP
+        entries.add(e1); entries.add(e2);
+        when(portConfig.getPortConfigurationList()).thenReturn(entries);
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory, portConfig);
+        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
 
         List<RouteBuilder> routes = registrar.registerMllpRoutes();
 
-        assertEquals(3, routes.size(), "Expected 3 routes to be registered from range 2575-2577");
-        verify(beanFactory, times(3)).registerSingleton(anyString(), any(RouteBuilder.class));
-    }
-
-    @Test
-    public void testRegisterMllpRoutesWithMixedPortsAndRange() {
-        // portConfig loaded and returns mixed mllp ports and a range
-        when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getMllpPorts()).thenReturn(List.of(2575, 2578, 2579, 2580, 2582));
-
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory, portConfig);
-
-        List<RouteBuilder> routes = registrar.registerMllpRoutes();
-
-        assertEquals(5, routes.size(), "Expected 5 routes to be registered from ports and range");
-        verify(beanFactory, times(5)).registerSingleton(anyString(), any(RouteBuilder.class));
+        // both ports should be registered (one MLLP, one TCP)
+        assertEquals(2, routes.size());
+        verify(beanFactory, times(2)).registerSingleton(anyString(), any(RouteBuilder.class));
     }
 }

@@ -5,19 +5,21 @@ import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 
 public class MllpRouteFactoryTest {
-   
+
     @Test
     public void testFactoryCreatesMllpRoute() {
-        MessageProcessorService messageProcessorService = mock(MessageProcessorService.class);
-        AppConfig appConfig = mock(AppConfig.class);
+        MessageProcessorService svc = mock(MessageProcessorService.class);
+        AppConfig cfg = mock(AppConfig.class);
         AppLogger appLogger = mock(AppLogger.class);
-        MllpRouteFactory factory = new MllpRouteFactory(messageProcessorService, appConfig, appLogger);
+        PortConfig portConfig = mock(PortConfig.class); // provide mock portConfig for new ctor
+
+        MllpRouteFactory factory = new MllpRouteFactory(svc, cfg, appLogger, portConfig);
         MllpRoute route = factory.create(2575);
         assertNotNull(route);
     }
-
 }
