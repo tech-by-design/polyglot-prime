@@ -146,7 +146,7 @@ public class FhirValidationServiceClient {
         try {
             // to-do : needs to change to /Bundle in future
             WebClient.RequestBodySpec requestBuilder = webClient.post()
-                    .uri("/Bundle/$validate")
+                    .uri("/Bundle/")
                     .contentType(MediaType.APPLICATION_JSON);
 
             // Add all headers from request
