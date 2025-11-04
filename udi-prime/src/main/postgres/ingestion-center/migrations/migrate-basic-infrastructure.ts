@@ -694,6 +694,7 @@ const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
     replay_status:textNullable(),
     error_message:textNullable(),
     elaboration:jsonbNullable(),
+    nyec_error_message: textNullable(),
     ...dvts.housekeeping.columns
   }, {
   isIdempotent: true,
@@ -1644,6 +1645,15 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.fhir_replay_details
               ADD CONSTRAINT fhir_replay_details_unique_combo_key
               UNIQUE (bundle_id, hub_interaction_id, replay_master_id);
+      END IF;
+
+      -- Check and add 'nyec_error_message' column if it does not exist
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                    AND table_name='fhir_replay_details' 
+                    AND column_name='nyec_error_message') THEN
+          ALTER TABLE techbd_udi_ingress.fhir_replay_details
+          ADD COLUMN nyec_error_message TEXT DEFAULT NULL;
       END IF;
       
       ${ccdaValidationErrorsSat}     
