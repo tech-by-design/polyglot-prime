@@ -4301,14 +4301,19 @@ BEGIN
                 CASE
                     WHEN sihr.nature = 'Original FHIR Payload' THEN 1
                 END) AS qe_total_submissions,
-            count(
+            COUNT(
                 CASE
-                    WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1
-                END) AS shinny_datalake_submissions,
-            count(
+                    WHEN sihr.nature = 'Forwarded HTTP Response'
+                         OR (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status = 'True')
+                    THEN 1
+                END
+            ) AS shinny_datalake_submissions,
+            COUNT(
                 CASE
-                    WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1
-                END) AS shinny_datalake_submissions_failed,
+                    WHEN  (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True' ) 
+                    THEN 1
+                END
+            ) AS shinny_datalake_submissions_failed, 
             max(sihr.created_at) AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
@@ -4325,9 +4330,12 @@ BEGIN
         submission_counts.shinny_datalake_submissions_failed,
         submission_counts.recently_created_at
     FROM submission_counts
+    WHERE submission_counts.qe_total_submissions <> 0   -- ✅ filter non-zero records
     ORDER BY submission_counts.recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+
 
 DROP FUNCTION if exists techbd_udi_ingress.get_interaction_http_request();
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request()
@@ -4466,8 +4474,10 @@ BEGIN
             sihr.created_at
          FROM 
             techbd_udi_ingress.sat_interaction_fhir_request sihr
-         WHERE 
-            sihr.nature = ''Forwarded HTTP Response Error''
+         WHERE  
+     (sihr.nature = ''Forwarded HTTP Response Error'' 
+     AND  sihr.replay_status IS DISTINCT FROM ''True''  
+     ) 
             AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/''])
             AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
 	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
@@ -4477,6 +4487,7 @@ BEGIN
     USING start_date, end_date, tenant_id;
 END;
 $$ LANGUAGE plpgsql;
+
 
 DROP FUNCTION if exists techbd_udi_ingress.get_missing_datalake_submission_details(text,date, date);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_missing_datalake_submission_details(
