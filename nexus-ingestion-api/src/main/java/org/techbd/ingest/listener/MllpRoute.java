@@ -57,7 +57,61 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                     // connection lifecycle / diagnostic logging (temporary)
                     String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
                     String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
+                    
+                    // Extract client IP and port from remote address
+                    String clientIp = null;
+                    String clientPort = null;
+                    if (remote != null && remote.contains(":")) {
+                        int lastColonIndex = remote.lastIndexOf(':');
+                        clientIp = remote.substring(0, lastColonIndex);
+                        clientPort = remote.substring(lastColonIndex + 1);
+                        // Remove leading slash if present
+                        if (clientIp.startsWith("/")) {
+                            clientIp = clientIp.substring(1);
+                        }
+                    }
+                    
+                    // Extract server IP and port from local address
+                    String serverIp = null;
+                    String serverPort = null;
+                    if (local != null && local.contains(":")) {
+                        int lastColonIndex = local.lastIndexOf(':');
+                        serverIp = local.substring(0, lastColonIndex);
+                        serverPort = local.substring(lastColonIndex + 1);
+                        // Remove leading slash if present
+                        if (serverIp.startsWith("/")) {
+                            serverIp = serverIp.substring(1);
+                        }
+                    }
+                    
                     logger.info("[PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
+                    logger.info("[PORT {}] Client details - IP: {}, Port: {}, interactionId={}", port, clientIp, clientPort, interactionId);
+                    logger.info("[PORT {}] Server details - IP: {}, Port: {}, interactionId={}", port, serverIp, serverPort, interactionId);
+                    
+                    // Log all MLLP headers and their values
+                    logger.info("[PORT {}] ===== MLLP Headers Start ===== interactionId={}", port, interactionId);
+                    Map<String, Object> allHeaders = exchange.getIn().getHeaders();
+                    if (allHeaders != null && !allHeaders.isEmpty()) {
+                        allHeaders.forEach((headerName, headerValue) -> {
+                            logger.info("[PORT {}] Header: {} = {} (type: {}) interactionId={}", 
+                                port, headerName, headerValue, 
+                                headerValue != null ? headerValue.getClass().getSimpleName() : "null",
+                                interactionId);
+                        });
+                    } else {
+                        logger.info("[PORT {}] No headers found in exchange, interactionId={}", port, interactionId);
+                    }
+                    logger.info("[PORT {}] ===== MLLP Headers End ===== interactionId={}", port, interactionId);
+                    
+                    // Log endpoint information
+                    logger.info("[PORT {}] Endpoint URI: {}, interactionId={}", port, 
+                        exchange.getFromEndpoint().getEndpointUri(), interactionId);
+                    
+                    // Log message size and preview
+                    logger.info("[PORT {}] Message size: {} bytes, interactionId={}", port, 
+                        hl7Message != null ? hl7Message.length() : 0, interactionId);
+                    logger.info("[PORT {}] Message preview: {}, interactionId={}", port, 
+                        truncate(hl7Message, 200), interactionId);
 
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
@@ -118,6 +172,8 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                     } finally {
                         // connection closed/completed diagnostic
                         logger.info("[PORT {}] Connection processing completed: {} -> {} interactionId={}", port, remote, local, interactionId);
+                        logger.info("[PORT {}] Final connection summary - Client: {}:{}, Server: {}:{}, interactionId={}", 
+                            port, clientIp, clientPort, serverIp, serverPort, interactionId);
                     }
                 })
                 .log("[PORT " + port + "] ACK/NAK sent");
