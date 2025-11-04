@@ -4243,16 +4243,17 @@ BEGIN
             )::INTEGER AS qe_total_submissions,
             count(
                 CASE 
-                    WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1 
-                    ELSE NULL 
+                     WHEN sihr.nature = 'Forwarded HTTP Response'
+                         OR (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status = 'True')
+                    THEN 1 
                 END
             )::INTEGER AS success_submissions,
             count(
                 CASE 
-                    WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1 
-                    ELSE NULL 
+                    WHEN  (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True' ) 
+                    THEN 1
                 END
-            )::INTEGER AS failed_submissions,
+            )::INTEGER AS failed_submissions,  
             max(sihr.created_at)::TIMESTAMP AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
@@ -4269,10 +4270,12 @@ BEGIN
         submission_counts.success_submissions,
         submission_counts.failed_submissions,
         submission_counts.recently_created_at
-    FROM submission_counts
+    FROM submission_counts 
+     WHERE submission_counts.qe_total_submissions <> 0 
     ORDER BY submission_counts.recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
 
 
 /*******************************************************************************************
@@ -4525,6 +4528,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+
 DROP FUNCTION if exists techbd_udi_ingress.get_fhir_scn_submission_details(text, date, date);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_scn_submission_details(
     organization_id_param TEXT,
@@ -4545,9 +4550,22 @@ BEGIN
              SELECT 
                 sihr.organization_id,
                 sihr.tenant_id_lower AS qe_name,
-                count(CASE WHEN sihr.nature = ''Original FHIR Payload'' THEN 1 ELSE NULL END) AS qe_total_submissions,
-                count(CASE WHEN sihr.nature = ''Forwarded HTTP Response'' THEN 1 ELSE NULL END) AS success_submissions,
-                count(CASE WHEN sihr.nature = ''Forwarded HTTP Response Error'' THEN 1 ELSE NULL END) AS faield_submissions,
+                count(CASE WHEN sihr.nature = ''Original FHIR Payload'' THEN 1 ELSE NULL END) AS qe_total_submissions, 
+	 			count(
+	                CASE 
+	                     WHEN sihr.nature = ''Forwarded HTTP Response''
+	                         OR (sihr.nature = ''Forwarded HTTP Response Error'' AND sihr.replay_status = ''True'')
+	                    THEN 1 
+					ELSE NULL
+	                END
+	            ) AS success_submissions,
+	            count(
+	                CASE 
+	                    WHEN  (sihr.nature = ''Forwarded HTTP Response Error'' AND sihr.replay_status IS DISTINCT FROM ''True'' ) 
+	                    THEN 1
+					ELSE NULL
+	                END
+	            ) AS failed_submissions, 
                 max(sihr.created_at) AS recently_created_at
              FROM 
                 techbd_udi_ingress.sat_interaction_fhir_request sihr
@@ -4565,10 +4583,11 @@ BEGIN
             qe_name,
             qe_total_submissions,
             success_submissions,
-            faield_submissions,
+            failed_submissions,
             recently_created_at
         FROM 
             submission_counts sc
+        WHERE qe_total_submissions <> 0 
         ORDER BY 
             recently_created_at DESC'
     ) USING organization_id_param, start_date, end_date;  -- Pass all parameters
