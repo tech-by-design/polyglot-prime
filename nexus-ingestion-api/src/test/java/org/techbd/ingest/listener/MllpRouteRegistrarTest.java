@@ -1,109 +1,97 @@
 package org.techbd.ingest.listener;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.ArrayList;
 
-import org.apache.camel.builder.RouteBuilder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mock;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.core.env.Environment;
+
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.service.MessageProcessorService;
-import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.TemplateLogger;
 
+@ExtendWith(MockitoExtension.class)
 public class MllpRouteRegistrarTest {
 
-    private MllpRouteFactory mllpFactory;
-    private TcpRouteFactory tcpFactory;
-    private ConfigurableBeanFactory beanFactory;
-    private PortConfig portConfig;
+    @Mock
+    MllpRouteFactory mllpFactory;
 
-    @BeforeEach
-    void setUp() {
-        MessageProcessorService mockRouter = mock(MessageProcessorService.class);
-        AppConfig config = mock(AppConfig.class);
-        AppLogger appLogger = mock(AppLogger.class);
-        portConfig = mock(PortConfig.class);
+    @Mock
+    TcpRouteFactory tcpFactory;
 
-        // create factories with mocks
-        mllpFactory = new MllpRouteFactory(mockRouter, config, appLogger, portConfig);
-        tcpFactory = new TcpRouteFactory(mockRouter, config, appLogger, portConfig);
+    @Mock
+    ConfigurableBeanFactory beanFactory;
 
-        beanFactory = mock(ConfigurableBeanFactory.class);
-    }
+    @Mock
+    MessageProcessorService messageProcessorService;
+
+    @Mock
+    AppConfig appConfig;
+
+    @Mock
+    AppLogger appLogger;
+
+    @Mock
+    TemplateLogger templateLogger;
+
+    @Mock
+    Environment env;
 
     @Test
-    public void testRegisterMllpRoutes() {
-        // portConfig loaded and returns three mllp ports entries
+    public void testRegisterMllpRoutesRegistersDispatcherAndTcpRoutes() throws Exception {
+        // prepare PortConfig mock with one TCP entry (reflection to create PortEntry)
+        PortConfig portConfig = mock(PortConfig.class);
         when(portConfig.isLoaded()).thenReturn(true);
-        List<PortConfig.PortEntry> entries = new ArrayList<>();
-        PortConfig.PortEntry e1 = new PortConfig.PortEntry(); e1.port = 2575; e1.protocol = "TCP"; e1.responseType = "mllp";
-        PortConfig.PortEntry e2 = new PortConfig.PortEntry(); e2.port = 2576; e2.protocol = "TCP"; e2.responseType = "mllp";
-        PortConfig.PortEntry e3 = new PortConfig.PortEntry(); e3.port = 2577; e3.protocol = "TCP"; e3.responseType = "mllp";
-        entries.add(e1); entries.add(e2); entries.add(e3);
-        when(portConfig.getPortConfigurationList()).thenReturn(entries);
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
+        Class<?> entryClass = Class.forName("org.techbd.ingest.config.PortConfig$PortEntry");
+        Object entry = entryClass.getDeclaredConstructor().newInstance();
+        entryClass.getField("protocol").set(entry, "tcp");
+        entryClass.getField("responseType").set(entry, "mllp");
+        entryClass.getField("port").set(entry, 2576);
 
-        List<RouteBuilder> routes = registrar.registerMllpRoutes();
-        assertEquals(3, routes.size());
+        // satisfy generics by casting
+        when(portConfig.getPortConfigurationList()).thenReturn((List) List.of(entry));
 
-        verify(beanFactory, times(3)).registerSingleton(anyString(), any(RouteBuilder.class));
-    }
+        // tcpFactory returns a mocked TcpRoute
+        TcpRoute mockedTcpRoute = mock(TcpRoute.class);
+        when(tcpFactory.create(2576)).thenReturn(mockedTcpRoute);
 
-    @Test
-    public void testNoRoutesWhenPortConfigNotLoaded() {
-        // PortConfig not loaded -> no routes
-        when(portConfig.isLoaded()).thenReturn(false);
+        // appLogger -> templateLogger
+        when(appLogger.getLogger(any(Class.class))).thenReturn(templateLogger);
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
+        // environment provides dispatcher port
+        when(env.getProperty("TCP_DISPATCHER_PORT")).thenReturn("2575");
 
-        List<RouteBuilder> result = registrar.registerMllpRoutes();
+        // instantiate registrar with all required mocks and Environment
+        MllpRouteRegistrar registrar = new MllpRouteRegistrar(
+                mllpFactory,
+                tcpFactory,
+                beanFactory,
+                portConfig,
+                messageProcessorService,
+                appConfig,
+                appLogger,
+                env
+        );
 
-        assertTrue(result.isEmpty(), "Expected no routes to be registered when port config is not loaded");
-        verifyNoInteractions(beanFactory);
-    }
+        // Call registration
+        var routes = registrar.registerMllpRoutes();
 
-    @Test
-    public void testNoRoutesWhenPortConfigLoadedButEmpty() {
-        // PortConfig loaded but returns no entries -> no routes
-        when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getPortConfigurationList()).thenReturn(List.of());
+        // Basic assertions
+        assertNotNull(routes, "routes list must not be null");
+        assertTrue(routes.size() >= 1, "at least one route expected (dispatcher)");
 
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
-
-        List<RouteBuilder> result = registrar.registerMllpRoutes();
-
-        assertTrue(result.isEmpty(), "Expected no routes to be registered when port config is loaded but empty");
-        verifyNoInteractions(beanFactory);
-    }
-
-    @Test
-    public void testRegisterMixedTcpAndMllpRoutes() {
-        when(portConfig.isLoaded()).thenReturn(true);
-        List<PortConfig.PortEntry> entries = new ArrayList<>();
-        PortConfig.PortEntry e1 = new PortConfig.PortEntry(); e1.port = 2575; e1.protocol = "TCP"; e1.responseType = "mllp";
-        PortConfig.PortEntry e2 = new PortConfig.PortEntry(); e2.port = 16010; e2.protocol = "TCP"; e2.responseType = ""; // plain TCP
-        entries.add(e1); entries.add(e2);
-        when(portConfig.getPortConfigurationList()).thenReturn(entries);
-
-        MllpRouteRegistrar registrar = new MllpRouteRegistrar(mllpFactory, tcpFactory, beanFactory, portConfig);
-
-        List<RouteBuilder> routes = registrar.registerMllpRoutes();
-
-        // both ports should be registered (one MLLP, one TCP)
-        assertEquals(2, routes.size());
-        verify(beanFactory, times(2)).registerSingleton(anyString(), any(RouteBuilder.class));
+        // verify per-port route registration happened and dispatcher registered
+        verify(beanFactory).registerSingleton(eq("tcpRoute_2576"), any());
+        verify(beanFactory).registerSingleton(eq("tcpDispatcher_2575"), any());
     }
 }

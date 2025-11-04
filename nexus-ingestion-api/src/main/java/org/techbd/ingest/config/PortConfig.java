@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -186,5 +187,22 @@ public class PortConfig implements InitializingBean {
             loadConfig();
         }
         return mllpPorts != null ? mllpPorts : Collections.emptyList();
+    }
+
+    /**
+     * Return the configured PortEntry for the given port, if any.
+     * Attempts to load config if not already loaded.
+     */
+    public Optional<PortEntry> findEntryForPort(int port) {
+        if (!isLoaded()) {
+            loadConfig();
+        }
+        if (portConfigurationList == null) {
+            return Optional.empty();
+        }
+        return portConfigurationList.stream()
+                .filter(p -> p != null)
+                .filter(p -> p.port == port)
+                .findFirst();
     }
 }

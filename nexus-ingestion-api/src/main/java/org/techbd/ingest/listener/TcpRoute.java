@@ -74,10 +74,55 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                     GenericParser parser = new GenericParser();
                     String interactionId = UUID.randomUUID().toString();
                     String response = null;
+                    
+                    // Normalize exchange headers (Map<String,Object>) to Map<String,String> expected by helpers
+                    try {
+                        this.headers.clear();
+                        Map<String, Object> rawHeaders = exchange.getIn().getHeaders();
+                        if (rawHeaders != null) {
+                            rawHeaders.forEach((k, v) -> {
+                                if (k == null) return;
+                                if (v == null) return;
+                                if (v instanceof String) {
+                                    this.headers.put(k, (String) v);
+                                } else {
+                                    this.headers.put(k, String.valueOf(v));
+                                }
+                            });
+                        }
+                    } catch (Exception ex) {
+                        logger.warn("[TCP PORT {}] Failed to normalize request headers: {}", port, ex.getMessage());
+                    }
 
                     String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
                     String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
                     logger.info("[TCP PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
+
+                    // determine destination port from headers (x-forwarded-port) or endpoint local address
+                    String portHeader = exchange.getIn().getHeader(Constants.REQ_X_FORWARDED_PORT, String.class);
+                    if (portHeader == null || portHeader.isBlank()) {
+                        // use normalized headers map (Map<String,String>) to avoid incompatible Map<String,Object> -> Map<String,String>
+                        portHeader = HttpUtil.extractDestinationPort(this.headers);
+                    }
+                    Integer requestPort = null;
+                    if (portHeader != null) {
+                        try {
+                            requestPort = Integer.parseInt(portHeader);
+                        } catch (NumberFormatException nfe) {
+                            logger.warn("[TCP PORT {}] Invalid port header value: '{}' ; falling back to route listen port", port, portHeader);
+                        }
+                    }
+                    // lookup config for the destination port (if found); else use listen port
+                    PortConfig.PortEntry portEntry = null;
+                    if (requestPort != null) {
+                        portEntry = portConfig.findEntryForPort(requestPort).orElse(null);
+                    }
+                    boolean configuredAsMllp = false;
+                    if (portEntry != null) {
+                        String proto = portEntry.protocol == null ? "" : portEntry.protocol.trim();
+                        String resp = portEntry.responseType == null ? "" : portEntry.responseType.trim();
+                        configuredAsMllp = "tcp".equalsIgnoreCase(proto) && "mllp".equalsIgnoreCase(resp);
+                    }
 
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
@@ -115,16 +160,16 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
 
                         messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
                         response = ackMessage;
-                        // For plain TCP, set body to raw ACK (no MLLP framing)
-                        // If client sent MLLP framed message, wrap the response in MLLP frame so MLLP-capable clients (eg. Mirth) will detect it.
-                        boolean inboundWasMllp = hl7Message != null && hl7Message.length() > 0 && hl7Message.charAt(0) == '\u000B';
-                        if (inboundWasMllp) {
+
+                        // Decide framing based on portConfig entry for destination port
+                        if (configuredAsMllp) {
                             String framed = "\u000B" + response + "\u001C\r";
                             exchange.getMessage().setBody(framed);
-                            logger.info("[TCP PORT {}] Sent TCP ACK (MLLP-wrapped) for interactionId={} preview={}", port, interactionId, truncate(framed, 512));
+                            logger.info("[TCP PORT {}] Sent ACK (MLLP-framed) for interactionId={} preview={}", port, interactionId, truncate(framed, 512));
                         } else {
+                            // plain TCP response (no MLLP framing)
                             exchange.getMessage().setBody(response);
-                            logger.info("[TCP PORT {}] Sent TCP ACK for interactionId={} preview={}", port, interactionId, truncate(response, 512));
+                            logger.info("[TCP PORT {}] Sent ACK (plain TCP) for interactionId={} preview={}", port, interactionId, truncate(response, 512));
                         }
                     } catch (Exception e) {
                         logger.error("[TCP PORT {}] Error processing message interactionId={} : {}", port, interactionId, e.getMessage(), e);
@@ -136,8 +181,16 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                             logger.error("[TCP PORT {}] Failed to generate NACK interactionId={}: {}", port, interactionId, ex2.getMessage(), ex2);
                             response = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN||ACK^O01|1|P|2.3\rMSA|AE|1\rNTE|1||InteractionID:" + interactionId + "\r";
                         }
-                        exchange.getMessage().setBody(response);
-                        logger.info("[TCP PORT {}] Sent TCP NACK for interactionId={} preview={}", port, interactionId, truncate(response, 512));
+
+                        // decide framing for NACK as well
+                        if (configuredAsMllp) {
+                            String framedNack = "\u000B" + response + "\u001C\r";
+                            exchange.getMessage().setBody(framedNack);
+                            logger.info("[TCP PORT {}] Sent NACK (MLLP-framed) for interactionId={} preview={}", port, interactionId, truncate(framedNack, 512));
+                        } else {
+                            exchange.getMessage().setBody(response);
+                            logger.info("[TCP PORT {}] Sent NACK (plain TCP) for interactionId={} preview={}", port, interactionId, truncate(response, 512));
+                        }
                     } finally {
                         logger.info("[TCP PORT {}] Connection processing completed: {} -> {} interactionId={}", port, remote, local, interactionId);
                     }
@@ -145,30 +198,32 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
     }
 
     private RequestContext buildRequestContext(org.apache.camel.Exchange exchange, String hl7Message, String interactionId) {
-        // reuse same RequestContext builder as MllpRoute by delegating to a simplified approach
-        // minimal metadata: keep headers, source type and port etc.
-        // Note: keep implementation same as MllpRoute.buildRequestContext to ensure metadata is populated.
-        // For brevity call into MllpRoute's helper via shared logic if available; otherwise replicate minimal required fields.
-        // Here replicate required pieces similar to MllpRoute.buildRequestContext
 
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
-        exchange.getIn().getHeaders().forEach((k, v) -> {
-            if (v instanceof String) {
-                this.headers.put(k, (String) v);
-                if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-                    logger.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, v);
-                }
-            }
-        });
 
+        // Normalize headers once (exchange headers are Map<String,Object>)
+        this.headers.clear();
+        Map<String, Object> raw = exchange.getIn().getHeaders();
+        if (raw != null) {
+            raw.forEach((k, v) -> {
+                if (k == null || v == null) return;
+                String sval = v instanceof String ? (String) v : String.valueOf(v);
+                this.headers.put(k, sval);
+                if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+                    logger.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, sval);
+                }
+            });
+        }
+
+        // Use the normalized Map<String,String> (this.headers) for all downstream helpers
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "hl7-message";
         String fileExtension = "hl7";
         String originalFileName = fileBaseName + "." + fileExtension;
 
         return new RequestContext(
-                headers,
+                this.headers,
                 "/hl7",
                 null,
                 interactionId,
@@ -176,22 +231,26 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                 timestamp,
                 originalFileName,
                 hl7Message == null ? 0 : hl7Message.length(),
-                getDataKey(interactionId, headers, originalFileName, timestamp),
-                getMetaDataKey(interactionId, headers, originalFileName, timestamp),
-                getFullS3DataPath(interactionId, headers, originalFileName, timestamp),
+                getDataKey(interactionId, this.headers, originalFileName, timestamp),
+                getMetaDataKey(interactionId, this.headers, originalFileName, timestamp),
+                getFullS3DataPath(interactionId, this.headers, originalFileName, timestamp),
                 getUserAgentFromHL7(hl7Message, interactionId),
                 exchange.getFromEndpoint().getEndpointUri(),
                 "",
                 "TCP",
-                getSourceIp(headers),
-                getDestinationIp(headers),
+                getSourceIp(this.headers),
+                getDestinationIp(this.headers),
                 null,
                 null,
-                getDestinationPort(headers),
-                getAcknowledgementKey(interactionId, headers, originalFileName, timestamp),
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName, timestamp),
-                getFullS3MetadataPath(interactionId, headers, originalFileName, timestamp),
-                MessageSourceType.MLLP, getDataBucketName(), getMetadataBucketName(), appConfig.getVersion());
+                getDestinationPort(this.headers),
+                getAcknowledgementKey(interactionId, this.headers, originalFileName, timestamp),
+                getFullS3AcknowledgementPath(interactionId, this.headers, originalFileName, timestamp),
+                getFullS3MetadataPath(interactionId, this.headers, originalFileName, timestamp),
+                MessageSourceType.MLLP,
+                getDataBucketName(),
+                getMetadataBucketName(),
+                appConfig.getVersion()
+        );
     }
 
     // Reuse helper from MllpRoute (addNteWithInteractionId and helper methods)
