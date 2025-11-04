@@ -164,7 +164,7 @@ public class FhirReplayService {
                 } finally {
                     // Always update FHIR replay status and errorMessage
                     if (!alreadyReplayed) {
-                        updateFhirStatus(jooqCfg, bundleInteractionId, status, errorMessage, replayId);
+                        updateFhirStatus(jooqCfg, bundleInteractionId, status, errorMessage, replayId ,bundleId);
                     }
                 }
             }
@@ -200,11 +200,13 @@ public class FhirReplayService {
     /**
      * Private helper method to update FHIR replay status and errorMessage
      */
-    private void updateFhirStatus(final org.jooq.Configuration jooqCfg,String bundleId, String status, String errorMessage, String replayMasterId) {
+    private void updateFhirStatus(final org.jooq.Configuration jooqCfg,String bundleInteractionId, String status, String errorMessage, String replayMasterId ,String bundleId) {
         try {
             UpdateFhirReplayStatus updateFhirReplayStatus = new UpdateFhirReplayStatus();
-            updateFhirReplayStatus.setPInteractionId(bundleId);
+            updateFhirReplayStatus.setPBundleId(bundleId);
+            updateFhirReplayStatus.setPInteractionId(bundleInteractionId);
             updateFhirReplayStatus.setPStatus(status);
+            updateFhirReplayStatus.setPReplayMasterId(replayMasterId);
             if (errorMessage != null && errorMessage.length() > 4000) { // adjust length as per DB field
                 errorMessage = errorMessage.substring(0, 4000);
             }
@@ -212,10 +214,10 @@ public class FhirReplayService {
             updateFhirReplayStatus.execute(jooqCfg);
 
             LOG.info("FHIR-REPLAY Updated status={} for bundleId={} replayMasterId={}",
-                    status, bundleId, replayMasterId);
+                    status, bundleInteractionId, replayMasterId);
         } catch (Exception e) {
             LOG.error("FHIR-REPLAY Failed to update FHIR replay status for bundleId={} | error={}",
-                    bundleId, e.getMessage(), e);
+                    bundleInteractionId, e.getMessage(), e);
         }
     }
 
