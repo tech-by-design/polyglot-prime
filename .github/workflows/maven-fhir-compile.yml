@@ -1,4 +1,4 @@
-name: FHIR Server Test & Site
+name: FHIR Server Compile
 on:
   push:
     branches: [ "main" ]
