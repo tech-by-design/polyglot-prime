@@ -1,9 +1,12 @@
 package org.techbd.ingest.listener;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.camel.Exchange;
@@ -12,10 +15,12 @@ import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import ca.uhn.hl7v2.AcknowledgmentCode;
@@ -33,12 +38,14 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
     private final int port;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
+    private final PortConfig portConfig;
     private Map<String, String> headers;
 
-    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger) {
+    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
+        this.portConfig = portConfig;
         this.headers = new HashMap<>();
         this.logger = appLogger.getLogger(MllpRoute.class);
     }
