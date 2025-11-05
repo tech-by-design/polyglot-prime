@@ -2,6 +2,7 @@ package org.techbd.ingest.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -132,6 +133,8 @@ public class PortConfig implements InitializingBean {
             log.info("PortConfig: JSON preview: {}", preview);
 
             ObjectMapper mapper = new ObjectMapper();
+            // tolerate extra/unknown fields in the JSON so updates won't break parsing
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             portConfigurationList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
             });
             // compute MLLP ports list (case-insensitive match)
