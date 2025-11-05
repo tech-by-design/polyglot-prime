@@ -2000,13 +2000,6 @@ BEGIN
                         WHERE RIGHT(profile, LENGTH('SHINNYSDOHTaskForReferralManagement')) = 'SHINNYSDOHTaskForReferralManagement'
 						   OR RIGHT(profile, LENGTH('SDOHCC-TaskForReferralManagement')) = 'SDOHCC-TaskForReferralManagement'
                     ))
-				OR (entry->'resource'->>'resourceType' = 'Procedure'
-                    AND EXISTS (
-                        SELECT 1
-                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
-                        WHERE RIGHT(profile, LENGTH('shinny-sdoh-procedure')) = 'shinny-sdoh-procedure'
-						   OR RIGHT(profile, LENGTH('SDOHCC-Procedure')) = 'SDOHCC-Procedure' 
-                    ))
             ) AS category_list
         )
         SELECT bundle_type INTO v_bundle_type FROM categories;  

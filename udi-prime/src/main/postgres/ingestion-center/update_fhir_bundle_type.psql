@@ -66,7 +66,7 @@ bundle_eval AS (
                                OR RIGHT(profile, LENGTH('SDOHCC-TaskForReferralManagement')) = 'SDOHCC-TaskForReferralManagement'
                         )
                     )
-                    OR (
+                    /*OR (
                         entry->'resource'->>'resourceType' = 'Procedure'
                         AND EXISTS (
                             SELECT 1
@@ -74,7 +74,7 @@ bundle_eval AS (
                             WHERE RIGHT(profile, LENGTH('shinny-sdoh-procedure')) = 'shinny-sdoh-procedure'
                                OR RIGHT(profile, LENGTH('SDOHCC-Procedure')) = 'SDOHCC-Procedure'
                         )
-                    )
+                    )*/
                 ) AS category_list
             )
             SELECT bundle_type FROM categories
