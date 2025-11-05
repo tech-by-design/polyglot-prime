@@ -66,237 +66,266 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(final HttpServletRequest origRequest, final HttpServletResponse origResponse,
             final FilterChain chain) throws IOException, ServletException {
-
-        LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(), origRequest.getRequestURI());
-
-        // DEBUG: list all headers received (temporary - remove this later)
-        try {
-            Enumeration<String> headerNames = origRequest.getHeaderNames();
-            if (headerNames != null) {
-                while (headerNames.hasMoreElements()) {
-                    String name = headerNames.nextElement();
-                    List<String> values = new ArrayList<>();
-                    Enumeration<String> vals = origRequest.getHeaders(name);
-                    while (vals.hasMoreElements()) {
-                        values.add(vals.nextElement());
-                    }
-                    LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
-        }
-
-        if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)
-                && !origRequest.getRequestURI().equals("/")
+        if (!origRequest.getRequestURI().equals("/")
                 && !origRequest.getRequestURI().startsWith("/actuator/health")) {
+            LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
+                    origRequest.getRequestURI());
 
-            String interactionId = UUID.randomUUID().toString();
-            origRequest.setAttribute("interactionId", interactionId);
-            LOG.info("Incoming Request - interactionId={}", interactionId);
-
-            // 1) determine request port (prefer X-Forwarded-Port header)
-            int requestPort = resolveRequestPort(origRequest);
-            LOG.info("InteractionsFilter: resolved request port={}", requestPort);
-
-            // 2) find port config entry that matches the request port
-            PortConfig.PortEntry portEntry = null;
-            if (portConfig != null && portConfig.isLoaded()) {
-                for (PortConfig.PortEntry e : portConfig.getPortConfigurationList()) {
-                    if (e != null && e.port == requestPort) {
-                        portEntry = e;
-                        break;
+            // DEBUG: list all headers received (temporary - remove this later)
+            try {
+                Enumeration<String> headerNames = origRequest.getHeaderNames();
+                if (headerNames != null) {
+                    while (headerNames.hasMoreElements()) {
+                        String name = headerNames.nextElement();
+                        List<String> values = new ArrayList<>();
+                        Enumeration<String> vals = origRequest.getHeaders(name);
+                        while (vals.hasMoreElements()) {
+                            values.add(vals.nextElement());
+                        }
+                        LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
                     }
                 }
+            } catch (Exception e) {
+                LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
             }
 
-            if (portEntry == null) {
-                String msg = String.format("No port configuration entry found for port %d - rejecting request", requestPort);
-                LOG.warn("InteractionsFilter: {}", msg);
-                origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-                origResponse.setContentType("application/json;charset=UTF-8");
-                String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
-                try {
-                    origResponse.getWriter().write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
-                    origResponse.getWriter().flush();
-                } catch (IOException ioe) {
-                    LOG.error("InteractionsFilter: failed to write Bad Request response", ioe);
+            if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+
+                String interactionId = UUID.randomUUID().toString();
+                origRequest.setAttribute("interactionId", interactionId);
+                LOG.info("Incoming Request - interactionId={}", interactionId);
+
+                // 1) determine request port (prefer X-Forwarded-Port header)
+                int requestPort = resolveRequestPort(origRequest);
+                LOG.info("InteractionsFilter: resolved request port={}", requestPort);
+
+                // 2) find port config entry that matches the request port
+                PortConfig.PortEntry portEntry = null;
+                if (portConfig != null && portConfig.isLoaded()) {
+                    for (PortConfig.PortEntry e : portConfig.getPortConfigurationList()) {
+                        if (e != null && e.port == requestPort) {
+                            portEntry = e;
+                            break;
+                        }
+                    }
                 }
-                return;
-            }
-            LOG.info("InteractionsFilter: found PortConfig entry for port {} -> {}", requestPort, portEntry);
 
-            // 3) If this port config requires mtls via mtls field, client must supply header
-            String mtlsName = portEntry.mtls;
-            String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
-            LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
-
-            String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
-            // Accept header value encoded as base64 (recommended) or raw PEM (less reliable).
-            String clientCertPem = null;
-            if (clientCertHeader != null) {
-                String v = clientCertHeader.trim();
-                try {
-                    // Try base64 decode first (clients should send single-line base64(header))
-                    byte[] decoded = java.util.Base64.getDecoder().decode(v);
-                    clientCertPem = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
-                    LOG.info("InteractionsFilter: decoded client cert header as base64, bytes={}", decoded.length);
-                } catch (IllegalArgumentException iae) {
-                    // Not base64 — treat as raw (may still fail if it contains forbidden header chars)
-                    clientCertPem = v;
-                    LOG.error("InteractionsFilter: client cert header not base64, using raw header length={}", clientCertPem.length());
-                }
-            }
-
-            if (mtlsName != null && !mtlsName.isBlank()) {
-                if (clientCertHeader == null) {
-                    String msg = String.format("Missing required header '%s' for mTLS on port %d", Constants.REQ_HEADER_MTLS_CLIENT_CERT, requestPort);
+                if (portEntry == null) {
+                    String msg = String.format("No port configuration entry found for port %d - rejecting request",
+                            requestPort);
                     LOG.warn("InteractionsFilter: {}", msg);
                     origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
                     origResponse.setContentType("application/json;charset=UTF-8");
                     String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
                     try {
-                        origResponse.getWriter().write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
+                        origResponse.getWriter()
+                                .write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
                         origResponse.getWriter().flush();
                     } catch (IOException ioe) {
-                        LOG.error("InteractionsFilter: failed to write Bad Request response for missing mTLS header", ioe);
+                        LOG.error("InteractionsFilter: failed to write Bad Request response", ioe);
                     }
                     return;
                 }
-            } else {
-                // mtlsName null -> still allow header-based flow if header present, but not mandatory
-                LOG.info("InteractionsFilter: mtls not set in port config for port {}. clientCertHeaderPresent={}",
-                        requestPort, clientCertHeader != null);
-            }
+                LOG.info("InteractionsFilter: found PortConfig entry for port {} -> {}", requestPort, portEntry);
 
-            // prepare server bundle key if mtlsName + bucket available
-            String serverBundleKey = (mtlsName != null && !mtlsName.isBlank() && mtlsBucket != null && !mtlsBucket.isBlank())
-                    ? (mtlsName + "-bundle.pem")
-                    : null;
+                // 3) If this port config requires mtls via mtls field, client must supply
+                // header
+                String mtlsName = portEntry.mtls;
+                String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
+                LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
 
-            // If mtls is not configured for this port, skip mTLS processing entirely.
-            if (mtlsName == null || mtlsName.isBlank()) {
-                LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS", requestPort);
+                String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
+                // Accept header value encoded as base64 (recommended) or raw PEM (less
+                // reliable).
+                String clientCertPem = null;
+                if (clientCertHeader != null) {
+                    String v = clientCertHeader.trim();
+                    try {
+                        // Try base64 decode first (clients should send single-line base64(header))
+                        byte[] decoded = java.util.Base64.getDecoder().decode(v);
+                        clientCertPem = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+                        LOG.info("InteractionsFilter: decoded client cert header as base64, bytes={}", decoded.length);
+                    } catch (IllegalArgumentException iae) {
+                        // Not base64 — treat as raw (may still fail if it contains forbidden header
+                        // chars)
+                        clientCertPem = v;
+                        LOG.error("InteractionsFilter: client cert header not base64, using raw header length={}",
+                                clientCertPem.length());
+                    }
+                }
+
+                if (mtlsName != null && !mtlsName.isBlank()) {
+                    if (clientCertHeader == null) {
+                        String msg = String.format("Missing required header '%s' for mTLS on port %d",
+                                Constants.REQ_HEADER_MTLS_CLIENT_CERT, requestPort);
+                        LOG.warn("InteractionsFilter: {}", msg);
+                        origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+                        origResponse.setContentType("application/json;charset=UTF-8");
+                        String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                        try {
+                            origResponse.getWriter()
+                                    .write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
+                            origResponse.getWriter().flush();
+                        } catch (IOException ioe) {
+                            LOG.error(
+                                    "InteractionsFilter: failed to write Bad Request response for missing mTLS header",
+                                    ioe);
+                        }
+                        return;
+                    }
+                } else {
+                    // mtlsName null -> still allow header-based flow if header present, but not
+                    // mandatory
+                    LOG.info("InteractionsFilter: mtls not set in port config for port {}. clientCertHeaderPresent={}",
+                            requestPort, clientCertHeader != null);
+                }
+
+                // prepare server bundle key if mtlsName + bucket available
+                String serverBundleKey = (mtlsName != null && !mtlsName.isBlank() && mtlsBucket != null
+                        && !mtlsBucket.isBlank())
+                                ? (mtlsName + "-bundle.pem")
+                                : null;
+
+                // If mtls is not configured for this port, skip mTLS processing entirely.
+                if (mtlsName == null || mtlsName.isBlank()) {
+                    LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
+                            requestPort);
+                    chain.doFilter(origRequest, origResponse);
+                    return;
+                }
+
+                try {
+                    // parse client certificate chain (if header present)
+                    X509Certificate[] clientChain = clientCertPem != null ? parsePemChain(clientCertPem)
+                            : new X509Certificate[0];
+                    LOG.info("InteractionsFilter: parsed client certificate chain length={}", clientChain.length);
+
+                    // 4) obtain CA/server cert(s) to validate client against:
+                    X509Certificate[] caCerts = null;
+                    if (serverBundleKey != null) {
+                        final String bucketFinal = mtlsBucket;
+                        final String keyFinal = serverBundleKey;
+                        final String cacheKey = "s3://" + bucketFinal + "/" + keyFinal;
+
+                        // log cache hit/miss
+                        X509Certificate[] cached = caCache.getIfPresent(cacheKey);
+                        if (cached != null) {
+                            LOG.info("InteractionsFilter: CA bundle cache hit for {}", cacheKey);
+                        } else {
+                            LOG.info("InteractionsFilter: CA bundle cache miss for {}, fetching from S3 {}/{}",
+                                    cacheKey, bucketFinal, keyFinal);
+                        }
+
+                        caCerts = caCache.get(cacheKey, () -> {
+                            try {
+                                return fetchPemFromS3AndParse(bucketFinal, keyFinal);
+                            } catch (Exception ex) {
+                                LOG.error("InteractionsFilter: error fetching CA bundle from S3 {}/{}", bucketFinal,
+                                        keyFinal, ex);
+                                throw new RuntimeException(ex);
+                            }
+                        });
+                        LOG.info("InteractionsFilter: loaded CA bundle from S3, cert count={}",
+                                caCerts != null ? caCerts.length : 0);
+                    }
+
+                    // 5) verify client chain against CA certs (server bundle is used as trust
+                    // anchors)
+                    verifyCertificateChain(clientChain, caCerts);
+                    LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}", requestPort,
+                            origRequest.getRequestURI());
+
+                } catch (ExecutionException ee) {
+                    LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
+                    // return 500 with a small JSON body (similar handling as IOException)
+                    origResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    origResponse.setContentType("application/json;charset=UTF-8");
+                    String msg = "Failed to load CA bundle from cache/S3";
+                    String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                    try {
+                        origResponse.getWriter().write(
+                                String.format("{\"error\":\"Internal Server Error\",\"description\":\"%s\"}", safe));
+                        origResponse.getWriter().flush();
+                    } catch (IOException ioe2) {
+                        LOG.error("InteractionsFilter: failed to write Internal Server Error response", ioe2);
+                    }
+                    return;
+                } catch (IOException ioe) {
+                    LOG.error("InteractionsFilter: IO error during mTLS processing", ioe);
+                    origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                            "mTLS processing error: " + ioe.getMessage());
+                    return;
+                } catch (CertificateException ce) {
+                    // Log full details (stack trace and cause) and return a JSON body with a
+                    // descriptive message.
+                    LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:", requestPort, ce);
+                    origResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    origResponse.setContentType("application/json;charset=UTF-8");
+                    String description = ce.getMessage() != null ? ce.getMessage() : "mTLS verification failed";
+                    // escape backslashes, quotes and newlines for safe JSON embedding
+                    description = description.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+                            .replace("\r", "\\r");
+                    String json = String.format("{\"error\":\"mTLS verification failed\",\"description\":\"%s\"}",
+                            description);
+                    try {
+                        origResponse.getWriter().write(json);
+                        origResponse.getWriter().flush();
+                    } catch (IOException ioe) {
+                        LOG.error("InteractionsFilter: failed to write error response", ioe);
+                    }
+                    return;
+                } catch (RuntimeException re) {
+                    LOG.error("InteractionsFilter: unexpected runtime error during mTLS processing", re);
+                    // unwrap causes to detect S3 missing key / 404
+                    Throwable t = re;
+                    while (t != null) {
+                        if (t instanceof software.amazon.awssdk.services.s3.model.NoSuchKeyException) {
+                            LOG.warn("InteractionsFilter: CA bundle not found in S3: {}", t.getMessage());
+                            origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                    "mTLS CA bundle not found: " + t.getMessage());
+                            return;
+                        }
+                        if (t instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
+                            software.amazon.awssdk.services.s3.model.S3Exception s3e = (software.amazon.awssdk.services.s3.model.S3Exception) t;
+                            if (s3e.statusCode() == 404) {
+                                LOG.warn("InteractionsFilter: S3 reported 404 for CA bundle: {}", s3e.getMessage());
+                                origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                        "mTLS CA bundle not found: " + s3e.getMessage());
+                                return;
+                            }
+                        }
+                        if (t instanceof IOException) {
+                            origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                    "mTLS processing error: " + t.getMessage());
+                            return;
+                        }
+                        if (t instanceof CertificateException) {
+                            origResponse.sendError(HttpStatus.UNAUTHORIZED.value(),
+                                    "mTLS verification failed: " + t.getMessage());
+                            return;
+                        }
+                        t = t.getCause();
+                    }
+                    // fallback generic error
+                    origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error");
+                    return;
+                }
+
+                // success: proceed
+                Enumeration<String> headerNames = origRequest.getHeaderNames();
+                while (headerNames.hasMoreElements()) {
+                    String headerName = headerNames.nextElement();
+                    String headerValue = origRequest.getHeader(headerName);
+                    LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,
+                            headerName, headerValue, interactionId);
+                }
+
                 chain.doFilter(origRequest, origResponse);
                 return;
             }
 
-            try {
-                // parse client certificate chain (if header present)
-                X509Certificate[] clientChain = clientCertPem != null ? parsePemChain(clientCertPem) : new X509Certificate[0];
-                LOG.info("InteractionsFilter: parsed client certificate chain length={}", clientChain.length);
-
-                // 4) obtain CA/server cert(s) to validate client against:
-                X509Certificate[] caCerts = null;
-                if (serverBundleKey != null) {
-                    final String bucketFinal = mtlsBucket;
-                    final String keyFinal = serverBundleKey;
-                    final String cacheKey = "s3://" + bucketFinal + "/" + keyFinal;
-
-                    // log cache hit/miss
-                    X509Certificate[] cached = caCache.getIfPresent(cacheKey);
-                    if (cached != null) {
-                        LOG.info("InteractionsFilter: CA bundle cache hit for {}", cacheKey);
-                    } else {
-                        LOG.info("InteractionsFilter: CA bundle cache miss for {}, fetching from S3 {}/{}", cacheKey, bucketFinal, keyFinal);
-                    }
-
-                    caCerts = caCache.get(cacheKey, () -> {
-                        try {
-                            return fetchPemFromS3AndParse(bucketFinal, keyFinal);
-                        } catch (Exception ex) {
-                            LOG.error("InteractionsFilter: error fetching CA bundle from S3 {}/{}", bucketFinal, keyFinal, ex);
-                            throw new RuntimeException(ex);
-                        }
-                    });
-                    LOG.info("InteractionsFilter: loaded CA bundle from S3, cert count={}", caCerts != null ? caCerts.length : 0);
-                }
-
-                // 5) verify client chain against CA certs (server bundle is used as trust anchors)
-                verifyCertificateChain(clientChain, caCerts);
-                LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}", requestPort, origRequest.getRequestURI());
-
-            } catch (ExecutionException ee) {
-                LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
-                // return 500 with a small JSON body (similar handling as IOException)
-                origResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-                origResponse.setContentType("application/json;charset=UTF-8");
-                String msg = "Failed to load CA bundle from cache/S3";
-                String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
-                try {
-                    origResponse.getWriter().write(String.format("{\"error\":\"Internal Server Error\",\"description\":\"%s\"}", safe));
-                    origResponse.getWriter().flush();
-                } catch (IOException ioe2) {
-                    LOG.error("InteractionsFilter: failed to write Internal Server Error response", ioe2);
-                }
-                return;
-            } catch (IOException ioe) {
-                LOG.error("InteractionsFilter: IO error during mTLS processing", ioe);
-                origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error: " + ioe.getMessage());
-                return;
-            } catch (CertificateException ce) {
-                // Log full details (stack trace and cause) and return a JSON body with a descriptive message.
-                LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:", requestPort, ce);
-                origResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-                origResponse.setContentType("application/json;charset=UTF-8");
-                String description = ce.getMessage() != null ? ce.getMessage() : "mTLS verification failed";
-                // escape backslashes, quotes and newlines for safe JSON embedding
-                description = description.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
-                String json = String.format("{\"error\":\"mTLS verification failed\",\"description\":\"%s\"}", description);
-                try {
-                    origResponse.getWriter().write(json);
-                    origResponse.getWriter().flush();
-                } catch (IOException ioe) {
-                    LOG.error("InteractionsFilter: failed to write error response", ioe);
-                }
-                return;
-            } catch (RuntimeException re) {
-                LOG.error("InteractionsFilter: unexpected runtime error during mTLS processing", re);
-                // unwrap causes to detect S3 missing key / 404
-                Throwable t = re;
-                while (t != null) {
-                    if (t instanceof software.amazon.awssdk.services.s3.model.NoSuchKeyException) {
-                        LOG.warn("InteractionsFilter: CA bundle not found in S3: {}", t.getMessage());
-                        origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS CA bundle not found: " + t.getMessage());
-                        return;
-                    }
-                    if (t instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
-                        software.amazon.awssdk.services.s3.model.S3Exception s3e = (software.amazon.awssdk.services.s3.model.S3Exception) t;
-                        if (s3e.statusCode() == 404) {
-                            LOG.warn("InteractionsFilter: S3 reported 404 for CA bundle: {}", s3e.getMessage());
-                            origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS CA bundle not found: " + s3e.getMessage());
-                            return;
-                        }
-                    }
-                    if (t instanceof IOException) {
-                        origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error: " + t.getMessage());
-                        return;
-                    }
-                    if (t instanceof CertificateException) {
-                        origResponse.sendError(HttpStatus.UNAUTHORIZED.value(), "mTLS verification failed: " + t.getMessage());
-                        return;
-                    }
-                    t = t.getCause();
-                }
-                // fallback generic error
-                origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error");
-                return;
-            }
-
-            // success: proceed
-            Enumeration<String> headerNames = origRequest.getHeaderNames();
-            while (headerNames.hasMoreElements()) {
-                String headerName = headerNames.nextElement();
-                String headerValue = origRequest.getHeader(headerName);
-                LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,
-                        headerName, headerValue, interactionId);
-            }
-
-            chain.doFilter(origRequest, origResponse);
-            return;
+            LOG.info("InteractionsFilter: feature disabled or excluded URI - continuing chain");
         }
-
-        LOG.info("InteractionsFilter: feature disabled or excluded URI - continuing chain");
         chain.doFilter(origRequest, origResponse);
     }
 
