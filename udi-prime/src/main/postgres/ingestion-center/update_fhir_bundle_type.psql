@@ -1,0 +1,89 @@
+
+-- Purpose: Back fill the 'bundle_type' value in the `sat_interaction_fhir_request` table
+-- Now limitted to 10000 records. To continue updating, run this psql more time.
+
+WITH payload_source AS (
+    SELECT 
+        hub_interaction_id,
+        payload
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature = 'Original FHIR Payload' AND bundle_type IS NULL 
+    ORDER BY created_at DESC LIMIT 10000 
+),
+
+bundle_eval AS (
+    SELECT
+        p.hub_interaction_id,
+        (
+            WITH categories AS (
+                SELECT STRING_AGG(category, ', ') AS bundle_type
+                FROM (
+                    -- Screening
+                    SELECT 'Screening' AS category
+                    FROM jsonb_array_elements(p.payload->'entry') AS entry
+                    WHERE entry->'resource'->>'resourceType' = 'Observation'
+                      AND jsonb_typeof(entry->'resource'->'hasMember') = 'array'
+                      AND jsonb_array_length(entry->'resource'->'hasMember') > 0
+                      AND EXISTS (
+                          SELECT 1
+                          FROM jsonb_array_elements_text( entry->'resource'->'meta'->'profile' ) AS profile
+                          WHERE RIGHT(profile, LENGTH('shinny-observation-screening-response')) = 'shinny-observation-screening-response'
+                      )
+
+                    UNION
+
+                    -- Assessment
+                    SELECT 'Assessment'
+                    FROM jsonb_array_elements(p.payload->'entry') AS entry
+                    WHERE entry->'resource'->>'resourceType' = 'Condition'
+                      AND EXISTS (
+                          SELECT 1
+                          FROM jsonb_array_elements_text( entry->'resource'->'meta'->'profile' ) AS profile
+                          WHERE RIGHT(profile, LENGTH('SHINNY-SDOHCC-Condition')) = 'SHINNY-SDOHCC-Condition'
+                             OR RIGHT(profile, LENGTH('SDOHCC-Condition')) = 'SDOHCC-Condition'
+                      )
+
+                    UNION
+
+                    -- Referral
+                    SELECT 'Referral'
+                    FROM jsonb_array_elements(p.payload->'entry') AS entry
+                    WHERE (
+                        entry->'resource'->>'resourceType' = 'ServiceRequest'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM jsonb_array_elements_text( entry->'resource'->'meta'->'profile' ) AS profile
+                            WHERE RIGHT(profile, LENGTH('SHINNYSDOHServiceRequest')) = 'SHINNYSDOHServiceRequest'
+                               OR RIGHT(profile, LENGTH('SDOHCC-ServiceRequest')) = 'SDOHCC-ServiceRequest'
+                        )
+                    )
+                    OR (
+                        entry->'resource'->>'resourceType' = 'Task'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM jsonb_array_elements_text( entry->'resource'->'meta'->'profile' ) AS profile
+                            WHERE RIGHT(profile, LENGTH('SHINNYSDOHTaskForReferralManagement')) = 'SHINNYSDOHTaskForReferralManagement'
+                               OR RIGHT(profile, LENGTH('SDOHCC-TaskForReferralManagement')) = 'SDOHCC-TaskForReferralManagement'
+                        )
+                    )
+                    OR (
+                        entry->'resource'->>'resourceType' = 'Procedure'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM jsonb_array_elements_text( entry->'resource'->'meta'->'profile' ) AS profile
+                            WHERE RIGHT(profile, LENGTH('shinny-sdoh-procedure')) = 'shinny-sdoh-procedure'
+                               OR RIGHT(profile, LENGTH('SDOHCC-Procedure')) = 'SDOHCC-Procedure'
+                        )
+                    )
+                ) AS category_list
+            )
+            SELECT bundle_type FROM categories
+        ) AS bundle_type
+    FROM payload_source p
+)
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_request t
+SET bundle_type = b.bundle_type
+FROM bundle_eval b
+WHERE t.hub_interaction_id = b.hub_interaction_id
+  AND t.bundle_type IS NULL;
