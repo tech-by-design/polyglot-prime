@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -32,14 +33,15 @@ class MessageGroupServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(MessageGroupService.class)).thenReturn(templateLogger);
-
-        // Inject strategies in the order of precedence
-        List varStrategies = List.of(
+        when(appLogger.getLogger(MllpMessageGroupStrategy.class)).thenReturn(templateLogger);
+        // Register strategies in order of precedence
+        List<MessageGroupStrategy> strategies = List.of(
                 new MllpMessageGroupStrategy(appLogger),
                 new TenantMessageGroupStrategy(),
                 new IpPortMessageGroupStrategy()
         );
-        messageGroupService = new MessageGroupService(varStrategies, appLogger);
+
+        messageGroupService = new MessageGroupService(strategies, appLogger);
     }
 
     private RequestContext buildContext(String tenantId,
@@ -81,19 +83,50 @@ class MessageGroupServiceTest {
         }};
     }
 
-    @Test
-    void testMllpWithAdditionalDetails_buildsCompositeGroupId() {
-        Map<String, String> additional = Map.of(
-                "deliveryType", "DEL",
-                "facility", "FAC",
-                "messageCode", "MSG"
-        );
-        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
-        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals("DEL_FAC_MSG", groupId);
+    // Helper to build parameter maps more readably
+    private static Map<String, String> params(String... kvPairs) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < kvPairs.length; i += 2) {
+            map.put(kvPairs[i], kvPairs[i + 1]);
+        }
+        return map;
     }
 
     @Test
+    @DisplayName("MLLP → Composite ID built from QE, DeliveryType, Facility, and MessageCode")
+    void testMllpCompositeGroupIdWithAllFields() {
+        Map<String, String> additional = params(
+                Constants.QE, "healthelink",
+                Constants.DELIVERY_TYPE, "DEL",
+                Constants.FACILITY, "FAC",
+                Constants.MESSAGE_CODE, "MSG"
+        );
+
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("healthelink_DEL_FAC_MSG", groupId);
+    }
+
+    @Test
+    @DisplayName("MLLP → QE only builds simple groupId")
+    void testMllpWithQEOnly_usesQEAsGroupId() {
+        Map<String, String> additional = params(Constants.QE, "healthelink");
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("healthelink", groupId);
+    }
+
+    @Test
+    @DisplayName("MLLP → Partial fields build only available components")
+    void testMllpWithPartialAdditionalDetails_usesAvailableFields() {
+        Map<String, String> additional = params(Constants.DELIVERY_TYPE, "DEL", Constants.FACILITY, "");
+        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("DEL", groupId);
+    }
+
+    @Test
+    @DisplayName("MLLP → No additional details uses port as fallback")
     void testMllpWithNoAdditionalDetails_usesPort() {
         var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -101,6 +134,7 @@ class MessageGroupServiceTest {
     }
 
     @Test
+    @DisplayName("MLLP → No details and no port returns default group ID")
     void testMllpWithNoAdditionalAndNoPort_returnsDefault() {
         var context = buildContext(null, "192.168.1.1", "192.168.1.2", null, MessageSourceType.MLLP, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -108,12 +142,23 @@ class MessageGroupServiceTest {
     }
 
     @Test
+    @DisplayName("Tenant Strategy → Non-MLLP uses tenant ID as group ID")
     void testTenantStrategy_usedWhenNotMllpAndTenantPresent() {
         var context = buildContext("tenantX", "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("tenantX", groupId);
     }
+
     @Test
+    @DisplayName("Tenant Strategy → Default tenant falls back to IP/Port")
+    void testTenantStrategy_withDefaultTenantId_fallbacksToIpPort() {
+        var context = buildContext(Constants.DEFAULT_TENANT_ID, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
+        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
+        assertEquals("192.168.1.1_192.168.1.2_8080", groupId);
+    }
+
+    @Test
+    @DisplayName("IP/Port Fallback → Builds composite from available fields")
     void testIpPortFallback_buildsCompositeFromAvailableFields() {
         var context = buildContext(null, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -121,6 +166,7 @@ class MessageGroupServiceTest {
     }
 
     @Test
+    @DisplayName("IP/Port Fallback → Partial fields still build composite")
     void testIpPortFallback_withMissingFields_buildsPartialComposite() {
         var context = buildContext(null, "192.168.1.1", null, "8080", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -128,6 +174,7 @@ class MessageGroupServiceTest {
     }
 
     @Test
+    @DisplayName("IP/Port Fallback → All blank returns default tenant ID")
     void testIpPortFallback_withAllBlank_returnsUnknownTenantId() {
         var context = buildContext(null, "   ", "   ", "   ", MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
@@ -135,27 +182,10 @@ class MessageGroupServiceTest {
     }
 
     @Test
+    @DisplayName("IP/Port Fallback → All null returns default tenant ID")
     void testIpPortFallback_withAllNull_returnsUnknownTenantId() {
         var context = buildContext(null, null, null, null, MessageSourceType.HTTP_INGEST, null);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
         assertEquals("unknown-tenantId", groupId);
-    }
-
-    @Test
-    void testMllpWithPartialAdditionalDetails_usesAvailableFields() {
-        Map<String, String> additional = Map.of(
-                "deliveryType", "DEL",
-                "facility", ""
-        );
-        var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
-        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals("DEL", groupId);
-    }
-
-    @Test
-    void testTenantStrategy_withDefaultTenantId_fallbacksToIpPort() {
-        var context = buildContext(Constants.DEFAULT_TENANT_ID, "192.168.1.1", "192.168.1.2", "8080", MessageSourceType.HTTP_INGEST, null);
-        String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals("192.168.1.1_192.168.1.2_8080", groupId);
     }
 }

@@ -127,21 +127,25 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
                         try {
                             Segment znt = terser.getSegment(".ZNT");
                             if (znt != null) {
-                                // Extract individual fields
-                                String messageCode = terser.get("/.ZNT-2");
-                                String facility = terser.get("/.ZNT-8");
-                                String deliveryType = terser.get("/.ZNT-4");
+                                String messageCode = terser.get("/.ZNT-2-1"); // ZNT.2.1
+                                String deliveryType = terser.get("/.ZNT-4-1"); // ZNT.4.1
+                                String znt8_1 = terser.get("/.ZNT-8-1"); // ZNT.8.1 (e.g., healthelink:GHC)
 
                                 String facilityCode = null;
-                                if (facility != null && facility.contains(":")) {
-                                    String[] parts = facility.split(":");
-                                    facilityCode = parts.length > 1 ? parts[1] : parts[0];
-                                } else if (facility != null) {
-                                    facilityCode = facility;
+                                String qe = null;
+
+                                if (znt8_1 != null && znt8_1.contains(":")) {
+                                    String[] parts = znt8_1.split(":");
+                                    qe = parts[0]; // part before ':', e.g., healthelink
+                                    facilityCode = parts.length > 1 ? parts[1] : null; // part after ':', e.g., GHC
+                                } else if (znt8_1 != null) {
+                                    facilityCode = znt8_1;
                                 }
+
                                 additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
                                 additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
                                 additionalDetails.put(Constants.FACILITY, facilityCode);
+                                additionalDetails.put(Constants.QE, qe); // add QE to the map
                             } else {
                                 logger.warn("ZNT segment not found in HL7 message. interactionId={}", interactionId);
                             }
