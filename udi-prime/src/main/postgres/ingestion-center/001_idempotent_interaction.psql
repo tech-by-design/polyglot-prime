@@ -1951,14 +1951,17 @@ BEGIN
             SELECT 
                 STRING_AGG(category, ', ') AS bundle_type
             FROM (
+				-- Screening
                 SELECT 'Screening' AS category
                 FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE entry->'resource'->>'resourceType' = 'Observation'
-                AND EXISTS (
+                /*AND EXISTS (
                     SELECT 1 
                     FROM jsonb_array_elements(entry->'resource'->'code'->'coding') AS coding
                     WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN', '100698-0', 'NYSAHCHRSN')
-                )
+                )*/
+				AND jsonb_typeof(entry->'resource'->'hasMember') = 'array'
+          		AND jsonb_array_length(entry->'resource'->'hasMember') > 0
                 AND EXISTS (
                     SELECT 1
                     FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
@@ -1967,6 +1970,7 @@ BEGIN
 
                 UNION
 
+				-- Assessment
                 SELECT 'Assessment'
                 FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE entry->'resource'->>'resourceType' = 'Condition'
@@ -1974,10 +1978,12 @@ BEGIN
                     SELECT 1
                     FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
                     WHERE RIGHT(profile, LENGTH('SHINNY-SDOHCC-Condition')) = 'SHINNY-SDOHCC-Condition'
+					   OR RIGHT(profile, LENGTH('SDOHCC-Condition')) = 'SDOHCC-Condition' 
                 )
 
                 UNION
 
+				-- Referral
                 SELECT 'Referral'
                 FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE (entry->'resource'->>'resourceType' = 'ServiceRequest'
@@ -1985,12 +1991,21 @@ BEGIN
                         SELECT 1
                         FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
                         WHERE RIGHT(profile, LENGTH('SHINNYSDOHServiceRequest')) = 'SHINNYSDOHServiceRequest'
+						   OR RIGHT(profile, LENGTH('SDOHCC-ServiceRequest')) = 'SDOHCC-ServiceRequest' 
                     ))
                 OR (entry->'resource'->>'resourceType' = 'Task'
                     AND EXISTS (
                         SELECT 1
                         FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
                         WHERE RIGHT(profile, LENGTH('SHINNYSDOHTaskForReferralManagement')) = 'SHINNYSDOHTaskForReferralManagement'
+						   OR RIGHT(profile, LENGTH('SDOHCC-TaskForReferralManagement')) = 'SDOHCC-TaskForReferralManagement'
+                    ))
+				OR (entry->'resource'->>'resourceType' = 'Procedure'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
+                        WHERE RIGHT(profile, LENGTH('shinny-sdoh-procedure')) = 'shinny-sdoh-procedure'
+						   OR RIGHT(profile, LENGTH('SDOHCC-Procedure')) = 'SDOHCC-Procedure' 
                     ))
             ) AS category_list
         )
