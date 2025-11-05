@@ -12,6 +12,7 @@ import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
+
 @Component
 @Order(1)
 public class MllpMessageGroupStrategy implements MessageGroupStrategy {
@@ -30,16 +31,21 @@ public class MllpMessageGroupStrategy implements MessageGroupStrategy {
     public String createGroupId(RequestContext context, String interactionId) {
         Map<String, String> params = context.getAdditionalParameters();
 
-        String deliveryType = StringUtils.trimToEmpty(params.get("deliveryType"));
-        String facility = StringUtils.trimToEmpty(params.get("facility"));
-        String messageCode = StringUtils.trimToEmpty(params.get("messageCode"));
+        String deliveryType = StringUtils.trimToEmpty(params.get(Constants.DELIVERY_TYPE));
+        String facility = StringUtils.trimToEmpty(params.get(Constants.FACILITY));
+        String messageCode = StringUtils.trimToEmpty(params.get(Constants.MESSAGE_CODE));
+        String qe = StringUtils.trimToEmpty(params.get(Constants.QE));
+
         LOG.info(
-                "Delivery Type: " + (StringUtils.isBlank(deliveryType) ? "Not Available" : "Available") + " | " +
-                "Facility: " + (StringUtils.isBlank(facility) ? "Not Available" : "Available") + " | " +
-                "Message Code: " + (StringUtils.isBlank(messageCode) ? "Not Available" : "Available") + " | " +
-                "InteractionId: " + (StringUtils.isBlank(interactionId) ? "Not Available" : "Available")
+            "Delivery Type: " + (StringUtils.isBlank(deliveryType) ? "Not Available" : "Available") + " | " +
+            "Facility: " + (StringUtils.isBlank(facility) ? "Not Available" : "Available") + " | " +
+            "Message Code: " + (StringUtils.isBlank(messageCode) ? "Not Available" : "Available") + " | " +
+            "QE: " + (StringUtils.isBlank(qe) ? "Not Available" : "Available") + " | " +
+            "InteractionId: " + (StringUtils.isBlank(interactionId) ? "Not Available" : "Available")
         );
+
         List<String> parts = new ArrayList<>();
+        if (StringUtils.isNotBlank(qe)) parts.add(qe);
         if (StringUtils.isNotBlank(deliveryType)) parts.add(deliveryType);
         if (StringUtils.isNotBlank(facility)) parts.add(facility);
         if (StringUtils.isNotBlank(messageCode)) parts.add(messageCode);
@@ -47,6 +53,7 @@ public class MllpMessageGroupStrategy implements MessageGroupStrategy {
         if (!parts.isEmpty()) {
             return String.join("_", parts);
         }
+
         return StringUtils.defaultIfBlank(context.getDestinationPort(), Constants.DEFAULT_MESSAGE_GROUP_ID);
     }
 }

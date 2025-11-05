@@ -40,6 +40,5 @@ public class Constants {
     public static final String MESSAGE_CODE = "messageCode";
     
     public static final String MTLS_BUCKET_NAME = "MTLS_BUCKET";
-
-
-    }
+    public static final String QE = "qe";
+    }  
