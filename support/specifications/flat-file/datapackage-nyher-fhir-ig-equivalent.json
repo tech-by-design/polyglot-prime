@@ -1,7 +1,7 @@
 {
   "profile": "tabular-data-package",
   "name": "csv-validation-using-ig", 
-  "description": "Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. CSV files must be encoded in **UTF-8** to ensure proper validation and processing. For example: \n\n- PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. \n- FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.",
+  "description": "Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. CSV files must be encoded in **UTF-8** to ensure proper validation and processing. For example: \n\n- PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. \n- FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.\n\n<b>NOTE</b> on Procedure generation: During the CSV-to-FHIR conversion, a Procedure resource is generated only when the PROCEDURE_CODE field is present in the Screening profile CSV. However, if the PROCEDURE_STATUS_CODE and PROCEDURE_CODE_SYSTEM fields are missing, FHIR validation will fail because these fields are mandatory in the IG for a valid Procedure resource. Therefore, when generating a Procedure resource, all three fields — PROCEDURE_CODE, PROCEDURE_CODE_SYSTEM, and PROCEDURE_STATUS_CODE — must be provided for successful validation.\n Additionally, if the field SEXUAL_ORIENTATION_CODE_SYSTEM has a value, then the field SEXUAL_ORIENTATION_CODE must also be provided to pass FHIR validation.",
   "resources": [
     {
       "profile": "tabular-data-resource",
@@ -116,10 +116,10 @@
      "pattern": "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?"
     }},
     {"name": "ENCOUNTER_LOCATION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference", "constraints": { "required": true}},              
-    {"name": "PROCEDURE_STATUS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').status"},
-    {"name": "PROCEDURE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').code.coding.code" },    
+    {"name": "PROCEDURE_STATUS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').status. <b>NOTE</b>: If you include a Procedure (PROCEDURE_CODE) in the Screening Profile CSV, you MUST also provide PROCEDURE_CODE_SYSTEM and PROCEDURE_STATUS_CODE. All three fields are required for the generated Procedure resource to pass IG FHIR validation."},
+    {"name": "PROCEDURE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').code.coding.code. <b>NOTE</b>: When PROCEDURE_CODE is present a Procedure resource will be generated. To ensure FHIR validation succeeds, also provide PROCEDURE_CODE_SYSTEM and PROCEDURE_STATUS_CODE."},    
     {"name": "PROCEDURE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').code.coding.display"},    
-    {"name": "PROCEDURE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').code.coding.system" },
+    {"name": "PROCEDURE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').code.coding.system. <b>NOTE</b>: This field is required alongside PROCEDURE_CODE and PROCEDURE_STATUS_CODE when a Procedure resource is generated from the Screening Profile CSV."},
     {"name": "PROCEDURE_CODE_MODIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').modifierExtension.value"},    
     { "name": "CONSENT_STATUS", "description":"Bundle.entry.resource.where(resourceType ='Consent').provision.type", "type": "string",  "constraints": {"required": true, "enum":[
       "permit",
@@ -423,7 +423,8 @@
           "urn:ietf:bcp:47",
           "http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage"
           ]}},
-          {"name": "SEXUAL_ORIENTATION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code", "constraints": { "enum": [
+          {"name": "SEXUAL_ORIENTATION_CODE", "type": "string", 
+          "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code. <b>NOTE</b>: If SEXUAL_ORIENTATION_CODE_SYSTEM has a value, SEXUAL_ORIENTATION_CODE MUST be provided to produce a valid FHIR resource.", "constraints": { "enum": [
             "20430005",
             "38628009",
             "42035005",
@@ -434,7 +435,7 @@
             "asku"
           ]}},
           {"name": "SEXUAL_ORIENTATION_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display"},
-          {"name": "SEXUAL_ORIENTATION_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system", "constraints": { "enum":["http://snomed.info/sct",
+          {"name": "SEXUAL_ORIENTATION_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system. <b>NOTE</b>: When this field has a value, SEXUAL_ORIENTATION_CODE must also be present; otherwise FHIR validation will fail.", "constraints": { "enum":["http://snomed.info/sct",
           "http://terminology.hl7.org/codesystem/v3-nullflavor", "http://terminology.hl7.org/codesystem/data-absent-reason"
           ] } },
           {"name": "PATIENT_LAST_UPDATED", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated", "constraints": { 
