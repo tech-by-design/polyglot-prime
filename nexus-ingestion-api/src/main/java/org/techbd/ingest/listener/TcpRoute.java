@@ -90,13 +90,55 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                                 }
                             });
                         }
+                        
+                        // Log all available headers for debugging connection details
+                        if (this.headers.isEmpty()) {
+                            logger.info("[TCP PORT {}] No headers available for interactionId={}", port, interactionId);
+                        } else {
+                            logger.info("[TCP PORT {}] All available headers for interactionId={} (count={})", port, interactionId, this.headers.size());
+                            this.headers.forEach((key, value) -> {
+                                logger.info("[TCP PORT {}] Header [{}] = [{}] interactionId={}", port, key, value, interactionId);
+                            });
+                        }
                     } catch (Exception ex) {
                         logger.warn("[TCP PORT {}] Failed to normalize request headers: {}", port, ex.getMessage());
                     }
 
+                    // Extract connection details from Camel headers
                     String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
                     String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
-                    logger.info("[TCP PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
+                    
+                    // Parse IP and port from remote address
+                    String clientIP = null;
+                    Integer clientPort = null;
+                    if (remote != null && remote.contains(":")) {
+                        int lastColon = remote.lastIndexOf(':');
+                        clientIP = remote.substring(0, lastColon);
+                        try {
+                            clientPort = Integer.parseInt(remote.substring(lastColon + 1));
+                        } catch (NumberFormatException e) {
+                            logger.warn("[TCP PORT {}] Failed to parse client port from remote address: {}", port, remote);
+                        }
+                    }
+                    
+                    // Parse IP and port from local address  
+                    String serverIP = null;
+                    Integer serverPort = null;
+                    if (local != null && local.contains(":")) {
+                        int lastColon = local.lastIndexOf(':');
+                        serverIP = local.substring(0, lastColon);
+                        try {
+                            serverPort = Integer.parseInt(local.substring(lastColon + 1));
+                        } catch (NumberFormatException e) {
+                            logger.warn("[TCP PORT {}] Failed to parse server port from local address: {}", port, local);
+                        }
+                    }
+                    
+                    // Log extracted connection details
+                    logger.info("[TCP PORT {}] Connection Details - Client: {}:{} -> Server: {}:{} interactionId={}", 
+                        port, clientIP, clientPort, serverIP, serverPort, interactionId);
+                    logger.info("[TCP PORT {}] Raw Connection - Remote: {} Local: {} interactionId={}", 
+                        port, remote, local, interactionId);
 
                     // determine destination port from headers (x-forwarded-port) or endpoint local address
                     String portHeader = exchange.getIn().getHeader(Constants.REQ_X_FORWARDED_PORT, String.class);
