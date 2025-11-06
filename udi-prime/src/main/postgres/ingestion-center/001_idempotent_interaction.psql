@@ -4549,7 +4549,7 @@ RETURNS TABLE (
     qe_name TEXT,
     qe_total_submissions BIGINT,
     success_submissions BIGINT,
-    faield_submissions BIGINT,
+    failed_submissions BIGINT,
     recently_created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
