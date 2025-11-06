@@ -47,16 +47,16 @@ public class TcpDispatcherRoute extends RouteBuilder {
         if (getContext().getComponent("tcp") != null) {
             endpointUri = "tcp://0.0.0.0:" + listenPort + "?sync=true";
         } else if (getContext().getComponent("netty4") != null) {
-            endpointUri = "netty4:tcp://0.0.0.0:" + listenPort + "?sync=true";
+            endpointUri = "netty4://tcp://0.0.0.0:" + listenPort + "?sync=true";
         } else if (getContext().getComponent("netty") != null) {
-            endpointUri = "netty:tcp://0.0.0.0:" + listenPort + "?sync=true";
+            endpointUri = "netty://tcp://0.0.0.0:" + listenPort + "?sync=true";
         } else {
             // Log warning and enumerate available Camel components to aid diagnostics
             try {
                 String components = String.join(", ", getContext().getComponentNames());
-                logger.warn("TcpDispatcher: no tcp/netty component available on classpath — not starting dispatcher on port {}. Available Camel components: {}", listenPort, components);
+                logger.warn("TcpDispatcherRoute: no tcp/netty component available on classpath — not starting dispatcher on port {}. Available Camel components: {}", listenPort, components);
             } catch (Exception ex) {
-                logger.warn("TcpDispatcher: no tcp/netty component available on classpath — not starting dispatcher on port {}. Failed to list components: {}", listenPort, ex.getMessage());
+                logger.warn("TcpDispatcherRoute: no tcp/netty component available on classpath — not starting dispatcher on port {}. Failed to list components: {}", listenPort, ex.getMessage());
             }
             return;
         }
