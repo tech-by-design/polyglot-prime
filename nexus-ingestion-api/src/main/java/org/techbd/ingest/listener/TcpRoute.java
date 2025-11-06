@@ -172,88 +172,170 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                     }
 
                     // Extract connection details from Camel headers
-                    String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
-                    String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
+                    String remote = exchange.getIn().getHeader(Constants.CAMEL_NETTY_REMOTE_ADDRESS, String.class);
+                    String local = exchange.getIn().getHeader(Constants.CAMEL_NETTY_LOCAL_ADDRESS, String.class);
                     
-                    // Initialize connection details
+                    // Extract connection details with enhanced Proxy Protocol support
                     String clientIP = null;
                     Integer clientPort = null;
                     String serverIP = null;
                     Integer serverPort = null;
                     boolean isProxyProtocol = false;
                     
-                    // Check for Proxy Protocol information first
+                    // First, check for Proxy Protocol information using multiple possible header keys
                     if (proxyProtocolEnabled) {
-                        Object proxyMsg = exchange.getIn().getHeader("CamelNettyProxyMessage");
+                        // Try different possible header names that Camel Netty might use
+                        Object proxyMsg = null;
+                        
+                        // Check various possible header keys for HAProxy message
+                        String[] possibleKeys = {
+                            "CamelNettyHAProxyMessage",
+                            "CamelNettyProxyMessage", 
+                            "HAProxyMessage",
+                            "ProxyMessage",
+                            "CamelNettyChannelHandlerContext"
+                        };
+                        
+                        for (String key : possibleKeys) {
+                            proxyMsg = exchange.getIn().getHeader(key);
+                            if (proxyMsg != null) {
+                                logger.debug("[TCP PORT PROXY {}] Found proxy message under key: {} interactionId={}", port, key, interactionId);
+                                break;
+                            }
+                        }
+                        
+                        // Also check exchange properties
+                        if (proxyMsg == null) {
+                            for (String key : possibleKeys) {
+                                proxyMsg = exchange.getProperty(key);
+                                if (proxyMsg != null) {
+                                    logger.debug("[TCP PORT PROXY {}] Found proxy message in properties under key: {} interactionId={}", port, key, interactionId);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Extract information from HAProxyMessage if found
                         if (proxyMsg instanceof HAProxyMessage) {
                             HAProxyMessage haProxy = (HAProxyMessage) proxyMsg;
+                            
+                            // Extract source/destination information as in your Netty example
                             clientIP = haProxy.sourceAddress();
                             clientPort = haProxy.sourcePort();
                             serverIP = haProxy.destinationAddress();
                             serverPort = haProxy.destinationPort();
                             isProxyProtocol = true;
                             
-                            logger.info("[TCP PORT {}] Proxy Protocol - Real Client: {}:{} -> Real Server: {}:{} (via Proxy: {}) interactionId={}", 
-                                port, clientIP, clientPort, serverIP, serverPort, remote, interactionId);
+                            logger.info("[TCP PORT {}] Proxy Protocol detected - Original client: {}:{} -> Original server: {}:{} interactionId={}", 
+                                port, clientIP, clientPort, serverIP, serverPort, interactionId);
+                            
+                            // Log proxy protocol version and command for debugging
+                            logger.debug("[TCP PORT {}] Proxy Protocol details - Version: {}, Command: {} interactionId={}", 
+                                port, haProxy.protocolVersion(), haProxy.command(), interactionId);
+                        } else if (proxyMsg != null) {
+                            logger.warn("[TCP PORT {}] Found proxy message object but not HAProxyMessage type: {} interactionId={}", 
+                                port, proxyMsg.getClass().getSimpleName(), interactionId);
+                        } else {
+                            logger.debug("[TCP PORT {}] No Proxy Protocol message found in headers or properties interactionId={}", 
+                                port, interactionId);
                         }
                     }
                     
-                    // Fallback to standard connection parsing if no Proxy Protocol info
+                    // Fallback to standard Camel connection parsing if no Proxy Protocol info
                     if (!isProxyProtocol) {
-                        // Parse IP and port from remote address
+                        // Parse client IP and port from remote address (similar to your AttributeKey approach)
                         if (remote != null && remote.contains(":")) {
                             int lastColon = remote.lastIndexOf(':');
                             clientIP = remote.substring(0, lastColon);
+                            // Remove leading slash if present (common in Netty address formatting)
+                            if (clientIP.startsWith("/")) {
+                                clientIP = clientIP.substring(1);
+                            }
                             try {
                                 clientPort = Integer.parseInt(remote.substring(lastColon + 1));
                             } catch (NumberFormatException e) {
-                                logger.warn("[TCP PORT {}] Failed to parse client port from remote address: {}", port, remote);
+                                logger.warn("[TCP PORT {}] Failed to parse client port from remote address: {} interactionId={}", 
+                                    port, remote, interactionId);
                             }
                         }
                         
-                        // Parse IP and port from local address  
+                        // Parse server IP and port from local address
                         if (local != null && local.contains(":")) {
                             int lastColon = local.lastIndexOf(':');
                             serverIP = local.substring(0, lastColon);
+                            // Remove leading slash if present
+                            if (serverIP.startsWith("/")) {
+                                serverIP = serverIP.substring(1);
+                            }
                             try {
                                 serverPort = Integer.parseInt(local.substring(lastColon + 1));
                             } catch (NumberFormatException e) {
-                                logger.warn("[TCP PORT {}] Failed to parse server port from local address: {}", port, local);
+                                logger.warn("[TCP PORT {}] Failed to parse server port from local address: {} interactionId={}", 
+                                    port, local, interactionId);
                             }
                         }
+                        
+                        logger.debug("[TCP PORT {}] Using standard connection info - Client: {}:{} -> Server: {}:{} interactionId={}", 
+                            port, clientIP, clientPort, serverIP, serverPort, interactionId);
                     }
                     
-                    // Log extracted connection details with Proxy Protocol awareness
+                    // Store extracted connection information in exchange properties for later use
+                    // (similar to Netty's AttributeKey approach in your example)
+                    if (clientIP != null) {
+                        exchange.setProperty("sourceIP", clientIP);
+                        exchange.setProperty("clientIP", clientIP);
+                    }
+                    if (clientPort != null) {
+                        exchange.setProperty("sourcePort", clientPort);
+                        exchange.setProperty("clientPort", clientPort);
+                    }
+                    if (serverIP != null) {
+                        exchange.setProperty("destinationIP", serverIP);
+                        exchange.setProperty("serverIP", serverIP);
+                    }
+                    if (serverPort != null) {
+                        exchange.setProperty("destinationPort", serverPort);
+                        exchange.setProperty("serverPort", serverPort);
+                    }
+                    exchange.setProperty("isProxyProtocol", isProxyProtocol);
+                    
+                    // Log comprehensive connection details (inspired by your Netty ProxyProtocolHandler)
                     if (isProxyProtocol) {
-                        logger.info("[TCP PORT {}] Proxy Protocol Connection - Real Client: {}:{} -> Real Server: {}:{} interactionId={}", 
-                            port, clientIP, clientPort, serverIP, serverPort, interactionId);
-                        logger.info("[TCP PORT {}] Proxy Connection - Via: {} Local: {} interactionId={}", 
-                            port, remote, local, interactionId);
+                        logger.info("[TCP PORT {}] Proxy Protocol Connection Details:", port);
+                        logger.info("[TCP PORT {}]   Original Client: {}:{}", port, clientIP, clientPort);
+                        logger.info("[TCP PORT {}]   Original Server: {}:{}", port, serverIP, serverPort);
+                        logger.info("[TCP PORT {}]   Proxy Gateway: {}", port, remote);
+                        logger.info("[TCP PORT {}]   Local Endpoint: {}", port, local);
+                        logger.info("[TCP PORT {}]   InteractionId: {}", port, interactionId);
                     } else {
-                        logger.info("[TCP PORT {}] Direct Connection - Client: {}:{} -> Server: {}:{} interactionId={}", 
-                            port, clientIP, clientPort, serverIP, serverPort, interactionId);
-                        logger.info("[TCP PORT {}] Raw Connection - Remote: {} Local: {} interactionId={}", 
-                            port, remote, local, interactionId);
+                        logger.info("[TCP PORT {}] Direct Connection Details:", port);
+                        logger.info("[TCP PORT {}]   Client: {}:{}", port, clientIP, clientPort);
+                        logger.info("[TCP PORT {}]   Server: {}:{}", port, serverIP, serverPort);
+                        logger.info("[TCP PORT {}]   Remote: {}", port, remote);
+                        logger.info("[TCP PORT {}]   Local: {}", port, local);
+                        logger.info("[TCP PORT {}]   InteractionId: {}", port, interactionId);
                     }
 
-                    // determine destination port from headers (x-forwarded-port) or endpoint local address
-                    String portHeader = exchange.getIn().getHeader(Constants.REQ_X_FORWARDED_PORT, String.class);
-                    if (portHeader == null || portHeader.isBlank()) {
-                        // use normalized headers map (Map<String,String>) to avoid incompatible Map<String,Object> -> Map<String,String>
-                        portHeader = HttpUtil.extractDestinationPort(this.headers);
-                    }
-                    Integer requestPort = null;
-                    if (portHeader != null) {
-                        try {
-                            requestPort = Integer.parseInt(portHeader);
-                        } catch (NumberFormatException nfe) {
-                            logger.warn("[TCP PORT {}] Invalid port header value: '{}' ; falling back to route listen port", port, portHeader);
-                        }
-                    }
+                    // // determine destination port from headers (x-forwarded-port) or endpoint local address
+                    // String portHeader = exchange.getIn().getHeader(Constants.REQ_X_FORWARDED_PORT, String.class);
+                    // if (portHeader == null || portHeader.isBlank()) {
+                    //     // use normalized headers map (Map<String,String>) to avoid incompatible Map<String,Object> -> Map<String,String>
+                    //     portHeader = HttpUtil.extractDestinationPort(this.headers);
+                    // }
+                    // Integer requestPort = null;
+                    // if (portHeader != null) {
+                    //     try {
+                    //         requestPort = Integer.parseInt(portHeader);
+                    //     } catch (NumberFormatException nfe) {
+                    //         logger.warn("[TCP PORT {}] Invalid port header value: '{}' ; falling back to route listen port", port, portHeader);
+                    //     }
+                    // }
+                    
                     // lookup config for the destination port (if found); else use listen port
+                    Integer requestPort = this.port;
                     PortConfig.PortEntry portEntry = null;
                     if (requestPort != null) {
-                        portEntry = portConfig.findEntryForPort(requestPort).orElse(null);
+                        portEntry = portConfig.findEntryForPort(clientPort).orElse(null);
                     }
                     boolean configuredAsMllp = false;
                     if (portEntry != null) {
