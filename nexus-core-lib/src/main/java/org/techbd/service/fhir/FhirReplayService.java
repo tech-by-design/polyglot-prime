@@ -94,7 +94,6 @@ public class FhirReplayService {
                 replayId, bundleCount);
         CompletableFuture.runAsync(() -> {
             for (Map<String, Object> bundle : bundlesList) {
-                boolean alreadyReplayed = false;
                 final var bundleId = (String) bundle.get("bundleid");
                 final var bundleInteractionId = (String) bundle.get("interactionid");
                 final var groupInteractionId = (String) bundle.get("groupInteractionId");
@@ -115,12 +114,6 @@ public class FhirReplayService {
                             bundleId,
                             tenantId,
                             source);
-                    if (errorMessage != null && !errorMessage.isEmpty()) {
-                        status = "Failed";
-                        LOG.info("FHIR-REPLAY Skipping replay due to existing error | replayId={} | bundleInteractionId={} | zipInteractionId={} | groupInteractionId={} | bundleId={} | errorMessage={}",
-                                 replayId, bundleInteractionId, zipInteractionId, groupInteractionId, bundleId, errorMessage);
-                        alreadyReplayed = true;
-                    } else {
                         // Call scoring engine
 
                         fhirService.sendToScoringEngine(
@@ -151,7 +144,7 @@ public class FhirReplayService {
                                 bundleId,
                                 tenantId,
                                 source);
-                    }
+                    
                 } catch (Exception e) {
                     LOG.error("FHIR-REPLAY Failed sending bundleId={} for replayId={} | error={}",
                             bundleId, replayId, e.getMessage(), e);
@@ -163,9 +156,7 @@ public class FhirReplayService {
                     errorMessage = sw.toString();
                 } finally {
                     // Always update FHIR replay status and errorMessage
-                    if (!alreadyReplayed) {
-                        updateFhirStatus(jooqCfg, bundleInteractionId, status, errorMessage, replayId);
-                    }
+                        updateFhirStatus(jooqCfg, bundleInteractionId, status, errorMessage, replayId, bundleId);
                 }
             }
 
@@ -200,10 +191,12 @@ public class FhirReplayService {
     /**
      * Private helper method to update FHIR replay status and errorMessage
      */
-    private void updateFhirStatus(final org.jooq.Configuration jooqCfg,String bundleId, String status, String errorMessage, String replayMasterId) {
+    private void updateFhirStatus(final org.jooq.Configuration jooqCfg,String bundleInteractionId, String status, String errorMessage, String replayMasterId, String bundleId) {
         try {
             UpdateFhirReplayStatus updateFhirReplayStatus = new UpdateFhirReplayStatus();
-            updateFhirReplayStatus.setPInteractionId(bundleId);
+            updateFhirReplayStatus.setPBundleId(bundleId);
+            updateFhirReplayStatus.setPInteractionId(bundleInteractionId);
+            updateFhirReplayStatus.setPReplayMasterId(replayMasterId);
             updateFhirReplayStatus.setPStatus(status);
             if (errorMessage != null && errorMessage.length() > 4000) { // adjust length as per DB field
                 errorMessage = errorMessage.substring(0, 4000);
