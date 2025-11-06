@@ -1,7 +1,5 @@
 package org.techbd.ingest.listener;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -29,8 +27,20 @@ import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
 
+import io.netty.handler.codec.haproxy.HAProxyMessage;
+
 /**
  * Plain TCP route (no MLLP framing). Sends HL7 ACK/NACK back as raw bytes on the TCP socket.
+ * 
+ * Enhanced with support for Proxy Protocol (HAProxy Protocol) which allows load balancers
+ * and proxies to pass the original client connection information to backend servers.
+ * 
+ * Features:
+ * - Standard TCP connection handling via Apache Camel
+ * - Optional Proxy Protocol v1/v2 support for real client IP extraction
+ * - Comprehensive connection logging (direct vs proxy connections)
+ * - HL7 message processing with ACK/NACK responses
+ * - Configurable MLLP framing based on port configuration
  */
 public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
 
@@ -39,14 +49,59 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortConfig portConfig;
-    private Map<String, String> headers = new HashMap<>();
+    private final Map<String, String> headers = new HashMap<>();
+    private final boolean proxyProtocolEnabled;
 
     public TcpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+        this(port, messageProcessorService, appConfig, appLogger, portConfig, false);
+    }
+
+    public TcpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig, boolean proxyProtocolEnabled) {
         this.port = port;
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.portConfig = portConfig;
+        this.proxyProtocolEnabled = proxyProtocolEnabled;
         this.logger = appLogger.getLogger(TcpRoute.class);
+    }
+
+    /**
+     * Factory method to create a TcpRoute with Proxy Protocol support enabled.
+     * 
+     * @param port TCP port to listen on
+     * @param messageProcessorService Service for processing HL7 messages
+     * @param appConfig Application configuration
+     * @param appLogger Application logger factory
+     * @param portConfig Port configuration for routing decisions
+     * @return TcpRoute instance with Proxy Protocol support enabled
+     */
+    public static TcpRoute withProxyProtocol(int port, MessageProcessorService messageProcessorService, 
+                                           AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+        return new TcpRoute(port, messageProcessorService, appConfig, appLogger, portConfig, true);
+    }
+
+    /**
+     * Factory method to create a standard TcpRoute without Proxy Protocol support.
+     * 
+     * @param port TCP port to listen on
+     * @param messageProcessorService Service for processing HL7 messages
+     * @param appConfig Application configuration
+     * @param appLogger Application logger factory
+     * @param portConfig Port configuration for routing decisions
+     * @return TcpRoute instance with standard TCP connection handling
+     */
+    public static TcpRoute standard(int port, MessageProcessorService messageProcessorService, 
+                                  AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+        return new TcpRoute(port, messageProcessorService, appConfig, appLogger, portConfig, false);
+    }
+
+    /**
+     * Check if Proxy Protocol support is enabled for this route.
+     * 
+     * @return true if Proxy Protocol is enabled, false otherwise
+     */
+    public boolean isProxyProtocolEnabled() {
+        return proxyProtocolEnabled;
     }
 
     @Override
@@ -57,12 +112,24 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
         // Use getComponent(...) and check for null to avoid boolean-theory issues across Camel versions.
         if (getContext().getComponent("tcp") != null) {
             endpointUri = "tcp://0.0.0.0:" + port + "?sync=true";
-        } else if (getContext().getComponent("netty4") != null) {
-            endpointUri = "netty4:tcp://0.0.0.0:" + port + "?sync=true";
         } else if (getContext().getComponent("netty") != null) {
-            endpointUri = "netty:tcp://0.0.0.0:" + port + "?sync=true";
+            // Configure Netty with optional Proxy Protocol support (Camel 4.x uses 'netty' component)
+            if (proxyProtocolEnabled) {
+                endpointUri = "netty://tcp://0.0.0.0:" + port + "?sync=true&decoders=#haProxyDecoder";
+                logger.info("[TCP PORT {}] Proxy Protocol support enabled", port);
+            } else {
+                endpointUri = "netty://tcp://0.0.0.0:" + port + "?sync=true";
+            }
+        } else if (getContext().getComponent("netty4") != null) {
+            // Legacy support for older Camel versions with netty4 component
+            if (proxyProtocolEnabled) {
+                endpointUri = "netty4://tcp://0.0.0.0:" + port + "?sync=true&decoders=#haProxyDecoder";
+                logger.info("[TCP PORT {}] Proxy Protocol support enabled (netty4)", port);
+            } else {
+                endpointUri = "netty4://tcp://0.0.0.0:" + port + "?sync=true";
+            }
         } else {
-            logger.warn("[TCP PORT {}] No TCP-capable Camel component (tcp/netty4/netty) found on classpath — skipping TCP route creation", port);
+            logger.warn("[TCP PORT {}] No TCP-capable Camel component (tcp/netty/netty4) found on classpath — skipping TCP route creation", port);
             return;
         }
 
@@ -108,37 +175,66 @@ public class TcpRoute extends RouteBuilder implements MessageSourceProvider {
                     String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
                     String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
                     
-                    // Parse IP and port from remote address
+                    // Initialize connection details
                     String clientIP = null;
                     Integer clientPort = null;
-                    if (remote != null && remote.contains(":")) {
-                        int lastColon = remote.lastIndexOf(':');
-                        clientIP = remote.substring(0, lastColon);
-                        try {
-                            clientPort = Integer.parseInt(remote.substring(lastColon + 1));
-                        } catch (NumberFormatException e) {
-                            logger.warn("[TCP PORT {}] Failed to parse client port from remote address: {}", port, remote);
-                        }
-                    }
-                    
-                    // Parse IP and port from local address  
                     String serverIP = null;
                     Integer serverPort = null;
-                    if (local != null && local.contains(":")) {
-                        int lastColon = local.lastIndexOf(':');
-                        serverIP = local.substring(0, lastColon);
-                        try {
-                            serverPort = Integer.parseInt(local.substring(lastColon + 1));
-                        } catch (NumberFormatException e) {
-                            logger.warn("[TCP PORT {}] Failed to parse server port from local address: {}", port, local);
+                    boolean isProxyProtocol = false;
+                    
+                    // Check for Proxy Protocol information first
+                    if (proxyProtocolEnabled) {
+                        Object proxyMsg = exchange.getIn().getHeader("CamelNettyProxyMessage");
+                        if (proxyMsg instanceof HAProxyMessage) {
+                            HAProxyMessage haProxy = (HAProxyMessage) proxyMsg;
+                            clientIP = haProxy.sourceAddress();
+                            clientPort = haProxy.sourcePort();
+                            serverIP = haProxy.destinationAddress();
+                            serverPort = haProxy.destinationPort();
+                            isProxyProtocol = true;
+                            
+                            logger.info("[TCP PORT {}] Proxy Protocol - Real Client: {}:{} -> Real Server: {}:{} (via Proxy: {}) interactionId={}", 
+                                port, clientIP, clientPort, serverIP, serverPort, remote, interactionId);
                         }
                     }
                     
-                    // Log extracted connection details
-                    logger.info("[TCP PORT {}] Connection Details - Client: {}:{} -> Server: {}:{} interactionId={}", 
-                        port, clientIP, clientPort, serverIP, serverPort, interactionId);
-                    logger.info("[TCP PORT {}] Raw Connection - Remote: {} Local: {} interactionId={}", 
-                        port, remote, local, interactionId);
+                    // Fallback to standard connection parsing if no Proxy Protocol info
+                    if (!isProxyProtocol) {
+                        // Parse IP and port from remote address
+                        if (remote != null && remote.contains(":")) {
+                            int lastColon = remote.lastIndexOf(':');
+                            clientIP = remote.substring(0, lastColon);
+                            try {
+                                clientPort = Integer.parseInt(remote.substring(lastColon + 1));
+                            } catch (NumberFormatException e) {
+                                logger.warn("[TCP PORT {}] Failed to parse client port from remote address: {}", port, remote);
+                            }
+                        }
+                        
+                        // Parse IP and port from local address  
+                        if (local != null && local.contains(":")) {
+                            int lastColon = local.lastIndexOf(':');
+                            serverIP = local.substring(0, lastColon);
+                            try {
+                                serverPort = Integer.parseInt(local.substring(lastColon + 1));
+                            } catch (NumberFormatException e) {
+                                logger.warn("[TCP PORT {}] Failed to parse server port from local address: {}", port, local);
+                            }
+                        }
+                    }
+                    
+                    // Log extracted connection details with Proxy Protocol awareness
+                    if (isProxyProtocol) {
+                        logger.info("[TCP PORT {}] Proxy Protocol Connection - Real Client: {}:{} -> Real Server: {}:{} interactionId={}", 
+                            port, clientIP, clientPort, serverIP, serverPort, interactionId);
+                        logger.info("[TCP PORT {}] Proxy Connection - Via: {} Local: {} interactionId={}", 
+                            port, remote, local, interactionId);
+                    } else {
+                        logger.info("[TCP PORT {}] Direct Connection - Client: {}:{} -> Server: {}:{} interactionId={}", 
+                            port, clientIP, clientPort, serverIP, serverPort, interactionId);
+                        logger.info("[TCP PORT {}] Raw Connection - Remote: {} Local: {} interactionId={}", 
+                            port, remote, local, interactionId);
+                    }
 
                     // determine destination port from headers (x-forwarded-port) or endpoint local address
                     String portHeader = exchange.getIn().getHeader(Constants.REQ_X_FORWARDED_PORT, String.class);

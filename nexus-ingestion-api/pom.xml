@@ -22,7 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <aws.sdk.version>2.28.0</aws.sdk.version>
         <hapi.version>2.6.0</hapi.version>
-        <camel.version>4.4.0</camel.version>
+        <camel.version>4.10.0</camel.version>
     </properties>
 
     <dependencies>
@@ -137,14 +137,24 @@
             <artifactId>camel-mllp-starter</artifactId>
             <version>4.10.0</version>
         </dependency>
-        <!-- <dependency>
+        
+        <!-- TCP support for Camel -->
+        <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-netty</artifactId>
             <version>${camel.version}</version>
         </dependency>
+        
+        <!-- Netty HAProxy Codec for Proxy Protocol support -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-haproxy</artifactId>
+        </dependency>
+        
+        <!-- Uncomment other TCP components if needed
         <dependency>
             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-netty4</artifactId>
+            <artifactId>camel-netty</artifactId>
             <version>${camel.version}</version>
         </dependency>
         <dependency>
