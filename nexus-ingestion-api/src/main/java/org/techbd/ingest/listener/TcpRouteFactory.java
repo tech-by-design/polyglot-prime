@@ -17,6 +17,7 @@ public class TcpRouteFactory {
     private final AppConfig appConfig;
     private final AppLogger appLogger;
     private final PortConfig portConfig;
+    private final int dispatcherPort;
 
     @Autowired
     public TcpRouteFactory(MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
@@ -24,9 +25,20 @@ public class TcpRouteFactory {
         this.appConfig = appConfig;
         this.appLogger = appLogger;
         this.portConfig = portConfig;
+        
+        // Read TCP_DISPATCHER_PORT from environment variable
+        String val = System.getenv("TCP_DISPATCHER_PORT");
+        if (val == null || val.isBlank()) {
+            throw new IllegalStateException("Required environment variable TCP_DISPATCHER_PORT is not set. Please set TCP_DISPATCHER_PORT to the dispatcher listen port.");
+        }
+        try {
+            this.dispatcherPort = Integer.parseInt(val.trim());
+        } catch (NumberFormatException nfe) {
+            throw new IllegalStateException("Invalid TCP_DISPATCHER_PORT value: '" + val + "'. Must be a valid integer port number.", nfe);
+        }
     }
 
-    public TcpRoute create(int port) {
-        return new TcpRoute(port, messageProcessorService, appConfig, appLogger, portConfig);
+    public TcpRoute create() {
+        return new TcpRoute(dispatcherPort, messageProcessorService, appConfig, appLogger, portConfig);
     }
 }
