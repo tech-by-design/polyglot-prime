@@ -8839,15 +8839,7 @@ BEGIN
                 'tenantID', tenant_id,
                 'source', source_type,
                 'uri', uri,
-                'errorMessage',
-                    CASE 
-                        WHEN replay_status IS NOT NULL THEN
-                            'already replayed | status: '
-                            || COALESCE(replay_status, '')
-                            || ' | error: '
-                            || COALESCE(error_message::text, '')
-                        ELSE NULL
-                    END,
+                'errorMessage', COALESCE(error_message::text, ''),
                 'groupInteractionId',
                     CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
                 'zipInteractionID',
