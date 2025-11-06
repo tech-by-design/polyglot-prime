@@ -161,6 +161,11 @@ public class CsvConversionUtil {
             List<T> dataList = csvToBean.parse();
             List<CsvException> errors = csvToBean.getCapturedExceptions();
 
+            // Trim all String fields of parsed objects
+            for (T obj : dataList) {
+                trimStringFields(obj);
+            }
+
             for (CsvException error : errors) {
                 LOG.error("Malformed CSV row skipped: {} for interactionId: {} TechBDVersion: {}", error.getLineNumber(), interactionId, techBDVersion, error);
                 errorRows.add(error.getLine()); // Store bad rows for debugging
@@ -180,6 +185,22 @@ public class CsvConversionUtil {
     } 
     
 }
+
+    private static void trimStringFields(Object obj) {
+        for (var field : obj.getClass().getDeclaredFields()) {
+            if (field.getType() == String.class) {
+                field.setAccessible(true);
+                try {
+                    String value = (String) field.get(obj);
+                    if (value != null) {
+                        field.set(obj, value.trim());
+                    }
+                } catch (IllegalAccessException e) {
+                    // Skip inaccessible fields silently
+                }
+            }
+        }
+    }
 
     /**
      * Extracts the value of a specified field from an object using reflection.
