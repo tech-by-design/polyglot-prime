@@ -141,6 +141,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     String v = clientCertHeader.trim();
                     
                     // First identify the encoding type and decode accordingly
+                    // Check URL-encoded first as it's more specific
                     if (isUrlEncoded(v)) {
                         // URL-encoded detected - decode it
                         try {
@@ -473,9 +474,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
     /**
      * Identifies if a string is Base64-encoded by checking its characteristics.
+     * This method is more conservative to avoid false positives with URL-encoded content.
      */
     private boolean isBase64Encoded(String value) {
         if (value == null || value.isEmpty()) {
+            return false;
+        }
+        
+        // If it contains URL-encoded characters, it's not pure Base64
+        if (value.contains("%")) {
+            return false;
+        }
+        
+        // If it looks like PEM format, it's not pure Base64
+        if (value.contains("-----BEGIN") || value.contains("-----END")) {
             return false;
         }
         
@@ -489,6 +501,11 @@ public class InteractionsFilter extends OncePerRequestFilter {
         
         // Check if it contains only valid Base64 characters
         if (!trimmed.matches("^[A-Za-z0-9+/]*={0,2}$")) {
+            return false;
+        }
+        
+        // Must be reasonably long to be a meaningful certificate
+        if (trimmed.length() < 100) {
             return false;
         }
         
