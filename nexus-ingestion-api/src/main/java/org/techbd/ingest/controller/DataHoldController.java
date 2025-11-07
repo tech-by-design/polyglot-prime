@@ -6,8 +6,6 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,17 +18,16 @@ import org.techbd.ingest.AbstractMessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
-import org.techbd.ingest.config.PortConfig;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
