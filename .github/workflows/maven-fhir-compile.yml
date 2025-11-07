@@ -26,4 +26,4 @@ jobs:
 
     - name: Compile the project
       run: |
-        mvn clean compile
+        mvn clean install -DskipTests
