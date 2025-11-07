@@ -142,6 +142,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     
                     // Header value is always expected to be URL-encoded, so decode it
                     try {
+                        v = v.replace("+", "%2B");
+                        v = v.replace(" ", "%20");
                         clientCertPem = java.net.URLDecoder.decode(v, java.nio.charset.StandardCharsets.UTF_8);
                         LOG.info("InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}", clientCertPem.length());
                     } catch (Exception urlDecodeException) {
