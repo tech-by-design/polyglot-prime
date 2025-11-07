@@ -135,22 +135,35 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
 
                 String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
-                // Accept header value encoded as base64 (recommended) or raw PEM (less
-                // reliable).
+                // Accept header value encoded as URL-encoded or base64 (recommended) or raw PEM (less reliable).
                 String clientCertPem = null;
                 if (clientCertHeader != null) {
                     String v = clientCertHeader.trim();
-                    try {
-                        // Try base64 decode first (clients should send single-line base64(header))
-                        byte[] decoded = java.util.Base64.getDecoder().decode(v);
-                        clientCertPem = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
-                        LOG.info("InteractionsFilter: decoded client cert header as base64, bytes={}", decoded.length);
-                    } catch (IllegalArgumentException iae) {
-                        // Not base64 — treat as raw (may still fail if it contains forbidden header
-                        // chars)
+                    
+                    // First identify the encoding type and decode accordingly
+                    if (isUrlEncoded(v)) {
+                        // URL-encoded detected - decode it
+                        try {
+                            clientCertPem = java.net.URLDecoder.decode(v, java.nio.charset.StandardCharsets.UTF_8);
+                            LOG.info("InteractionsFilter: detected and decoded client cert header as URL-encoded, decoded length={}", clientCertPem.length());
+                        } catch (Exception urlDecodeException) {
+                            LOG.error("InteractionsFilter: URL decoding failed, treating as raw header", urlDecodeException);
+                            clientCertPem = v;
+                        }
+                    } else if (isBase64Encoded(v)) {
+                        // Base64 detected - decode it
+                        try {
+                            byte[] decoded = java.util.Base64.getDecoder().decode(v);
+                            clientCertPem = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+                            LOG.info("InteractionsFilter: detected and decoded client cert header as base64, bytes={}", decoded.length);
+                        } catch (IllegalArgumentException iae) {
+                            LOG.error("InteractionsFilter: Base64 decoding failed, treating as raw header", iae);
+                            clientCertPem = v;
+                        }
+                    } else {
+                        // Neither URL-encoded nor Base64 - treat as raw PEM
                         clientCertPem = v;
-                        LOG.error("InteractionsFilter: client cert header not base64, using raw header length={}",
-                                clientCertPem.length());
+                        LOG.info("InteractionsFilter: client cert header appears to be raw PEM, length={}", clientCertPem.length());
                     }
                 }
 
@@ -431,6 +444,60 @@ public class InteractionsFilter extends OncePerRequestFilter {
             // Throw CertificateException with the detailed message as internal diagnostic.
             // Note: callers should log the exception (including cause) but return a generic message to clients.
             throw new CertificateException("Certificate chain validation failed: " + details.toString(), e);
+        }
+    }
+
+    /**
+     * Identifies if a string is URL-encoded by checking for URL-encoded characters
+     * and attempting to decode it to see if the result differs from the original.
+     */
+    private boolean isUrlEncoded(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        
+        // Common URL-encoded characters that indicate URL encoding
+        if (value.contains("%20") || value.contains("%2B") || value.contains("%2F") 
+            || value.contains("%3D") || value.contains("%0A") || value.contains("%0D")) {
+            return true;
+        }
+        
+        // Try to decode and see if it changes the string
+        try {
+            String decoded = java.net.URLDecoder.decode(value, java.nio.charset.StandardCharsets.UTF_8);
+            return !decoded.equals(value);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Identifies if a string is Base64-encoded by checking its characteristics.
+     */
+    private boolean isBase64Encoded(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        
+        // Remove whitespace for validation
+        String trimmed = value.replaceAll("\\s", "");
+        
+        // Check if length is multiple of 4 (Base64 requirement)
+        if (trimmed.length() % 4 != 0) {
+            return false;
+        }
+        
+        // Check if it contains only valid Base64 characters
+        if (!trimmed.matches("^[A-Za-z0-9+/]*={0,2}$")) {
+            return false;
+        }
+        
+        // Try to decode to verify it's valid Base64
+        try {
+            java.util.Base64.getDecoder().decode(trimmed);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 }
