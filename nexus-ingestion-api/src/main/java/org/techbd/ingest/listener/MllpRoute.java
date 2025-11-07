@@ -1,16 +1,15 @@
 package org.techbd.ingest.listener;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
@@ -20,7 +19,6 @@ import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
-import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import ca.uhn.hl7v2.AcknowledgmentCode;
@@ -31,22 +29,25 @@ import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
 
+@Component
 public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
-    private TemplateLogger logger;
-
-    private final int port;
+    private final TemplateLogger logger;
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortConfig portConfig;
-    private Map<String, String> headers;
+    private final Map<String, String> headers = new HashMap<>();
 
-    public MllpRoute(int port, MessageProcessorService messageProcessorService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
-        this.port = port;
+    @Value("${MLLP_DISPATCHER_PORT:2575}")
+    private int port;
+
+    public MllpRoute(MessageProcessorService messageProcessorService,
+                     AppConfig appConfig,
+                     AppLogger appLogger,
+                     PortConfig portConfig) {
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.portConfig = portConfig;
-        this.headers = new HashMap<>();
         this.logger = appLogger.getLogger(MllpRoute.class);
     }
 
