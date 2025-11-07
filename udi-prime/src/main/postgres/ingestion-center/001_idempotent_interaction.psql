@@ -1564,12 +1564,14 @@ DECLARE
    	v_intr_finish_time 				TIMESTAMPTZ := NULL;
 	v_elaboration 					JSONB 		:= NULL;
 	v_elaboration_steps 			JSONB 		:= '[]'::jsonb;
+	v_elaboration_steps_text 		TEXT[] 		:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 		JSONB 		:= '[]'::jsonb;
 	v_user_id 						TEXT  		:= COALESCE(user_id, v_created_by);
 	v_techbd_version_number			TEXT  		:= NULL;
 
 BEGIN
 	BEGIN
-		v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In sat_interaction_user_upserted function'));  
+		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_user_upserted function');
 	
 	    -- Verify hub_interaction details
 	   	SELECT t."key" INTO v_hub_interaction_key
@@ -1665,7 +1667,7 @@ BEGIN
 				v_techbd_version_number
 		    ) RETURNING sat_interaction_user_id INTO v_return;
 		
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_user'));
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_interaction_user');
 		END IF;
 	EXCEPTION
 		WHEN OTHERS THEN
@@ -1691,14 +1693,20 @@ BEGIN
 								'tenant_id', tenant_id,							
 								'p_additional_details', p_additional_details
 								);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'sat_interaction_user_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, tenant_id, hub_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -3528,6 +3536,8 @@ DECLARE
 	v_is_exception					BOOLEAN := false;
 	v_elaboration 					JSONB 	:= NULL;
 	v_elaboration_steps 			JSONB	:= '[]'::jsonb;
+	v_elaboration_steps_text 		TEXT[] 	:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 		JSONB 	:= '[]'::jsonb;
 	v_validation_error              TEXT;
 
 
@@ -3541,7 +3551,7 @@ BEGIN
 	 * 'origin' can be 'http', 'sftp' etc.
 	 */
 	BEGIN
-		v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In sat_interaction_hl7_request_upserted function'));
+		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_hl7_request_upserted function');
 	
 		IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
 	  		WHERE t.hub_interaction_id = p_hub_interaction_id 
@@ -3601,7 +3611,7 @@ BEGIN
 				p_file_name
 		    ) RETURNING sat_interaction_hl7_request_id INTO v_return;  -- Return the generated UUID
 
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_hl7_request'));
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_interaction_hl7_request');
 
 			v_validation_error := (p_payload -> 'result' -> 0-> 'details' ->> 'text')::text;
 
@@ -3638,7 +3648,7 @@ BEGIN
 					v_created_by,
 					v_provenance);	
 
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_interaction_hl7_validation_errors'));				
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into sat_interaction_hl7_validation_errors');			
             END IF;
 		END IF;
 	EXCEPTION
@@ -3669,14 +3679,20 @@ BEGIN
 									'file_name', p_file_name,
 									'client_ip_address', p_client_ip_address
 	         						);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_uri, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_uri, v_created_by, v_provenance, 'info'::text, 
        																'sat_interaction_hl7_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -3989,6 +4005,8 @@ DECLARE
 	v_is_exception					BOOLEAN := false;
     v_elaboration 					JSONB 	:= NULL;
 	v_elaboration_steps 			JSONB	:= '[]'::jsonb;
+	v_elaboration_steps_text 		TEXT[] 	:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 		JSONB 	:= '[]'::jsonb;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
     --lo_id 							OID;
 	v_status						TEXT 	:= sat_interaction_csv_request_upserted.status;
@@ -3999,7 +4017,7 @@ DECLARE
 BEGIN	
 	BEGIN
 		
-		v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In sat_interaction_csv_request_upserted function'));
+		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_csv_request_upserted function');
 	
 		IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
 	  		WHERE t.hub_interaction_id = p_interaction_id 
@@ -4016,7 +4034,7 @@ BEGIN
 		    		WHERE hub_interaction_id = p_interaction_id;
 		    	v_return := p_interaction_id;
 		
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Updated validation_result_payload'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Updated validation_result_payload');
 		
 			ELSIF nature = 'Update Zip File Processing Details' THEN /*Update the errors and status after the zip file is processed*/
 				IF v_status IS NOT NULL THEN
@@ -4075,7 +4093,7 @@ BEGIN
 				END IF;
 		
 		    	v_return := p_interaction_id;
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Updated sat_interaction_zip_file_request'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Updated sat_interaction_zip_file_request');
 		    
 		    ELSIF nature = 'Original CSV Zip Archive' THEN 
 		    	/*lo_id := lo_create(0); -- Create a new large OBJECT
@@ -4119,7 +4137,7 @@ BEGIN
 					p_data_validation_status
 			    ) RETURNING sat_interaction_zip_file_request_id INTO v_return;  -- Return the generated UUID
 			    
-			    v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_zip_file_request'));
+			    v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_interaction_zip_file_request');
 		    ELSE 
 		  	    -- The INSERT statement inserts a new record into the sat_interaction_flat_file_csv_request table, generating a UUID for the primary key.
 			    INSERT INTO techbd_udi_ingress.sat_interaction_flat_file_csv_request (
@@ -4152,7 +4170,7 @@ BEGIN
 					zip_file_hub_interaction_id, p_techbd_version_number
 			    ) RETURNING sat_interaction_flat_file_csv_request_id INTO v_return;  -- Return the generated UUID
 			    
-			    v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_interaction_flat_file_csv_request'));
+			    v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_interaction_flat_file_csv_request');
 		
 				IF p_validation_result_payload IS NOT NULL THEN
 					--Denormalize the 'data_integrity' errors from validation_result_payload
@@ -4167,7 +4185,7 @@ BEGIN
 						p_hub_interaction_id => p_interaction_id
 					) INTO v_denormalize_result;
 
-					v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Denormalized the errors from validation_result_payload'));
+					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Denormalized the errors from validation_result_payload');
 				END IF;
 		
 		    END IF;
@@ -4204,14 +4222,20 @@ BEGIN
 							'p_number_of_fhir_bundles_generated_from_zip_file', p_number_of_fhir_bundles_generated_from_zip_file,
 							'p_data_validation_status', p_data_validation_status
 	 						);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, uri, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, uri, v_created_by, v_provenance, 'info'::text, 
        						'sat_interaction_csv_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, tenant_id, p_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -5996,9 +6020,11 @@ DECLARE
 	v_nature_denorm 	text 	:= trim(p_nature->>'nature');
 	v_tenant_id_denorm 	text 	:= p_nature->>'tenant_id';
 	v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
-	v_user_id 			TEXT  	:= COALESCE(p_user_id, CURRENT_USER);
-	v_elaboration_steps JSONB	:= '[]'::jsonb;
-	v_provenance		TEXT 	:= 'Nexus';
+	v_user_id 			TEXT  		:= COALESCE(p_user_id, CURRENT_USER);
+	v_elaboration_steps JSONB		:= '[]'::jsonb;
+	v_elaboration_steps_text TEXT[] := ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb JSONB := '[]'::jsonb;
+	v_provenance		TEXT 		:= 'Nexus';
 BEGIN
     BEGIN
 		/*
@@ -6006,7 +6032,7 @@ BEGIN
 		  It ensures error logging, traceability, and prevents duplicate hub entries while returning a JSONB response with interaction details.
 		*/		
 		
-		v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In register_interaction_nexus_ingestion function'));
+		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_nexus_ingestion function');
 
         -- Insert into hub_nexus_interaction if not exists
         IF NOT EXISTS (
@@ -6020,7 +6046,7 @@ BEGIN
                     p_hub_nexus_interaction_id, p_request_uri, v_created_at, p_created_by, p_provenance
                 );
 
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into hub_nexus_interactio'));  
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_nexus_interaction');
 		
             EXCEPTION WHEN OTHERS THEN
                 GET STACKED DIAGNOSTICS
@@ -6088,7 +6114,7 @@ BEGIN
 				p_techbd_version_number
 	        );
 	
-	        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_nexus_interaction_ingestion'));
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into sat_nexus_interaction_ingestion');
 	
 	        v_return := jsonb_build_object('hub_nexus_interaction_id', p_hub_nexus_interaction_id);
 		END IF;
@@ -6114,17 +6140,22 @@ BEGIN
 							'tenant_id', v_tenant_id_denorm,
 							'from_state', p_from_state,
 							'to_state', p_to_state,
-							'techbd_version_number', p_techbd_version_number,
-							'step', '0. Input parameters into register_interaction_nexus_ingestion function'
+							'techbd_version_number', p_techbd_version_number
 							);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_request_uri, v_user_id, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_request_uri, v_user_id, v_provenance, 'info'::text, 
        																'register_interaction_nexus_ingestion Logs'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_hub_nexus_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -6946,6 +6977,8 @@ DECLARE
    	v_disposition_json			JSONB 	:= NULL;
    	v_payload					JSONB 	:= NULL;
     v_elaboration 				JSONB 	:= NULL;
+	v_elaboration_steps_text TEXT[] 	:= ARRAY[]::text[]; 
+	v_elaboration_steps_jsonb JSONB 	:= '[]'::jsonb;
 	v_elaboration_steps 		JSONB	:= '[]'::jsonb;
     v_user_id 					TEXT  	:= COALESCE(p_user_id, v_created_by);	
 	v_additional_details		JSONB 	:= jsonb_build_object(
@@ -6971,7 +7004,7 @@ BEGIN
 	 - source_type: fhir/hl7/csv/ccda
 	*/
 
-	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In register_interaction_csv_request function'));
+	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_csv_request function');
 
 	IF v_nature_denorm NOT IN('Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
 		v_return_status := true;
@@ -7006,7 +7039,7 @@ BEGIN
 	        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
 	        VALUES (p_interaction_id, p_interaction_key, v_created_at, p_created_by, v_provenance);
 	
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into hub_interaction'));
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_interaction');
 	    EXCEPTION
 	        WHEN unique_violation THEN
 	            IF NOT p_hub_upsert_behavior THEN
@@ -7046,7 +7079,7 @@ BEGIN
 				p_hub_nexus_interaction_id, p_interaction_id, p_created_by, v_created_at, v_provenance
 			) ON CONFLICT DO NOTHING;
 
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into link_nexus_interaction'));	  
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into link_nexus_interaction');
 		END IF;
 		
 		IF NOT v_return_status THEN
@@ -7062,7 +7095,7 @@ BEGIN
 		            p_state_transition_reason, p_elaboration, v_created_at, p_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
 		        );
 
-		        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{3}', jsonb_build_object('3', 'Insert into sat_interaction_http_request'));	
+		        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_interaction_http_request');
 
 		       	--1) Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'Original CSV Zip Archive') THEN     		       	
@@ -7083,7 +7116,7 @@ BEGIN
 						p_additional_details		=> v_additional_details
 			       	); 
 
-			      	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{4}', jsonb_build_object('4', 'Insert into user info'));
+			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into user info');
 			    END IF;
 			   
 			    IF v_nature_denorm IN ('Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
@@ -7128,7 +7161,7 @@ BEGIN
 					v_return := jsonb_build_object('payload', p_payload,
 											 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 											 'interaction_id', p_interaction_id);
-					v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{5}', jsonb_build_object('5', 'Insert into ' || CASE WHEN v_nature_denorm = 'Original CSV Zip Archive' THEN 'sat_interaction_zip_file_request' ELSE 'sat_interaction_flat_file_csv_request' END));
+					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Inserted into ' || CASE WHEN v_nature_denorm = 'Original CSV Zip Archive' THEN 'sat_interaction_zip_file_request' ELSE 'sat_interaction_flat_file_csv_request' END);
 				ELSE
 					v_return := jsonb_build_object('error','Not a CSV Interaction Key',
 											 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7169,14 +7202,20 @@ BEGIN
 						'number_of_fhir_bundles_generated_from_zip_file', p_number_of_fhir_bundles_generated_from_zip_file,
 						'data_validation_status', p_data_validation_status
 					  );
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        													'register_interaction_csv_request Logs'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -7256,15 +7295,17 @@ DECLARE
    	v_to_state					TEXT;
    	v_state_transition_reason 	TEXT;
    	v_nature 					JSONB;   
-   	v_return 					JSONB := NULL;
+   	v_return 					JSONB 	:= NULL;
 	v_return_status				BOOLEAN := false;
 	v_is_exception				BOOLEAN := false;
-   	v_disposition_json			JSONB := NULL;
-   	v_payload					JSONB := NULL;
-    v_elaboration 				JSONB := NULL;
-	v_elaboration_steps 		JSONB	:= '[]'::jsonb;
-    v_user_id 					TEXT  := COALESCE(p_user_id, v_created_by);	
-	v_additional_details		JSONB := jsonb_build_object(
+   	v_disposition_json			JSONB 	:= NULL;
+   	v_payload					JSONB 	:= NULL;
+    v_elaboration 				JSONB 	:= NULL;
+	v_elaboration_steps 		JSONB 	:= '[]'::jsonb;
+	v_elaboration_steps_text 	TEXT[]	:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 	JSONB 	:= '[]'::jsonb;
+    v_user_id 					TEXT  	:= COALESCE(p_user_id, v_created_by);	
+	v_additional_details		JSONB 	:= jsonb_build_object(
 										    'request', jsonb_build_object(
 										        'User-Agent', p_user_agent,
 										        'remoteAddr', p_client_ip_address,
@@ -7284,7 +7325,7 @@ BEGIN
      * source_type : fhir/hl7/csv/ccda
      */
 	
-	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In register_user_interaction function'));  
+	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_user_interaction function');  
 	
 	-- Check hub_nexus_interaction exists
     IF p_hub_nexus_interaction_id IS NOT NULL AND NOT EXISTS (
@@ -7304,7 +7345,7 @@ BEGIN
 	        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
 	        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance);
 	        
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into hub_interaction'));
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_interaction'); 
 	    EXCEPTION
 	        WHEN unique_violation THEN
 	            IF NOT p_hub_upsert_behavior THEN
@@ -7344,7 +7385,7 @@ BEGIN
 				p_hub_nexus_interaction_id, p_interaction_id, v_created_by, v_created_at, v_provenance
 			) ON CONFLICT DO NOTHING;
 
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into link_nexus_interaction'));  
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into link_nexus_interaction');
 		END IF;
 
 		IF NOT v_return_status THEN
@@ -7360,7 +7401,7 @@ BEGIN
 		            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
 		        );
 
-		        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{3}', jsonb_build_object('3', 'Insert into sat_interaction_http_request'));
+		        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_interaction_http_request');
 		
 		       	--1) Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(p_interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/')) THEN     		       	
@@ -7380,7 +7421,7 @@ BEGIN
 				        provenance 					=> v_provenance,
 						p_additional_details		=> v_additional_details
 			       	); 
-			      	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{4}', jsonb_build_object('4', 'Insert into user info'));
+			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into user info');
 					
 					v_return := jsonb_build_object('hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 											 'interaction_id', p_interaction_id);
@@ -7414,14 +7455,20 @@ BEGIN
 							'to_state', p_to_state,
 							'techbd_version_number', p_techbd_version_number
 							);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'register_user_interaction Logs'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -7460,15 +7507,17 @@ DECLARE
    	v_to_state					TEXT;
    	v_state_transition_reason 	TEXT;
    	v_nature 					JSONB;
-   	v_return 					JSONB := NULL;
+   	v_return 					JSONB 	:= NULL;
 	v_return_status				BOOLEAN := false;
 	v_is_exception				BOOLEAN := false;
-   	v_disposition_json			JSONB := NULL;
-   	v_payload					JSONB := NULL;
-    v_elaboration 				JSONB := NULL;
-	v_elaboration_steps 		JSONB	:= '[]'::jsonb;
-    v_user_id 					TEXT  := COALESCE(p_user_id, v_created_by);	
-	v_additional_details		JSONB := jsonb_build_object(
+   	v_disposition_json			JSONB 	:= NULL;
+   	v_payload					JSONB 	:= NULL;
+    v_elaboration 				JSONB 	:= NULL;
+	v_elaboration_steps 		JSONB 	:= '[]'::jsonb;
+	v_elaboration_steps_text 	TEXT[]  := ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 	JSONB   := '[]'::jsonb;
+    v_user_id 					TEXT  	:= COALESCE(p_user_id, v_created_by);	
+	v_additional_details		JSONB 	:= jsonb_build_object(
 										    'request', jsonb_build_object(
 										        'User-Agent', p_user_agent,
 										        'remoteAddr', p_client_ip_address,
@@ -7491,7 +7540,7 @@ BEGIN
 	 - source_type: fhir/hl7/csv/ccda
 	*/
 	
-	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In register_interaction_hl7_request function')); 
+	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_hl7_request function');
 
 	IF v_nature_denorm NOT IN('Original HL7 Payload', 'HL7 Validation Result', 'Converted to FHIR') THEN
 		v_return_status := true;
@@ -7526,7 +7575,7 @@ BEGIN
 	        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
 	        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance);
 
-	        v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into hub_interaction'));   
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_interaction');
 	    EXCEPTION
 	        WHEN unique_violation THEN
 	            IF NOT p_hub_upsert_behavior THEN
@@ -7566,7 +7615,7 @@ BEGIN
 				p_hub_nexus_interaction_id, p_interaction_id, v_created_by, v_created_at, v_provenance
 			) ON CONFLICT DO NOTHING;
 
-			v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into link_nexus_interaction'));   
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into link_nexus_interaction');
 		END IF;
 		
 		IF NOT v_return_status THEN
@@ -7582,7 +7631,7 @@ BEGIN
 		            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm
 		        );
 		        
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{3}', jsonb_build_object('3', 'Insert into sat_interaction_http_request'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_interaction_http_request');
 
 		       	--1) Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'Original HL7 Payload')	THEN     		       	
@@ -7603,7 +7652,7 @@ BEGIN
 						p_additional_details		=> v_additional_details
 			       	); 
 
-			      	v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{4}', jsonb_build_object('4', 'Insert into user info'));
+			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into user info');
 			    END IF;
 			   
 			    --2.4) Call the function with the defined parameters to upsert interaction HL7 request info.
@@ -7632,7 +7681,7 @@ BEGIN
 											 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 											 'interaction_id', p_interaction_id);
 		
-					v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{5}', jsonb_build_object('5', 'Insert into sat_interaction_hl7_request table')); 
+					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Inserted into sat_interaction_hl7_request'); 
 		       	ELSE
 					v_return := jsonb_build_object('error','Not a valid HL7 nature',
 											 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -7669,14 +7718,20 @@ BEGIN
 							'techbd_version_number', p_techbd_version_number,
 							'file_name', p_file_name
 							);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'register_interaction_hl7_request Logs'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_id_denorm, p_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
@@ -8062,13 +8117,15 @@ DECLARE
 	v_is_exception		BOOLEAN := false;
     v_elaboration 		JSONB 	:= NULL;
 	v_elaboration_steps JSONB 	:= '[]'::jsonb;
+	v_elaboration_steps_text 	TEXT[] 	:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 	JSONB 	:= '[]'::jsonb;
     v_diagnostic_id 	TEXT  	:= gen_random_uuid()::text;
 	v_inserted_count 	integer	:= 0;
 	v_return			TEXT;
 	v_return_status		BOOLEAN := false;
 BEGIN
 	BEGIN
-		v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{0}', jsonb_build_object('0', 'In denormalize_validation_errors function'));
+		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In denormalize_validation_errors function');
 		
 		IF p_category IS NULL OR p_hub_interaction_id IS NULL THEN
 	        v_return_status := true;
@@ -8116,7 +8173,7 @@ BEGIN
 		
 					GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 		
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{1}', jsonb_build_object('1', 'Insert into sat_csv_fhir_processing_errors - file_not_processed'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - file_not_processed');
 			END IF;
 			
 			-- incomplete_groups 
@@ -8161,7 +8218,7 @@ BEGIN
 		
 				GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 		
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{2}', jsonb_build_object('2', 'Insert into sat_csv_fhir_processing_errors - incomplete_groups'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into sat_csv_fhir_processing_errors - incomplete_groups');
 			END IF;
 			   
 			-- data_integrity errors
@@ -8221,7 +8278,7 @@ BEGIN
 		
 				GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 		
-				v_elaboration_steps := jsonb_insert(v_elaboration_steps, '{3}', jsonb_build_object('3', 'Insert into sat_csv_fhir_processing_errors - data_integrity'));
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_csv_fhir_processing_errors - data_integrity');
 		
 			END IF;
 			
@@ -8248,14 +8305,20 @@ BEGIN
 			 						'flat_file_csv_request_hub_interaction_id', p_hub_interaction_id,
 									'rows inserted', v_inserted_count
 			 						);
-	IF v_elaboration_steps IS NOT NULL THEN
-		v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-		IF v_error_msg IS NOT NULL THEN --Add error details, if any
-			v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-		END IF;
-        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, null, v_created_by, v_provenance, 'info'::text, 
+	-- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, null, v_created_by, v_provenance, 'info'::text, 
        																'denormalize_validation_errors function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, null, p_hub_interaction_id);
-	END IF;
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
