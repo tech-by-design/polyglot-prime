@@ -7,13 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
-import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import org.springframework.context.annotation.Bean;
-
-import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * TCP listener route that supports Proxy Protocol v2 (from AWS NLB).
@@ -27,10 +21,10 @@ public class TcpRoute extends RouteBuilder {
     private static final Logger log = LoggerFactory.getLogger(TcpRoute.class);
 
     @Value("${TCP_DISPATCHER_PORT:7980}")
-    private int tcpPort;
+    public int tcpPort;
 
     @Value("${PRINT_PROXY_PROTOCOL_MESSAGE:false}")
-    private boolean printProxyProtocolMessage;
+    public boolean printProxyProtocolMessage;
 
     @Override
     public void configure() {
