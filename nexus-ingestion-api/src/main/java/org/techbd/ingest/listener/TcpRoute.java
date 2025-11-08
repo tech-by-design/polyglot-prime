@@ -1,5 +1,7 @@
 package org.techbd.ingest.listener;
 
+import java.nio.charset.StandardCharsets;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
@@ -11,9 +13,9 @@ import io.netty.handler.codec.haproxy.HAProxyMessage;
 
 /**
  * TCP listener route that supports Proxy Protocol v2 (from AWS NLB).
- * 
- * When PRINT_PROXY_PROTOCOL_MESSAGE=true, decodes the HAProxy header to extract
- * the actual client IP and port (instead of the NLB IP).
+ *
+ * Always logs message content in a human-readable form (UTF-8 decoded),
+ * and optionally logs HAProxy header details when enabled.
  */
 @Component
 public class TcpRoute extends RouteBuilder {
@@ -30,7 +32,8 @@ public class TcpRoute extends RouteBuilder {
     public void configure() {
         String endpointUri = "netty:tcp://0.0.0.0:" + tcpPort
                 + "?sync=true"
-                + "&allowDefaultCodec=false"
+                + "&textline=true"
+                + "&encoding=UTF-8"
                 + "&decoders=#proxyDecoders";
 
         from(endpointUri)
@@ -40,26 +43,37 @@ public class TcpRoute extends RouteBuilder {
     }
 
     private void process(Exchange exchange) {
-        String message = exchange.getIn().getBody(String.class);
+        Object body = exchange.getIn().getBody();
+        String message;
+
+        // 🔹 Convert any message type to readable UTF-8 text safely
+        if (body instanceof byte[] bytes) {
+            message = new String(bytes, StandardCharsets.UTF_8)
+                    .replaceAll("\\p{C}", ""); // remove control characters
+        } else {
+            message = String.valueOf(body);
+        }
+
         String remote = exchange.getIn().getHeader("CamelNettyRemoteAddress", String.class);
         String local = exchange.getIn().getHeader("CamelNettyLocalAddress", String.class);
 
         // 🔹 Start log block
         log.info("PROXYPROTOCOL | ===== New TCP Exchange Received on Port {} =====", tcpPort);
 
-        // 🔹 Log connection details
+        // 🔹 Log connection info
         log.info("PROXYPROTOCOL | Connection Info | Remote: {} | Local: {}", remote, local);
 
         // 🔹 Log all headers
         StringBuilder headerLog = new StringBuilder("PROXYPROTOCOL | Exchange Headers:\n");
-        exchange.getIn().getHeaders().forEach((key, value) -> headerLog.append("PROXYPROTOCOL |   ").append(key)
+        exchange.getIn().getHeaders().forEach((key, value) -> headerLog
+                .append("PROXYPROTOCOL |   ").append(key)
                 .append(": ").append(value).append("\n"));
         log.info(headerLog.toString().trim());
 
-        // 🔹 Log raw message body
-        log.info("PROXYPROTOCOL | Raw Body:\n{}", message);
+        // 🔹 Log readable message content
+        log.info("PROXYPROTOCOL | Message Content (UTF-8 Decoded):\n{}", message);
 
-        // 🔹 If Proxy Protocol info is enabled
+        // 🔹 Proxy Protocol section
         if (printProxyProtocolMessage) {
             log.info("PROXYPROTOCOL | PRINT_PROXY_PROTOCOL_MESSAGE=true → checking HAProxy header...");
             Object proxyMsg = exchange.getIn().getHeader("CamelNettyHAProxyMessage");
@@ -75,15 +89,15 @@ public class TcpRoute extends RouteBuilder {
                         haProxy.command(),
                         haProxy.proxiedProtocol());
             } else {
-                log.info("PROXYPROTOCOL | Proxy Protocol v2 enabled, but no HAProxyMessage found.");
+                log.info("PROXYPROTOCOL | No HAProxyMessage found — processed as plain TCP message.");
             }
         } else {
             log.info("PROXYPROTOCOL | PRINT_PROXY_PROTOCOL_MESSAGE=false → skipping HAProxy header parse.");
         }
 
-        // 🔹 Response log
+        // 🔹 Response
         String response = "ACK received on port " + tcpPort;
-        exchange.getMessage().setBody(response);
+        exchange.getMessage().setBody(response); // ✅ now safe because of textline=true
         log.info("PROXYPROTOCOL | Response Sent: {}", response);
 
         // 🔹 End log block
