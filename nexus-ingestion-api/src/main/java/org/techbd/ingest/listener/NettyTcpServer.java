@@ -62,7 +62,6 @@ public class NettyTcpServer {
                                                     proxyMsg.proxiedProtocol(),
                                                     proxyMsg.protocolVersion(),
                                                     proxyMsg.command());
-                                            proxyMsg.release(); // prevent memory leak
                                             return;
                                         }
 
