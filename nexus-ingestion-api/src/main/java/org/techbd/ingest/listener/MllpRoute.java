@@ -42,7 +42,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
     private final PortConfig portConfig;
     private final PortConfigUtil portConfigUtil;
 
-    @Value("${MLLP_DISPATCHER_MLLP_PORT:2575}")
+    @Value("${MLLP_DISPATCHER_PORT:2575}")
     private int port;
 
     public MllpRoute(MessageProcessorService messageProcessorService,
