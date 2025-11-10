@@ -42,7 +42,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
     private final PortConfig portConfig;
     private final PortConfigUtil portConfigUtil;
 
-    @Value("${MLLP_DISPATCHER_PORT:2575}")
+    @Value("${MLLP_DISPATCHER_PORT:7981}")
     private int port;
 
     public MllpRoute(MessageProcessorService messageProcessorService,
@@ -59,7 +59,7 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
     @Override
     public void configure() throws Exception {
-        from("mllp://0.0.0.0:" + port + "?autoAck=false&allowDefaultCodec=false")
+        from("mllp://0.0.0.0:" + port + "?autoAck=false")
                 .routeId("hl7-mllp-listener-" + port)
                 .log("[MLLP_PORT " + port + "] Received HL7 message")
                 .process(this::processMessage);
