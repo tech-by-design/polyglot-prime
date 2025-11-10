@@ -45,7 +45,7 @@ public class TcpRouteManualProxyParser extends RouteBuilder {
     private final AppConfig appConfig;
     private final PortConfigUtil portConfigUtil;
 
-    @Value("${TCP_DISPATCHER_PORT:6001}")
+    @Value("${TCP_DISPATCHER_PORT:7980}")
     private int tcpPort;
 
     public TcpRouteManualProxyParser(MessageProcessorService messageProcessorService,
