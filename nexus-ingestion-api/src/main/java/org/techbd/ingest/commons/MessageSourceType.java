@@ -8,6 +8,7 @@ public enum MessageSourceType {
 
     // HL7 via MLLP
     MLLP(true, true),          // S3 + SQS
+    TCP(true, true),          // S3 + SQS
 
     // SOAP endpoints
     SOAP_PIX(true, true),      // S3 + SQS

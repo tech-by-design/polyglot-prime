@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.camel.Exchange;
@@ -13,12 +14,15 @@ import org.springframework.stereotype.Component;
 import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
+import org.techbd.ingest.commons.PortBasedPaths;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.PortConfigUtil;
+import org.techbd.ingest.util.ProxyProtocolParserUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import ca.uhn.hl7v2.AcknowledgmentCode;
@@ -36,180 +40,257 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortConfig portConfig;
-    private final Map<String, String> headers = new HashMap<>();
+    private final PortConfigUtil portConfigUtil;
 
-    @Value("${MLLP_DISPATCHER_PORT:2575}")
+    @Value("${MLLP_DISPATCHER_MLLP_PORT:2575}")
     private int port;
 
     public MllpRoute(MessageProcessorService messageProcessorService,
-                     AppConfig appConfig,
-                     AppLogger appLogger,
-                     PortConfig portConfig) {
+            AppConfig appConfig,
+            AppLogger appLogger,
+            PortConfig portConfig,
+            PortConfigUtil portConfigUtil) {
         this.messageProcessorService = messageProcessorService;
         this.appConfig = appConfig;
         this.portConfig = portConfig;
+        this.portConfigUtil = portConfigUtil;
         this.logger = appLogger.getLogger(MllpRoute.class);
     }
 
     @Override
     public void configure() throws Exception {
-        from("mllp://0.0.0.0:" + port + "?autoAck=false")
+        from("mllp://0.0.0.0:" + port + "?autoAck=false&allowDefaultCodec=false")
                 .routeId("hl7-mllp-listener-" + port)
-                .log("[PORT " + port + "] Received HL7 message")
-                .process(exchange -> {
-                    String hl7Message = exchange.getIn().getBody(String.class);
-                    GenericParser parser = new GenericParser();
-                    String interactionId = UUID.randomUUID().toString();
-                    String nack = null;
+                .log("[MLLP_PORT " + port + "] Received HL7 message")
+                .process(this::processMessage);
+    }
+    /**
+     * Main message processing orchestrator.
+     * Coordinates the workflow but delegates specific tasks to helper methods.
+     */
+    private void processMessage(Exchange exchange) {
+        String interactionId = UUID.randomUUID().toString();
 
-                    // connection lifecycle / diagnostic logging (temporary)
-                    String remote = exchange.getIn().getHeader(Constants.CAMEL_MLLP_REMOTE_ADDRESS, String.class);
-                    String local = exchange.getIn().getHeader(Constants.CAMEL_MLLP_LOCAL_ADDRESS, String.class);
-                    
-                    // Extract client IP and port from remote address
-                    String clientIp = null;
-                    String clientPort = null;
-                    if (remote != null && remote.contains(":")) {
-                        int lastColonIndex = remote.lastIndexOf(':');
-                        clientIp = remote.substring(0, lastColonIndex);
-                        clientPort = remote.substring(lastColonIndex + 1);
-                        // Remove leading slash if present
-                        if (clientIp.startsWith("/")) {
-                            clientIp = clientIp.substring(1);
-                        }
-                    }
-                    
-                    // Extract server IP and port from local address
-                    String serverIp = null;
-                    String serverPort = null;
-                    if (local != null && local.contains(":")) {
-                        int lastColonIndex = local.lastIndexOf(':');
-                        serverIp = local.substring(0, lastColonIndex);
-                        serverPort = local.substring(lastColonIndex + 1);
-                        // Remove leading slash if present
-                        if (serverIp.startsWith("/")) {
-                            serverIp = serverIp.substring(1);
-                        }
-                    }
-                    
-                    logger.info("[PORT {}] Connection opened: {} -> {} interactionId={}", port, remote, local, interactionId);
-                    logger.info("[PORT {}] Client details - IP: {}, Port: {}, interactionId={}", port, clientIp, clientPort, interactionId);
-                    logger.info("[PORT {}] Server details - IP: {}, Port: {}, interactionId={}", port, serverIp, serverPort, interactionId);
-                    
-                    // Log all MLLP headers and their values
-                    logger.info("[PORT {}] ===== MLLP Headers Start ===== interactionId={}", port, interactionId);
-                    Map<String, Object> allHeaders = exchange.getIn().getHeaders();
-                    if (allHeaders != null && !allHeaders.isEmpty()) {
-                        allHeaders.forEach((headerName, headerValue) -> {
-                            logger.info("[PORT {}] Header: {} = {} (type: {}) interactionId={}", 
-                                port, headerName, headerValue, 
-                                headerValue != null ? headerValue.getClass().getSimpleName() : "null",
-                                interactionId);
-                        });
-                    } else {
-                        logger.info("[PORT {}] No headers found in exchange, interactionId={}", port, interactionId);
-                    }
-                    logger.info("[PORT {}] ===== MLLP Headers End ===== interactionId={}", port, interactionId);
-                    
-                    // Log endpoint information
-                    logger.info("[PORT {}] Endpoint URI: {}, interactionId={}", port, 
-                        exchange.getFromEndpoint().getEndpointUri(), interactionId);
-                    
-                    // Log message size and preview
-                    logger.info("[PORT {}] Message size: {} bytes, interactionId={}", port, 
-                        hl7Message != null ? hl7Message.length() : 0, interactionId);
-                    logger.info("[PORT {}] Message preview: {}, interactionId={}", port, 
-                        truncate(hl7Message, 200), interactionId);
-
-                    try {
-                        Message hapiMsg = parser.parse(hl7Message);
-                        Message ack = hapiMsg.generateACK();
-                        String ackMessage = addNteWithInteractionId(ack, interactionId, appConfig.getVersion());
-                        Terser terser = new Terser(hapiMsg);
-                        RequestContext requestContext = buildRequestContext(exchange, hl7Message, interactionId);
-                        Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
-                        if (additionalDetails == null) {
-                            additionalDetails = new HashMap<>();
-                            requestContext.setAdditionalParameters(additionalDetails);
-                        }
-                        try {
-                            Segment znt = terser.getSegment(".ZNT");
-                            if (znt != null) {
-                                String messageCode = terser.get("/.ZNT-2-1"); // ZNT.2.1
-                                String deliveryType = terser.get("/.ZNT-4-1"); // ZNT.4.1
-                                String znt8_1 = terser.get("/.ZNT-8-1"); // ZNT.8.1 (e.g., healthelink:GHC)
-
-                                String facilityCode = null;
-                                String qe = null;
-
-                                if (znt8_1 != null && znt8_1.contains(":")) {
-                                    String[] parts = znt8_1.split(":");
-                                    qe = parts[0]; // part before ':', e.g., healthelink
-                                    facilityCode = parts.length > 1 ? parts[1] : null; // part after ':', e.g., GHC
-                                } else if (znt8_1 != null) {
-                                    facilityCode = znt8_1;
-                                }
-
-                                additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
-                                additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
-                                additionalDetails.put(Constants.FACILITY, facilityCode);
-                                additionalDetails.put(Constants.QE, qe); // add QE to the map
-                            } else {
-                                logger.warn("ZNT segment not found in HL7 message. interactionId={}", interactionId);
-                            }
-                        } catch (HL7Exception e) {
-                            logger.error("Error extracting ZNT segment from HL7 message: {} for interaction id :{}",
-                                    e.getMessage(), interactionId);
-                        }
-                        messageProcessorService.processMessage(requestContext, hl7Message, ackMessage);
-                        logger.info("[PORT {}] Ack generated for interactionId={} ackPreview={}", port, interactionId, truncate(ackMessage, 1024));
-                        exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
-                        exchange.getMessage().setBody(ackMessage);
-                        logger.info("[PORT {}] Processed HL7 message successfully; ACK set for interactionId={}", port, interactionId);
-                    } catch (Exception e) {
-                        logger.error("[PORT {}] Error processing HL7 message. interactionId= {} reason={}", port, interactionId, e.getMessage(), e);
-                        try {
-                            Message partial = parser.parse(hl7Message);
-                            Message generatedNack = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
-                            nack = addNteWithInteractionId(generatedNack, interactionId, appConfig.getVersion());
-                        } catch (Exception ex2) {
-                            logger.error("[PORT {}] Error generating NACK. interactionId= {} reason={}", port, interactionId, ex2.getMessage(), ex2);
-                            nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r"
-                                    + "MSA|AE|1|Error: Unexpected failure\r"
-                                    + "NTE|1||InteractionID: " + interactionId + "\r";
-                        }
-                        logger.info("[PORT {}] NACK generated for interactionId={} nackPreview={}", port, interactionId, truncate(nack, 1024));
-                        exchange.setProperty("CamelMllpAcknowledgementString", nack);
-                        exchange.getMessage().setBody(nack);
-                    } finally {
-                        // connection closed/completed diagnostic
-                        logger.info("[PORT {}] Connection processing completed: {} -> {} interactionId={}", port, remote, local, interactionId);
-                        logger.info("[PORT {}] Final connection summary - Client: {}:{}, Server: {}:{}, interactionId={}", 
-                            port, clientIp, clientPort, serverIp, serverPort, interactionId);
-                    }
-                })
-                .log("[PORT " + port + "] ACK/NAK sent");
+        try {
+            MessageParseResult parseResult = parseIncomingMessage(exchange, interactionId);
+            if (validateParseResult(parseResult, interactionId)) {
+                Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
+                        parseResult.proxyInfo.dstPort,
+                        interactionId);
+                if (portConfigUtil.validatePortEntry(portEntryOpt, parseResult.proxyInfo.dstPort, interactionId)) {
+                    processHl7Message(exchange, parseResult, portEntryOpt, interactionId);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("[MLLP_PORT {}] Unexpected error in message processing. interactionId={}",
+                    port, interactionId, e);
+        }
     }
 
-    public static String addNteWithInteractionId(Message ackMessage, String interactionId, String ingestionApiVersion) throws HL7Exception {
-        Terser terser = new Terser(ackMessage);
-        ackMessage.addNonstandardSegment("NTE");
-        terser.set("/NTE(0)-1", "1");
-        terser.set("/NTE(0)-3",
-                "InteractionID: " + interactionId
-                + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
-        PipeParser parser = new PipeParser();
-        return parser.encode(ackMessage);
+    /**
+     * Validate parse result and proxy protocol information.
+     * 
+     * @param parseResult   The message parse result to validate
+     * @param interactionId The interaction ID for logging
+     * @return true if validation passes
+     * @throws IllegalArgumentException if validation fails
+     */
+    public boolean validateParseResult(MessageParseResult parseResult, String interactionId) {
+        if (parseResult == null) {
+            logger.error("[MLLP_PORT {}] Failed to parse incoming message, interactionId={}", port, interactionId);
+            throw new IllegalArgumentException("Failed to parse incoming message, interactionId=" + interactionId);
+        }
+        if (parseResult.proxyInfo == null) {
+            logger.error("[MLLP_PORT {}] No Proxy Protocol information detected, interactionId={}", port, interactionId);
+            throw new IllegalArgumentException(
+                    "No Proxy Protocol information detected, interactionId=" + interactionId);
+        }
+        if (parseResult.proxyInfo.dstPort <= 0) {
+            logger.error("[MLLP_PORT {}] Invalid Proxy Protocol destination port: {}, interactionId={}",
+                    port, parseResult.proxyInfo.dstPort, interactionId);
+            throw new IllegalArgumentException("Invalid Proxy Protocol destination port: "
+                    + parseResult.proxyInfo.dstPort + ", interactionId=" + interactionId);
+        }
+        logger.info("[MLLP_PORT {}] Proxy Protocol validation successful - dstPort: {}, interactionId={}",
+                port, parseResult.proxyInfo.dstPort, interactionId);
+        return true;
     }
 
-    private RequestContext buildRequestContext(Exchange exchange, String hl7Message, String interactionId) {
+    /**
+     * Parse incoming message: extract Proxy Protocol header and HL7 payload.
+     * Strategy Pattern: Different parsing strategy based on presence of Proxy
+     * Protocol.
+     */
+    private MessageParseResult parseIncomingMessage(Exchange exchange, String interactionId) {
+        byte[] rawData = exchange.getIn().getBody(byte[].class);
+        ProxyProtocolParserUtil.ProxyInfo proxyInfo = null;
+        String hl7Message;
+
+        if (rawData != null && ProxyProtocolParserUtil.startsWithProxyProtocolSignature(rawData)) {
+            logger.info("[MLLP_PORT {}] Proxy Protocol v2 header detected, interactionId={}", port, interactionId);
+            ProxyProtocolParserUtil.ParseResult result = ProxyProtocolParserUtil.parseProxyProtocolV2(rawData,
+                    "MLLP_PORT-" + port + "-", interactionId);
+            proxyInfo = result.proxyInfo;
+            hl7Message = new String(result.payload, java.nio.charset.StandardCharsets.UTF_8);
+
+            if (proxyInfo != null) {
+                logger.info(
+                        "[MLLP_PORT {}] Proxy Protocol Info - Client: {}:{} → Server: {}:{}, Family: {}, interactionId={}",
+                        port, proxyInfo.srcIp, proxyInfo.srcPort,
+                        proxyInfo.dstIp, proxyInfo.dstPort,
+                        proxyInfo.addressFamily, interactionId);
+            }
+        } else {
+            throw new IllegalArgumentException("No  Proxy Protocol v2 header detected, interactionId=" + interactionId);
+        }
+        return new MessageParseResult(hl7Message, proxyInfo);
+    }
+
+    /**
+     * Process HL7 message: parse, extract segments, generate ACK/NACK.
+     * Open/Closed Principle: Behavior can be extended through port configuration.
+     */
+    private void processHl7Message(Exchange exchange, MessageParseResult parseResult,
+            Optional<PortConfig.PortEntry> portEntryOpt, String interactionId) {
+        GenericParser parser = new GenericParser();
+        String nack = null;
+
+        try {
+            Message hapiMsg = parser.parse(parseResult.hl7Message);
+            Message ack = hapiMsg.generateACK();
+            String ackMessage = addNteWithInteractionId(ack, interactionId, appConfig.getVersion());
+
+            // Build request context with port configuration
+            RequestContext requestContext = buildRequestContext(
+                    exchange, parseResult.hl7Message, interactionId, portEntryOpt,parseResult.proxyInfo);
+
+            // Extract ZNT segment only if response type is "outbound"
+            if (shouldProcessZntSegment(portEntryOpt)) {
+                extractZntSegment(hapiMsg, requestContext, interactionId);
+            }
+
+            // Process message
+            messageProcessorService.processMessage(requestContext, parseResult.hl7Message, ackMessage);
+
+            logger.info("[MLLP_PORT {}] Ack generated for interactionId={} ackPreview={}",
+                    port, interactionId, ProxyProtocolParserUtil.truncate(ackMessage, 1024));
+
+            exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
+            exchange.getMessage().setBody(ackMessage);
+
+            logger.info("[MLLP_PORT {}] Processed HL7 message successfully; ACK set for interactionId={}",
+                    port, interactionId);
+
+        } catch (Exception e) {
+            logger.error("[MLLP_PORT {}] Error processing HL7 message. interactionId={} reason={}",
+                    port, interactionId, e.getMessage(), e);
+
+            nack = generateNack(parser, parseResult.hl7Message, interactionId, e);
+
+            logger.info("[MLLP_PORT {}] NACK generated for interactionId={} nackPreview={}",
+                    port, interactionId, ProxyProtocolParserUtil.truncate(nack, 1024));
+
+            exchange.setProperty("CamelMllpAcknowledgementString", nack);
+            exchange.getMessage().setBody(nack);
+
+        } finally {
+            logger.info("[MLLP_PORT {}] Completed processing for interactionId={}", port, interactionId);
+        }
+    }
+
+    /**
+     * Determine if ZNT segment should be processed based on port configuration.
+     * Open/Closed Principle: Decision based on configuration, not hardcoded.
+     */
+    private boolean shouldProcessZntSegment(Optional<PortConfig.PortEntry> portEntryOpt) {
+        return portEntryOpt.isPresent()
+                && "outbound".equalsIgnoreCase(portEntryOpt.get().responseType);
+    }
+
+    /**
+     * Extract ZNT segment from HL7 message.
+     * Single Responsibility: Only handles ZNT extraction.
+     */
+    private void extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
+        try {
+            Terser terser = new Terser(hapiMsg);
+            Segment znt = terser.getSegment(".ZNT");
+
+            if (znt != null) {
+                Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
+                if (additionalDetails == null) {
+                    additionalDetails = new HashMap<>();
+                    requestContext.setAdditionalParameters(additionalDetails);
+                }
+
+                String messageCode = terser.get("/.ZNT-2-1"); // ZNT.2.1
+                String deliveryType = terser.get("/.ZNT-4-1"); // ZNT.4.1
+                String znt8_1 = terser.get("/.ZNT-8-1"); // ZNT.8.1 (e.g., healthelink:GHC)
+
+                String facilityCode = null;
+                String qe = null;
+
+                if (znt8_1 != null && znt8_1.contains(":")) {
+                    String[] parts = znt8_1.split(":");
+                    qe = parts[0]; // part before ':', e.g., healthelink
+                    facilityCode = parts.length > 1 ? parts[1] : null; // part after ':', e.g., GHC
+                } else if (znt8_1 != null) {
+                    facilityCode = znt8_1;
+                }
+
+                additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+                additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+                additionalDetails.put(Constants.FACILITY, facilityCode);
+                additionalDetails.put(Constants.QE, qe);
+
+                logger.info(
+                        "[MLLP_PORT {}] ZNT segment extracted - messageCode={}, deliveryType={}, facility={}, qe={}, interactionId={}",
+                        port, messageCode, deliveryType, facilityCode, qe, interactionId);
+            } else {
+                logger.warn("[MLLP_PORT {}] ZNT segment not found in HL7 message. interactionId={}",
+                        port, interactionId);
+            }
+        } catch (HL7Exception e) {
+            logger.error("[MLLP_PORT {}] Error extracting ZNT segment: {} for interactionId={}",
+                    port, e.getMessage(), interactionId);
+        }
+    }
+
+    /**
+     * Generate NACK message on error.
+     * Single Responsibility: Only handles NACK generation.
+     */
+    private String generateNack(GenericParser parser, String hl7Message, String interactionId, Exception e) {
+        try {
+            Message partial = parser.parse(hl7Message);
+            Message generatedNack = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
+            return addNteWithInteractionId(generatedNack, interactionId, appConfig.getVersion());
+        } catch (Exception ex2) {
+            logger.error("[MLLP_PORT {}] Error generating NACK. interactionId={} reason={}",
+                    port, interactionId, ex2.getMessage(), ex2);
+            return "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r"
+                    + "MSA|AE|1|Error: Unexpected failure\r"
+                    + "NTE|1||InteractionID: " + interactionId + "\r";
+        }
+    }
+
+    /**
+     * Build RequestContext with port configuration support.
+     * Builder Pattern: Constructs complex RequestContext object.
+     * Dependency Inversion: Uses abstractions (PortConfig) rather than concrete
+     * implementations.
+     */
+    private RequestContext buildRequestContext(Exchange exchange, String hl7Message, String interactionId, Optional<PortConfig.PortEntry> portEntryOpt, ProxyProtocolParserUtil.ProxyInfo proxyInfo) {
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
+
+        Map<String, String> headers = new HashMap<>();
         exchange.getIn().getHeaders().forEach((k, v) -> {
             if (v instanceof String) {
-                this.headers.put(k, (String) v);
+                headers.put(k, (String) v);
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-                    logger.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, v);
+                    logger.info("{} -Header for the InteractionId {} : {} = {}",
+                            FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, v);
                 }
             }
         });
@@ -219,76 +300,58 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
         String fileExtension = "hl7";
         String originalFileName = fileBaseName + "." + fileExtension;
 
+        PortBasedPaths paths = portConfigUtil.resolvePortBasedPaths(portEntryOpt, interactionId, headers,
+                originalFileName, timestamp, datePath);
         return new RequestContext(
-                headers,
-                "/hl7",
-                null,
-                interactionId,
-                uploadTime,
-                timestamp,
-                originalFileName,
-                hl7Message.length(),
-                getDataKey(interactionId, headers, originalFileName, timestamp),
-                getMetaDataKey(interactionId, headers, originalFileName, timestamp),
-                getFullS3DataPath(interactionId, headers, originalFileName, timestamp),
-                getUserAgentFromHL7(hl7Message, interactionId),
-                exchange.getFromEndpoint().getEndpointUri(),
-                "",
-                "MLLP",
-                getSourceIp(headers),
-                getDestinationIp(headers),
-                null,
-                null,
-                getDestinationPort(headers),
-                getAcknowledgementKey(interactionId, headers, originalFileName, timestamp),
-                getFullS3AcknowledgementPath(interactionId, headers, originalFileName, timestamp),
-                getFullS3MetadataPath(interactionId, headers, originalFileName, timestamp),
-                MessageSourceType.MLLP, getDataBucketName(), getMetadataBucketName(), appConfig.getVersion());
+            headers,
+            "/hl7",
+            portEntryOpt.map(pe -> pe.queue).orElse(null),
+            interactionId,
+            uploadTime,
+            timestamp,
+            originalFileName,
+            hl7Message.length(),
+            paths.getDataKey(),
+            paths.getMetaDataKey(),
+            paths.getFullS3DataPath(),
+            getUserAgentFromHL7(hl7Message, interactionId),
+            exchange.getFromEndpoint().getEndpointUri(),
+            portEntryOpt.map(pe -> pe.route).orElse(""),
+            "MLLP",
+            proxyInfo != null ? proxyInfo.dstIp : null,
+            proxyInfo != null ? proxyInfo.srcIp : null,
+            proxyInfo != null ? proxyInfo.srcIp : null,
+            proxyInfo != null ? proxyInfo.dstIp : null,
+            proxyInfo != null ? String.valueOf(proxyInfo.dstPort) : null,
+            paths.getAcknowledgementKey(),
+            paths.getFullS3AcknowledgementPath(),
+            paths.getFullS3MetadataPath(),
+            MessageSourceType.MLLP,
+            paths.getDataBucketName(),
+            paths.getMetadataBucketName(),
+            appConfig.getVersion()); 
+    }
+
+   
+
+    /**
+     * Add NTE segment with interaction ID to ACK message.
+     */
+    public static String addNteWithInteractionId(Message ackMessage, String interactionId,
+            String ingestionApiVersion) throws HL7Exception {
+        Terser terser = new Terser(ackMessage);
+        ackMessage.addNonstandardSegment("NTE");
+        terser.set("/NTE(0)-1", "1");
+        terser.set("/NTE(0)-3",
+                "InteractionID: " + interactionId
+                        + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
+        PipeParser parser = new PipeParser();
+        return parser.encode(ackMessage);
     }
 
     /**
-     * Extracts a user-agent-like identifier from the HL7 message.
-     * <p>
-     * This method parses the MSH (Message Header) segment of the HL7 message
-     * and builds a string in the format: {@code SendingApp@SendingFacility}.
-     * </p>
-     *
-     * <p>
-     * <b>Return behavior:</b>
-     * </p>
-     * <ul>
-     * <li>If both MSH-3 (Sending App) and MSH-4 (Sending Facility) are present:
-     *
-     * <pre>{@code
-     * "SendingApp@SendingFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If MSH-3 is missing but MSH-4 is present:
-     *
-     * <pre>{@code
-     * "UnknownApp@SendingFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If MSH-3 is present but MSH-4 is missing:
-     *
-     * <pre>{@code
-     * "SendingApp@UnknownFacility"
-     * }</pre>
-     *
-     * </li>
-     * <li>If both fields are missing or parsing fails:
-     *
-     * <pre>{@code
-     * "MLLP Listener"
-     * }</pre>
-     *
-     * (default fallback)</li>
-     * </ul>
-     *
-     * @param hl7Message The raw HL7 message as a String
-     * @return A user-agent-like identifier string derived from the message
+     * Extract user agent from HL7 message (MSH segment).
+     * Single Responsibility: Only handles user agent extraction.
      */
     private String getUserAgentFromHL7(String hl7Message, String interactionId) {
         if (hl7Message == null || !hl7Message.startsWith("MSH")) {
@@ -319,10 +382,13 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
 
             return sendingApp + "@" + sendingFacility;
         } catch (Exception e) {
-            logger.error("Error extracting sending facility from HL7 message: {} for interaction id :{}", e.getMessage(), interactionId);
+            logger.error("[MLLP_PORT {}] Error extracting user agent from HL7: {} for interactionId={}",
+                    port, e.getMessage(), interactionId);
             return "MLLP Listener";
         }
     }
+
+    // ========== MessageSourceProvider Implementation ==========
 
     @Override
     public MessageSourceType getMessageSource() {
@@ -363,14 +429,21 @@ public class MllpRoute extends RouteBuilder implements MessageSourceProvider {
         return null;
     }
 
-    // small helper for safe, truncated logging of ACK/NACK bodies
-    private static String truncate(String s, int max) {
-        if (s == null) {
-            return null;
+    // ========== Inner Classes (Data Transfer Objects) ==========
+
+    /**
+     * Immutable data class holding parsed message result.
+     * Encapsulates parsing outcome for better code organization.
+     */
+    private static class MessageParseResult {
+        final String hl7Message;
+        final ProxyProtocolParserUtil.ProxyInfo proxyInfo;
+
+        MessageParseResult(String hl7Message, ProxyProtocolParserUtil.ProxyInfo proxyInfo) {
+            this.hl7Message = hl7Message;
+            this.proxyInfo = proxyInfo;
         }
-        if (s.length() <= max) {
-            return s;
-        }
-        return s.substring(0, max) + "...(truncated)";
     }
+
+ 
 }
