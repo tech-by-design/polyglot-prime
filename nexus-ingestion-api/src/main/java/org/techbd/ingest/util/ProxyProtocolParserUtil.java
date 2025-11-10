@@ -16,11 +16,6 @@ public class ProxyProtocolParserUtil {
     private static final byte[] PROXY_V2_SIGNATURE = {
         0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, 0x55, 0x49, 0x54, 0x0A
     };
-
-    private ProxyProtocolParserUtil() {
-        throw new AssertionError("Utility class should not be instantiated");
-    }
-
     /**
      * Check if data starts with Proxy Protocol v2 signature.
      */
