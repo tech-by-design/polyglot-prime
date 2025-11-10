@@ -1,21 +1,37 @@
 package org.techbd.ingest.listener;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.techbd.ingest.MessageSourceProvider;
+import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.commons.MessageSourceType;
+import org.techbd.ingest.commons.PortBasedPaths;
 import org.techbd.ingest.config.AppConfig;
-import org.techbd.ingest.config.PortConfig.PortEntry;
+import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.feature.FeatureEnum;
+import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.PortConfigUtil;
+import org.techbd.ingest.util.ProxyProtocolParserUtil;
 import org.techbd.ingest.util.TemplateLogger;
+
+import ca.uhn.hl7v2.AcknowledgmentCode;
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.parser.GenericParser;
+import ca.uhn.hl7v2.parser.PipeParser;
+import ca.uhn.hl7v2.util.Terser;
 
 /**
  * TCP listener route that manually parses Proxy Protocol v2 headers.
@@ -29,6 +45,9 @@ public class TcpRouteManualProxyParser extends RouteBuilder {
     private final AppConfig appConfig;
     private final PortConfigUtil portConfigUtil;
 
+    @Value("${TCP_DISPATCHER_PORT:6001}")
+    private int tcpPort;
+
     public TcpRouteManualProxyParser(MessageProcessorService messageProcessorService,
                      AppConfig appConfig,
                      AppLogger appLogger,
@@ -38,13 +57,6 @@ public class TcpRouteManualProxyParser extends RouteBuilder {
         this.portConfigUtil = portConfigUtil;
         this.logger = appLogger.getLogger(TcpRouteManualProxyParser.class);
     }
-    // Proxy Protocol v2 signature
-    private static final byte[] PROXY_V2_SIGNATURE = {
-            0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, 0x55, 0x49, 0x54, 0x0A
-    };
-
-    @Value("${TCP_DISPATCHER_PORT:6001}")
-    private int tcpPort;
 
     @Override
     public void configure() {
@@ -55,152 +67,392 @@ public class TcpRouteManualProxyParser extends RouteBuilder {
 
         from(endpointUri)
                 .routeId("tcp-manual-proxy-" + tcpPort)
-                .log("[TCP] Message received on port " + tcpPort)
-                .process(this::process);
-    }
-
-    private void process(Exchange exchange) {
-        byte[] rawData = exchange.getIn().getBody(byte[].class);
-        String remote = exchange.getIn().getHeader("CamelNettyRemoteAddress", String.class);
-        String local = exchange.getIn().getHeader("CamelNettyLocalAddress", String.class);
-
-        log.info("TCP_ROUTE | ===== New TCP Exchange Received on Port {} =====", tcpPort);
-        log.info("TCP_ROUTE | Connection Info | Remote: {} | Local: {}", remote, local);
-
-        ProxyInfo proxyInfo = null;
-        byte[] payload = rawData;
-            log.info("TCP_ROUTE | Parsing Proxy Protocol v2 header manually...");
-            ParseResult result = parseProxyProtocolV2(rawData);
-            proxyInfo = result.proxyInfo;
-            payload = result.payload;
-
-            if (proxyInfo != null) {
-                log.info("TCP_ROUTE | Proxy Protocol v2 Info | Client: {}:{} → Server: {}:{} | Family: {}",
-                        proxyInfo.srcIp, proxyInfo.srcPort,
-                        proxyInfo.dstIp, proxyInfo.dstPort,
-                        proxyInfo.addressFamily);
-            } else {
-                log.info("TCP_ROUTE | No Proxy Protocol v2 header detected");
-            }
-
-        // Log payload
-        String payloadStr = new String(payload, StandardCharsets.UTF_8);
-        Optional<PortEntry> portEntryOpt = portConfigUtil.readPortEntry(tcpPort);
-        String response = "ACK received on port " + tcpPort;
-        exchange.getMessage().setBody(response);
-        log.info("TCP_ROUTE | Response Sent: {}", response);
-        log.info("TCP_ROUTE | ===== End of TCP Exchange =====");
+                .log("[TCP_PORT " + tcpPort + "] Message received")
+                .process(this::processMessage);
     }
 
     /**
-     * Manually parse Proxy Protocol v2 header from raw bytes
+     * Main message processing orchestrator.
+     * Coordinates the workflow but delegates specific tasks to helper methods.
      */
-    private ParseResult parseProxyProtocolV2(byte[] data) {
-        // Check if data starts with Proxy Protocol v2 signature
-        if (data.length < 16 || !startsWithSignature(data)) {
-            return new ParseResult(null, data);
-        }
+    private void processMessage(Exchange exchange) {
+        String interactionId = UUID.randomUUID().toString();
 
         try {
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            buffer.position(12); // Skip signature
-
-            byte versionCommand = buffer.get();
-            byte addressFamily = buffer.get();
-            short length = buffer.getShort();
-
-            // Extract proxy info based on address family
-            ProxyInfo info = null;
-            if (addressFamily == 0x11) { // TCP over IPv4
-                byte[] srcAddr = new byte[4];
-                byte[] dstAddr = new byte[4];
-                buffer.get(srcAddr);
-                buffer.get(dstAddr);
-                int srcPort = buffer.getShort() & 0xFFFF;
-                int dstPort = buffer.getShort() & 0xFFFF;
-
-                info = new ProxyInfo(
-                    formatIpv4(srcAddr),
-                    formatIpv4(dstAddr),
-                    srcPort,
-                    dstPort,
-                    "IPv4"
-                );
-            } else if (addressFamily == 0x21) { // TCP over IPv6
-                byte[] srcAddr = new byte[16];
-                byte[] dstAddr = new byte[16];
-                buffer.get(srcAddr);
-                buffer.get(dstAddr);
-                int srcPort = buffer.getShort() & 0xFFFF;
-                int dstPort = buffer.getShort() & 0xFFFF;
-
-                info = new ProxyInfo(
-                    formatIpv6(srcAddr),
-                    formatIpv6(dstAddr),
-                    srcPort,
-                    dstPort,
-                    "IPv6"
-                );
+            MessageParseResult parseResult = parseIncomingMessage(exchange, interactionId);
+            if (validateParseResult(parseResult, interactionId)) {
+                Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
+                        parseResult.proxyInfo.dstPort,
+                        interactionId);
+                if (portConfigUtil.validatePortEntry(portEntryOpt, parseResult.proxyInfo.dstPort, interactionId)) {
+                    processPayload(exchange, parseResult, portEntryOpt, interactionId);
+                }
             }
-
-            // Extract remaining payload after proxy header
-            int headerEnd = 16 + length;
-            byte[] payload = Arrays.copyOfRange(data, headerEnd, data.length);
-
-            return new ParseResult(info, payload);
         } catch (Exception e) {
-            log.error("TCP_ROUTE | Error parsing proxy protocol header", e);
-            return new ParseResult(null, data);
+            logger.error("[TCP_PORT {}] Unexpected error in message processing. interactionId={}",
+                    tcpPort, interactionId, e);
+            exchange.getMessage().setBody("NACK: Processing error - " + e.getMessage());
         }
     }
 
-    private boolean startsWithSignature(byte[] data) {
-        for (int i = 0; i < PROXY_V2_SIGNATURE.length; i++) {
-            if (data[i] != PROXY_V2_SIGNATURE[i]) {
-                return false;
-            }
+    /**
+     * Validate parse result and proxy protocol information.
+     * 
+     * @param parseResult   The message parse result to validate
+     * @param interactionId The interaction ID for logging
+     * @return true if validation passes
+     * @throws IllegalArgumentException if validation fails
+     */
+    public boolean validateParseResult(MessageParseResult parseResult, String interactionId) {
+        if (parseResult == null) {
+            logger.error("[TCP_PORT {}] Failed to parse incoming message, interactionId={}", tcpPort, interactionId);
+            throw new IllegalArgumentException("Failed to parse incoming message, interactionId=" + interactionId);
         }
+        if (parseResult.proxyInfo == null) {
+            logger.error("[TCP_PORT {}] No Proxy Protocol information detected, interactionId={}", tcpPort, interactionId);
+            throw new IllegalArgumentException(
+                    "No Proxy Protocol information detected, interactionId=" + interactionId);
+        }
+        if (parseResult.proxyInfo.dstPort <= 0) {
+            logger.error("[TCP_PORT {}] Invalid Proxy Protocol destination port: {}, interactionId={}",
+                    tcpPort, parseResult.proxyInfo.dstPort, interactionId);
+            throw new IllegalArgumentException("Invalid Proxy Protocol destination port: "
+                    + parseResult.proxyInfo.dstPort + ", interactionId=" + interactionId);
+        }
+        logger.info("[TCP_PORT {}] Proxy Protocol validation successful - dstPort: {}, interactionId={}",
+                tcpPort, parseResult.proxyInfo.dstPort, interactionId);
         return true;
     }
 
-    private String formatIpv4(byte[] addr) {
-        return String.format("%d.%d.%d.%d",
-            addr[0] & 0xFF, addr[1] & 0xFF, addr[2] & 0xFF, addr[3] & 0xFF);
-    }
+    /**
+     * Parse incoming message: extract Proxy Protocol header and payload.
+     * Strategy Pattern: Different parsing strategy based on presence of Proxy Protocol.
+     */
+    private MessageParseResult parseIncomingMessage(Exchange exchange, String interactionId) {
+        byte[] rawData = exchange.getIn().getBody(byte[].class);
+        ProxyProtocolParserUtil.ProxyInfo proxyInfo = null;
+        String payloadMessage;
 
-    private String formatIpv6(byte[] addr) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 16; i += 2) {
-            if (i > 0) sb.append(":");
-            sb.append(String.format("%02x%02x", addr[i] & 0xFF, addr[i + 1] & 0xFF));
+        if (rawData != null && ProxyProtocolParserUtil.startsWithProxyProtocolSignature(rawData)) {
+            logger.info("[TCP_PORT {}] Proxy Protocol v2 header detected, interactionId={}", tcpPort, interactionId);
+            ProxyProtocolParserUtil.ParseResult result = ProxyProtocolParserUtil.parseProxyProtocolV2(rawData,
+                    "TCP_PORT-" + tcpPort + "-", interactionId);
+            proxyInfo = result.proxyInfo;
+            payloadMessage = new String(result.payload, StandardCharsets.UTF_8);
+
+            if (proxyInfo != null) {
+                logger.info(
+                        "[TCP_PORT {}] Proxy Protocol Info - Client: {}:{} → Server: {}:{}, Family: {}, interactionId={}",
+                        tcpPort, proxyInfo.srcIp, proxyInfo.srcPort,
+                        proxyInfo.dstIp, proxyInfo.dstPort,
+                        proxyInfo.addressFamily, interactionId);
+            }
+        } else {
+            throw new IllegalArgumentException("No Proxy Protocol v2 header detected, interactionId=" + interactionId);
         }
-        return sb.toString();
+
+        return new MessageParseResult(payloadMessage, proxyInfo, isHl7Message(payloadMessage));
     }
 
-    // Data classes
-    private static class ProxyInfo {
-        final String srcIp;
-        final String dstIp;
-        final int srcPort;
-        final int dstPort;
-        final String addressFamily;
+    /**
+     * Determine if payload is an HL7 message.
+     */
+    private boolean isHl7Message(String message) {
+        return message != null && message.trim().startsWith("MSH");
+    }
 
-        ProxyInfo(String srcIp, String dstIp, int srcPort, int dstPort, String addressFamily) {
-            this.srcIp = srcIp;
-            this.dstIp = dstIp;
-            this.srcPort = srcPort;
-            this.dstPort = dstPort;
-            this.addressFamily = addressFamily;
+    /**
+     * Process payload: handle HL7 or plain text accordingly.
+     */
+    private void processPayload(Exchange exchange, MessageParseResult parseResult,
+            Optional<PortConfig.PortEntry> portEntryOpt, String interactionId) {
+        
+        if (parseResult.isHl7) {
+            logger.info("[TCP_PORT {}] Processing as HL7 message, interactionId={}", tcpPort, interactionId);
+            processHl7Message(exchange, parseResult, portEntryOpt, interactionId);
+        } else {
+            logger.info("[TCP_PORT {}] Processing as plain text message, interactionId={}", tcpPort, interactionId);
+            processTextMessage(exchange, parseResult, portEntryOpt, interactionId);
         }
     }
 
-    private static class ParseResult {
-        final ProxyInfo proxyInfo;
-        final byte[] payload;
+    /**
+     * Process plain text message.
+     */
+    private void processTextMessage(Exchange exchange, MessageParseResult parseResult,
+            Optional<PortConfig.PortEntry> portEntryOpt, String interactionId) {
+        try {
+            // Build request context
+            RequestContext requestContext = buildRequestContext(
+                    exchange, parseResult.payloadMessage, interactionId, portEntryOpt, parseResult.proxyInfo, "txt");
 
-        ParseResult(ProxyInfo proxyInfo, byte[] payload) {
+            // Create simple ACK response
+            String ackMessage = "ACK: Message received successfully. InteractionID: " + interactionId;
+
+            // Process message
+            messageProcessorService.processMessage(requestContext, parseResult.payloadMessage, ackMessage);
+
+            logger.info("[TCP_PORT {}] Text message processed successfully, interactionId={}", tcpPort, interactionId);
+
+            exchange.getMessage().setBody(ackMessage);
+
+        } catch (Exception e) {
+            logger.error("[TCP_PORT {}] Error processing text message. interactionId={} reason={}",
+                    tcpPort, interactionId, e.getMessage(), e);
+            
+            String nack = "NACK: Processing failed. InteractionID: " + interactionId + " Error: " + e.getMessage();
+            exchange.getMessage().setBody(nack);
+        }
+    }
+
+    /**
+     * Process HL7 message: parse, extract segments, generate ACK/NACK.
+     */
+    private void processHl7Message(Exchange exchange, MessageParseResult parseResult,
+            Optional<PortConfig.PortEntry> portEntryOpt, String interactionId) {
+        GenericParser parser = new GenericParser();
+        String nack = null;
+
+        try {
+            Message hapiMsg = parser.parse(parseResult.payloadMessage);
+            Message ack = hapiMsg.generateACK();
+            String ackMessage = addNteWithInteractionId(ack, interactionId, appConfig.getVersion());
+
+            // Build request context with port configuration
+            RequestContext requestContext = buildRequestContext(
+                    exchange, parseResult.payloadMessage, interactionId, portEntryOpt, parseResult.proxyInfo, "hl7");
+
+            // Extract ZNT segment only if response type is "outbound"
+            if (shouldProcessZntSegment(portEntryOpt)) {
+                extractZntSegment(hapiMsg, requestContext, interactionId);
+            }
+
+            // Process message
+            messageProcessorService.processMessage(requestContext, parseResult.payloadMessage, ackMessage);
+
+            logger.info("[TCP_PORT {}] HL7 ACK generated for interactionId={} ackPreview={}",
+                    tcpPort, interactionId, ProxyProtocolParserUtil.truncate(ackMessage, 1024));
+
+            exchange.getMessage().setBody(ackMessage);
+
+            logger.info("[TCP_PORT {}] Processed HL7 message successfully; ACK set for interactionId={}",
+                    tcpPort, interactionId);
+
+        } catch (Exception e) {
+            logger.error("[TCP_PORT {}] Error processing HL7 message. interactionId={} reason={}",
+                    tcpPort, interactionId, e.getMessage(), e);
+
+            nack = generateNack(parser, parseResult.payloadMessage, interactionId, e);
+
+            logger.info("[TCP_PORT {}] HL7 NACK generated for interactionId={} nackPreview={}",
+                    tcpPort, interactionId, ProxyProtocolParserUtil.truncate(nack, 1024));
+
+            exchange.getMessage().setBody(nack);
+
+        } finally {
+            logger.info("[TCP_PORT {}] Completed processing for interactionId={}", tcpPort, interactionId);
+        }
+    }
+
+    /**
+     * Determine if ZNT segment should be processed based on port configuration.
+     */
+    private boolean shouldProcessZntSegment(Optional<PortConfig.PortEntry> portEntryOpt) {
+        return portEntryOpt.isPresent()
+                && "outbound".equalsIgnoreCase(portEntryOpt.get().responseType);
+    }
+
+    /**
+     * Extract ZNT segment from HL7 message.
+     */
+    private void extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
+        try {
+            Terser terser = new Terser(hapiMsg);
+            Segment znt = terser.getSegment(".ZNT");
+
+            if (znt != null) {
+                Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
+                if (additionalDetails == null) {
+                    additionalDetails = new HashMap<>();
+                    requestContext.setAdditionalParameters(additionalDetails);
+                }
+
+                String messageCode = terser.get("/.ZNT-2-1"); // ZNT.2.1
+                String deliveryType = terser.get("/.ZNT-4-1"); // ZNT.4.1
+                String znt8_1 = terser.get("/.ZNT-8-1"); // ZNT.8.1 (e.g., healthelink:GHC)
+
+                String facilityCode = null;
+                String qe = null;
+
+                if (znt8_1 != null && znt8_1.contains(":")) {
+                    String[] parts = znt8_1.split(":");
+                    qe = parts[0]; // part before ':', e.g., healthelink
+                    facilityCode = parts.length > 1 ? parts[1] : null; // part after ':', e.g., GHC
+                } else if (znt8_1 != null) {
+                    facilityCode = znt8_1;
+                }
+
+                additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+                additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+                additionalDetails.put(Constants.FACILITY, facilityCode);
+                additionalDetails.put(Constants.QE, qe);
+
+                logger.info(
+                        "[TCP_PORT {}] ZNT segment extracted - messageCode={}, deliveryType={}, facility={}, qe={}, interactionId={}",
+                        tcpPort, messageCode, deliveryType, facilityCode, qe, interactionId);
+            } else {
+                logger.warn("[TCP_PORT {}] ZNT segment not found in HL7 message. interactionId={}",
+                        tcpPort, interactionId);
+            }
+        } catch (HL7Exception e) {
+            logger.error("[TCP_PORT {}] Error extracting ZNT segment: {} for interactionId={}",
+                    tcpPort, e.getMessage(), interactionId);
+        }
+    }
+
+    /**
+     * Generate NACK message on error.
+     */
+    private String generateNack(GenericParser parser, String hl7Message, String interactionId, Exception e) {
+        try {
+            Message partial = parser.parse(hl7Message);
+            Message generatedNack = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
+            return addNteWithInteractionId(generatedNack, interactionId, appConfig.getVersion());
+        } catch (Exception ex2) {
+            logger.error("[TCP_PORT {}] Error generating NACK. interactionId={} reason={}",
+                    tcpPort, interactionId, ex2.getMessage(), ex2);
+            return "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r"
+                    + "MSA|AE|1|Error: Unexpected failure\r"
+                    + "NTE|1||InteractionID: " + interactionId + "\r";
+        }
+    }
+
+    /**
+     * Build RequestContext with port configuration support.
+     */
+    private RequestContext buildRequestContext(Exchange exchange, String message, String interactionId,
+            Optional<PortConfig.PortEntry> portEntryOpt, ProxyProtocolParserUtil.ProxyInfo proxyInfo,
+            String fileExtension) {
+        ZonedDateTime uploadTime = ZonedDateTime.now();
+        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
+
+        Map<String, String> headers = new HashMap<>();
+        exchange.getIn().getHeaders().forEach((k, v) -> {
+            if (v instanceof String) {
+                headers.put(k, (String) v);
+                if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+                    logger.info("{} -Header for the InteractionId {} : {} = {}",
+                            FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, v);
+                }
+            }
+        });
+
+        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String fileBaseName = "tcp-message";
+        String originalFileName = fileBaseName + "." + fileExtension;
+
+        PortBasedPaths paths = portConfigUtil.resolvePortBasedPaths(portEntryOpt, interactionId, headers,
+                originalFileName, timestamp, datePath);
+
+        return new RequestContext(
+                headers,
+                "/tcp",
+                paths.getQueue(),
+                interactionId,
+                uploadTime,
+                timestamp,
+                originalFileName,
+                message.length(),
+                paths.getDataKey(),
+                paths.getMetaDataKey(),
+                paths.getFullS3DataPath(),
+                getUserAgent(message, interactionId),
+                exchange.getFromEndpoint().getEndpointUri(),
+                portEntryOpt.map(pe -> pe.route).orElse(""),
+                "TCP",
+                proxyInfo != null ? proxyInfo.dstIp : null,
+                proxyInfo != null ? proxyInfo.srcIp : null,
+                proxyInfo != null ? proxyInfo.srcIp : null,
+                proxyInfo != null ? proxyInfo.dstIp : null,
+                proxyInfo != null ? String.valueOf(proxyInfo.dstPort) : null,
+                paths.getAcknowledgementKey(),
+                paths.getFullS3AcknowledgementPath(),
+                paths.getFullS3MetadataPath(),
+                MessageSourceType.TCP,
+                paths.getDataBucketName(),
+                paths.getMetadataBucketName(),
+                appConfig.getVersion());
+    }
+
+    /**
+     * Add NTE segment with interaction ID to ACK message.
+     */
+    public static String addNteWithInteractionId(Message ackMessage, String interactionId,
+            String ingestionApiVersion) throws HL7Exception {
+        Terser terser = new Terser(ackMessage);
+        ackMessage.addNonstandardSegment("NTE");
+        terser.set("/NTE(0)-1", "1");
+        terser.set("/NTE(0)-3",
+                "InteractionID: " + interactionId
+                        + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
+        PipeParser parser = new PipeParser();
+        return parser.encode(ackMessage);
+    }
+
+    /**
+     * Extract user agent from message.
+     * For HL7: extract from MSH segment
+     * For text: use default
+     */
+    private String getUserAgent(String message, String interactionId) {
+        if (message == null || !message.startsWith("MSH")) {
+            return "TCP Listener";
+        }
+
+        try {
+            String[] lines = message.split("\r|\n");
+            String mshLine = lines[0];
+            char fieldSeparator = mshLine.charAt(3);
+
+            String[] fields = mshLine.split("\\" + fieldSeparator, -1);
+            String sendingApp = (fields.length > 2) ? fields[2] : null;
+            String sendingFacility = (fields.length > 3) ? fields[3] : null;
+
+            if ((sendingApp == null || sendingApp.isBlank())
+                    && (sendingFacility == null || sendingFacility.isBlank())) {
+                return "TCP Listener";
+            }
+
+            if (sendingApp == null || sendingApp.isBlank()) {
+                sendingApp = "UnknownApp";
+            }
+
+            if (sendingFacility == null || sendingFacility.isBlank()) {
+                sendingFacility = "UnknownFacility";
+            }
+
+            return sendingApp + "@" + sendingFacility;
+        } catch (Exception e) {
+            logger.error("[TCP_PORT {}] Error extracting user agent: {} for interactionId={}",
+                    tcpPort, e.getMessage(), interactionId);
+            return "TCP Listener";
+        }
+    }
+
+    // ========== Inner Classes (Data Transfer Objects) ==========
+
+    /**
+     * Immutable data class holding parsed message result.
+     */
+    private static class MessageParseResult {
+        final String payloadMessage;
+        final ProxyProtocolParserUtil.ProxyInfo proxyInfo;
+        final boolean isHl7;
+
+        MessageParseResult(String payloadMessage, ProxyProtocolParserUtil.ProxyInfo proxyInfo, boolean isHl7) {
+            this.payloadMessage = payloadMessage;
             this.proxyInfo = proxyInfo;
-            this.payload = payload;
+            this.isHl7 = isHl7;
         }
     }
 }
