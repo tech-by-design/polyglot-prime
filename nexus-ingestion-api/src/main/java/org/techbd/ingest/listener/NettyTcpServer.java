@@ -1,6 +1,5 @@
 package org.techbd.ingest.listener;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -8,9 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.commons.PortBasedPaths;
@@ -42,11 +43,12 @@ import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 import jakarta.annotation.PostConstruct;
 
 @Component
-public class NettyTcpServer {
+public class NettyTcpServer implements MessageSourceProvider {
 
     private final TemplateLogger logger;
     private final MessageProcessorService messageProcessorService;
@@ -56,10 +58,20 @@ public class NettyTcpServer {
     @Value("${TCP_DISPATCHER_PORT:6001}")
     private int tcpPort;
 
+    @Value("${TCP_READ_TIMEOUT_SECONDS:30}")
+    private int readTimeoutSeconds;
+
     private static final AttributeKey<String> CLIENT_IP_KEY = AttributeKey.valueOf("CLIENT_IP");
     private static final AttributeKey<Integer> CLIENT_PORT_KEY = AttributeKey.valueOf("CLIENT_PORT");
     private static final AttributeKey<String> DESTINATION_IP_KEY = AttributeKey.valueOf("DESTINATION_IP_KEY");
     private static final AttributeKey<Integer> DESTINATION_PORT_KEY = AttributeKey.valueOf("DESTINATION_PORT_KEY");
+    private static final AttributeKey<UUID> INTERACTION_ATTRIBUTE_KEY = AttributeKey
+            .valueOf("INTERACTION_ATTRIBUTE_KEY");
+
+    // MLLP protocol markers
+    private static final char MLLP_START = '\u000B'; // <VT> Vertical Tab
+    private static final char MLLP_END_1 = '\u001C'; // <FS> File Separator
+    private static final char MLLP_END_2 = '\r'; // <CR> Carriage Return
 
     public NettyTcpServer(MessageProcessorService messageProcessorService,
             AppConfig appConfig,
@@ -78,164 +90,69 @@ public class NettyTcpServer {
             EventLoopGroup worker = new NioEventLoopGroup();
 
             try {
-                String interactionId = UUID.randomUUID().toString();
-                String sourceIp = null;
-                String soucePort = null;
-                String destinationPort = null;
-                String destinationIp = null;
                 ServerBootstrap bootstrap = new ServerBootstrap();
                 bootstrap.group(boss, worker)
                         .channel(NioServerSocketChannel.class)
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
+                                // Add read timeout handler
+                                ch.pipeline().addLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS));
+
+                                // HAProxy protocol support
                                 ch.pipeline().addLast(new HAProxyMessageDecoder());
+
+                                // String encoding/decoding
                                 ch.pipeline().addLast(new StringDecoder());
                                 ch.pipeline().addLast(new StringEncoder());
 
+                                // Main message handler
                                 ch.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
                                     @Override
-                                    protected void channelRead0(ChannelHandlerContext ctx, Object msg)
-                                            throws IOException {
+                                    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+                                        UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
+                                        if (interactionId == null) {
+                                            interactionId = UUID.randomUUID();
+                                            ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
+                                        }
+                                        String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+                                        // if ("sandbox".equals(activeProfile)) { // or just check non-null
+                                        // handleSandboxProxy(ctx, interactionId);
+                                        // } else {
                                         if (msg instanceof HAProxyMessage proxyMsg) {
-                                            handleProxyHeader(ctx, proxyMsg);
-                                            return; // skip to next frame
+                                            handleProxyHeader(ctx, proxyMsg, interactionId);
+                                            return; // Wait for next frame (actual message)
                                         }
+                                        // }
 
-                                        if (msg instanceof String hl7Msg) {
-                                            handleHL7Message(ctx, hl7Msg);
+                                        if (msg instanceof String messageContent) {
+                                            handleMessage(ctx, messageContent, interactionId);
                                         }
-                                    }
-
-                                    private void handleProxyHeader(ChannelHandlerContext ctx, HAProxyMessage proxyMsg) {
-                                        if (proxyMsg.command() == HAProxyCommand.PROXY) {
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] ======================================== interactionId : {}",
-                                                    interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Detected HAProxy Protocol Header interactionId : {}",
-                                                    interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Protocol Version: {} interactionId : {} ",
-                                                    proxyMsg.protocolVersion(), interactionId);
-                                            logger.info("NETTY_TCP_SERVER [PROXY] Command: {} interactionId : {}",
-                                                    proxyMsg.command(), interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Proxied Protocol: {} interactionId : {}",
-                                                    proxyMsg.proxiedProtocol(), interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Source Address: {} interactionId : {}",
-                                                    proxyMsg.sourceAddress(), interactionId);
-                                            logger.info("NETTY_TCP_SERVER [PROXY] Source Port: {} interactionId : {}",
-                                                    proxyMsg.sourcePort(), interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Destination Address: {} interactionId : {}",
-                                                    proxyMsg.destinationAddress(), interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] Destination Port: {} interactionId : {}",
-                                                    proxyMsg.destinationPort(), interactionId);
-                                            logger.info("NETTY_TCP_SERVER [PROXY] Full Message: {} interactionId : {}",
-                                                    proxyMsg, interactionId);
-                                            logger.info(
-                                                    "NETTY_TCP_SERVER [PROXY] ======================================== interactionId : {}",
-                                                    interactionId);
-                                            ctx.channel().attr(CLIENT_IP_KEY).set(proxyMsg.sourceAddress());
-                                            ctx.channel().attr(CLIENT_PORT_KEY).set(proxyMsg.sourcePort());
-
-                                            // Store destination IP and port in channel attributes
-                                            ctx.channel().attr(DESTINATION_IP_KEY).set(proxyMsg.destinationAddress());
-                                            ctx.channel().attr(DESTINATION_PORT_KEY).set(proxyMsg.destinationPort());
-                                        }
-                                    }
-
-                                    private void handleHL7Message(ChannelHandlerContext ctx, String msg)
-                                            throws IOException {
-                                        // Retrieve client/source IP and port
-                                        String clientIP = ctx.channel().attr(CLIENT_IP_KEY).get();
-                                        Integer clientPort = ctx.channel().attr(CLIENT_PORT_KEY).get();
-
-                                        // Retrieve destination IP and port
-                                        String destinationIP = ctx.channel().attr(DESTINATION_IP_KEY).get();
-                                        Integer destinationPort = ctx.channel().attr(DESTINATION_PORT_KEY).get();
-                                        logger.info("Received raw message from {}:{}:\n{}", clientIP, clientPort,
-                                                toVisible(msg));
-                                        boolean isMllp = msg.startsWith("\u000B") && msg.endsWith("\u001C\r");
-                                        String cleanMsg = removeMllp(msg.trim());
-                                        logger.info("Sanitized HL7 Message:\n{}", cleanMsg);
-                                        String response;
-                                        try {
-                                            GenericParser parser = new GenericParser();
-                                            Message hl7Message = parser.parse(cleanMsg);
-                                            Message ack = hl7Message.generateACK();
-                                            String ackMessage = addNteWithInteractionId(ack, interactionId,
-                                                    appConfig.getVersion());
-                                            // Build request context with port configuration
-                                            Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
-                                                    destinationPort,
-                                                    interactionId);
-                                            if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort,
-                                                    interactionId)) {
-                                                // TODO -handle invalid port entry case
-                                            }
-                                            RequestContext requestContext = buildRequestContext(
-                                                    cleanMsg, interactionId, portEntryOpt, String.valueOf(soucePort), sourceIp,
-                                                    destinationIP, String.valueOf(destinationPort), "hl7");
-
-                                            // Extract ZNT segment only if response type is "outbound"
-                                            if (shouldProcessZntSegment(portEntryOpt)) {
-                                                extractZntSegment(hl7Message, requestContext, interactionId);
-                                            }
-
-                                            // Process message
-                                            messageProcessorService.processMessage(requestContext,
-                                                    cleanMsg, ackMessage);
-                                            response = new PipeParser().encode(ack);
-                                            logger.info("Generated ACK:\n{}", response);
-                                        } catch (HL7Exception e) {
-                                            logger.error("Failed to parse HL7 message: {}", e.getMessage());
-                                            response = createNack("AE", e.getMessage());
-                                        }
-
-                                        if (isMllp) {
-                                            response = "\u000B" + response + "\u001C\r";
-                                            logger.info("Sending MLLP ACK");
-                                        } else {
-                                            logger.info("Sending plain TCP ACK");
-                                        }
-
-                                        ctx.writeAndFlush(response + "\n");
-                                    }
-
-                                    private String removeMllp(String msg) {
-                                        return msg.replaceAll("^[\\u000B]", "").replaceAll("[\\u001C\\r]+$", "");
-                                    }
-
-                                    private String createNack(String code, String error) {
-                                        return "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now()
-                                                + "||ACK^A01|1|P|2.5\r"
-                                                + "MSA|" + code + "|1|" + error + "\r";
-                                    }
-
-                                    private String toVisible(String msg) {
-                                        return msg.replace("\u000B", "<VT>")
-                                                .replace("\u001C", "<FS>")
-                                                .replace("\r", "<CR>");
                                     }
 
                                     @Override
                                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                                        logger.error("Exception caught in TCP handler", cause);
+                                        UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
+                                        logger.error("Exception in TCP handler for interactionId {}: {}",
+                                                interactionId, cause.getMessage(), cause);
                                         ctx.close();
+                                    }
+
+                                    @Override
+                                    public void channelInactive(ChannelHandlerContext ctx) {
+                                        UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
+                                        logger.debug("Channel closed for interactionId {}", interactionId);
                                     }
                                 });
                             }
                         });
 
                 ChannelFuture future = bootstrap.bind(tcpPort).sync();
-                logger.info("Netty TCP Server listening on port {}", tcpPort);
+                logger.info("TCP Server listening on port {} (MLLP=HL7 with ACK, non-MLLP=Generic with simple ACK)",
+                        tcpPort);
                 future.channel().closeFuture().sync();
             } catch (Exception e) {
-                logger.error("Failed to start Netty TCP Server", e);
+                logger.error("Failed to start TCP Server on port {}", tcpPort, e);
             } finally {
                 boss.shutdownGracefully();
                 worker.shutdownGracefully();
@@ -244,72 +161,263 @@ public class NettyTcpServer {
     }
 
     /**
-     * Build RequestContext with port configuration support.
+     * Handle HAProxy protocol header to extract real client IP/port
      */
-    private RequestContext buildRequestContext(String message, String interactionId,
-            Optional<PortConfig.PortEntry> portEntryOpt, String sourcePort, String sourceIp, String destinationIp,
-            String destinationPort,
-            String fileExtension) {
-        ZonedDateTime uploadTime = ZonedDateTime.now();
-        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
-        // TODO-Extract Headers
-        // Map<String, String> headers = new HashMap<>();
-        // exchange.getIn().getHeaders().forEach((k, v) -> {
-        // if (v instanceof String) {
-        // headers.put(k, (String) v);
-        // if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-        // logger.info("{} -Header for the InteractionId {} : {} = {}",
-        // FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, interactionId, k, v);
-        // }
-        // }
-        // });
-        Map<String, String> nettyHeaders = new HashMap<>();
-        nettyHeaders.put("SourceIp", sourceIp);
-        nettyHeaders.put("SourcePort", sourcePort);
-        nettyHeaders.put("DestinationIp", destinationIp);
-        nettyHeaders.put("DestinationPort", destinationPort);
+    private void handleProxyHeader(ChannelHandlerContext ctx, HAProxyMessage proxyMsg, UUID interactionId) {
+        if (proxyMsg.command() == HAProxyCommand.PROXY) {
+            logger.info("PROXY_HEADER [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
+                    interactionId,
+                    proxyMsg.sourceAddress(),
+                    proxyMsg.sourcePort(),
+                    proxyMsg.destinationAddress(),
+                    proxyMsg.destinationPort());
 
-        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-        String fileBaseName = "tcp-message";
-        String originalFileName = fileBaseName + "." + fileExtension;
-
-        PortBasedPaths paths = portConfigUtil.resolvePortBasedPaths(portEntryOpt, interactionId, nettyHeaders,
-                originalFileName, timestamp, datePath);
-
-        return new RequestContext(
-                nettyHeaders,
-                "/tcp",
-                paths.getQueue(),
-                interactionId,
-                uploadTime,
-                timestamp,
-                originalFileName,
-                message.length(),
-                paths.getDataKey(),
-                paths.getMetaDataKey(),
-                paths.getFullS3DataPath(),
-                getUserAgent(message, interactionId),
-                "NettyTcpRoute",
-                portEntryOpt.map(pe -> pe.route).orElse(""),
-                "TCP",
-                destinationIp,
-                sourceIp,
-                sourceIp,
-                destinationIp,
-                destinationPort,
-                paths.getAcknowledgementKey(),
-                paths.getFullS3AcknowledgementPath(),
-                paths.getFullS3MetadataPath(),
-                MessageSourceType.TCP,
-                paths.getDataBucketName(),
-                paths.getMetadataBucketName(),
-                appConfig.getVersion());
+            ctx.channel().attr(CLIENT_IP_KEY).set(proxyMsg.sourceAddress());
+            ctx.channel().attr(CLIENT_PORT_KEY).set(proxyMsg.sourcePort());
+            ctx.channel().attr(DESTINATION_IP_KEY).set(proxyMsg.destinationAddress());
+            ctx.channel().attr(DESTINATION_PORT_KEY).set(proxyMsg.destinationPort());
+        }
     }
 
     /**
-     * Add NTE segment with interaction ID to ACK message.
+     * Assign dummy client and destination IP/port for sandbox profile
      */
-    public static String addNteWithInteractionId(Message ackMessage, String interactionId,
+    private void handleSandboxProxy(ChannelHandlerContext ctx, UUID interactionId) {
+        // Assign dummy values
+        String dummyClientIp = "127.0.0.1";
+        int dummyClientPort = 12345;
+        String dummyDestinationIp = "127.0.0.1";
+        int dummyDestinationPort = tcpPort; // use server port
+
+        // Log for debugging
+        logger.info("SANDBOX_PROXY [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
+                interactionId, dummyClientIp, dummyClientPort, dummyDestinationIp, dummyDestinationPort);
+
+        // Set as channel attributes
+        ctx.channel().attr(CLIENT_IP_KEY).set(dummyClientIp);
+        ctx.channel().attr(CLIENT_PORT_KEY).set(dummyClientPort);
+        ctx.channel().attr(DESTINATION_IP_KEY).set(dummyDestinationIp);
+        ctx.channel().attr(DESTINATION_PORT_KEY).set(dummyDestinationPort);
+    }
+
+    /**
+     * Main message handler - routes to HL7 or generic handler based on MLLP
+     * detection
+     */
+    private void handleMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId) {
+        String clientIP = ctx.channel().attr(CLIENT_IP_KEY).get();
+        Integer clientPort = ctx.channel().attr(CLIENT_PORT_KEY).get();
+        String destinationIP = ctx.channel().attr(DESTINATION_IP_KEY).get();
+        Integer destinationPort = ctx.channel().attr(DESTINATION_PORT_KEY).get();
+
+        // Use direct connection info if proxy headers not present
+        if (clientIP == null) {
+            clientIP = ctx.channel().remoteAddress().toString();
+        }
+        if (destinationIP == null) {
+            destinationIP = ctx.channel().localAddress().toString();
+        }
+
+        logger.info("MESSAGE_RECEIVED [interactionId={}] from={}:{}, size={} bytes",
+                interactionId, clientIP, clientPort, rawMessage.length());
+        logger.debug("RAW_MESSAGE [interactionId={}]:\n{}", interactionId, toVisibleChars(rawMessage));
+
+        // Detect MLLP wrapper
+        boolean isMllpWrapped = detectMllpWrapper(rawMessage);
+
+        if (isMllpWrapped) {
+            logger.info("MLLP_DETECTED [interactionId={}] - Using HL7 processing with proper ACK", interactionId);
+            handleHL7Message(ctx, rawMessage, interactionId, clientIP, clientPort,
+                    destinationIP, destinationPort);
+        } else {
+            logger.info("NON_MLLP_DETECTED [interactionId={}] - Using generic processing with simple ACK",
+                    interactionId);
+            handleGenericMessage(ctx, rawMessage, interactionId, clientIP, clientPort,
+                    destinationIP, destinationPort);
+        }
+    }
+
+    /**
+     * Handle MLLP-wrapped HL7 messages with proper HL7 ACK generation
+     */
+    private void handleHL7Message(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort) {
+        try {
+            String cleanMsg = unwrapMllp(rawMessage);
+            logger.info("HL7_MESSAGE_UNWRAPPED [interactionId={}] size={} bytes",
+                    interactionId, cleanMsg.length());
+
+            String ackMessage;
+            try {
+                // Parse HL7 message
+                GenericParser parser = new GenericParser();
+                Message hl7Message = parser.parse(cleanMsg);
+
+                // Generate proper HL7 ACK
+                Message ack = hl7Message.generateACK();
+                ackMessage = addNteWithInteractionId(ack, interactionId.toString(),
+                        appConfig.getVersion());
+
+                logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
+
+                // Build request context
+                Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
+                        destinationPort, interactionId.toString());
+
+                if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort,
+                        interactionId.toString())) {
+                    logger.warn("INVALID_PORT_CONFIG [interactionId={}] port={}",
+                            interactionId, destinationPort);
+                }
+
+                RequestContext requestContext = buildRequestContext(
+                        cleanMsg,
+                        interactionId.toString(),
+                        portEntryOpt,
+                        String.valueOf(clientPort),
+                        clientIP,
+                        destinationIP,
+                        String.valueOf(destinationPort),
+                        "hl7");
+
+                // Extract ZNT segment if needed (outbound response type)
+                if (shouldProcessZntSegment(portEntryOpt)) {
+                    extractZntSegment(hl7Message, requestContext, interactionId.toString());
+                }
+
+                // Process message asynchronously
+                messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
+
+                // Encode ACK for sending
+                ackMessage = new PipeParser().encode(ack);
+                logger.info("HL7_ACK_ENCODED [interactionId={}]", interactionId);
+
+            } catch (HL7Exception e) {
+                logger.error("HL7_PARSE_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
+                ackMessage = createHL7Nack("AE", e.getMessage());
+            }
+
+            // Wrap in MLLP and send
+            String response = wrapMllp(ackMessage);
+            sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
+
+        } catch (Exception e) {
+            logger.error("HL7_PROCESSING_ERROR [interactionId={}]: {}", interactionId, e.getMessage(), e);
+            String errorResponse = wrapMllp(createHL7Nack("AR", e.getMessage()));
+            sendResponseAndClose(ctx, errorResponse, interactionId, "HL7_NACK");
+        }
+    }
+
+    /**
+     * Handle non-MLLP messages with simple acknowledgment
+     */
+    private void handleGenericMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort) {
+        try {
+            String cleanMsg = rawMessage.trim();
+            String detectedFormat = detectMessageFormat(cleanMsg);
+
+            logger.info("FORMAT_DETECTED [interactionId={}] format={}", interactionId, detectedFormat);
+
+            // Build request context
+            Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
+                    destinationPort, interactionId.toString());
+
+            if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
+                logger.warn("INVALID_PORT_CONFIG [interactionId={}] port={}", interactionId, destinationPort);
+            }
+
+            RequestContext requestContext = buildRequestContext(
+                    cleanMsg,
+                    interactionId.toString(),
+                    portEntryOpt,
+                    String.valueOf(clientPort),
+                    clientIP,
+                    destinationIP,
+                    String.valueOf(destinationPort),
+                    detectedFormat);
+
+            // Add detected format to metadata
+            Map<String, String> additionalParams = requestContext.getAdditionalParameters();
+            if (additionalParams == null) {
+                additionalParams = new HashMap<>();
+                requestContext.setAdditionalParameters(additionalParams);
+            }
+            additionalParams.put("detectedFormat", detectedFormat);
+            additionalParams.put("mllpWrapped", "false");
+
+            // Generate simple acknowledgment
+            String ackMessage = generateSimpleAck(interactionId.toString(), detectedFormat);
+
+            // Process message asynchronously
+            messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
+
+            // Send simple ACK (with newline, no MLLP wrapping)
+            sendResponseAndClose(ctx, ackMessage + "\n", interactionId, "SIMPLE_ACK");
+
+        } catch (Exception e) {
+            logger.error("GENERIC_PROCESSING_ERROR [interactionId={}]: {}",
+                    interactionId, e.getMessage(), e);
+            String errorResponse = generateSimpleNack(interactionId.toString(), e.getMessage()) + "\n";
+            sendResponseAndClose(ctx, errorResponse, interactionId, "SIMPLE_NACK");
+        }
+    }
+
+    /**
+     * Send response and close connection
+     */
+    private void sendResponseAndClose(ChannelHandlerContext ctx, String response,
+            UUID interactionId, String responseType) {
+        logger.info("SENDING_RESPONSE [interactionId={}] type={}", interactionId, responseType);
+
+        ctx.writeAndFlush(response).addListener(future -> {
+            if (future.isSuccess()) {
+                logger.info("RESPONSE_SENT_SUCCESS [interactionId={}] type={}, closing connection",
+                        interactionId, responseType);
+            } else {
+                logger.error("RESPONSE_SEND_FAILED [interactionId={}] type={}: {}",
+                        interactionId, responseType, future.cause().getMessage());
+            }
+            ctx.close();
+        });
+    }
+
+    /**
+     * Detect if message is wrapped in MLLP protocol
+     */
+    private boolean detectMllpWrapper(String message) {
+        return message.length() >= 3
+                && message.charAt(0) == MLLP_START
+                && message.charAt(message.length() - 2) == MLLP_END_1
+                && message.charAt(message.length() - 1) == MLLP_END_2;
+    }
+
+    /**
+     * Remove MLLP wrapper from message
+     */
+    private String unwrapMllp(String message) {
+        if (message.charAt(0) == MLLP_START) {
+            message = message.substring(1);
+        }
+        if (message.length() >= 2
+                && message.charAt(message.length() - 2) == MLLP_END_1
+                && message.charAt(message.length() - 1) == MLLP_END_2) {
+            message = message.substring(0, message.length() - 2);
+        }
+        return message.trim();
+    }
+
+    /**
+     * Wrap message in MLLP protocol
+     */
+    private String wrapMllp(String message) {
+        return MLLP_START + message + MLLP_END_1 + MLLP_END_2;
+    }
+
+    /**
+     * Add NTE segment with interaction ID to HL7 ACK message
+     */
+    private String addNteWithInteractionId(Message ackMessage, String interactionId,
             String ingestionApiVersion) throws HL7Exception {
         Terser terser = new Terser(ackMessage);
         ackMessage.addNonstandardSegment("NTE");
@@ -322,7 +430,15 @@ public class NettyTcpServer {
     }
 
     /**
-     * Determine if ZNT segment should be processed based on port configuration.
+     * Create HL7 NACK message
+     */
+    private String createHL7Nack(String code, String error) {
+        return "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK^A01|1|P|2.5\r"
+                + "MSA|" + code + "|1|" + error + "\r";
+    }
+
+    /**
+     * Determine if ZNT segment should be processed based on port configuration
      */
     private boolean shouldProcessZntSegment(Optional<PortConfig.PortEntry> portEntryOpt) {
         return portEntryOpt.isPresent()
@@ -330,7 +446,7 @@ public class NettyTcpServer {
     }
 
     /**
-     * Extract ZNT segment from HL7 message.
+     * Extract ZNT segment from HL7 message
      */
     private void extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
         try {
@@ -365,24 +481,148 @@ public class NettyTcpServer {
                 additionalDetails.put(Constants.QE, qe);
 
                 logger.info(
-                        "[TCP_PORT {}] ZNT segment extracted - messageCode={}, deliveryType={}, facility={}, qe={}, interactionId={}",
-                        tcpPort, messageCode, deliveryType, facilityCode, qe, interactionId);
+                        "ZNT_SEGMENT_EXTRACTED [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
+                        interactionId, messageCode, deliveryType, facilityCode, qe);
             } else {
-                logger.warn("[TCP_PORT {}] ZNT segment not found in HL7 message. interactionId={}",
-                        tcpPort, interactionId);
+                logger.warn("ZNT_SEGMENT_NOT_FOUND [interactionId={}]", interactionId);
             }
         } catch (HL7Exception e) {
-            logger.error("[TCP_PORT {}] Error extracting ZNT segment: {} for interactionId={}",
-                    tcpPort, e.getMessage(), interactionId);
+            logger.error("ZNT_EXTRACTION_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
         }
     }
 
     /**
-     * Extract user agent from message.
-     * For HL7: extract from MSH segment
-     * For text: use default
+     * Detect message format based on content (for non-MLLP messages)
      */
-    private String getUserAgent(String message, String interactionId) {
+    private String detectMessageFormat(String message) {
+        if (message == null || message.isBlank()) {
+            return "empty";
+        }
+
+        String trimmed = message.trim();
+
+        // HL7 detection (starts with MSH segment) - shouldn't happen in non-MLLP
+        if (trimmed.startsWith("MSH|") || trimmed.startsWith("MSH^")) {
+            return "hl7";
+        }
+
+        // JSON detection
+        if ((trimmed.startsWith("{") && trimmed.endsWith("}"))
+                || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            return "json";
+        }
+
+        // XML detection
+        if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
+            if (trimmed.contains("<ClinicalDocument") || trimmed.contains("urn:hl7-org:v3")) {
+                return "ccd";
+            }
+            return "xml";
+        }
+
+        // CSV detection (simple heuristic)
+        String[] lines = trimmed.split("\n", 3);
+        if (lines.length >= 2 && lines[0].contains(",") && lines[1].contains(",")) {
+            int firstCommas = lines[0].split(",").length;
+            int secondCommas = lines[1].split(",").length;
+            if (Math.abs(firstCommas - secondCommas) <= 1) {
+                return "csv";
+            }
+        }
+
+        return "text";
+    }
+
+    /**
+     * Generate simple acknowledgment for non-MLLP messages
+     */
+    private String generateSimpleAck(String interactionId, String format) {
+        return String.format("ACK|%s|%s|%s|%s",
+                interactionId,
+                format,
+                appConfig.getVersion(),
+                Instant.now().toString());
+    }
+
+    /**
+     * Generate simple NACK for non-MLLP messages
+     */
+    private String generateSimpleNack(String interactionId, String errorMessage) {
+        String sanitizedError = errorMessage.replace("|", " ").replace("\n", " ");
+        return String.format("NACK|%s|ERROR|%s|%s",
+                interactionId,
+                sanitizedError,
+                Instant.now().toString());
+    }
+
+    /**
+     * Build RequestContext with port configuration support
+     */
+    private RequestContext buildRequestContext(String message, String interactionId,
+            Optional<PortConfig.PortEntry> portEntryOpt, String sourcePort, String sourceIp,
+            String destinationIp, String destinationPort, String detectedFormat) {
+
+        ZonedDateTime uploadTime = ZonedDateTime.now();
+        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("SourceIp", sourceIp);
+        headers.put("SourcePort", sourcePort);
+        headers.put("DestinationIp", destinationIp);
+        headers.put("DestinationPort", destinationPort);
+        headers.put("MessageFormat", detectedFormat);
+
+        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String fileBaseName = "tcp-message";
+        String fileExtension = getFileExtension(detectedFormat);
+        String originalFileName = fileBaseName + "." + fileExtension;
+
+        PortBasedPaths paths = portConfigUtil.resolvePortBasedPaths(
+                portEntryOpt,
+                interactionId,
+                headers,
+                originalFileName,
+                timestamp,
+                datePath);
+
+        String userAgent = detectedFormat.equals("hl7")
+                ? getUserAgentFromHL7(message, interactionId)
+                : "TCP Listener";
+
+        return new RequestContext(
+                headers,
+                "/tcp",
+                paths.getQueue(),
+                interactionId,
+                uploadTime,
+                timestamp,
+                originalFileName,
+                message.length(),
+                paths.getDataKey(),
+                paths.getMetaDataKey(),
+                paths.getFullS3DataPath(),
+                userAgent,
+                "NettyTcpRoute",
+                portEntryOpt.map(pe -> pe.route).orElse(""),
+                "TCP",
+                destinationIp,
+                sourceIp,
+                sourceIp,
+                destinationIp,
+                destinationPort,
+                paths.getAcknowledgementKey(),
+                paths.getFullS3AcknowledgementPath(),
+                paths.getFullS3MetadataPath(),
+                MessageSourceType.TCP,
+                paths.getDataBucketName(),
+                paths.getMetadataBucketName(),
+                appConfig.getVersion());
+    }
+
+    /**
+     * Extract user agent from HL7 MSH segment
+     */
+    private String getUserAgentFromHL7(String message, String interactionId) {
         if (message == null || !message.startsWith("MSH")) {
             return "TCP Listener";
         }
@@ -411,9 +651,73 @@ public class NettyTcpServer {
 
             return sendingApp + "@" + sendingFacility;
         } catch (Exception e) {
-            logger.error("[TCP_PORT {}] Error extracting user agent: {} for interactionId={}",
-                    tcpPort, e.getMessage(), interactionId);
+            logger.error("USER_AGENT_EXTRACTION_ERROR [interactionId={}]: {}",
+                    interactionId, e.getMessage());
             return "TCP Listener";
         }
+    }
+
+    /**
+     * Get appropriate file extension based on detected format
+     */
+    private String getFileExtension(String format) {
+        return switch (format) {
+            case "hl7" -> "hl7";
+            case "json" -> "json";
+            case "xml" -> "xml";
+            case "ccd" -> "xml";
+            case "csv" -> "csv";
+            default -> "txt";
+        };
+    }
+
+    /**
+     * Convert control characters to visible representation for logging
+     */
+    private String toVisibleChars(String message) {
+        if (message == null) {
+            return null;
+        }
+        return message
+                .replace("\u000B", "<VT>")
+                .replace("\u001C", "<FS>")
+                .replace("\r", "<CR>")
+                .replace("\n", "<LF>");
+    }
+
+    // MessageSourceProvider interface methods
+    @Override
+    public MessageSourceType getMessageSource() {
+        return MessageSourceType.TCP;
+    }
+
+    @Override
+    public String getDataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
+    }
+
+    @Override
+    public String getMetadataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
+    }
+
+    @Override
+    public String getTenantId(Map<String, String> headers) {
+        return null;
+    }
+
+    @Override
+    public String getSourceIp(Map<String, String> headers) {
+        return headers.get("SourceIp");
+    }
+
+    @Override
+    public String getDestinationIp(Map<String, String> headers) {
+        return headers.get("DestinationIp");
+    }
+
+    @Override
+    public String getDestinationPort(Map<String, String> headers) {
+        return headers.get("DestinationPort");
     }
 }
