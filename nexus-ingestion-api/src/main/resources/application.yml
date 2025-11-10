@@ -53,4 +53,19 @@ togglz:
   enabled: true 
   features: 
     DEBUG_LOG_REQUEST_HEADERS: 
-      enabled: true  
+      enabled: true 
+logging:
+  level:
+    root: INFO
+    org:
+      apache:
+      camel:
+        component:
+        mllp:
+          internal:
+          MllpSocketBuffer: ERROR
+          MllpTcpServerConsumer: ERROR
+          MllpDecoder: ERROR
+          MllpEncoder: ERROR
+          MllpAcknowledgementGenerator: ERROR
+
