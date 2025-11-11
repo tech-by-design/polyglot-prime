@@ -140,7 +140,7 @@ public class PortConfigUtil {
             }
         }
 
-        String acknowledgementKey = baseDataKey + "_acknowledgement";
+        String acknowledgementKey = baseDataKey + "_ack";
         String fullS3DataPath = "s3://" + dataBucketName + "/" + baseDataKey;
         String fullS3MetadataPath = "s3://" + metadataBucketName + "/" + baseMetadataKey;
         String fullS3AcknowledgementPath = "s3://" + dataBucketName + "/" + acknowledgementKey;
