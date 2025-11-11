@@ -98,10 +98,12 @@ public class NettyTcpServer implements MessageSourceProvider {
                             protected void initChannel(SocketChannel ch) {
                                 // Add read timeout handler
                                 ch.pipeline().addLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS));
+                                String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
 
                                 // HAProxy protocol support
-                                ch.pipeline().addLast(new HAProxyMessageDecoder());
-
+                                if (!"sandbox".equals(activeProfile)) {
+                                    ch.pipeline().addLast(new HAProxyMessageDecoder());
+                                }
                                 // String encoding/decoding
                                 ch.pipeline().addLast(new StringDecoder());
                                 ch.pipeline().addLast(new StringEncoder());
@@ -116,14 +118,14 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                         }
                                         String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-                                        // if ("sandbox".equals(activeProfile)) { // or just check non-null
-                                        // handleSandboxProxy(ctx, interactionId);
-                                        // } else {
-                                        if (msg instanceof HAProxyMessage proxyMsg) {
-                                            handleProxyHeader(ctx, proxyMsg, interactionId);
-                                            return; // Wait for next frame (actual message)
+                                        if ("sandbox".equals(activeProfile)) { // or just check non-null
+                                            handleSandboxProxy(ctx, interactionId);
+                                        } else {
+                                            if (msg instanceof HAProxyMessage proxyMsg) {
+                                                handleProxyHeader(ctx, proxyMsg, interactionId);
+                                                return; // Wait for next frame (actual message)
+                                            }
                                         }
-                                        // }
 
                                         if (msg instanceof String messageContent) {
                                             handleMessage(ctx, messageContent, interactionId);
@@ -187,7 +189,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         String dummyClientIp = "127.0.0.1";
         int dummyClientPort = 12345;
         String dummyDestinationIp = "127.0.0.1";
-        int dummyDestinationPort = tcpPort; // use server port
+        int dummyDestinationPort = 5555;
 
         // Log for debugging
         logger.info("SANDBOX_PROXY [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
@@ -278,7 +280,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                         clientIP,
                         destinationIP,
                         String.valueOf(destinationPort),
-                        "hl7");
+                        "hl7",MessageSourceType.MLLP);
 
                 // Extract ZNT segment if needed (outbound response type)
                 if (shouldProcessZntSegment(portEntryOpt)) {
@@ -302,7 +304,7 @@ public class NettyTcpServer implements MessageSourceProvider {
             sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
 
         } catch (Exception e) {
-            logger.error("HL7_PROCESSING_ERROR [interactionId={}]: {}", interactionId, e.getMessage(), e);
+            logger.error("Processing ERROR [interactionId={}]: {}", interactionId, e.getMessage(), e);
             String errorResponse = wrapMllp(createHL7Nack("AR", e.getMessage()));
             sendResponseAndClose(ctx, errorResponse, interactionId, "HL7_NACK");
         }
@@ -335,7 +337,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     clientIP,
                     destinationIP,
                     String.valueOf(destinationPort),
-                    detectedFormat);
+                    detectedFormat,MessageSourceType.TCP);
 
             // Add detected format to metadata
             Map<String, String> additionalParams = requestContext.getAdditionalParameters();
@@ -344,7 +346,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                 requestContext.setAdditionalParameters(additionalParams);
             }
             additionalParams.put("detectedFormat", detectedFormat);
-            additionalParams.put("mllpWrapped", "false");
 
             // Generate simple acknowledgment
             String ackMessage = generateSimpleAck(interactionId.toString(), detectedFormat);
@@ -560,7 +561,7 @@ public class NettyTcpServer implements MessageSourceProvider {
      */
     private RequestContext buildRequestContext(String message, String interactionId,
             Optional<PortConfig.PortEntry> portEntryOpt, String sourcePort, String sourceIp,
-            String destinationIp, String destinationPort, String detectedFormat) {
+            String destinationIp, String destinationPort, String detectedFormat,MessageSourceType messageSourceType) {
 
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
@@ -591,7 +592,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
         return new RequestContext(
                 headers,
-                "/tcp",
+                "",
                 paths.getQueue(),
                 interactionId,
                 uploadTime,
@@ -602,7 +603,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 paths.getMetaDataKey(),
                 paths.getFullS3DataPath(),
                 userAgent,
-                "NettyTcpRoute",
+                "",
                 portEntryOpt.map(pe -> pe.route).orElse(""),
                 "TCP",
                 destinationIp,
@@ -613,7 +614,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 paths.getAcknowledgementKey(),
                 paths.getFullS3AcknowledgementPath(),
                 paths.getFullS3MetadataPath(),
-                MessageSourceType.TCP,
+                messageSourceType,
                 paths.getDataBucketName(),
                 paths.getMetadataBucketName(),
                 appConfig.getVersion());

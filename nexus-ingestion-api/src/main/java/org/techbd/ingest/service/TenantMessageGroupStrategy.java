@@ -8,7 +8,7 @@ import org.techbd.ingest.model.RequestContext;
 
 
 @Component
-@Order(2)
+@Order(3)
 public class TenantMessageGroupStrategy implements MessageGroupStrategy {
     @Override
     public boolean supports(RequestContext context) {
