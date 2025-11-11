@@ -118,7 +118,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                         }
                                         String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-                                        if ("sandbox".equals(activeProfile)) { // or just check non-null
+                                        if ("sandbox".equals(activeProfile)) {
                                             handleSandboxProxy(ctx, interactionId);
                                         } else {
                                             if (msg instanceof HAProxyMessage proxyMsg) {
@@ -575,8 +575,8 @@ public class NettyTcpServer implements MessageSourceProvider {
 
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "tcp-message";
-        String fileExtension = getFileExtension(detectedFormat);
-        String originalFileName = fileBaseName + "." + fileExtension;
+        //String fileExtension = getFileExtension(detectedFormat);
+        String originalFileName = fileBaseName;
 
         PortBasedPaths paths = portConfigUtil.resolvePortBasedPaths(
                 portEntryOpt,
