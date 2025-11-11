@@ -1612,15 +1612,32 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;         
       PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
 
+      -- If the existing constraint is not included 'processing_errors', drop it if 'category_check' constraint exists and then recreate it.
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%processing_errors%'
+      ) THEN
+          IF EXISTS ( -- check if 'category_check' constraint exists, only then drop it
+              SELECT 1
+              FROM pg_constraint
+              WHERE conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+                AND conname = 'category_check'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+              DROP CONSTRAINT category_check;
+          END IF;
+      END IF;
+
       IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
           WHERE conname = 'category_check'
             AND conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
       ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
-          ADD CONSTRAINT category_check
-          CHECK (category IN ('data_integrity', 'file_not_processed', 'incomplete_groups'));
+        ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors ADD CONSTRAINT category_check CHECK (category = ANY (ARRAY['data_integrity', 'file_not_processed', 'incomplete_groups', 'processing_errors']));
       END IF;
 
       ${users}

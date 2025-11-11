@@ -4066,6 +4066,12 @@ BEGIN
 					UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
 					SET full_operation_outcome = p_full_operation_outcome
 					WHERE hub_interaction_id = p_interaction_id;
+
+					--Denormalize the 'processing_errors' errors from full_operation_outcome
+					SELECT techbd_udi_ingress.denormalize_validation_errors(
+						p_category => 'processing_errors', 
+						p_hub_interaction_id => p_interaction_id
+					) INTO v_denormalize_result;
 				END IF;
 		
 				IF p_validation_result_payload IS NOT NULL THEN
@@ -8280,6 +8286,46 @@ BEGIN
 		
 				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_csv_fhir_processing_errors - data_integrity');
 		
+			END IF;
+
+			-- Processing Errors from techbd_udi_ingress.sat_interaction_zip_file_request.full_operation_outcome
+			IF p_category = 'processing_errors' AND p_hub_interaction_id IS NOT NULL THEN
+				INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
+							sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
+							zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
+							row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
+				SELECT gen_random_uuid()::text,
+					        p_category,
+					        null,--flat_file_hub_interaction_id
+					        v_created_at,
+					        tenant_id,
+					        uri,
+					        p_hub_interaction_id,--zip_file_hub_interaction_id
+					        group_id,
+					        NULL,
+					        NULL,
+					        NULL,
+					        err ->> 'type'        AS error_type,
+					        NULL,
+					        err ->> 'message'     AS error,
+					        err ->> 'description' AS description,
+					        NULL,
+					        NULL,
+					        csv_zip_file_name,
+					        csv_zip_file_name AS file_name,
+					        origin,
+					        user_agent,
+							v_created_by,
+							v_provenance,
+							techbd_version_number
+					FROM 	techbd_udi_ingress.sat_interaction_zip_file_request
+					CROSS JOIN LATERAL jsonb_array_elements(COALESCE(full_operation_outcome, '[]'::jsonb)) AS o
+					CROSS JOIN LATERAL jsonb_array_elements(COALESCE(o -> 'validationResults' -> 'errors', '[]'::jsonb)) AS err
+					WHERE hub_interaction_id = p_hub_interaction_id;
+		
+					GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
+		
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - Processing Errors from full_operation_outcome');
 			END IF;
 			
 			v_return := p_category || ': ' || v_inserted_count::text || ' records inserted.';
