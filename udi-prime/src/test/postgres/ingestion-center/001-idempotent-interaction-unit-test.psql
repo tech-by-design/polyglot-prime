@@ -182,6 +182,65 @@ BEGIN
 	    'The columns of techbd_udi_ingress.sat_interaction_hl7_request should match the expected structure.'
 	);
 
+	RETURN NEXT has_table(schema_name, 'sat_csv_fhir_processing_errors', 'The table techbd_udi_ingress.sat_csv_fhir_processing_errors should exist.');
+	RETURN NEXT columns_are(schema_name, 'sat_csv_fhir_processing_errors',
+	    ARRAY['sat_validation_and_fhir_conversion_errors_id','category','flat_file_hub_interaction_id','tenant_id','uri','zip_file_hub_interaction_id','group_id','section','field_name','value','error_type','error_subtype','error',
+			'description','row_number','field_number','zip_file_name','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance'],
+		'The columns of techbd_udi_ingress.sat_csv_fhir_processing_errors should match the expected structure.'
+	);
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_hl7_validation_errors', 'The table techbd_udi_ingress.sat_interaction_hl7_validation_errors should exist.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_hl7_validation_errors',
+	    ARRAY['sat_hl7_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version'],
+	    'The columns of techbd_udi_ingress.sat_interaction_hl7_validation_errors should match the expected structure.'
+	);
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_ccda_validation_errors', 'The table techbd_udi_ingress.sat_interaction_ccda_validation_errors should exist.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_validation_errors',
+	    ARRAY['sat_ccda_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version'],
+	    'The columns of techbd_udi_ingress.sat_interaction_ccda_validation_errors should match the expected structure.'
+	);
+
+	RETURN NEXT has_table(schema_name, 'sat_diagnostic_log', 'The table techbd_udi_ingress.sat_diagnostic_log should exist.');
+	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_log',
+	    ARRAY['sat_diagnostic_log_id','hub_diagnostic_id','diagnostic_log_level','diagnostic_log_message','user_id','status','parent_diagnostic_log_id','hierarchy_level','elaboration','created_at','created_by','provenance','hub_interaction_id','tenant_id'],
+	    'The columns of techbd_udi_ingress.sat_diagnostic_log should match the expected structure.'
+	);
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_info', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_info should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_info',
+		ARRAY['sat_interaction_fhir_screening_info_id','hub_interaction_id','qe_name','submitted_date_time','survey_date_time','patient_mrn','full_name','last_name','first_name','org_id','org_name',
+			'total_safety_score','areas_of_interest','elaboration','created_at','created_by','provenance','tenant_id'],
+		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_info should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_organization', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_organization should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_organization',
+		ARRAY['sat_interaction_fhir_screening_organization_id','hub_interaction_id','qe_name','org_id','org_type','org_name','org_active','org_address','org_city','org_state','org_postal_code',
+			'elaboration','created_at','created_by','provenance','tenant_id'],
+		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_organization should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_patient', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_patient should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_patient',
+		ARRAY['sat_interaction_fhir_screening_patient_id','hub_interaction_id','qe_name','patient_mrn','patient_id','patient_type','patient_full_name','patient_first_name','patient_last_name','patient_gender',
+			'patient_birth_date','patient_address','patient_city','patient_state','patient_postal_code','patient_language','patient_ssn','org_id','elaboration','created_at','created_by','provenance','primary_org_id','tenant_id'],
+		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_patient should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_session_diagnostic', 'The table techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_session_diagnostic',
+		ARRAY['sat_interaction_fhir_session_diagnostic_id','hub_interaction_id','tenant_id','uri','session_id','severity','message','line','column','diagnostics','encountered_at','elaboration','created_at','created_by',
+			'provenance','ig_version','validation_engine','bundle_id','techbd_version_number'],
+		'The columns of techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_validation_issue', 'The table techbd_udi_ingress.sat_interaction_fhir_validation_issue should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_validation_issue',
+		ARRAY['sat_interaction_fhir_validation_issue_id','hub_interaction_id','issue','date_time','validation_engine','ig_version','elaboration','created_at','created_by','provenance','severity',
+			'profile_url','techbd_version_number','tenant_id','profile_url_domain'],
+		'The columns of techbd_udi_ingress.sat_interaction_fhir_validation_issue should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'sat_interaction_file_exchange', 'The table techbd_udi_ingress.sat_interaction_file_exchange should exist.');
+	RETURN NEXT columns_are(schema_name,'sat_interaction_file_exchange',
+		ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id'],
+		'The columns of techbd_udi_ingress.sat_interaction_file_exchange should match the expected structure.');
 
 	/*=================== Testing with Nexus Interaction ========================*/
 	v_hub_nexus_interaction_id	:= 'nexus-4f-5cc8-9c5d-b65245d90fb6';
@@ -221,6 +280,68 @@ BEGIN
             'Nexus - Successfully inserted into the table sat_nexus_interaction_ingestion'
 	);
 
+	/*=================== Testing with User Interaction ========================*/
+	v_interaction_id            := 'user-5f-5cc8-9c5d-b65245d90fb6';
+
+	PERFORM techbd_udi_ingress.register_user_interaction(
+		p_interaction_id 		=> v_interaction_id,
+		p_interaction_key 		=> '/user/',
+		p_nature 				=> '{"nature":"org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id":"QE-user1"}'::jsonb,
+		p_payload 				=> NULL,
+		p_payload_text 			=> NULL,
+		p_hub_nexus_interaction_id => NULL,
+		p_rule_namespace 		=> NULL,
+		p_elaboration 			=> '{"key" : "elaboration"}',
+		p_content_type 			=> 'application/json',
+		p_from_state 			=> NULL,
+		p_to_state 				=> NULL,
+		p_state_transition_reason 	=> NULL,
+		p_user_id 				=> CURRENT_USER,
+		p_user_name 			=> 'Citrus',	
+		p_user_session 			=> NULL,
+		p_user_role 			=> NULL,
+		p_created_by 			=> CURRENT_USER,
+		p_created_at 			=> now(),
+		p_provenance 			=> 'user', 
+		p_hub_upsert_behavior 	=> true,
+		p_source_hub_interaction_id => NULL,
+		p_client_ip_address		=> '127.0.0.1',
+		p_user_agent 			=> 'user agent 1',
+		p_origin 				=> 'http',			 
+		p_source_type 			=> 'source user',
+		p_group_hub_interaction_id => NULL, 
+		p_sftp_session_id 		=> NULL,
+		p_request_source 		=> NULL,
+		p_intr_start_time 		=> now(),
+		p_intr_finish_time 		=> now(),
+		p_techbd_version_number => v_techbd_version_number
+	);
+
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = '/user/'
+							AND hub_intr.provenance              = 'user'
+                   ),
+            'User - Successfully inserted into the table hub_interaction'
+	);
+        
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+							AND hub_intr.provenance              = 'user'
+                   ),
+            'User - Successfully inserted into the table sat_interaction_http_request'
+	);
+
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = '/user/'
+							AND sat_intr.provenance             = 'user'
+                   ),
+            'User - Successfully inserted into the table sat_interaction_user'
+	);
 
     /*=================== Testing with FHIR bundle ========================*/
    	/* First call to insert FHIR Bundle into sat_interaction_http_request and sat_interaction_fhir_request */
