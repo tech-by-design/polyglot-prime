@@ -1,0 +1,157 @@
+[
+    {
+        "port": 2575,
+        "responseType": "mllp",
+        "protocol": "TCP"
+    },
+    {
+        "port": 1610,
+        "responseType": "outbound",
+        "protocol": "TCP",
+        "route": "/hold",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound"
+    },
+       {
+        "port": 5555,
+        "responseType": "mllp",
+        "protocol": "TCP",
+        "route": "/hold",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound",
+        "queue": "test.fifo"
+    },
+    {
+        "port": 16010,
+        "responseType": "mllp",
+        "protocol": "TCP",
+        "route": "/",
+        "queue": "txd-sbx-util-queue.fifo",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound"
+    },
+    {
+        "port": 3575,
+        "responseType": "mllp",
+        "protocol": "TCP",
+        "route": "/",
+        "queue": "txd-sbx-util-queue.fifo",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound"
+    },
+    {
+        "port": 9203,
+        "responseType": "pnr",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "mtls": "txd",
+        "execType": "async",
+        "trafficTo": "hl7",
+        "route": "/hold",
+        "queue": "txd-sbx-ccd-queue.fifo",
+        "dataDir": "/ccd",
+        "metadataDir": ""
+    },
+    {
+        "port": 9204,
+        "responseType": "pnr",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "mtls": "txd-sbx",
+        "execType": "async",
+        "trafficTo": "hl7",
+        "route": "/hold",
+        "queue": "txd-sbx-ccd-queue.fifo",
+        "dataDir": "/ccd",
+        "metadataDir": ""
+    },
+    {
+        "port": 9050,
+        "responseType": "pix",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "mtls": "txd",
+        "execType": "sync",
+        "trafficTo": "hl7",
+        "route": "/",
+        "queue": "txd-sbx-ccd-queue.fifo",
+        "dataDir": "/ccd",
+        "metadataDir": ""
+    },
+    {
+        "port": 9000,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9001,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9002,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9003,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9004,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9005,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    },
+    {
+        "port": 9006,
+        "responseType": "",
+        "protocol": "HTTP",
+        "whitelistIps": [
+            "0.0.0.0/0"
+        ],
+        "execType": "sync",
+        "trafficTo": "util"
+    }
+]

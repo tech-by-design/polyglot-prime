@@ -11,6 +11,9 @@ import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.config.PortConfig.PortEntry;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 /**
  * Utility class for accessing port configuration entries in a safe and
  * consistent way.
@@ -43,14 +46,21 @@ public class PortConfigUtil {
         try {
             Optional<PortEntry> entry = portConfig.findEntryForPort(port);
             if (entry.isPresent()) {
-                log.info("PortConfigUtil: Found PortEntry for port {} -> {} interactionId={}", port, entry.get(),
-                        interactionId);
+                try {
+                    ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+                    String json = mapper.writeValueAsString(entry.get());
+                    log.info("[PORT_CONFIG_MATCH]  Found PortEntry for port={} interactionId={} \n{}",
+                            port, interactionId, json);
+                } catch (Exception e) {
+                    log.error("[PORT_CONFIG_ERROR] Failed to serialize PortEntry for port={} interactionId={}",
+                            port, interactionId, e);
+                }
             } else {
-                log.warn("PortConfigUtil: No configuration found for port {} interactionId={}", port, interactionId);
+                log.warn("[PORT_CONFIG_ERROR] : No configuration found for port {} interactionId={}", port, interactionId);
             }
             return entry;
         } catch (Exception e) {
-            log.error("PortConfigUtil: Error: {} reading PortEntry for port {} interactionId={}", e.getMessage(), port,
+            log.error("[PORT_CONFIG_ERROR] Error: {} reading PortEntry for port {} interactionId={}", e.getMessage(), port,
                     interactionId, e);
             return Optional.empty();
         }

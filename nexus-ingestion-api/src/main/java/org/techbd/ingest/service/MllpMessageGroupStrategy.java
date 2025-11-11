@@ -30,25 +30,32 @@ public class MllpMessageGroupStrategy implements MessageGroupStrategy {
     @Override
     public String createGroupId(RequestContext context, String interactionId) {
         Map<String, String> params = context.getAdditionalParameters();
+        if (params == null) {
+            LOG.warn("[GROUP_ID_GEN] Additional parameters map is null for interactionId={}", interactionId);
+            return StringUtils.defaultIfBlank(context.getDestinationPort(), Constants.DEFAULT_MESSAGE_GROUP_ID);
+        }
 
         String deliveryType = StringUtils.trimToEmpty(params.get(Constants.DELIVERY_TYPE));
         String facility = StringUtils.trimToEmpty(params.get(Constants.FACILITY));
         String messageCode = StringUtils.trimToEmpty(params.get(Constants.MESSAGE_CODE));
         String qe = StringUtils.trimToEmpty(params.get(Constants.QE));
 
-        LOG.info(
-            "Delivery Type: " + (StringUtils.isBlank(deliveryType) ? "Not Available" : "Available") + " | " +
-            "Facility: " + (StringUtils.isBlank(facility) ? "Not Available" : "Available") + " | " +
-            "Message Code: " + (StringUtils.isBlank(messageCode) ? "Not Available" : "Available") + " | " +
-            "QE: " + (StringUtils.isBlank(qe) ? "Not Available" : "Available") + " | " +
-            "InteractionId: " + (StringUtils.isBlank(interactionId) ? "Not Available" : "Available")
-        );
+        LOG.info("[GROUP_ID_GEN] DeliveryType={} Facility={} MessageCode={} QE={} InteractionId={}",
+                StringUtils.isBlank(deliveryType) ? "Not Available" : "Available",
+                StringUtils.isBlank(facility) ? "Not Available" : "Available",
+                StringUtils.isBlank(messageCode) ? "Not Available" : "Available",
+                StringUtils.isBlank(qe) ? "Not Available" : "Available",
+                StringUtils.isBlank(interactionId) ? "Not Available" : interactionId);
 
         List<String> parts = new ArrayList<>();
-        if (StringUtils.isNotBlank(qe)) parts.add(qe);
-        if (StringUtils.isNotBlank(deliveryType)) parts.add(deliveryType);
-        if (StringUtils.isNotBlank(facility)) parts.add(facility);
-        if (StringUtils.isNotBlank(messageCode)) parts.add(messageCode);
+        if (StringUtils.isNotBlank(qe))
+            parts.add(qe);
+        if (StringUtils.isNotBlank(deliveryType))
+            parts.add(deliveryType);
+        if (StringUtils.isNotBlank(facility))
+            parts.add(facility);
+        if (StringUtils.isNotBlank(messageCode))
+            parts.add(messageCode);
 
         if (!parts.isEmpty()) {
             return String.join("_", parts);
@@ -56,4 +63,5 @@ public class MllpMessageGroupStrategy implements MessageGroupStrategy {
 
         return StringUtils.defaultIfBlank(context.getDestinationPort(), Constants.DEFAULT_MESSAGE_GROUP_ID);
     }
+
 }
