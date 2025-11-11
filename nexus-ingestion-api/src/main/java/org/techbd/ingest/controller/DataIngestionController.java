@@ -239,7 +239,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         Instant now = Instant.now();
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
         String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String dataKey = String.format("data/%s/%s_%s_ack", datePath, interactionId, timestamp);
+        String dataKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
 
         return (prefix.isEmpty() ? "" : prefix) + dataKey;
     }
