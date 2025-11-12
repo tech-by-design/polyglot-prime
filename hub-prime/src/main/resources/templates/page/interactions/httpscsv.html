@@ -129,7 +129,7 @@
                         filter: "agTextColumnFilter",
                         cellRenderer: params => {
                             if (params.value === 'Failed' || params.value === 'Partial Success') {
-                                return `<a href="/data-quality/csv-validations/file-not-processed" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                                return `<a href="/data-quality/csv-validations/data-integrity" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } else {
                                 return params.value;
                             }
@@ -241,7 +241,7 @@
                         users understand where the file stands in the processing pipeline.<br>
                         <strong>CSV Validation Status:</strong> Highlights whether the FHIR conversion from the submitted CSV
                         failed. If a Failure/Partial Success occurred, a direct link is provided to the
-                        <a href="/data-quality/csv-validations/file-not-processed" class="text-blue-600 underline"
+                        <a href="/data-quality/csv-validations/data-integrity" class="text-blue-600 underline"
                             target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the
                         Interaction ID to filter errors on that page.<br>                                            
                         <strong>Total File Count:</strong> Shows the total number of files received within the ZIP file.<br>
