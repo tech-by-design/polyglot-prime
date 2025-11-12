@@ -144,3 +144,31 @@ BEGIN
 		p_hub_interaction_id
     );
 END $$;
+
+
+
+
+/* -------------------------------------------------------------
+-- View: diagnostics_exception_details
+-- This view provides detailed records of diagnostic and exception events 
+-- captured during data ingestion or interaction processing.
+-- It includes information such as error messages, PostgreSQL exception details,
+-- contextual elaboration, tenant identifiers, and interaction references.
+-- Useful for debugging ingestion failures, analyzing recurring error patterns,
+-- and tracing issues specific to tenants or hub interactions.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_exception_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.diagnostics_exception_details AS
+SELECT
+    message,
+    err_pg_exception_detail,
+    err_pg_exception_context,
+    elaboration,
+    tenant_id,
+    hub_interaction_id,
+    created_at,
+    sat_diagnostic_exception_id
+FROM
+    techbd_udi_ingress.sat_diagnostic_exception;

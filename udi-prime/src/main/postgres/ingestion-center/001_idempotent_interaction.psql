@@ -9039,3 +9039,71 @@ BEGIN
 END;
 $function$;
 /*End Of FHIR Replay Process*/
+
+
+/* -------------------------------------------------------------
+-- View: csv_processing_errors_summary
+-- This view provides a summarized overview of CSV processing errors 
+-- encountered during data ingestion. 
+-- It aggregates key details such as interaction ID, tenant, group, 
+-- file name, origin, and error type for each failed ZIP file.
+-- Useful for monitoring ingestion failures and identifying 
+-- recurring CSV processing issues across tenants.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_processing_errors_summary cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_processing_errors_summary
+AS 
+SELECT
+    scfpe.zip_file_hub_interaction_id,
+    MIN(scfpe.created_at) AS created_at,
+    MIN(scfpe.tenant_id) AS tenant_id,
+    MIN(scfpe.group_id) AS group_id,
+    MIN(scfpe.uri) AS uri,
+    MIN(scfpe.error_type) AS error_types,
+    MIN(scfpe.zip_file_name) AS zip_file_name,
+    MIN(scfpe.origin) AS origin,
+    MIN(scfpe.user_agent) AS user_agent
+FROM
+    techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'processing_errors'    
+GROUP BY
+    scfpe.zip_file_hub_interaction_id ;
+
+
+/* -------------------------------------------------------------
+-- View: csv_processing_error
+-- This view provides detailed records of CSV processing errors 
+-- captured during data ingestion. 
+-- It includes timestamps, tenant information, file and group identifiers, 
+-- error types, descriptions, and file origins. 
+-- Useful for diagnosing individual CSV ingestion failures, 
+-- analyzing error patterns, and supporting data quality troubleshooting.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_processing_error cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_processing_error
+AS 
+SELECT
+    scfpe.created_at,
+    scfpe.tenant_id,
+    scfpe.zip_file_hub_interaction_id,
+    scfpe.group_id,
+    scfpe.uri,
+    scfpe.error_type,
+    scfpe.error_subtype,
+    scfpe.description,
+    scfpe.error,
+    scfpe.file_name,
+    scfpe.zip_file_name,
+    scfpe.origin,
+    scfpe.user_agent
+FROM
+	techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe 
+where 
+	scfpe.category = 'processing_errors'       
+ORDER BY
+    scfpe.created_at DESC;      
