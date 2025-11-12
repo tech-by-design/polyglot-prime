@@ -345,7 +345,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 List<Reference> derivedFromRefs = screeningObservationDataList.stream()
                                                 .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
                                                 .map(obs -> {
-                                                        String derivedFromId = CsvConversionUtil.sha256(obs.getObservationId());
+                                                        String derivedFromId = CsvConversionUtil.sha256(obs.getScreeningIdentifier());
                                                         return new Reference("Observation/" + derivedFromId);
                                                 })
                                                 .collect(Collectors.toList());
