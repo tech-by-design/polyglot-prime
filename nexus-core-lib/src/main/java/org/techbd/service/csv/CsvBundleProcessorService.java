@@ -439,6 +439,8 @@ private List<Object> processScreening(final String groupKey,
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
+                        // Ensure CUSTOM_DATA_LAKE_API key is present by reusing any existing value from requestParameters (avoids referencing undefined variable)
+                        requestParameters.put(Constants.CUSTOM_DATA_LAKE_API, requestParameters.get(Constants.CUSTOM_DATA_LAKE_API));
                         requestParameters.putAll(headers);
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,responseParameters));
