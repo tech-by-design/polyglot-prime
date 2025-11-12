@@ -496,16 +496,8 @@ PERFORM pg_advisory_lock(hashtext('perfomance_index'));
                 AND indexname = 'ccda_replay_details_bundle_id_idx'
             ) THEN
               DROP INDEX techbd_udi_ingress.ccda_replay_details_bundle_id_idx; 
-        END IF;
+        END IF;        
         
-        IF EXISTS (
-            SELECT 1 FROM pg_indexes
-            WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'ccda_replay_details'
-                AND indexname = 'ccda_replay_details_bundle_id_key'
-            ) THEN
-              DROP INDEX techbd_udi_ingress.ccda_replay_details_bundle_id_key; 
-        END IF;
         RAISE NOTICE 'Cleanup complete: All unused indexes were handled successfully.';
             EXCEPTION
                 WHEN OTHERS THEN
