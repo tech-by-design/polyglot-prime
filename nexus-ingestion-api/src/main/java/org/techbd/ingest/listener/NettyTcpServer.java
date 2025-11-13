@@ -46,6 +46,8 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 import jakarta.annotation.PostConstruct;
+import ca.uhn.hl7v2.llp.MllpConstants;
+
 
 @Component
 public class NettyTcpServer implements MessageSourceProvider {
@@ -220,22 +222,21 @@ public class NettyTcpServer implements MessageSourceProvider {
             destinationIP = ctx.channel().localAddress().toString();
         }
 
-        logger.info("MESSAGE_RECEIVED [interactionId={}] from={}:{}, size={} bytes",
-                interactionId, clientIP, clientPort, rawMessage.length());
-        logger.debug("RAW_MESSAGE [interactionId={}]:\n{}", interactionId, toVisibleChars(rawMessage));
-
-        // Detect MLLP wrapper
         boolean isMllpWrapped = detectMllpWrapper(rawMessage);
-
-        if (isMllpWrapped) {
+        logger.info("MESSAGE_RECEIVED [interactionId={}] from={}:{}, size={} bytes MLLP_WRAPPED={}",
+                interactionId, clientIP, clientPort, rawMessage.length(), isMllpWrapped?"YES":"NO");
+      
+        Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
+                        destinationPort, interactionId.toString());
+        if (detectMllp(portEntryOpt)) {
             logger.info("MLLP_DETECTED [interactionId={}] - Using HL7 processing with proper ACK", interactionId);
             handleHL7Message(ctx, rawMessage, interactionId, clientIP, clientPort,
-                    destinationIP, destinationPort);
+                    destinationIP, destinationPort,portEntryOpt);
         } else {
             logger.info("NON_MLLP_DETECTED [interactionId={}] - Using generic processing with simple ACK",
                     interactionId);
             handleGenericMessage(ctx, rawMessage, interactionId, clientIP, clientPort,
-                    destinationIP, destinationPort);
+                    destinationIP, destinationPort,portEntryOpt);
         }
     }
 
@@ -243,7 +244,8 @@ public class NettyTcpServer implements MessageSourceProvider {
      * Handle MLLP-wrapped HL7 messages with proper HL7 ACK generation
      */
     private void handleHL7Message(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
-            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort) {
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort,
+            Optional<PortConfig.PortEntry> portEntryOpt) {
         try {
             String cleanMsg = unwrapMllp(rawMessage);
             logger.info("HL7_MESSAGE_UNWRAPPED [interactionId={}] size={} bytes",
@@ -263,8 +265,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
 
                 // Build request context
-                Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
-                        destinationPort, interactionId.toString());
+
 
                 if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort,
                         interactionId.toString())) {
@@ -280,10 +281,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                         clientIP,
                         destinationIP,
                         String.valueOf(destinationPort),
-                        "hl7",MessageSourceType.MLLP);
+                        MessageSourceType.MLLP);
 
-                // Extract ZNT segment if needed (outbound response type)
-                if (shouldProcessZntSegment(portEntryOpt)) {
+                // Extract ZNT segment if needed (outbound or mllp response type)
+                if (detectMllp(portEntryOpt)) {
                     extractZntSegment(hl7Message, requestContext, interactionId.toString());
                 }
 
@@ -314,17 +315,9 @@ public class NettyTcpServer implements MessageSourceProvider {
      * Handle non-MLLP messages with simple acknowledgment
      */
     private void handleGenericMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
-            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort) {
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort,Optional<PortConfig.PortEntry> portEntryOpt) {
         try {
             String cleanMsg = rawMessage.trim();
-            String detectedFormat = detectMessageFormat(cleanMsg);
-
-            logger.info("FORMAT_DETECTED [interactionId={}] format={}", interactionId, detectedFormat);
-
-            // Build request context
-            Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
-                    destinationPort, interactionId.toString());
-
             if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
                 logger.warn("INVALID_PORT_CONFIG [interactionId={}] port={}", interactionId, destinationPort);
             }
@@ -337,7 +330,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     clientIP,
                     destinationIP,
                     String.valueOf(destinationPort),
-                    detectedFormat,MessageSourceType.TCP);
+                    MessageSourceType.TCP);
 
             // Add detected format to metadata
             Map<String, String> additionalParams = requestContext.getAdditionalParameters();
@@ -345,10 +338,9 @@ public class NettyTcpServer implements MessageSourceProvider {
                 additionalParams = new HashMap<>();
                 requestContext.setAdditionalParameters(additionalParams);
             }
-            additionalParams.put("detectedFormat", detectedFormat);
 
             // Generate simple acknowledgment
-            String ackMessage = generateSimpleAck(interactionId.toString(), detectedFormat);
+            String ackMessage = generateSimpleAck(interactionId.toString());
 
             // Process message asynchronously
             messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
@@ -439,12 +431,15 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * Determine if ZNT segment should be processed based on port configuration
+     * Determine if incoming message is based on port configuration
      */
-    private boolean shouldProcessZntSegment(Optional<PortConfig.PortEntry> portEntryOpt) {
+    private boolean detectMllp(Optional<PortConfig.PortEntry> portEntryOpt) {
         return portEntryOpt.isPresent()
-                && "outbound".equalsIgnoreCase(portEntryOpt.get().responseType);
+                && Optional.ofNullable(portEntryOpt.get().responseType)
+                        .map(rt -> rt.equalsIgnoreCase("outbound") || rt.equalsIgnoreCase("mllp"))
+                        .orElse(false);
     }
+
 
     /**
      * Extract ZNT segment from HL7 message
@@ -488,7 +483,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.warn("ZNT_SEGMENT_NOT_FOUND [interactionId={}]", interactionId);
             }
         } catch (HL7Exception e) {
-            logger.error("ZNT_EXTRACTION_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
+            logger.error("ZNT_EXTRACTION_ERROR -- This could be as the ZNT segment is not available [interactionId={}]: Detailed error message {}", interactionId, e.getMessage());
         }
     }
 
@@ -537,10 +532,9 @@ public class NettyTcpServer implements MessageSourceProvider {
     /**
      * Generate simple acknowledgment for non-MLLP messages
      */
-    private String generateSimpleAck(String interactionId, String format) {
-        return String.format("ACK|%s|%s|%s|%s",
+    private String generateSimpleAck(String interactionId) {
+        return String.format("ACK|%s|%s|%s",
                 interactionId,
-                format,
                 appConfig.getVersion(),
                 Instant.now().toString());
     }
@@ -561,7 +555,7 @@ public class NettyTcpServer implements MessageSourceProvider {
      */
     private RequestContext buildRequestContext(String message, String interactionId,
             Optional<PortConfig.PortEntry> portEntryOpt, String sourcePort, String sourceIp,
-            String destinationIp, String destinationPort, String detectedFormat,MessageSourceType messageSourceType) {
+            String destinationIp, String destinationPort, MessageSourceType messageSourceType) {
 
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
@@ -571,7 +565,6 @@ public class NettyTcpServer implements MessageSourceProvider {
         headers.put("SourcePort", sourcePort);
         headers.put("DestinationIp", destinationIp);
         headers.put("DestinationPort", destinationPort);
-        headers.put("MessageFormat", detectedFormat);
 
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "tcp-message";
@@ -586,9 +579,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 timestamp,
                 datePath);
 
-        String userAgent = detectedFormat.equals("hl7")
-                ? getUserAgentFromHL7(message, interactionId)
-                : "TCP Listener";
+        String userAgent = "";
 
         return new RequestContext(
                 headers,
@@ -618,58 +609,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                 paths.getDataBucketName(),
                 paths.getMetadataBucketName(),
                 appConfig.getVersion());
-    }
-
-    /**
-     * Extract user agent from HL7 MSH segment
-     */
-    private String getUserAgentFromHL7(String message, String interactionId) {
-        if (message == null || !message.startsWith("MSH")) {
-            return "TCP Listener";
-        }
-
-        try {
-            String[] lines = message.split("\r|\n");
-            String mshLine = lines[0];
-            char fieldSeparator = mshLine.charAt(3);
-
-            String[] fields = mshLine.split("\\" + fieldSeparator, -1);
-            String sendingApp = (fields.length > 2) ? fields[2] : null;
-            String sendingFacility = (fields.length > 3) ? fields[3] : null;
-
-            if ((sendingApp == null || sendingApp.isBlank())
-                    && (sendingFacility == null || sendingFacility.isBlank())) {
-                return "TCP Listener";
-            }
-
-            if (sendingApp == null || sendingApp.isBlank()) {
-                sendingApp = "UnknownApp";
-            }
-
-            if (sendingFacility == null || sendingFacility.isBlank()) {
-                sendingFacility = "UnknownFacility";
-            }
-
-            return sendingApp + "@" + sendingFacility;
-        } catch (Exception e) {
-            logger.error("USER_AGENT_EXTRACTION_ERROR [interactionId={}]: {}",
-                    interactionId, e.getMessage());
-            return "TCP Listener";
-        }
-    }
-
-    /**
-     * Get appropriate file extension based on detected format
-     */
-    private String getFileExtension(String format) {
-        return switch (format) {
-            case "hl7" -> "hl7";
-            case "json" -> "json";
-            case "xml" -> "xml";
-            case "ccd" -> "xml";
-            case "csv" -> "csv";
-            default -> "txt";
-        };
     }
 
     /**
