@@ -3,8 +3,6 @@ package org.techbd.ingest.util;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.ingest.commons.PortBasedPaths;
 import org.techbd.ingest.config.AppConfig;
@@ -21,14 +19,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 @Component
 public class PortConfigUtil {
 
-    private static final Logger log = LoggerFactory.getLogger(PortConfigUtil.class);
+    private TemplateLogger log;
 
     private final PortConfig portConfig;
     private final AppConfig appConfig;
 
-    public PortConfigUtil(PortConfig portConfig, AppConfig appConfig) {
+    public PortConfigUtil(PortConfig portConfig, AppConfig appConfig, AppLogger appLogger) {
         this.portConfig = portConfig;
         this.appConfig = appConfig;
+        this.log = appLogger.getLogger(PortConfigUtil.class);
     }
 
     /**
@@ -47,7 +46,7 @@ public class PortConfigUtil {
             Optional<PortEntry> entry = portConfig.findEntryForPort(port);
             if (entry.isPresent()) {
                 try {
-                    ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+                    ObjectMapper mapper = new ObjectMapper();
                     String json = mapper.writeValueAsString(entry.get());
                     log.info("[PORT_CONFIG_MATCH]  Found PortEntry for port={} interactionId={} \n{}",
                             port, interactionId, json);
@@ -106,7 +105,10 @@ public class PortConfigUtil {
                 .map(pe -> pe.queue)
                 .filter(q -> q != null && !q.isBlank())
                 .orElse(appConfig.getAws().getSqs().getFifoQueueUrl());
-
+        if (null == queue || queue.isBlank()) {
+            queue = appConfig.getAws().getSqs().getFifoQueueUrl();
+        }
+        
         // Build base keys
         String baseDataKey;
         String baseMetadataKey;
