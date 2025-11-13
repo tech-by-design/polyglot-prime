@@ -48,7 +48,7 @@ public class PortConfigUtil {
                 try {
                     ObjectMapper mapper = new ObjectMapper();
                     String json = mapper.writeValueAsString(entry.get());
-                    log.info("[PORT_CONFIG_MATCH]  Found PortEntry for port={} interactionId={} \n{}",
+                    log.info("[PORT_CONFIG_MATCH]  Found PortEntry for port={} interactionId={} {}",
                             port, interactionId, json);
                 } catch (Exception e) {
                     log.error("[PORT_CONFIG_ERROR] Failed to serialize PortEntry for port={} interactionId={}",
