@@ -11,7 +11,7 @@
 	</parent>
 
   <artifactId>hub-prime</artifactId>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>Tech by Design Hub (Prime)</name>
 	<description>Tech by Design Hub (Primary)</description>
 	<properties>
@@ -391,9 +391,17 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<includeSystemScope>true</includeSystemScope>
 				</configuration>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
-
 			<!-- Maven Site Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
