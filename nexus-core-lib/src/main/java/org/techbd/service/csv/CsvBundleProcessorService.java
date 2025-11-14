@@ -403,7 +403,7 @@ private List<Object> processScreening(final String groupKey,
 
                     if (demographicList.isEmpty() || qeAdminList.isEmpty() || screeningObservationList.isEmpty()) {
                         final String errorMessage = String.format(
-                                "Data missing in one or more files for patientMrIdValue: %s",
+                                "Foreign Key Error : Data missing in one or more files for patientMrIdValue: %s",
                                 profile.getPatientMrIdValue());
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
@@ -526,9 +526,11 @@ private List<Object> processScreening(final String groupKey,
             if (requestParameters != null && requestParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
                 severityLevel = ((String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL)).toLowerCase();
             }
-
+        final String errorType = (e.getMessage() != null && e.getMessage().contains("Foreign Key Error"))
+            ? "data-integrity"
+            : "processing-error";
         final Map<String, Object> errorDetails = Map.of(
-                "type", "processing-error",
+                "type", errorType,
                 "severity", severityLevel,
                 "description", remediationMessage,
                 "message", diagnosticsMessage);
