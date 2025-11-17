@@ -102,7 +102,7 @@
   <!-- Check whether the CCDA from Guthrie and get Encounter Status in a separate logic -->
   <!-- Determine if this is a Guthrie CCDA -->
   <xsl:variable name="IsGuthrieCCDA"
-      select="contains(ccda:assignedAuthor/ccda:representedOrganization/ccda:name, 'Guthrie')" />
+      select="contains(/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name, 'Guthrie')" />
 
   <!-- Encounter status from the Guthrie path -->
   <xsl:variable name="guthrieEncounterStatus"
