@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style> 
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'diagnostics_exception_summary';
+        const viewNameDetails = 'diagnostics_exception_details';
+ 
+        document.addEventListener('DOMContentLoaded', function () {
+ 
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                 .withColumnDefs([
+                            {
+                                headerName: "Created At",
+                                field: "created_at",
+                                sort: "desc",
+                                filter: "agDateColumnFilter",
+                                headerTooltip: "Timestamp when the diagnostic exception was recorded"
+                            },
+                            {
+                                headerName: "TechBD Interaction ID",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Unique interaction identifier associated with this diagnostic exception",
+                                cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewNameDetails}/sat_diagnostic_exception_id/${params.data.sat_diagnostic_exception_id}.json`));
+                                }, modalAide)
+                            },
+                            {
+                                headerName: "TechBD Tenant ID",
+                                field: "tenant_id",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "ID of the tenant involved in this diagnostic exception"
+                            },
+                            {
+                                headerName: "Message",
+                                field: "message",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Primary diagnostic or exception message",
+                                valueFormatter: (params) => {
+                                    if (!params.value) return "";
+                                    return params.value.length > 230 ? params.value.substring(0, 230) + "..." : params.value;
+                                }
+                            },
+                            {
+                                headerName: "Exception Detail",
+                                field: "err_pg_exception_detail",
+                                filter: "agTextColumnFilter",
+                                headerTooltip: "Detailed  exception information",
+                                valueFormatter: (params) => {
+                                    if (!params.value) return "";
+                                    return params.value.length > 230 ? params.value.substring(0, 230) + "..." : params.value;
+                                }                                
+                            } 
+                        ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+    
+        <div class="grid-description">
+          This widget provides comprehensive diagnostic and exception details captured during data ingestion and interaction processing. It displays diagnostic messages, PostgreSQL exception details, contextual information, tenant identifiers, and interaction references. Users can filter and sort the grid to analyze exceptions by tenant, timeframe, or error patterns. The data is sorted by creation time in descending order to show the most recent exceptions first, enabling efficient debugging and troubleshooting of ingestion failures and system issues.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

@@ -957,6 +957,37 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
           END IF;
+
+          IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes
+                WHERE schemaname = 'techbd_udi_ingress'
+                  AND tablename = 'sat_diagnostic_log'
+                  AND indexname = 'idx_sat_diagnostic_log_created_at_desc'
+          ) THEN
+                CREATE INDEX idx_sat_diagnostic_log_created_at_desc
+                    ON techbd_udi_ingress.sat_diagnostic_log (created_at DESC);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_exception'
+                AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+          ) THEN
+              CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                  ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_exception'
+                AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+          ) THEN
+              CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                  ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+          END IF;          
+
       PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
 
       ${interactionUserRequestSat}

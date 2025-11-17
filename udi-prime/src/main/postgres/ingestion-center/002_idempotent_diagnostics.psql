@@ -172,3 +172,17 @@ SELECT
     sat_diagnostic_exception_id
 FROM
     techbd_udi_ingress.sat_diagnostic_exception;
+
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_exception_summary CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.diagnostics_exception_summary AS
+SELECT
+    message,
+    err_pg_exception_detail, 
+    tenant_id,
+    hub_interaction_id,
+    created_at,
+    sat_diagnostic_exception_id
+FROM
+    techbd_udi_ingress.sat_diagnostic_exception;      
