@@ -397,19 +397,19 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 		<xs:attribute name="typeCode" type="ActRelationshipType" use="optional" fixed="DOC"/>
 	</xs:complexType>
 	<xs:complexType name="POCD_MT000040.EncompassingEncounter">
-		<xs:sequence>
-			<xs:element name="realmCode" type="CS" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="realmCode" type="CS" minOccurs="0"/>
 			<xs:element name="typeId" type="POCD_MT000040.InfrastructureRoot.typeId" minOccurs="0"/>
-			<xs:element name="templateId" type="II" minOccurs="0" maxOccurs="unbounded"/>
-			<xs:element name="id" type="II" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="templateId" type="II" minOccurs="0"/>
+			<xs:element name="id" type="II" minOccurs="0"/>
 			<xs:element name="code" type="CE" minOccurs="0"/>
 			<xs:element name="effectiveTime" type="IVL_TS"/>
 			<xs:element name="dischargeDispositionCode" type="CE" minOccurs="0"/>
 			<xs:element name="responsibleParty" type="POCD_MT000040.ResponsibleParty" minOccurs="0"/>
-			<xs:element name="encounterParticipant" type="POCD_MT000040.EncounterParticipant" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="encounterParticipant" type="POCD_MT000040.EncounterParticipant" minOccurs="0"/>
 			<xs:element name="location" type="POCD_MT000040.Location" minOccurs="0"/>
-			<xs:element name="statusCode" type="CS" minOccurs="0" />
-		</xs:sequence>
+			<xs:element name="statusCode" type="CS" minOccurs="0"/>
+		</xs:choice>
 		<xs:attribute name="nullFlavor" type="NullFlavor" use="optional"/>
 		<xs:attribute name="classCode" type="ActClass" use="optional" fixed="ENC"/>
 		<xs:attribute name="moodCode" type="ActMood" use="optional" fixed="EVN"/>
