@@ -135,9 +135,8 @@ public class FhirController {
                         @Parameter(description = "Optional header to specify IG version.", required = false) @RequestHeader(value = "X-SHIN-NY-IG-Version", required = false) String requestedIgVersion,
                         @Parameter(description = "Optional header to specify source type.", required = false) @RequestHeader(value = "X-TechBD-Source-Type", required = false) String sourceType,
                         @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Master-Interaction-ID", required = false) String masterInteractionId,
-                        @Parameter(description = "Optional header to specify group interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Group-Interaction-ID", required = false) String groupInteractionId, @Parameter(description = "Optional header to specify interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId, @Parameter(description = "Optional header to specify request URI.", required = false)
-                        @RequestHeader(value = "X-TechBD-Request-URI", required = false) String requestUri,
-                        
+                        @Parameter(description = "Optional header to specify group interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Group-Interaction-ID", required = false) String groupInteractionId, @Parameter(description = "Optional header to specify interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,         @Parameter(description = "Optional header to specify override request URI.", required = false)
+                        @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,                        
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
@@ -152,11 +151,11 @@ public class FhirController {
                         }
                         // request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
-                                        null, null, null, null, null,requestedIgVersion );
+                        requestUriToBeOverridden, null, null, null, null,requestedIgVersion );
                         Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);            
                         LOG.debug("FhirController.validateBundle - sourceType: '{}', groupInteractionId: '{}', masterInteractionId: '{}'", 
                                 sourceType, groupInteractionId, masterInteractionId);
-                        CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap, deleteSessionCookie, null, sourceType, groupInteractionId, masterInteractionId, (requestUri == null || requestUri.trim().isEmpty()) ? request.getRequestURI() : requestUri.trim());
+                        CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap, deleteSessionCookie, null, sourceType, groupInteractionId, masterInteractionId, (requestUriToBeOverridden == null || requestUriToBeOverridden.trim().isEmpty()) ? request.getRequestURI() : requestUriToBeOverridden.trim());
                         if (interactionId != null && !interactionId.trim().isEmpty()) {
                             requestDetailsMap.put(Constants.INTERACTION_ID, interactionId.trim());
                         } else {
