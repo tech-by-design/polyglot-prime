@@ -75,7 +75,7 @@ public class ConsoleController {
     }
 
     @GetMapping("/console/diagnostics/database-diagnostics-logs")
-    @RouteMapping(label = "Database Diagnostics Logs", title = "Diagnostics Logs", siblingOrder = 7)
+    @RouteMapping(label = "Database Diagnostics Logs", title = "Database Diagnostics Logs", siblingOrder = 7)
     public String diagnosticsDatabaseLogs(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/console/database-diagnostics-logs", model, request); 
 
