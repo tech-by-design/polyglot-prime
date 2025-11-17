@@ -9107,3 +9107,42 @@ where
 	scfpe.category = 'processing_errors'       
 ORDER BY
     scfpe.created_at DESC;      
+
+
+/* -------------------------------------------------------------
+-- View: diagnostics_log_details
+-- This view provides detailed diagnostic and exception log records 
+-- captured during file interaction processing. 
+-- It includes information such as the interaction ID, tenant ID, 
+-- diagnostic messages, elaboration details, timestamps, 
+-- and unique diagnostic log identifiers. 
+-- Useful for analyzing processing exceptions, understanding 
+-- system behavior, and assisting in troubleshooting and data quality improvement.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_logs cascade;
+CREATE OR REPLACE view techbd_udi_ingress.diagnostics_logs
+AS 
+select
+ hub_interaction_id,
+ tenant_id,
+ diagnostic_log_message, 
+ created_at,
+ sat_diagnostic_log_id
+FROM techbd_udi_ingress.sat_diagnostic_log
+where tenant_id is not null;
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_log_details cascade;
+CREATE OR REPLACE view techbd_udi_ingress.diagnostics_log_details
+AS 
+select
+ hub_interaction_id,
+ tenant_id,
+ diagnostic_log_message,
+ elaboration,
+ created_at,
+ sat_diagnostic_log_id
+FROM techbd_udi_ingress.sat_diagnostic_log
+where tenant_id is not null;    
