@@ -23,12 +23,15 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.PortConfigUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
+import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
+import ca.uhn.hl7v2.validation.impl.NoValidation;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -46,7 +49,6 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 import jakarta.annotation.PostConstruct;
-import ca.uhn.hl7v2.llp.MllpConstants;
 
 
 @Component
@@ -240,76 +242,81 @@ public class NettyTcpServer implements MessageSourceProvider {
         }
     }
 
-    /**
-     * Handle MLLP-wrapped HL7 messages with proper HL7 ACK generation
-     */
-    private void handleHL7Message(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
-            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort,
+    private void handleHL7Message(
+            ChannelHandlerContext ctx,
+            String rawMessage,
+            UUID interactionId,
+            String clientIP,
+            Integer clientPort,
+            String destinationIP,
+            Integer destinationPort,
             Optional<PortConfig.PortEntry> portEntryOpt) {
-        try {
-            String cleanMsg = unwrapMllp(rawMessage);
-            logger.info("HL7_MESSAGE_UNWRAPPED [interactionId={}] size={} bytes",
-                    interactionId, cleanMsg.length());
-
-            String ackMessage;
+        String cleanMsg = null;
+        String ackMessage = null;
+        Message hl7Message = null;
+        boolean nackGenerated = false;
+        try{
             try {
-                // Parse HL7 message
-                GenericParser parser = new GenericParser();
-                Message hl7Message = parser.parse(cleanMsg);
-
-                // Generate proper HL7 ACK
+                cleanMsg = unwrapMllp(rawMessage);
+                logger.info("HL7_MESSAGE_UNWRAPPED [interactionId={}] size={} bytes",
+                    interactionId, cleanMsg.length());
+                HapiContext context = new DefaultHapiContext();
+                context.setValidationContext(new NoValidation());
+                GenericParser parser = context.getGenericParser();
+                hl7Message = parser.parse(cleanMsg);
                 Message ack = hl7Message.generateACK();
                 ackMessage = addNteWithInteractionId(ack, interactionId.toString(),
                         appConfig.getVersion());
-
+                ackMessage = new PipeParser().encode(ack);       
                 logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
-
-                // Build request context
-
-
-                if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort,
-                        interactionId.toString())) {
-                    logger.warn("INVALID_PORT_CONFIG [interactionId={}] port={}",
-                            interactionId, destinationPort);
-                }
-
-                RequestContext requestContext = buildRequestContext(
-                        cleanMsg,
-                        interactionId.toString(),
-                        portEntryOpt,
-                        String.valueOf(clientPort),
-                        clientIP,
-                        destinationIP,
-                        String.valueOf(destinationPort),
-                        MessageSourceType.MLLP);
-
-                // Extract ZNT segment if needed (outbound or mllp response type)
-                if (detectMllp(portEntryOpt)) {
-                    extractZntSegment(hl7Message, requestContext, interactionId.toString());
-                }
-
-                // Process message asynchronously
-                messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
-
-                // Encode ACK for sending
-                ackMessage = new PipeParser().encode(ack);
-                logger.info("HL7_ACK_ENCODED [interactionId={}]", interactionId);
-
             } catch (HL7Exception e) {
-                logger.error("HL7_PARSE_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
-                ackMessage = createHL7Nack("AE", e.getMessage());
+                logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", interactionId, e.getMessage(),e);
+                ackMessage = createHL7AckFromMsh(cleanMsg, "AE", e.getMessage(), interactionId.toString());
+                nackGenerated =true;
             }
 
-            // Wrap in MLLP and send
+            if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
+                logger.warn("INVALID_PORT_CONFIG [interactionId={}] port={}", interactionId, destinationPort);
+            }
+
+            RequestContext requestContext = buildRequestContext(
+                    cleanMsg,
+                    interactionId.toString(),
+                    portEntryOpt,
+                    String.valueOf(clientPort),
+                    clientIP,
+                    destinationIP,
+                    String.valueOf(destinationPort),
+                    MessageSourceType.MLLP);
+
+            // Extract ZNT always if MLLP responseType
+            if (detectMllp(portEntryOpt)) {
+                if (hl7Message != null) {
+                    extractZntSegment(hl7Message, requestContext, interactionId.toString());
+                } else {
+                    extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
+                }
+            }
+            if (!nackGenerated) {             
+                messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
+            }
+            
+            // Send MLLP-wrapped ACK
             String response = wrapMllp(ackMessage);
             sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
 
         } catch (Exception e) {
-            logger.error("Processing ERROR [interactionId={}]: {}", interactionId, e.getMessage(), e);
-            String errorResponse = wrapMllp(createHL7Nack("AR", e.getMessage()));
-            sendResponseAndClose(ctx, errorResponse, interactionId, "HL7_NACK");
+            logger.error("PROCESSING_ERROR Sending Reject NACK(AR) [interactionId={}]: {}", interactionId, e.getMessage(), e);
+            // Final fallback NACK (AR)
+            String errorAck = createHL7AckFromMsh(
+                    cleanMsg != null ? cleanMsg : unwrapMllp(rawMessage),
+                    "AR",
+                    e.getMessage(),
+                    interactionId.toString());
+            sendResponseAndClose(ctx, wrapMllp(errorAck), interactionId, "HL7_NACK");
         }
     }
+
 
     /**
      * Handle non-MLLP messages with simple acknowledgment
@@ -423,11 +430,161 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * Create HL7 NACK message
+     * Parse MSH segment from HL7 message
      */
-    private String createHL7Nack(String code, String error) {
-        return "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK^A01|1|P|2.5\r"
-                + "MSA|" + code + "|1|" + error + "\r";
+    private Map<String, String> parseMshSegment(String hl7Message) {
+        Map<String, String> mshFields = new HashMap<>();
+        
+        try {
+            String[] lines = hl7Message.split("\r|\n");
+            String mshLine = null;
+            
+            // Find MSH segment
+            for (String line : lines) {
+                if (line.trim().startsWith("MSH|")) {
+                    mshLine = line.trim();
+                    break;
+                }
+            }
+            
+            if (mshLine == null) {
+                logger.warn("MSH segment not found in message");
+                return mshFields;
+            }
+            
+            // MSH segment format: MSH|^~\&|SendingApp|SendingFacility|ReceivingApp|ReceivingFacility|Timestamp|Security|MessageType|MessageControlId|ProcessingId|Version
+            String[] fields = mshLine.split("\\|", -1);
+            
+            if (fields.length > 0) {
+                mshFields.put("fieldSeparator", "|");
+                mshFields.put("encodingCharacters", fields.length > 1 ? fields[1] : "^~\\&");
+                mshFields.put("sendingApplication", fields.length > 2 ? fields[2] : "");
+                mshFields.put("sendingFacility", fields.length > 3 ? fields[3] : "");
+                mshFields.put("receivingApplication", fields.length > 4 ? fields[4] : "");
+                mshFields.put("receivingFacility", fields.length > 5 ? fields[5] : "");
+                mshFields.put("timestamp", fields.length > 6 ? fields[6] : "");
+                mshFields.put("messageType", fields.length > 8 ? fields[8] : "");
+                mshFields.put("messageControlId", fields.length > 9 ? fields[9] : "");
+                mshFields.put("processingId", fields.length > 10 ? fields[10] : "");
+                mshFields.put("version", fields.length > 11 ? fields[11] : "2.5");
+                
+                logger.debug("MSH_PARSED messageControlId={}, sendingApp={}, receivingApp={}", 
+                    mshFields.get("messageControlId"), 
+                    mshFields.get("sendingApplication"), 
+                    mshFields.get("receivingApplication"));
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error parsing MSH segment: {}", e.getMessage());
+        }
+        
+        return mshFields;
+    }
+
+    private String createHL7AckFromMsh(String originalMessage, String ackCode, String errorText, String interactionId) {
+
+        Map<String, String> msh = parseMshSegment(originalMessage);
+
+        // If ackCode=AA but there is an error → override to AE (unexpected error)
+        String finalAckCode;
+        if ("AA".equals(ackCode) && errorText != null && !errorText.trim().isEmpty()) {
+            finalAckCode = "AE";
+            errorText = "Unexpected error: " + errorText;
+            logger.warn("ACK_OVERRIDE [interactionId={}] - AA overridden to AE due to error", interactionId);
+        } else {
+            finalAckCode = ackCode;
+        }
+
+        String fieldSep = msh.getOrDefault("fieldSeparator", "|");
+        String encoding = msh.getOrDefault("encodingCharacters", "^~\\&");
+
+        String sendingApp = msh.getOrDefault("sendingApplication", "");
+        String sendingFacility = msh.getOrDefault("sendingFacility", "");
+        String receivingApp = msh.getOrDefault("receivingApplication", "");
+        String receivingFacility = msh.getOrDefault("receivingFacility", "");
+        String messageControlId = msh.getOrDefault("messageControlId", "UNKNOWN");
+        String version = msh.getOrDefault("version", "2.5");
+
+        String err = (errorText == null)
+                ? ""
+                : errorText.replace("|", " ").replace("\r", " ").replace("\n", " ");
+
+        // If MSH was completely unreadable → generate minimal NACK
+        if (msh.isEmpty()) {
+            logger.warn("MSH_MISSING [interactionId={}] - generating minimal NACK", interactionId);
+
+            StringBuilder nack = new StringBuilder();
+
+            nack.append("MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|")
+                    .append(Instant.now()).append("||ACK|")
+                    .append(UUID.randomUUID().toString().substring(0, 20))
+                    .append("|P|2.5\r");
+
+            nack.append("MSA|AR|UNKNOWN|")
+                    .append(err.isEmpty() ? "Invalid or missing MSH segment" : err)
+                    .append("\r");
+
+            nack.append("ERR|||207^Application internal error^HL70357||E|||")
+                    .append(err.substring(0, Math.min(80, err.length())))
+                    .append("\r");
+
+            nack.append("NTE|1||InteractionID: ").append(interactionId)
+                    .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion())
+                    .append("\r");
+            return nack.toString();
+        }
+
+        // ---------------------------------------------------------
+        // Build Standard ACK/NACK using MSH fields available
+        // ---------------------------------------------------------
+        StringBuilder ack = new StringBuilder();
+
+        // MSH (swap sender & receiver)
+        ack.append("MSH").append(fieldSep)
+                .append(encoding).append(fieldSep)
+                .append(receivingApp.isEmpty() ? "SERVER" : receivingApp).append(fieldSep)
+                .append(receivingFacility.isEmpty() ? "LOCAL" : receivingFacility).append(fieldSep)
+                .append(sendingApp.isEmpty() ? "CLIENT" : sendingApp).append(fieldSep)
+                .append(sendingFacility.isEmpty() ? "REMOTE" : sendingFacility).append(fieldSep)
+                .append(Instant.now()).append(fieldSep)
+                .append(fieldSep)
+                .append("ACK").append(fieldSep)
+                .append(UUID.randomUUID().toString().substring(0, 20)).append(fieldSep)
+                .append("P").append(fieldSep)
+                .append(version).append("\r");
+
+        // MSA
+        ack.append("MSA").append(fieldSep)
+                .append(finalAckCode).append(fieldSep)
+                .append(messageControlId);
+
+        if (!err.isEmpty()) {
+            ack.append(fieldSep).append(err);
+        }
+        ack.append("\r");
+
+        // ERR only if NACK
+        if (!"AA".equals(finalAckCode)) {
+            ack.append("ERR").append(fieldSep)
+                    .append(fieldSep)
+                    .append("207^Application error^HL70357").append(fieldSep)
+                    .append(fieldSep)
+                    .append("E").append(fieldSep)
+                    .append(fieldSep)
+                    .append(fieldSep)
+                    .append(err.substring(0, Math.min(80, err.length())))
+                    .append("\r");
+        }
+
+        // NTE
+        ack.append("NTE").append(fieldSep)
+                .append("1").append(fieldSep)
+                .append(fieldSep)
+                .append("InteractionID: ").append(interactionId)
+                .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion())
+                .append("\r");
+
+        return ack.toString();
     }
 
     /**
@@ -442,7 +599,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
 
     /**
-     * Extract ZNT segment from HL7 message
+     * Extract ZNT segment from HL7 message using HAPI parser
      */
     private void extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
         try {
@@ -484,6 +641,84 @@ public class NettyTcpServer implements MessageSourceProvider {
             }
         } catch (HL7Exception e) {
             logger.error("ZNT_EXTRACTION_ERROR -- This could be as the ZNT segment is not available [interactionId={}]: Detailed error message {}", interactionId, e.getMessage());
+        }
+    }
+
+    /**
+     * Extract ZNT segment manually from HL7 message when HAPI parsing fails
+     */
+    private void extractZntSegmentManually(String hl7Message, RequestContext requestContext, String interactionId) {
+        try {
+            String[] lines = hl7Message.split("\r|\n");
+            String zntLine = null;
+            
+            // Find ZNT segment
+            for (String line : lines) {
+                if (line.trim().startsWith("ZNT|")) {
+                    zntLine = line.trim();
+                    break;
+                }
+            }
+            
+            if (zntLine == null) {
+                logger.warn("ZNT_SEGMENT_NOT_FOUND_MANUAL [interactionId={}]", interactionId);
+                return;
+            }
+            
+            // ZNT segment format: ZNT|field1|field2|field3|field4|field5|field6|field7|field8...
+            String[] fields = zntLine.split("\\|", -1);
+            
+            Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
+            if (additionalDetails == null) {
+                additionalDetails = new HashMap<>();
+                requestContext.setAdditionalParameters(additionalDetails);
+            }
+            
+            // Extract fields based on typical ZNT structure
+            String messageCode = null;
+            String deliveryType = null;
+            String znt8_1 = null;
+            
+            // ZNT-2 (component 1) - Message Code
+            if (fields.length > 2 && !fields[2].isEmpty()) {
+                String[] components = fields[2].split("\\^", -1);
+                messageCode = components.length > 0 ? components[0] : null;
+            }
+            
+            // ZNT-4 (component 1) - Delivery Type
+            if (fields.length > 4 && !fields[4].isEmpty()) {
+                String[] components = fields[4].split("\\^", -1);
+                deliveryType = components.length > 0 ? components[0] : null;
+            }
+            
+            // ZNT-8 (component 1) - e.g., healthelink:GHC
+            if (fields.length > 8 && !fields[8].isEmpty()) {
+                String[] components = fields[8].split("\\^", -1);
+                znt8_1 = components.length > 0 ? components[0] : null;
+            }
+            
+            String facilityCode = null;
+            String qe = null;
+            
+            if (znt8_1 != null && znt8_1.contains(":")) {
+                String[] parts = znt8_1.split(":");
+                qe = parts[0]; // part before ':', e.g., healthelink
+                facilityCode = parts.length > 1 ? parts[1] : null; // part after ':', e.g., GHC
+            } else if (znt8_1 != null) {
+                facilityCode = znt8_1;
+            }
+            
+            additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
+            additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
+            additionalDetails.put(Constants.FACILITY, facilityCode);
+            additionalDetails.put(Constants.QE, qe);
+            
+            logger.info(
+                    "ZNT_SEGMENT_EXTRACTED_MANUALLY [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
+                    interactionId, messageCode, deliveryType, facilityCode, qe);
+            
+        } catch (Exception e) {
+            logger.error("ZNT_MANUAL_EXTRACTION_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
         }
     }
 
