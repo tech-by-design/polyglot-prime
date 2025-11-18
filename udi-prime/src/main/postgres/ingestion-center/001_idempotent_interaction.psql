@@ -4046,14 +4046,7 @@ BEGIN
 				IF zip_file_processing_errors IS NOT NULL THEN
 					UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
 					SET general_errors = zip_file_processing_errors
-					WHERE hub_interaction_id = p_interaction_id;
-		
-					--Denormalize the 'file_not_processed' errors from validation_result_payload
-					SELECT techbd_udi_ingress.denormalize_validation_errors(
-						p_category => 'file_not_processed', 
-						p_hub_interaction_id => p_interaction_id
-					) INTO v_denormalize_result;
-		
+					WHERE hub_interaction_id = p_interaction_id;	
 				END IF;
 		
 				IF p_elaboration IS NOT NULL THEN
@@ -8139,94 +8132,7 @@ BEGIN
 			v_error_msg := 'p_category AND p_hub_interaction_id should not be NULL.';
 	    END IF;
 	
-		IF NOT v_return_status THEN
-			-- File Not Processed Errors
-			IF p_category = 'file_not_processed' AND p_hub_interaction_id IS NOT NULL THEN
-				INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
-							sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
-							zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
-							row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
-				SELECT gen_random_uuid()::text,
-					        p_category,
-					        null,--flat_file_hub_interaction_id
-					        v_created_at,
-					        tenant_id,
-					        uri,
-					        p_hub_interaction_id,--zip_file_hub_interaction_id
-					        group_id,
-					        NULL,
-					        NULL,
-					        NULL,
-					        issue.value ->> 'type'        AS error_type,
-					        issue.value ->> 'subType'     AS error_subtype,
-					        issue.value ->> 'reason'      AS error,
-					        issue.value ->> 'description' AS description,
-					        NULL,
-					        NULL,
-					        csv_zip_file_name,
-					        --jsonb_array_elements_text(issue.value -> 'files') AS file_name,
-							file_name.value AS file_name,
-					        origin,
-					        user_agent,
-							v_created_by,
-							v_provenance,
-							techbd_version_number
-					FROM 	techbd_udi_ingress.sat_interaction_zip_file_request,
-					LATERAL jsonb_array_elements(COALESCE(general_errors, '[]'::jsonb)) AS general_error(value)
-					CROSS JOIN LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue(value)
-					CROSS JOIN LATERAL jsonb_array_elements_text(issue.value -> 'files') AS file_name(value)
-					WHERE 	hub_interaction_id = p_hub_interaction_id;
-		
-					GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
-		
-				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - file_not_processed');
-			END IF;
-			
-			-- incomplete_groups 
-			IF p_category = 'incomplete_groups' AND p_hub_interaction_id IS NOT NULL THEN
-				INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
-							sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
-							zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
-							row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
-					SELECT 	gen_random_uuid()::text,
-					       	p_category,
-					       	p_hub_interaction_id, --flat_file_hub_interaction_id
-					       	v_created_at,
-					       	flat.tenant_id,
-							flat.uri,
-							zip_file_hub_interaction_id,
-							flat.group_id,
-							NULL,
-							NULL,
-							NULL,
-							error_payload.value ->> 'type'        AS error_type,
-							NULL,
-							error_payload.value ->> 'message'     AS error,
-							error_payload.value ->> 'description' AS description,
-							NULL,
-							NULL,
-							zip.csv_zip_file_name,
-							NULL,
-							zip.origin, 
-		    				COALESCE(zip.user_agent, flat.user_agent), 
-							v_created_by, 
-							v_provenance, 
-							flat.techbd_version_number
-					FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request AS flat
-					CROSS JOIN LATERAL jsonb_array_elements((flat.validation_result_payload -> 'validationResults') -> 'errors') AS error_payload(value)
-					INNER JOIN techbd_udi_ingress.sat_interaction_zip_file_request AS zip ON zip.hub_interaction_id = flat.zip_file_hub_interaction_id
-					WHERE  
-						(flat.nature = 'CSV Validation Result' OR flat.nature = 'Converted to FHIR')
-						AND jsonb_array_length(
-								COALESCE((flat.validation_result_payload -> 'validationResults') -> 'errors', '[]'::jsonb)
-							) > 0
-						AND flat.hub_interaction_id = p_hub_interaction_id;
-		
-				GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
-		
-				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Inserted into sat_csv_fhir_processing_errors - incomplete_groups');
-			END IF;
-			   
+		IF NOT v_return_status THEN			   
 			-- data_integrity errors
 			IF p_category = 'data_integrity' AND p_hub_interaction_id IS NOT NULL THEN
 				INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
@@ -8288,14 +8194,21 @@ BEGIN
 		
 			END IF;
 
-			-- Processing Errors from techbd_udi_ingress.sat_interaction_zip_file_request.full_operation_outcome
-			IF p_category = 'processing_errors' AND p_hub_interaction_id IS NOT NULL THEN
+			-- Processing, file_not_processed and incomplete_groups Errors from techbd_udi_ingress.sat_interaction_zip_file_request.full_operation_outcome
+			IF p_category IN ('processing_errors', 'file_not_processed', 'incomplete_groups') AND p_hub_interaction_id IS NOT NULL THEN
 				INSERT INTO techbd_udi_ingress.sat_csv_fhir_processing_errors (
 							sat_validation_and_fhir_conversion_errors_id, category, flat_file_hub_interaction_id, created_at, tenant_id, uri, 
 							zip_file_hub_interaction_id, group_id, section, field_name, value, error_type, error_subtype, error, description, 
 							row_number, field_number, zip_file_name, file_name, origin, user_agent, created_by, provenance, techbd_version_number)
 				SELECT gen_random_uuid()::text,
-					        p_category,
+					        --p_category,
+							CASE err ->> 'type'
+								WHEN 'processing-error'  	THEN 'processing_errors'
+								WHEN 'files-not-processed' 	THEN 'file_not_processed'
+								WHEN 'incomplete_groups' 	THEN 'incomplete_groups'
+								WHEN 'missing-file-error' 	THEN 'incomplete_groups'
+								WHEN 'data-integrity' 		THEN 'data_integrity'
+							END AS category,
 					        null,--flat_file_hub_interaction_id
 					        v_created_at,
 					        tenant_id,
@@ -8307,12 +8220,12 @@ BEGIN
 					        NULL,
 					        err ->> 'type'        AS error_type,
 					        NULL,
-					        err ->> 'message'     AS error,
+					        COALESCE(err ->> 'message', err ->> 'reason') AS error,
 					        err ->> 'description' AS description,
 					        NULL,
 					        NULL,
 					        csv_zip_file_name,
-					        csv_zip_file_name AS file_name,
+					        NULL, --csv_zip_file_name AS file_name,
 					        origin,
 					        user_agent,
 							v_created_by,
@@ -8325,7 +8238,7 @@ BEGIN
 		
 					GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 		
-				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - Processing Errors from full_operation_outcome');
+				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - processing_errors, file_not_processed and incomplete_groups from full_operation_outcome');
 			END IF;
 			
 			v_return := p_category || ': ' || v_inserted_count::text || ' records inserted.';
