@@ -8203,12 +8203,12 @@ BEGIN
 								WHEN 'missing-file-error' 	THEN 'incomplete_groups'
 								WHEN 'data-integrity' 		THEN 'data_integrity'
 							END AS category,
-					        null,--flat_file_hub_interaction_id
+					        o -> 'provenance' ->> 'groupInteractionId' as flat_file_hub_interaction_id,
 					        v_created_at,
 					        tenant_id,
 					        uri,
 					        p_hub_interaction_id,--zip_file_hub_interaction_id
-					        group_id,
+					        o -> 'provenance' ->> 'groupInteractionId' as group_id,
 					        NULL,
 					        NULL,
 					        NULL,
@@ -8219,7 +8219,7 @@ BEGIN
 					        NULL,
 					        NULL,
 					        csv_zip_file_name,
-					        NULL, --csv_zip_file_name AS file_name,
+					        STRING_AGG(DISTINCT file_elem, ', ' ORDER BY file_elem) AS file_name,
 					        origin,
 					        user_agent,
 							v_created_by,
@@ -8228,8 +8228,10 @@ BEGIN
 					FROM 	techbd_udi_ingress.sat_interaction_zip_file_request
 					CROSS JOIN LATERAL jsonb_array_elements(COALESCE(full_operation_outcome, '[]'::jsonb)) AS o
 					CROSS JOIN LATERAL jsonb_array_elements(COALESCE(o -> 'validationResults' -> 'errors', '[]'::jsonb)) AS err
-					WHERE hub_interaction_id = p_hub_interaction_id;
-		
+					LEFT  JOIN LATERAL jsonb_array_elements_text(COALESCE(err -> 'files', '[]'::jsonb)) AS file_elem ON TRUE
+					WHERE hub_interaction_id = p_hub_interaction_id
+					GROUP BY category, flat_file_hub_interaction_id, tenant_id, uri, group_id, error_type, error, description, csv_zip_file_name, origin, user_agent, techbd_version_number; 
+
 					GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 		
 				v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into sat_csv_fhir_processing_errors - processing_errors, file_not_processed and incomplete_groups from full_operation_outcome');
