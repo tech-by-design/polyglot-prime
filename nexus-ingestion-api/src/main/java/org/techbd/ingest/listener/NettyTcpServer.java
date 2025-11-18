@@ -50,7 +50,6 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 import jakarta.annotation.PostConstruct;
 
-
 @Component
 public class NettyTcpServer implements MessageSourceProvider {
 
@@ -226,19 +225,19 @@ public class NettyTcpServer implements MessageSourceProvider {
 
         boolean isMllpWrapped = detectMllpWrapper(rawMessage);
         logger.info("MESSAGE_RECEIVED [interactionId={}] from={}:{}, size={} bytes MLLP_WRAPPED={}",
-                interactionId, clientIP, clientPort, rawMessage.length(), isMllpWrapped?"YES":"NO");
-      
+                interactionId, clientIP, clientPort, rawMessage.length(), isMllpWrapped ? "YES" : "NO");
+
         Optional<PortConfig.PortEntry> portEntryOpt = portConfigUtil.readPortEntry(
-                        destinationPort, interactionId.toString());
+                destinationPort, interactionId.toString());
         if (detectMllp(portEntryOpt)) {
             logger.info("MLLP_DETECTED [interactionId={}] - Using HL7 processing with proper ACK", interactionId);
             handleHL7Message(ctx, rawMessage, interactionId, clientIP, clientPort,
-                    destinationIP, destinationPort,portEntryOpt);
+                    destinationIP, destinationPort, portEntryOpt);
         } else {
             logger.info("NON_MLLP_DETECTED [interactionId={}] - Using generic processing with simple ACK",
                     interactionId);
             handleGenericMessage(ctx, rawMessage, interactionId, clientIP, clientPort,
-                    destinationIP, destinationPort,portEntryOpt);
+                    destinationIP, destinationPort, portEntryOpt);
         }
     }
 
@@ -255,11 +254,11 @@ public class NettyTcpServer implements MessageSourceProvider {
         String ackMessage = null;
         Message hl7Message = null;
         boolean nackGenerated = false;
-        try{
+        try {
             try {
                 cleanMsg = unwrapMllp(rawMessage);
                 logger.info("HL7_MESSAGE_UNWRAPPED [interactionId={}] size={} bytes",
-                    interactionId, cleanMsg.length());
+                        interactionId, cleanMsg.length());
                 HapiContext context = new DefaultHapiContext();
                 context.setValidationContext(new NoValidation());
                 GenericParser parser = context.getGenericParser();
@@ -267,12 +266,12 @@ public class NettyTcpServer implements MessageSourceProvider {
                 Message ack = hl7Message.generateACK();
                 ackMessage = addNteWithInteractionId(ack, interactionId.toString(),
                         appConfig.getVersion());
-                ackMessage = new PipeParser().encode(ack);       
+                ackMessage = new PipeParser().encode(ack);
                 logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
             } catch (HL7Exception e) {
-                logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", interactionId, e.getMessage(),e);
+                logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", interactionId, e.getMessage(), e);
                 ackMessage = createHL7AckFromMsh(cleanMsg, "AE", e.getMessage(), interactionId.toString());
-                nackGenerated =true;
+                nackGenerated = true;
             }
 
             if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
@@ -289,18 +288,26 @@ public class NettyTcpServer implements MessageSourceProvider {
                     String.valueOf(destinationPort),
                     MessageSourceType.MLLP);
 
-            // Extract ZNT always if MLLP responseType
+            // Extract ZNT always if MLLP responseType. If missing, immediately send a NACK.
             if (detectMllp(portEntryOpt)) {
+                boolean zntPresent = true;
                 if (hl7Message != null) {
-                    extractZntSegment(hl7Message, requestContext, interactionId.toString());
+                    zntPresent = extractZntSegment(hl7Message, requestContext, interactionId.toString());
                 } else {
-                    extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
+                    zntPresent = extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
+                }
+
+                if (!zntPresent) {
+                    logger.warn("MISSING_ZNT_NACK [interactionId={}] - sending NACK due to missing ZNT segment", interactionId);
+                    String nack = createHL7AckFromMsh(cleanMsg, "AR", "Missing ZNT segment", interactionId.toString());
+                    sendResponseAndClose(ctx, wrapMllp(nack), interactionId, "HL7_NACK_MISSING_ZNT");
+                    return;
                 }
             }
-            if (!nackGenerated) {             
+            if (!nackGenerated) {
                 messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
             }
-            
+
             // Send MLLP-wrapped ACK
             String response = wrapMllp(ackMessage);
             sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
@@ -317,12 +324,11 @@ public class NettyTcpServer implements MessageSourceProvider {
         }
     }
 
-
     /**
      * Handle non-MLLP messages with simple acknowledgment
      */
     private void handleGenericMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
-            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort,Optional<PortConfig.PortEntry> portEntryOpt) {
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort, Optional<PortConfig.PortEntry> portEntryOpt) {
         try {
             String cleanMsg = rawMessage.trim();
             if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
@@ -424,7 +430,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         terser.set("/NTE(0)-1", "1");
         terser.set("/NTE(0)-3",
                 "InteractionID: " + interactionId
-                        + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
+                + " | TechBDIngestionApiVersion: " + ingestionApiVersion);
         PipeParser parser = new PipeParser();
         return parser.encode(ackMessage);
     }
@@ -434,11 +440,11 @@ public class NettyTcpServer implements MessageSourceProvider {
      */
     private Map<String, String> parseMshSegment(String hl7Message) {
         Map<String, String> mshFields = new HashMap<>();
-        
+
         try {
             String[] lines = hl7Message.split("\r|\n");
             String mshLine = null;
-            
+
             // Find MSH segment
             for (String line : lines) {
                 if (line.trim().startsWith("MSH|")) {
@@ -446,15 +452,15 @@ public class NettyTcpServer implements MessageSourceProvider {
                     break;
                 }
             }
-            
+
             if (mshLine == null) {
                 logger.warn("MSH segment not found in message");
                 return mshFields;
             }
-            
+
             // MSH segment format: MSH|^~\&|SendingApp|SendingFacility|ReceivingApp|ReceivingFacility|Timestamp|Security|MessageType|MessageControlId|ProcessingId|Version
             String[] fields = mshLine.split("\\|", -1);
-            
+
             if (fields.length > 0) {
                 mshFields.put("fieldSeparator", "|");
                 mshFields.put("encodingCharacters", fields.length > 1 ? fields[1] : "^~\\&");
@@ -467,17 +473,17 @@ public class NettyTcpServer implements MessageSourceProvider {
                 mshFields.put("messageControlId", fields.length > 9 ? fields[9] : "");
                 mshFields.put("processingId", fields.length > 10 ? fields[10] : "");
                 mshFields.put("version", fields.length > 11 ? fields[11] : "2.5");
-                
-                logger.debug("MSH_PARSED messageControlId={}, sendingApp={}, receivingApp={}", 
-                    mshFields.get("messageControlId"), 
-                    mshFields.get("sendingApplication"), 
-                    mshFields.get("receivingApplication"));
+
+                logger.debug("MSH_PARSED messageControlId={}, sendingApp={}, receivingApp={}",
+                        mshFields.get("messageControlId"),
+                        mshFields.get("sendingApplication"),
+                        mshFields.get("receivingApplication"));
             }
-            
+
         } catch (Exception e) {
             logger.error("Error parsing MSH segment: {}", e.getMessage());
         }
-        
+
         return mshFields;
     }
 
@@ -513,6 +519,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         if (msh.isEmpty()) {
             logger.warn("MSH_MISSING [interactionId={}] - generating minimal NACK", interactionId);
 
+            String genericError = "Message cannot be processed";
             StringBuilder nack = new StringBuilder();
 
             nack.append("MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|")
@@ -521,11 +528,11 @@ public class NettyTcpServer implements MessageSourceProvider {
                     .append("|P|2.5\r");
 
             nack.append("MSA|AR|UNKNOWN|")
-                    .append(err.isEmpty() ? "Invalid or missing MSH segment" : err)
+                    .append(genericError)
                     .append("\r");
 
             nack.append("ERR|||207^Application internal error^HL70357||E|||")
-                    .append(err.substring(0, Math.min(80, err.length())))
+                    .append(genericError.substring(0, Math.min(80, genericError.length())))
                     .append("\r");
 
             nack.append("NTE|1||InteractionID: ").append(interactionId)
@@ -597,11 +604,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                         .orElse(false);
     }
 
-
     /**
      * Extract ZNT segment from HL7 message using HAPI parser
      */
-    private void extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
+    private boolean extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
         try {
             Terser terser = new Terser(hapiMsg);
             Segment znt = terser.getSegment(".ZNT");
@@ -636,22 +642,25 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.info(
                         "ZNT_SEGMENT_EXTRACTED [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
                         interactionId, messageCode, deliveryType, facilityCode, qe);
+                return true;
             } else {
                 logger.warn("ZNT_SEGMENT_NOT_FOUND [interactionId={}]", interactionId);
+                return false;
             }
         } catch (HL7Exception e) {
             logger.error("ZNT_EXTRACTION_ERROR -- This could be as the ZNT segment is not available [interactionId={}]: Detailed error message {}", interactionId, e.getMessage());
+            return false;
         }
     }
 
     /**
      * Extract ZNT segment manually from HL7 message when HAPI parsing fails
      */
-    private void extractZntSegmentManually(String hl7Message, RequestContext requestContext, String interactionId) {
+    private boolean extractZntSegmentManually(String hl7Message, RequestContext requestContext, String interactionId) {
         try {
             String[] lines = hl7Message.split("\r|\n");
             String zntLine = null;
-            
+
             // Find ZNT segment
             for (String line : lines) {
                 if (line.trim().startsWith("ZNT|")) {
@@ -659,47 +668,47 @@ public class NettyTcpServer implements MessageSourceProvider {
                     break;
                 }
             }
-            
+
             if (zntLine == null) {
                 logger.warn("ZNT_SEGMENT_NOT_FOUND_MANUAL [interactionId={}]", interactionId);
-                return;
+                return false;
             }
-            
+
             // ZNT segment format: ZNT|field1|field2|field3|field4|field5|field6|field7|field8...
             String[] fields = zntLine.split("\\|", -1);
-            
+
             Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
             if (additionalDetails == null) {
                 additionalDetails = new HashMap<>();
                 requestContext.setAdditionalParameters(additionalDetails);
             }
-            
+
             // Extract fields based on typical ZNT structure
             String messageCode = null;
             String deliveryType = null;
             String znt8_1 = null;
-            
+
             // ZNT-2 (component 1) - Message Code
             if (fields.length > 2 && !fields[2].isEmpty()) {
                 String[] components = fields[2].split("\\^", -1);
                 messageCode = components.length > 0 ? components[0] : null;
             }
-            
+
             // ZNT-4 (component 1) - Delivery Type
             if (fields.length > 4 && !fields[4].isEmpty()) {
                 String[] components = fields[4].split("\\^", -1);
                 deliveryType = components.length > 0 ? components[0] : null;
             }
-            
+
             // ZNT-8 (component 1) - e.g., healthelink:GHC
             if (fields.length > 8 && !fields[8].isEmpty()) {
                 String[] components = fields[8].split("\\^", -1);
                 znt8_1 = components.length > 0 ? components[0] : null;
             }
-            
+
             String facilityCode = null;
             String qe = null;
-            
+
             if (znt8_1 != null && znt8_1.contains(":")) {
                 String[] parts = znt8_1.split(":");
                 qe = parts[0]; // part before ':', e.g., healthelink
@@ -707,19 +716,21 @@ public class NettyTcpServer implements MessageSourceProvider {
             } else if (znt8_1 != null) {
                 facilityCode = znt8_1;
             }
-            
+
             additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
             additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
             additionalDetails.put(Constants.FACILITY, facilityCode);
             additionalDetails.put(Constants.QE, qe);
-            
+
             logger.info(
                     "ZNT_SEGMENT_EXTRACTED_MANUALLY [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
                     interactionId, messageCode, deliveryType, facilityCode, qe);
-            
+            return true;
+
         } catch (Exception e) {
             logger.error("ZNT_MANUAL_EXTRACTION_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
         }
+        return false;
     }
 
     /**
