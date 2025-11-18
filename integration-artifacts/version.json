@@ -104,23 +104,23 @@
       {
         "name": "cda-fhir-bundle-epic.xslt",
         "type": "CCDA",
-        "version": "0.1.1",
-        "editedby": "",
-        "date": "2025-08-01"
+        "version": "0.1.3",
+        "editedby": "cibijacob",
+        "date": "2025-11-18"
       },
       {
         "name": "cda-fhir-bundle-medent.xslt",
         "type": "CCDA",
-        "version": "0.1.1",
-        "editedby": "",
-        "date": "2025-08-01"
+        "version": "0.1.3",
+        "editedby": "cibijacob",
+        "date": "2025-11-18"
       },
       {
         "name": "cda-fhir-bundle-athenahealth.xslt",
         "type": "CCDA",
-        "version": "0.1.2",
+        "version": "0.1.3",
         "editedby": "cibijacob",
-        "date": "2025-10-14"
+        "date": "2025-11-18"
       },      
       {
         "name": "cda-phi-filter-athenahealth.xslt",
@@ -174,9 +174,9 @@
       {
         "name": "POCD_MT000040.xsd",
         "type": "CCDA",
-        "version": "0.1.0",
-        "editedby": "",
-        "date": "2025-08-01"
+        "version": "0.1.1",
+        "editedby": "cibijacob",
+        "date": "2025-11-18"
       },
       {
         "name": "sdtc.xsd",
