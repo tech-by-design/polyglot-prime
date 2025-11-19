@@ -8478,15 +8478,14 @@ SELECT
     sicr.client_ip_address, 
     sicr.ccda_authoring_device,	
     htt_req.bundle_id,
-    CASE 
-        WHEN EXISTS (
-            SELECT 1
-            FROM techbd_udi_ingress.sat_interaction_ccda_request s2
-            WHERE s2.hub_interaction_id = sicr.hub_interaction_id
-              AND s2.to_state = 'CONVERTED_TO_FHIR'
-        ) THEN 'Yes'
-        ELSE 'No'
-    END AS fhir_generated,
+    -- NEW FIELD: sat_interaction_ccda_request_id where to_state = 'CCDA Validation Result'
+    (
+        SELECT s4.sat_interaction_ccda_request_id
+        FROM techbd_udi_ingress.sat_interaction_ccda_request s4
+        WHERE s4.hub_interaction_id = sicr.hub_interaction_id
+          AND s4.nature = 'CCDA Validation Result'
+        LIMIT 1
+    ) AS ccda_validation_result_request_id,
     CASE 
         WHEN EXISTS (
             SELECT 1
@@ -8553,11 +8552,11 @@ AS SELECT hub_interaction_id AS interaction_id,
 
 
 /**
--- View: interaction_ccda_https_request
+-- View: interaction_hl7v2_https_request
 -- This view lists all "Original HL7 Payload" interactions from the sat_interaction_ccda_request table.
 -- It includes additional metadata such as file name, user agent, and client IP address.
 -- The 'fhir_generated' column indicates whether the payload was converted to FHIR, and 
--- the 'ccda_validation_status' column shows whether HL7 validation succeeded or failed.
+-- the 'interaction_hl7v2_https_request' column shows whether HL7 validation succeeded or failed.
 **/
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_hl7v2_https_request CASCADE;
@@ -8575,15 +8574,14 @@ SELECT
 	sicr.user_agent,
     sicr.client_ip_address, 
     htt_req.bundle_id,
-    CASE 
-        WHEN EXISTS (
-            SELECT 1
-            FROM techbd_udi_ingress.sat_interaction_hl7_request s2
-            WHERE s2.hub_interaction_id = sicr.hub_interaction_id
-              AND s2.to_state = 'CONVERTED_TO_FHIR'
-        ) THEN 'Yes'
-        ELSE 'No'
-    END AS fhir_generated,
+    -- NEW FIELD: sat_interaction_hl7_request_id where to_state = 'HL7 Validation Result'
+    (
+        SELECT s4.sat_interaction_hl7_request_id
+        FROM techbd_udi_ingress.sat_interaction_hl7_request s4
+        WHERE s4.hub_interaction_id = sicr.hub_interaction_id
+          AND s4.nature = 'HL7 Validation Result'
+        LIMIT 1
+    ) AS hl7_validation_result_request_id,
     CASE 
         WHEN EXISTS (
             SELECT 1
@@ -8592,7 +8590,7 @@ SELECT
               AND s3.to_state = 'VALIDATION_SUCCESS'
         ) THEN 'Success'
         ELSE 'Failed'
-    END AS ccda_validation_status  
+    END AS hl7_validation_status  
 FROM
     techbd_udi_ingress.sat_interaction_hl7_request sicr
 left join   techbd_udi_ingress.sat_interaction_fhir_request htt_req
