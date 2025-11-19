@@ -81,6 +81,18 @@
                 return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
                     <i class="fas fa-download"></i>
                 </a>`;
+            }  
+            
+            function downloadValidationResultCellRenderer(params) {
+                const ccda_validation_result_request_id = params.data.ccda_validation_result_request_id;  
+                 const file_name =`${params.data.file_name}_operation_outcome.json` ||  '';
+
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_ccda_request/payload/sat_interaction_ccda_request_id/${ccda_validation_result_request_id}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
             }            
            
             const agGridInstance = new AGGridAideBuilder() 
@@ -102,29 +114,29 @@
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
                     { headerName: "Source System", field: "ccda_authoring_device", headerTooltip: "The source system that authored the CCDA", filter: "agTextColumnFilter" },
                     { headerName: "CCDA Validation Status", field: "ccda_validation_status", headerTooltip: "Indicates whether the CCDA validation succeeded or failed.", filter: "agTextColumnFilter",
-                        cellRenderer: (params) => {
-                        const value = params.value;
-                        if (value === "Failed") {
-                        const link = document.createElement("a");
-                        link.href = "#";
-                        link.innerText = value;
-                        link.className = "text-blue-600 underline hover:text-blue-800 font-medium";
-                        link.onclick = (e) => {
-                            e.preventDefault();
-                            modalAide.viewFetchedJsonValue(
-                            window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_ccda_payload/hub_interaction_id/${params.data.interaction_id}.json`)
-                            );
-                        };
-                        return link;
-                        } else {
-                        return document.createTextNode(value);
-                        }
-                    } 
+                     cellRenderer: params => {
+                            if (params.value === 'Failed') {
+                                   // Get interaction_id from the row
+                                    const interactionId = params.data?.interaction_id;
+
+                                    return `
+                                        <a 
+                                            href="/data-quality/ccda-validations-issues?hub_interaction_id=${encodeURIComponent(interactionId)}"
+                                            placeholder="Click to view CCDA validation errors"
+                                            target="_blank"
+                                            class="text-blue-600 underline hover:text-blue-800 font-medium"
+                                        >
+                                            ${params.value}
+                                        </a>`;
+                            }else{
+                                return params.value;
+                            }
+                        }                                           
                     },
                     { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction", 
                         cellRenderer: params => {
                             if (params.value) {
-                                return `<a href="/interactions/httpsfhir" placeholder="Click to view FHIR details" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                                return `<a href="/interactions/httpsfhir?bundle_id=${encodeURIComponent(params.value)}" placeholder="Click to view FHIR details" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             }
                         }
                      },
@@ -162,6 +174,16 @@
                         headerName: "CCDA File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
                         headerTooltip: "Download CCDA File",   
                          filter: false,
+                        suppressFilter: true,
+                        sortable: false
+                    },
+                    {
+                        headerName: "OperationOutcome",
+                        field: "",
+                        cellClass: "flex justify-center items-center",
+                        cellRenderer: downloadValidationResultCellRenderer,
+                        headerTooltip: "Download OperationOutcome",
+                        filter: false,
                         suppressFilter: true,
                         sortable: false
                     }                   
@@ -207,7 +229,7 @@
 
     Additional features include interactive filtering and sorting, state transition tracking, and the ability to view detailed information for each interaction by clicking the TechBD Interaction ID. This enables efficient validation, troubleshooting, and assurance of seamless data flow for CCDA requests.
  
-            Users can click on the TechBD Interaction ID to view detailed information in a popup.
+  
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>        
     </div>
