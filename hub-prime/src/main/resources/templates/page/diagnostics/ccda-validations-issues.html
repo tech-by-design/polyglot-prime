@@ -32,6 +32,17 @@
         document.addEventListener('DOMContentLoaded', function () {
  
             const modalAide = new ModalAide();
+
+            // Function to get URL parameters
+            function getUrlParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const value = urlParams.get(name);
+                return value ? decodeURIComponent(value) : null;
+            }
+
+            // Get hub_interaction_id from URL if present
+            const hubInteractionIdFromUrl = getUrlParameter('hub_interaction_id');
+
             const agGridInstance = new AGGridAideBuilder()
                  .withColumnDefs([
                             {
@@ -80,12 +91,65 @@
                             field: col.field
                         }));
                     },
+                    {
+                        beforeRequest: async (reqPayload, dataSourceUrl) => {
+                            // Add hub_interaction_id filter from URL if present and not already in filterModel
+                            if (hubInteractionIdFromUrl && (!reqPayload.body.filterModel || !reqPayload.body.filterModel.hub_interaction_id)) {
+                                reqPayload.body.filterModel = {
+                                    ...reqPayload.body.filterModel,
+                                    hub_interaction_id: {
+                                        filterType: "text",
+                                        type: "equals",
+                                        filter: hubInteractionIdFromUrl
+                                    }
+                                };
+                            }
+                        }
+                    }
                 )
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
 
             agGridInstance.init('serverDataGrid');
+
+            // Show visual indicator if hub_interaction_id filter is applied from URL
+            if (hubInteractionIdFromUrl) {
+                // Update grid description to show active filter
+                const gridDescription = document.querySelector('.grid-description');
+                if (gridDescription) {
+                    const filterNotice = document.createElement('div');
+                    filterNotice.style.cssText = 'background-color: #e3f2fd; border: 1px solid #2196f3; padding: 8px; margin: 10px 0; border-radius: 4px; color: #1976d2; font-weight: bold; display: flex; justify-content: space-between; align-items: center;';
+
+                    const filterText = document.createElement('span');
+                    filterText.innerHTML = `TechBD Interaction ID: ${hubInteractionIdFromUrl}`;
+
+                    const clearButton = document.createElement('button');
+                    clearButton.innerHTML = 'Show All';
+                    clearButton.style.cssText = 'background-color: #1976d2; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 10px;';
+                    clearButton.title = 'Clear TechBD Interaction ID filter and return to original view';
+
+                    // Add hover effect
+                    clearButton.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#1565c0';
+                    });
+                    clearButton.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '#1976d2';
+                    });
+
+                    // Add click handler to Show All and refresh page
+                    clearButton.addEventListener('click', function() {
+                        // Remove hub_interaction_id parameter from URL and reload page
+                        const url = new URL(window.location);
+                        url.searchParams.delete('hub_interaction_id');
+                        window.location.href = url.toString();
+                    });
+
+                    filterNotice.appendChild(filterText);
+                    filterNotice.appendChild(clearButton);
+                    gridDescription.parentNode.insertBefore(filterNotice, gridDescription.nextSibling);
+                }
+            }            
         });
     </script>
 </head>
