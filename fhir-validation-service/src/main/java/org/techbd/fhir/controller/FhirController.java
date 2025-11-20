@@ -135,6 +135,7 @@ public class FhirController {
                         @Parameter(description = "Optional header to specify IG version.", required = false) @RequestHeader(value = "X-SHIN-NY-IG-Version", required = false) String requestedIgVersion,
                         @Parameter(description = "Optional header to specify source type.", required = false) @RequestHeader(value = "X-TechBD-Source-Type", required = false) String sourceType,
                         @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Master-Interaction-ID", required = false) String masterInteractionId,
+                        @Parameter(description = "Optional header to provide elaboration details.", required = false) @RequestHeader(value = "X-TechBD-Elaboration", required = false) String elaboration,
                         @Parameter(description = "Optional header to specify group interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Group-Interaction-ID", required = false) String groupInteractionId, @Parameter(description = "Optional header to specify interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,         @Parameter(description = "Optional header to specify override request URI.", required = false)
                         @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,                        
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -162,6 +163,7 @@ public class FhirController {
                             requestDetailsMap.put(Constants.INTERACTION_ID, UUID.randomUUID().toString());
                         }                                        
                         requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+                        requestDetailsMap.put(Constants.ELABORATION, elaboration);
                         requestDetailsMap.putAll(headers);
                         Map<String, Object> responseParameters = new HashMap<>();
                         final var result = fhirService.processBundle(payload, requestDetailsMap,  responseParameters);
