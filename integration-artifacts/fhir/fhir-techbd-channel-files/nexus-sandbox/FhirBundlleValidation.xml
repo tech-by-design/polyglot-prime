@@ -1,0 +1,684 @@
+<channel version="4.5.3">
+  <id>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</id>
+  <nextMetaDataId>4</nextMetaDataId>
+  <name>FhirBundlleValidation</name>
+  <description>Version: 0.1.0</description>
+  <revision>195</revision>
+  <sourceConnector version="4.5.3">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
+      <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.5.3">
+        <host>0.0.0.0</host>
+        <port>9001</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.5.3">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>false</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes></binaryMimeTypes>
+      <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
+      <responseContentType>application/fhir+json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode>200</responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Expose-Headers</string>
+          <list>
+            <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>10000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>FHIR Validation</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>// Use logger.info with a single string (no channelMap arg)
+
+var requestedPath = channelMap.get(&apos;requestedPath&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: Request URL: &quot; + requestedPath);
+channelMap.put(&quot;requestUri&quot;, requestedPath);
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}
+
+if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
+var fhirJson  = connectorMessage.getRawData();
+channelMap.put(&apos;fhirJson&apos;, fhirJson);
+
+var interactionId = channelMap.get(&apos;interactionId&apos;);
+var validationSeverityLevel = channelMap.get(&apos;validationSeverityLevel&apos;);
+var source = channelMap.get(&apos;source&apos;);
+var igVersion = channelMap.get(&apos;igVersion&apos;);
+&#xd;
+
+
+logger.info(&quot;Channel Name: &quot; + channelName);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
+
+var fhirSubmissionApiUrl = java.lang.System.getenv(&quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;); 
+fhirSubmissionApiUrl = fhirSubmissionApiUrl + &quot;/Bundle/$validate&quot;;
+
+
+
+channelMap.put(&apos;interactionId&apos;, interactionId);&#xd;
+channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
+channelMap.put(&quot;fhirSubmissionApiUrl&quot;,fhirSubmissionApiUrl);
+channelMap.put(&apos;source&apos;,source);
+channelMap.put(&apos;igVersion&apos;, igVersion);
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
+
+
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); 
+channelMap.put(&apos;tenantId&apos;, tenantId);
+
+
+&#xd;
+&#xd;
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);&#xd;
+channelMap.put(&apos;userAgent&apos;, userAgent);
+
+
+
+channelMap.put(&quot;endpoint&quot;, &quot;validate&quot;);
+responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/$validate/&apos; or &apos;/Bundle/$validate&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/Bundle/$validate/&apos;</string>
+            <string>&apos;/Bundle/$validate&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.3">
+      <metaDataId>1</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.5.3">
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${fhirSubmissionApiUrl}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map">
+          <entry>
+            <string>Access-Control-Allow-Origin</string>
+            <list>
+              <string>*</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Methods</string>
+            <list>
+              <string>GET, POST, OPTIONS</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Headers</string>
+            <list>
+              <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Expose-Headers</string>
+            <list>
+              <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Tenant-ID</string>
+            <list>
+              <string>${tenantId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Content-Type</string>
+            <list>
+              <string>application/fhir+json</string>
+            </list>
+          </entry>
+          <entry>
+            <string>User-Agent</string>
+            <list>
+              <string>${userAgent}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Credentials</string>
+            <list>
+              <string>true</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Interaction-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Request-URI</string>
+            <list>
+              <string>${requestUri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${validationSeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-SHIN-NY-IG-Version</string>
+            <list>
+              <string>${igVersion}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Override-Request-URI</string>
+            <list>
+              <string>${requestUri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Source-Type</string>
+            <list>
+              <string>${source}</string>
+            </list>
+          </entry>
+        </headers>
+        <parameters class="linked-hash-map">
+          <entry>
+            <string>source</string>
+            <list>
+              <string>${source}</string>
+            </list>
+          </entry>
+        </parameters>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content>${fhirJson}</content>
+        <contentType>application/fhir+json</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>30000</socketTimeout>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements/>
+      </filter>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+//logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
+//var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+//if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
+//    return;
+//}
+//TODO - check and add other parameters /header validation for /Bundle
+//logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+var overridePath = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Override-Request-URI&apos;);
+
+if (overridePath != null &amp;&amp; overridePath.trim() !== &apos;&apos;) {
+    requestedPath = overridePath;
+}
+
+channelMap.put(&apos;requestedPath&apos;, requestedPath);
+
+
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}
+
+channelMap.put(&apos;channelName&apos;,channelName);
+
+var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
+var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
+
+var interactionId;
+
+if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &apos;&apos;) {
+    interactionId = incomingInteractionId;
+} else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
+    interactionId = incomingCorrelationId;
+} else {
+    interactionId = java.util.UUID.randomUUID().toString();
+}
+
+channelMap.put(&apos;interactionId&apos;, interactionId);
+
+var source = &quot;FHIR&quot;;
+var incomingSource = sourceMap.get(&apos;source&apos;);
+
+if (incomingSource != null &amp;&amp; incomingSource.trim() !== &apos;&apos;) {
+    source = incomingSource;
+}
+
+channelMap.put(&apos;source&apos;, source);
+logger.info(&quot;Source: &quot; + source);
+
+
+
+
+
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); // Mirth helper that accepts channelMap
+channelMap.put(&apos;tenantId&apos;, tenantId);
+
+&#xd;
+&#xd;
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);&#xd;
+channelMap.put(&apos;userAgent&apos;, userAgent);
+
+
+
+var igVersion = &quot;&quot;;
+var incomingIgVersion = $(&apos;headers&apos;).getHeader(&apos;X-SHIN-NY-IG-Version&apos;);
+
+if (incomingIgVersion != null &amp;&amp; incomingIgVersion.trim() !== &apos;&apos;) {
+    igVersion = incomingIgVersion;
+}
+
+channelMap.put(&apos;igVersion&apos;, igVersion);
+
+
+
+
+
+
+var validationSeverityLevel = &quot;error&quot;;&#xd;
+var incomingSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);&#xd;
+&#xd;
+// If header has valid value, use it; otherwise keep default&#xd;
+if (incomingSeverity != null &amp;&amp; incomingSeverity.trim() !== &apos;&apos;) {&#xd;
+    validationSeverityLevel = incomingSeverity;&#xd;
+}&#xd;
+&#xd;
+channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
+
+// Check if the header is null or empty
+if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
+    // Log the error for debugging
+    var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+    logger.error(errorMessage);
+    setErrorResponsePre(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+function setErrorResponsePre(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponsePre(statusCode, errorMessage));
+}
+function createJsonResponsePre(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+return message;</preprocessingScript>
+  <postprocessingScript>var chlName = channelMap.get(&apos;channelName&apos;);
+var interactionId = channelMap.get(&apos;interactionId&apos;);
+
+var requestedPath = channelMap.get(&apos;requestedPath&apos;);
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
+var endpoint = channelMap.get(&quot;endpoint&quot;);
+if(endpoint == &apos;validate&apos;) {&#xd;
+	// Get the response from the HTTP Writer destination&#xd;
+	var destinationName = &quot;dest_bundle&quot;;&#xd;
+	var destinationResponse = responseMap.get(destinationName);&#xd;
+&#xd;
+	// Check if the response exists&#xd;
+	if (destinationResponse) {&#xd;
+	    var responseStatus = destinationResponse.getStatus();  // HTTP status code&#xd;
+	    var responseData = destinationResponse.getMessage();   // Response message body&#xd;
+		responseMap.put(&apos;finalResponse&apos;, responseData);&#xd;
+		&#xd;
+	    // Log the response details&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Response from &quot; + destinationName + &quot;:&quot;);&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Status Code: &quot; + responseStatus);&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Response Data: &quot; + responseData);&#xd;
+	} else {&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:No response found for destination: &quot; + destinationName);&#xd;
+	}&#xd;
+}&#xd;
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor ENDS.&quot;);
+
+return;
+</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+
+&#xd;
+&#xd;
+function toJsonb(value) {&#xd;
+    var jsonbObj = new PGobject();&#xd;
+    jsonbObj.setType(&quot;jsonb&quot;);&#xd;
+&#xd;
+	if (typeof value === &quot;object&quot;) {&#xd;
+        value = JSON.stringify(value);&#xd;
+    }&#xd;
+    &#xd;
+    jsonbObj.setValue(value);&#xd;
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);&#xd;
+    return jsonbObj;&#xd;
+}
+
+// Function to extract a query param from the URI&#xd;
+function getQueryParam(uriString, paramName) {&#xd;
+    if (!uriString) return null;&#xd;
+    var regex = new RegExp(&apos;[?&amp;]&apos; + paramName + &apos;=([^&amp;]*)&apos;, &apos;i&apos;);&#xd;
+    var match = uriString.match(regex);&#xd;
+    return (match &amp;&amp; match[1]) ? decodeURIComponent(match[1]) : null;&#xd;
+}
+globalMap.put(&apos;getQueryParam&apos;, getQueryParam);
+
+
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.3">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.3">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1763386343279</time>
+        <timezone>Asia/Kolkata</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+    <channelTags>
+      <channelTag>
+        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
+        <name>Active</name>
+        <channelIds>
+          <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
+          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
+          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
+          <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
+          <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
+          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+          <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
+        </channelIds>
+        <backgroundColor>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
+  </exportData>
+</channel>
