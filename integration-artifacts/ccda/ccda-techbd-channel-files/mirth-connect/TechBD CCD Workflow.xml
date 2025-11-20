@@ -2,8 +2,8 @@
   <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.36</description>
-  <revision>73</revision>
+  <description>Version: 0.4.37</description>
+  <revision>75</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1371,8 +1371,8 @@ function set_fhir_resource_profile_urls(transformer) {
 	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
 	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
 	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
-//	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
-	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
+	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
+//	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
 	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
 	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
@@ -2473,7 +2473,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1761133001665</time>
+        <time>1763552332242</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
