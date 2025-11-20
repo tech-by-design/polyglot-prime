@@ -64,6 +64,13 @@
       "date": "2025-07-24"
     },
     {
+      "type": "Lookup Manager",
+      "channel": "lookup_group_schemafiles_export.json",
+      "version": "",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-11-20"
+    },
+    {
       "type": "AwsSqsFifoQueueListener",
       "channel": "AwsSqsFifoQueueListener.xml",
       "version": "",
