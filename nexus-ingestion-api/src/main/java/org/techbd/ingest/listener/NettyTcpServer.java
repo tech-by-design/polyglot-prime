@@ -462,8 +462,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
             } catch (HL7Exception e) {
                 logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", interactionId, e.getMessage(), e);
-                ackMessage = createHL7AckFromMsh(cleanMsg, "AE", e.getMessage(), interactionId.toString());
-                nackGenerated = true;
             }
 
             if (!portConfigUtil.validatePortEntry(portEntryOpt, destinationPort, interactionId.toString())) {
@@ -487,6 +485,11 @@ public class NettyTcpServer implements MessageSourceProvider {
                     zntPresent = extractZntSegment(hl7Message, requestContext, interactionId.toString());
                 } else {
                     zntPresent = extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
+                    ackMessage = createHL7AckFromMsh(
+                            cleanMsg,
+                            "AA",
+                            null,
+                            interactionId.toString());
                     nackGenerated = false;
                 }
 
