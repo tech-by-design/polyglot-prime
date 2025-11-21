@@ -2,13 +2,16 @@
   <id>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.1.0</description>
-  <revision>1213</revision>
+  <description>Version: 0.1.1</description>
+  <revision>1222</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -116,7 +116,8 @@ channelMap.put(&apos;fhirJson&apos;, fhirJson);
 var interactionId = channelMap.get(&apos;interactionId&apos;);
 var validationSeverityLevel = channelMap.get(&apos;validationSeverityLevel&apos;);
 var source = channelMap.get(&apos;source&apos;);
-var igVersion = channelMap.get(&apos;igVersion&apos;);&#xd;
+var igVersion = channelMap.get(&apos;igVersion&apos;);
+var elaboration = channelMap.get(&apos;elaboration&apos;);&#xd;
 
 logger.info(&quot;Channel Name: &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
@@ -134,6 +135,7 @@ channelMap.put(&apos;interactionId&apos;, interactionId);
 channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
 channelMap.put(&apos;source&apos;,source);
 channelMap.put(&apos;igVersion&apos;, igVersion);
+channelMap.put(&apos;elaboration&apos;, elaboration);
 
 
 
@@ -345,6 +347,12 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
             <string>X-TechBD-Source-Type</string>
             <list>
               <string>${source}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
             </list>
           </entry>
         </headers>
@@ -1187,6 +1195,17 @@ channelMap.put(&apos;igVersion&apos;, igVersion);
 logger.info(&quot;IG Version: &quot; + igVersion);
 
 
+var elaboration = &quot;&quot;;
+var incomingElaboration = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Elaboration&apos;);
+
+// If header has valid value, use it; otherwise keep default (empty string or any fallback)
+if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;&apos;) {
+    elaboration = incomingElaboration.trim();
+}
+
+channelMap.put(&quot;elaboration&quot;, elaboration);
+
+
 
 
 // Check if the header is null or empty
@@ -1710,7 +1729,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763558858532</time>
+        <time>1763725987315</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
