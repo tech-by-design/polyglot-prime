@@ -1,23 +1,45 @@
-<channel version="4.5.0">
-  <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
+<channel version="4.6.0">
+  <id>eda1fe7c-172b-4ef3-b98a-00e5b23d4f70</id>
   <nextMetaDataId>12</nextMetaDataId>
-  <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.36</description>
-  <revision>73</revision>
-  <sourceConnector version="4.5.0">
+  <name>TechBD CCD Workflow - 7602</name>
+  <description>Version: 0.4.35
+Updated to handle AthenaHealth CCD XML files.</description>
+  <revision>3</revision>
+  <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.0">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.0">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.5.0">
+      <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
-        <port>9443</port>
+        <port>9002</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.5.0">
+      <sourceConnectorProperties version="4.6.0">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -72,9 +94,9 @@
       <timeout>300000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.5.0">
+    <transformer version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>DB Save</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -101,18 +123,6 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	logger.info(&quot;requestUri: &quot; + requestUri);
 	logger.info(&quot;payloadJson: &quot; + payloadJson);
 	logger.info(&quot;operation: &quot; + operation);
-
-	var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-	logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
-	//If any error happens in between, find the ccda source type from the input file
-	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
-		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
-		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
-		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
-		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
-	}
-	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
 	
 	var DriverManager = java.sql.DriverManager;
 	var conn = null;
@@ -131,7 +141,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 
 	    logger.info(&quot;Database connection established successfully.&quot;);
 	
-		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
 	    stmt = conn.prepareCall(sql);
 
 		stmt.setString(1, interactionId);
@@ -188,8 +198,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(16, java.sql.Types.VARCHAR);
 		stmt.setNull(17, java.sql.Types.VARCHAR);
 		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
-		//stmt.setNull(19, java.sql.Types.VARCHAR); 
-		stmt.setString(19, &quot;CCDA&quot;); //provenance  
+		stmt.setNull(19, java.sql.Types.VARCHAR);
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
 		stmt.setNull(21, java.sql.Types.VARCHAR);
 		stmt.setNull(22, java.sql.Types.VARCHAR);
@@ -200,7 +209,6 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(27, java.sql.Types.VARCHAR);
 		stmt.setNull(28, java.sql.Types.VARCHAR);
 		stmt.setString(29, channelMap.get(&apos;filename&apos;));
-		stmt.setString(30, ccdaAuthoringDevice);
 
 	    var result = stmt.execute();
 	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
@@ -214,7 +222,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	}
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>Common JS functions</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -499,7 +507,7 @@ function extractClinicalDocument(rawXml) {
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>Validate HTTP Request and collect headers</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
@@ -827,7 +835,7 @@ if(jdbcPassword != null) {
     throw errorMessage; // Stop further processing by throwing an exception
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>step_validate_profile_urls_env_variables</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
@@ -1473,7 +1481,7 @@ function getConsentResourceStatus(sourceXml) {
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>API endpoint processing</name>
           <sequenceNumber>4</sequenceNumber>
           <enabled>true</enabled>
@@ -1493,7 +1501,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
     // Forward to the channel or logic for $validate
     channelMap.put(&quot;endpoint&quot;, &quot;validate&quot;);
-
+    channelMap.put(&quot;requestUri&quot;, requestedPath);
     try {
 		// Parse the XML content into an XML object
 		var interactionId = channelMap.get(&apos;interactionId&apos;);
@@ -1543,12 +1551,27 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		// Load the XSLT template
 		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
 		logger.info(&quot;xsltPath: &quot; + xsltPath);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
-		
+		var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+		var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+
+//		var xsltFile = new java.io.File(xsltPath);
+//		var xsltStream = new java.io.FileInputStream(xsltFile);
+		var ttlHours = 24 * 20; // Time to live in hours
+		var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
+			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);
 		// Create the transformer
 		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 		var transformer = transformerFactory.newTransformer(xsltSource);
 		
 		// Prepare input and output streams
@@ -1568,7 +1591,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML phi filtering failed: &quot; + e.toString();
+	                errorMsg = &quot;CCDA XML phi filtering failed: &quot; + e.toString();
 	            } else {
 	                errorMsg = &quot;Unexpected error during phi filtering: &quot; + e.message;
 	            }
@@ -1580,24 +1603,129 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	     }
 		/*End of phi filter*/
 		
-        // Validate CCD
+// Validate CCD
         var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
         logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+        var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
+        logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
+        var xsdContent  = LookupHelper.get(&quot;SchemaFiles&quot;, xsdFileName , ttlHours);
+	   logger.info(&quot;Value from XSD file : &quot; + xsdContent );
 
-        // Load the XSD schema
-        var xsdFile = new java.io.File(xsdFilePath);
-        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-        var schema = javax.xml.validation.SchemaFactory
-            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-            .newSchema(schemaInputStream);
+			if (!xsdContent ) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + xsdFileName);
+			}
+//==========================================================================
+		var ttlHours = 24 * 24;
+			
+			var lookupResource = &quot;SchemaFiles&quot;;
+			 
+			var File = Packages.java.io.File;
+               var FileWriter = Packages.java.io.FileWriter;
 
-        // Set up the validator
-        var validator = schema.newValidator();
+			
+			var tempDir = new File(&quot;/tmp/cda_xsd_cache&quot;);
+			if (!tempDir.exists()) {
+			    tempDir.mkdirs();
+			}
+			
+			logger.info(&quot;Temp XSD folder = &quot; + tempDir.getAbsolutePath());
+			
+			// ===============================================================
+			// 2. List all XSD files required
+			// ===============================================================
+			var ttl = 24 * 24;
+			
+			logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
+			var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;, ttl);
+			
+			logger.info(&quot;typeof rawIndex = &quot; + typeof rawIndex);
+			logger.info(&quot;rawIndex: &quot; + JSON.stringify(rawIndex));
+			
+			var indexText = null;
 
-        // Set up the input source for the XML
-        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml));
+				// ========== NORMALIZE rawIndex TO A STRING ==========
+				if (rawIndex == null) {
+				    logger.error(&quot;Lookup returned NULL for index.txt — fallback to empty string&quot;);
+				    indexText = &quot;&quot;;
+				} 
+				else if (typeof rawIndex === &quot;object&quot;) {
+				    // Mirth sometimes returns {content:&quot;text&quot;} OR sometimes the object itself is stringifiable
+				    if (rawIndex.content &amp;&amp; typeof rawIndex.content === &quot;string&quot;) {
+				        indexText = rawIndex.content;
+				    } else {
+				        // Convert entire object to string safely
+				        indexText = String(rawIndex);
+				        logger.warn(&quot;Converted rawIndex OBJECT to string: &quot; + indexText);
+				    }
+				}
+				else if (typeof rawIndex === &quot;string&quot;) {
+				    indexText = rawIndex;
+				} 
+				else {
+				    // Unexpected type (number, boolean, etc)
+				    indexText = String(rawIndex);
+				    logger.warn(&quot;Converted NON-STRING rawIndex to string: &quot; + indexText);
+				}
+				
+				logger.info(&quot;indexText (final extracted): &gt;&gt;&gt;&quot; + indexText + &quot;&lt;&lt;&lt;&quot;);
+				
+				// ========== PARSE INTO ARRAY ==========
+				var xsdFiles = [];
+				
+				if (indexText.trim().length &gt; 0) {
+				    xsdFiles = indexText
+				        .split(/\r?\n/)
+				        .map(function (line) { return line.trim(); })
+				        .filter(function (line) { return line.length &gt; 0; });
+				}
+				
+				logger.info(&quot;Final XSD list: &quot; + JSON.stringify(xsdFiles));
 
-        // Perform the validation
+			// ===============================================================
+			// 3. Write each XSD from LookupManager into temp directory
+			// ===============================================================
+			for (var i = 0; i &lt; xsdFiles.length; i++) {
+			    var name = xsdFiles[i];
+			    var content = LookupHelper.get(&quot;SchemaFiles&quot;, name, ttl);
+			
+			    if (!content || content.trim().length === 0) {
+			        throw new Error(&quot;Missing XSD in LookupManager: &quot; + name);
+			    }
+			
+			    var f = new File(tempDir, name);
+			    var fw = new FileWriter(f);
+			    fw.write(content);
+			    fw.close();
+			
+			    logger.info(&quot;Wrote XSD to temp: &quot; + f.getAbsolutePath());
+			}
+			
+			// ===============================================================
+			// 4. Load ONLY the root CDA.xsd from the temp directory
+			// ===============================================================
+			var schemaFactory = javax.xml.validation.SchemaFactory
+			    .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			
+			var rootFile = new File(tempDir, xsdFileName);
+			var schemaSource = new javax.xml.transform.stream.StreamSource(rootFile);
+			
+			// ===============================================================
+			// 5. Build the schema — includes work automatically from disk
+			// ===============================================================
+			var schema = schemaFactory.newSchema(schemaSource);
+			var validator = schema.newValidator();
+			
+			// ===============================================================
+			// 6. Validate your XML
+			// ===============================================================
+			var xmlSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(phiFilteredXml)
+			);
+
+				
+				logger.info(&quot;Starting XML validation against CDA schema...&quot;);
+
+
         try {
         	  validator.validate(xmlSource);
             
@@ -1614,7 +1742,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                                         &quot;severity&quot;: &quot;information&quot;,
                                         &quot;code&quot;: &quot;informational&quot;,
                                         &quot;details&quot;: {
-                                            &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
+                                            &quot;text&quot;: &quot;CCDA XML is valid according to the XSD.&quot;
                                         }
                                     }
                                 ]
@@ -1624,7 +1752,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                 }
             };
             responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
-            logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+            logger.info(&quot;CCDA XML is valid according to the XSD.&quot;);
 
 			// SAVE VALIDATION RESULT
 			logger.info(&quot;DB Validation Save inside Validate&quot;);
@@ -1644,7 +1772,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         } catch (e) {
             var errorMsg;
             if (e instanceof JavaException) {
-                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();  
+                errorMsg = &quot;CCDA XML validation failed: &quot; + e.toString();  
             } else {
                 errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
             }
@@ -1678,12 +1806,14 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         throw e;
     }
 } else if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+	channelMap.put(&quot;requestUri&quot;, requestedPath);
 	try {
 	
 	    //*********** DATA LEDGER ***************
 	    var randomSuffix = Math.floor(Math.random() * 10000);
 	    channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 	    // Generate current timestamp in ISO format with microsecond precision
+	
 	   var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
 	    // Add 3 more random digits to simulate microseconds
 	    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
@@ -1764,13 +1894,31 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	     getConsentResourceStatus(sourceXml); // Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
 	     
 		// Load the XSLT template
-		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
+//		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+//		var xsltFile = new java.io.File(xsltPath);
+//		var xsltStream = new java.io.FileInputStream(xsltFile);
+          var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+		logger.info(&quot;xsltPath: &quot; + xsltPath);
+		var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+		var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+
+		var ttlHours = 24 * 20; // Time to live in hours
+		var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
+			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);
 		
 		// Create the transformer
 		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 		var transformer = transformerFactory.newTransformer(xsltSource);
 		
 		// Prepare input and output streams
@@ -1790,7 +1938,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML phi filtering failed: &quot; + e.toString();
+	                errorMsg = &quot;CCDA XML phi filtering failed: &quot; + e.toString();
 	            } else {
 	                errorMsg = &quot;Unexpected error during phi filtering: &quot; + e.message;
 	            }
@@ -1804,15 +1952,125 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	
 	//**/////////CCDA Validation Begin///////////////**///
 		   // Validate CCD
-	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-	        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
-	
-	        // Load the XSD schema
-	        var xsdFile = new java.io.File(xsdFilePath);
-	        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-	        var schema = javax.xml.validation.SchemaFactory
-	            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-	            .newSchema(schemaInputStream);
+//	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+//	        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+//	
+//	        // Load the XSD schema
+//	        var xsdFile = new java.io.File(xsdFilePath);
+//	        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
+//	        var schema = javax.xml.validation.SchemaFactory
+//	            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
+//	            .newSchema(schemaInputStream);&#xd;&#xd;//============================New Chnges ===========================================//&#xd;// Validate CCD
+        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+        var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
+        logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
+        var xsdContent  = LookupHelper.get(&quot;SchemaFiles&quot;, xsdFileName , ttlHours);
+	   logger.info(&quot;Value from XSD file : &quot; + xsdContent );
+
+			if (!xsdContent ) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + xsdFileName);
+			}
+//==========================================================================
+		var ttlHours = 24 * 24;
+			
+			var lookupResource = &quot;SchemaFiles&quot;;
+			 
+			var File = Packages.java.io.File;
+               var FileWriter = Packages.java.io.FileWriter;
+
+			
+			var tempDir = new File(&quot;/tmp/cda_xsd_cache&quot;);
+			if (!tempDir.exists()) {
+			    tempDir.mkdirs();
+			}
+			
+			logger.info(&quot;Temp XSD folder = &quot; + tempDir.getAbsolutePath());
+			
+			// ===============================================================
+			// 2. List all XSD files required
+			// ===============================================================
+			var ttl = 24 * 24;
+			
+			logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
+			var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;, ttl);
+			
+			logger.info(&quot;typeof rawIndex = &quot; + typeof rawIndex);
+			logger.info(&quot;rawIndex: &quot; + JSON.stringify(rawIndex));
+			
+			var indexText = null;
+
+				// ========== NORMALIZE rawIndex TO A STRING ==========
+				if (rawIndex == null) {
+				    logger.error(&quot;Lookup returned NULL for index.txt — fallback to empty string&quot;);
+				    indexText = &quot;&quot;;
+				} 
+				else if (typeof rawIndex === &quot;object&quot;) {
+				    // Mirth sometimes returns {content:&quot;text&quot;} OR sometimes the object itself is stringifiable
+				    if (rawIndex.content &amp;&amp; typeof rawIndex.content === &quot;string&quot;) {
+				        indexText = rawIndex.content;
+				    } else {
+				        // Convert entire object to string safely
+				        indexText = String(rawIndex);
+				        logger.warn(&quot;Converted rawIndex OBJECT to string: &quot; + indexText);
+				    }
+				}
+				else if (typeof rawIndex === &quot;string&quot;) {
+				    indexText = rawIndex;
+				} 
+				else {
+				    // Unexpected type (number, boolean, etc)
+				    indexText = String(rawIndex);
+				    logger.warn(&quot;Converted NON-STRING rawIndex to string: &quot; + indexText);
+				}
+				
+				logger.info(&quot;indexText (final extracted): &gt;&gt;&gt;&quot; + indexText + &quot;&lt;&lt;&lt;&quot;);
+				
+				// ========== PARSE INTO ARRAY ==========
+				var xsdFiles = [];
+				
+				if (indexText.trim().length &gt; 0) {
+				    xsdFiles = indexText
+				        .split(/\r?\n/)
+				        .map(function (line) { return line.trim(); })
+				        .filter(function (line) { return line.length &gt; 0; });
+				}
+				
+				logger.info(&quot;Final XSD list: &quot; + JSON.stringify(xsdFiles));
+
+			// ===============================================================
+			// 3. Write each XSD from LookupManager into temp directory
+			// ===============================================================
+			for (var i = 0; i &lt; xsdFiles.length; i++) {
+			    var name = xsdFiles[i];
+			    var content = LookupHelper.get(&quot;SchemaFiles&quot;, name, ttl);
+			
+			    if (!content || content.trim().length === 0) {
+			        throw new Error(&quot;Missing XSD in LookupManager: &quot; + name);
+			    }
+			
+			    var f = new File(tempDir, name);
+			    var fw = new FileWriter(f);
+			    fw.write(content);
+			    fw.close();
+			
+			    logger.info(&quot;Wrote XSD to temp: &quot; + f.getAbsolutePath());
+			}
+			
+			// ===============================================================
+			// 4. Load ONLY the root CDA.xsd from the temp directory
+			// ===============================================================
+			var schemaFactory = javax.xml.validation.SchemaFactory
+			    .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			
+			var rootFile = new File(tempDir, xsdFileName);
+			var schemaSource = new javax.xml.transform.stream.StreamSource(rootFile);
+			
+			// ===============================================================
+			// 5. Build the schema — includes work automatically from disk
+			// ===============================================================
+			var schema = schemaFactory.newSchema(schemaSource);
+		//==============================new changes end =====================================//	&#xd;
 	        
 	        var validator = schema.newValidator(); // Set up the validator       
 	        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml)); // Set up the input source for the XML
@@ -1830,7 +2088,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                                         &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                                         &quot;code&quot;: &quot;informational&quot;,
                                         &quot;details&quot;: {
-                                            &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
+                                            &quot;text&quot;: &quot;CCDA XML is valid according to the XSD.&quot;
                                         }
                                     }
                                 ]
@@ -1843,7 +2101,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	        // Perform the validation
 	        try {
 	        	validator.validate(xmlSource);
-	          logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+	          logger.info(&quot;CCDA XML is valid according to the XSD.&quot;);
 
 			// SAVE VALIDATION RESULT
 			logger.info(&quot;DB Validation Save inside Bundle&quot;);
@@ -1861,7 +2119,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	        } catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();
+	                errorMsg = &quot;CCDA XML validation failed: &quot; + e.toString();
 	            } else {
 	                errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
 	            }
@@ -1937,12 +2195,30 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			/////////  Step 2  //////////
 			// Load the XSLT template
 			var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
-			var xsltFile = new java.io.File(xsltPath);
-			var xsltStream = new java.io.FileInputStream(xsltFile);
+//			var xsltFile = new java.io.File(xsltPath);
+//			var xsltStream = new java.io.FileInputStream(xsltFile);
+
+//=====================================new changes ====================================//
+               logger.info(&quot;xsltPath: &quot; + xsltPath);
+	          var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+			var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+	          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+			var ttlHours = 24 * 20; // Time to live in hours
+			var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+			logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
 			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);   
+//=======================================new changes end =================================//			
 			// Create the transformer
 			var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-			var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//			var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 			var transformer = transformerFactory.newTransformer(xsltSource);
 	
 			// Set the current timestamp parameter in ISO 8601 format
@@ -2063,11 +2339,11 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.0">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
           <stripNamespaces>false</stripNamespaces>
         </serializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
           <splitType>Element_Name</splitType>
           <elementName></elementName>
           <level>1</level>
@@ -2075,16 +2351,16 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.5.0">
+    <filter version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/$validate/&apos; or &apos;/ccda/Bundle/$validate&apos; or &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -2097,7 +2373,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             <string>&apos;/ccda/Bundle&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>false</enabled>
@@ -2116,12 +2392,12 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.5.0">
+    <connector version="4.6.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle_validate</name>
-      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.0">
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.5.0">
+        <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2145,45 +2421,45 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables/>
       </properties>
-      <transformer version="4.5.0">
+      <transformer version="4.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.5.0">
+      <responseTransformer version="4.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.5.0">
+      <filter version="4.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2200,12 +2476,34 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="4.5.0">
+    <connector version="4.6.0">
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.5.0">
-        <pluginProperties/>
-        <destinationConnectorProperties version="4.5.0">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
+        <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2225,7 +2523,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
-        <host>${fhirBundleSubmissionApiUrl}</host>
+        <host>https://1.nexus-txd.sbx.techbd.org:9000/Bundle/</host>
         <useProxyServer>false</useProxyServer>
         <proxyAddress></proxyAddress>
         <proxyPort></proxyPort>
@@ -2252,7 +2550,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <entry>
             <string>X-TechBD-Override-Request-URI</string>
             <list>
-              <string>${uri}</string>
+              <string>${requestUri}</string>
             </list>
           </entry>
           <entry>
@@ -2303,6 +2601,30 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
               <string>${interactionId}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Interaction-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Source-Type</string>
+            <list>
+              <string>CCDA</string>
+            </list>
+          </entry>
+          <entry>
+            <string>requestUri</string>
+            <list>
+              <string>${requestUri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-SHIN-NY-IG-Version</string>
+            <list>
+              <string>${igVersion}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -2333,45 +2655,45 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         <charset>UTF-8</charset>
         <socketTimeout>300000</socketTimeout>
       </properties>
-      <transformer version="4.5.0">
+      <transformer version="4.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.5.0">
+      <responseTransformer version="4.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.5.0">
+      <filter version="4.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2381,7 +2703,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
               <string>&apos;bundle&apos;</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -2437,7 +2759,7 @@ return;
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.5.0">
+  <properties version="4.6.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -2452,15 +2774,15 @@ return;</undeployScript>
       <metaDataColumn>
         <name>SOURCE</name>
         <type>STRING</type>
-        <mappingName>mirth_source</mappingName>
+        <mappingName>message_source</mappingName>
       </metaDataColumn>
       <metaDataColumn>
         <name>TYPE</name>
         <type>STRING</type>
-        <mappingName>mirth_type</mappingName>
+        <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.5.0">
+    <attachmentProperties version="4.6.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -2475,14 +2797,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1761133001665</time>
+        <time>1763974002767</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>6</userId>
     </metadata>
   </exportData>
 </channel>
