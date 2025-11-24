@@ -67,28 +67,40 @@ public class DataQualityController {
     }   
     
     @GetMapping("/data-quality/csv-validations/file-not-processed")
-    @RouteMapping(label = "Files Not Processed", title = "Files Not Processed", siblingOrder = 20)
+    @RouteMapping(label = "Files Not Processed", title = "Files Not Processed", siblingOrder = 40)
     public String diagnosticsFileNotProcessedIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/file-not-processed", model, request);
     }       
     
     @GetMapping("/data-quality/csv-validations/incomplete-groups")
-    @RouteMapping(label = "Incomplete Groups", title = "Incomplete Groups", siblingOrder = 30)
+    @RouteMapping(label = "Incomplete Groups", title = "Incomplete Groups", siblingOrder = 50)
     public String diagnosticsIncompleteGroupsIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/incomplete-groups", model, request);
     }   
     
     @GetMapping("/data-quality/csv-validations/data-integrity")
-    @RouteMapping(label = "Data Integrity Errors", title = "Data Integrity Errors", siblingOrder = 10)
+    @RouteMapping(label = "Data Integrity Errors", title = "Data Integrity Errors", siblingOrder = 60)
     public String diagnosticsDataIntegrityIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/data-integrity", model, request);
-    }      
+    }       
     
     @GetMapping("/data-quality/csv-validations/processing-errors")
     @RouteMapping(label = "Processing Errors", title = "Processing Errors", siblingOrder = 40)
     public String diagnosticsProcessingErrors(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/processing-errors", model, request);
-    }      
+    }
+    
+    @GetMapping("/data-quality/csv-validations/csv-error-summary")
+    @RouteMapping(label = "CSV Error Summary", title = "CSV Error Summary", siblingOrder = 10)
+    public String csvErrorSummary(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/diagnostics/csv-error-summary", model, request);
+    }    
+
+    @GetMapping("/data-quality/csv-validations/csv-all-error-summary")
+    @RouteMapping(label = "All CSV Errors", title = "All CSV Errors", siblingOrder = 20)
+    public String csvAllErrorSummary(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/diagnostics/csv-all-error-summary-details", model, request);
+    }       
 
     @GetMapping("/data-quality/ccda-validations-issues") 
     @RouteMapping(label = "CCDA Data Quality", title = "CCDA Data Quality", siblingOrder = 50)    

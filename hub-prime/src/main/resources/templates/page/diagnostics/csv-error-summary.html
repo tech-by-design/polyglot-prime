@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 5px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'csv_error_summary'; 
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+
+                .withColumnDefs([
+                    {
+                        headerName: "Created Time",
+                        field: "created_at",
+                        sortable: true,
+                        sort: "desc",
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "The earliest timestamp when the CSV processing error was recorded."
+                    }, 
+                    {
+                        headerName: "TechBD Tenant ID",
+                        field: "tenant_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
+                    },
+                    {
+                        headerName: "TechBD Zip File Interaction ID",
+                        field: "zip_file_hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique Zip File Hub Interaction ID for the CSV submission.",                        
+                        cellRenderer: params => {
+                            if (params.value) {
+                                const hub_interaction_ids = params.data?.zip_file_hub_interaction_id;
+                                return `<a href="/data-quality/csv-validations/csv-all-error-summary?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                            } 
+                        }
+                    }, 
+                    {
+                        headerName: "URI",
+                        field: "uri",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The URI from where the CSV file was submitted or processed."
+                    },
+                    {
+                        headerName: "Zip File Name",
+                        field: "zip_file_name",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The name of the ZIP file involved in the error."
+                    }, 
+                    {
+                        headerName: "Origin",
+                        field: "origin",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The origin system or source that submitted the CSV file."
+                    },
+                    {
+                        headerName: "User Agent",
+                        field: "user_agent",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The User Agent of the client that submitted the CSV file."
+                    }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    }
+                )
+                .withMasterDetail(true)
+                // .withDetailCellRendererParams({
+                //     detailGridOptions: {
+                //         columnDefs: fileNotProcesseddetailGrid,
+                //         defaultColDef: {
+                //             flex: 1
+                //         }
+                //     },
+                //     getDetailRowData: params => {
+                //         getfileNotProcessedDetailData(params);
+                //     }
+                // })
+                .withDetailCellRendererParams(function (params) {
+                    const category = params.data.category;
+                    console.log('Category:', category);
+                    const config = detailConfigByCategory[category];
+
+                    return {
+                        detailGridOptions: {
+                            columnDefs: config.columnDefs,
+                            defaultColDef: { flex: 1 }
+                        },
+
+                        getDetailRowData: detailParams => {
+                            config.fetchFn(detailParams);
+                        }
+                    };
+                })             
+                .withDetailRowAutoHeight(false)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+           This data grid provides a high-level summary of all CSV processing failures, grouped by ZIP File Interaction ID. Each row represents a single ZIP submission and displays the earliest error timestamp, tenant and group details, file name, submission source, and user agent. <br>
+            This summary view helps users quickly identify problematic ZIP submissions and understand the overall error categories associated with each interaction. Clicking on the TechBD Zip File Interaction ID navigates to the All CSV Errors page, automatically applying the correct TechBD Zip File Interaction ID filter to display the detailed errors for that specific interaction.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

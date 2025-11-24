@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 5px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'csv_all_processing_error_summary'; 
+
+        function getfileNotProcessedDetailData(params) {
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/csv_file_not_processed_error/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+
+        function getIncompleteGroupsDetailData(params) {
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/csv_incomplete_groups_errors/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+
+        function getProcessingErrorsDetailData(params) {
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/csv_processing_error/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+
+        function getDataIntegrityDetailDetailData(params) {
+            const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
+
+            console.log('Drill-down called for zip_file_hub_interaction_id:', zip_file_hub_interaction_id);
+
+            // Use stored procedure with filtering parameters
+            const storedProcParams = {
+                "p_zip_file_hub_interaction_id": zip_file_hub_interaction_id
+            };
+
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 1000, // show all data without limit
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            };
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+            const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/get_csv_data_integrity_errors.json?storedProcparams=${paramsJson}`);
+
+            console.log('Calling URL:', url);
+            console.log('Stored proc params:', storedProcParams);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(gridRequestBody)
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    console.log('Raw response:', response);
+                    let rowData = response;
+
+                    if (!Array.isArray(rowData)) {
+                        if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                            console.log('Using response.rows, length:', rowData.rows.length);
+                            rowData = rowData.rows;
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
+                            console.log('Using response.data, length:', rowData.data.length);
+                            rowData = rowData.data;
+                        } else {
+                            console.error("Unexpected response format:", response);
+                            console.log('Response keys:', Object.keys(response || {}));
+                            rowData = [];
+                        }
+                    } else {
+                        console.log('Direct array response, length:', rowData.length);
+                    }
+
+                    console.log('Final rowData:', rowData);
+                    params.successCallback(rowData, rowData.length);
+                })
+                .catch(error => {
+                    console.error('Error fetching CSV data integrity error details: ' + error);
+                    params.failCallback();
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Function to get URL parameters
+            function getUrlParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const value = urlParams.get(name);
+                return value ? decodeURIComponent(value) : null;
+            }
+
+            // Get hub_interaction_id from URL if present
+            const hubInteractionIdFromUrl = getUrlParameter('hub_interaction_id');
+
+            const fileNotProcessedDetailGrid = [
+                {
+                    headerName: "Error Message",
+                    field: "error",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The detailed error message describing the validation issue.",
+                    tooltipField: "error"
+                },
+                {
+                    headerName: "Description",
+                    field: "description",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "A brief description of the validation error.",
+                    tooltipField: "description"
+                },
+                {
+                    headerName: "File Name",
+                    field: "file_name",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The name of the CSV file where the error occurred."
+                }
+            ];
+
+            const incompleteGroupsDetailGrid = [
+                {
+                    headerName: "TechBD Group Interaction ID",
+                    field: "hub_interaction_id",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The unique Group Interaction ID for the TechBD tenant associated with the CSV file."
+                },
+                {
+                    headerName: "Error Type",
+                    field: "error_type",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The category or type of validation error encountered."
+                },
+                {
+                    headerName: "Error Message",
+                    field: "error",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The detailed error message describing the validation issue.",
+                    tooltipField: "error"
+                },
+                {
+                    headerName: "Description",
+                    field: "description",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "A brief description of the validation error.",
+                    tooltipField: "description"
+                }
+            ];
+
+            const processingErrorsDetailGrid = [
+                {
+                    headerName: "Error Message",
+                    field: "error",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The detailed error message describing the validation issue.",
+                    tooltipField: "error"
+                },
+                {
+                    headerName: "Description",
+                    field: "description",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "A brief description of the validation error.",
+                    tooltipField: "description"
+                },
+                {
+                    headerName: "File Name",
+                    field: "file_name",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The name of the CSV file where the error occurred."
+                }
+            ];
+
+            const dataIntegrityDetailGrid = [
+                {
+                    headerName: "TechBD Group Interaction ID",
+                    field: "hub_interaction_id",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The unique Group Interaction ID for the TechBD tenant associated with the CSV file."
+                },
+                {
+                    headerName: "Field Name",
+                    field: "fieldname",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The name of the field in the CSV file where the error occurred."
+                },
+                {
+                    headerName: "Cell Value",
+                    field: "value",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The value of the cell in the CSV file that triggered the error."
+                },
+                {
+                    headerName: "Error Type",
+                    field: "error_type",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The category or type of validation error encountered."
+                },
+                {
+                    headerName: "File Name",
+                    field: "file_name",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The name of the CSV file where the error occurred."
+                },
+                {
+                    headerName: "Error Message",
+                    field: "error",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The detailed error message describing the validation issue.",
+                    tooltipField: "error"
+                },
+                {
+                    headerName: "Description",
+                    field: "description",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "A brief description of the validation error.",
+                    tooltipField: "description"
+                },
+                {
+                    headerName: "Row Number",
+                    field: "rownumber",
+                    filter: "agNumberColumnFilter",
+                    headerTooltip: "The row number in the CSV file where the error occurred."
+                },
+                {
+                    headerName: "Field Number",
+                    field: "fieldnumber",
+                    filter: "agNumberColumnFilter",
+                    headerTooltip: "The field number in the CSV file where the error occurred."
+                }
+            ];
+
+            const detailConfigByCategory = {
+                file_not_processed: {
+                    columnDefs: fileNotProcessedDetailGrid,
+                    fetchFn: getfileNotProcessedDetailData
+                },
+                incomplete_groups: {
+                    columnDefs: incompleteGroupsDetailGrid,
+                    fetchFn: getIncompleteGroupsDetailData
+                },
+                processing_errors: {
+                    columnDefs: processingErrorsDetailGrid,
+                    fetchFn: getProcessingErrorsDetailData
+                },
+                data_integrity: {
+                    columnDefs: dataIntegrityDetailGrid,
+                    fetchFn: getDataIntegrityDetailDetailData
+                }
+                };
+
+
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+
+
+                .withColumnDefs([
+                    {
+                        headerName: "Created Time",
+                        field: "created_at",
+                        sortable: true,
+                        sort: "desc",
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "The earliest timestamp when the CSV processing error was recorded."
+                    },
+                    {
+                        headerName: "Category",
+                        field: "category",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The processing error category of the CSV file."
+                    },
+                    {
+                        headerName: "TechBD Tenant ID",
+                        field: "tenant_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
+                    },
+                    {
+                        headerName: "TechBD Zip File Interaction ID",
+                        field: "zip_file_hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique Zip File Hub Interaction ID for the CSV submission.",
+                        cellRenderer: 'agGroupCellRenderer'
+                    },
+                    {
+                        headerName: "Group ID",
+                        field: "group_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The group identifier associated with the CSV processing."
+                    },
+                    {
+                        headerName: "URI",
+                        field: "uri",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The URI from where the CSV file was submitted or processed."
+                    },
+                    {
+                        headerName: "Zip File Name",
+                        field: "zip_file_name",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The name of the ZIP file involved in the error."
+                    },
+                    {
+                        headerName: "Error Type",
+                        field: "error_types",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The type or category of the processing error encountered."
+                    },
+                    {
+                        headerName: "Origin",
+                        field: "origin",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The origin system or source that submitted the CSV file."
+                    },
+                    {
+                        headerName: "User Agent",
+                        field: "user_agent",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The User Agent of the client that submitted the CSV file."
+                    }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                    {
+                        beforeRequest: async (reqPayload, dataSourceUrl) => {
+                            // Add zip_file_hub_interaction_id filter from URL if present and not already in filterModel
+                            if (hubInteractionIdFromUrl && (!reqPayload.body.filterModel || !reqPayload.body.filterModel.zip_file_hub_interaction_id)) {
+                                reqPayload.body.filterModel = {
+                                    ...reqPayload.body.filterModel,
+                                    zip_file_hub_interaction_id: {
+                                        filterType: "text",
+                                        type: "equals",
+                                        filter: hubInteractionIdFromUrl
+                                    }
+                                };
+                            }
+                        }
+                    }
+                )
+                .withMasterDetail(true)
+                // .withDetailCellRendererParams({
+                //     detailGridOptions: {
+                //         columnDefs: fileNotProcesseddetailGrid,
+                //         defaultColDef: {
+                //             flex: 1
+                //         }
+                //     },
+                //     getDetailRowData: params => {
+                //         getfileNotProcessedDetailData(params);
+                //     }
+                // })
+                .withDetailCellRendererParams(function (params) {
+                    const category = params.data.category;
+                    console.log('Category:', category);
+                    const config = detailConfigByCategory[category];
+
+                    return {
+                        detailGridOptions: {
+                            columnDefs: config.columnDefs,
+                            defaultColDef: { flex: 1 }
+                        },
+
+                        getDetailRowData: detailParams => {
+                            config.fetchFn(detailParams);
+                        }
+                    };
+                })             
+                .withDetailRowAutoHeight(false)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+
+            // Show visual indicator if hub_interaction_id filter is applied from URL
+            if (hubInteractionIdFromUrl) {
+                // Update grid description to show active filter
+                const gridDescription = document.querySelector('.grid-description');
+                if (gridDescription) {
+                    const filterNotice = document.createElement('div');
+                    filterNotice.style.cssText = 'background-color: #e3f2fd; border: 1px solid #2196f3; padding: 8px; margin: 10px 0; border-radius: 4px; color: #1976d2; font-weight: bold; display: flex; justify-content: space-between; align-items: center;';
+
+                    const filterText = document.createElement('span');
+                    filterText.innerHTML = `TechBD Zip File Interaction ID: ${hubInteractionIdFromUrl}`;
+
+                    const clearButton = document.createElement('button');
+                    clearButton.innerHTML = 'Show All';
+                    clearButton.style.cssText = 'background-color: #1976d2; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 10px;';
+                    clearButton.title = 'Clear hub_interaction_id filter and return to original view';
+
+                    // Add hover effect
+                    clearButton.addEventListener('mouseenter', function () {
+                        this.style.backgroundColor = '#1565c0';
+                    });
+                    clearButton.addEventListener('mouseleave', function () {
+                        this.style.backgroundColor = '#1976d2';
+                    });
+
+                    // Add click handler to Show All and refresh page
+                    clearButton.addEventListener('click', function () {
+                        // Remove hub_interaction_id parameter from URL and reload page
+                        const url = new URL(window.location);
+                        url.searchParams.delete('hub_interaction_id');
+                        window.location.href = url.toString();
+                    });
+
+                    filterNotice.appendChild(filterText);
+                    filterNotice.appendChild(clearButton);
+                    gridDescription.parentNode.insertBefore(filterNotice, gridDescription.nextSibling);
+                }
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+            This data grid provides a consolidated summary of all major CSV processing issues detected during data
+            ingestion. It groups errors by ZIP File Interaction ID and highlights high-level categories such as file not
+            processed, incomplete groups, processing errors, and data integrity issues. For each interaction, the grid
+            displays the earliest recorded timestamp, tenant details, group information, file name, submission origin,
+            and user agent. <br>
+            This summary helps users quickly identify problematic ZIP submissions and understand the nature of
+            processing failures at an aggregated level. A drill-down option allows users to view detailed error records
+            for each interaction, enabling deeper investigation and ensuring that underlying issues are resolved before
+            reprocessing.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
