@@ -483,6 +483,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                 boolean zntPresent = true;
                 if (hl7Message != null) {
                     zntPresent = extractZntSegment(hl7Message, requestContext, interactionId.toString());
+                    if (!zntPresent) {
+                        logger.warn("ZNT_EXTRACTION_FAILED_USING_TERSER [interactionId={}] - proceed extracting manually", interactionId);
+                        zntPresent = extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
+                    }
                 } else {
                     zntPresent = extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
                     ackMessage = createHL7AckFromMsh(
