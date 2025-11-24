@@ -3,9 +3,9 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-  
+
     <style>
-        .grid-description{
+        .grid-description {
             font-size: 14px;
             margin: 5px 0px 5px 15px;
         }
@@ -30,7 +30,7 @@
                 field: "hub_interaction_id",
                 filter: "agTextColumnFilter",
                 headerTooltip: "The unique Group Interaction ID for the TechBD tenant associated with the CSV file."
-            }, 
+            },
             {
                 headerName: "Field Name",
                 field: "fieldname",
@@ -60,14 +60,14 @@
                 field: "error",
                 filter: "agTextColumnFilter",
                 headerTooltip: "The detailed error message describing the validation issue.",
-                tooltipField: "error"    
+                tooltipField: "error"
             },
             {
                 headerName: "Description",
                 field: "description",
                 filter: "agTextColumnFilter",
                 headerTooltip: "A brief description of the validation error.",
-                tooltipField: "description"  
+                tooltipField: "description"
             },
             {
                 headerName: "Row Number",
@@ -138,7 +138,7 @@
                         if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
                             console.log('Using response.rows, length:', rowData.rows.length);
                             rowData = rowData.rows;
-                        } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
                             console.log('Using response.data, length:', rowData.data.length);
                             rowData = rowData.data;
                         } else {
@@ -163,47 +163,47 @@
             const modalAide = new ModalAide();
             const helpers = new Helpers();
             const agGridInstance = new AGGridAideBuilder()
-            .withColumnDefs([
-                            { 
-                                headerName: "Created Time", 
-                                field: "created_at", 
-                                sortable: true, 
-                                sort: "desc", 
-                                filter: "agDateColumnFilter", 
-                                headerTooltip: "The timestamp when the CSV validation error was recorded."
-                            },
-                            { 
-                                headerName: "TechBD Tenant ID", 
-                                field: "tenant_id", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
-                            },
-                            {
-                                headerName: "TechBD Zip File Interaction ID",
-                                field: "zip_file_hub_interaction_id",
-                                filter: "agTextColumnFilter",
-                                cellRenderer: 'agGroupCellRenderer',
-                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."                                
-                            },
-                            { 
-                                headerName: "URI", 
-                                field: "uri", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The URI where the CSV file was submitted or validated."
-                            },
-                            { 
-                                headerName: "File Name", 
-                                field: "csv_zip_file_name", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The name of the CSV file where the error occurred."
-                            },
-                             { 
-                                headerName: "User Agent", 
-                                field: "user_agent", 
-                                filter: "agTextColumnFilter", 
-                                headerTooltip: "The User Agent of the user who submitted the CSV file."
-                            } 
-                        ])
+                .withColumnDefs([
+                    {
+                        headerName: "Created Time",
+                        field: "created_at",
+                        sortable: true,
+                        sort: "desc",
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "The timestamp when the CSV validation error was recorded."
+                    },
+                    {
+                        headerName: "TechBD Tenant ID",
+                        field: "tenant_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
+                    },
+                    {
+                        headerName: "TechBD Zip File Interaction ID",
+                        field: "zip_file_hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: 'agGroupCellRenderer',
+                        headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
+                    },
+                    {
+                        headerName: "URI",
+                        field: "uri",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The URI where the CSV file was submitted or validated."
+                    },
+                    {
+                        headerName: "File Name",
+                        field: "csv_zip_file_name",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The name of the CSV file where the error occurred."
+                    },
+                    {
+                        headerName: "User Agent",
+                        field: "user_agent",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The User Agent of the user who submitted the CSV file."
+                    }
+                ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
@@ -238,9 +238,15 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid provides a comprehensive overview of CSV data integrity errors within submitted files, displaying critical information such as Created Time, Tenant ID, Interaction ID, URI, File Name, and User Agent.
-            A drill-down feature enables users to explore detailed insights for each entry by clicking the expand arrow next to any row. This reveals specific field-level validation errors, including Field Name, Cell Value, Error Type, Error Message, Row Number, and Field Number, providing comprehensive context for efficient error tracing and resolution.
-             The grid highlights data validation issues including foreign key violations, incorrect values, and constraint errors, enabling users to quickly identify and address data quality problems.
+            This data grid provides a comprehensive overview of CSV data integrity errors within submitted files,
+            displaying critical information such as Created Time, Tenant ID, Interaction ID, URI, File Name, and User
+            Agent.
+            A drill-down feature enables users to explore detailed insights for each entry by clicking the expand arrow
+            next to any row. This reveals specific field-level validation errors, including Field Name, Cell Value,
+            Error Type, Error Message, Row Number, and Field Number, providing comprehensive context for efficient error
+            tracing and resolution.
+            The grid highlights data validation issues including foreign key violations, incorrect values, and
+            constraint errors, enabling users to quickly identify and address data quality problems.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

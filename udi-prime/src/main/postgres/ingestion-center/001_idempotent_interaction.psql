@@ -9420,3 +9420,75 @@ END;
 $function$
 ;
 /*********************** End of CCDA Replay ******************************/
+
+
+
+/* -------------------------------------------------------------
+-- View: csv_all_processing_error_summary
+-- This view provides a summarized list of CSV processing issues 
+-- recorded during data ingestion. 
+-- It consolidates records across categories such as 
+-- file_not_processed, incomplete_groups, processing_errors, 
+-- and data_integrity.
+--
+-- For each Zip File Interaction ID, the view captures the earliest 
+-- creation time, tenant details, group information, submission URI, 
+-- error type, ZIP file name, origin, and user agent.
+--
+-- Useful for understanding overall CSV processing outcomes, 
+-- identifying problematic files, grouping errors by interaction,
+-- and supporting high-level data quality monitoring.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_all_processing_error_summary CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.csv_all_processing_error_summary AS
+SELECT
+    scfpe.category,
+    scfpe.zip_file_hub_interaction_id,
+    MIN(scfpe.created_at) AS created_at,
+    MIN(scfpe.tenant_id) AS tenant_id,
+    MIN(scfpe.group_id) AS group_id,
+    MIN(scfpe.uri) AS uri,
+    MIN(scfpe.error_type) AS error_types,
+    MIN(scfpe.zip_file_name) AS zip_file_name,
+    MIN(scfpe.origin) AS origin,
+    MIN(scfpe.user_agent) AS user_agent
+FROM
+    techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe
+WHERE
+    scfpe.category IN (
+        'file_not_processed',
+        'incomplete_groups',
+        'processing_errors',
+        'data_integrity'
+    )
+GROUP BY
+    scfpe.category,
+    scfpe.zip_file_hub_interaction_id;
+
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_error_summary CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.csv_error_summary AS
+SELECT 
+    scfpe.zip_file_hub_interaction_id,
+    MIN(scfpe.created_at) AS created_at,
+    MIN(scfpe.tenant_id) AS tenant_id,
+    MIN(scfpe.group_id) AS group_id,
+    MIN(scfpe.uri) AS uri,
+    MIN(scfpe.error_type) AS error_types,
+    MIN(scfpe.zip_file_name) AS zip_file_name,
+    MIN(scfpe.origin) AS origin,
+    MIN(scfpe.user_agent) AS user_agent
+FROM
+    techbd_udi_ingress.sat_csv_fhir_processing_errors scfpe
+WHERE
+    scfpe.category IN (
+        'file_not_processed',
+        'incomplete_groups',
+        'processing_errors',
+        'data_integrity'
+    )
+GROUP BY 
+    scfpe.zip_file_hub_interaction_id;    
