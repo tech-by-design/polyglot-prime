@@ -602,6 +602,23 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
     sqlNS: ingressSchema
 });
 
+const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
+  bundle_id: text(),
+  hub_interaction_id: textNullable(),
+  retry_interaction_id: textNullable(),
+  is_valid: boolean().default(false),
+  error_message: jsonbNullable(),
+  elaboration: jsonbNullable(),
+  retry_master_interaction_id: textNullable(),
+  new_bundle_generated: jsonbNullable(),
+  corrected_bundle: jsonbNullable(),
+  original_ccda_file: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
 const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_errors", {
   sat_validation_and_fhir_conversion_errors_id: primaryKey(),
   category: text(),
@@ -1736,6 +1753,19 @@ const migrateSP = pgSQLa.storedProcedure(
           ADD CONSTRAINT link_nexus_interaction_pkey
           PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
       END IF;
+
+      ${ccdaReplayDetails}
+      PERFORM pg_advisory_lock(hashtext('ccda_replay_details'));
+          ALTER TABLE techbd_udi_ingress.ccda_replay_details ADD COLUMN IF NOT EXISTS reply_id TEXT NOT NULL DEFAULT gen_random_uuid()::text;
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'ccda_replay_details'
+                AND indexname = 'ccda_replay_details_bundle_id_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
+          END IF;          
+      PERFORM pg_advisory_unlock(hashtext('ccda_replay_details'));
 
       IF NOT EXISTS (
           SELECT 1

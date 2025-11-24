@@ -9161,4 +9161,262 @@ select
  created_at,
  sat_diagnostic_log_id
 FROM techbd_udi_ingress.sat_diagnostic_log
-where tenant_id is not null;    
+where tenant_id is not null;  
+
+/*********************** CCDA Replay ******************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_xml_content_from_mirth_fdw(text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_xml_content_from_mirth_fdw(p_bundle_id text)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_xml                          TEXT := NULL;
+    v_channel_id                   INT;
+    v_table                        TEXT;
+    v_sql                          TEXT;
+ 
+    v_base_fhir_url                TEXT := NULL;
+    v_patient_cin                  TEXT := NULL;
+    v_facility_id                  TEXT := NULL;
+    v_org_npi                      TEXT := NULL;
+    v_org_tax                      TEXT := NULL;
+    v_encounter_type               TEXT := NULL;
+    v_tenant_id                    TEXT := NULL;
+    v_original_hub_interaction_id  TEXT := NULL;
+    v_grouper_screening_code       TEXT := NULL;
+	v_original_bundle              JSONB := NULL;
+	v_alreadyResubmitted		   boolean := false;
+BEGIN
+    IF p_bundle_id IS NULL OR p_bundle_id = '' THEN
+        RETURN jsonb_build_object('error', 'bundle_id is empty.');
+    END IF;
+ 
+    -- Prevent duplicate replay
+    IF EXISTS (
+        SELECT 1
+        FROM techbd_udi_ingress.ccda_replay_details
+        WHERE bundle_id = p_bundle_id
+    ) THEN
+		v_alreadyResubmitted := true;
+    END IF;    
+ 
+	SELECT mc.content
+	  INTO v_xml
+      FROM public.d_mc mc
+      JOIN public.d_mc mc2
+        ON mc.message_id = mc2.message_id
+       AND mc2.metadata_id = 2
+       AND mc2.content_type = 11
+       AND mc2.content LIKE '%%' || p_bundle_id || '%%'
+     WHERE mc.metadata_id = 2
+       AND mc.content_type = 3
+     LIMIT 1;
+ 
+    WITH fhir_req AS (
+        SELECT r.payload, r.tenant_id, r.hub_interaction_id
+          FROM techbd_udi_ingress.sat_interaction_fhir_request r
+         WHERE r.nature = 'Original FHIR Payload'
+           AND r.bundle_id = p_bundle_id
+           AND r.payload IS NOT NULL
+           AND r.payload->>'id' = r.bundle_id
+         LIMIT 1
+    ),
+ 
+    -- Patient identifiers
+    patient AS (
+        SELECT
+            MAX(CASE WHEN coding->>'code' = 'MA' THEN ident->>'value' END) AS patient_cin,
+            MAX(CASE WHEN coding->>'code' = 'MR'
+                     THEN split_part(
+                              ident->>'system',
+                              '/',
+                              array_length(string_to_array(ident->>'system', '/'), 1)
+                          )
+                END) AS facility_id
+          FROM fhir_req r
+          JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON TRUE
+          JOIN LATERAL jsonb_array_elements(e->'resource'->'identifier') ident ON TRUE
+          JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON TRUE
+         WHERE e->'resource'->>'resourceType' = 'Patient'
+    ),
+ 
+    -- Organization identifiers
+    org AS (
+        SELECT
+            MAX(CASE WHEN coding->>'code' = 'NPI' THEN ident->>'value' END) AS org_npi,
+            MAX(CASE WHEN coding->>'code' = 'TAX' THEN ident->>'value' END) AS org_tax
+          FROM fhir_req r
+          JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON TRUE
+          JOIN LATERAL jsonb_array_elements(e->'resource'->'identifier') ident ON TRUE
+          JOIN LATERAL jsonb_array_elements(ident->'type'->'coding') coding ON TRUE
+         WHERE e->'resource'->>'resourceType' = 'Organization'
+    ),
+ 
+    -- Encounter type (aggregate to guarantee one row)
+    encounter AS (
+        SELECT MAX(coding->>'code') AS encounter_type
+          FROM fhir_req r
+          JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON TRUE
+          JOIN LATERAL jsonb_array_elements(e->'resource'->'type') typ ON TRUE
+          JOIN LATERAL jsonb_array_elements(typ->'coding') coding ON TRUE
+         WHERE e->'resource'->>'resourceType' = 'Encounter'
+    ),
+ 
+    -- Grouper Observation code (hasMember present) — aggregate to guarantee one row
+    grouper AS (
+	    SELECT MAX(coding->>'code') AS grouper_screening_code
+	      FROM fhir_req r
+	      JOIN LATERAL jsonb_array_elements(r.payload->'entry') e ON TRUE
+	      JOIN LATERAL jsonb_array_elements((e->'resource'->'code'->'coding')) coding ON TRUE
+	     WHERE e->'resource'->>'resourceType' = 'Observation'
+	       AND (e->'resource') ? 'hasMember'
+	),
+ 
+    -- Base FHIR URL + tenant + interaction (aggregate to guarantee one row)
+    base AS (
+        SELECT
+            MIN(split_part(pf, '/StructureDefinition', 1)) AS base_fhir_url,
+            r.tenant_id,
+            r.hub_interaction_id,
+			r.payload
+          FROM fhir_req r
+          LEFT JOIN LATERAL (
+              SELECT jsonb_array_elements_text(r.payload->'meta'->'profile') AS pf
+          ) p ON TRUE
+         GROUP BY r.tenant_id, r.hub_interaction_id, r.payload
+    )
+ 
+    SELECT
+        p.patient_cin,
+        p.facility_id,
+        o.org_npi,
+        o.org_tax,
+        e.encounter_type,
+        b.base_fhir_url,
+        b.tenant_id,
+        b.hub_interaction_id,
+        g.grouper_screening_code,
+		b.payload
+      INTO
+        v_patient_cin,
+        v_facility_id,
+        v_org_npi,
+        v_org_tax,
+        v_encounter_type,
+        v_base_fhir_url,
+        v_tenant_id,
+        v_original_hub_interaction_id,
+        v_grouper_screening_code,
+		v_original_bundle
+      FROM patient         p
+      CROSS JOIN org       o
+      CROSS JOIN encounter e
+      CROSS JOIN grouper   g
+      CROSS JOIN base      b;
+ 
+    RETURN jsonb_build_object(
+        'alreadyResubmitted', v_alreadyResubmitted,
+        'originalCCDAPayload', v_xml,
+		'originalBundle', v_original_bundle,
+        'original_hub_interaction_id', v_original_hub_interaction_id,
+        'X-TechBD-Tenant-ID', v_tenant_id,
+        'X-TechBD-Bundle-ID', p_bundle_id,
+        'X-TechBD-Base-FHIR-URL', v_base_fhir_url,
+        'X-TechBD-CIN', v_patient_cin,
+        'X-TechBD-OrgNPI', v_org_npi,
+        'X-TechBD-Facility-ID', v_facility_id,
+        'X-TechBD-OrgTIN', v_org_tax,
+        'X-TechBD-Encounter-Type', v_encounter_type,
+        'X-TechBD-Screening-Code', v_grouper_screening_code
+    );
+END;
+$$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.ccda_replay_details_upserted(text, text, text, timestamptz, text, text, bool, jsonb, jsonb, text, jsonb, jsonb, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.ccda_replay_details_upserted(
+	p_bundle_id text,
+	p_hub_interaction_id text,
+	p_retry_interaction_id text,
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
+	p_created_by text DEFAULT NULL::text,
+	p_provenance text DEFAULT NULL::text,
+	p_is_valid boolean DEFAULT false,
+	p_error_message jsonb DEFAULT NULL::jsonb,
+	p_elaboration jsonb DEFAULT NULL::jsonb,
+	p_retry_master_interaction_id text DEFAULT NULL::text,
+	p_new_bundle_generated jsonb DEFAULT NULL::jsonb,
+	p_corrected_bundle jsonb DEFAULT NULL::jsonb,
+	p_original_ccda_file text DEFAULT NULL::text
+	)
+RETURNS text
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_error_msg 			TEXT;
+    v_error_type 			TEXT;
+    v_sqlstate 				TEXT;
+    v_pg_detail 			TEXT;
+    v_pg_hint 				TEXT;
+    v_pg_context 			TEXT;
+    v_created_at 			TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
+    v_created_by 			TEXT 		:= COALESCE(p_created_by, current_user);
+    v_provenance 			TEXT 		:= COALESCE(p_provenance, 'replay ccda');
+    v_exception_id 			TEXT 		:= gen_random_uuid()::text;
+   	v_hub_interaction_key 	TEXT;
+   	v_return				TEXT;
+	v_elaboration 			JSONB;   	
+BEGIN
+	/*---register diagnostic log---*/
+	v_elaboration := jsonb_build_object(
+							'old interaction_id', p_hub_interaction_id,
+							'bundle_id', p_bundle_id,
+							'retry_interaction_id', p_retry_interaction_id,
+							'retry_master_interaction_id', p_retry_master_interaction_id
+							);
+	CALL techbd_udi_ingress.register_diagnostic_log(
+			v_exception_id, v_hub_interaction_key, v_created_by, v_provenance, 'info'::text,
+			'Input parameters into ccda_replay_details_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+	/*------------------------------*/
+ 
+  	IF p_bundle_id IS NULL OR p_hub_interaction_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+ 
+	INSERT INTO techbd_udi_ingress.ccda_replay_details
+				(bundle_id, hub_interaction_id, retry_interaction_id, provenance, created_by, created_at,
+				is_valid, error_message, elaboration, retry_master_interaction_id,
+				new_bundle_generated, corrected_bundle, original_ccda_file)
+	VALUES(p_bundle_id, p_hub_interaction_id, p_retry_interaction_id, v_provenance, v_created_by, v_created_at,
+				p_is_valid, p_error_message, p_elaboration, p_retry_master_interaction_id,
+				p_new_bundle_generated, p_corrected_bundle, p_original_ccda_file);
+	v_return = p_bundle_id;
+	
+	RETURN v_return;
+EXCEPTION
+	WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		    
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		v_hub_interaction_key,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+	RETURN NULL;
+END;
+$function$
+;
+/*********************** End of CCDA Replay ******************************/
