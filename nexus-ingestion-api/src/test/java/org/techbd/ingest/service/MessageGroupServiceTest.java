@@ -104,7 +104,7 @@ class MessageGroupServiceTest {
 
         var context = buildContext(null, "192.168.1.1", "192.168.1.2", "9090", MessageSourceType.MLLP, additional);
         String groupId = messageGroupService.createMessageGroupId(context, "interaction123");
-        assertEquals("healthelink_DEL_FAC_MSG", groupId);
+        assertEquals("healthelink_FAC_MSG_DEL", groupId);
     }
 
     @Test
