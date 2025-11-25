@@ -335,7 +335,8 @@
                         headerName: "Category",
                         field: "category",
                         filter: "agTextColumnFilter",
-                        headerTooltip: "The processing error category of the CSV file."
+                        headerTooltip: "The processing error category of the CSV file.",
+                        cellStyle: { fontWeight: "bold" }
                     },
                     {
                         headerName: "TechBD Tenant ID",
@@ -491,8 +492,8 @@
     <div layout:fragment="content">
         <div class="grid-description">
             This data grid provides a consolidated summary of all major CSV processing issues detected during data
-            ingestion. It groups errors by ZIP File Interaction ID and highlights high-level categories such as file not
-            processed, incomplete groups, processing errors, and data integrity issues. For each interaction, the grid
+            ingestion. It groups errors by ZIP File Interaction ID and highlights high-level categories such as <b>file not
+            processed, incomplete groups, processing errors, and data integrity issues</b>. For each interaction, the grid
             displays the earliest recorded timestamp, tenant details, group information, file name, submission origin,
             and user agent. <br>
             This summary helps users quickly identify problematic ZIP submissions and understand the nature of
