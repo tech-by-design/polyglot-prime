@@ -2,9 +2,9 @@
   <id>eda1fe7c-172b-4ef3-b98a-00e5b23d4f70</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow - 7602</name>
-  <description>Version: 0.4.35
-Updated to handle AthenaHealth CCD XML files.</description>
-  <revision>3</revision>
+  <description>Version: 0.5.1
+Lookup manager implementation for XSD, XSLT files.</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2797,7 +2797,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763974002767</time>
+        <time>1764131778048</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
