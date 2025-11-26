@@ -48,7 +48,7 @@
                         cellRenderer: params => {
                             if (params.value) {
                                 const hub_interaction_ids = params.data?.zip_file_hub_interaction_id;
-                                return `<a href="/data-quality/csv-validations/csv-all-error-summary?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                                return `<a href="/data-quality/csv-validations/csv-issue-details?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } 
                         }
                     }, 
@@ -115,7 +115,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-           This data grid provides a high-level summary of all CSV processing failures, grouped by ZIP File Interaction ID. Each row represents a single ZIP submission and displays the earliest error timestamp, tenant and group details, file name, submission source, and user agent. <br>
+           This data grid provides a high-level summary of all CSV processing failures, grouped by ZIP File Interaction ID. Each row represents a single ZIP submission and displays the earliest error timestamp, tenant, uri and file name. <br>
             This summary view helps users quickly identify problematic ZIP submissions and understand the overall error categories associated with each interaction. Clicking on the TechBD Zip File Interaction ID navigates to the All CSV Errors page, automatically applying the correct TechBD Zip File Interaction ID filter to display the detailed errors for that specific interaction.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>

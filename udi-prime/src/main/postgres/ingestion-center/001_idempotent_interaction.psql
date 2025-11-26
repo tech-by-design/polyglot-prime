@@ -9445,6 +9445,13 @@ DROP VIEW IF EXISTS techbd_udi_ingress.csv_all_processing_error_summary CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.csv_all_processing_error_summary AS
 SELECT
     scfpe.category,
+    CASE scfpe.category
+        WHEN 'file_not_processed' THEN 'File Not Processed'
+        WHEN 'incomplete_groups' THEN 'Incomplete Groups'
+        WHEN 'processing_errors' THEN 'Processing Errors'
+        WHEN 'data_integrity' THEN 'Data Integrity'
+        ELSE scfpe.category
+    END AS category_label,    
     scfpe.zip_file_hub_interaction_id,
     MIN(scfpe.created_at) AS created_at,
     MIN(scfpe.tenant_id) AS tenant_id,

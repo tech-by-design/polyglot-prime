@@ -131,7 +131,7 @@
                         cellRenderer: params => {
                             if (params.value === 'Failed' || params.value === 'Partial Success') {
                                 const hub_interaction_ids = params.data?.hub_interaction_id;
-                                return `<a href="/data-quality/csv-validations/csv-all-error-summary?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                                return `<a href="/data-quality/csv-validations/csv-issue-details?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } else {
                                 return params.value;
                             }

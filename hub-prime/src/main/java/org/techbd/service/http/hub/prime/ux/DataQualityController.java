@@ -63,7 +63,7 @@ public class DataQualityController {
     @GetMapping("/data-quality/csv-validations") 
     @RouteMapping(label = "CSV Data Quality", title = "CSV Data Quality", siblingOrder = 40)    
     public String diagnosticsHttpsViaCsvValidationIssues(final Model model, final HttpServletRequest request) {
-        return "redirect:/data-quality/csv-validations/csv-error-summary";
+        return "redirect:/data-quality/csv-validations/csv-issues-summary";
     }   
     
     // @GetMapping("/data-quality/csv-validations/file-not-processed")
@@ -90,16 +90,16 @@ public class DataQualityController {
     //     return presentation.populateModel("page/diagnostics/processing-errors", model, request);
     // }
     
-    @GetMapping("/data-quality/csv-validations/csv-error-summary")
-    @RouteMapping(label = "CSV Error Summary", title = "CSV Error Summary", siblingOrder = 10)
+    @GetMapping("/data-quality/csv-validations/csv-issues-summary")
+    @RouteMapping(label = "CSV Issues Summary", title = "CSV Issues Summary", siblingOrder = 10)
     public String csvErrorSummary(final Model model, final HttpServletRequest request) {        
-        return presentation.populateModel("page/diagnostics/csv-error-summary", model, request);
+        return presentation.populateModel("page/diagnostics/csv-issues-summary", model, request);
     }    
 
-    @GetMapping("/data-quality/csv-validations/csv-all-error-summary")
-    @RouteMapping(label = "All CSV Errors", title = "All CSV Errors", siblingOrder = 20)
+    @GetMapping("/data-quality/csv-validations/csv-issue-details")
+    @RouteMapping(label = "CSV Issues", title = "CSV Issues", siblingOrder = 20)
     public String csvAllErrorSummary(final Model model, final HttpServletRequest request) {        
-        return presentation.populateModel("page/diagnostics/csv-all-error-summary-details", model, request);
+        return presentation.populateModel("page/diagnostics/csv-issue-details", model, request);
     }       
 
     @GetMapping("/data-quality/ccda-validations-issues") 

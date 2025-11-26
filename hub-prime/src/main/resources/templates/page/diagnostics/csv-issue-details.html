@@ -491,15 +491,8 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid provides a consolidated summary of all major CSV processing issues detected during data
-            ingestion. It groups errors by ZIP File Interaction ID and highlights high-level categories such as <b>file not
-            processed, incomplete groups, processing errors, and data integrity issues</b>. For each interaction, the grid
-            displays the earliest recorded timestamp, tenant details, group information, file name, submission origin,
-            and user agent. <br>
-            This summary helps users quickly identify problematic ZIP submissions and understand the nature of
-            processing failures at an aggregated level. A drill-down option allows users to view detailed error records
-            for each interaction, enabling deeper investigation and ensuring that underlying issues are resolved before
-            reprocessing.
+            This data grid provides a complete overview of all CSV processing issues detected during data ingestion, including file-level errors, incomplete groups, processing exceptions, and data integrity problems. It displays key details such as Created Time, Tenant ID, Interaction ID, File Name, Origin, and User Agent. <br>
+            A drill-down option allows users to view detailed error information for each submission—such as specific validation errors, missing files, processing exceptions, and field-level issues—helping them quickly identify the root cause and resolve problems efficiently.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
