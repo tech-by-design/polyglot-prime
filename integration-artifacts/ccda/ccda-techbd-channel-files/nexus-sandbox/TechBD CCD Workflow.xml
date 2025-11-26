@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
+  <id>eda1fe7c-172b-4ef3-b98a-00e5b23d4f70</id>
   <nextMetaDataId>12</nextMetaDataId>
-  <name>TechBD CCD Workflow With DB</name>
-  <description>Version: 0.4.34
-Updated to handle AthenaHealth CCD XML files.</description>
-  <revision>35</revision>
+  <name>TechBD CCD Workflow - 7602</name>
+  <description>Version: 0.5.1
+Lookup manager implementation for XSD, XSLT files.</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1465,8 +1465,6 @@ function getConsentResourceStatus(sourceXml) {
 		var consentJsonString = JSON.stringify(consentInfo);
 		logger.info(&quot;Consent Info JSON: &quot; + consentJsonString);
 		channelMap.put(&apos;elaboration&apos;, consentJsonString);
-	logger.info(&quot;***********Generated X-TechBD-Elaboration value → &quot; + channelMap.get(&apos;elaboration&apos;));
-
 	} catch (e) {
         var errorMsg;
         if (e instanceof JavaException) {
@@ -1553,12 +1551,27 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		// Load the XSLT template
 		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
 		logger.info(&quot;xsltPath: &quot; + xsltPath);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
-		
+		var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+		var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+
+//		var xsltFile = new java.io.File(xsltPath);
+//		var xsltStream = new java.io.FileInputStream(xsltFile);
+		var ttlHours = 24 * 20; // Time to live in hours
+		var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
+			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);
 		// Create the transformer
 		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 		var transformer = transformerFactory.newTransformer(xsltSource);
 		
 		// Prepare input and output streams
@@ -1590,24 +1603,129 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	     }
 		/*End of phi filter*/
 		
-        // Validate CCD
+// Validate CCD
         var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
         logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+        var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
+        logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
+        var xsdContent  = LookupHelper.get(&quot;SchemaFiles&quot;, xsdFileName , ttlHours);
+	   logger.info(&quot;Value from XSD file : &quot; + xsdContent );
 
-        // Load the XSD schema
-        var xsdFile = new java.io.File(xsdFilePath);
-        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-        var schema = javax.xml.validation.SchemaFactory
-            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-            .newSchema(schemaInputStream);
+			if (!xsdContent ) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + xsdFileName);
+			}
+//==========================================================================
+		var ttlHours = 24 * 24;
+			
+			var lookupResource = &quot;SchemaFiles&quot;;
+			 
+			var File = Packages.java.io.File;
+               var FileWriter = Packages.java.io.FileWriter;
 
-        // Set up the validator
-        var validator = schema.newValidator();
+			
+			var tempDir = new File(&quot;/tmp/cda_xsd_cache&quot;);
+			if (!tempDir.exists()) {
+			    tempDir.mkdirs();
+			}
+			
+			logger.info(&quot;Temp XSD folder = &quot; + tempDir.getAbsolutePath());
+			
+			// ===============================================================
+			// 2. List all XSD files required
+			// ===============================================================
+			var ttl = 24 * 24;
+			
+			logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
+			var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;, ttl);
+			
+			logger.info(&quot;typeof rawIndex = &quot; + typeof rawIndex);
+			logger.info(&quot;rawIndex: &quot; + JSON.stringify(rawIndex));
+			
+			var indexText = null;
 
-        // Set up the input source for the XML
-        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml));
+				// ========== NORMALIZE rawIndex TO A STRING ==========
+				if (rawIndex == null) {
+				    logger.error(&quot;Lookup returned NULL for index.txt — fallback to empty string&quot;);
+				    indexText = &quot;&quot;;
+				} 
+				else if (typeof rawIndex === &quot;object&quot;) {
+				    // Mirth sometimes returns {content:&quot;text&quot;} OR sometimes the object itself is stringifiable
+				    if (rawIndex.content &amp;&amp; typeof rawIndex.content === &quot;string&quot;) {
+				        indexText = rawIndex.content;
+				    } else {
+				        // Convert entire object to string safely
+				        indexText = String(rawIndex);
+				        logger.warn(&quot;Converted rawIndex OBJECT to string: &quot; + indexText);
+				    }
+				}
+				else if (typeof rawIndex === &quot;string&quot;) {
+				    indexText = rawIndex;
+				} 
+				else {
+				    // Unexpected type (number, boolean, etc)
+				    indexText = String(rawIndex);
+				    logger.warn(&quot;Converted NON-STRING rawIndex to string: &quot; + indexText);
+				}
+				
+				logger.info(&quot;indexText (final extracted): &gt;&gt;&gt;&quot; + indexText + &quot;&lt;&lt;&lt;&quot;);
+				
+				// ========== PARSE INTO ARRAY ==========
+				var xsdFiles = [];
+				
+				if (indexText.trim().length &gt; 0) {
+				    xsdFiles = indexText
+				        .split(/\r?\n/)
+				        .map(function (line) { return line.trim(); })
+				        .filter(function (line) { return line.length &gt; 0; });
+				}
+				
+				logger.info(&quot;Final XSD list: &quot; + JSON.stringify(xsdFiles));
 
-        // Perform the validation
+			// ===============================================================
+			// 3. Write each XSD from LookupManager into temp directory
+			// ===============================================================
+			for (var i = 0; i &lt; xsdFiles.length; i++) {
+			    var name = xsdFiles[i];
+			    var content = LookupHelper.get(&quot;SchemaFiles&quot;, name, ttl);
+			
+			    if (!content || content.trim().length === 0) {
+			        throw new Error(&quot;Missing XSD in LookupManager: &quot; + name);
+			    }
+			
+			    var f = new File(tempDir, name);
+			    var fw = new FileWriter(f);
+			    fw.write(content);
+			    fw.close();
+			
+			    logger.info(&quot;Wrote XSD to temp: &quot; + f.getAbsolutePath());
+			}
+			
+			// ===============================================================
+			// 4. Load ONLY the root CDA.xsd from the temp directory
+			// ===============================================================
+			var schemaFactory = javax.xml.validation.SchemaFactory
+			    .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			
+			var rootFile = new File(tempDir, xsdFileName);
+			var schemaSource = new javax.xml.transform.stream.StreamSource(rootFile);
+			
+			// ===============================================================
+			// 5. Build the schema — includes work automatically from disk
+			// ===============================================================
+			var schema = schemaFactory.newSchema(schemaSource);
+			var validator = schema.newValidator();
+			
+			// ===============================================================
+			// 6. Validate your XML
+			// ===============================================================
+			var xmlSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(phiFilteredXml)
+			);
+
+				
+				logger.info(&quot;Starting XML validation against CDA schema...&quot;);
+
+
         try {
         	  validator.validate(xmlSource);
             
@@ -1775,15 +1893,32 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	     getManufacturerModelName(sourceXml); // Load the XSLT template
 	     getConsentResourceStatus(sourceXml); // Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
 	     
-		
 		// Load the XSLT template
-		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
+//		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+//		var xsltFile = new java.io.File(xsltPath);
+//		var xsltStream = new java.io.FileInputStream(xsltFile);
+          var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+		logger.info(&quot;xsltPath: &quot; + xsltPath);
+		var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+		var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+
+		var ttlHours = 24 * 20; // Time to live in hours
+		var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
+			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);
 		
 		// Create the transformer
 		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 		var transformer = transformerFactory.newTransformer(xsltSource);
 		
 		// Prepare input and output streams
@@ -1817,15 +1952,125 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	
 	//**/////////CCDA Validation Begin///////////////**///
 		   // Validate CCD
-	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-	        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
-	
-	        // Load the XSD schema
-	        var xsdFile = new java.io.File(xsdFilePath);
-	        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-	        var schema = javax.xml.validation.SchemaFactory
-	            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-	            .newSchema(schemaInputStream);
+//	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+//	        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+//	
+//	        // Load the XSD schema
+//	        var xsdFile = new java.io.File(xsdFilePath);
+//	        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
+//	        var schema = javax.xml.validation.SchemaFactory
+//	            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
+//	            .newSchema(schemaInputStream);&#xd;&#xd;//============================New Chnges ===========================================//&#xd;// Validate CCD
+        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+        var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
+        logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
+        var xsdContent  = LookupHelper.get(&quot;SchemaFiles&quot;, xsdFileName , ttlHours);
+	   logger.info(&quot;Value from XSD file : &quot; + xsdContent );
+
+			if (!xsdContent ) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + xsdFileName);
+			}
+//==========================================================================
+		var ttlHours = 24 * 24;
+			
+			var lookupResource = &quot;SchemaFiles&quot;;
+			 
+			var File = Packages.java.io.File;
+               var FileWriter = Packages.java.io.FileWriter;
+
+			
+			var tempDir = new File(&quot;/tmp/cda_xsd_cache&quot;);
+			if (!tempDir.exists()) {
+			    tempDir.mkdirs();
+			}
+			
+			logger.info(&quot;Temp XSD folder = &quot; + tempDir.getAbsolutePath());
+			
+			// ===============================================================
+			// 2. List all XSD files required
+			// ===============================================================
+			var ttl = 24 * 24;
+			
+			logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
+			var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;, ttl);
+			
+			logger.info(&quot;typeof rawIndex = &quot; + typeof rawIndex);
+			logger.info(&quot;rawIndex: &quot; + JSON.stringify(rawIndex));
+			
+			var indexText = null;
+
+				// ========== NORMALIZE rawIndex TO A STRING ==========
+				if (rawIndex == null) {
+				    logger.error(&quot;Lookup returned NULL for index.txt — fallback to empty string&quot;);
+				    indexText = &quot;&quot;;
+				} 
+				else if (typeof rawIndex === &quot;object&quot;) {
+				    // Mirth sometimes returns {content:&quot;text&quot;} OR sometimes the object itself is stringifiable
+				    if (rawIndex.content &amp;&amp; typeof rawIndex.content === &quot;string&quot;) {
+				        indexText = rawIndex.content;
+				    } else {
+				        // Convert entire object to string safely
+				        indexText = String(rawIndex);
+				        logger.warn(&quot;Converted rawIndex OBJECT to string: &quot; + indexText);
+				    }
+				}
+				else if (typeof rawIndex === &quot;string&quot;) {
+				    indexText = rawIndex;
+				} 
+				else {
+				    // Unexpected type (number, boolean, etc)
+				    indexText = String(rawIndex);
+				    logger.warn(&quot;Converted NON-STRING rawIndex to string: &quot; + indexText);
+				}
+				
+				logger.info(&quot;indexText (final extracted): &gt;&gt;&gt;&quot; + indexText + &quot;&lt;&lt;&lt;&quot;);
+				
+				// ========== PARSE INTO ARRAY ==========
+				var xsdFiles = [];
+				
+				if (indexText.trim().length &gt; 0) {
+				    xsdFiles = indexText
+				        .split(/\r?\n/)
+				        .map(function (line) { return line.trim(); })
+				        .filter(function (line) { return line.length &gt; 0; });
+				}
+				
+				logger.info(&quot;Final XSD list: &quot; + JSON.stringify(xsdFiles));
+
+			// ===============================================================
+			// 3. Write each XSD from LookupManager into temp directory
+			// ===============================================================
+			for (var i = 0; i &lt; xsdFiles.length; i++) {
+			    var name = xsdFiles[i];
+			    var content = LookupHelper.get(&quot;SchemaFiles&quot;, name, ttl);
+			
+			    if (!content || content.trim().length === 0) {
+			        throw new Error(&quot;Missing XSD in LookupManager: &quot; + name);
+			    }
+			
+			    var f = new File(tempDir, name);
+			    var fw = new FileWriter(f);
+			    fw.write(content);
+			    fw.close();
+			
+			    logger.info(&quot;Wrote XSD to temp: &quot; + f.getAbsolutePath());
+			}
+			
+			// ===============================================================
+			// 4. Load ONLY the root CDA.xsd from the temp directory
+			// ===============================================================
+			var schemaFactory = javax.xml.validation.SchemaFactory
+			    .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			
+			var rootFile = new File(tempDir, xsdFileName);
+			var schemaSource = new javax.xml.transform.stream.StreamSource(rootFile);
+			
+			// ===============================================================
+			// 5. Build the schema — includes work automatically from disk
+			// ===============================================================
+			var schema = schemaFactory.newSchema(schemaSource);
+		//==============================new changes end =====================================//	&#xd;
 	        
 	        var validator = schema.newValidator(); // Set up the validator       
 	        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml)); // Set up the input source for the XML
@@ -1950,12 +2195,30 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			/////////  Step 2  //////////
 			// Load the XSLT template
 			var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
-			var xsltFile = new java.io.File(xsltPath);
-			var xsltStream = new java.io.FileInputStream(xsltFile);
+//			var xsltFile = new java.io.File(xsltPath);
+//			var xsltStream = new java.io.FileInputStream(xsltFile);
+
+//=====================================new changes ====================================//
+               logger.info(&quot;xsltPath: &quot; + xsltPath);
+	          var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
+			var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
+	          logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
+			var ttlHours = 24 * 20; // Time to live in hours
+			var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName , ttlHours);
+			logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltContent);
+
+			if (!xsltContent) {
+			    throw new Error(&quot;LookupManager: No XSLT found for key &quot; + fileName);
+			}
 			
+			// Convert XSLT to StreamSource
+			var xsltSource = new javax.xml.transform.stream.StreamSource(
+			    new java.io.StringReader(xsltContent)
+			);   
+//=======================================new changes end =================================//			
 			// Create the transformer
 			var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-			var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+//			var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
 			var transformer = transformerFactory.newTransformer(xsltSource);
 	
 			// Set the current timestamp parameter in ISO 8601 format
@@ -2534,14 +2797,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763655685075</time>
+        <time>1764131778048</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
   </exportData>
 </channel>

@@ -68,7 +68,7 @@
       "channel": "lookup_group_schemafiles_export.json",
       "version": "",
       "editedby": "anoopvarma-2000-p",
-      "date": "2025-11-20"
+      "date": "2025-11-26"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -80,9 +80,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.4.36",
-      "editedby": "cibijacob",
-      "date": "2025-10-22"
+      "version": "0.5.1",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-11-26"
     }
   ],
   "transformations": {
