@@ -1,18 +1,15 @@
 <channel version="4.6.0">
-  <id>eda1fe7c-172b-4ef3-b98a-00e5b23d4f70</id>
+  <id>1f14d3a9-82a9-4b2c-8b0d-a2992aca7d07</id>
   <nextMetaDataId>12</nextMetaDataId>
-  <name>TechBD CCD Workflow - 7602</name>
-  <description>Version: 0.5.1
-Lookup manager implementation for XSD, XSLT files.</description>
-  <revision>6</revision>
+  <name>TechBD CCD Workflow</name>
+  <description>Version: 0.5.2
+Implemented source system.</description>
+  <revision>14</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Lookup manager implementation for XSD, XSLT files.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -136,12 +136,24 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
 		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
 
+		var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+	     logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	     //If any error happens in between, find the ccda source type from the input file
+	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
+		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
+		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
+		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
+		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
+	}
+	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
+		
 		//Devl
 	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
 
 	    logger.info(&quot;Database connection established successfully.&quot;);
 	
-		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
 	    stmt = conn.prepareCall(sql);
 
 		stmt.setString(1, interactionId);
@@ -209,6 +221,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(27, java.sql.Types.VARCHAR);
 		stmt.setNull(28, java.sql.Types.VARCHAR);
 		stmt.setString(29, channelMap.get(&apos;filename&apos;));
+		stmt.setString(30, ccdaAuthoringDevice);
 
 	    var result = stmt.execute();
 	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
@@ -1381,7 +1394,7 @@ function set_fhir_resource_profile_urls(transformer) {
 	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
 	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
 	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
-//	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
+	//var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
 	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
 	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
@@ -2797,14 +2810,43 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1764131778048</time>
+        <time>1764150698737</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
+        <name>Active</name>
+        <channelIds>
+          <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
+          <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
+          <string>1f14d3a9-82a9-4b2c-8b0d-a2992aca7d07</string>
+          <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
+          <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
+          <string>a841f60d-4223-48de-aa35-a2714b609ac6</string>
+          <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
+          <string>14111208-19b9-4253-9e7b-50e4e03e0dd0</string>
+          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
+          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+          <string>dbc62d38-c440-4cd8-89e5-d026f33a570c</string>
+          <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
+          <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
+        </channelIds>
+        <backgroundColor>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
