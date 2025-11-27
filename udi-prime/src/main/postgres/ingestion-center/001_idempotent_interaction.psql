@@ -1815,7 +1815,7 @@ DECLARE
     v_created_at                    TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
     v_created_by                    TEXT        := COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
     v_provenance                    TEXT        := COALESCE(p_provenance, 'unknown');  -- Set default provenance
-    v_exception_id                  TEXT;
+    v_exception_id 					TEXT		:= gen_random_uuid()::text;
     
     -- Additional variables for extracting and holding data from the payload JSONB
     v_client_ip_address             TEXT    := NULL;
@@ -1848,6 +1848,8 @@ DECLARE
     v_return                        TEXT    := NULL;
     v_techbd_disposition_action     TEXT    := NULL;
     v_elaboration_steps             JSONB   := '[]'::jsonb;
+	v_elaboration_steps_text 		TEXT[] 	:= ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb 		JSONB 	:= '[]'::jsonb;
     v_elaboration                   JSONB   := NULL;
     v_diagnostic_id                 TEXT    := gen_random_uuid()::text;
     v_is_bundle_valid               BOOLEAN := false;
@@ -1857,8 +1859,8 @@ DECLARE
 
 BEGIN
     BEGIN    
-    v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('0', 'sat_interaction_fhir_request_upserted function parameters'));
-
+    v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_fhir_request_upserted function');
+	
     IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
         WHERE t.hub_interaction_id = p_hub_interaction_id) THEN
         --AND t."key" = p_uri) then
@@ -2117,7 +2119,7 @@ BEGIN
 				AND nature = 'Forwarded HTTP Response Replay Error'
 				AND tenant_id = p_tenant_id;
 
-			v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Updated the row in sat_interaction_fhir_request'));
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Updated the row in sat_interaction_fhir_request');
     	ELSE
 		    -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
 		    -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
@@ -2215,7 +2217,7 @@ BEGIN
 	            p_techbd_version_number
 	        ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 	
-	        v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('1', 'Insert into sat_interaction_fhir_request'));
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Insert into sat_interaction_fhir_request');
 		END IF;
 
     IF (v_return IS NOT NULL) THEN
@@ -2248,7 +2250,7 @@ BEGIN
                     p_tenant_id,
                     p_techbd_version_number
                 );
-                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('3', 'Insert into sat_interaction_fhir_validation_issue'));
+                v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Insert into sat_interaction_fhir_validation_issue');
             END IF;              
             IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN
                 CALL techbd_udi_ingress.insert_fhir_screening_info(
@@ -2261,7 +2263,7 @@ BEGIN
                     p_provenance,
                     p_elaboration
                 );
-                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('4', 'Insert into sat_interaction_fhir_screening_info'));
+                v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Insert into sat_interaction_fhir_screening_info');
 
                 CALL techbd_udi_ingress.insert_fhir_screening_patient(
                     p_hub_interaction_id, 
@@ -2274,7 +2276,7 @@ BEGIN
                     p_elaboration,
                     v_organization_id
                 );
-                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('5', 'Insert into sat_interaction_fhir_screening_patient'));
+                v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Insert into sat_interaction_fhir_screening_patient');
 
                 CALL techbd_udi_ingress.insert_fhir_screening_organization(
                     p_hub_interaction_id, 
@@ -2286,7 +2288,7 @@ BEGIN
                     p_provenance,
                     p_elaboration 
                 );
-                v_elaboration_steps := v_elaboration_steps || jsonb_build_array(jsonb_build_object('6', 'Insert into sat_interaction_fhir_screening_organization'));
+                v_elaboration_steps_text := array_append(v_elaboration_steps_text, '6: Insert into sat_interaction_fhir_screening_organization');
             END IF;                  
         END IF;         
     END IF; 
@@ -2384,6 +2386,7 @@ EXCEPTION
             
             v_is_exception := true;				
 			v_return_status := true;
+			v_return := NULL;
 END;
         
         v_elaboration := jsonb_build_object(
@@ -2396,35 +2399,29 @@ END;
                         'techbd_version_number', p_techbd_version_number
                         );
 
-    IF  v_elaboration_steps IS NOT NULL THEN
-        v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('steps', v_elaboration_steps));
-        IF v_error_msg IS NOT NULL THEN --Add error details, if any
-            v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
-        END IF;
-
-        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, v_provenance, 'info'::text, 
-                        'sat_interaction_fhir_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
+    -- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
     END IF;
 
-    IF v_is_exception = true THEN
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_uri, v_created_by, v_provenance, 'info'::text, 
+       						'sat_interaction_fhir_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_id, p_hub_interaction_id);
+
+	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
         v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
         v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-        p_uri,
-        v_error_msg,
-        v_error_type,
-        v_sqlstate,
-        v_pg_detail,
-        v_pg_hint,
-        v_pg_context,
-        v_created_by,
-        v_provenance, v_elaboration, p_tenant_id, p_hub_interaction_id);
-       
-        v_return := NULL;
-    END IF;                    
-                        
-    RETURN v_return;
+            v_exception_id, p_uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, p_tenant_id, p_hub_interaction_id
+        );
+	END IF;
+   	RETURN v_return;
 END;
 $function$;
 /*******************************************************************************************
@@ -6303,8 +6300,8 @@ BEGIN
 	                    v_pg_context = PG_EXCEPTION_CONTEXT;
 	                    v_error_type = 'SQL';
 	
-	                v_is_exception := true;
-	            END IF; 
+	                v_is_exception := false; -- It is set to false because in the second insert, with another nature, the same hub_interaction_id is used, which should not register as an exception.
+	            END IF;
 	       WHEN OTHERS THEN
 	        	GET STACKED DIAGNOSTICS
 	                v_error_msg = MESSAGE_TEXT,
