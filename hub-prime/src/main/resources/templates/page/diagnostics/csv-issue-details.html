@@ -18,7 +18,7 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'csv_all_processing_error_summary'; 
+        const viewName = 'csv_all_processing_error_summary';
 
         function getfileNotProcessedDetailData(params) {
             const zip_file_hub_interaction_id = params.data.zip_file_hub_interaction_id;
@@ -315,7 +315,7 @@
                     columnDefs: dataIntegrityDetailGrid,
                     fetchFn: getDataIntegrityDetailDetailData
                 }
-                };
+            };
 
 
             const modalAide = new ModalAide();
@@ -352,12 +352,6 @@
                         cellRenderer: 'agGroupCellRenderer'
                     },
                     {
-                        headerName: "Group ID",
-                        field: "group_id",
-                        filter: "agTextColumnFilter",
-                        headerTooltip: "The group identifier associated with the CSV processing."
-                    },
-                    {
                         headerName: "URI",
                         field: "uri",
                         filter: "agTextColumnFilter",
@@ -368,18 +362,6 @@
                         field: "zip_file_name",
                         filter: "agTextColumnFilter",
                         headerTooltip: "The name of the ZIP file involved in the error."
-                    },
-                    {
-                        headerName: "Error Type",
-                        field: "error_types",
-                        filter: "agTextColumnFilter",
-                        headerTooltip: "The type or category of the processing error encountered."
-                    },
-                    {
-                        headerName: "Origin",
-                        field: "origin",
-                        filter: "agTextColumnFilter",
-                        headerTooltip: "The origin system or source that submitted the CSV file."
                     },
                     {
                         headerName: "User Agent",
@@ -439,7 +421,7 @@
                             config.fetchFn(detailParams);
                         }
                     };
-                })             
+                })
                 .withDetailRowAutoHeight(false)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
@@ -491,8 +473,13 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid provides a complete overview of all CSV processing issues detected during data ingestion, including file-level errors, incomplete groups, processing exceptions, and data integrity problems. It displays key details such as Created Time, Tenant ID, Interaction ID, File Name, Origin, and User Agent. <br>
-            A drill-down option allows users to view detailed error information for each submission—such as specific validation errors, missing files, processing exceptions, and field-level issues—helping them quickly identify the root cause and resolve problems efficiently.
+            This data grid provides a complete overview of all CSV processing issues detected during data ingestion,
+            including file-level errors, incomplete groups, processing exceptions, and data integrity problems. It
+            displays key details such as Created Time, Tenant ID, Interaction ID, File Name, Origin, and User Agent.
+            <br>
+            A drill-down option allows users to view detailed error information for each submission—such as specific
+            validation errors, missing files, processing exceptions, and field-level issues—helping them quickly
+            identify the root cause and resolve problems efficiently.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

@@ -116,13 +116,12 @@ FROM multi_answers ;
 /*******************************************************************************************
  * Stored Procedure for FHIR Screening Questions and Answers with Filtering. *
  ******************************************************************************************/
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers1(TEXT, TEXT);
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
-    p_hub_interaction_id TEXT DEFAULT NULL,
-    p_patient_mrn TEXT DEFAULT NULL
+drop function if exists techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT,TEXT);
+create or replace function techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
+    p_hub_interaction_id TEXT default null,
+    p_patient_mrn TEXT default null
 )
-RETURNS TABLE (
+returns table (
     hub_interaction_id TEXT,
     tenant_id TEXT, 
     resource_type TEXT,
@@ -130,86 +129,127 @@ RETURNS TABLE (
     question TEXT,
     question_code TEXT,
     answer TEXT,
-    answer_code TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    WITH filtered_resources AS (
-         SELECT sihr.hub_interaction_id,
-            sihr.tenant_id,
-            jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry,
-            sihr.patient_mrn
-           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE
-          sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/','/hl7v2/Bundle', '/hl7v2/Bundle/')
-          AND sihr.nature = 'Original FHIR Payload'::text
-          -- Apply filters if provided
-          AND (p_hub_interaction_id IS NULL OR sihr.hub_interaction_id = p_hub_interaction_id)
-          AND (p_patient_mrn IS NULL OR sihr.patient_mrn = p_patient_mrn)
-        ), filtered_data AS (
-         SELECT fr.hub_interaction_id,
-            fr.tenant_id,
-            fr.entry -> 'resource'::text AS resource,
-            (fr.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
-            fr.patient_mrn
-           FROM filtered_resources fr
-          WHERE (fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
-        ), single_answers AS (
-         SELECT fd.hub_interaction_id,
-            fd.tenant_id,
-            fd.resource_type,
-            fd.patient_mrn,
-            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
-            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code, 
-            CASE 
-                WHEN (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
-                THEN (fd.resource -> 'valueCodeableConcept' ->> 'text')
-                ELSE (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
-            END AS answer,            
-            (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
-           FROM filtered_data fd
-          WHERE fd.resource_type = 'Observation'
-            AND fd.resource ? 'valueCodeableConcept'
-        ), multi_answers AS (
-         SELECT fd.hub_interaction_id,
-            fd.tenant_id,
-            fd.resource_type,
-            fd.patient_mrn,
-            comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
-            comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
-            CASE 
-                WHEN (coding ->> 'display') = '{Number}'
-                THEN (comp -> 'valueCodeableConcept' ->> 'text')
-                ELSE (coding ->> 'display')
-            END AS answer,            
-            coding ->> 'code' AS answer_code
-           FROM filtered_data fd
-           CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp
-           CROSS JOIN LATERAL jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') AS coding
-          WHERE fd.resource_type = 'Observation'
-            AND fd.resource ? 'component'
+    answer_code TEXT,
+    data_absent_reason_code TEXT,
+    data_absent_reason_display TEXT
+) as $$
+begin
+    return QUERY
+    with filtered_resources as (
+select
+	sihr.hub_interaction_id,
+	sihr.tenant_id,
+	jsonb_array_elements(sihr.payload -> 'entry'::text) as entry,
+	sihr.patient_mrn
+from
+	techbd_udi_ingress.sat_interaction_fhir_request sihr
+where
+	sihr.uri in ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/')
+	and sihr.nature = 'Original FHIR Payload'::text
+	-- Apply filters if provided
+	and (p_hub_interaction_id is null
+		or sihr.hub_interaction_id = p_hub_interaction_id)
+	and (p_patient_mrn is null
+		or sihr.patient_mrn = p_patient_mrn)
+        ),
+filtered_data as (
+select
+	fr.hub_interaction_id,
+	fr.tenant_id,
+	fr.entry -> 'resource'::text as resource,
+	(fr.entry -> 'resource'::text) ->> 'resourceType'::text as resource_type,
+	fr.patient_mrn
+from
+	filtered_resources fr
+where
+	(fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+        ),
+single_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	-- Question
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' as question,
+	(((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' as question_code,
+	-- Answer (valueCodeableConcept OR NULL)
+            case
+		when fd.resource ? 'valueCodeableConcept'
+			and (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
+                then fd.resource -> 'valueCodeableConcept' ->> 'text'
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
+			else null
+		end as answer,
+		case
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code'
+			else null
+		end as answer_code,
+		-- Data Absent Reason (NEW)
+            (fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'code') as data_absent_reason_code,
+		(fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'display') as data_absent_reason_display
+	from
+		filtered_data fd
+		-- Accept both valueCodeableConcept OR dataAbsentReason
+	where
+		fd.resource_type = 'Observation'
+		and (fd.resource ? 'valueCodeableConcept'
+			or fd.resource ? 'dataAbsentReason')
+    ),
+multi_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	comp -> 'code' -> 'coding' -> 0 ->> 'display' as question,
+	comp -> 'code' -> 'coding' -> 0 ->> 'code' as question_code,
+	case
+		when (coding ->> 'display') = '{Number}'
+                then (comp -> 'valueCodeableConcept' ->> 'text')
+		else (coding ->> 'display')
+	end as answer,
+	coding ->> 'code' as answer_code
+from
+	filtered_data fd
+cross join lateral jsonb_array_elements(fd.resource -> 'component') as comp
+cross join lateral jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') as coding
+where
+	fd.resource_type = 'Observation'
+	and fd.resource ? 'component'
         )
-    SELECT sa.hub_interaction_id,
-        sa.tenant_id,
-        sa.resource_type,
-        sa.patient_mrn,
-        sa.question,
-        sa.question_code,
-        sa.answer,
-        sa.answer_code
-       FROM single_answers sa
-     UNION ALL
-     SELECT ma.hub_interaction_id,
-        ma.tenant_id,
-        ma.resource_type,
-        ma.patient_mrn,
-        ma.question,
-        ma.question_code,
-        ma.answer,
-        ma.answer_code
-       FROM multi_answers ma;
-END;
-$$ LANGUAGE plpgsql;
+    select
+	sa.hub_interaction_id,
+	sa.tenant_id,
+	sa.resource_type,
+	sa.patient_mrn,
+	sa.question,
+	sa.question_code,
+	sa.answer,
+	sa.answer_code,
+	sa.data_absent_reason_code,
+	sa.data_absent_reason_display
+from
+	single_answers sa
+union all
+     select
+	ma.hub_interaction_id,
+	ma.tenant_id,
+	ma.resource_type,
+	ma.patient_mrn,
+	ma.question,
+	ma.question_code,
+	ma.answer,
+	ma.answer_code,
+	null as data_absent_reason_code,
+	null as data_absent_reason_display
+from
+	multi_answers ma;
+end;
+
+$$ language plpgsql;
 
 
 /*******************************************************************************************
