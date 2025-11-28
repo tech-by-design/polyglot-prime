@@ -447,6 +447,7 @@ private List<Object> processScreening(final String groupKey,
                         requestParameters.put("sourceType", SourceType.CSV.name());
                         requestParameters.put("groupInteractionId", groupInteractionId);
                         requestParameters.put("masterInteractionId", masterInteractionId);
+                        requestParameters.put("validationSeverityLevel", (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL));
                         requestParameters.putAll(headers);
                         // Call FHIR validation service
                         try {
