@@ -43,18 +43,20 @@
         const questionAndAnswersColumnDefs = [
             { headerName: "Question Code", field: "question_code", filter: "agTextColumnFilter" },
             {
-                headerName: "Question", field: "question", filter: "agTextColumnFilter",flex:4,tooltipField: 'question',
-                valueGetter: (params) => {
-                    return params.data.question ?? "No observation provided";
-                }
+                headerName: "Question", field: "question", filter: "agTextColumnFilter",flex:3,tooltipField: 'question'
+                // valueGetter: (params) => {
+                //     return params.data.question ?? "No observation provided";
+                // }
             },
             { headerName: "Answer Code", field: "answer_code", filter: "agTextColumnFilter" },
             {
-                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",flex:3,tooltipField: 'answer',
-                valueGetter: (params) => {
-                    return params.data.answer ?? "No value provided";
-                }
-            }
+                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",flex:1.5,tooltipField: 'answer'
+                // valueGetter: (params) => {
+                //     return params.data.answer ?? "No value provided";
+                // }
+            },
+            { headerName: "Data Absent Reason Code", field: "data_absent_reason_code", filter: "agTextColumnFilter" },
+            { headerName: "Data Absent Reason Display", field: "data_absent_reason_display", filter: "agTextColumnFilter" }                  
         ];
         function getScreeningGridData(params) {
             const value = params.data.patient_mrn;
