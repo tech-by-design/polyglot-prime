@@ -1,0 +1,3 @@
+TENANT=<Tenant ID>
+HOST_NAME=<Host address>
+FHIR_BUNDLE_VALIDATE=<Bundle validate endpoint url>
