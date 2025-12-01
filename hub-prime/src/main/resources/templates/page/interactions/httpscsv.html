@@ -26,7 +26,7 @@
         const viewName = 'interaction_csv_http';
         const viewdetail = 'interaction_csv_http_fhir_request';
         const pipupviewName = 'interaction_http_fhir_request';
-        const downloadviewName = 'interaction_csv_http_stat_file_data';
+        const downloadviewName = 'interaction_http_fhir_request_payload_details';
         const modalAide = new ModalAide();
         const fhirColumnDefs = [
             {
@@ -35,22 +35,22 @@
                     modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${pipupviewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
                 }, modalAide)
             },
-            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },
-            { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
-            { 
-                headerName: "Operation Outcome Status", 
-                field: "is_bundle_valid", 
-                filter: "agTextColumnFilter", 
-                headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')" 
-            }, 
-            { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" },
-            { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
-            { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },
-            { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
-            { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
-            { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" }, 
-            { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },
+            {
+                headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction",
+                cellRenderer: params => {
+                    if (params.value) {
+                        return `<a href="/interactions/httpsfhir?bundle_id=${encodeURIComponent(params.value)}" placeholder="Click to view FHIR details" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                    }
+                }
+            },
+            // { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
+            {
+                headerName: "Operation Outcome Status",
+                field: "is_bundle_valid",
+                filter: "agTextColumnFilter",
+                headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')"
+            },
+            { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" }
         ];
         function getFhirGridData(params) {
             const hub_interaction_id = params.data.hub_interaction_id;
@@ -130,46 +130,49 @@
                         filter: "agTextColumnFilter",
                         cellRenderer: params => {
                             if (params.value === 'Failed' || params.value === 'Partial Success') {
-                                return `<a href="/data-quality/csv-validations/file-not-processed" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                                const hub_interaction_ids = params.data?.hub_interaction_id;
+                                return `<a href="/data-quality/csv-validations/csv-issue-details?hub_interaction_id=${encodeURIComponent(hub_interaction_ids)}" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
                             } else {
                                 return params.value;
                             }
                         }
                     },
                     { headerName: "Total File Count", field: "total_number_of_files_in_zip_file", headerTooltip: "The total number of files received within the ZIP.", filter: "agNumberColumnFilter" },
-                    { headerName: "FHIR Count", field: "number_of_fhir_bundles_generated_from_zip_file", headerTooltip: "The total number of FHIR bundles generated from the ZIP file.", filter: "agNumberColumnFilter",    cellRendererSelector: params => {
-                        if  (params.data.uri &&
-                            (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
-                            params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
+                    {
+                        headerName: "FHIR Count", field: "number_of_fhir_bundles_generated_from_zip_file", headerTooltip: "The total number of FHIR bundles generated from the ZIP file.", filter: "agNumberColumnFilter", cellRendererSelector: params => {
+                            if (params.data.uri &&
+                                (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
+                                    params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
+                                return {
+                                    component: undefined // shows blank cell, no drill-down
+                                };
+                            }
                             return {
-                                component: undefined // shows blank cell, no drill-down
+                                component: 'agGroupCellRenderer'
                             };
+                        }, valueGetter: params => {
+                            if (params.data.uri &&
+                                (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
+                                    params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
+                                return null; // return null so nothing is shown
+                            }
+                            return params.data.number_of_fhir_bundles_generated_from_zip_file;
                         }
-                        return {
-                            component: 'agGroupCellRenderer'
-                        };
-                    },    valueGetter: params => {
-                        if  ( params.data.uri &&
-                            (params.data.uri === '/flatfile/csv/Bundle/$validate' ||
-                            params.data.uri === '/flatfile/csv/Bundle/$validate/')) {
-                            return null; // return null so nothing is shown
-                        }
-                        return params.data.number_of_fhir_bundles_generated_from_zip_file;
-                    }  },
-                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
-                        return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
-                            ? ''
-                            : params.value;
-                    } },
-                    { headerName: "FHIR Failed Count", field: "fhir_count_failed", headerTooltip: "The number of failed FHIR interactions where an HTTP response error was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
-                        return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
-                            ? ''
-                            : params.value;
-                    } },
+                    },
+                    // { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
+                    //     return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
+                    //         ? ''
+                    //         : params.value;
+                    // } },
+                    // { headerName: "FHIR Failed Count", field: "fhir_count_failed", headerTooltip: "The number of failed FHIR interactions where an HTTP response error was forwarded.", filter: "agNumberColumnFilter",cellRenderer: params => {
+                    //     return params.data && (params.data.uri === '/flatfile/csv/Bundle/$validate' || params.data.uri === '/flatfile/csv/Bundle/$validate/')
+                    //         ? ''
+                    //         : params.value;
+                    // } },
                     { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
                     {
                         headerName: "Zip File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download Zip File", filter: false, suppressFilter: true
+                        headerTooltip: "Download Zip File", filter: false, suppressFilter: true, sortable: false
                     },
                     {
                         headerName: "OperationOutcome",
@@ -178,7 +181,8 @@
                         cellRenderer: downloadValidationResultCellRenderer,
                         headerTooltip: "Download OperationOutcome",
                         filter: false,
-                        suppressFilter: true
+                        suppressFilter: true,
+                        sortable: false
                     }
                 ])
                 .withServerSideDatasource(
@@ -218,18 +222,18 @@
             <div class=" text-base leading-relaxed text-sm">
 
                 <p class="mb-1">
-                    This widget presents a detailed view of CSV-based HTTP interactions processed through the system.
+                    This widget presents a detailed view of CSV-based interactions processed through the system.
                     Each row represents a single interaction initiated via a ZIP file, with essential metadata and
-                    outcomes displayed in an accessible format. 
+                    outcomes displayed in an accessible format.
                 </p>
 
                 <button id="accordionToggle"
                     class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
                     ▶ Click here to view the column descriptions:
                 </button>
-                 <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200"> 
-                <!--<div id="accordionContent"  > -->
-                    <p class="mb-2" >
+                <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200">
+                    <!--<div id="accordionContent"  > -->
+                    <p class="mb-2">
                         <strong>Request Time:</strong> Shows when the interaction was initiated.<br>
                         <strong>TechBD Zip File Interaction ID:</strong> Serves as the unique reference for the
                         submitted ZIP file. Users can use this ID to trace issues and cross-reference CSV validation
@@ -237,20 +241,24 @@
                         <strong>TechBD Tenant ID:</strong> Identifies the tenant associated with the request.<br>
                         <strong>URI:</strong> Displays the endpoint involved in the interaction.<br>
                         <strong>Processing Status:</strong> Indicates the current state of ZIP file processing (e.g.,
-                        <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
+                        <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>
+                        <!-- <em>Received</em>--> etc.), helping
                         users understand where the file stands in the processing pipeline.<br>
-                        <strong>CSV Validation Status:</strong> Highlights whether the FHIR conversion from the submitted CSV
+                        <strong>CSV Validation Status:</strong> Highlights whether the FHIR conversion from the
+                        submitted CSV
                         failed. If a Failure/Partial Success occurred, a direct link is provided to the
-                        <a href="/data-quality/csv-validations/file-not-processed" class="text-blue-600 underline"
+                        <a href="/data-quality/csv-validations/data-integrity" class="text-blue-600 underline"
                             target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the
-                        Interaction ID to filter errors on that page.<br>                                            
-                        <strong>Total File Count:</strong> Shows the total number of files received within the ZIP file.<br>
-                        <strong>FHIR Count:</strong> Reflects the total FHIR interactions triggered by the request, and
-                        can be expanded for detailed interaction-level insight.<br>
-                        <strong>FHIR Success Count:</strong> Indicates how many of those interactions were successfully
+                        Interaction ID to filter errors on that page.<br>
+                        <strong>Total File Count:</strong> Shows the total number of files received within the ZIP
+                        file.<br>
+                        <strong>FHIR Count:</strong> Represents the total number of FHIR interactions triggered by the
+                        request. You can click the FHIR Count to expand and view detailed interaction-level information.
+                        Click the Bundle ID to view specific FHIR details.<br>
+                        <!-- <strong>FHIR Success Count:</strong> Indicates how many of those interactions were successfully
                         forwarded as valid FHIR resources to DataLake.<br>
                         <strong>FHIR Failed Count:</strong> Indicates how many of those interactions failed to be forwarded
-                         as valid FHIR resources to DataLake.<br>
+                         as valid FHIR resources to DataLake.<br> -->
                         <strong>Download Options:</strong> Users can download the original ZIP file submitted for
                         processing and the corresponding OperationOutcome file, which contains validation results for
                         debugging and analysis.

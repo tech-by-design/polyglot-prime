@@ -44,7 +44,7 @@ public class CCDAService {
 
     public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveOriginalCcdaPayload  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -68,6 +68,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -100,7 +103,7 @@ public class CCDAService {
      */
     public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -124,6 +127,9 @@ public class CCDAService {
             rihr.setPProvenance(provenance);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -157,7 +163,7 @@ public class CCDAService {
      */
     public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
             String tenantId, String requestUri,
-            Map<String, Object> bundle, String fileName) {
+            Map<String, Object> bundle, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             logger.info("CCDAService Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
@@ -182,6 +188,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -215,7 +224,7 @@ public class CCDAService {
      */
     public boolean saveCcdaValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveCcdaValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -238,6 +247,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();

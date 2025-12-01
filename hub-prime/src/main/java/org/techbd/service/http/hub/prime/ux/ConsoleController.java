@@ -60,6 +60,27 @@ public class ConsoleController {
         return presentation.populateModel("page/console/islm", model, request);
     }
 
+    @RouteMapping(label = "Diagnostics", title = "Diagnostics", siblingOrder = 70)
+    @GetMapping("/console/diagnostics")
+    public String diagnostic() {
+
+         return "redirect:/console/diagnostics/database-exceptions";
+    }    
+
+    @GetMapping("/console/diagnostics/database-exceptions")
+    @RouteMapping(label = "Database Exceptions", title = "Database Exception Details", siblingOrder = 6)
+    public String diagnosticsDatabaseExceptions(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/database-exceptions", model, request); 
+
+    }
+
+    @GetMapping("/console/diagnostics/database-diagnostics-logs")
+    @RouteMapping(label = "Database Diagnostics Logs", title = "Database Diagnostics Logs", siblingOrder = 7)
+    public String diagnosticsDatabaseLogs(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/database-diagnostics-logs", model, request); 
+
+    }    
+ 
     // @RouteMapping(label = "Cron Jobs", title = "Cron Jobs", siblingOrder = 70)
     // @GetMapping("/console/cron-job")
     // public String cronjob(final Model model, final HttpServletRequest request) {

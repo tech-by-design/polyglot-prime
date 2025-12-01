@@ -6,7 +6,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -33,6 +40,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.fhir.FHIRService;
+import org.techbd.service.fhir.FhirReplayService;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
@@ -64,10 +72,12 @@ public class FhirController {
         private final CoreDataLedgerApiClient dataLedgerApiClient;
         private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
         private final FHIRService fhirService;
+        private final FhirReplayService fhirReplayService;
         private final Tracer tracer;
 
         public FhirController(final Tracer tracer,final OrchestrationEngine engine,
-        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService
+        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,
+        final FHIRService fhirService, final FhirReplayService fhirReplayService
         ,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) throws IOException {
                 // String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
                 // appConfig = ConfigLoader.loadConfig(activeProfile);
@@ -84,6 +94,7 @@ public class FhirController {
                 this.dataLedgerApiClient = dataLedgerApiClient;
                 this.tracer = tracer;
                 this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+                this.fhirReplayService = fhirReplayService;
         }
 
         @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -359,6 +370,89 @@ public class FhirController {
                         Thread.currentThread().interrupt();
                         return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
+        }
+
+        @PostMapping(value = { "/Bundle/replay", "/Bundle/replay/" })
+        @Operation(summary = "Replay FHIR Bundles between a date or datetime range", description = """
+                        Accepts startDate and endDate
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Replay triggered successfully."),
+                        @ApiResponse(responseCode = "400", description = "Invalid or missing parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object replayBundles(
+                        @RequestHeader("X-TechBD-StartDate") String startDateStr,
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,HttpServletRequest request) {
+
+                UUID interactionId = UUID.randomUUID();
+                 try {
+                         if (startDateStr.equals(endDateStr)) {
+                                 throw new IllegalArgumentException(
+                                                 "startDate cannot be same as endDate for interactionId: "
+                                                                 + interactionId);
+                         }
+                        OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
+                        OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
+
+                        if (endDate.isBefore(startDate)) {
+                                throw new IllegalArgumentException(
+                                                "endDate cannot be before startDate for interactionId: "
+                                                                + interactionId);
+                        }
+
+                        LOG.info("Replaying Bundles from {} to {} for interactionId {}", startDate, endDate,
+                                        interactionId);
+
+                        return fhirReplayService.replayBundles(request,interactionId.toString(), startDate, endDate);
+
+                } catch (DateTimeParseException e) {
+                        LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for interactionId {}",
+                                        startDateStr, endDateStr, interactionId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message",
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                } 
+        }
+
+
+        private OffsetDateTime parseFlexibleDate(String input, boolean isStart) {
+                if (input == null || input.isBlank()) {
+                        throw new IllegalArgumentException("Date value cannot be null or empty");
+                }
+
+                List<DateTimeFormatter> formatters = List.of(
+                                DateTimeFormatter.ISO_OFFSET_DATE_TIME, // 2025-09-09T16:16:42.248+05:30
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS Z"), // 2025-09-09 16:16:42.248
+                                                                                          // +0530
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 2025-09-09 16:16:42
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd") // 2025-09-09
+                );
+
+                for (DateTimeFormatter fmt : formatters) {
+                        try {
+                                TemporalAccessor ta = fmt.parse(input);
+
+                                if (ta.isSupported(ChronoField.OFFSET_SECONDS)) {
+                                        // Input has timezone info
+                                        return OffsetDateTime.from(ta).withOffsetSameInstant(ZoneOffset.UTC);
+                                } else if (ta.isSupported(ChronoField.HOUR_OF_DAY)) {
+                                        // Date + time but no zone: assume UTC
+                                        return OffsetDateTime.parse(input + "Z",
+                                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSS]X"));
+                                } else {
+                                        // Date only: start or end of day in UTC
+                                        return isStart
+                                                        ? OffsetDateTime.parse(input + "T00:00:00Z")
+                                                        : OffsetDateTime.parse(input + "T23:59:59.999999999Z");
+                                }
+                        } catch (DateTimeParseException ignored) {
+                                // try next
+                        }
+                }
+                throw new DateTimeParseException("Unrecognized date format", input, 0);
         }
 
         private void deleteJSessionCookie(HttpServletRequest request, HttpServletResponse response) {

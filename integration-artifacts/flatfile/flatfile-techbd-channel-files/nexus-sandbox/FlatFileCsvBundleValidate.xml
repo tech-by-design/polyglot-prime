@@ -1,0 +1,596 @@
+<channel version="4.5.3">
+  <id>a7466412-a4fd-44ee-8f4e-697c02a81c55</id>
+  <nextMetaDataId>2</nextMetaDataId>
+  <name>FlatFileCsvBundleValidate</name>
+  <description>Version: 0.8.0</description>
+  <revision>23</revision>
+  <sourceConnector version="4.5.3">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
+      <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.5.3">
+        <host>0.0.0.0</host>
+        <port>9005</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.5.3">
+        <responseVariable>fhirResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>true</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*|application/zip</binaryMimeTypes>
+      <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
+      <responseContentType>application/json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode>${status}</responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>https://hub.dev.techbd.org</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS </string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Expose-Headers</string>
+          <list>
+            <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>30000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>Common JS functions</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>Validate HTTP Request and collect headers</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+channelMap.put(&apos;tenantId&apos;, tenantId);
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] X-TechBD-Tenant-ID: &quot; + tenantId);
+
+// Check if the header is null or empty
+if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
+    // Log the error for debugging
+    var errorMessage = &apos;[CHANNEL: FLAT FILE CSV BUNDLE VALIDATE] Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+//####################################################################################
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;[CHANNEL: &quot;+ channelName +&quot;] Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+    }
+
+    return value;
+}
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;[CHANNEL: &quot;+ channelName +&quot;] Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Check if there are any missing headers and stop processing
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &apos;Bad Request: &apos; + missingHeaders.join(&apos;; &apos;);
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+//####################################################################################
+///////////////////////////////////////////////////////////////////////////
+// Parse the incoming request (assumes multipart form data)
+var rawData = connectorMessage.getRawData();
+
+// Check if rawData is empty
+if (!rawData || rawData.trim().length === 0) {
+    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] No file provided in the request.&quot;;
+    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage;
+}
+
+// Parse the rawData as multipart form data
+var boundary = rawData.split(&quot;\r\n&quot;)[0];
+var parts = rawData.split(boundary);
+
+// Initialize variables to store file content
+var fileContent = null;
+
+// Loop through parts to find the file part
+var i = 0;
+for each (var part in parts) {
+    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
+        logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Part count &quot; + ++i);
+        // Extract the file content (skip headers)
+        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
+        logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] contentStartIndex : &quot; + contentStartIndex);
+        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
+        logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] fileContent :&quot; + fileContent);
+        break;
+    }
+}
+
+// Validate the file content
+if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
+    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] Uploaded file is empty or missing.&quot;;
+    // Set the HTTP response status to 400 (Bad Request)
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+///////////////////////////////////////////////////////////////////////////</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>FHIR validation and submission</name>
+          <sequenceNumber>2</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/* ----------------- Compact SimpleMultipartFile (in-memory) ----------------- */
+function SimpleMultipartFile(originalFilename, contentType, contentBytes) {
+    this.originalFilename = originalFilename;
+    this.contentType = contentType || null;
+    this.content = contentBytes || null;
+}
+SimpleMultipartFile.prototype.getName = function () { return this.originalFilename; };
+SimpleMultipartFile.prototype.getOriginalFilename = function () { return this.originalFilename; };
+SimpleMultipartFile.prototype.getContentType = function () { return this.contentType; };
+SimpleMultipartFile.prototype.isEmpty = function () { return this.content == null || this.content.length == 0; };
+SimpleMultipartFile.prototype.getSize = function () { return this.content ? this.content.length : 0; };
+SimpleMultipartFile.prototype.getBytes = function () { return this.content; };
+SimpleMultipartFile.prototype.getInputStream = function () {
+    return new java.io.ByteArrayInputStream(this.content);
+};
+
+/* ----------------- 1. Read raw body ----------------- */
+var bodyStr = connectorMessage.getRawData();
+
+/* ----------------- 2. Detect boundary line ----------------- */
+var nlPos = bodyStr.indexOf(&apos;\r\n&apos;);
+var newlineLen = 2;
+if (nlPos &lt; 0) { nlPos = bodyStr.indexOf(&apos;\n&apos;); newlineLen = 1; }
+if (nlPos &lt; 0) { throw &apos;No newline in body, cannot detect boundary&apos;; }
+var dashBoundary = bodyStr.substring(0, nlPos);
+if (!dashBoundary.startsWith(&apos;--&apos;)) { throw &apos;Boundary line invalid: &apos; + dashBoundary; }
+var boundary = dashBoundary.substring(2);
+
+/* ----------------- 3. Convert to ISO-8859-1 ----------------- */
+var bodyIso = new java.lang.String(bodyStr.getBytes(&apos;ISO-8859-1&apos;), &apos;ISO-8859-1&apos;);
+
+/* ----------------- 4. Locate file part ----------------- */
+var dispIdx = bodyIso.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;&apos;);
+if (dispIdx &lt; 0) throw &apos;Multipart section &quot;file&quot; not found&apos;;
+var hdrEnd = bodyIso.indexOf(&apos;\r\n\r\n&apos;, dispIdx);
+if (hdrEnd &lt; 0) { hdrEnd = bodyIso.indexOf(&apos;\n\n&apos;, dispIdx); if (hdrEnd &lt; 0) throw &apos;Malformed header&apos;; }
+
+/* ----------------- 5. Extract filename ----------------- */
+var dispLineStart = bodyIso.lastIndexOf(&apos;Content-Disposition&apos;, hdrEnd);
+var filenameMatch = bodyIso.substring(dispLineStart, hdrEnd).match(/filename=&quot;([^&quot;]+)&quot;/);
+var filename = (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) ? filenameMatch[1] : &apos;uploaded-file.zip&apos;;
+filename = filename.trim().replace(/^.*[\/\\]/, &apos;&apos;).replace(/[^\w\-.]/g, &apos;_&apos;);
+
+/* ----------------- 6. Extract file bytes ----------------- */
+var dataStart = hdrEnd + (bodyIso.charAt(hdrEnd) == &apos;\r&apos; ? 4 : 2);
+if (bodyIso.substring(dataStart, dataStart+2) == &apos;\r\n&apos;) dataStart += 2;
+else if (bodyIso.charAt(dataStart) == &apos;\n&apos;) dataStart += 1;
+
+var nextBndIdx = bodyIso.indexOf(&apos;\r\n--&apos; + boundary, dataStart);
+if (nextBndIdx &lt; 0) nextBndIdx = bodyIso.indexOf(&apos;\n--&apos; + boundary, dataStart);
+if (nextBndIdx &lt; 0) throw &apos;Closing boundary not found&apos;;
+var dataEnd = nextBndIdx;
+if (bodyIso.substring(dataEnd-2, dataEnd) == &apos;\r\n&apos;) dataEnd -= 2;
+else if (bodyIso.substring(dataEnd-1, dataEnd) == &apos;\n&apos;) dataEnd -= 1;
+
+var attachmentBytes = bodyIso.substring(dataStart, dataEnd).getBytes(&apos;ISO-8859-1&apos;);
+logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;] Recovered ZIP length: &apos; + attachmentBytes.length);
+
+/* ----------------- 7. Wrap in SimpleMultipartFile (optional) ----------------- */
+var multipartFile = new SimpleMultipartFile(filename, &apos;application/zip&apos;, attachmentBytes);
+
+/* ----------------- 8. Build multipart/form-data body ----------------- */
+var multipartBoundary = &quot;----MirthBoundary&quot; + java.util.UUID.randomUUID().toString();
+var header = &quot;--&quot; + multipartBoundary + &quot;\r\n&quot; +
+             &apos;Content-Disposition: form-data; name=&quot;file&quot;; filename=&quot;&apos; + filename + &apos;&quot;\r\n&apos; +
+             &quot;Content-Type: application/zip\r\n\r\n&quot;;
+var footer = &quot;\r\n--&quot; + multipartBoundary + &quot;--\r\n&quot;;
+
+var baos = new java.io.ByteArrayOutputStream();
+baos.write(new java.lang.String(header).getBytes(&quot;UTF-8&quot;));
+baos.write(attachmentBytes);
+baos.write(new java.lang.String(footer).getBytes(&quot;UTF-8&quot;));
+var fullBodyBytes = baos.toByteArray();
+baos.close();
+
+// Base64 encode for channelMap
+var base64Body = Packages.java.util.Base64.getEncoder().encodeToString(fullBodyBytes);
+
+channelMap.put(&quot;multipartBodyBase64&quot;, base64Body);
+channelMap.put(&quot;multipartBoundary&quot;, multipartBoundary);
+channelMap.put(&quot;multipartFileName&quot;, filename);
+channelMap.put(&quot;multipartContentType&quot;, &quot;application/zip&quot;);
+
+logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form-data for destination, size: &quot; + fullBodyBytes.length);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/flatfile/csv/Bundle/$validate&apos; or &apos;/flatfile/csv/Bundle/$validate/&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/flatfile/csv/Bundle/$validate&apos;</string>
+            <string>&apos;/flatfile/csv/Bundle/$validate/&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.3">
+      <metaDataId>1</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <script> /**
+ * Destination JavaScript Writer:
+ * Sends the uploaded ZIP file to the FHIR validate endpoint
+ * using Apache HttpClient (DefaultHttpClient for Mirth compatibility)
+ */
+
+// --- Retrieve data from channelMap ---
+var attachmentBytes = Packages.java.util.Base64.getDecoder().decode(channelMap.get(&apos;multipartBodyBase64&apos;));
+var filename = channelMap.get(&apos;multipartFileName&apos;) || &apos;uploaded-file.zip&apos;;
+var tenantId = channelMap.get(&apos;tenantId&apos;) || &apos;defaultTenant&apos;;
+var userAgent = channelMap.get(&apos;userAgent&apos;) || &apos;MirthConnector/1.0&apos;;
+var sourceParam = &apos;CSV&apos;;
+
+// --- Build URL with query parameter ---
+var urlStr = &quot;https://nexus.csv.sandbox.techbd.org/flatfile/csv/Bundle/$validate?source=&quot; + encodeURIComponent(sourceParam);
+//var urlStr = &quot;http://localhost:8080/flatfile/csv/Bundle/$validate?source=&quot; + encodeURIComponent(sourceParam);
+//var urlStr = &quot;https://synthetic.fhir.api.devl.techbd.org/flatfile/csv/Bundle/$validate?source=&quot; + encodeURIComponent(sourceParam);
+
+// --- Import Apache HttpClient classes ---
+var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
+var HttpPost = Packages.org.apache.http.client.methods.HttpPost;
+var MultipartEntityBuilder = Packages.org.apache.http.entity.mime.MultipartEntityBuilder;
+var ContentType = Packages.org.apache.http.entity.ContentType;
+var BasicHeader = Packages.org.apache.http.message.BasicHeader;
+
+// --- Create client and POST ---
+var client = new DefaultHttpClient();
+var post = new HttpPost(urlStr);
+
+// --- Use the prebuilt multipart from the transformer ---
+var fullBodyBytes = Packages.java.util.Base64.getDecoder().decode(channelMap.get(&apos;multipartBodyBase64&apos;));
+var boundary = String(channelMap.get(&apos;multipartBoundary&apos;));
+
+var ByteArrayEntity = Packages.org.apache.http.entity.ByteArrayEntity;
+var entity = new ByteArrayEntity(fullBodyBytes);
+
+// IMPORTANT: tell the server this is multipart with the same boundary you built
+entity.setContentType(&quot;multipart/form-data; boundary=&quot; + boundary);
+
+post.setEntity(entity);
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+var uri = channelMap.get(&apos;uri&apos;) || &apos;/flatfile/csv/Bundle/&apos;;
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
+
+
+// --- Set required headers ---
+post.setHeader(new BasicHeader(&quot;Accept&quot;, &quot;application/fhir+json&quot;));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Tenant-ID&quot;, tenantId));
+post.setHeader(new BasicHeader(&quot;User-Agent&quot;, userAgent));
+post.setHeader(new BasicHeader(&quot;Access-Control-Allow-Origin&quot;, &quot;*&quot;));
+post.setHeader(new BasicHeader(&quot;Access-Control-Allow-Methods&quot;, &quot;GET, POST, OPTIONS&quot;));
+post.setHeader(new BasicHeader(&quot;Access-Control-Allow-Headers&quot;, &quot;Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version&quot;));
+post.setHeader(new BasicHeader(&quot;Access-Control-Allow-Credentials&quot;, &quot;true&quot;));
+post.setHeader(new BasicHeader(&quot;X-TechBD-REMOTE-IP&quot;, uri));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Override-Request-URI&quot;, uri));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Request-URI&quot;, uri));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Validation-Severity-Level&quot;, severityLevel));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Source&quot;, sourceParam));
+
+// --- Include additional headers from channelMap if any ---
+var headerParameters = channelMap.get(&quot;headerParameters&quot;);
+if (headerParameters != null) {
+    var iter = headerParameters.entrySet().iterator();
+    while (iter.hasNext()) {
+        var entry = iter.next();
+        post.setHeader(new BasicHeader(entry.getKey(), entry.getValue()));
+    }
+}
+
+// --- Execute request ---
+var response = client.execute(post);
+var responseEntity = response.getEntity();
+var responseCode = response.getStatusLine().getStatusCode();
+var responseStr = &quot;&quot;;
+
+if (responseEntity != null) {
+    var reader = new java.io.BufferedReader(new java.io.InputStreamReader(responseEntity.getContent(), &quot;UTF-8&quot;));
+    var line;
+    while ((line = reader.readLine()) != null) {
+        responseStr += line;
+    }
+    reader.close();
+}
+
+// --- Log and store response in channelMap ---
+logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] FHIR validate response (&quot; + responseCode + &quot;): &quot; + responseStr);
+channelMap.put(&quot;fhirResponse&quot;, responseStr);
+channelMap.put(&quot;fhirResponseCode&quot;, responseCode);
+
+responseMap.put(&apos;fhirResponse&apos;, responseStr);
+</script>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements/>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>return;</preprocessingScript>
+  <postprocessingScript>var endpoint = channelMap.get(&quot;endpoint&quot;);
+if(endpoint == &apos;validate&apos;) {
+	// Get the response from the HTTP Writer destination
+	var destinationName = &quot;dest_bundle&quot;;
+	var destinationResponse = responseMap.get(destinationName);
+	
+	// Check if the response exists
+	if (destinationResponse) {
+	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
+	    var responseData = destinationResponse.getMessage();   // Response message body
+		responseMap.put(&apos;finalResponse&apos;, responseData);
+		
+	    // Log the response details
+	    logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Response from &quot; + destinationName + &quot;:&quot;);
+	    logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Status Code: &quot; + responseStatus);
+	    logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Response Data: &quot; + responseData);
+	} else {
+	    logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] No response found for destination: &quot; + destinationName);
+	}
+}
+
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.3">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>METADATA</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>false</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>message_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>message_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.3">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1763103540698</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>5</userId>
+    </metadata>
+  </exportData>
+</channel>

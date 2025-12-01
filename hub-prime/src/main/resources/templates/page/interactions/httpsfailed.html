@@ -93,14 +93,14 @@
                     },
                     { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter", headerTooltip: "Count of validation issues associated with the interaction" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved" },
-                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request " },
-                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
+                    { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The IG version of the request " }, 
+                    { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" }, 
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
                     {
                         headerName: "Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, headerTooltip: "Option to download the FHIR payload for detailed inspection"
-                    }
+                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, sortable: false, headerTooltip: "Option to download the FHIR payload for detailed inspection"
+                    } 
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -123,7 +123,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This widget provides an overview of HTTP interactions that have failed or remain unprocessed. It features
+            This widget provides an overview of the FHIR interactions that have failed or remain unprocessed. It features
             columns such as Request Time, Interaction ID, Tenant ID, URI, Nature, From State, To State, Outbound HTTP
             Message, Error Message, Validation Issues, FHIR Resources, IP Address, and User Agent. Users can click on
             the Interaction ID to view detailed error and interaction information in a popup. The widget also supports

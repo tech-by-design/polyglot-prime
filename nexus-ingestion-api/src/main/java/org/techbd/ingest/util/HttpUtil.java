@@ -46,6 +46,10 @@ public class HttpUtil {
     }
 
     public static String extractDestinationPort(Map<String, String> headers) {
+        String forwardedPort = headers.get(Constants.REQ_X_FORWARDED_PORT);
+        if (forwardedPort != null && !forwardedPort.isBlank()) {
+            return forwardedPort;
+        }
         return headers.get(Constants.REQ_X_SERVER_PORT);
     }
 }

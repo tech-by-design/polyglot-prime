@@ -117,27 +117,31 @@ const migrateSP = pgSQLa.storedProcedure(
 
       
       ${dependenciesSQL}
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_jsonb_extracted_nature_nature_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree((nature ->> 'nature'));
-      DROP INDEX IF EXISTS techbd_udi_ingress.sat_interaction_http_request_created_at_idx;
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_created_at_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree (created_at DESC);
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_user_agent_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> 'request' -> 'userAgent'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_clientip_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> 'request' -> 'clientIpAddress'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_issues_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin (((payload -> 'response' -> 'responseBody' -> 'OperationOutcome' -> 'validationResults' -> 0) -> 'issues'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_response_header_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> 'response' -> 'headers'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_entry_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin ((payload -> 'entry'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_user_agent_text_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree ((payload -> 'request' ->> 'userAgent'));
-      CREATE INDEX IF NOT EXISTS  sat_interaction_http_request_payload_clientip_text_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree ((payload -> 'request' ->> 'clientIpAddress'));
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_from_state_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree (from_state);
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_to_state_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state);
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_nature_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree (((payload ->> 'nature'::text)));
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_payload_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin (payload);
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_tenant_id_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree ((((payload -> 'nature'::text) ->> 'tenant_id'::text)));
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_nature_idx ON techbd_udi_ingress.sat_interaction_http_request USING gin (nature);
+      PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation')); 
+          -- 11. BTREE index: from_state
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND indexname = 'sat_interaction_http_request_from_state_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_from_state_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (from_state)';
+          END IF;
 
-      ANALYZE techbd_udi_ingress.hub_interaction;
-      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
-      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+          -- 12. BTREE index: to_state
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND indexname = 'sat_interaction_http_request_to_state_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_to_state_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state)';
+          END IF; 
 
+          ANALYZE techbd_udi_ingress.hub_interaction;
+          --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+          ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       
     END

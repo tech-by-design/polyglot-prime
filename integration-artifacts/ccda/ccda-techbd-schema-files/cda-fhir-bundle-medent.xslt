@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.2 -->
+<!-- Version : 0.1.3 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -88,7 +88,34 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
   
-  <xsl:variable name="encounterStatus" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+  <!-- Check whether the CCDA from Guthrie and get Encounter Status in a separate logic -->
+  <!-- Determine if this is a Guthrie CCDA -->
+  <xsl:variable name="IsGuthrieCCDA"
+      select="contains(/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name, 'Guthrie')" />
+
+  <!-- Encounter status from the Guthrie path -->
+  <xsl:variable name="guthrieEncounterStatus"
+      select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:statusCode/@code" />
+
+  <!-- Encounter status from the normal encounters section -->
+  <xsl:variable name="normalEncounterStatus"
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+
+  <!-- Final encounterStatus -->
+  <xsl:variable name="encounterStatus">
+      <xsl:choose>
+          <!-- Case 1: Guthrie AND Guthrie encounter status exists -->
+          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatus) &gt; 0">
+              <xsl:value-of select="$guthrieEncounterStatus"/>
+          </xsl:when>
+
+          <!-- Case 2: Otherwise use normal encounter status -->
+          <xsl:otherwise>
+              <xsl:value-of select="$normalEncounterStatus"/>
+          </xsl:otherwise>
+      </xsl:choose>
+  </xsl:variable>
+  <!-- End of Guthrie logic -->
 
   <!-- Get Organization name from the first encounter entry -->
   <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
@@ -1936,7 +1963,7 @@
     <xsl:param name="screeningCode"/>
     <xsl:choose>
       <xsl:when test="$screeningCode = 'NYSAHCHRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool [Alternate]</xsl:when>
-      <xsl:when test="$screeningCode = 'NYS-AHC-HRSN'">INYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = 'NYS-AHC-HRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool</xsl:when>
       <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
       <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
       <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    

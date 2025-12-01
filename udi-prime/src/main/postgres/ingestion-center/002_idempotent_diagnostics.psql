@@ -1,68 +1,9 @@
-
-/*******************************************************************************************
- * Comprehensive view of SFTP diagnostics with their related issues. * 
- ******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.orch_session_diagnostics CASCADE;
-CREATE or REPLACE
-view techbd_udi_ingress.orch_session_diagnostics AS
-WITH cte_business_rule AS (
-         SELECT business_rules.worksheet,
-            business_rules.field,
-            business_rules.required,
-            business_rules."Resolved by QE/QCS" AS resolved_by_qe_qcs,
-            concat(
-                CASE
-                    WHEN upper(business_rules."True Rejection"::text) = 'YES'::text THEN 'REJECTION'::text
-                    ELSE ''::text
-                END,
-                CASE
-                    WHEN upper(business_rules."Warning Layer"::text) = 'YES'::text THEN 'WARNING'::text
-                    ELSE ''::text
-                END) AS record_action
-           FROM techbd_orch_ctl.business_rules
-          GROUP BY business_rules.worksheet, business_rules.field, business_rules.required, business_rules."Resolved by QE/QCS", (concat(
-                CASE
-                    WHEN upper(business_rules."True Rejection"::text) = 'YES'::text THEN 'REJECTION'::text
-                    ELSE ''::text
-                END,
-                CASE
-                    WHEN upper(business_rules."Warning Layer"::text) = 'YES'::text THEN 'WARNING'::text
-                    ELSE ''::text
-                END))
-        )
- SELECT DISTINCT ON (isi.orch_session_issue_id) isi.orch_session_issue_id,
-    isi.session_id,
-    isi.session_entry_id,
-    isi.issue_type,
-    isi.issue_message,
-    isi.issue_row,
-    isi.issue_column,
-    isi.invalid_value,
-    isi.remediation,
-    isi.elaboration,
-    ose.ingest_src AS ingest_file_source,
-    SUBSTRING(ose.ingest_src FROM '.*/(.*)$') AS ingest_file,
-    upper(substring(ose.ingest_src FROM '/SFTP/([^/]+)/')) AS qe,
-    os.orch_started_at::timestamptz,
-        CASE
-            WHEN upper(isi.issue_type::text) = 'MISSING COLUMN'::text THEN 'STRUCTURAL ISSUE'::text
-            ELSE br.record_action
-        END AS disposition,
-        CASE
-            WHEN upper(br.resolved_by_qe_qcs::text) = 'YES'::text THEN 'Resolved By QE/QCS'::text
-            ELSE NULL::text
-        END AS remediation2
-   FROM techbd_orch_ctl.orch_session_issue isi
-     LEFT JOIN techbd_orch_ctl.orch_session_entry ose ON ose.orch_session_entry_id::text = isi.session_entry_id::text 
-		 AND ose.session_id::text = isi.session_id::text
-     LEFT JOIN techbd_orch_ctl.orch_session os ON os.orch_session_id::text = isi.session_id::text
-     LEFT JOIN cte_business_rule br ON br.field::text = isi.issue_column::text
-  WHERE isi.orch_session_issue_id IS NOT NULL AND ose.ingest_src::text ~~ '/SFTP/%'::text;
-
+ 
 
 /*******************************************************************************************
  * Comprehensive view of SFTP diagnostics with REJECTION and their related issues. * 
  ******************************************************************************************/
+ /*
 DROP VIEW IF EXISTS techbd_udi_ingress.orch_session_diagnostics_rejection CASCADE;
 CREATE or REPLACE
 view techbd_udi_ingress.orch_session_diagnostics_rejection AS
@@ -81,7 +22,7 @@ SELECT
 	orch_session_issue_id 
 FROM techbd_udi_ingress.orch_session_diagnostics 
 WHERE disposition = 'REJECTION';
-
+*/
 /*******************************************************************************************************************************
  * Procedure to insert diagnostic logs into the Data Vault structure, specifically handling hub and satellite tables.
  * This procedure ensures that logs are captured with proper attribution and linked to the corresponding hub record.
@@ -203,3 +144,45 @@ BEGIN
 		p_hub_interaction_id
     );
 END $$;
+
+
+
+
+/* -------------------------------------------------------------
+-- View: diagnostics_exception_details
+-- This view provides detailed records of diagnostic and exception events 
+-- captured during data ingestion or interaction processing.
+-- It includes information such as error messages, PostgreSQL exception details,
+-- contextual elaboration, tenant identifiers, and interaction references.
+-- Useful for debugging ingestion failures, analyzing recurring error patterns,
+-- and tracing issues specific to tenants or hub interactions.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_exception_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.diagnostics_exception_details AS
+SELECT
+    message,
+    err_pg_exception_detail,
+    err_pg_exception_context,
+    elaboration,
+    tenant_id,
+    hub_interaction_id,
+    created_at,
+    sat_diagnostic_exception_id
+FROM
+    techbd_udi_ingress.sat_diagnostic_exception;
+
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.diagnostics_exception_summary CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.diagnostics_exception_summary AS
+SELECT
+    message,
+    err_pg_exception_detail, 
+    tenant_id,
+    hub_interaction_id,
+    created_at,
+    sat_diagnostic_exception_id
+FROM
+    techbd_udi_ingress.sat_diagnostic_exception;      

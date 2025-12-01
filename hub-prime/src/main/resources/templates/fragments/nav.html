@@ -27,7 +27,7 @@
                     </div>
                     <div id="nav-prime" class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <span><a th:each="navItem: ${navPrime}"  th:if="${navItem.text} != 'Needs Attention'" th:attr="href=@{${navItem.href.orElse('?')}}"
+                            <span><a th:each="navItem: ${navPrime}"  th:if="${navItem.text} != 'Needs Attention' and ${navItem.text} != 'Diagnostic'" th:attr="href=@{${navItem.href.orElse('?')}}"
                                 th:text="${navItem.text}"
                                 class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Label</a>
                             </span>
@@ -229,8 +229,14 @@
                             <a href="/data-quality/fhir-validation-issues" class="hover:underline">FHIR Data Quality</a>
                           </li>
                           <li class="mb-4">
-                            <a href="/data-quality/https-via-csv-validations" class="hover:underline">CSV Via HTTPs Data Quality</a>
-                          </li>                          
+                            <a href="/data-quality/csv-validations/csv-issues-summary" class="hover:underline">CSV Data Quality</a>
+                          </li>              
+                          <li class="mb-4">
+                            <a href="/data-quality/ccda-validations-issues" class="hover:underline">CCDA Data Quality</a>
+                          </li> 
+                          <li class="mb-4">
+                            <a href="/data-quality/hl7v2-validations-issues" class="hover:underline">HL7v2 Data Quality</a>
+                          </li>                                       
                           <li class="mb-4">
                             <a href="/data-quality/ig-publication-issues" class="hover:underline">IG Publication Issues</a>
                           </li>
@@ -243,23 +249,23 @@
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Interactions</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
                           <li class="mb-4">
-                              <a href="/interactions/httpsfhir" class="hover:underline ">FHIR via HTTPs</a>
+                              <a href="/interactions/httpsfhir" class="hover:underline ">FHIR Data</a>
                           </li>
                           <li class="mb-4">
-                              <a href="/interactions/httpsfailed" class="hover:underline">FHIR via HTTPs FAILED</a>
+                              <a href="/interactions/httpsfailed" class="hover:underline">FHIR Failed Submissions (Data Lake)</a>
                           </li>
                           <li class="mb-4">
-                              <a href="/interactions/httpscsv" class="hover:underline">CSV via HTTPs</a>
+                              <a href="/interactions/httpscsv" class="hover:underline">CSV Submissions</a>
                           </li>     
                           <li class="mb-4">
-                              <a href="/interactions/httpsccda" class="hover:underline">CCDA via HTTPs</a>
+                              <a href="/interactions/httpsccda" class="hover:underline">CCDA Submissions</a>
                           </li> 
                           <li class="mb-4">
-                              <a href="/interactions/httpshl7v2" class="hover:underline">HL7V2 via HTTPs</a>
+                              <a href="/interactions/httpshl7v2" class="hover:underline">HL7v2 Submissions</a>
                           </li> 
                         
                         <li class="mb-4">
-                            <a href="/interactions/https" class="hover:underline">HTTP Interactions</a>
+                            <a href="/interactions/https" class="hover:underline">Hub & API Interactions</a>
                         </li>
                         <li class="mb-4">
                             <a href="/interactions/observe" class="hover:underline">Performance Overview</a>

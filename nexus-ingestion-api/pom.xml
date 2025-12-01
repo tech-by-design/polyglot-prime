@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -22,15 +22,26 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <aws.sdk.version>2.28.0</aws.sdk.version>
         <hapi.version>2.6.0</hapi.version>
-		<camel.version>4.4.0</camel.version>
+        <camel.version>4.10.0</camel.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.108.Final</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>        
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-test-junit5</artifactId>
+            <version>${camel.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -53,6 +64,11 @@
                     <artifactId>spring-ws-core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-core</artifactId>
+            <version>4.16.0</version>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -137,6 +153,31 @@
             <artifactId>camel-mllp-starter</artifactId>
             <version>4.10.0</version>
         </dependency>
+        
+        <!-- TCP support for Camel -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-netty</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        
+        <!-- Netty HAProxy Codec for Proxy Protocol support -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-haproxy</artifactId>
+        </dependency>
+        
+        <!-- Uncomment other TCP components if needed
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-netty</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-mina</artifactId>
+            <version>${camel.version}</version>
+        </dependency> -->
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -180,7 +221,7 @@
             <artifactId>hapi-structures-v28</artifactId>
             <version>${hapi.version}</version>
         </dependency>
-         <dependency> 
+        <dependency> 
             <groupId>org.togglz</groupId> 
             <artifactId>togglz-console-spring-boot-starter</artifactId> 
             <version>4.4.0</version> 
@@ -195,6 +236,19 @@
             <artifactId>javax.xml.soap-api</artifactId>
             <version>1.4.0</version>
         </dependency>
+
+        <!-- mTLS related -->
+        <!-- Bouncy Castle for certificate parsing and verification -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version> <!-- Latest secure version -->
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -203,28 +257,28 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-           <plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>jaxb2-maven-plugin</artifactId>
-				<version>3.1.0</version>
-				<executions>
-					<execution>
-						<id>xjc</id>
-						<goals>
-							<goal>xjc</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<sources>
-						<source>${project.basedir}/src/main/resources/ITI/schema/HL7V3/NE2008/multicacheschemas</source>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jaxb2-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>xjc</id>
+                        <goals>
+                            <goal>xjc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <sources>
+                        <source>${project.basedir}/src/main/resources/ITI/schema/HL7V3/NE2008/multicacheschemas</source>
                         <source>${project.basedir}/src/main/resources/ITI/schema/IHE</source>
-					</sources>
-					<outputDirectory>${project.build.directory}/generated-sources/jaxb</outputDirectory>
-					<clearOutputDir>false</clearOutputDir>
+                    </sources>
+                    <outputDirectory>${project.build.directory}/generated-sources/jaxb</outputDirectory>
+                    <clearOutputDir>false</clearOutputDir>
                     <packageName>org.techbd.iti.schema</packageName>
                 </configuration>
-			</plugin>
+            </plugin>
         </plugins>
         <resources>
             <resource>

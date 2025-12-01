@@ -208,6 +208,17 @@ public class CsvBundleProcessorService {
             initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -287,6 +298,17 @@ public class CsvBundleProcessorService {
                     : Configuration.objectMapper.readTree(payload));
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCreatedBy(CsvService.class.getName());
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setPClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setPUserAgent(userAgent);
             initRIHR.setPFromState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             initRIHR.setPToState(StringUtils.isNotEmpty(payload) ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
@@ -381,7 +403,7 @@ private List<Object> processScreening(final String groupKey,
 
                     if (demographicList.isEmpty() || qeAdminList.isEmpty() || screeningObservationList.isEmpty()) {
                         final String errorMessage = String.format(
-                                "Data missing in one or more files for patientMrIdValue: %s",
+                                "Foreign Key Error : Data missing in one or more files for patientMrIdValue: %s",
                                 profile.getPatientMrIdValue());
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
@@ -417,6 +439,8 @@ private List<Object> processScreening(final String groupKey,
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
+                        // Ensure CUSTOM_DATA_LAKE_API key is present by reusing any existing value from requestParameters (avoids referencing undefined variable)
+                        requestParameters.put(Constants.CUSTOM_DATA_LAKE_API, requestParameters.get(Constants.CUSTOM_DATA_LAKE_API));
                         requestParameters.putAll(headers);
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,responseParameters));
@@ -502,9 +526,11 @@ private List<Object> processScreening(final String groupKey,
             if (requestParameters != null && requestParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
                 severityLevel = ((String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL)).toLowerCase();
             }
-
+        final String errorType = (e.getMessage() != null && e.getMessage().contains("Foreign Key Error"))
+            ? "data-integrity"
+            : "processing-error";
         final Map<String, Object> errorDetails = Map.of(
-                "type", "processing-error",
+                "type", errorType,
                 "severity", severityLevel,
                 "description", remediationMessage,
                 "message", diagnosticsMessage);

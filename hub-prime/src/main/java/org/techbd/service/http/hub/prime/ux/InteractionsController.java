@@ -43,44 +43,44 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/httpsfhir")
-    @RouteMapping(label = "FHIR via HTTPs", title = "FHIR Interactions via HTTPs", siblingOrder = 20)
+    @RouteMapping(label = "FHIR Data", title = "FHIR Data", siblingOrder = 20)
     public String httpsfhir(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsfhir", model, request);
     }
 
     @GetMapping("/interactions/httpsfailed")
-    @RouteMapping(label = "FHIR via HTTPs FAILED", title = "FHIR Interactions via HTTPs (POST to SHIN-NY Failures)", siblingOrder = 30)
+    @RouteMapping(label = "FHIR Failed Submissions (Data Lake)", title = "FHIR Failed Submissions (Data Lake)", siblingOrder = 30)
     public String httpsFailed(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsfailed", model, request);
     }
 
     @GetMapping("/interactions/httpscsv")
-    @RouteMapping(label = "CSV via HTTPs", title = "CSV Files via HTTPs", siblingOrder = 40)
+    @RouteMapping(label = "CSV Submissions", title = "CSV Submissions", siblingOrder = 40)
     public String httpscsv(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpscsv", model, request);
     }   
 
     @GetMapping("/interactions/httpsccda")
-    @RouteMapping(label = "CCDA via HTTPs", title = "CCDA via HTTPs", siblingOrder = 50)
+    @RouteMapping(label = "CCDA Submissions", title = "CCDA Submissions", siblingOrder = 50)
     public String httpsccda(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsccda", model, request);
     }       
     @GetMapping("/interactions/httpshl7v2")
-    @RouteMapping(label = "HL7V2 via HTTPs", title = "HL7V2 via HTTPs", siblingOrder = 60)
+    @RouteMapping(label = "HL7v2 Submissions", title = "HL7v2 Submissions", siblingOrder = 60)
     public String httpshl7v2(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpshl7v2", model, request);
     } 
-    @Operation(summary = "Recent SFTP Interactions")
-    @GetMapping("/support/interaction/sftp/recent.json")
-    @ResponseBody
-    public List<?> observeRecentSftpInteractions(
-            @Parameter(description = "Optional variable to mention the number of entries to be fetched for each tenant. If no value is specified, 10 entries will be taken by default.", required = false)
-            final @RequestParam(defaultValue = "10") int limitMostRecent) {
-        return sftpManager.tenantEgressSessions(limitMostRecent);
-    }
+    // @Operation(summary = "Recent SFTP Interactions")
+    // @GetMapping("/support/interaction/sftp/recent.json")
+    // @ResponseBody
+    // public List<?> observeRecentSftpInteractions(
+    //         @Parameter(description = "Optional variable to mention the number of entries to be fetched for each tenant. If no value is specified, 10 entries will be taken by default.", required = false)
+    //         final @RequestParam(defaultValue = "10") int limitMostRecent) {
+    //     return sftpManager.tenantEgressSessions(limitMostRecent);
+    // }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "HTTP Interactions", title = "Interactions via HTTPs", siblingOrder = 80)
+    @RouteMapping(label = "Hub & API Interactions", title = "Hub & API Interactions", siblingOrder = 80)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }

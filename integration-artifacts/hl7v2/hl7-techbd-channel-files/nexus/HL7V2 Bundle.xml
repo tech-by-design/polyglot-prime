@@ -2,8 +2,8 @@
   <id>37b4eb27-9ced-4307-8e25-1c94500c9b50</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.3.2</description>
-  <revision>43</revision>
+  <description>Version: 0.3.5</description>
+  <revision>65</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -131,6 +131,14 @@ function setErrorResponse(statusCode, errorMessage) {
 
 var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 &#xd;var rawData = connectorMessage.getRawData();
+
+	if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+	    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+	    setErrorResponse(400, errorMessage);
+	    throw errorMessage;
+	}
+
+
 var xml = new XML(rawData);
 var hl7Message = xml.Content.Part.Content.toString();
 logger.info(&quot;hl7Message : &quot; + hl7Message);
@@ -154,6 +162,9 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
 }
 
 	var successResponse = {
@@ -179,6 +190,28 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
         };
 
         var fileName = channelMap.get(&apos;filename&apos;);
+        var clientIpAddress = channelMap.get(&apos;clientIpAddress&apos;);
+
+        // Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+		var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+		channelMap.put(&apos;userAgent&apos;, userAgent);
+		logger.info(&quot;User-Agent: &quot; + userAgent);
+
+		var userAgent = channelMap.get(&apos;userAgent&apos;);
+
+		// Parse request as XML
+		var requestXml = new XML(connectorMessage.getRawData());
+		
+		// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+		var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+		
+		// Safety check
+		if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+		    logger.warn(&quot;No HL7 content found in uploaded file.&quot;);
+		    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+		    	setErrorResponse(400, errorMessage);
+		    	throw errorMessage;
+		}
 
 
 		try{
@@ -189,14 +222,15 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 		     channelMap.put(&apos;tenantId&apos;, tenantId);
 		     var interactionId = channelMap.get(&apos;interactionId&apos;);
 		     logger.info(&quot;interactionId: &quot; + interactionId);
-		     var operation = &quot;saveOgHL7Payload&quot;;
 		     var result = hl7Service.saveOriginalHl7Payload(
 			   interactionId,
 			   tenantId,
 			   sourceMap.get(&apos;contextPath&apos;),
 			   hl7Message,
 			   successResponse,
-			   fileName
+			   fileName,
+			   userAgent,
+			   clientIpAddress
 			);
 		} catch (e) {
 			var errorMsg;
@@ -212,26 +246,6 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 
 // ---------------- HL7 VALIDATION ----------------
 
-// Parse request as XML
-var requestXml = new XML(connectorMessage.getRawData());
-
-// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
-var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
-
-// Safety check
-if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
-    var errorMessage = &quot;No HL7 content found in uploaded file.&quot;;
-    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;missing-hl7&quot;, interactionId);
-	try {
-	        var operation = &quot;saveValidationFailed&quot;;
-	        hl7Service.saveValidation(false, interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), null, JSON.parse(outcome), fileName);
-	        logger.info(&quot;Successfully saved validation failure information&quot;);
-	    } catch (saveError) {
-	        logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
-	    }
-	 responseMap.put(&apos;finalResponse&apos;, outcome);
-      throw outcome;
-}
 
 // Now validate HL7 lines
 var lines = hl7Data.split(/\r?\n/);
@@ -239,8 +253,7 @@ if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
     var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
     var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
 	try {
-        var operation = &quot;saveValidationFailed&quot;;
-        hl7Service.saveValidation(false, interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), null, JSON.parse(outcome), fileName);
+        hl7Service.saveValidation(false, interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), null, JSON.parse(outcome), fileName, userAgent, clientIpAddress);
         logger.info(&quot;Successfully saved validation failure information&quot;);
     } catch (saveError) {
         logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -255,8 +268,7 @@ for (var i = 0; i &lt; lines.length; i++) {
         var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
         var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;line-error&quot;, interactionId);
 	try {
-            var operation = &quot;saveValidationFailed&quot;;
-            hl7Service.saveValidation(false, interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), null, JSON.parse(outcome), fileName);
+            hl7Service.saveValidation(false, interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), null, JSON.parse(outcome), fileName, userAgent, clientIpAddress);
             logger.info(&quot;Successfully saved validation failure information&quot;);
         } catch (saveError) {
             logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -796,11 +808,6 @@ if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|
     missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
 }
 
-// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
-var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
-channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(&quot;User-Agent: &quot; + userAgent);
-
 var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
 channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
 logger.info(&quot;OrganizationName: &quot; + OrganizationName);
@@ -1318,6 +1325,8 @@ logger.info(&quot;Request URL: &quot; + requestedPath);
 var hl7Service = globalMap.get(&apos;hl7Service&apos;);
 
 var fileName = channelMap.get(&apos;filename&apos;);
+var clientIpAddress = channelMap.get(&apos;clientIpAddress&apos;);
+var userAgent = channelMap.get(&apos;userAgent&apos;);
 
 if (requestedPath == &quot;/&quot;) {
 	return;
@@ -1405,8 +1414,7 @@ try {
 	    logger.error(msg);
 
 		try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId)), fileName);
+		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		            logger.info(&quot;Successfully saved validation failure information&quot;);
 		        } catch (saveError) {
 		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -1427,8 +1435,7 @@ try {
 		     var tenantId = channelMap.get(&apos;tenantId&apos;);
 		     logger.info(&quot;tenant Id: &quot; + tenantId);
 		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
-		     var operation = &quot;saveValidationSuccess&quot;;
-			hl7Service.saveValidation(true, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId)), fileName);
+			hl7Service.saveValidation(true, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
@@ -1437,8 +1444,7 @@ try {
 	    }
 
 		try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName);
+		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		            logger.info(&quot;Successfully saved validation failure information&quot;);
 		        } catch (saveError) {
 		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -1585,8 +1591,7 @@ try {
 	    logger.error(msg);
 
 		try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId)), fileName);
+		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		            logger.info(&quot;Successfully saved validation failure information&quot;);
 		        } catch (saveError) {
 		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -1607,8 +1612,7 @@ try {
 		     var tenantId = channelMap.get(&apos;tenantId&apos;);
 		     logger.info(&quot;tenant Id: &quot; + tenantId);
 		     logger.info(&quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
-		     var operation = &quot;saveValidationSuccess&quot;;
-			hl7Service.saveValidation(true, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId)), fileName);
+			hl7Service.saveValidation(true, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 
 	} catch (e) {
 	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
@@ -1617,8 +1621,7 @@ try {
 	    }
 
 		try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName);
+		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		            logger.info(&quot;Successfully saved validation failure information&quot;);
 		        } catch (saveError) {
 		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -1715,13 +1718,14 @@ try {
 				logger.info(&quot;FHIR Conversion Save inside Bundle&quot;);
 			     var tenantId = channelMap.get(&apos;tenantId&apos;);
 			     logger.info(&quot;tenant Id: &quot; + tenantId);
-			     var operation = &quot;saveConversionSuccess&quot;;
 				var result = hl7Service.saveFhirConversionResult(true,
 				    interactionId,
 				   tenantId,
 				   requestedPath,
 				   JSON.parse(cleanedJsonString),
-				   fileName
+				   fileName,
+				   userAgent,
+				   clientIpAddress
 				);
 			&#xd;		} catch (e) {
 			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
@@ -1729,8 +1733,7 @@ try {
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
 
 		    try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName);
+		            hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		            logger.info(&quot;Successfully saved validation failure information&quot;);
 		        } catch (saveError) {
 		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -1786,8 +1789,7 @@ try {
     logger.error(errorMsg);
 
 	try {
-		 var operation = &quot;saveValidationFailed&quot;;
-		 hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName);
+		 hl7Service.saveValidation(false, interactionId, tenantId, requestedPath, null, JSON.parse(getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId)), fileName, userAgent, clientIpAddress);
 		  logger.info(&quot;Successfully saved validation failure information&quot;);
 		} catch (saveError) {
 		    logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
@@ -2160,6 +2162,30 @@ var source = SourceType.HL7V2.name();
 
 requestParameters.put(Packages.org.techbd.config.Constants.SOURCE_TYPE, source.trim());
 
+///////////////////////////////////////////////////////////////
+// Get remote client address (could be IPv4 or IPv6, with port)
+var clientAddr = $(&apos;remoteAddress&apos;);
+var clientIp = clientAddr;
+ 
+ 
+logger.info(&quot;remoteAddress: &quot; + clientAddr);
+ 
+// Handle IPv6: [address]:port
+if (clientAddr != null &amp;&amp; clientAddr.startsWith(&quot;[&quot;)) {
+    // Extract between [ and ]
+    var start = clientAddr.indexOf(&quot;[&quot;) + 1;
+    var end = clientAddr.indexOf(&quot;]&quot;);
+    clientIp = clientAddr.substring(start, end);
+}
+// Handle IPv4: address:port
+else if (clientAddr != null &amp;&amp; clientAddr.indexOf(&quot;:&quot;) !== -1) {
+    clientIp = clientAddr.split(&quot;:&quot;)[0];
+}
+ 
+// Store into channel map
+channelMap.put(&apos;clientIpAddress&apos;, clientIp);
+//////////////////////////////////////////////////////////////
+
 
 return message;</preprocessingScript>
   <postprocessingScript>return;</postprocessingScript>
@@ -2207,7 +2233,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1759236753670</time>
+        <time>1760091572791</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

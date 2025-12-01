@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -12,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.io.*;
 
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
@@ -166,6 +166,11 @@ public class CsvConversionUtil {
                 errorRows.add(error.getLine()); // Store bad rows for debugging
             }
 
+            // Trim all String fields of parsed objects
+            for (T obj : dataList) {
+                trimStringFields(obj);
+            }
+
             // Group valid rows by fieldName
             return dataList.stream()
                     .collect(Collectors.groupingBy(obj -> {
@@ -180,6 +185,22 @@ public class CsvConversionUtil {
     } 
     
 }
+
+    private static void trimStringFields(Object obj) {
+        for (var field : obj.getClass().getDeclaredFields()) {
+            if (field.getType() == String.class) {
+                field.setAccessible(true);
+                try {
+                    String value = (String) field.get(obj);
+                    if (value != null) {
+                        field.set(obj, value.trim());
+                    }
+                } catch (IllegalAccessException e) {
+                    // Skip inaccessible fields silently
+                }
+            }
+        }
+    }
 
     /**
      * Extracts the value of a specified field from an object using reflection.

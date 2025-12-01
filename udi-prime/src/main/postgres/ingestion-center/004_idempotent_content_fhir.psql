@@ -116,13 +116,12 @@ FROM multi_answers ;
 /*******************************************************************************************
  * Stored Procedure for FHIR Screening Questions and Answers with Filtering. *
  ******************************************************************************************/
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers1(TEXT, TEXT);
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
-    p_hub_interaction_id TEXT DEFAULT NULL,
-    p_patient_mrn TEXT DEFAULT NULL
+drop function if exists techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT,TEXT);
+create or replace function techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
+    p_hub_interaction_id TEXT default null,
+    p_patient_mrn TEXT default null
 )
-RETURNS TABLE (
+returns table (
     hub_interaction_id TEXT,
     tenant_id TEXT, 
     resource_type TEXT,
@@ -130,86 +129,127 @@ RETURNS TABLE (
     question TEXT,
     question_code TEXT,
     answer TEXT,
-    answer_code TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    WITH filtered_resources AS (
-         SELECT sihr.hub_interaction_id,
-            sihr.tenant_id,
-            jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry,
-            sihr.patient_mrn
-           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE
-          sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/','/hl7v2/Bundle', '/hl7v2/Bundle/')
-          AND sihr.nature = 'Original FHIR Payload'::text
-          -- Apply filters if provided
-          AND (p_hub_interaction_id IS NULL OR sihr.hub_interaction_id = p_hub_interaction_id)
-          AND (p_patient_mrn IS NULL OR sihr.patient_mrn = p_patient_mrn)
-        ), filtered_data AS (
-         SELECT fr.hub_interaction_id,
-            fr.tenant_id,
-            fr.entry -> 'resource'::text AS resource,
-            (fr.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
-            fr.patient_mrn
-           FROM filtered_resources fr
-          WHERE (fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
-        ), single_answers AS (
-         SELECT fd.hub_interaction_id,
-            fd.tenant_id,
-            fd.resource_type,
-            fd.patient_mrn,
-            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
-            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code, 
-            CASE 
-                WHEN (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
-                THEN (fd.resource -> 'valueCodeableConcept' ->> 'text')
-                ELSE (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
-            END AS answer,            
-            (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
-           FROM filtered_data fd
-          WHERE fd.resource_type = 'Observation'
-            AND fd.resource ? 'valueCodeableConcept'
-        ), multi_answers AS (
-         SELECT fd.hub_interaction_id,
-            fd.tenant_id,
-            fd.resource_type,
-            fd.patient_mrn,
-            comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
-            comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
-            CASE 
-                WHEN (coding ->> 'display') = '{Number}'
-                THEN (comp -> 'valueCodeableConcept' ->> 'text')
-                ELSE (coding ->> 'display')
-            END AS answer,            
-            coding ->> 'code' AS answer_code
-           FROM filtered_data fd
-           CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp
-           CROSS JOIN LATERAL jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') AS coding
-          WHERE fd.resource_type = 'Observation'
-            AND fd.resource ? 'component'
+    answer_code TEXT,
+    data_absent_reason_code TEXT,
+    data_absent_reason_display TEXT
+) as $$
+begin
+    return QUERY
+    with filtered_resources as (
+select
+	sihr.hub_interaction_id,
+	sihr.tenant_id,
+	jsonb_array_elements(sihr.payload -> 'entry'::text) as entry,
+	sihr.patient_mrn
+from
+	techbd_udi_ingress.sat_interaction_fhir_request sihr
+where
+	sihr.uri in ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/')
+	and sihr.nature = 'Original FHIR Payload'::text
+	-- Apply filters if provided
+	and (p_hub_interaction_id is null
+		or sihr.hub_interaction_id = p_hub_interaction_id)
+	and (p_patient_mrn is null
+		or sihr.patient_mrn = p_patient_mrn)
+        ),
+filtered_data as (
+select
+	fr.hub_interaction_id,
+	fr.tenant_id,
+	fr.entry -> 'resource'::text as resource,
+	(fr.entry -> 'resource'::text) ->> 'resourceType'::text as resource_type,
+	fr.patient_mrn
+from
+	filtered_resources fr
+where
+	(fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+        ),
+single_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	-- Question
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' as question,
+	(((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' as question_code,
+	-- Answer (valueCodeableConcept OR NULL)
+            case
+		when fd.resource ? 'valueCodeableConcept'
+			and (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
+                then fd.resource -> 'valueCodeableConcept' ->> 'text'
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
+			else null
+		end as answer,
+		case
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code'
+			else null
+		end as answer_code,
+		-- Data Absent Reason (NEW)
+            (fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'code') as data_absent_reason_code,
+		(fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'display') as data_absent_reason_display
+	from
+		filtered_data fd
+		-- Accept both valueCodeableConcept OR dataAbsentReason
+	where
+		fd.resource_type = 'Observation'
+		and (fd.resource ? 'valueCodeableConcept'
+			or fd.resource ? 'dataAbsentReason')
+    ),
+multi_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	comp -> 'code' -> 'coding' -> 0 ->> 'display' as question,
+	comp -> 'code' -> 'coding' -> 0 ->> 'code' as question_code,
+	case
+		when (coding ->> 'display') = '{Number}'
+                then (comp -> 'valueCodeableConcept' ->> 'text')
+		else (coding ->> 'display')
+	end as answer,
+	coding ->> 'code' as answer_code
+from
+	filtered_data fd
+cross join lateral jsonb_array_elements(fd.resource -> 'component') as comp
+cross join lateral jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') as coding
+where
+	fd.resource_type = 'Observation'
+	and fd.resource ? 'component'
         )
-    SELECT sa.hub_interaction_id,
-        sa.tenant_id,
-        sa.resource_type,
-        sa.patient_mrn,
-        sa.question,
-        sa.question_code,
-        sa.answer,
-        sa.answer_code
-       FROM single_answers sa
-     UNION ALL
-     SELECT ma.hub_interaction_id,
-        ma.tenant_id,
-        ma.resource_type,
-        ma.patient_mrn,
-        ma.question,
-        ma.question_code,
-        ma.answer,
-        ma.answer_code
-       FROM multi_answers ma;
-END;
-$$ LANGUAGE plpgsql;
+    select
+	sa.hub_interaction_id,
+	sa.tenant_id,
+	sa.resource_type,
+	sa.patient_mrn,
+	sa.question,
+	sa.question_code,
+	sa.answer,
+	sa.answer_code,
+	sa.data_absent_reason_code,
+	sa.data_absent_reason_display
+from
+	single_answers sa
+union all
+     select
+	ma.hub_interaction_id,
+	ma.tenant_id,
+	ma.resource_type,
+	ma.patient_mrn,
+	ma.question,
+	ma.question_code,
+	ma.answer,
+	ma.answer_code,
+	null as data_absent_reason_code,
+	null as data_absent_reason_display
+from
+	multi_answers ma;
+end;
+
+$$ language plpgsql;
 
 
 /*******************************************************************************************
@@ -330,7 +370,8 @@ AS SELECT validation_engine,
     count(*) AS issue_count,
     max(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
-    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date
+    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date,
+    profile_url
       FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
    WHERE  
    date_time >= CURRENT_DATE - INTERVAL '2 days'
@@ -348,12 +389,90 @@ AS SELECT validation_engine,
             AND severity !=''
    GROUP BY validation_engine,
     issue, severity,
+    profile_url,
      (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
    ORDER BY	(max(date_time)) DESC;
 
+/*******************************************************************************************
+ * Stored Procedure for FHIR Validation Issue Details (Replacement for View)
+ *
+ * This stored procedure replaces the fhir_validation_issue_details view by accepting
+ * ig_version, validation_engine, issue_date, and profile_url as parameters.
+ *
+ * Parameters:
+ * - p_ig_version: The IG version filter
+ * - p_validation_engine: The validation engine filter
+ * - p_issue_date: The issue date filter (format: MM-DD-YYYY)
+ * - p_profile_url: The profile URL filter
+ *
+ * Returns: Detailed FHIR validation issue records for the specified filters
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_validation_issue_details(
+    TEXT, TEXT, TEXT, TEXT
+);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_validation_issue_details(
+    p_ig_version TEXT DEFAULT NULL,
+    p_validation_engine TEXT DEFAULT NULL,
+    p_issue_date TEXT DEFAULT NULL,
+    p_source TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    validation_engine TEXT,
+    issue TEXT,
+    issue_severity TEXT,
+    issue_count BIGINT,
+    most_recent_date TIMESTAMP WITH TIME ZONE,
+    ig_version TEXT,
+    issue_date TEXT,
+    source TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sifvi.validation_engine,
+        sifvi.issue,
+        sifvi.severity AS issue_severity,
+        COUNT(*) AS issue_count,
+        MAX(sifvi.date_time) AS most_recent_date,
+        COALESCE(sifvi.ig_version, 'Unknown') AS ig_version,
+        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') AS issue_date,
+        profile_url_domain AS source
+    FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue sifvi
+    WHERE
+        sifvi.date_time >= CURRENT_DATE - INTERVAL '5 days'
+        AND (
+            sifvi.issue ILIKE '%has not been checked because it is unknown%' OR
+            sifvi.issue ILIKE '%Unknown profile%' OR
+            sifvi.issue ILIKE '%Unknown extension%' OR
+            sifvi.issue ILIKE '%Unknown Code System%' OR
+            sifvi.issue ILIKE '%not found%' OR
+            sifvi.issue ILIKE '%has not been checked because it could not be found%' OR
+            sifvi.issue ILIKE '%Unable to find a match for profile%' OR
+            sifvi.issue ILIKE '%None of the codings provided%' OR
+            sifvi.issue ILIKE '%Unable to expand ValueSet%' OR
+            sifvi.issue ILIKE '%Slicing cannot be evaluated%' OR
+            sifvi.issue ILIKE '%could not be resolved%'
+        )
+        AND sifvi.severity != ''
+        AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(sifvi.ig_version, 'Unknown') = p_ig_version)
+        AND (NULLIF(p_validation_engine, '') IS NULL OR sifvi.validation_engine = p_validation_engine)
+        AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') = p_issue_date)
+        AND (NULLIF(p_source, '') IS NULL OR sifvi.profile_url_domain = p_source)
+    GROUP BY
+        sifvi.validation_engine,
+        sifvi.issue,
+        sifvi.severity,
+        sifvi.profile_url_domain,
+        COALESCE(sifvi.ig_version, 'Unknown'),
+        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY')
+    ORDER BY MAX(sifvi.date_time) DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 
 /****************************************************************************************
- * This view provides a straightforward way to access consolidated validation issues. 
+ * This view provides a straightforward way to access consolidated validation issues.
  * It includes key fields related to FHIR validation issues, such as the validation engine, 
  * formatted issue date, most recent timestamp of the issue, IG (Implementation Guide) version, 
  * and the count of distinct issues. This view helps in quickly identifying and analyzing validation 
@@ -364,12 +483,13 @@ AS SELECT validation_engine,
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
 AS 
-   SELECT
+SELECT
     validation_engine,
     MAX(date_time::date) AS issue_date,
     MAX(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown') AS ig_version,
-    COUNT(DISTINCT issue) AS distinct_issue_count
+    COUNT(DISTINCT issue) AS distinct_issue_count,
+    profile_url_domain AS source
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
@@ -387,8 +507,25 @@ WHERE
         OR issue LIKE '%Slicing cannot be evaluated%'
         OR issue LIKE '%could not be resolved%'
     )
-    AND severity !=''
+    AND severity <> ''
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
+    profile_url_domain,
     date_time::date;
+
+
+-- ============================================================
+-- View: interaction_recent_widget_new
+-- Purpose: Exposes recent widget metadata for all widget types 
+--          (FHIR, CSV, CCDA, HL7V2) across all tenants.
+-- Columns: widget_name, tenant_id, last_updated_at
+-- ============================================================
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_widget_new CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_widget_new AS
+SELECT 
+    widget_name,
+    tenant_id,
+    last_updated_at
+FROM techbd_udi_ingress.dashboard_widget_metadata;

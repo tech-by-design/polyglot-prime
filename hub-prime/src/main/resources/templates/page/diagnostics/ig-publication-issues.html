@@ -23,40 +23,88 @@
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_validation_issue';
         const igPublication = 'fhir_validation_issue_details';
+        const detailStoredProcName = 'get_fhir_validation_issue_details';
         const igPublicationColumnDefs = [
             { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", tooltipValueGetter: (params) => `${params.value}`, headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
             { headerName: "Severity", field: "issue_severity", filter: "agTextColumnFilter"  },
             { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
         ];
         function getIgPublicationGridData(params) {
-            const ig_version = encodeURIComponent(params.data.ig_version) || params.data.ig_version;
-            const validation_engine = encodeURIComponent(params.data.validation_engine) || params.data.validation_engine;
-            const issue_date = encodeURIComponent(params.data.issue_date) || params.data.issue_date;
+            const ig_version = params.data.ig_version || '';
+            const validation_engine = params.data.validation_engine || '';
+            const issue_date = params.data.issue_date || '';
+            const source = params.data.source || '';
 
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${igPublication}/ig_version/${ig_version}/validation_engine/${validation_engine}/issue_date/${issue_date}.json`))
-                .then(response => {
-                    if (response.url.includes('/?timeout=true')) {
-                        window.location.href = '/?timeout=true'; // Redirect to login page
-                        return null; // Prevent further processing of the response
+            const storedProcParams = {
+                "p_ig_version": ig_version,
+                "p_validation_engine": validation_engine,
+                "p_issue_date": issue_date,
+                "p_source": source
+            };
+
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 1000,
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            };
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+            const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${detailStoredProcName}.json?storedProcparams=${paramsJson}`);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(gridRequestBody)
+            })
+            .then(response => {
+                if (response.url.includes('/?timeout=true')) {
+                    window.location.href = '/?timeout=true';
+                    return null;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                let rowData = response;
+
+                if (!Array.isArray(rowData)) {
+                    if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                        rowData = rowData.rows;
+                    } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        rowData = rowData.data;
+                    } else {
+                        console.error("Unexpected response format:", response);
+                        rowData = [];
                     }
-                    return response.json();
-                })
-                .then(response => {
-                    params.successCallback(response);
-                })
-                .catch(error => {
-                    console.error('Error fetching details data' + error);
-                });
+                }
+
+                params.successCallback(rowData, rowData.length);
+            })
+            .catch(error => {
+                console.error('Error fetching FHIR validation issue details: ' + error);
+                params.failCallback();
+            });
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const helpers = new Helpers();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "SHIN-NY IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "SHIN-NY IG Source", field: "source", filter: "agTextColumnFilter", headerTooltip: "SHIN-NY IG Source" },
                     { headerName: "Issue Identified On", field: "issue_date", sort:"desc", filter: "agDateColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems." },
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
-                    { headerName: "Count Of URLs With Issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
+                    { headerName: "Count Of URLs With Issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." },                    
                 ]) 
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),

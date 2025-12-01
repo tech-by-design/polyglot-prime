@@ -53,8 +53,8 @@ class HL7ServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = hl7Service.saveOriginalHl7Payload("int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata");
+        boolean result = hl7Service.saveOriginalHl7Payload("int123", "tenantA",
+            "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "file.hl7", "unit-test-agent", "127.0.0.1");
 
             assertTrue(result);
         }
@@ -69,8 +69,8 @@ class HL7ServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = hl7Service.saveValidation(true, "int123", "tenantA",
-                    "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "metadata");
+        boolean result = hl7Service.saveValidation(true, "int123", "tenantA",
+            "/test-uri", "{\"payload\":\"data\"}", Map.of("status", "ok"), "file.hl7", "unit-test-agent", "127.0.0.1");
 
             assertTrue(result);
         }
@@ -85,8 +85,8 @@ class HL7ServiceTest {
                                  when(mock.getReturnValue()).thenReturn(new ObjectMapper().createObjectNode());
                              })) {
 
-            boolean result = hl7Service.saveFhirConversionResult(true, "int123", "tenantA",
-                    "/test-uri", Map.of("fhir", "bundle"), "metadata");
+        boolean result = hl7Service.saveFhirConversionResult(true, "int123", "tenantA",
+            "/test-uri", Map.of("fhir", "bundle"), "file.hl7", "unit-test-agent", "127.0.0.1");
 
             assertTrue(result);
         }
@@ -99,7 +99,7 @@ class HL7ServiceTest {
 
         HL7Service errorService = new HL7Service(faultyConfig, appLogger, coreAppConfig);
 
-        boolean result = errorService.saveOriginalHl7Payload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata");
+    boolean result = errorService.saveOriginalHl7Payload("int123", "tenantA", "/uri", "{}", Map.of(), "file.hl7", "unit-test-agent", "127.0.0.1");
 
         assertFalse(result);
     }

@@ -1,96 +1,82 @@
 
 package org.techbd.ingest.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
+
 /**
- * Service responsible for generating a unique message group ID
- * using metadata from a {@link RequestContext}.
+ * Service responsible for generating a unique message group ID for a message
+ * based on its metadata. The message group ID is used for grouping related
+ * messages in message-driven systems (e.g., SQS FIFO queues, Kafka partitions).
+ *
  * <p>
- * The generated ID is used to group related messages, for example
- * in SQS FIFO queues or other message-driven systems.
+ * This service delegates the actual creation logic to a list of
+ * {@link MessageGroupStrategy} implementations. The first strategy that
+ * supports the given {@link RequestContext} is used to generate the ID.
+ * </p>
+ *
  * <p>
- * Format of the message group ID: <br>
- * <code>{source_ip}_{destination_ip}_{destination_port}</code>
- * <br>
- * If any of the components are missing or blank, the group ID defaults to
- * <code>default_message_group</code> and a warning is logged.
+ * If no strategy matches, a default group ID
+ * {@link Constants#DEFAULT_MESSAGE_GROUP_ID}
+ * is assigned.
+ * </p>
+ *
+ * <p>
+ * Strategies can include, for example:
+ * <ul>
+ * <li>MLLP-based grouping (using deliveryType, facility, messageCode)</li>
+ * <li>Tenant-based grouping (using tenantId)</li>
+ * <li>Fallback grouping (using sourceIp, destinationIp, destinationPort)</li>
+ * </ul>
+ * </p>
  */
 @Service
 public class MessageGroupService {
-
+    private final List<MessageGroupStrategy> strategies;
     private static TemplateLogger logger;
-    public MessageGroupService(AppLogger appLogger) {
+
+    public MessageGroupService(List<MessageGroupStrategy> strategies, AppLogger appLogger) {
+        this.strategies = strategies;
         logger = appLogger.getLogger(MessageGroupService.class);
-        logger.info("MessageGroupService initialized");
     }
 
     /**
-     * Creates a message group ID by combining the source IP, destination IP,
-     * and destination port from the given {@link RequestContext}.
+     * Generates a message group ID for the given {@link RequestContext} and
+     * interaction ID. Delegates to the first matching strategy.
      *
-     * @param context the context containing metadata about the message source and
-     *                destination
-     * @return a string in the format:
-     *         {@code sourceIp_destinationIp_destinationPort},
-     *         or {@code default_message_group} if any part is missing
+     * <p>
+     * Execution flow:
+     * <ol>
+     * <li>Iterate over all strategies in order of precedence</li>
+     * <li>Check if the strategy supports the given context</li>
+     * <li>If supported, generate the message group ID and set it in context</li>
+     * <li>If no strategy supports the context, fallback to default group ID</li>
+     * </ol>
+     * </p>
+     *
+     * @param context       the request context containing message metadata
+     * @param interactionId a unique interaction ID for logging/tracing
+     * @return the generated message group ID
      */
     public String createMessageGroupId(RequestContext context, String interactionId) {
-        String sourceIp = context.getSourceIp();
-        String destinationIp = context.getDestinationIp();
-        String destinationPort = context.getDestinationPort();
-        String tenantId = context.getTenantId();
-        MessageSourceType messageSourceType = context.getMessageSourceType();
-        String messageGroupId = Constants.DEFAULT_MESSAGE_GROUP_ID;
+        for (MessageGroupStrategy strategy : strategies) {
+            if (strategy.supports(context)) {
+                String groupId = strategy.createGroupId(context, interactionId);
 
-        if (MessageSourceType.MLLP == messageSourceType) {
-            if (StringUtils.isNotBlank(destinationPort)) {
-                messageGroupId = destinationPort.trim();
-            } else {
-                logger.warn("MLLP source but no destination port. Using default group. interactionId='{}'",
-                        interactionId);
-            }
-        } else if (StringUtils.isNotBlank(tenantId) && !isDefaultTenantId(tenantId)) {
-            messageGroupId = tenantId.trim();
-        } else {
-            List<String> parts = new ArrayList<>();
-            if (StringUtils.isNotBlank(sourceIp))
-                parts.add(sourceIp.trim());
-            if (StringUtils.isNotBlank(destinationIp))
-                parts.add(destinationIp.trim());
-            if (StringUtils.isNotBlank(destinationPort))
-                parts.add(destinationPort.trim());
-            if (!parts.isEmpty()) {
-                messageGroupId = String.join("_", parts);
-            } else {
-                messageGroupId = "unknown-tenantId";
-                logger.warn("No context values available. Using unknown-tenantId. interactionId='{}'",
-                        interactionId);
+                logger.info("Selected strategy [{}] generated messageGroupId='{}' for interactionId='{}'",
+                        strategy.getClass().getSimpleName(), groupId, interactionId);
+
+                context.setMessageGroupId(groupId);
+                return groupId;
             }
         }
-
-        logger.debug("Generated message group ID: {} for interactionId: {}", messageGroupId, interactionId);
-        //logger.info("TenantId from context: '{}', Generated message group ID: '{}' for interactionId: '{}'", tenantId, messageGroupId, interactionId);
-
-        context.setMessageGroupId(messageGroupId);
-        return messageGroupId;
+        logger.warn("No strategy matched, using default message group ID. interactionId='{}'", interactionId);
+        context.setMessageGroupId(Constants.DEFAULT_MESSAGE_GROUP_ID);
+        return Constants.DEFAULT_MESSAGE_GROUP_ID;
     }
-
-    /**
-     * Checks if the tenant ID is a default/fallback value that should not be used for message grouping.
-     */
-    private boolean isDefaultTenantId(String tenantId) {
-        return Constants.DEFAULT_TENANT_ID.equals(tenantId) || 
-               "unknown-tenant".equals(tenantId) ||
-               "unknown-tenantId".equals(tenantId);
-    }
-
 }

@@ -63,35 +63,63 @@ public class DataQualityController {
     @GetMapping("/data-quality/csv-validations") 
     @RouteMapping(label = "CSV Data Quality", title = "CSV Data Quality", siblingOrder = 40)    
     public String diagnosticsHttpsViaCsvValidationIssues(final Model model, final HttpServletRequest request) {
-        return "redirect:/data-quality/csv-validations/file-not-processed";
+        return "redirect:/data-quality/csv-validations/csv-issues-summary";
     }   
     
-    @GetMapping("/data-quality/csv-validations/file-not-processed")
-    @RouteMapping(label = "Files Not Processed", title = "Files Not Processed", siblingOrder = 10)
-    public String diagnosticsFileNotProcessedIssues(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/file-not-processed", model, request);
-    }       
+    // @GetMapping("/data-quality/csv-validations/file-not-processed")
+    // @RouteMapping(label = "Files Not Processed", title = "Files Not Processed", siblingOrder = 40)
+    // public String diagnosticsFileNotProcessedIssues(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/diagnostics/file-not-processed", model, request);
+    // }       
     
-    @GetMapping("/data-quality/csv-validations/incomplete-groups")
-    @RouteMapping(label = "Incomplete Groups", title = "Incomplete Groups", siblingOrder = 20)
-    public String diagnosticsIncompleteGroupsIssues(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/incomplete-groups", model, request);
-    }   
+    // @GetMapping("/data-quality/csv-validations/incomplete-groups")
+    // @RouteMapping(label = "Incomplete Groups", title = "Incomplete Groups", siblingOrder = 50)
+    // public String diagnosticsIncompleteGroupsIssues(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/diagnostics/incomplete-groups", model, request);
+    // }   
     
-    @GetMapping("/data-quality/csv-validations/data-integrity")
-    @RouteMapping(label = "Data Integrity Errors", title = "Data Integrity Errors", siblingOrder = 30)
-    public String diagnosticsDataIntegrityIssues(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/data-integrity", model, request);
+    // @GetMapping("/data-quality/csv-validations/data-integrity")
+    // @RouteMapping(label = "Data Integrity Errors", title = "Data Integrity Errors", siblingOrder = 60)
+    // public String diagnosticsDataIntegrityIssues(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/diagnostics/data-integrity", model, request);
+    // }       
+    
+    // @GetMapping("/data-quality/csv-validations/processing-errors")
+    // @RouteMapping(label = "Processing Errors", title = "Processing Errors", siblingOrder = 40)
+    // public String diagnosticsProcessingErrors(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/diagnostics/processing-errors", model, request);
+    // }
+    
+    @GetMapping("/data-quality/csv-validations/csv-issues-summary")
+    @RouteMapping(label = "CSV Issues Summary", title = "CSV Issues Summary", siblingOrder = 10)
+    public String csvErrorSummary(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/diagnostics/csv-issues-summary", model, request);
+    }    
+
+    @GetMapping("/data-quality/csv-validations/csv-issue-details")
+    @RouteMapping(label = "CSV Issues", title = "CSV Issues", siblingOrder = 20)
+    public String csvAllErrorSummary(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/diagnostics/csv-issue-details", model, request);
     }       
 
+    @GetMapping("/data-quality/ccda-validations-issues") 
+    @RouteMapping(label = "CCDA Data Quality", title = "CCDA Data Quality", siblingOrder = 50)    
+    public String diagnosticsHttpsViaCCDAValidationIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/ccda-validations-issues", model, request);
+    }   
+    @GetMapping("/data-quality/hl7v2-validations-issues") 
+    @RouteMapping(label = "HL7v2 Data Quality", title = "HL7v2 Data Quality", siblingOrder = 60)    
+    public String diagnosticsHttpsViaHL7v2ValidationIssues(final Model model, final HttpServletRequest request) {
+    return presentation.populateModel("page/diagnostics/hl7v2-validations-issues", model, request);
+    }   
     @GetMapping("/data-quality/ig-publication-issues")
-    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 50)
+    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 70)
     public String igPublicationIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/ig-publication-issues", model, request);
     }
 
     @GetMapping("/data-quality/fhir-rules")
-    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 60)
+    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 80)
     public String fhirRules(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
     }

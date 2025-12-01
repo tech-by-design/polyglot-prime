@@ -124,6 +124,27 @@
             </dl>
         </div>  
 
+         <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
+            <div class="text-center font-bold">Recent HL7v2 FHIR Bundles</div>
+            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/hl7v2/most-recent/healthelink.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Healtheconnections', @{/dashboard/stat/hl7v2/most-recent/healtheconn.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/hl7v2/most-recent/healthix.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/hl7v2/most-recent/grrhio.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/hl7v2/most-recent/hixny.html})}">
+                </div>
+            </dl>
+        </div>         
+
         <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
             <div th:replace="fragments/interactions :: serverTextStat"></div>
         </div>

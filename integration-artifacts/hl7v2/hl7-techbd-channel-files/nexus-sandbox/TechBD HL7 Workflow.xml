@@ -1,0 +1,2401 @@
+<channel version="4.6.0">
+  <id>dc8ab30d-0a78-4072-bbe7-89dc4ac30c27</id>
+  <nextMetaDataId>3</nextMetaDataId>
+  <name>TechBD HL7 Workflow</name>
+  <description>Version: 0.1.7</description>
+  <revision>62</revision>
+  <sourceConnector version="4.6.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
+      <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.6.0">
+        <host>0.0.0.0</host>
+        <port>9006</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.6.0">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>true</xmlBody>
+      <parseMultipart>true</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>text/hl7</binaryMimeTypes>
+      <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
+      <responseContentType>text/json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode></responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Credentials</string>
+          <list>
+            <string>true</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>30000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.6.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <name>FileName validation</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>//Check the file type, only .hl7 and .txt allowed
+function getOutcome(text, severity, code, interactionId) {
+    return JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
+        result: [{
+            severity: severity,
+            code: code,
+            details: { text: text }
+        }]
+    });
+}
+/**
+* Util function to generate json string with status and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+var interactionId = java.util.UUID.randomUUID().toString();
+globalMap.put(&apos;interactionId&apos;, interactionId);
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;&#xd;
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
+
+	var rawData = connectorMessage.getRawData();
+	if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+	    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+	    setErrorResponse(400, errorMessage);
+	    throw errorMessage;
+	}&#xd;
+
+var xml = new XML(rawData);
+var hl7Message = xml.Content.Part.Content.toString();
+logger.info(logPrefix + &quot;hl7Message : &quot; + hl7Message);
+
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/);
+
+if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
+    filename = filenameMatch[1];
+    logger.info(logPrefix + &quot;Filename: &quot; + filename);
+    globalMap.put(&apos;filename&apos;, filename);
+
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
+    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
+    logger.info(logPrefix + &quot;File extension: &quot; + extension);
+
+    if (extension !== &quot;hl7&quot; &amp;&amp; extension !== &quot;txt&quot;) {
+       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .hl7 and .txt are allowed.&quot;;
+       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    	  throw errorMessage; // Stop further processing by throwing an exception
+    }
+} else {
+    logger.warn(logPrefix + &quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// Parse request as XML
+var requestXml = new XML(connectorMessage.getRawData());
+
+// Extract HL7 body (the &lt;Content&gt; of the first &lt;Part&gt;)
+var hl7Data = String(requestXml[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
+
+// Safety check
+if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
+	logger.warn(logPrefix + &quot;No HL7 content found in uploaded file.&quot;);
+    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    	setErrorResponse(400, errorMessage);
+    	throw errorMessage;
+}
+
+
+		try{
+			//DB Save Original Payload
+		     logger.info(logPrefix + &quot;DB Save inside Source transformer&quot;);
+		     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+		     logger.info(logPrefix + &quot;tenant Id: &quot; + tenantId);
+		     channelMap.put(&apos;tenantId&apos;, tenantId);
+		     var interactionId = globalMap.get(&apos;interactionId&apos;);
+		     logger.info(logPrefix + &quot;interactionId: &quot; + interactionId);
+		     var operation = &quot;saveOgHL7Payload&quot;;
+		     var result = saveHL7Payload(
+			   interactionId,
+			   tenantId,
+			   sourceMap.get(&apos;contextPath&apos;),
+			   hl7Message,
+			   operation
+			);
+		} catch (e) {
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;HL7 Og Payload save: &quot; + e.toString();
+	                throw errorMessage;
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	                throw errorMessage;
+	            }
+		}
+
+
+// ---------------- HL7 VALIDATION ----------------
+
+// Now validate HL7 lines
+var lines = hl7Data.split(/\r?\n/);
+if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
+    var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
+	try {
+        var operation = &quot;saveValidationFailed&quot;;
+        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+        logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+    } catch (saveError) {
+        logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+    }
+    responseMap.put(&apos;finalResponse&apos;, outcome);
+    throw outcome;
+}
+
+for (var i = 0; i &lt; lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith(&quot;|&quot;)) {
+        var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
+        var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;line-error&quot;, interactionId);
+	try {
+            var operation = &quot;saveValidationFailed&quot;;
+            saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+        } catch (saveError) {
+            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+        }
+        responseMap.put(&apos;finalResponse&apos;, outcome);
+    	 throw outcome;
+    }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>XML</inboundDataType>
+      <outboundDataType>HL7V2</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+          <stripNamespaces>false</stripNamespaces>
+        </serializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+          <splitType>Element_Name</splitType>
+          <elementName></elementName>
+          <level>1</level>
+          <query></query>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+          <handleRepetitions>true</handleRepetitions>
+          <handleSubcomponents>true</handleSubcomponents>
+          <useStrictParser>false</useStrictParser>
+          <useStrictValidation>false</useStrictValidation>
+          <stripNamespaces>false</stripNamespaces>
+          <segmentDelimiter>\r</segmentDelimiter>
+          <convertLineBreaks>true</convertLineBreaks>
+        </serializationProperties>
+        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+          <useStrictParser>false</useStrictParser>
+          <useStrictValidation>false</useStrictValidation>
+          <segmentDelimiter>\r</segmentDelimiter>
+        </deserializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+          <splitType>MSH_Segment</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+          <segmentDelimiter>\r</segmentDelimiter>
+          <successfulACKCode>AA</successfulACKCode>
+          <successfulACKMessage></successfulACKMessage>
+          <errorACKCode>AE</errorACKCode>
+          <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+          <rejectedACKCode>AR</rejectedACKCode>
+          <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+          <msh15ACKAccept>false</msh15ACKAccept>
+          <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+        </responseGenerationProperties>
+        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+          <successfulACKCode>AA,CA</successfulACKCode>
+          <errorACKCode>AE,CE</errorACKCode>
+          <rejectedACKCode>AR,CR</rejectedACKCode>
+          <validateMessageControlId>true</validateMessageControlId>
+          <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+          <originalIdMapVariable></originalIdMapVariable>
+        </responseValidationProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.6.0">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos; or &apos;/hl7v2/Bundle/$validate/&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/hl7v2/Bundle&apos;</string>
+            <string>&apos;/hl7v2/Bundle/&apos;</string>
+            <string>&apos;/hl7v2/Bundle/$validate&apos;</string>
+            <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.6.0">
+      <metaDataId>1</metaDataId>
+      <name>Destination 1</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${message.encodedData}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.6.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>HL7 Validation</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>// --------------------
+// Helper: Get JSON Outcome
+// --------------------
+function getOutcome(text, severity, code, interactionId) {
+    return JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        interactionId : interactionId,
+        result: [{
+            severity: severity,
+            code: code,
+            details: { text: text }
+        }]
+    });
+}
+var interactionId = globalMap.get(&apos;interactionId&apos;);
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+// --------------------
+// Helper: Extract HL7 body from raw data
+// --------------------
+function extractHL7Body(rawData) {
+    var match = rawData.match(/MSH\|[\s\S]*/);
+    return match ? match[0].trim() : &quot;&quot;;
+}
+
+// --------------------
+// Helper: Extract segments from HL7 input
+// --------------------
+function extractSegments(hl7Text) {
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    var segments = [];
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i].trim();
+        if (line &amp;&amp; line.includes(&apos;|&apos;)) {
+            var seg = String(line.split(&apos;|&apos;)[0].trim()); // Force to JS string
+            if (/^[A-Z0-9]{2,5}$/.test(seg)) {
+                segments.push(seg);
+            }
+        }
+    }
+
+    return segments;
+}
+
+function validateFieldsInAllSegments(segmentName, fieldIndex, componentIndex, hl7Text, fieldName, description) {
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    var violations = [];
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+
+        if (line.startsWith(segmentName + &quot;|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+
+            // Pad fields if necessary
+            while (fields.length &lt; fieldIndex) {
+                fields.push(&quot;&quot;);
+            }
+
+            var value = fields[fieldIndex] || &quot;&quot;;
+
+            if (componentIndex != null) {
+                var components = value.split(&quot;^&quot;);
+                value = components.length &gt;= componentIndex ? components[componentIndex - 1].trim() : &quot;&quot;;
+            } else {
+                value = value.trim();
+            }
+
+            if (!value) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: segmentName,
+                    fieldIndex: fieldIndex,
+                    fieldName: fieldName,
+                    description: description,
+                    lineContent: line
+                });
+            }
+        }
+    }
+
+    return violations;
+}
+
+function getRequiredSegmentsAndFieldsFromXml(xmlInput) {
+
+
+		var SAXBuilder = Packages.org.jdom2.input.SAXBuilder;
+		    var StringReader = java.io.StringReader;
+		    var InputSource = org.xml.sax.InputSource;
+		    var builder = new SAXBuilder();
+		    var document;
+		
+		    // Detect whether the input is XML text or a file path
+		    if (xmlInput &amp;&amp; xmlInput.trim().startsWith(&quot;&lt;&quot;)) {
+		        logger.info(&quot;Parsing validation XML from in-memory string...&quot;);
+		        var inputSource = new InputSource(new StringReader(xmlInput));
+		        document = builder.build(inputSource);
+		    } else {
+		        logger.info(&quot;Parsing validation XML from file path...&quot;);
+		        var File = java.io.File;
+		        var file = new File(xmlInput);
+		        if (!file.exists()) throw new Error(&quot;Template XML file not found: &quot; + xmlInput);
+		        document = builder.build(file);
+		    }
+    
+    var root = document.getRootElement();
+
+    var messageStructure = root.getChild(&quot;MessageStructure&quot;);
+    var segmentGroup = messageStructure.getChild(&quot;SegmentGroup&quot;);
+    var segmentElems = segmentGroup.getChildren(&quot;Segment&quot;);
+
+    var requiredSegments = [];
+    for each (var seg in segmentElems) {
+        var usage = seg.getAttributeValue(&quot;Usage&quot;);
+        var name = seg.getAttributeValue(&quot;Name&quot;);
+        if (&quot;R&quot;.equalsIgnoreCase(usage) &amp;&amp; name) {
+            requiredSegments.push(name);
+        }
+    }
+
+    var segmentsSection = root.getChild(&quot;Segments&quot;);
+    var segmentDefs = segmentsSection.getChildren(&quot;SegmentDef&quot;);
+
+    var requiredFields = [];
+    var oneOfGroups = [];
+
+    for each (var segDef in segmentDefs) {
+        var segmentName = segDef.getAttributeValue(&quot;Name&quot;);
+        var fields = segDef.getChildren(&quot;Field&quot;);
+
+        for each (var field in fields) {
+		    var usage = field.getAttributeValue(&quot;Usage&quot;);
+		    var fieldName = field.getAttributeValue(&quot;Name&quot;);
+		    fieldName = String(fieldName).trim();
+			var description = String(field.getAttributeValue(&quot;Description&quot;) || &quot;&quot;).trim();
+		
+		    if (!fieldName) {
+		        logger.warn(logPrefix + &quot;Skipping field: Missing field name entirely&quot;);
+		        continue;
+		    }
+		
+		    fieldName = String(fieldName).trim();
+		
+		    if (!&quot;R&quot;.equalsIgnoreCase(usage)) {
+		        logger.info(logPrefix + &quot;Skipping non-required field: &quot; + fieldName + &quot; (Usage=&quot; + usage + &quot;)&quot;);
+		        continue;
+		    }
+		
+		    if (!fieldName.match(/^[A-Z0-9]{3,5}-\d+(\.\d+)?$/)) {
+		        logger.warn(logPrefix + &quot;Field does not match pattern: &apos;&quot; + fieldName + &quot;&apos; (Length=&quot; + fieldName.length + &quot;)&quot;);
+		        continue;
+		    }
+		
+		    var fieldParts = fieldName.split(&quot;-&quot;);
+		    if (fieldParts.length !== 2) {
+		        logger.warn(logPrefix + &quot;Unexpected field format: &apos;&quot; + fieldName + &quot;&apos;, parts=&quot; + fieldParts);
+		        continue;
+		    }
+		
+		    var seg = fieldParts[0];
+		    var fieldComp = fieldParts[1].split(&quot;.&quot;);
+		
+		    var fieldIndex = parseInt(fieldComp[0], 10);
+		    if (isNaN(fieldIndex)) {
+		        logger.warn(logPrefix + &quot;Could not parse fieldIndex: &apos;&quot; + fieldComp[0] + &quot;&apos; from fieldName: &apos;&quot; + fieldName + &quot;&apos;&quot;);
+		        continue;
+		    }
+		
+		    var componentIndex = null;
+		    if (fieldComp.length &gt; 1) {
+		        componentIndex = parseInt(fieldComp[1], 10);
+		        if (isNaN(componentIndex)) {
+		            logger.warn(logPrefix + &quot;Could not parse componentIndex: &apos;&quot; + fieldComp[1] + &quot;&apos; from fieldName: &apos;&quot; + fieldName + &quot;&apos;&quot;);
+		            continue;
+		        }
+		    }
+		
+		    requiredFields.push({
+		        segment: seg,
+		        fieldIndex: fieldIndex,
+		        componentIndex: componentIndex,
+		        fieldName: fieldName,
+		        description: description
+		    });
+		
+		    logger.info(logPrefix + &quot;✅ Extracted required field: &quot; + seg + &quot;-&quot; + fieldIndex + (componentIndex ? &quot;.&quot; + componentIndex : &quot;&quot;));
+		}
+
+		// Handle &lt;OneOfGroup&gt;
+        var groups = segDef.getChildren(&quot;OneOfGroup&quot;);
+        for each (var group in groups) {
+            var groupFields = [];
+            var groupDesc = group.getAttributeValue(&quot;Description&quot;) || &quot;&quot;;
+
+            for each (var field in group.getChildren(&quot;Field&quot;)) {
+                var fieldName = String(field.getAttributeValue(&quot;Name&quot;)).trim();
+                var description = String(field.getAttributeValue(&quot;Description&quot;) || &quot;&quot;).trim();
+
+                var parts = fieldName.split(&quot;-&quot;);
+                var seg = parts[0];
+                var idxComp = parts[1].split(&quot;.&quot;);
+                var fieldIndex = parseInt(idxComp[0], 10);
+                var componentIndex = idxComp.length &gt; 1 ? parseInt(idxComp[1], 10) : null;
+
+                groupFields.push({
+                    segment: seg,
+                    fieldIndex: fieldIndex,
+                    componentIndex: componentIndex,
+                    fieldName: fieldName,
+                    description: description
+                });
+            }
+
+            oneOfGroups.push({
+                segment: segmentName,
+                description: groupDesc,
+                fields: groupFields
+            });
+        }
+    }
+
+
+    return {
+        requiredSegments: requiredSegments,
+        requiredFields: requiredFields,
+        oneOfGroups: oneOfGroups
+    };
+}
+
+function validateOneOfGroups(groups, hl7Text) {
+    var violations = [];
+
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+
+    for each (var group in groups) {
+        var satisfied = false;
+
+        for each (var f in group.fields) {
+            var fieldViolations = validateFieldsInAllSegments(
+                f.segment, f.fieldIndex, f.componentIndex, hl7Text,
+                f.fieldName, f.description
+            );
+            if (fieldViolations.length === 0) {
+                satisfied = true;
+                break;
+            }
+        }
+
+        if (!satisfied) {
+            violations.push({
+                segment: group.segment,
+                fieldName: group.fields.map(f =&gt; f.fieldName).join(&quot; OR &quot;),
+                description: group.description,
+                lineNumber: &quot;-&quot;, // optional: could inspect the first PID line
+                lineContent: &quot;&quot;  // optional
+            });
+        }
+    }
+    return violations;
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>Common Js func.</name>
+            <sequenceNumber>1</sequenceNumber>
+            <enabled>true</enabled>
+            <script>/**
+* Replacer function to remove empty values
+*/&#xd;function removeEmptyValues(key, value) {&#xd;  // Remove values that are empty strings, null, undefined, or empty objects/arrays&#xd;  if (value === &quot;&quot; || value === null || value === undefined || &#xd;      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||&#xd;      (Array.isArray(value) &amp;&amp; value.length === 0)) {&#xd;    return undefined; // Exclude the key from the result&#xd;  }&#xd;  return value; // Keep the value as is&#xd;}
+var interactionId = globalMap.get(&apos;interactionId&apos;);
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/*
+* Util function to generate json error message
+*/
+function getJsonInvalidOperationOutcome(errorMsg, code) {
+	return { &quot;OperationOutcome&quot;: {
+                    &quot;validationResults&quot;: [
+                        {
+                            &quot;operationOutcome&quot;: {
+                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interactionId&quot; : channelMap.get(interactionId),
+                                &quot;issue&quot;: [
+                                    {
+                                        &quot;severity&quot;: &quot;error&quot;,
+                                        &quot;code&quot;: code,
+                                        &quot;details&quot;: {
+                                            &quot;text&quot;: errorMsg
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            };
+}
+
+function sendDataLedgerSync(payload) {
+    logger.info(logPrefix + &quot;sendDataLedgerSync: &quot; + payload);
+    
+    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);
+    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+
+    logger.info(logPrefix + &quot;API URL: &quot; + apiUrl);
+
+    if (apiUrl == null) {
+        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);
+    }
+    if (dataLedgerApiKey == null) {
+        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);
+    }
+
+    try {
+        var HttpClients = org.apache.http.impl.client.HttpClients;
+        var HttpPost = org.apache.http.client.methods.HttpPost;
+        var StringEntity = org.apache.http.entity.StringEntity;
+        var EntityUtils = org.apache.http.util.EntityUtils;
+
+        var httpClient = HttpClients.createDefault();
+        var httpPost = new HttpPost(apiUrl);
+
+        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
+        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
+       
+        if (dataLedgerApiKey != null) {
+        	httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header
+        }
+
+        var entity = new StringEntity(payload, &quot;UTF-8&quot;);
+        httpPost.setEntity(entity);
+
+        var response = httpClient.execute(httpPost);
+        try {
+            var statusCode = response.getStatusLine().getStatusCode();
+            logger.info(logPrefix + &quot;sendDataLedgerSync response status: &quot; + statusCode);
+            var responseBody = EntityUtils.toString(response.getEntity());
+
+            if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
+                logger.info(logPrefix + &quot;Data Ledger API Response: &quot; + responseBody);
+                return {
+                    statusCode: statusCode,
+                    body: responseBody
+                };
+            } else {
+                logger.error(logPrefix + &quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
+                throw new Error(&quot;Request failed with status &quot; + statusCode);
+            }
+        } finally {
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+    } catch (error) {
+        logger.error(logPrefix + &quot;Data Ledger API Request Failed: &quot; + error.message);
+        throw error;
+    }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>Validate HTTP Request and collect headers</name>
+            <sequenceNumber>2</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var interactionId = globalMap.get(&apos;interactionId&apos;);
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+
+logger.info(logPrefix + &quot;HTTP request validation started.&quot;);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(logPrefix + &quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(logPrefix + headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+        globalMap.put(mapKey || headerName, value);
+    }
+    return value;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+// Mandatory: X-TechBD-Tenant-ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+channelMap.put(&apos;X-TechBD-Tenant-ID&apos;, tenantId);
+logger.info(logPrefix + &quot;X-TechBD-Tenant-ID: &quot; + tenantId);
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(logPrefix + &quot;User-Agent: &quot; + userAgent);
+
+var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
+channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
+logger.info(logPrefix + &quot;OrganizationName: &quot; + OrganizationName);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(logPrefix + &quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
+if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+	//1.CIN
+	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+	
+	//2.NPI
+	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+	logger.info(logPrefix + &quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
+	
+	//3.TIN
+	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+	logger.info(logPrefix + &quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
+	
+	// Check if both are missing — only then it&apos;s an error
+	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+	} else {
+	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+	    }
+	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+	    }
+	}
+	
+	//4. Facility Code
+	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+
+	//5. Encounter Type
+	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+    logger.error(logPrefix + errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+
+//////////////////////////////////////////////////////
+// Read environment variables and set to global map //
+//////////////////////////////////////////////////////
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
+if(fhirBundleSubmissionApiUrl != null) {
+    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+} else {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+logger.info(&quot;HTTP request validation ended.&quot;);</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>step_validate_profile_urls_env_variables</name>
+            <sequenceNumber>3</sequenceNumber>
+            <enabled>true</enabled>
+            <script>/**
+* Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
+*/
+
+
+/**
+* Util function to get FHIR resource profile URLs and set as parameters to the transformer which converts the XML file to FHIR Bundle.
+*/
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+
+function set_fhir_resource_profile_urls(transformer) {
+	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
+	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
+	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
+	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
+	var consentMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
+	var organizationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
+	var observationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
+	var observationSexualOrientationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
+	var questionnaireMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
+	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
+	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
+	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
+
+	if(baseFhirUrl != null) {
+		transformer.setParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
+		channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
+		logger.info(logPrefix + &quot;baseFhirUrl: &quot; + baseFhirUrl);
+	} else {
+		var errorMessage = &apos;BASE_FHIR_URL variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(bundleMetaProfileUrl != null) {
+		transformer.setParameter(&quot;bundleMetaProfileUrl&quot;, bundleMetaProfileUrl);
+		channelMap.put(&apos;bundleMetaProfileUrl&apos;, bundleMetaProfileUrl);
+		logger.info(logPrefix + &quot;bundleMetaProfileUrl: &quot; + bundleMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_BUNDLE variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(patientMetaProfileUrl != null) {
+		transformer.setParameter(&quot;patientMetaProfileUrl&quot;, patientMetaProfileUrl);
+		channelMap.put(&apos;patientMetaProfileUrl&apos;, patientMetaProfileUrl);
+		logger.info(logPrefix + &quot;patientMetaProfileUrl: &quot; + patientMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PATIENT variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(encounterMetaProfileUrl != null) {
+		transformer.setParameter(&quot;encounterMetaProfileUrl&quot;, encounterMetaProfileUrl);
+		channelMap.put(&apos;encounterMetaProfileUrl&apos;, encounterMetaProfileUrl);
+		logger.info(logPrefix + &quot;encounterMetaProfileUrl: &quot; + encounterMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_ENCOUNTER variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(consentMetaProfileUrl != null) {
+		transformer.setParameter(&quot;consentMetaProfileUrl&quot;, consentMetaProfileUrl);
+		channelMap.put(&apos;consentMetaProfileUrl&apos;, consentMetaProfileUrl);
+		logger.info(logPrefix + &quot;consentMetaProfileUrl: &quot; + consentMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_CONSENT variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+		
+	if(organizationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;organizationMetaProfileUrl&quot;, organizationMetaProfileUrl);
+		channelMap.put(&apos;organizationMetaProfileUrl&apos;, organizationMetaProfileUrl);
+		logger.info(logPrefix + &quot;organizationMetaProfileUrl: &quot; + organizationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_ORGANIZATION variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+			
+	if(observationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;observationMetaProfileUrl&quot;, observationMetaProfileUrl);
+		channelMap.put(&apos;observationMetaProfileUrl&apos;, observationMetaProfileUrl);
+		logger.info(logPrefix + &quot;observationMetaProfileUrl: &quot; + observationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_OBSERVATION variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+				
+	if(observationSexualOrientationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;observationSexualOrientationMetaProfileUrl&quot;, observationSexualOrientationMetaProfileUrl);
+		channelMap.put(&apos;observationSexualOrientationMetaProfileUrl&apos;, observationSexualOrientationMetaProfileUrl);
+		logger.info(logPrefix + &quot;observationSexualOrientationMetaProfileUrl: &quot; + observationSexualOrientationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_SEXUAL_ORIENTATION variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+					
+	if(questionnaireMetaProfileUrl != null) {
+		transformer.setParameter(&quot;questionnaireMetaProfileUrl&quot;, questionnaireMetaProfileUrl);
+		channelMap.put(&apos;questionnaireMetaProfileUrl&apos;, questionnaireMetaProfileUrl);
+		logger.info(logPrefix + &quot;questionnaireMetaProfileUrl: &quot; + questionnaireMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+						
+	if(questionnaireResponseMetaProfileUrl != null) {
+		transformer.setParameter(&quot;questionnaireResponseMetaProfileUrl&quot;, questionnaireResponseMetaProfileUrl);
+		channelMap.put(&apos;questionnaireResponseMetaProfileUrl&apos;, questionnaireResponseMetaProfileUrl);
+		logger.info(logPrefix + &quot;questionnaireResponseMetaProfileUrl: &quot; + questionnaireResponseMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+							
+	if(practitionerMetaProfileUrl != null) {
+		transformer.setParameter(&quot;practitionerMetaProfileUrl&quot;, practitionerMetaProfileUrl);
+		channelMap.put(&apos;practitionerMetaProfileUrl&apos;, practitionerMetaProfileUrl);
+		logger.info(logPrefix + &quot;practitionerMetaProfileUrl: &quot; + practitionerMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PRACTITIONER variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+
+	if(procedureMetaProfileUrl != null) {
+		transformer.setParameter(&quot;procedureMetaProfileUrl&quot;, procedureMetaProfileUrl);
+		channelMap.put(&apos;procedureMetaProfileUrl&apos;, procedureMetaProfileUrl);
+		logger.info(logPrefix + &quot;procedureMetaProfileUrl: &quot; + procedureMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PROCEDURE variable is not set&apos;;
+		logger.error(logPrefix + errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+
+	transformer.setParameter(&quot;patientCIN&quot;, channelMap.get(&apos;patientCIN&apos;)); // Pass the parameter to XSLT
+	if (channelMap.get(&apos;organizationNPI&apos;)) {
+		transformer.setParameter(&quot;organizationNPI&quot;, channelMap.get(&apos;organizationNPI&apos;)); // Pass the parameter to XSLT
+	}		
+	if (channelMap.get(&apos;organizationTIN&apos;)) {
+		transformer.setParameter(&quot;organizationTIN&quot;, channelMap.get(&apos;organizationTIN&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;facilityID&apos;)) {
+		transformer.setParameter(&quot;facilityID&quot;, channelMap.get(&apos;facilityID&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;encounterType&apos;)) {
+		transformer.setParameter(&quot;encounterType&quot;, channelMap.get(&apos;encounterType&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;OrganizationName&apos;)) {
+		transformer.setParameter(&quot;OrganizationName&quot;, channelMap.get(&apos;OrganizationName&apos;)); // Pass the parameter to XSLT
+	}
+
+
+	return transformer;
+}
+
+
+function getConsentResourceStatus(sourceXml) {
+	try {
+		var consentInfo = {};
+	    	consentInfo.code = &apos;Consent-Status&apos;;
+	    	consentInfo.status = &quot;TechBD-Generated&quot;;
+		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
+		//default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
+		var consentCode = &quot;&quot;;
+		for each (var obx in xmlDoc..OBX) {
+		    var obx32 = &quot;&quot;;
+		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
+		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();
+		    }
+		
+		    if (obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
+		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;] != null) {
+		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString();
+		        }
+		        break;
+		    }
+		}
+		logger.info(logPrefix + &quot;Consent Code: &quot; + consentCode);
+		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
+		    logger.info(logPrefix + &quot;Consent Code: &quot; + consentCode);
+		        consentInfo.status = &quot;provided&quot;;
+		}		
+		// Convert to JSON string (optional, for sending/logging)
+		var consentJsonString = JSON.stringify(consentInfo);
+		logger.info(logPrefix + &quot;Consent Info JSON: &quot; + consentJsonString);
+		channelMap.put(&apos;elaboration&apos;, consentJsonString);
+	} catch (e) {
+        var errorMsg;
+        if (e instanceof JavaException) {
+           errorMsg = &quot;Error parsing Consent Resource: &quot; + e.toString();
+        } else {
+           errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;
+        }
+        logger.error(logPrefix + errorMsg);
+ 
+        // Failure: Return an OperationOutcome JSON response with validation errors
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+ 
+        throw new Error(errorMsg);
+     }
+}
+
+function getCategoryDisplay(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;Housing Instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;Inadequate Housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;Utility Insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;Food Insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;Transportation Insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;Employment Status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;SDOH Category Unspecified&apos;;
+        default:
+            return &apos;SDOH Category Unspecified&apos;;
+    }
+}
+
+function getCategoryCode(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;housing-instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;inadequate-housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;utility-insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;food-insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;transportation-insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;employment-status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;sdoh-category-unspecified&apos;;
+        default:
+            return null;
+    }
+}
+
+// Define Namespace Resolver
+function getObservationCategoryCodes(transformer, observations) {    
+    var xml = new XML(observations);  
+
+    var categorySystem = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;;
+
+	var categorySet = {};
+
+	var children = xml.children();
+    var currentOBR = null;
+
+    for each (var child in children) {
+	    var nodeName = child.name().localName;
+	
+	    if (nodeName === &apos;OBR&apos;) {
+	        currentOBR = child;
+	    } else if (nodeName === &apos;OBX&apos; &amp;&amp; currentOBR != null) {
+	        var questionCode = &quot;&quot;;
+	        var displayCode = &quot;&quot;;
+	
+	        if (child[&quot;OBX.3&quot;] != null) {
+	            if (child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {
+	                questionCode = child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();
+	            }
+	            if (child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
+	                displayCode = child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString().trim();
+	            }
+	        }
+	
+	        // Filter like in XSLT logic
+	        if (questionCode === &apos;&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
+	            continue;
+	        }
+	
+	        var categoryCode = getCategoryCode(questionCode);
+	        var categoryDisplay = getCategoryDisplay(questionCode);
+	
+	        if (categoryCode &amp;&amp; !(categoryCode in categorySet)) {
+	            categorySet[categoryCode] = categoryDisplay;
+	        }
+	    }
+	}
+
+    // Build the category JSON array
+    var categoryJsonArray = [];
+    for (var code in categorySet) {
+        categoryJsonArray.push({
+            system: categorySystem,
+            code: code,
+            display: categorySet[code]
+        });
+    }
+
+     var categoryXml = JSON.stringify(categoryJsonArray);
+	
+	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+	logger.info(logPrefix + &quot;categoryXml : &quot; + categoryXml);
+	return transformer;
+}
+
+function generateSHA256(inputString) {
+    //var md = MessageDigest.getInstance(&quot;SHA-256&quot;);
+    var md = Packages.java.security.MessageDigest.getInstance(&quot;SHA-256&quot;);
+    md.update(inputString.getBytes(&quot;UTF-8&quot;));   
+    var digest = md.digest();
+    return bytesToHex(digest);
+}
+
+function bytesToHex(byteArray) {
+    var hexString = new java.lang.StringBuilder();
+    for (var i = 0; i &lt; byteArray.length; i++) {
+        var hex = java.lang.Integer.toHexString(0xff &amp; byteArray[i]);
+        if (hex.length == 1) hexString.append(&apos;0&apos;);
+        hexString.append(hex);
+    }
+    return hexString.toString();
+}
+
+function getPatientMRN(sourceXml){
+	var xmlDoc = new XML(sourceXml);
+	var patientMRN = xmlDoc..PID[&quot;PID.3&quot;][&quot;PID.3.1&quot;].toString().trim();
+	channelMap.put(&apos;patientMRN&apos;, patientMRN);
+	logger.info(logPrefix + &quot;patientMRN: &quot; + patientMRN);
+	
+}
+
+function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, additionalString) {
+    if (sourceXml != undefined) { 
+    	var xmlDoc = new XML(sourceXml);
+        // Get MRN and CIN from channelMap
+        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
+        var combinedText = mrn + cin;
+
+        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
+            combinedText += additionalString;
+            logger.info(logPrefix + &quot;Including additionalString in SHA-256: &quot; + additionalString);
+        }
+
+        var resourceText = resourceName + xmlDoc.toString().trim();
+        combinedText += resourceText;
+
+        // Generate SHA-256 hash
+        var sha256Hash = generateSHA256(new java.lang.String(combinedText));
+        transformer.setParameter(resourceIdName, sha256Hash);
+        logger.info(logPrefix + resourceIdName + &quot; : &quot; + sha256Hash);
+    } else {
+        logger.error(logPrefix + resourceName + &quot; not found in the XML.&quot;);
+    }
+
+    return transformer;
+}
+
+function getMultipleAnswersForComponent(transformer, observations) {
+    var xml = new XML(observations);
+    var codingArray = [];
+    var seenCodes = {};
+
+    var obxList = xml..OBX;
+
+    for each (var obx in obxList) {
+        var obxCode = obx[&apos;OBX.3&apos;][&apos;OBX.3.1&apos;].toString().trim();
+
+        if (obxCode === &apos;96778-6&apos;) {
+            var values = obx[&apos;OBX.5&apos;];
+
+            for each (var val in values) {
+                var code = val[&apos;OBX.5.1&apos;].toString().trim();
+                var display = val[&apos;OBX.5.2&apos;].toString().trim();
+
+                if (code &amp;&amp; !seenCodes[code]) {
+                    codingArray.push({
+                        &quot;system&quot;: &quot;http://loinc.org&quot;,
+                        &quot;code&quot;: code,
+                        &quot;display&quot;: display
+                    });
+                    seenCodes[code] = true;
+                }
+            }
+        }
+    }
+
+    transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
+    logger.info(logPrefix + &quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));
+    return transformer;
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>API endpoint processing</name>
+            <sequenceNumber>4</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;
+&#xd;var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(logPrefix + &quot;Request URL: &quot; + requestedPath);
+var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+		// Extraction from Lookup Manager.
+		var ttlHours = 24 * 20;
+		var validationSchemaXML = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-validation-schema&quot;, ttlHours);
+		logger.info(&quot;Value from hl7v2-validation-schema: &quot; + validationSchemaXML);
+
+
+if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
+	requestedPath == &quot;/hl7v2/Bundle/$validate&quot;){
+
+
+try {
+    // Step 1: Get HL7 Input
+    var raw = connectorMessage.getRawData();
+    if (!raw || raw.trim().length === 0) {
+        throw new Error(&quot;Empty HL7 message received.&quot;);
+    }
+
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
+
+
+    var hl7Body = extractHL7Body(raw);
+    logger.info(logPrefix + &quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
+	    logger.error(logPrefix + msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
+
+    // Step 2: Extract input segments
+    var inputSegments = extractSegments(hl7Body);
+    var normalizedInput = inputSegments.map(String);
+    logger.info(logPrefix + &quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
+
+    // Step 3: Load required segments from XML template
+
+	if (!validationSchemaXML) {
+		   throw new Error(&quot;Validation XML not found in channelMap. Ensure XSLT Transformer step executed before this script.&quot;);
+	}
+	logger.info(&quot;Loaded validation XML from XSLT Transformer step&quot;);
+	var profile = getRequiredSegmentsAndFieldsFromXml(validationSchemaXML);
+
+
+	var requiredSegments = profile.requiredSegments;
+	var requiredFields = profile.requiredFields;
+
+	var allViolations = [];
+
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
+	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
+	    var check = profile.requiredFields[i];
+	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
+	    allViolations = allViolations.concat(violations);
+	}
+
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
+	if (allViolations.length &gt; 0) {
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
+		    }
+		}).join(&quot;\n\n&quot;);
+	
+	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
+	    logger.error(logPrefix + msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
+	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
+	}
+	
+
+
+    // Step 5: Valid
+    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+    logger.info(logPrefix + success);
+
+    			// SAVE VALIDATION RESULT
+			logger.info(logPrefix + &quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(logPrefix + &quot;tenant Id: &quot; + tenantId);
+		     logger.info(logPrefix + &quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
+
+	} catch (e) {
+	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
+	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));	        
+	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
+	    logger.error(logPrefix + &quot;Validation error: &quot; + errorMsg);
+	    throw e;
+	}	
+}
+
+else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+//////////////////////////////////////////////
+
+
+    //*********** DATA LEDGER ***************
+    var randomSuffix = Math.floor(Math.random() * 10000);
+    channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+   var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+    // Add 3 more random digits to simulate microseconds
+    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+    return &apos;.&apos; + micros + &apos;Z&apos;;
+  });
+
+
+	var interactionId = globalMap.get(&apos;interactionId&apos;);
+    logger.info(logPrefix + &quot;InteractionId: &quot; + interactionId);
+    var payload = JSON.stringify({
+        executedAt: currentTimestampBegin,
+        actor: &quot;TechBD&quot;,
+        action: &quot;received&quot;, 
+        destination: &quot;TechBD&quot;,
+        dataId: interactionId,
+        payloadType: &quot;hrsnBundle&quot;
+    });
+
+
+	// Check if tracking is enabled
+	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
+	    logger.info(logPrefix + &quot;data ledger api call -BEGIN received&quot;);
+	    try {
+	        sendDataLedgerSync(payload);
+	    } catch (e) {
+	        logger.error(logPrefix + &quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+	    }
+	    logger.info(logPrefix + &quot;data ledger api call -END received&quot;);
+	} else {
+	    logger.info(logPrefix + &quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
+	}
+	//*********** DATA LEDGER ***************
+
+
+
+	
+	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+	var tenantId = channelMap.get(&apos;tenantId&apos;);
+
+	/////
+	var rawMessage = connectorMessage.getTransformedData(); // msg contains the entire raw message
+	var raw = connectorMessage.getRawData();
+	
+	// Extract the XML content from the form-data (i.e., skip the metadata)
+	var xmlStartIndex = rawMessage.indexOf(&apos;&lt;?xml&apos;); // Find the XML declaration
+	var xmlContent = rawMessage.substring(xmlStartIndex); // Extract the XML part
+	
+	if (!xmlContent || xmlContent.length === 0) {
+		logger.error(logPrefix + &quot;No XML data received in the request.&quot;);
+		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;, &quot;Invalid&quot;)));
+		throw new Error(&quot;No XML data received in the request.&quot;);
+	}
+
+try {
+    // Step 1: Get HL7 Input
+    var raw = connectorMessage.getRawData();
+    if (!raw || raw.trim().length === 0) {
+        throw new Error(&quot;Empty HL7 message received.&quot;);
+    }
+
+    var hl7Body = extractHL7Body(raw);
+    logger.info(logPrefix + &quot;Extracted HL7:\n&quot; + hl7Body);
+    if (!hl7Body) {
+	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
+	    logger.error(logPrefix + msg);
+	
+	    throw new Error(&quot;HL7 validation failed due to missing MSH segment.&quot;);
+	}
+
+    // Step 2: Extract input segments
+    var inputSegments = extractSegments(hl7Body);
+    var normalizedInput = inputSegments.map(String);
+    logger.info(logPrefix + &quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
+
+    // Step 3: Load required segments from XML template
+
+	if (!validationSchemaXML) {
+		   throw new Error(&quot;Validation XML not found in channelMap. Ensure XSLT Transformer step executed before this script.&quot;);
+	}
+	logger.info(&quot;Loaded validation XML from XSLT Transformer step&quot;);
+	var profile = getRequiredSegmentsAndFieldsFromXml(validationSchemaXML);
+
+
+	var requiredSegments = profile.requiredSegments;
+	var requiredFields = profile.requiredFields;
+
+	var allViolations = [];
+
+	// Normalize both lists to uppercase &amp; trimmed
+	var normalizedInputSet = new java.util.HashSet();
+	for each (var seg in inputSegments) {
+	    normalizedInputSet.add(String(seg).trim().toUpperCase());
+	}
+	
+	for each (var reqSeg in requiredSegments) {
+	    var segName = String(reqSeg).trim().toUpperCase();
+	    if (!normalizedInputSet.contains(segName)) {
+	        allViolations.push({
+	            segment: segName,
+	            description: &quot;Required segment is missing&quot;
+	        });
+	    }
+	}
+    
+	for (var i = 0; i &lt; profile.requiredFields.length; i++) {
+	    var check = profile.requiredFields[i];
+	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
+	    allViolations = allViolations.concat(violations);
+	}
+
+	// Validate OneOfGroup rules
+	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
+	allViolations = allViolations.concat(groupViolations);
+
+	if (allViolations.length &gt; 0) {
+		var errorDetails = allViolations.map(function(v) {
+		    if (!v.fieldName) {
+		        // Segment-level violation
+		        return &quot;Missing required segment: &apos;&quot; + v.segment + &quot;&apos;&quot;;
+		    } else {
+		        // Field-level violation
+		        return &quot;Line &quot; + v.lineNumber + &quot;: Missing &quot; + v.fieldName +
+		               (v.description ? &quot; (&quot; + v.description + &quot;)&quot; : &quot;&quot;);
+		    }
+		}).join(&quot;\n\n&quot;);
+	
+	    var msg = &quot;Missing required HL7 fields:\n\n&quot; + errorDetails;
+	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId));
+	    logger.error(logPrefix + msg);
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(msg, &quot;error&quot;, &quot;missing-fields&quot;, interactionId), operation);
+		            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
+	    throw new Error(&quot;HL7 validation failed due to missing required fields.&quot;);
+	}
+	
+
+
+    // Step 5: Valid
+    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+    logger.info(logPrefix + success);
+
+    // SAVE VALIDATION RESULT
+			logger.info(logPrefix + &quot;DB Validation Save inside Validate&quot;);
+		     var tenantId = channelMap.get(&apos;tenantId&apos;);
+		     logger.info(logPrefix + &quot;tenant Id: &quot; + tenantId);
+		     logger.info(logPrefix + &quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
+		     var operation = &quot;saveValidationSuccess&quot;;
+		     var result = saveHL7Payload(
+			    interactionId,
+			   tenantId,
+			   requestedPath,
+			   getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId),
+			   operation
+			);
+
+	} catch (e) {
+	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
+	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId));
+	    }
+
+		try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+	    
+	    logger.error(logPrefix + &quot;Validation error: &quot; + errorMsg);
+	    throw e;
+	}
+
+try {
+    var rawTransformedData = connectorMessage.getTransformedData();
+	logger.info(logPrefix + &quot;Raw HL7 Message (pre-clean): &quot; + rawTransformedData);
+
+
+
+		// Extraction from Lookup Manager.
+		var ttlHours = 24 * 20; // Time to live in hours
+		var xsltString = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-fhir-bundle.xslt&quot;, ttlHours);
+		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltString);
+
+		
+		if (!xsltString) throw new Error(&quot;Missing hl7v2Xslt in channelMap — check the XSLT Transformer step&quot;);
+		
+		logger.info(&quot; Loaded in-memory XSLT from channel variable&quot;);
+		
+		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+		var xsltReader = new java.io.StringReader(xsltString);
+		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltReader);
+		var transformer = transformerFactory.newTransformer(xsltSource);
+
+    set_fhir_resource_profile_urls(transformer);
+
+    
+
+    // Optional: pass parameters to XSLT
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
+
+    var bundleId = globalMap.get(&apos;interactionId&apos;);
+    transformer.setParameter(&quot;bundleId&quot;, bundleId);
+
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+
+	transformer = generateSHA256Id(rawTransformedData, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, currentTimestamp);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+
+
+    // Retrieve the X-TechBD-Base-FHIR-URL header
+		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+		logger.info(logPrefix + &quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+
+
+    // Retrieve the VALID_URLS environment variable (comma-separated list)
+		var validUrlsEnv = java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
+		logger.info(logPrefix + &quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
+		
+		// Convert VALID_URLS to an array for validation
+		var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+		
+		// Check if the header value is valid
+		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+		    if (validUrls.includes(customBaseFhirUrl)) {
+		        // Store valid value in channelMap
+		        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+			   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+		    } else {
+		        // Throw a Bad Request error if the URL is not in the valid list
+				var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
+				logger.error(logPrefix + errorMessage);
+		    }
+		}
+
+	var sourceXml = connectorMessage.getTransformedData();
+	getConsentResourceStatus(sourceXml);
+	getPatientMRN(sourceXml);
+	getObservationCategoryCodes(transformer, sourceXml);
+	getMultipleAnswersForComponent(transformer, sourceXml);
+    
+
+    // Transform
+    var xmlInputStream = new java.io.StringReader(rawTransformedData);
+    var xmlOutputStream = new java.io.StringWriter();
+    var input = new javax.xml.transform.stream.StreamSource(xmlInputStream);
+    var output = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
+
+    try {
+    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(logPrefix + &quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(logPrefix + &quot;Cleaned JSON : &quot; + cleanedJsonString);
+               logger.info(logPrefix + &quot;testtttttttt&quot; + $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;));
+			//Save Converted FHIR
+				logger.info(logPrefix + &quot;FHIR Conversion Save inside Bundle&quot;);
+			     var tenantId = channelMap.get(&apos;tenantId&apos;);
+			     logger.info(logPrefix + &quot;tenant Id: &quot; + tenantId);
+			     var operation = &quot;saveConversionSuccess&quot;;
+			     var result = saveHL7Payload(
+				    interactionId,
+				   tenantId,
+				   requestedPath,
+				   cleanedJsonString,
+				   operation
+				);
+			&#xd;		} catch (e) {
+			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
+        		// Failure: Return an OperationOutcome JSON response for general errors
+		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
+
+		    try {
+		        	  var operation = &quot;saveValidationFailed&quot;;
+		            saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		        } catch (saveError) {
+		            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		        }
+			        &#xd;		    logger.error(logPrefix + &quot;Error during HL7 FHIR bundle transformation: &quot; + e);&#xd;		    throw e;&#xd;		}
+
+		// Convert the XML document to JSON
+		const jsonResult = cleanedJsonString;
+		channelMap.put(&apos;jsonResult&apos;, jsonResult);
+		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(jsonResult));
+ 
+    
+
+    channelMap.put(&apos;xslt_result&apos;, cleanedJsonString);
+    return cleanedJsonString;
+
+} catch (e) {
+    var errorMsg = &quot;Error during XSLT transformation: &quot; + e.message + &quot;\nDetails: &quot; + e;
+    logger.error(logPrefix + errorMsg);
+
+	try {
+		 var operation = &quot;saveValidationFailed&quot;;
+		 saveHL7Payload(interactionId, tenantId, requestedPath, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;, interactionId), operation);
+		  logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+		} catch (saveError) {
+		    logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+		}
+    
+    channelMap.put(&apos;xslt_result&apos;, errorMsg);
+    throw e;
+}
+}
+
+function removeEmptyValues(key, value) {   
+// Remove values that are empty strings, null, undefined, or empty objects/arrays   
+if (value === &quot;&quot; || value === null || value === undefined ||       
+(typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||       
+(Array.isArray(value) &amp;&amp; value.length === 0)) {     
+return undefined;  
+}   
+return value;
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>HL7V2</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+            <handleRepetitions>true</handleRepetitions>
+            <handleSubcomponents>true</handleSubcomponents>
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <stripNamespaces>false</stripNamespaces>
+            <segmentDelimiter>\r</segmentDelimiter>
+            <convertLineBreaks>true</convertLineBreaks>
+          </serializationProperties>
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <segmentDelimiter>\r</segmentDelimiter>
+          </deserializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+            <splitType>MSH_Segment</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+            <segmentDelimiter>\r</segmentDelimiter>
+            <successfulACKCode>AA</successfulACKCode>
+            <successfulACKMessage></successfulACKMessage>
+            <errorACKCode>AE</errorACKCode>
+            <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+            <rejectedACKCode>AR</rejectedACKCode>
+            <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+            <msh15ACKAccept>false</msh15ACKAccept>
+            <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+          </responseGenerationProperties>
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+            <successfulACKCode>AA,CA</successfulACKCode>
+            <errorACKCode>AE,CE</errorACKCode>
+            <rejectedACKCode>AR,CR</rejectedACKCode>
+            <validateMessageControlId>true</validateMessageControlId>
+            <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+            <originalIdMapVariable></originalIdMapVariable>
+          </responseValidationProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.6.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.6.0">
+        <elements/>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="4.6.0">
+      <metaDataId>2</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
+        <destinationConnectorProperties version="4.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${fhirBundleSubmissionApiUrl}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map">
+          <entry>
+            <string>X-TechBD-Tenant-ID</string>
+            <list>
+              <string>${tenantId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Content-Type</string>
+            <list>
+              <string>application/fhir+json</string>
+            </list>
+          </entry>
+          <entry>
+            <string>User-Agent</string>
+            <list>
+              <string>${userAgent}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Origin</string>
+            <list>
+              <string>*</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Methods</string>
+            <list>
+              <string>GET, POST, OPTIONS</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Headers</string>
+            <list>
+              <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Credentials</string>
+            <list>
+              <string>true</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-REMOTE-IP</string>
+            <list>
+              <string>${uri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Override-Request-URI</string>
+            <list>
+              <string>${uri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-Correlation-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Interaction-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+        </headers>
+        <parameters class="linked-hash-map">
+          <entry>
+            <string>source</string>
+            <list>
+              <string>HL7V2</string>
+            </list>
+          </entry>
+        </parameters>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content>${jsonResult}</content>
+        <contentType>application/fhir+json</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>30000</socketTimeout>
+      </properties>
+      <transformer version="4.6.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>HL7V2</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+            <handleRepetitions>true</handleRepetitions>
+            <handleSubcomponents>true</handleSubcomponents>
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <stripNamespaces>false</stripNamespaces>
+            <segmentDelimiter>\r</segmentDelimiter>
+            <convertLineBreaks>true</convertLineBreaks>
+          </serializationProperties>
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <segmentDelimiter>\r</segmentDelimiter>
+          </deserializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+            <splitType>MSH_Segment</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+            <segmentDelimiter>\r</segmentDelimiter>
+            <successfulACKCode>AA</successfulACKCode>
+            <successfulACKMessage></successfulACKMessage>
+            <errorACKCode>AE</errorACKCode>
+            <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+            <rejectedACKCode>AR</rejectedACKCode>
+            <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+            <msh15ACKAccept>false</msh15ACKAccept>
+            <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+          </responseGenerationProperties>
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+            <successfulACKCode>AA,CA</successfulACKCode>
+            <errorACKCode>AE,CE</errorACKCode>
+            <rejectedACKCode>AR,CR</rejectedACKCode>
+            <validateMessageControlId>true</validateMessageControlId>
+            <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+            <originalIdMapVariable></originalIdMapVariable>
+          </responseValidationProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.6.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>sourceMap.get(&apos;contextPath&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;/hl7v2/Bundle&apos;</string>
+              <string>&apos;/hl7v2/Bundle/&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>var index = message.indexOf(&quot;MSH|&quot;);
+if (index !== -1) {
+    message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
+}
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+
+// Version: 0.4.3 - Added support for X-TechBD-Base-FHIR-URL
+// Version: 0.4.15 - Added filters to source and bundle destination and changed the globalMap usage to channelMap
+
+var endpoint = channelMap.get(&quot;endpoint&quot;);
+if(endpoint == &apos;bundle&apos;) {
+	// Get the response from the HTTP Writer destination
+	var destinationName = &quot;dest_bundle&quot;;
+	var destinationResponse = responseMap.get(destinationName);
+	
+	// Check if the response exists
+	if (destinationResponse) {
+	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
+	    var responseData = destinationResponse.getMessage();   // Response message body
+		responseMap.put(&apos;finalResponse&apos;, responseData);
+		
+	    // Log the response details
+	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
+	    logger.info(&quot;Status Code: &quot; + responseStatus);
+	    logger.info(&quot;Response Data: &quot; + responseData);
+	} else {
+	    logger.info(&quot;No response found for destination: &quot; + destinationName);
+	}
+}
+
+return;</postprocessingScript>
+  <deployScript>//// This script executes once when the channel is deployed
+//// You only have access to the globalMap and globalChannelMap here to persist data
+//return;
+// Version 0.1.0
+// Version 0.1.0
+
+var PGobject = Packages.org.postgresql.util.PGobject;
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    return jsonbObj;
+}
+
+
+function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	
+	logger.info(&quot;interactionId: &quot; + interactionId);
+	logger.info(&quot;tenantId: &quot; + tenantId);
+	logger.info(&quot;requestUri: &quot; + requestUri);
+	logger.info(&quot;payloadJson: &quot; + payloadJson);
+	logger.info(&quot;operation: &quot; + operation);
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    logger.info(&quot;Inside DB Try&quot;);
+
+	    var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+		if(jdbcUrl != null) {
+		    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
+		    logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+		
+		var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+		if(jdbcUsername != null) {
+		    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+		    logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+		
+		var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
+		if(jdbcPassword != null) {
+		    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+		    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+		} else {
+		    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+		    logger.error(errorMessage);
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		    throw errorMessage; // Stop further processing by throwing an exception
+		}
+
+	    // Database connection details
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+
+	    logger.info(&quot;Database connection established successfully.&quot;);
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_hl7_request(?::text,?::text,?::jsonb,?::text,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original HL7 Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;HL7_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(7, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(8, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(8, payloadJson);
+		}
+					
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		stmt.setNull(10, java.sql.Types.OTHER);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(19, java.sql.Types.VARCHAR);
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setNull(28, java.sql.Types.VARCHAR);
+		stmt.setString(29, globalMap.get(&apos;filename&apos;));
+
+	    var result = stmt.execute();
+	    logger.info(&quot;Stored procedure executed, result: &quot; + result);
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	    logger.info(&quot;DB connection closed.&quot;);
+	}
+}
+
+globalMap.put(&apos;saveHL7Payload&apos;, saveHL7Payload);</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.6.0">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>message_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>message_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.6.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1763634036259</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>5</userId>
+    </metadata>
+    <channelTags/>
+  </exportData>
+</channel>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	  <modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <groupId>org.techbd</groupId>
     <artifactId>polyglot-prime</artifactId>
     <version>${revision}</version>
@@ -14,10 +14,13 @@
         <module>hub-prime</module>
         <module>nexus-core-lib</module>
         <module>nexus-ingestion-api</module>
+        <module>core-lib</module>
+        <module>fhir-validation-service</module>
+        <module>csv-service</module>
     </modules>
 
     <properties>
-        <revision>0.744.0</revision>
+        <revision>0.880.0</revision>
         <java.version>21</java.version>
         <spring-boot.version>3.3.3</spring-boot.version>
         <maven.compiler.source>21</maven.compiler.source>
