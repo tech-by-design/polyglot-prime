@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+
+        #date-picker-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .date-picker-label{
+            width: 100px;
+            line-height: 35px;
+        }
+
+        .date-picker-label {
+            text-align: right;
+        }
+
+        #searchButton {
+            margin-left: 10px;
+            background-color: #e7e7e7;
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        #clearButton {
+            margin-left: 10px;
+            background-color: #e7e7e7;
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            display: none;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+
+        const schemaName = 'techbd_udi_ingress'; 
+        const storedProcName = 'get_api_interaction_observe';
+        const viewdetail = 'interaction_http_request_payload';
+
+        // Format dates as "mm-dd-yyyy"
+        const formatDate = (date) => {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}-${day}-${year}`;
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const helpers = new Helpers();
+
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+
+            let initialStartDate = formatDate(oneWeekAgo);
+            let initialEndDate = formatDate(today);
+
+            // Datepicker Initialization
+            $("#start-date, #end-date").datepicker({
+                dateFormat: "mm-dd-yy",
+                onSelect: function() {
+                    const startDate = $('#start-date').datepicker('getDate');
+                    const endDate = $('#end-date').datepicker('getDate');
+                    const formattedStartDate = formatDate(startDate);
+                    const formattedEndDate = formatDate(endDate);
+
+                    if (formattedStartDate !== initialStartDate || formattedEndDate !== initialEndDate) {
+                        $('#clearButton').show();
+                    } else {
+                        $('#clearButton').hide();
+                    }
+                }
+            });
+
+            $("#start-date").datepicker("setDate", oneWeekAgo);
+            $("#end-date").datepicker("setDate", today);
+
+            updateGridWithDates(oneWeekAgo, today);
+
+            // Search Button Click Handler
+            $('#searchButton').click(function() {
+                $('#serverDataGrid').empty();
+                const startDate = $('#start-date').datepicker('getDate');
+                const endDate = $('#end-date').datepicker('getDate');
+                updateGridWithDates(startDate, endDate);
+            });
+
+            $('#clearButton').click(function() {
+               location.reload();
+            });
+
+            function updateGridWithDates(startDate, endDate) {
+                const formattedStartDate = formatDate(startDate);
+                const formattedEndDate = formatDate(endDate);
+
+                const storedProcparams = {
+                    "start_date": formattedStartDate,
+                    "end_date": formattedEndDate
+                };
+
+                helpers.injectDateRangeText('date-range', 'This widget displays detailed API interaction performance data for the selected date range (<b>{startDate}</b> to <b>{endDate}</b>). It shows the interaction ID, API endpoint (URI), start and finish timestamps, duration in milliseconds, and the associated HTTP request ID. The duration is calculated using request and response header timestamps to measure total API processing time. Results are sorted by the longest duration first, enabling quick identification of slow API endpoints and helping analyze backend performance and service responsiveness.');                
+
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+                const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+
+                const agGridInstance = new AGGridAideBuilder()
+                    .withColumnDefs([
+                        {
+                            headerName: "TechBD  Interaction ID",
+                            field: "interaction_id",
+                            filter: "agTextColumnFilter",
+                            cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
+                            }, modalAide)
+                        },
+                        { headerName: "URI", field: "uri", filter: "agTextColumnFilter" },
+                        {
+                            headerName: "Duration (ms)",
+                            field: "duration_millisecs",
+                            filter: "agNumberColumnFilter",
+                            sort: "desc"
+                        },
+                        {
+                            headerName: "Start Time",
+                            field: "start_time",
+                            filter: "agDateColumnFilter",
+                            filter: false
+                        },
+                        {
+                            headerName: "Finish Time",
+                            field: "finish_time",
+                            filter: "agDateColumnFilter",
+                            filter: false
+                        }
+
+                    ])
+                    .withServerSideDatasource(
+                        window.shell.serverSideUrl(url),
+                        (data, valueCols) => {
+                            return valueCols.map(col => ({
+                                headerName: col.displayName,
+                                field: col.field
+                            }));
+                        },
+                    )
+                    .withModalAide(modalAide)
+                    .withGridDivStyles({ height: "750px", width: "100%" })
+                    .build();
+
+                agGridInstance.init('serverDataGrid');
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <!-- <div class="text-lg font-bold my-3 ml-4">HTTP Interactions Report</div> -->
+        <div class="grid-description" id="date-range">
+            <!-- The date range will be injected here -->
+        </div>
+        <div id="date-picker-container">
+            <label for="start-date" class="date-picker-label">Start Date:</label>
+            <input type="text" id="start-date" name="start-date" readonly>
+            <label for="end-date" class="date-picker-label">End Date:</label>
+            <input type="text" id="end-date" name="end-date" readonly>
+            <button id="searchButton">Search</button>
+            <button id="clearButton">Clear</button>
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

@@ -418,6 +418,30 @@ public class JooqRowsSupplierForSP {
                         startDate.toString(), endDate.toString());
                 return DSL.table(functionCall);
             }
+            case "get_api_interaction_observe" -> {
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are
+                // regenerated
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                LocalDate startDate = paramMap.get("start_date");
+                LocalDate endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_api_interaction_observe('%s', '%s')",
+                        startDate.toString(), endDate.toString());
+                return DSL.table(functionCall);
+            }
+            case "get_user_interaction_observe" -> {
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are
+                // regenerated
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                LocalDate startDate = paramMap.get("start_date");
+                LocalDate endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_user_interaction_observe('%s', '%s')",
+                        startDate.toString(), endDate.toString());
+                return DSL.table(functionCall);
+            }                        
             case "get_fhir_patient_screening_questions_answers" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);

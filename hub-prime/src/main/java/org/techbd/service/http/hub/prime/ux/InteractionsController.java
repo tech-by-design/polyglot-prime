@@ -88,8 +88,20 @@ public class InteractionsController {
     @GetMapping("/interactions/observe")
     @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 90)
     public String osberve(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/interactions/observe", model, request);
+        return "redirect:/interactions/observe/api-performance";        
     }
+
+    @GetMapping("/interactions/observe/api-performance")
+    @RouteMapping(label = "API", title = "API", siblingOrder = 10)
+    public String apiPerformance(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/interactions/api-performance", model, request);
+    }         
+
+    @GetMapping("/interactions/observe/user-interaction-performance")
+    @RouteMapping(label = "User Interactions", title = "User Interactions", siblingOrder = 20)
+    public String userInteractionPerformance(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/interactions/user-interaction-performance", model, request);
+    }         
 
     @GetMapping("/interactions/provenance")
     @RouteMapping(label = "Provenance", title = "Provenance", siblingOrder = 100)
