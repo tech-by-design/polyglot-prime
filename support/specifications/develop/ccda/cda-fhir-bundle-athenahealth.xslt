@@ -1978,7 +1978,7 @@
                             , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:addr/ccda:streetAddressLine">
-                            "line": [
+                            , "line": [
                                 <xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
