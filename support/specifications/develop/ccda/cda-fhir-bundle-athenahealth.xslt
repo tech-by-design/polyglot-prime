@@ -243,7 +243,7 @@
                             , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:streetAddressLine">
-                            "line": [
+                            , "line": [
                                 <xsl:for-each select="ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
@@ -886,7 +886,7 @@
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
                                 <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                            </xsl:choose>"
                         </xsl:if>
                         <xsl:variable name="formattedAddress">
                             <xsl:call-template name="format-address">
@@ -898,7 +898,7 @@
                             , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:streetAddressLine">
-                            "line": [
+                            , "line": [
                                 <xsl:for-each select="ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
@@ -1892,7 +1892,7 @@
                             , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:addr/ccda:streetAddressLine">
-                            "line": [
+                            , "line": [
                                 <xsl:for-each select="ccda:addr/ccda:streetAddressLine">
                                     "<xsl:value-of select="."/>"
                                     <xsl:if test="position() != last()">, </xsl:if>
