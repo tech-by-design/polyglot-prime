@@ -5,8 +5,8 @@
         "protocol": "TCP"
     },
     {
-        "port": 1610,
-        "responseType": "outbound",
+        "sourceId":"netspective",
+        "msgType":"pnr",
         "protocol": "TCP",
         "route": "/hold",
         "dataDir": "/outbound",
@@ -22,8 +22,8 @@
         "queue": "test.fifo"
     },
     {
-        "port": 16010,
-        "responseType": "mllp",
+        "sourceId":"netspective",
+        "msgType":"pix",
         "protocol": "TCP",
         "route": "/",
         "queue": "txd-sbx-util-queue.fifo",
@@ -76,7 +76,6 @@
         "whitelistIps": [
             "0.0.0.0/0"
         ],
-        "mtls": "txd",
         "execType": "sync",
         "trafficTo": "hl7",
         "route": "/",

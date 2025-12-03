@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.processor.MessageProcessingStep;
+import org.techbd.ingest.service.portconfig.PortConfigApplierService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
@@ -38,12 +39,14 @@ public class MessageProcessorService {
     private final AppConfig appConfig;
     private  TemplateLogger LOG;
     private final List<MessageProcessingStep> processingSteps;
+    private final PortConfigApplierService portConfigApplierService;
 
-    public MessageProcessorService(List<MessageProcessingStep> processingSteps, AppLogger appLogger, AppConfig appConfig) {
+    public MessageProcessorService(List<MessageProcessingStep> processingSteps, AppLogger appLogger, AppConfig appConfig, PortConfigApplierService portConfigApplierService) {
         this.processingSteps = processingSteps;
         LOG = appLogger.getLogger(MessageProcessorService.class);
         LOG.info("MessageProcessorService:: initialized");
         this.appConfig = appConfig;
+        this.portConfigApplierService = portConfigApplierService;
     }
 
     /**
@@ -62,6 +65,7 @@ public class MessageProcessorService {
                 interactionId,
                 file != null ? file.getOriginalFilename() : "null",
                 file != null ? file.getSize() : 0, context.getMessageSourceType().name());
+        portConfigApplierService.applyPortConfigOverrides(context);        
         for (MessageProcessingStep step : processingSteps) {
             if (step.isEnabledFor(context)) {
                 LOG.info("MessageProcessorService:: Executing step {} for interactionId={}",
@@ -102,6 +106,7 @@ public class MessageProcessorService {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={} from source {}",
                 interactionId, context.getMessageSourceType().name());
+        portConfigApplierService.applyPortConfigOverrides(context); 
         for (MessageProcessingStep step : processingSteps) {
             if (step.isEnabledFor(context)) {
                 LOG.info("MessageProcessorService:: Executing step {} for interactionId={}",

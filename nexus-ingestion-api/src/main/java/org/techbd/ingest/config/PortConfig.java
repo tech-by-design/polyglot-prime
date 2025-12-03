@@ -1,29 +1,30 @@
 package org.techbd.ingest.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import software.amazon.awssdk.core.ResponseBytes;
+import lombok.Getter;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Singleton Spring Boot component to load port configuration from AWS S3 or local JSON (for sandbox).
@@ -47,6 +48,7 @@ public class PortConfig implements InitializingBean {
         this.s3Client = s3Client;
     }
 
+    @Getter
     public static class PortEntry {
         public int port;
         public String responseType;
@@ -62,6 +64,8 @@ public class PortConfig implements InitializingBean {
         public String queue;
         public String dataDir;
         public String metadataDir;
+        public String sourceId;
+        public String msgType;
 
         public boolean isMtlsEnabled() {
             return mtlsEnabled || (mtls != null && !mtls.isBlank());

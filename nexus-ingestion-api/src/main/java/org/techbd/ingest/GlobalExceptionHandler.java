@@ -83,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
-        return handleException(ex, "An unexpected system error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+        return handleException(ex, "An unexpected system error occurred : " +ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ResponseEntity<ErrorResponse> handleException(Exception ex, String userMessage, HttpStatus status) {

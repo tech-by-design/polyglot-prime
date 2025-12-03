@@ -38,9 +38,9 @@ public class RequestContext {
     private final String timestamp;
     private final String fileName;
     private final long fileSize;
-    private final String objectKey;
-    private final String metadataKey;
-    private final String ackObjectKey;
+    private String objectKey;
+    private String metadataKey;
+    private String ackObjectKey;
     private final String fullS3DataPath;
     private final String fullS3AckMessagePath;
     private final String fullS3MetadataPath;
@@ -54,14 +54,16 @@ public class RequestContext {
     private final String destinationIp;
     private final String destinationPort;
     private final MessageSourceType messageSourceType;
-    private final String dataBucketName;
-    private final String metaDataBucketName;
+    private String dataBucketName;
+    private String metaDataBucketName;
     private String messageGroupId;
     private String s3Response;
     private String messageId;
     private String techBdIngestionApiVersion;
     private Map<String,String> additionalParameters;
     private String queueUrl;
+    private String sourceId;
+    private String msgType;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,

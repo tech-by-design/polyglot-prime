@@ -1,5 +1,5 @@
 
-package org.techbd.ingest.service;
+package org.techbd.ingest.service.messagegroup;
 
 import java.util.List;
 

@@ -1,9 +1,5 @@
 package org.techbd.ingest.endpoint;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.ws.context.MessageContext;
@@ -52,57 +48,14 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
 
     private static TemplateLogger log;
     private static final String NAMESPACE_URI = "urn:hl7-org:v3";
-
     private final AcknowledgementService ackService;
     private final AppConfig appConfig;
-    private final PortConfig portConfig;
-    private final ThreadLocal<PortConfig.PortEntry> currentPortEntry = new ThreadLocal<>();
-
+    
     public PixEndpoint(AcknowledgementService ackService, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
         super(appConfig, appLogger);
         this.ackService = ackService;
         this.appConfig = appConfig;
-        this.portConfig = portConfig;
         log = appLogger.getLogger(PixEndpoint.class);
-        try {
-            if (this.portConfig != null && !this.portConfig.isLoaded()) {
-                this.portConfig.loadConfig();
-            }
-        } catch (Exception e) {
-            log.warn("PixEndpoint: Failed to load PortConfig during initialization: {}", e.getMessage());
-        }
-    }
-
-    private void resolvePortEntry(jakarta.servlet.http.HttpServletRequest httpRequest) {
-        try {
-            String portHeader = httpRequest.getHeader(Constants.REQ_X_FORWARDED_PORT);
-            if (portHeader == null) {
-                portHeader = httpRequest.getHeader("x-forwarded-port");
-            }
-            if (StringUtils.isNotBlank(portHeader) && portConfig != null) {
-                try {
-                    int requestPort = Integer.parseInt(portHeader);
-                    if (!portConfig.isLoaded()) {
-                        portConfig.loadConfig();
-                    }
-                    if (portConfig.isLoaded()) {
-                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                            if (entry.port == requestPort) {
-                                currentPortEntry.set(entry);
-                                log.info("PixEndpoint: Matched port entry for port {} -> route={}", requestPort, entry.route);
-                                break;
-                            }
-                        }
-                    } else {
-                        log.warn("PixEndpoint: PortConfig not loaded when resolving port entry");
-                    }
-                } catch (NumberFormatException nfe) {
-                    log.warn("PixEndpoint: Invalid x-forwarded-port header value: {}", portHeader);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("PixEndpoint: Exception while resolving port entry: {}", e.getMessage());
-        }
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")
@@ -112,15 +65,31 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        
+        // Extract custom headers
+        String sourceId = httpRequest.getHeader(Constants.HEADER_SOURCE_ID);
+        String msgType = httpRequest.getHeader(Constants.HEADER_MSG_TYPE);
+        String interactionId = httpRequest.getHeader(Constants.HEADER_INTERACTION_ID);
+        
+        // Use attribute interactionId if header not present
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        }
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
-        resolvePortEntry(httpRequest);
+        
         try {
-            log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. interactionId={}", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. sourceId={} msgType={} interactionId={}", 
+                sourceId, msgType, interactionId);
+            
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = createRequestContext(interactionId, null, httpRequest, rawSoapMessage.length(), "soap-message.xml");
+            
+            // Set sourceId and msgType in context if available
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+            
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
                     context.getSourceIp() + ":" + context.getDestinationPort(),
@@ -132,9 +101,7 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, error={}",
                     interactionId, e.getMessage(), e);
             return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
-        } finally {
-            currentPortEntry.remove();
-        }
+        } 
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201302UV02")
@@ -144,15 +111,31 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        
+        // Extract custom headers
+        String sourceId = httpRequest.getHeader(Constants.HEADER_SOURCE_ID);
+        String msgType = httpRequest.getHeader(Constants.HEADER_MSG_TYPE);
+        String interactionId = httpRequest.getHeader(Constants.HEADER_INTERACTION_ID);
+        
+        // Use attribute interactionId if header not present
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        }
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
-        resolvePortEntry(httpRequest);
+        
         try {
-            log.info("PixEndpoint:: Received PRPA_IN201302UV02 request. interactionId={}", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201302UV02 request. sourceId={} msgType={} interactionId={}", 
+                sourceId, msgType, interactionId);
+            
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = createRequestContext(interactionId, null, httpRequest, rawSoapMessage.length(), "soap-message.xml");
+            
+            // Set sourceId and msgType in context if available
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+            
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
                     context.getSourceIp() + ":" + context.getDestinationPort(),
@@ -164,9 +147,7 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
                     interactionId, e.getMessage(), e);
             return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
-        } finally {
-            currentPortEntry.remove();
-        }
+        } 
     }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201304UV02")
@@ -176,15 +157,31 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
-        var interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        
+        // Extract custom headers
+        String sourceId = httpRequest.getHeader(Constants.HEADER_SOURCE_ID);
+        String msgType = httpRequest.getHeader(Constants.HEADER_MSG_TYPE);
+        String interactionId = httpRequest.getHeader(Constants.HEADER_INTERACTION_ID);
+        
+        // Use attribute interactionId if header not present
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
+        }
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
-        resolvePortEntry(httpRequest);
+        
         try {
-            log.info("PixEndpoint:: Received PRPA_IN201304UV02 request. interactionId={}", interactionId);
+            log.info("PixEndpoint:: Received PRPA_IN201304UV02 request. sourceId={} msgType={} interactionId={}", 
+                sourceId, msgType, interactionId);
+            
             String rawSoapMessage = (String) messageContext.getProperty("RAW_SOAP_MESSAGE");
             RequestContext context = createRequestContext(interactionId, null, httpRequest, rawSoapMessage.length(), "soap-message.xml");
+            
+            // Set sourceId and msgType in context if available
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+            
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
                     context.getSourceIp() + ":" + context.getDestinationPort(),
@@ -196,136 +193,11 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",
                     interactionId, e.getMessage(), e);
             return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
-        } finally {
-            currentPortEntry.remove();
-        }
+        } 
     }
 
     @Override
     public MessageSourceType getMessageSource() {
-        PortConfig.PortEntry entry = currentPortEntry.get();
-        if (entry != null && "/hold".equals(entry.route)) {
-            return MessageSourceType.HTTP_HOLD;
-        }
         return MessageSourceType.SOAP_PIX;
-    }
-
-    /**
-     * Prefix the default data key with per-port dataDir when a port entry is
-     * resolved for the current request.
-     */
-    @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        PortConfig.PortEntry entry = currentPortEntry.get();
-
-        Instant now = Instant.now();
-        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String baseKey;
-        if (entry != null && "/hold".equals(entry.route)) {
-            // prepare filename and extension
-            String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
-            String baseName = original;
-            String extension = "";
-
-            int lastDot = original.lastIndexOf('.');
-            if (lastDot > 0 && lastDot < original.length() - 1) {
-                baseName = original.substring(0, lastDot);
-                extension = original.substring(lastDot + 1);
-            }
-
-            // build timestamped filename: {timestamp}_{basename}.{extension}
-            String timestampedName = timestamp + "_" + baseName;
-            if (!extension.isBlank()) {
-                timestampedName = timestampedName + "." + extension;
-            }
-
-            // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}
-            baseKey = String.format("hold/%d/%s/%s", entry.port, datePath, timestampedName);
-
-        } else {
-            baseKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
-        }
-
-        if (entry != null && entry.dataDir != null && !entry.dataDir.isBlank()) {
-            String prefix = entry.dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-            if (!prefix.isEmpty()) {
-                return prefix + "/" + baseKey;
-            }
-        }
-        return baseKey;
-    }
-
-    /**
-     * Prefix the default metadata key with per-port metadataDir when a port
-     * entry is resolved for the current request.
-     */
-    @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        PortConfig.PortEntry entry = currentPortEntry.get();
-
-        Instant now = Instant.now();
-        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String baseKey;
-        if (entry != null && "/hold".equals(entry.route)) {
-            // prepare filename and extension
-            String original = (originalFileName == null || originalFileName.isBlank()) ? "body" : originalFileName;
-            String baseName = original;
-            String extension = "";
-
-            int lastDot = original.lastIndexOf('.');
-            if (lastDot > 0 && lastDot < original.length() - 1) {
-                baseName = original.substring(0, lastDot);
-                extension = original.substring(lastDot + 1);
-            }
-
-            // build timestamped filename: {timestamp}_{basename}.{extension}
-            String timestampedName = timestamp + "_" + baseName;
-            if (!extension.isBlank()) {
-                timestampedName = timestampedName + "." + extension;
-            }
-
-            // final path: hold/{destination_port}/{YYYY}/{MM}/{DD}/{timestamp_filename}.{extension}_metadata.json
-            baseKey = String.format("hold/%d/%s/%s_metadata.json", entry.port, datePath, timestampedName);
-
-        } else {
-            baseKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
-        }
-
-        if (entry != null && entry.metadataDir != null && !entry.metadataDir.isBlank()) {
-            String prefix = entry.metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-            if (!prefix.isEmpty()) {
-                return prefix + "/" + baseKey;
-            }
-        }
-        return baseKey;
-    }
-
-    // Backwards-compatible aliases if any code expects getKey()/getMetadataKey()
-    public String getKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        return getDataKey(interactionId, headers, originalFileName, timestamp);
-    }
-
-    public String getMetadataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        return getMetaDataKey(interactionId, headers, originalFileName, timestamp);
-    }
-
-    @Override
-    public String getDataBucketName() {
-        PortConfig.PortEntry entry = currentPortEntry.get();
-        if (entry != null && "/hold".equals(entry.route)) {
-            return appConfig.getAws().getS3().getHoldConfig().getBucket();
-        }
-        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
-    }
-
-    @Override
-    public String getMetadataBucketName() {
-        PortConfig.PortEntry entry = currentPortEntry.get();
-        if (entry != null && "/hold".equals(entry.route)) {
-            return appConfig.getAws().getS3().getHoldConfig().getMetadataBucket();
-        }
-        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 }
