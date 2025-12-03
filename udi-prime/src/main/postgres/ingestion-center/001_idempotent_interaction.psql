@@ -9530,32 +9530,22 @@ BEGIN
             req.interaction_start_time AS start_time,
             req.interaction_end_time AS finish_time,
             EXTRACT(EPOCH FROM (req.interaction_end_time - req.interaction_start_time)) * 1000 AS duration_millisecs,
-            req.sat_interaction_fhir_request_id AS interaction_http_request_id,            
-            ROW_NUMBER() OVER (
-                PARTITION BY req.hub_interaction_id
-                ORDER BY EXTRACT(EPOCH FROM (req.interaction_end_time - req.interaction_start_time)) DESC
-            ) AS rank
+            req.sat_interaction_fhir_request_id AS interaction_http_request_id
         FROM 
             techbd_udi_ingress.sat_interaction_fhir_request req
             CROSS JOIN date_range dr
         WHERE 
-            req.interaction_start_time IS NOT NULL
+            req.nature = 'Original FHIR Payload'
+            AND req.interaction_start_time IS NOT NULL
             AND req.interaction_end_time IS NOT NULL
             AND req.interaction_start_time >= dr.range_start
-            AND req.interaction_start_time < dr.range_end
+            AND req.interaction_start_time < dr.range_end 
     )
-    SELECT 
-        fi.interaction_id,
-        fi.uri,
-        fi.start_time,
-        fi.finish_time,
-        fi.duration_millisecs,
-        fi.interaction_http_request_id
-    FROM fhir_interactions fi
-    WHERE rank = 1
-    ORDER BY duration_millisecs DESC;
+    SELECT *
+    FROM fhir_interactions ;
 END;
-$$;    
+$$;
+
 
 
 /****************
@@ -9591,11 +9581,7 @@ BEGIN
             req.interaction_start_time AS start_time,
             req.interaction_end_time AS finish_time,
             EXTRACT(EPOCH FROM (req.interaction_end_time - req.interaction_start_time)) * 1000 AS duration_millisecs,
-            req.sat_interaction_user_id AS interaction_http_request_id,
-            ROW_NUMBER() OVER (
-                PARTITION BY req.hub_interaction_id
-                ORDER BY EXTRACT(EPOCH FROM (req.interaction_end_time - req.interaction_start_time)) DESC
-            ) AS rank
+            req.sat_interaction_user_id AS interaction_http_request_id
         FROM 
             techbd_udi_ingress.sat_interaction_user req
             CROSS JOIN date_range dr
@@ -9613,7 +9599,6 @@ BEGIN
         ui.finish_time,
         ui.duration_millisecs,
         ui.interaction_http_request_id
-    FROM user_interactions ui
-    WHERE ui.rank = 1;
+    FROM user_interactions ui;
 END;
 $$;
