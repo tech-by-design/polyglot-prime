@@ -73,6 +73,8 @@ public class MetadataBuilderService {
     public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
         jsonMetadata.put("tenantId", resolveTenantId(context));
+        jsonMetadata.put("sourceId", context.getSourceId());
+        jsonMetadata.put("msgType", context.getMsgType());
         jsonMetadata.put("ingestionApiVersion", appConfig.getVersion());
         jsonMetadata.put("interactionId", context.getInteractionId());
         jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
