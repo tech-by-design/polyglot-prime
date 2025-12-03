@@ -41,7 +41,9 @@ public class Constants {
     public static final String DELIVERY_TYPE = "deliveryType";
     public static final String FACILITY = "facility";
     public static final String MESSAGE_CODE = "messageCode";
-
     public static final String MTLS_BUCKET_NAME = "MTLS_BUCKET";
     public static final String QE = "qe";
+    public static final String HEADER_SOURCE_ID = "X-Source-ID";
+    public static final String HEADER_MSG_TYPE = "X-Message-Type";
+    public static final String HEADER_INTERACTION_ID = "X-Interaction-ID";
 }

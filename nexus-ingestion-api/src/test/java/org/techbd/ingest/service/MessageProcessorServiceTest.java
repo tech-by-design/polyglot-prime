@@ -18,6 +18,7 @@ import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.processor.MessageProcessingStep;
+import org.techbd.ingest.service.portconfig.PortConfigApplierService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
@@ -28,12 +29,12 @@ public class MessageProcessorServiceTest {
     private MessageProcessingStep step1;
     @Mock
     private MessageProcessingStep step2;
-
+    @Mock
+    PortConfigApplierService portConfigApplierService;
     @Mock
     private AppLogger appLogger;    
     @Mock
     private static TemplateLogger templateLogger;
-
     @Mock
     private AppConfig appConfig;
  
@@ -41,7 +42,7 @@ public class MessageProcessorServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);        
         when(appLogger.getLogger(MessageProcessorService.class)).thenReturn(templateLogger);
-        service = new MessageProcessorService(List.of(step1, step2), appLogger,appConfig);
+        service = new MessageProcessorService(List.of(step1, step2), appLogger,appConfig, portConfigApplierService);
     }
 
     @Test
