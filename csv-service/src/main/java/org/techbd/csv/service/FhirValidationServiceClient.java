@@ -1,27 +1,37 @@
-
 package org.techbd.csv.service;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.micrometer.common.util.StringUtils;
-import reactor.core.publisher.Mono;
-
-import java.util.HashMap;
-import java.util.Map;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import reactor.netty.http.client.HttpClient;
 
 /**
- * Client for interacting with the FHIR validation service.
- * Handles bundle validation with comprehensive header support and error
- * handling.
+ * Optimized client for interacting with the FHIR validation service.
+ * Handles bundle validation with comprehensive header support and error handling.
+ * 
+ * Key improvements:
+ * - Configurable buffer size to handle large responses
+ * - Proper timeout configuration
+ * - More efficient parameter handling
+ * - Better error messages
  */
 @Service
 public class FhirValidationServiceClient {
@@ -30,250 +40,263 @@ public class FhirValidationServiceClient {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    
+    // Configuration properties with defaults
+    @Value("${FHIR_CLIENT_MAX_BUFFER_SIZE:10485760}") // 10MB default
+    private final int maxBufferSize;
+    
+    @Value("${FHIR_CLIENT_CONNECT_TIMEOUT_MS:5000}") // 5 seconds default
+    private final int connectTimeoutMs;
+    
+    @Value("${FHIR_CLIENT_READ_TIMEOUT_SECONDS:60}") // 60 seconds default
+    private final int readTimeoutSeconds;
+    
+    @Value("${FHIR_CLIENT_WRITE_TIMEOUT_SECONDS:60}") // 60 seconds default
+    private final int writeTimeoutSeconds;
+    
+    @Value("${FHIR_CLIENT_BLOCK_TIMEOUT_SECONDS:90}") // 90 seconds default
+    private final int blockTimeout;
 
-    public FhirValidationServiceClient(@Value("${TECHBD_BL_BASEURL}") String baseUrl) {
-        this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
-                .build();
+    public FhirValidationServiceClient(
+            @Value("${TECHBD_BL_BASEURL}") String baseUrl,
+            @Value("${FHIR_CLIENT_MAX_BUFFER_SIZE:10485760}") int maxBufferSize,
+            @Value("${FHIR_CLIENT_CONNECT_TIMEOUT_MS:5000}") int connectTimeoutMs,
+            @Value("${FHIR_CLIENT_READ_TIMEOUT_SECONDS:60}") int readTimeoutSeconds,
+            @Value("${FHIR_CLIENT_WRITE_TIMEOUT_SECONDS:60}") int writeTimeoutSeconds,
+            @Value("${FHIR_CLIENT_BLOCK_TIMEOUT_SECONDS:90}") int blockTimeoutSeconds) {
+        
+        this.maxBufferSize = maxBufferSize;
+        this.connectTimeoutMs = connectTimeoutMs;
+        this.readTimeoutSeconds = readTimeoutSeconds;
+        this.writeTimeoutSeconds = writeTimeoutSeconds;
+        this.blockTimeout = blockTimeoutSeconds;
+        
+        this.webClient = createConfiguredWebClient(baseUrl);
         this.objectMapper = new ObjectMapper();
-        LOG.info("FhirValidationServiceClient initialized with baseUrl: {}", baseUrl);
+        
+        LOG.info("FhirValidationServiceClient initialized - baseUrl: {}, maxBufferSize: {}MB, " +
+                 "connectTimeout: {}ms, readTimeout: {}s, writeTimeout: {}s, blockTimeout: {}s", 
+                 baseUrl, maxBufferSize / (1024 * 1024), connectTimeoutMs, 
+                 readTimeoutSeconds, writeTimeoutSeconds, blockTimeoutSeconds);
     }
 
     /**
-     * Simple validation method for backward compatibility
+     * Creates a WebClient with optimized configuration for handling large responses
+     */
+    private WebClient createConfiguredWebClient(String baseUrl) {
+        // Configure HTTP client with timeouts
+        HttpClient httpClient = HttpClient.create()
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
+            .doOnConnected(conn -> conn
+                .addHandlerLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS))
+                .addHandlerLast(new WriteTimeoutHandler(writeTimeoutSeconds, TimeUnit.SECONDS)));
+
+        // Configure exchange strategies with larger buffer
+        ExchangeStrategies strategies = ExchangeStrategies.builder()
+            .codecs(configurer -> configurer
+                .defaultCodecs()
+                .maxInMemorySize(maxBufferSize))
+            .build();
+
+        return WebClient.builder()
+            .baseUrl(baseUrl)
+            .clientConnector(new ReactorClientHttpConnector(httpClient))
+            .exchangeStrategies(strategies)
+            .build();
+    }
+
+    /**
+     * Simplified validation method for backward compatibility
      * Extracts parameters from the map and applies them to the validation request
-     * 
-     * @param bundle            The FHIR bundle JSON string
-     * @param interactionId     The interaction ID
-     * @param tenantId          The tenant ID
-     * @param requestParameters Map containing all headers and parameters
      */
     public Object validateBundle(String bundle, String interactionId, String tenantId,
-            Map<String, Object> requestParameters) {
+                                Map<String, Object> requestParameters) {
         ValidationRequest.Builder builder = ValidationRequest.builder()
-                .bundle(bundle)
-                .interactionId(interactionId)
-                .tenantId(tenantId);
+            .bundle(bundle)
+            .interactionId(interactionId)
+            .tenantId(tenantId);
 
-        // Extract and apply parameters from the map if present
-        if (requestParameters != null && !requestParameters.isEmpty()) {
-            if (requestParameters.containsKey("groupInteractionId")) {
-                builder.groupInteractionId((String) requestParameters.get("groupInteractionId"));
-            }
-            if (requestParameters.containsKey("masterInteractionId")) {
-                builder.masterInteractionId((String) requestParameters.get("masterInteractionId"));
-            }
-            if (requestParameters.containsKey("sourceType")) {
-                builder.sourceType((String) requestParameters.get("sourceType"));
-            }
-            if (requestParameters.containsKey("sessionId")) {
-                builder.sessionId((String) requestParameters.get("sessionId"));
-            }
-            if (requestParameters.containsKey("userId")) {
-                builder.userId((String) requestParameters.get("userId"));
-            }
-            if (requestParameters.containsKey("userName")) {
-                builder.userName((String) requestParameters.get("userName"));
-            }
-            if (requestParameters.containsKey("userRole")) {
-                builder.userRole((String) requestParameters.get("userRole"));
-            }
-            if (requestParameters.containsKey("correlationId")) {
-                builder.correlationId((String) requestParameters.get("correlationId"));
-            }
-            if (requestParameters.containsKey("requestUri")) {
-                builder.requestUri((String) requestParameters.get("requestUri"));
-            }
-            if (requestParameters.containsKey("overrideRequestUri")) {
-                builder.overrideRequestUri((String) requestParameters.get("overrideRequestUri"));
-            }
-            if (requestParameters.containsKey("provenance")) {
-                builder.provenance((String) requestParameters.get("provenance"));
-            }
-            if (requestParameters.containsKey("healthCheck")) {
-                builder.healthCheck((String) requestParameters.get("healthCheck"));
-            }
-            if (requestParameters.containsKey("customDataLakeApi")) {
-                builder.customDataLakeApi((String) requestParameters.get("customDataLakeApi"));
-            }
-            if (requestParameters.containsKey("dataLakeApiContentType")) {
-                builder.dataLakeApiContentType((String) requestParameters.get("dataLakeApiContentType"));
-            }
-            if (requestParameters.containsKey("mtlsStrategy")) {
-                builder.mtlsStrategy((String) requestParameters.get("mtlsStrategy"));
-            }
-            if (requestParameters.containsKey("elaboration")) {
-                builder.elaboration((String) requestParameters.get("elaboration"));
-            }
-            if (requestParameters.containsKey("shinNyIgVersion")) {
-                builder.shinNyIgVersion((String) requestParameters.get("shinNyIgVersion"));
-            }
-            if (requestParameters.containsKey("validationSeverityLevel")) {
-                builder.validationSeverityLevel((String) requestParameters.get("validationSeverityLevel"));
-            }
+        applyParametersFromMap(builder, requestParameters);
+        return validateBundle(builder.build());
+    }
+
+    /**
+     * Efficiently applies parameters from map to builder
+     */
+    private void applyParametersFromMap(ValidationRequest.Builder builder, Map<String, Object> params) {
+        if (params == null || params.isEmpty()) {
+            return;
         }
 
-        return validateBundle(builder.build());
+        getStringParam(params, "groupInteractionId").ifPresent(builder::groupInteractionId);
+        getStringParam(params, "masterInteractionId").ifPresent(builder::masterInteractionId);
+        getStringParam(params, "sourceType").ifPresent(builder::sourceType);
+        getStringParam(params, "sessionId").ifPresent(builder::sessionId);
+        getStringParam(params, "userId").ifPresent(builder::userId);
+        getStringParam(params, "userName").ifPresent(builder::userName);
+        getStringParam(params, "userRole").ifPresent(builder::userRole);
+        getStringParam(params, "correlationId").ifPresent(builder::correlationId);
+        getStringParam(params, "requestUri").ifPresent(builder::requestUri);
+        getStringParam(params, "overrideRequestUri").ifPresent(builder::overrideRequestUri);
+        getStringParam(params, "provenance").ifPresent(builder::provenance);
+        getStringParam(params, "healthCheck").ifPresent(builder::healthCheck);
+        getStringParam(params, "customDataLakeApi").ifPresent(builder::customDataLakeApi);
+        getStringParam(params, "dataLakeApiContentType").ifPresent(builder::dataLakeApiContentType);
+        getStringParam(params, "mtlsStrategy").ifPresent(builder::mtlsStrategy);
+        getStringParam(params, "elaboration").ifPresent(builder::elaboration);
+        getStringParam(params, "shinNyIgVersion").ifPresent(builder::shinNyIgVersion);
+        getStringParam(params, "validationSeverityLevel").ifPresent(builder::validationSeverityLevel);
+    }
+
+    /**
+     * Safely extracts string parameter with type checking
+     */
+    private Optional<String> getStringParam(Map<String, Object> params, String key) {
+        return Optional.ofNullable(params.get(key))
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .filter(s -> !s.trim().isEmpty());
     }
 
     /**
      * Validation method with extended parameters
      */
     public Object validateBundle(String bundle, String interactionId, String tenantId,
-            String groupInteractionId, String masterInteractionId, String sourceType,
-            String sessionId, String userId) {
+                                String groupInteractionId, String masterInteractionId, String sourceType,
+                                String sessionId, String userId) {
         return validateBundle(ValidationRequest.builder()
-                .bundle(bundle)
-                .interactionId(interactionId)
-                .tenantId(tenantId)
-                .groupInteractionId(groupInteractionId)
-                .masterInteractionId(masterInteractionId)
-                .sourceType(sourceType)
-                .sessionId(sessionId)
-                .userId(userId)
-                .build());
+            .bundle(bundle)
+            .interactionId(interactionId)
+            .tenantId(tenantId)
+            .groupInteractionId(groupInteractionId)
+            .masterInteractionId(masterInteractionId)
+            .sourceType(sourceType)
+            .sessionId(sessionId)
+            .userId(userId)
+            .build());
     }
 
     /**
      * Primary validation method using builder pattern
      */
     public Object validateBundle(ValidationRequest request) {
-        LOG.info("Calling FHIR validation service for bundle validation - interaction Id: {}",
-                request.interactionId);
+        LOG.info("Calling FHIR validation service - interactionId: {}, tenantId: {}", 
+                 request.interactionId, request.tenantId);
 
         validateRequest(request);
 
         try {
-            // to-do : needs to change to /Bundle in future
-            WebClient.RequestBodySpec requestBuilder = webClient.post()
-                    .uri("/Bundle/")
-                    .contentType(MediaType.APPLICATION_JSON);
+            String response = webClient.post()
+                .uri("/Bundle/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .headers(headers -> addHeaders(headers, request))
+                .body(BodyInserters.fromValue(request.bundle))
+                .retrieve()
+                .onStatus(status -> status.isError(),
+                    clientResponse -> clientResponse.bodyToMono(String.class)
+                        .defaultIfEmpty("Unknown error from FHIR validation service")
+                        .flatMap(errorBody -> {
+                            LOG.error("FHIR validation service error - status: {}, interactionId: {}, error: {}", 
+                                     clientResponse.statusCode(), request.interactionId, errorBody);
+                            return reactor.core.publisher.Mono.error(
+                                new FhirValidationException(
+                                    String.format("FHIR validation failed with status %s: %s", 
+                                                clientResponse.statusCode(), errorBody),
+                                    request.interactionId));
+                        }))
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(blockTimeout))
+                .block(Duration.ofSeconds(blockTimeout + 30));
 
-            // Add all headers from request
-            addHeaders(requestBuilder, request);
-
-            // Log outgoing request details
-            logRequest(request);
-
-            String response = requestBuilder
-                    .body(BodyInserters.fromValue(request.bundle))
-                    .retrieve()
-                    .onStatus(status -> status.isError(),
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .defaultIfEmpty("Unknown error from FHIR validation service")
-                                    .flatMap(errorBody -> {
-                                        LOG.error(
-                                                "Error response from FHIR validation service (status={}): {} - interaction Id: {}",
-                                                clientResponse.statusCode(), errorBody, request.interactionId);
-                                        return Mono.error(
-                                                new RuntimeException("FHIR validation service error: " + errorBody));
-                                    }))
-                    .bodyToMono(String.class)
-                    .block();
-
-            LOG.info("Successfully received response from FHIR validation service - interaction Id: {}",
-                    request.interactionId);
+            LOG.info("Successfully received response from FHIR validation service - interactionId: {}", 
+                     request.interactionId);
 
             return objectMapper.readValue(response, Object.class);
 
         } catch (WebClientResponseException e) {
-            LOG.error("WebClient error while calling FHIR validation service: status={} body={} - interaction Id: {}",
-                    e.getStatusCode(), e.getResponseBodyAsString(), request.interactionId);
-            throw new RuntimeException("FHIR validation service error: " + e.getMessage(), e);
+            String errorMsg = String.format(
+                "FHIR validation WebClient error - status: %s, interactionId: %s, response: %s",
+                e.getStatusCode(), request.interactionId, e.getResponseBodyAsString());
+            LOG.error(errorMsg, e);
+            throw new FhirValidationException(errorMsg, request.interactionId, e);
+            
         } catch (Exception e) {
-            LOG.error("Unexpected error while calling FHIR validation service: {} - interaction Id: {}",
-                    e.getMessage(), request.interactionId, e);
-            throw new RuntimeException("FHIR validation service error: " + e.getMessage(), e);
+            String errorMsg = String.format(
+                "Unexpected FHIR validation error - interactionId: %s, message: %s",
+                request.interactionId, e.getMessage());
+            LOG.error(errorMsg, e);
+            throw new FhirValidationException(errorMsg, request.interactionId, e);
         }
     }
 
     private void validateRequest(ValidationRequest request) {
-        if (StringUtils.isEmpty(request.bundle)) {
+        if (request.bundle == null || request.bundle.trim().isEmpty()) {
             throw new IllegalArgumentException("Bundle payload cannot be null or empty");
         }
-        if (StringUtils.isEmpty(request.interactionId)) {
+        if (request.interactionId == null || request.interactionId.trim().isEmpty()) {
             throw new IllegalArgumentException("Interaction ID cannot be null or empty");
         }
-        if (StringUtils.isEmpty(request.tenantId)) {
+        if (request.tenantId == null || request.tenantId.trim().isEmpty()) {
             throw new IllegalArgumentException("Tenant ID cannot be null or empty");
         }
     }
 
-    private WebClient.RequestHeadersSpec<?> addHeaders(WebClient.RequestHeadersSpec<?> spec,
-            ValidationRequest request) {
+    /**
+     * Adds headers to the request - more efficient implementation
+     */
+    private void addHeaders(org.springframework.http.HttpHeaders headers, ValidationRequest request) {
         // Required headers
-        spec = spec.header("X-TechBD-Tenant-ID", request.tenantId)
-                .header("X-TechBD-Interaction-ID", request.interactionId);
+        headers.add("X-TechBD-Tenant-ID", request.tenantId);
+        headers.add("X-TechBD-Interaction-ID", request.interactionId);
 
         // Optional headers - only add if not null/empty
-        if (StringUtils.isNotEmpty(request.groupInteractionId)) {
-            spec = spec.header("X-TechBD-Group-Interaction-ID", request.groupInteractionId);
-        }
-        if (StringUtils.isNotEmpty(request.masterInteractionId)) {
-            spec = spec.header("X-TechBD-Master-Interaction-ID", request.masterInteractionId);
-        }
-        if (StringUtils.isNotEmpty(request.sourceType)) {
-            spec = spec.header("X-TechBD-Source-Type", request.sourceType);
-        }
-        if (StringUtils.isNotEmpty(request.sessionId)) {
-            spec = spec.header("X-TechBD-Session-ID", request.sessionId);
-        }
-        if (StringUtils.isNotEmpty(request.userId)) {
-            spec = spec.header("X-TechBD-User-ID", request.userId);
-        }
-        if (StringUtils.isNotEmpty(request.userName)) {
-            spec = spec.header("X-TechBD-User-Name", request.userName);
-        }
-        if (StringUtils.isNotEmpty(request.userRole)) {
-            spec = spec.header("X-TechBD-User-Role", request.userRole);
-        }
-        if (StringUtils.isNotEmpty(request.correlationId)) {
-            spec = spec.header("X-TechBD-Correlation-ID", request.correlationId);
-        }
-        if (StringUtils.isNotEmpty(request.requestUri)) {
-            spec = spec.header("X-TechBD-Request-URI", request.requestUri);
-        }
-        if (StringUtils.isNotEmpty(request.overrideRequestUri)) {
-            spec = spec.header("X-TechBD-Override-Request-URI", request.overrideRequestUri);
-        }
-        if (StringUtils.isNotEmpty(request.provenance)) {
-            spec = spec.header("X-TechBD-Provenance", request.provenance);
-        }
-        if (StringUtils.isNotEmpty(request.healthCheck)) {
-            spec = spec.header("X-TechBD-Health-Check", request.healthCheck);
-        }
-        if (StringUtils.isNotEmpty(request.customDataLakeApi)) {
-            spec = spec.header("X-TechBD-Custom-DataLake-API", request.customDataLakeApi);
-        }
-        if (StringUtils.isNotEmpty(request.dataLakeApiContentType)) {
-            spec = spec.header("X-TechBD-DataLake-API-Content-Type", request.dataLakeApiContentType);
-        }
-        if (StringUtils.isNotEmpty(request.mtlsStrategy)) {
-            spec = spec.header("X-TechBD-MTLS-Strategy", request.mtlsStrategy);
-        }
-        if (StringUtils.isNotEmpty(request.elaboration)) {
-            spec = spec.header("X-TechBD-Elaboration", request.elaboration);
-        }
-        if (StringUtils.isNotEmpty(request.shinNyIgVersion)) {
-            spec = spec.header("X-TechBD-SHIN-NY-IG-Version", request.shinNyIgVersion);
-        }
-        if (StringUtils.isNotEmpty(request.validationSeverityLevel)) {
-            spec = spec.header("X-TechBD-Validation-Severity-Level", request.validationSeverityLevel);
-        }
-
-        return spec;
+        addOptionalHeader(headers, "X-TechBD-Group-Interaction-ID", request.groupInteractionId);
+        addOptionalHeader(headers, "X-TechBD-Master-Interaction-ID", request.masterInteractionId);
+        addOptionalHeader(headers, "X-TechBD-Source-Type", request.sourceType);
+        addOptionalHeader(headers, "X-TechBD-Session-ID", request.sessionId);
+        addOptionalHeader(headers, "X-TechBD-User-ID", request.userId);
+        addOptionalHeader(headers, "X-TechBD-User-Name", request.userName);
+        addOptionalHeader(headers, "X-TechBD-User-Role", request.userRole);
+        addOptionalHeader(headers, "X-TechBD-Correlation-ID", request.correlationId);
+        addOptionalHeader(headers, "X-TechBD-Request-URI", request.requestUri);
+        addOptionalHeader(headers, "X-TechBD-Override-Request-URI", request.overrideRequestUri);
+        addOptionalHeader(headers, "X-TechBD-Provenance", request.provenance);
+        addOptionalHeader(headers, "X-TechBD-Health-Check", request.healthCheck);
+        addOptionalHeader(headers, "X-TechBD-Custom-DataLake-API", request.customDataLakeApi);
+        addOptionalHeader(headers, "X-TechBD-DataLake-API-Content-Type", request.dataLakeApiContentType);
+        addOptionalHeader(headers, "X-TechBD-MTLS-Strategy", request.mtlsStrategy);
+        addOptionalHeader(headers, "X-TechBD-Elaboration", request.elaboration);
+        addOptionalHeader(headers, "X-TechBD-SHIN-NY-IG-Version", request.shinNyIgVersion);
+        addOptionalHeader(headers, "X-TechBD-Validation-Severity-Level", request.validationSeverityLevel);
+        
+        LOG.debug("Added {} headers to FHIR validation request", headers.size());
     }
 
-    private void logRequest(ValidationRequest request) {
-        Map<String, String> logDetails = new HashMap<>();
-        logDetails.put("interactionId", request.interactionId);
-        logDetails.put("tenantId", request.tenantId);
-        logDetails.put("groupInteractionId", request.groupInteractionId);
-        logDetails.put("masterInteractionId", request.masterInteractionId);
-        logDetails.put("sourceType", request.sourceType);
-        logDetails.put("correlationId", request.correlationId);
+    private void addOptionalHeader(org.springframework.http.HttpHeaders headers, String name, String value) {
+        if (value != null && !value.trim().isEmpty()) {
+            headers.add(name, value);
+        }
+    }
 
-        LOG.debug("FHIR validation request details: {}", logDetails);
+    /**
+     * Custom exception for FHIR validation failures
+     */
+    public static class FhirValidationException extends RuntimeException {
+        private final String interactionId;
+
+        public FhirValidationException(String message, String interactionId) {
+            super(message);
+            this.interactionId = interactionId;
+        }
+
+        public FhirValidationException(String message, String interactionId, Throwable cause) {
+            super(message, cause);
+            this.interactionId = interactionId;
+        }
+
+        public String getInteractionId() {
+            return interactionId;
+        }
     }
 
     /**
