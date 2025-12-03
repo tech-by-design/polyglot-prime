@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -63,7 +64,7 @@ public class SoapForwarderService {
             SOAPMessage soapRequest = createSoapMessage(body, contentType);
             
             // Determine target URL
-            String targetUrl = "http://localhost:" + request.getServerPort() + "/ws";
+            String targetUrl = getBaseUrl(request) + "/ws";
             LOG.info("SoapForwarderService:: Forwarding to URL={}", targetUrl);
 
             // Forward the request and get response using WebServiceTemplate
@@ -149,6 +150,26 @@ public class SoapForwarderService {
                 .body(createSoapFault(e.getMessage(), soapVersion));
         }
     }
+
+    public static String getBaseUrl(HttpServletRequest request) {
+        String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
+                .orElse(request.getScheme());
+
+        String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
+                .orElse(request.getServerName());
+
+        String port = Optional.ofNullable(request.getHeader("X-Forwarded-Port"))
+                .orElse(String.valueOf(request.getServerPort()));
+
+        // Remove default ports
+        if ((proto.equals("http") && port.equals("80")) ||
+                (proto.equals("https") && port.equals("443"))) {
+            return proto + "://" + host;
+        }
+
+        return proto + "://" + host + ":" + port;
+    }
+
 
     /**
      * Adds custom HTTP headers to the SOAP request for routing parameters.
