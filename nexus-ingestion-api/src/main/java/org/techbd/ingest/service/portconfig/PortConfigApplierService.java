@@ -1,5 +1,6 @@
 package org.techbd.ingest.service.portconfig;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -12,13 +13,10 @@ import org.techbd.ingest.util.TemplateLogger;
  * Central orchestrator that applies PortConfig-based overrides to the
  * {@link RequestContext}.
  *
- * <p>This service delegates all resolution logic to small, focused components:
- * <ul>
- *     <li>{@link PortResolverService} – determines which PortEntry applies</li>
- *     <li>{@link QueueResolver} – resolves queue URLs</li>
- *     <li>{@link BucketResolver} – resolves data/metadata buckets</li>
- *     <li>{@link DataDirResolver} – builds S3 object keys</li>
- * </ul>
+ * <p>This service delegates all resolution logic to implementations of
+ * {@link PortConfigAttributeResolver}. Each resolver is responsible for
+ * updating specific attributes of the context (queue URLs, buckets, keys, etc.).
+ *
  * <p>If no matching port entry is found, the service logs that defaults are
  * being used and returns the context unchanged.
  */
@@ -26,30 +24,23 @@ import org.techbd.ingest.util.TemplateLogger;
 public class PortConfigApplierService {
 
     private final PortResolverService portEntryResolver;
-    private final QueueResolver queueResolver;
-    private final BucketResolver bucketResolver;
-    private final DataDirResolver keyResolver;
+    private final List<PortConfigAttributeResolver> attributeResolvers;
     private final TemplateLogger LOG;
 
     /**
      * Creates a new instance of the applier service.
      *
      * @param portEntryResolver resolver for finding the applicable PortEntry
-     * @param queueResolver     resolves queue URLs, including header-based overrides
-     * @param bucketResolver    resolves S3 data and metadata buckets
-     * @param keyResolver       resolves object, metadata, and ack keys
-     * @param appLogger         application-level structured logger provider
+     * @param attributeResolvers list of all attribute resolvers to apply
+     * @param appLogger application-level structured logger provider
      */
-    public PortConfigApplierService(PortResolverService portEntryResolver,
-            QueueResolver queueResolver,
-            BucketResolver bucketResolver,
-            DataDirResolver keyResolver,
+    public PortConfigApplierService(
+            PortResolverService portEntryResolver,
+            List<PortConfigAttributeResolver> attributeResolvers,
             AppLogger appLogger) {
 
         this.portEntryResolver = portEntryResolver;
-        this.queueResolver = queueResolver;
-        this.bucketResolver = bucketResolver;
-        this.keyResolver = keyResolver;
+        this.attributeResolvers = attributeResolvers;
         this.LOG = appLogger.getLogger(PortConfigApplierService.class);
     }
 
@@ -60,10 +51,8 @@ public class PortConfigApplierService {
      * <p>The method performs the following steps:
      * <ol>
      *     <li>Resolve the matching PortEntry (route-parameter–based or header-based)</li>
-     *     <li>Override the queue URL</li>
-     *     <li>Override data and metadata bucket names</li>
-     *     <li>Override data, metadata, and ack object keys</li>
-     *     <li>Log each override individually for traceability</li>
+     *     <li>Iteratively invoke each {@link PortConfigAttributeResolver} to apply overrides</li>
+     *     <li>Log the overall operation for traceability</li>
      * </ol>
      *
      * <p>If no PortEntry is resolved, logs an informational message and returns the
@@ -78,61 +67,21 @@ public class PortConfigApplierService {
         Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context);
         if (!portEntryOpt.isPresent()) {
             LOG.debug(
-                    "[PORT_CONFIG_APPLY]:: No port entry resolved for context. Using default values. interactionId={}",
+                    "[PORT_CONFIG_APPLY] No port entry resolved for context. Using default values. interactionId={}",
                     interactionId);
             return context;
         }
-
         PortEntry entry = portEntryOpt.get();
         LOG.info(
-                "[PORT_CONFIG_APPLY]:: CHECK_FOR_PORT_CONFIG_OVERRIDES for port {} sourceId :{} msgType :{} interactionId={}",
+                "[PORT_CONFIG_APPLY] CHECK_FOR_PORT_CONFIG_OVERRIDES for port {} sourceId: {} msgType: {} interactionId={}",
                 entry.port, context.getSourceId(), context.getMsgType(), interactionId);
 
-        // queue
-        String queueUrl = queueResolver.resolveQueueUrl(context, entry);
-        if (queueUrl != null && !queueUrl.equals(context.getQueueUrl())) {
-            context.setQueueUrl(queueUrl);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Queue URL overridden to: {} interactionId={}", queueUrl,
-                    interactionId);
+        // Iteratively apply all attribute resolvers
+        for (PortConfigAttributeResolver resolver : attributeResolvers) {
+            resolver.resolve(context, entry, interactionId);
         }
-
-        // buckets
-        String dataBucket = bucketResolver.resolveDataBucket(entry,interactionId);
-        if (dataBucket != null && !dataBucket.equals(context.getDataBucketName())) {
-            context.setDataBucketName(dataBucket);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Data bucket overridden to: {} interactionId={}", dataBucket,
-                    interactionId);
-        }
-
-        String metadataBucket = bucketResolver.resolveMetadataBucket(entry,interactionId);
-        if (metadataBucket != null && !metadataBucket.equals(context.getMetaDataBucketName())) {
-            context.setMetaDataBucketName(metadataBucket);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Metadata bucket overridden to: {} interactionId={}", metadataBucket,
-                    interactionId);
-        }
-
-        // keys
-        String objectKey = keyResolver.resolveDataKey(context, entry);
-        if (objectKey != null && !objectKey.equals(context.getObjectKey())) {
-            context.setObjectKey(objectKey);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Object key overridden to: {} interactionId={}", objectKey,
-                    interactionId);
-        }
-
-        String metadataKey = keyResolver.resolveMetadataKey(context, entry);
-        if (metadataKey != null && !metadataKey.equals(context.getMetadataKey())) {
-            context.setMetadataKey(metadataKey);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Metadata key overridden to: {} interactionId={}", metadataKey,
-                    interactionId);
-        }
-
-        String ackObjectKey = keyResolver.resolveAckObjectKey(context, entry);
-        if (ackObjectKey != null && !ackObjectKey.equals(context.getAckObjectKey())) {
-            context.setAckObjectKey(ackObjectKey);
-            LOG.debug("[PORT_CONFIG_APPLY]:: Ack object key overridden to: {} interactionId={}", ackObjectKey,
-                    interactionId);
-        }
-
+        LOG.info("[PORT_CONFIG_APPLY] All port config overrides applied successfully. interactionId={}",
+                interactionId);
         return context;
     }
 }

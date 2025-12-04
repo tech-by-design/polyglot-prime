@@ -21,10 +21,9 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
  *   <li>PortEntry queue from configuration</li>
  *   <li>Default FIFO queue from {@link AppConfig}</li>
  * </ol>
- *
  */
 @Component
-public class QueueResolverImpl implements QueueResolver {
+public class QueueResolverImpl implements PortConfigAttributeResolver {
 
     private final AppConfig appConfig;
     private final TemplateLogger LOG;
@@ -44,7 +43,7 @@ public class QueueResolverImpl implements QueueResolver {
     }
 
     /**
-     * Resolves the SQS queue URL to use for the given request context and port entry.
+     * Resolves and applies the SQS queue URL to the request context.
      *
      * <p>Resolution steps:
      * <ul>
@@ -53,12 +52,29 @@ public class QueueResolverImpl implements QueueResolver {
      *   <li>Otherwise, fall back to the default FIFO queue URL from configuration</li>
      * </ul>
      *
-     * @param context the request context containing headers and interaction info
+     * @param context the request context to update
      * @param entry the port configuration entry
-     * @return the resolved SQS queue URL
+     * @param interactionId the interaction ID for logging
      */
     @Override
-    public String resolveQueueUrl(RequestContext context, PortEntry entry) {
+    public void resolve(RequestContext context, PortEntry entry, String interactionId) {
+        String resolvedQueueUrl = resolveQueueUrl(context, entry, interactionId);
+        
+        if (resolvedQueueUrl != null && !resolvedQueueUrl.equals(context.getQueueUrl())) {
+            context.setQueueUrl(resolvedQueueUrl);
+            LOG.debug("[QUEUE_RESOLVER] Queue URL updated to: {} interactionId={}", resolvedQueueUrl, interactionId);
+        }
+    }
+
+    /**
+     * Internal method to resolve the queue URL.
+     *
+     * @param context the request context containing headers and interaction info
+     * @param entry the port configuration entry
+     * @param interactionId the interaction ID for logging
+     * @return the resolved SQS queue URL
+     */
+    private String resolveQueueUrl(RequestContext context, PortEntry entry, String interactionId) {
         Map<String, String> headers = context.getHeaders();
 
         // Helper to find a header value ignoring case
@@ -82,30 +98,30 @@ public class QueueResolverImpl implements QueueResolver {
                         GetQueueUrlRequest.builder().queueName(overrideQueue).build());
                 String resolvedQueueUrl = resp.queueUrl();
                 LOG.info("[QUEUE_RESOLVER] Using X-TechBd-Queue-Name override, resolved queue URL: {} interactionId={}",
-                        resolvedQueueUrl, context.getInteractionId());
+                        resolvedQueueUrl, interactionId);
                 return resolvedQueueUrl;
             } catch (SqsException e) {
                 LOG.warn(
                         "[QUEUE_RESOLVER] X-TechBd-Queue-Name '{}' could not be resolved by SQS: {}. Falling back to default queue. interactionId={}",
-                        overrideQueue, e.getMessage(), context.getInteractionId(), e);
+                        overrideQueue, e.getMessage(), interactionId, e);
             } catch (RuntimeException e) {
                 LOG.warn(
                         "[QUEUE_RESOLVER] Error while resolving X-TechBd-Queue-Name '{}': {}. Falling back to default queue. interactionId={}",
-                        overrideQueue, e.getMessage(), context.getInteractionId(), e);
+                        overrideQueue, e.getMessage(), interactionId, e);
             }
         }
 
         // Use port config queue if present
         if (entry != null && entry.queue != null && !entry.queue.isBlank()) {
             LOG.info("[QUEUE_RESOLVER] Using queue from port config: {} interactionId={}", entry.queue,
-                    context.getInteractionId());
+                    interactionId);
             return entry.queue;
         }
 
         // Fallback to default
         String defaultQueue = appConfig.getAws().getSqs().getFifoQueueUrl();
         LOG.info("[QUEUE_RESOLVER] Falling back to default FIFO queue URL: {} interactionId={}", defaultQueue,
-                context.getInteractionId());
+                interactionId);
         return defaultQueue;
     }
 }
