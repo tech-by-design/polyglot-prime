@@ -152,25 +152,28 @@ public class SoapForwarderService {
     }
 
     public static String getBaseUrl(HttpServletRequest request) {
-        // Prefer forwarded proto, fallback to request scheme
         String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
                 .orElse(request.getScheme());
 
-        // Prefer forwarded host, fallback to server name
         String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
                 .orElse(request.getServerName());
+        String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+        int port;
+        boolean skipPort = false;
 
-        // Always use actual port from the request URL
-        int port = request.getServerPort();
-
-        // Skip default ports
-        boolean defaultHttp = proto.equals("http") && port == 80;
-        boolean defaultHttps = proto.equals("https") && port == 443;
-
-        if (defaultHttp || defaultHttps) {
-            return proto + "://" + host;
+        if ("sandbox".equals(activeProfile)) {
+            port = request.getServerPort();
+            skipPort = false;
+        } else {
+            port = Optional.ofNullable(request.getHeader("X-Forwarded-Port"))
+                    .map(Integer::parseInt)
+                    .orElse(request.getServerPort());
+            skipPort = (proto.equals("http") && port == 80) || (proto.equals("https") && port == 443) || (proto.equals("https") && port == 80);
         }
 
+        if (skipPort) {
+            return proto + "://" + host;
+        }
         return proto + "://" + host + ":" + port;
     }
 
