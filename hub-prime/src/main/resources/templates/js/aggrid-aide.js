@@ -351,11 +351,33 @@ export class AGGridAideBuilder {
                             : successArgs);
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, reqPayload, response, respMetrics);
-                        params.fail();
+                    // Show error message  
+                    params.api.setGridOption(
+                        'overlayNoRowsTemplate',
+                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
+                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
+                        '</div>'
+                    );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });
                     }
                 } catch (error) {
                     await fetchError?.(dataSourceUrl, reqPayload, error);
-                    params.fail();
+            // Show error message  
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Sorry, something went wrong while loading the data. Please try again a little later.' +
+                '</div>'
+            );
+
+            params.api.showNoRowsOverlay();
+
+            // IMPORTANT: do NOT call params.fail()
+            params.success({ rowData: [], rowCount: 0 });
                 }
             }
         };
@@ -443,11 +465,34 @@ export class AGGridAideBuilder {
                         }
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
-                        params.fail();
+                    // Show error message  
+                    params.api.setGridOption(
+                        'overlayNoRowsTemplate',
+                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
+                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
+                        '</div>'
+                    );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });
                     }
                 } catch (error) {
                     await fetchError?.(dataSourceUrl, error);
-                    params.fail();
+                    // Show error message  
+                    params.api.setGridOption(
+                        'overlayNoRowsTemplate',
+                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
+                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
+                        '</div>'
+                    );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });                    
+                 //   params.fail();
                 }
             }
         };
