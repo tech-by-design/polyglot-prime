@@ -204,9 +204,9 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String tenantId = resolveTenantId(context);
 
         if (tenantId != null) {
-            return String.format("hold/%s/%s/%s_metadata.json", tenantId, datePath, stampedName);
+            return String.format("hold/metadata/%s/%s/%s_metadata.json", tenantId, datePath, stampedName);
         } else {
-            return String.format("hold/%d/%s/%s_metadata.json", entry.port, datePath, stampedName);
+            return String.format("hold/metadata/%d/%s/%s_metadata.json", entry.port, datePath, stampedName);
         }
     }
 
