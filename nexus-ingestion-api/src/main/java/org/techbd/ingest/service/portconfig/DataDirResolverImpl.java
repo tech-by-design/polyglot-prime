@@ -10,13 +10,14 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
 /**
- * Resolves S3 object keys (data and metadata) for both normal and {@code /hold}
+ * Resolves S3 object keys (data, metadata, and ack) for both normal and {@code /hold}
  * routing paths. This component centralizes all logic for constructing
- * timestamped, directory-prefixed S3 keys to ensure consistent naming across
- * ingestion flows.
+ * timestamped, directory-prefixed S3 keys with tenant ID support to ensure 
+ * consistent naming across ingestion flows.
  *
  * <p>Responsibilities include:
  * <ul>
+ *   <li>Resolving tenant ID from sourceId and messageType</li>
  *   <li>Applying {@code dataDir} and {@code metadataDir} prefixes from {@link PortEntry}</li>
  *   <li>Handling {@code /hold} versus non-hold routing</li>
  *   <li>Building timestamped filenames</li>
@@ -25,96 +26,133 @@ import org.techbd.ingest.util.TemplateLogger;
  *
  * <h3>Sample Output</h3>
  * <pre>
- *  Normal mode:
+ *  Normal mode with tenant:
+ *      Data Key:     data/netspective_pnr/2025/12/02/ABC123_20251202T143000Z
+ *      Metadata Key: metadata/netspective_pnr/2025/12/02/ABC123_20251202T143000Z_metadata.json
+ *
+ *  Normal mode without tenant:
  *      Data Key:     data/2025/12/02/ABC123_20251202T143000Z
  *      Metadata Key: metadata/2025/12/02/ABC123_20251202T143000Z_metadata.json
  *
- *  Hold mode (entry.route="/hold", port=9001):
- *      Data Key:     hold/9001/2025/12/02/20251202T143000Z_sample.xml
- *      Metadata Key: hold/9001/2025/12/02/20251202T143000Z_sample_metadata.json
- *
- *  Timestamped filename:
- *      Input file:   sample.xml
- *      Output:       20251202T143000Z_sample.xml
- *
- *  Date folder path:
- *      2025/12/02
+ *  Hold mode with tenant (entry.route="/hold"):
+ *      Data Key:     hold/netspective_pnr/2025/12/02/20251202T143000Z_sample.xml
+ *      Metadata Key: hold/netspective_pnr/2025/12/02/20251202T143000Z_sample_metadata.json
  * </pre>
  */
 @Component
-class DataDirResolverImpl implements DataDirResolver {
-private final TemplateLogger LOG;
+class DataDirResolverImpl implements PortConfigAttributeResolver {
+    private final TemplateLogger LOG;
 
     public DataDirResolverImpl(AppLogger appLogger) {
         this.LOG = appLogger.getLogger(DataDirResolverImpl.class);
     }
+
+    /**
+     * Resolves and applies S3 object keys to the request context.
+     *
+     * @param context the request context to update
+     * @param entry the port entry configuration
+     * @param interactionId the interaction ID for logging
+     */
+    @Override
+    public void resolve(RequestContext context, PortEntry entry, String interactionId) {
+        String objectKey = resolveDataKey(context, entry);
+        if (objectKey != null && !objectKey.equals(context.getObjectKey())) {
+            context.setObjectKey(objectKey);
+            LOG.info("[DATA_DIR_RESOLVER] Resolved Data Key: {} interactionId={}", objectKey, interactionId);
+        }
+
+        String metadataKey = resolveMetadataKey(context, entry);
+        if (metadataKey != null && !metadataKey.equals(context.getMetadataKey())) {
+            context.setMetadataKey(metadataKey);
+            LOG.info("[DATA_DIR_RESOLVER] Resolved Metadata Key: {} interactionId={}", metadataKey, interactionId);
+        }
+
+        String ackObjectKey = resolveAckObjectKey(context, entry);
+        if (ackObjectKey != null && !ackObjectKey.equals(context.getAckObjectKey())) {
+            context.setAckObjectKey(ackObjectKey);
+            LOG.info("[DATA_DIR_RESOLVER] Resolved Ack Object Key: {} interactionId={}", ackObjectKey,
+                    interactionId);
+        }
+    }
+
     /**
      * Builds the S3 key for the uploaded data object.
      *
-     * <p><b>Examples:</b></p>
-     * <pre>
-     *  Normal mode:
-     *     data/2025/12/02/ABC123_20251202T143000Z
-     *
-     *  Hold mode:
-     *     hold/9001/2025/12/02/20251202T143000Z_sample.xml
-     * </pre>
-     *
-     * If the port entry is marked as {@code /hold}, a hold-style key is created;
-     * otherwise a standard ingestion key is created. After building the base key,
-     * the port entry's {@code dataDir} prefix is applied when present.
+     * @param context the request context
+     * @param entry the port entry configuration
+     * @return the resolved data key
      */
-    @Override
-    public String resolveDataKey(RequestContext context, PortEntry entry) {
+    private String resolveDataKey(RequestContext context, PortEntry entry) {
         String baseKey = isHold(entry)
                 ? buildHoldDataKey(context, entry)
-                : buildNormalDataKey(context, entry);        
+                : buildNormalDataKey(context, entry);
         String finalKey = applyPrefix(entry != null ? entry.dataDir : null, baseKey);
-        LOG.info("[DATA_DIR_RESOLVER] Resolved Data Key: {} | route: {} | port: {} | fileName: {}",
+        LOG.debug("[DATA_DIR_RESOLVER] Resolved Data Key: {} | route: {} | port: {} | fileName: {} | tenantId: {}",
                 finalKey,
                 entry != null ? entry.route : "null",
                 entry != null ? entry.port : "null",
-                context.getFileName());
+                context.getFileName(),
+                resolveTenantId(context));
         return finalKey;
     }
 
     /**
-     * Builds the S3 key for the metadata JSON file associated with an upload.
+     * Builds the S3 key for the metadata JSON file.
      *
-     * <p><b>Examples:</b></p>
-     * <pre>
-     *  Normal:
-     *     metadata/2025/12/02/ABC123_20251202T143000Z_metadata.json
-     *
-     *  Hold:
-     *     hold/9001/2025/12/02/20251202T143000Z_sample_metadata.json
-     * </pre>
+     * @param context the request context
+     * @param entry the port entry configuration
+     * @return the resolved metadata key
      */
-    @Override
-    public String resolveMetadataKey(RequestContext context, PortEntry entry) {
+    private String resolveMetadataKey(RequestContext context, PortEntry entry) {
         String baseKey = isHold(entry)
                 ? buildHoldMetadataKey(context, entry)
                 : buildNormalMetadataKey(context, entry);
         String finalKey = applyPrefix(entry != null ? entry.metadataDir : null, baseKey);
-        LOG.info("[DATA_DIR_RESOLVER] Resolved Metadata Key: {} | route: {} | port: {} | fileName: {}",
+        LOG.debug("[DATA_DIR_RESOLVER] Resolved Metadata Key: {} | route: {} | port: {} | fileName: {} | tenantId: {}",
                 finalKey,
                 entry != null ? entry.route : "null",
                 entry != null ? entry.port : "null",
-                context.getFileName());
+                context.getFileName(),
+                resolveTenantId(context));
         return finalKey;
     }
 
     /**
-     * Applies a directory prefix to a given S3 key, ensuring no double or trailing slashes.
+     * Builds the S3 key for the acknowledgment file.
      *
-     * <p><b>Example:</b></p>
-     * <pre>
-     *   prefix:  "custom/prefix"
-     *   key:     "data/2025/12/02/ABC123_20251202T143000Z"
-     *
-     *   Result → "custom/prefix/data/2025/12/02/ABC123_20251202T143000Z"
-     * </pre>
+     * @param context the request context
+     * @param entry the port entry configuration
+     * @return the resolved ack object key
      */
+    private String resolveAckObjectKey(RequestContext context, PortEntry entry) {
+        return resolveDataKey(context, entry) + "_ack";
+    }
+
+    /**
+     * Resolves the tenant ID from sourceId and messageType.
+     *
+     * @param context the request context
+     * @return the tenant ID, or null if both fields are missing
+     */
+    private String resolveTenantId(RequestContext context) {
+        String sourceId = context.getSourceId();
+        String messageType = context.getMsgType();
+
+        boolean hasSource = sourceId != null && !sourceId.isBlank();
+        boolean hasMsgType = messageType != null && !messageType.isBlank();
+
+        if (hasSource && hasMsgType) {
+            return sourceId + "_" + messageType;
+        } else if (hasSource) {
+            return sourceId;
+        } else if (hasMsgType) {
+            return messageType;
+        } else {
+            return null;
+        }
+    }
+
     private String applyPrefix(String prefix, String key) {
         if (prefix == null || prefix.isBlank()) {
             return key;
@@ -123,26 +161,10 @@ private final TemplateLogger LOG;
         return cleaned.isEmpty() ? key : cleaned + "/" + key;
     }
 
-    /**
-     * Determines whether the port entry represents a {@code /hold} route.
-     *
-     * <p><b>Example:</b> entry.route="/hold" → true</p>
-     */
     private boolean isHold(PortEntry entry) {
         return entry != null && "/hold".equals(entry.route);
     }
 
-    /**
-     * Constructs a timestamp-prepended filename based on the original upload name.
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   fileName: "sample.xml"
-     *   timestamp: "20251202T143000Z"
-     *
-     *   Output → "20251202T143000Z_sample.xml"
-     * </pre>
-     */
     private String buildTimestampedName(String fileName, String timestamp) {
         String original = (fileName == null || fileName.isBlank()) ? "body" : fileName;
 
@@ -159,77 +181,60 @@ private final TemplateLogger LOG;
         return extension.isBlank() ? timestamped : timestamped + "." + extension;
     }
 
-    /**
-     * Produces a date-based folder structure {@code yyyy/MM/dd}.
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   UploadTime: 2025-12-02T14:30:00Z
-     *
-     *   Output → "2025/12/02"
-     * </pre>
-     */
     private String datePath(RequestContext context) {
         ZonedDateTime uploadTime = context.getUploadTime();
         return uploadTime.format(Constants.DATE_PATH_FORMATTER);
     }
 
-    /**
-     * Builds the key for data files routed via {@code /hold}.
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   hold/9001/2025/12/02/20251202T143000Z_sample.xml
-     * </pre>
-     */
     private String buildHoldDataKey(RequestContext context, PortEntry entry) {
         String datePath = datePath(context);
         String stampedName = buildTimestampedName(context.getFileName(), context.getTimestamp());
-        return String.format("hold/%d/%s/%s", entry.port, datePath, stampedName);
+        String tenantId = resolveTenantId(context);
+
+        if (tenantId != null) {
+            return String.format("hold/%s/%s/%s", tenantId, datePath, stampedName);
+        } else {
+            return String.format("hold/%d/%s/%s", entry.port, datePath, stampedName);
+        }
     }
 
-    /**
-     * Builds the key for metadata files routed via {@code /hold}.
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   hold/9001/2025/12/02/20251202T143000Z_sample_metadata.json
-     * </pre>
-     */
     private String buildHoldMetadataKey(RequestContext context, PortEntry entry) {
         String datePath = datePath(context);
         String stampedName = buildTimestampedName(context.getFileName(), context.getTimestamp());
-        return String.format("hold/%d/%s/%s_metadata.json", entry.port, datePath, stampedName);
+        String tenantId = resolveTenantId(context);
+
+        if (tenantId != null) {
+            return String.format("hold/%s/%s/%s_metadata.json", tenantId, datePath, stampedName);
+        } else {
+            return String.format("hold/%d/%s/%s_metadata.json", entry.port, datePath, stampedName);
+        }
     }
 
-    /**
-     * Builds the standard ingestion data key (non-hold).
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   data/2025/12/02/ABC123_20251202T143000Z
-     * </pre>
-     */
     private String buildNormalDataKey(RequestContext context, PortEntry entry) {
         String datePath = datePath(context);
         String interactionId = context.getInteractionId();
-        return String.format("data/%s/%s_%s", datePath, interactionId, context.getTimestamp());
+        String tenantId = resolveTenantId(context);
+
+        if (tenantId != null) {
+            return String.format("data/%s/%s/%s_%s", tenantId, datePath, interactionId, context.getTimestamp());
+        } else {
+            return String.format("data/%s/%s_%s", datePath, interactionId, context.getTimestamp());
+        }
     }
 
-    /**
-     * Builds the standard ingestion metadata key (non-hold).
-     *
-     * <h4>Example:</h4>
-     * <pre>
-     *   metadata/2025/12/02/ABC123_20251202T143000Z_metadata.json
-     * </pre>
-     */
     private String buildNormalMetadataKey(RequestContext context, PortEntry entry) {
         String datePath = datePath(context);
         String interactionId = context.getInteractionId();
-        return String.format(
-                "metadata/%s/%s_%s_metadata.json",
-                datePath, interactionId, context.getTimestamp()
-        );
+        String tenantId = resolveTenantId(context);
+
+        if (tenantId != null) {
+            return String.format(
+                    "metadata/%s/%s/%s_%s_metadata.json",
+                    tenantId, datePath, interactionId, context.getTimestamp());
+        } else {
+            return String.format(
+                    "metadata/%s/%s_%s_metadata.json",
+                    datePath, interactionId, context.getTimestamp());
+        }
     }
 }

@@ -1,8 +1,11 @@
 package org.techbd.ingest.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -16,8 +19,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
@@ -55,6 +58,9 @@ class InteractionsFilterTest {
     @Mock
     private FilterChain filterChain;
 
+    @Mock
+    private PortResolverService portResolverService;
+
     private InteractionsFilter interactionsFilter;
 
     // Sample certificate content for testing
@@ -72,7 +78,7 @@ class InteractionsFilterTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(any(Class.class))).thenReturn(templateLogger);
-        interactionsFilter = new InteractionsFilter(appLogger, portConfig, s3Client);
+        interactionsFilter = new InteractionsFilter(appLogger, portConfig,portResolverService, s3Client);
     }
 
     @Nested

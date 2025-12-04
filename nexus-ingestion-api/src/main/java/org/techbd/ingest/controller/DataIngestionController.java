@@ -174,8 +174,8 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             String extension = HttpUtil.resolveExtension(contentType);
             String generatedFileName = "payload-" + UUID.randomUUID() + extension;
 
-            LOG.info("Raw body received (Content-Type={}): {}... interactionId={}",
-                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
+            LOG.info("Raw body received (Content-Type={}): interactionId={}",
+                    contentType, interactionId);
 
             RequestContext context = createRequestContext(
                     interactionId, headers, request, body.length(), generatedFileName);
