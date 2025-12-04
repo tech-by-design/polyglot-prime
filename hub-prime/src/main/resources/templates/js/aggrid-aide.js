@@ -352,12 +352,12 @@ export class AGGridAideBuilder {
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, reqPayload, response, respMetrics);
                     // Show error message  
-                    params.api.setGridOption(
-                        'overlayNoRowsTemplate',
-                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
-                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
-                        '</div>'
-                    );
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
 
                     params.api.showNoRowsOverlay();
 
@@ -370,7 +370,7 @@ export class AGGridAideBuilder {
             params.api.setGridOption(
                 'overlayNoRowsTemplate',
                 '<div class="custom-error-message" >' +
-                'Sorry, something went wrong while loading the data. Please try again a little later.' +
+                'Data loading failed. Please retry after some time.' +
                 '</div>'
             );
 
@@ -466,12 +466,12 @@ export class AGGridAideBuilder {
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
                     // Show error message  
-                    params.api.setGridOption(
-                        'overlayNoRowsTemplate',
-                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
-                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
-                        '</div>'
-                    );
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
 
                     params.api.showNoRowsOverlay();
 
@@ -481,12 +481,12 @@ export class AGGridAideBuilder {
                 } catch (error) {
                     await fetchError?.(dataSourceUrl, error);
                     // Show error message  
-                    params.api.setGridOption(
-                        'overlayNoRowsTemplate',
-                        '<div style="padding: 20px; color: #1E88E5; text-align: left; font-size: 1.2em;">' +
-                        'Sorry, something went wrong while loading the data. Please try again a little later.' +
-                        '</div>'
-                    );
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
 
                     params.api.showNoRowsOverlay();
 
