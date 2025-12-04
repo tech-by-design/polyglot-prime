@@ -41,6 +41,7 @@ import org.techbd.ingest.util.TemplateLogger;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -98,14 +99,22 @@ public class InteractionsFilter extends OncePerRequestFilter {
             }
         }
             
+                
+              String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
 
-                String interactionId = UUID.randomUUID().toString();
+                if (StringUtils.isEmpty(interactionId)) {
+                    interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
+                }
+                if (StringUtils.isEmpty(interactionId)) {
+                    interactionId = UUID.randomUUID().toString();
+                }
+        
                 origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
                 LOG.info("Incoming Request - interactionId={}", interactionId);
 
                 // 1) determine request port (prefer X-Forwarded-Port header)
                 int requestPort = resolveRequestPort(origRequest);
-                LOG.info("InteractionsFilter: resolved request port={}", requestPort);
+                LOG.info("InteractionsFilter: resolved request port={} interactionId: {}", requestPort, interactionId);
 
                 // 2) Extract sourceId and msgType from URI path
                 String requestUri = origRequest.getRequestURI();
@@ -116,9 +125,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (matcher.matches()) {
                     sourceId = matcher.group(1);
                     msgType = matcher.group(2);
-                    LOG.info("InteractionsFilter: extracted from path - sourceId={}, msgType={}", sourceId, msgType);
+                    LOG.info("InteractionsFilter: extracted from path - sourceId={}, msgType={} interactionId: {}", sourceId, msgType, interactionId);
                 } else {
-                    LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {}", requestUri);
+                    LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {} interactionId: {}", requestUri, interactionId);
                 }
 
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
