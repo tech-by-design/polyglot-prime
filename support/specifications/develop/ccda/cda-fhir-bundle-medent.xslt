@@ -1331,34 +1331,54 @@
 
 <xsl:template name="mapObservationStatus">
     <xsl:param name="statusCode"/>
+        
+    <!-- Convert value to lowercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz')" />
+
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">final</xsl:when>
-        <xsl:when test="$statusCode = 'final'">final</xsl:when>
-        <xsl:when test="$statusCode = 'active'">preliminary</xsl:when>
-        <xsl:when test="$statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'held'">registered</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">registered</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'completed'">final</xsl:when>
+        <xsl:when test="$cleanCode = 'final'">final</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">preliminary</xsl:when>
+        <xsl:when test="$cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'held'">registered</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">registered</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified'">entered-in-error</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapProcedureStatus">
     <xsl:param name="statusCode"/>
+            
+    <!-- Convert value to lowercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz')" />
+
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">completed</xsl:when>
-        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
-        <xsl:when test="$statusCode = 'aborted'">stopped</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'completed'">completed</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$cleanCode = 'aborted'">stopped</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">on-hold</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified'">entered-in-error</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapEncounterStatus"> 
     <xsl:param name="statusCode"/>
-    <xsl:variable name="cleanCode" select="normalize-space(string($statusCode))"/>
+    
+    <!-- Convert value to lowercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz')" />
+
     <xsl:choose>
         <xsl:when test="$cleanCode = 'completed' or 
                         $cleanCode = 'normal'">finished</xsl:when>
@@ -1375,71 +1395,78 @@
 
 <xsl:template name="mapParticipantType">
     <xsl:param name="typeCode"/>
+            
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($typeCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
+
     <xsl:choose>
-        <xsl:when test="$typeCode = 'ADM'">admitter</xsl:when>
-        <xsl:when test="$typeCode = 'ATND'">attender</xsl:when>
-        <xsl:when test="$typeCode = 'CALLBCK'">callback contact</xsl:when>
-        <xsl:when test="$typeCode = 'CON'">consultant</xsl:when>
-        <xsl:when test="$typeCode = 'DIS'">discharger</xsl:when>
-        <xsl:when test="$typeCode = 'ESC'">escort</xsl:when>
-        <xsl:when test="$typeCode = 'REF'">referrer</xsl:when>
-        <xsl:when test="$typeCode = 'SPRF'">secondary performer</xsl:when>
-        <xsl:when test="$typeCode = 'PPRF'">primary performer</xsl:when>
-        <xsl:when test="$typeCode = 'PART'">Participation</xsl:when>
-        <xsl:when test="$typeCode = 'translator'">Translator</xsl:when>
-        <xsl:when test="$typeCode = 'emergency'">Emergency</xsl:when>
-        <xsl:when test="$typeCode = 'AUT'">author (originator)</xsl:when>
-        <xsl:when test="$typeCode = 'INF'">informant</xsl:when>
-        <xsl:when test="$typeCode = 'TRANS'">Transcriber</xsl:when>
-        <xsl:when test="$typeCode = 'ENT'">data entry person</xsl:when>
-        <xsl:when test="$typeCode = 'WIT'">witness</xsl:when>
-        <xsl:when test="$typeCode = 'NOTARY'">notary</xsl:when>
-        <xsl:when test="$typeCode = 'CST'">custodian</xsl:when>
-        <xsl:when test="$typeCode = 'DIR'">direct target</xsl:when>
-        <xsl:when test="$typeCode = 'ALY'">analyte</xsl:when>
-        <xsl:when test="$typeCode = 'BBY'">baby</xsl:when>
-        <xsl:when test="$typeCode = 'CAT'">catalyst</xsl:when>
-        <xsl:when test="$typeCode = 'CSM'">consumable</xsl:when>
-        <xsl:when test="$typeCode = 'TPA'">therapeutic agent</xsl:when>
-        <xsl:when test="$typeCode = 'DEV'">device</xsl:when>
-        <xsl:when test="$typeCode = 'NRD'">non-reuseable device</xsl:when>
-        <xsl:when test="$typeCode = 'RDV'">reusable device</xsl:when>
-        <xsl:when test="$typeCode = 'DON'">donor</xsl:when>
-        <xsl:when test="$typeCode = 'EXPAGNT'">ExposureAgent</xsl:when>
-        <xsl:when test="$typeCode = 'EXPART'">ExposureParticipation</xsl:when>
-        <xsl:when test="$typeCode = 'EXPTRGT'">ExposureTarget</xsl:when>
-        <xsl:when test="$typeCode = 'EXSRC'">ExposureSource</xsl:when>
-        <xsl:when test="$typeCode = 'PRD'">product</xsl:when>
-        <xsl:when test="$typeCode = 'SBJ'">subject</xsl:when>
-        <xsl:when test="$typeCode = 'SPC'">specimen</xsl:when>
-        <xsl:when test="$typeCode = 'IND'">indirect target</xsl:when>
-        <xsl:when test="$typeCode = 'BEN'">beneficiary</xsl:when>
-        <xsl:when test="$typeCode = 'CAGNT'">causative agent</xsl:when>
-        <xsl:when test="$typeCode = 'COV'">coverage target</xsl:when>
-        <xsl:when test="$typeCode = 'GUAR'">guarantor party</xsl:when>
-        <xsl:when test="$typeCode = 'HLD'">holder</xsl:when>
-        <xsl:when test="$typeCode = 'RCT'">record target</xsl:when>
-        <xsl:when test="$typeCode = 'RCV'">receiver</xsl:when>
-        <xsl:when test="$typeCode = 'IRCP'">information recipient</xsl:when>
-        <xsl:when test="$typeCode = 'NOT'">urgent notification contact</xsl:when>
-        <xsl:when test="$typeCode = 'PRCP'">primary information recipient</xsl:when>
-        <xsl:when test="$typeCode = 'REFB'">Referred By</xsl:when>
-        <xsl:when test="$typeCode = 'REFT'">Referred to</xsl:when>
-        <xsl:when test="$typeCode = 'TRC'">tracker</xsl:when>
-        <xsl:when test="$typeCode = 'LOC'">location</xsl:when>
-        <xsl:when test="$typeCode = 'DST'">destination</xsl:when>
-        <xsl:when test="$typeCode = 'ELOC'">entry location</xsl:when>
-        <xsl:when test="$typeCode = 'ORG'">origin</xsl:when>
-        <xsl:when test="$typeCode = 'RML'">remote</xsl:when>
-        <xsl:when test="$typeCode = 'VIA'">via</xsl:when>
-        <xsl:when test="$typeCode = 'PRF'">performer</xsl:when>
-        <xsl:when test="$typeCode = 'DIST'">distributor</xsl:when>
-        <xsl:when test="$typeCode = 'PPRF'">primary performer</xsl:when>
-        <xsl:when test="$typeCode = 'SPRF'">secondary performer</xsl:when>
-        <xsl:when test="$typeCode = 'RESP'">responsible party</xsl:when>
-        <xsl:when test="$typeCode = 'VRF'">verifier</xsl:when>
-        <xsl:when test="$typeCode = 'AUTHEN'">authenticator</xsl:when>
-        <xsl:when test="$typeCode = 'LA'">legal authenticator</xsl:when>
+        <xsl:when test="$cleanCode = 'ADM'">admitter</xsl:when>
+        <xsl:when test="$cleanCode = 'ATND'">attender</xsl:when>
+        <xsl:when test="$cleanCode = 'CALLBCK'">callback contact</xsl:when>
+        <xsl:when test="$cleanCode = 'CON'">consultant</xsl:when>
+        <xsl:when test="$cleanCode = 'DIS'">discharger</xsl:when>
+        <xsl:when test="$cleanCode = 'ESC'">escort</xsl:when>
+        <xsl:when test="$cleanCode = 'REF'">referrer</xsl:when>
+        <xsl:when test="$cleanCode = 'SPRF'">secondary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'PPRF'">primary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'PART'">Participation</xsl:when>
+        <xsl:when test="$cleanCode = 'TRANSLATOR'">Translator</xsl:when>
+        <xsl:when test="$cleanCode = 'EMERGEMCY'">Emergency</xsl:when>
+        <xsl:when test="$cleanCode = 'AUT'">author (originator)</xsl:when>
+        <xsl:when test="$cleanCode = 'INF'">informant</xsl:when>
+        <xsl:when test="$cleanCode = 'TRANS'">Transcriber</xsl:when>
+        <xsl:when test="$cleanCode = 'ENT'">data entry person</xsl:when>
+        <xsl:when test="$cleanCode = 'WIT'">witness</xsl:when>
+        <xsl:when test="$cleanCode = 'NOTARY'">notary</xsl:when>
+        <xsl:when test="$cleanCode = 'CST'">custodian</xsl:when>
+        <xsl:when test="$cleanCode = 'DIR'">direct target</xsl:when>
+        <xsl:when test="$cleanCode = 'ALY'">analyte</xsl:when>
+        <xsl:when test="$cleanCode = 'BBY'">baby</xsl:when>
+        <xsl:when test="$cleanCode = 'CAT'">catalyst</xsl:when>
+        <xsl:when test="$cleanCode = 'CSM'">consumable</xsl:when>
+        <xsl:when test="$cleanCode = 'TPA'">therapeutic agent</xsl:when>
+        <xsl:when test="$cleanCode = 'DEV'">device</xsl:when>
+        <xsl:when test="$cleanCode = 'NRD'">non-reuseable device</xsl:when>
+        <xsl:when test="$cleanCode = 'RDV'">reusable device</xsl:when>
+        <xsl:when test="$cleanCode = 'DON'">donor</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPAGNT'">ExposureAgent</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPART'">ExposureParticipation</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPTRGT'">ExposureTarget</xsl:when>
+        <xsl:when test="$cleanCode = 'EXSRC'">ExposureSource</xsl:when>
+        <xsl:when test="$cleanCode = 'PRD'">product</xsl:when>
+        <xsl:when test="$cleanCode = 'SBJ'">subject</xsl:when>
+        <xsl:when test="$cleanCode = 'SPC'">specimen</xsl:when>
+        <xsl:when test="$cleanCode = 'IND'">indirect target</xsl:when>
+        <xsl:when test="$cleanCode = 'BEN'">beneficiary</xsl:when>
+        <xsl:when test="$cleanCode = 'CAGNT'">causative agent</xsl:when>
+        <xsl:when test="$cleanCode = 'COV'">coverage target</xsl:when>
+        <xsl:when test="$cleanCode = 'GUAR'">guarantor party</xsl:when>
+        <xsl:when test="$cleanCode = 'HLD'">holder</xsl:when>
+        <xsl:when test="$cleanCode = 'RCT'">record target</xsl:when>
+        <xsl:when test="$cleanCode = 'RCV'">receiver</xsl:when>
+        <xsl:when test="$cleanCode = 'IRCP'">information recipient</xsl:when>
+        <xsl:when test="$cleanCode = 'NOT'">urgent notification contact</xsl:when>
+        <xsl:when test="$cleanCode = 'PRCP'">primary information recipient</xsl:when>
+        <xsl:when test="$cleanCode = 'REFB'">Referred By</xsl:when>
+        <xsl:when test="$cleanCode = 'REFT'">Referred to</xsl:when>
+        <xsl:when test="$cleanCode = 'TRC'">tracker</xsl:when>
+        <xsl:when test="$cleanCode = 'LOC'">location</xsl:when>
+        <xsl:when test="$cleanCode = 'DST'">destination</xsl:when>
+        <xsl:when test="$cleanCode = 'ELOC'">entry location</xsl:when>
+        <xsl:when test="$cleanCode = 'ORG'">origin</xsl:when>
+        <xsl:when test="$cleanCode = 'RML'">remote</xsl:when>
+        <xsl:when test="$cleanCode = 'VIA'">via</xsl:when>
+        <xsl:when test="$cleanCode = 'PRF'">performer</xsl:when>
+        <xsl:when test="$cleanCode = 'DIST'">distributor</xsl:when>
+        <xsl:when test="$cleanCode = 'PPRF'">primary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'SPRF'">secondary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'RESP'">responsible party</xsl:when>
+        <xsl:when test="$cleanCode = 'VRF'">verifier</xsl:when>
+        <xsl:when test="$cleanCode = 'AUTHEN'">authenticator</xsl:when>
+        <xsl:when test="$cleanCode = 'LA'">legal authenticator</xsl:when>
         <xsl:otherwise>Unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1475,64 +1502,67 @@
   </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapQuestionnaireStatus">
-    <xsl:param name="statusCode"/>
-    <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">active</xsl:when>
-        <xsl:when test="$statusCode = 'final'">active</xsl:when>
-        <xsl:when test="$statusCode = 'active'">active</xsl:when>
-        <xsl:when test="$statusCode = 'aborted'">retired</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled'">retired</xsl:when>
-        <xsl:when test="$statusCode = 'held'">draft</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">draft</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">retired</xsl:when>
-        <xsl:otherwise>unknown</xsl:otherwise>
-    </xsl:choose>
-</xsl:template>
-
 <xsl:template name="mapMaritalStatus">
     <xsl:param name="statusCode"/>
+        
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
     <xsl:choose>
-        <xsl:when test="$statusCode = 'M'">married</xsl:when>
-        <xsl:when test="$statusCode = 'S'">Never Married</xsl:when>
-        <xsl:when test="$statusCode = 'A'">Annulled</xsl:when>
-        <xsl:when test="$statusCode = 'D'">Divorced</xsl:when>
-        <xsl:when test="$statusCode = 'I'">Interlocutory</xsl:when>
-        <xsl:when test="$statusCode = 'L'">Legally Separated</xsl:when>
-        <xsl:when test="$statusCode = 'C'">Common Law</xsl:when>
-        <xsl:when test="$statusCode = 'P'">Polygamous</xsl:when>
-        <xsl:when test="$statusCode = 'T'">Domestic partner</xsl:when>
-        <xsl:when test="$statusCode = 'U'">unmarried</xsl:when>
-        <xsl:when test="$statusCode = 'W'">Widowed</xsl:when>
+        <xsl:when test="$cleanCode = 'M'">married</xsl:when>
+        <xsl:when test="$cleanCode = 'S'">Never Married</xsl:when>
+        <xsl:when test="$cleanCode = 'A'">Annulled</xsl:when>
+        <xsl:when test="$cleanCode = 'D'">Divorced</xsl:when>
+        <xsl:when test="$cleanCode = 'I'">Interlocutory</xsl:when>
+        <xsl:when test="$cleanCode = 'L'">Legally Separated</xsl:when>
+        <xsl:when test="$cleanCode = 'C'">Common Law</xsl:when>
+        <xsl:when test="$cleanCode = 'P'">Polygamous</xsl:when>
+        <xsl:when test="$cleanCode = 'T'">Domestic partner</xsl:when>
+        <xsl:when test="$cleanCode = 'U'">unmarried</xsl:when>
+        <xsl:when test="$cleanCode = 'W'">Widowed</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapMaritalStatusCode">
     <xsl:param name="statusCode"/>
+            
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
     <xsl:choose>
-  <xsl:when test='$statusCode = "M" or
-                  $statusCode = "S" or
-                  $statusCode = "A" or
-                  $statusCode = "D" or
-                  $statusCode = "I" or
-                  $statusCode = "L" or
-                  $statusCode = "C" or
-                  $statusCode = "P" or
-                  $statusCode = "T" or
-                  $statusCode = "U" or
-                  $statusCode = "W"'>
-    <xsl:value-of select='$statusCode'/>
-  </xsl:when>
-  <xsl:otherwise/>
-</xsl:choose>
+        <xsl:when test='$cleanCode = "M" or
+                  $cleanCode = "S" or
+                  $cleanCode = "A" or
+                  $cleanCode = "D" or
+                  $cleanCode = "I" or
+                  $cleanCode = "L" or
+                  $cleanCode = "C" or
+                  $cleanCode = "P" or
+                  $cleanCode = "T" or
+                  $cleanCode = "U" or
+                  $cleanCode = "W"'>
+          <xsl:value-of select='$cleanCode'/>
+        </xsl:when>
+        <xsl:otherwise/>
+    </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapAdministrativeGenderCode">
   <xsl:param name="genderCode"/>
+              
+  <!-- Convert value to uppercase for case-insensitive matching -->
+  <xsl:variable name="cleanCode"
+      select="translate(normalize-space(string($genderCode)),
+                        'abcdefghijklmnopqrstuvwxyz',
+                        'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
   <xsl:choose>
-    <xsl:when test="$genderCode = 'M' or $genderCode = 'Male' or $genderCode = 'male'">M</xsl:when>
-    <xsl:when test="$genderCode = 'F' or $genderCode = 'Female' or $genderCode = 'female'">F</xsl:when>
+    <xsl:when test="$cleanCode = 'M' or $cleanCode = 'MALE'">M</xsl:when>
+    <xsl:when test="$cleanCode = 'F' or $cleanCode = 'FEMALE'">F</xsl:when>
     <xsl:otherwise>UNK</xsl:otherwise>
   </xsl:choose>
 </xsl:template>
