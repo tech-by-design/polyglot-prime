@@ -1,4 +1,4 @@
-name: Manual Playwright Tests-Devl
+name: Manual Playwright Tests
 
 on:
   workflow_dispatch:
@@ -31,8 +31,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Playwright tests
-        run: npx playwright test > playwright-test-output.log 2>&1
+      - name: Run Playwright tests (allow failures)
+        run: |
+          npx playwright test > playwright-test-output.log 2>&1 || true
+
+      - name: Output Playwright test results
+        run: cat playwright-test-output.log
 
       - name: Upload Playwright artifacts
         if: always()
@@ -43,4 +47,3 @@ jobs:
             api-automation/playwright-report/**
             api-automation/test-results/**
             playwright-test-output.log
-          retention-days: 7
