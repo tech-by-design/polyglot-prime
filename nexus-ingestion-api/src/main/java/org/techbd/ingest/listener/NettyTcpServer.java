@@ -240,9 +240,24 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * RENAMED: Delimiter-Based Frame Decoder - Works for both MLLP and TCP with configurable delimiters
-     * Buffers data until complete message received based on start/end delimiters
-     * Tracks fragments and provides detailed logging
+     * Delimiter-based frame decoder for Netty TCP server.
+     * <p>
+     * This decoder reads incoming bytes from the TCP channel and assembles complete
+     * messages
+     * based on configurable start and end delimiters. It supports both MLLP (HL7)
+     * and
+     * generic TCP message formats. Messages can arrive fragmented across multiple
+     * TCP frames,
+     * and this decoder ensures proper reassembly before passing them to the next
+     * handler.
+     * <p>
+     * Features:
+     * <ul>
+     * <li>Buffers partial messages until complete delimiters are received</li>
+     * <li>Tracks fragment count and total bytes for logging purposes</li>
+     * <li>Supports MLLP (STX/ETX) and custom TCP start/end delimiters</li>
+     * <li>Handles messages exceeding max frame length safely</li>
+     * </ul>
      */
     private class DelimiterBasedFrameDecoder extends ByteToMessageDecoder {
         private final int maxFrameLength;
@@ -634,14 +649,8 @@ private boolean detectTcpDelimiterWrapper(String message) {
         }
     }
 
-    /**
-     * Send response and close connection
-     * FIXED: Added channel active check and scheduled close to ensure response delivery
-     */
     private void sendResponseAndClose(ChannelHandlerContext ctx, String response,
             UUID interactionId, String responseType) {
-        
-        // FIXED: Verify channel is still active before attempting to send
         if (!ctx.channel().isActive()) {
             logger.warn("CANNOT_SEND_RESPONSE [interactionId={}] type={} - CHANNEL_ALREADY_INACTIVE",
                     interactionId, responseType);
@@ -654,7 +663,7 @@ private boolean detectTcpDelimiterWrapper(String message) {
         ByteBuf responseBuf = ctx.alloc().buffer();
         responseBuf.writeBytes(response.getBytes(StandardCharsets.UTF_8));
 
-        // FIXED: Schedule close after flush to ensure response is sent
+        // Schedule close after flush to ensure response is sent
         ctx.writeAndFlush(responseBuf).addListener(future -> {
             if (future.isSuccess()) {
                 logger.info("RESPONSE_SENT_SUCCESS [interactionId={}] type={}, scheduling connection close",
