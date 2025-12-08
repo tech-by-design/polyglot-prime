@@ -1204,12 +1204,12 @@
 
 <!-- Consent Template -->
   <xsl:template name="ConsentFromOBX">
-  <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.2) = 'AHC-HRSN Patient Consent'][1]"/>
+  <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.1) = '105511-0'][1]"/>
   
    <!-- Define boolean: is consent given -->
   <xsl:variable name="isConsentGiven"
-                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Patient Consents') or 
-                        contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Yes')"/>
+                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Patient Consents') or 
+                        contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Yes')"/>
 						
   {
     "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
