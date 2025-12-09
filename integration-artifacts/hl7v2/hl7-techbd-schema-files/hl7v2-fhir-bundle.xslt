@@ -1207,9 +1207,14 @@
   <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.1) = '105511-0'][1]"/>
   
    <!-- Define boolean: is consent given -->
+  <xsl:variable name="valueLower"
+    select="translate(normalize-space($consentOBX/OBX.5/OBX.5.2),
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                      'abcdefghijklmnopqrstuvwxyz')" />
+
   <xsl:variable name="isConsentGiven"
-                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Patient Consents') or 
-                        contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Yes')"/>
+      select="contains($valueLower, 'patient consents')
+              or contains($valueLower, 'yes')" />
 						
   {
     "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
