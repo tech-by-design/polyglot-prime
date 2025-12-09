@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.8</description>
-  <revision>32</revision>
+  <revision>33</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1030,10 +1030,14 @@ function getConsentResourceStatus(sourceXml) {
 		for each (var obx in xmlDoc..OBX) {
 		    var obx32 = &quot;&quot;;
 		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {
-		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();
+		        obx31 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();
+		    }
+
+		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
+		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();
 		    }
 		
-		    if (obx32 == &quot;105511-0&quot;) {
+		    if (obx31 == &quot;105511-0&quot; || obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
 		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;] != null) {
 		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;].toString();
 		        }
@@ -1149,7 +1153,7 @@ function getObservationCategoryCodes(transformer, observations) {
 	        }
 	
 	        // Filter like in XSLT logic
-	        if (questionCode === &apos;&apos; || questionCode === &apos;105511-0&apos;) {
+	        if (questionCode === &apos;&apos; || questionCode === &apos;105511-0&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
 	            continue;
 	        }
 	
@@ -2138,7 +2142,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1765259961874</time>
+        <time>1765274159776</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
