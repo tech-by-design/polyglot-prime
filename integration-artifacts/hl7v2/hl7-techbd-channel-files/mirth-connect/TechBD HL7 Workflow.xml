@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.8</description>
-  <revision>30</revision>
+  <revision>32</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1149,7 +1149,7 @@ function getObservationCategoryCodes(transformer, observations) {
 	        }
 	
 	        // Filter like in XSLT logic
-	        if (questionCode === &apos;&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
+	        if (questionCode === &apos;&apos; || questionCode === &apos;105511-0&apos;) {
 	            continue;
 	        }
 	
@@ -2138,7 +2138,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1765255447307</time>
+        <time>1765259961874</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2147,5 +2147,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
