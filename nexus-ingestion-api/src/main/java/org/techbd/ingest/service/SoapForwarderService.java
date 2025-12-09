@@ -4,7 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -213,35 +215,43 @@ public class SoapForwarderService {
     }
 
     /**
-     * Copies relevant HTTP headers from the original request to the forwarding request.
-     * This preserves important SOAP and HTTP headers like SOAPAction, Authorization, etc.
-     * @throws IOException 
+     * Copies all HTTP headers from the incoming request to the outgoing
+     * HttpUrlConnection.
+     * Automatically excludes headers that cannot be set on HttpUrlConnection.
      */
     private void copyRelevantHeaders(HttpServletRequest request, HttpUrlConnection connection) throws IOException {
-        // Copy SOAPAction header (required for SOAP 1.1)
-        String soapAction = request.getHeader("SOAPAction");
-        if (soapAction != null) {
-            connection.addRequestHeader("SOAPAction", soapAction);
-            LOG.debug("SoapForwarderService:: Copied SOAPAction header: {}", soapAction);
-        }
 
-        // Copy Authorization header if present
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null) {
-            connection.addRequestHeader("Authorization", authorization);
-            LOG.debug("SoapForwarderService:: Copied Authorization header");
-        }
+        // Headers that HttpUrlConnection does NOT allow clients to set
+        Set<String> restrictedHeaders = Set.of(
+                "host", "connection", "content-length", "transfer-encoding",
+                "expect", "upgrade");
 
-        // Copy Accept header
-        String accept = request.getHeader("Accept");
-        if (accept != null) {
-            connection.addRequestHeader("Accept", accept);
-        }
+        Enumeration<String> headerNames = request.getHeaderNames();
 
-        // Copy User-Agent
-        String userAgent = request.getHeader("User-Agent");
-        if (userAgent != null) {
-            connection.addRequestHeader("User-Agent", userAgent);
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+
+            if (headerName == null)
+                continue;
+
+            String lower = headerName.toLowerCase();
+
+            // Skip restricted headers
+            if (restrictedHeaders.contains(lower)) {
+                LOG.debug("SoapForwarderService:: Skipping restricted header: {}", headerName);
+                continue;
+            }
+
+            Enumeration<String> headerValues = request.getHeaders(headerName);
+            while (headerValues.hasMoreElements()) {
+                String value = headerValues.nextElement();
+
+                if (value == null)
+                    continue;
+
+                connection.addRequestHeader(headerName, value);
+                LOG.debug("SoapForwarderService:: Copied header: {} = {}", headerName, value);
+            }
         }
     }
 
