@@ -4364,6 +4364,7 @@ $$ LANGUAGE plpgsql;
 
 
 DROP FUNCTION if exists techbd_udi_ingress.get_interaction_http_request();
+/*
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request()
 RETURNS TABLE (
     interaction_id UUID,
@@ -4478,6 +4479,8 @@ BEGIN
     ) combined_query;
 END;
 $$ LANGUAGE plpgsql;
+*/
+
 
 DROP FUNCTION if exists techbd_udi_ingress.get_fhir_needs_attention_details(text, date, date);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_needs_attention_details(
@@ -7985,76 +7988,13 @@ RETURNS TABLE (
     user_agent TEXT,
     client_ip_address TEXT,
     content_type TEXT,
-    elaboration JSONB,
-    from_state TEXT,
-    to_state TEXT,
-    state_transition_reason TEXT,
+    elaboration JSONB, 
     request_created_at TIMESTAMP WITH TIME ZONE,
     request_created_by TEXT,
-    request_provenance TEXT,
-    issues_count INTEGER,
-    resource_types TEXT,
-    start_time TIMESTAMP WITH TIME ZONE,
-    finish_time TIMESTAMP WITH TIME ZONE,
-    duration_millisecs NUMERIC
+    request_provenance TEXT 
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT
-        combined_query.interaction_id,
-        combined_query.uri,
-        combined_query.interaction_created_at,
-        combined_query.interaction_created_by,
-        combined_query.interaction_provenance,
-        combined_query.sat_interaction_http_request_id,
-        combined_query.nature,
-        combined_query.tenant_id,
-        combined_query.user_agent,
-        combined_query.client_ip_address,
-        combined_query.content_type,
-        combined_query.elaboration,
-        combined_query.from_state,
-        combined_query.to_state,
-        combined_query.state_transition_reason,
-        combined_query.request_created_at,
-        combined_query.request_created_by,
-        combined_query.request_provenance,
-        combined_query.issues_count,
-        combined_query.resource_types,
-        combined_query.start_time,
-        combined_query.finish_time,
-        combined_query.duration_millisecs
-    FROM (
-        SELECT
-            htt_req.hub_interaction_id AS interaction_id,
-            htt_req.uri,
-            htt_req.created_at AS interaction_created_at,
-            htt_req.created_by AS interaction_created_by,
-            htt_req.provenance AS interaction_provenance,
-            htt_req.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
-            htt_req.nature,
-            htt_req.tenant_id,
-            htt_req.user_agent,
-            htt_req.client_ip_address,
-            'application/json'::text AS content_type,
-            htt_req.elaboration,
-            htt_req.from_state,
-            htt_req.to_state,
-            htt_req.state_transition_reason,
-            htt_req.created_at AS request_created_at,
-            htt_req.created_by AS request_created_by,
-            htt_req.provenance AS request_provenance,
-            htt_req.issues_count,
-            htt_req.resource_type_set AS resource_types,
-            htt_req.interaction_start_time AS start_time,
-            htt_req.interaction_end_time AS finish_time,
-            EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
-        FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
-        WHERE htt_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
-          AND htt_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
-
-        UNION ALL
-
         SELECT
             user_req.hub_interaction_id AS interaction_id,
             user_req.uri,
@@ -8062,28 +8002,19 @@ BEGIN
             user_req.created_by AS interaction_created_by,
             user_req.provenance AS interaction_provenance,
             user_req.sat_interaction_user_id AS sat_interaction_http_request_id,
-            user_req.nature,
+            user_req.nature, 
             user_req.tenant_id,
             user_req.user_agent,
             user_req.client_ip_address,
             'application/json'::text AS content_type,
-            user_req.elaboration,
-            NULL::TEXT AS from_state,
-            NULL::TEXT AS to_state,
-            NULL::TEXT AS state_transition_reason,
+            user_req.elaboration, 
             user_req.created_at AS request_created_at,
             user_req.created_by AS request_created_by,
-            user_req.provenance AS request_provenance,
-            NULL::INTEGER AS issues_count,
-            NULL::TEXT AS resource_types,
-            user_req.interaction_start_time AS start_time,
-            user_req.interaction_end_time AS finish_time,
-            EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+            user_req.provenance AS request_provenance
         FROM techbd_udi_ingress.sat_interaction_user user_req
         WHERE user_req.uri NOT ILIKE '%/Bundle%' 
           AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
-          AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day'
-    ) combined_query;
+          AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day';
 END;
 $$ LANGUAGE plpgsql;
 
