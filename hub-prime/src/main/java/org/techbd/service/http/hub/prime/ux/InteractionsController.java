@@ -80,7 +80,7 @@ public class InteractionsController {
     // }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "Hub & API Interactions", title = "Hub & API Interactions", siblingOrder = 80)
+    @RouteMapping(label = "Hub Interactions", title = "Hub Interactions", siblingOrder = 80)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
