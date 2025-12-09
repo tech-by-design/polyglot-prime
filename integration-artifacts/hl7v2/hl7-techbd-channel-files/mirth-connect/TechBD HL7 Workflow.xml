@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.7</description>
-  <revision>28</revision>
+  <description>Version: 0.1.8</description>
+  <revision>30</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1029,13 +1029,13 @@ function getConsentResourceStatus(sourceXml) {
 		var consentCode = &quot;&quot;;
 		for each (var obx in xmlDoc..OBX) {
 		    var obx32 = &quot;&quot;;
-		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
-		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();
+		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {
+		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();
 		    }
 		
-		    if (obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
-		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;] != null) {
-		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString();
+		    if (obx32 == &quot;105511-0&quot;) {
+		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;] != null) {
+		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;].toString();
 		        }
 		        break;
 		    }
@@ -2138,7 +2138,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1760090469901</time>
+        <time>1765255447307</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
