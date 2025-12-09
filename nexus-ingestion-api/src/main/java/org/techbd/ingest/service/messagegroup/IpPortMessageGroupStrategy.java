@@ -10,7 +10,7 @@ import org.techbd.ingest.model.RequestContext;
 
 
 @Component
-@Order(4)
+@Order(5)
 public class IpPortMessageGroupStrategy implements MessageGroupStrategy {
     @Override
     public boolean supports(RequestContext context) {

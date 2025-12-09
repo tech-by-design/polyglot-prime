@@ -80,9 +80,9 @@ public class SqsPublishStep implements MessageProcessingStep {
             LOG.info("[SQS_PUBLISH_STEP]:: MESSAGE_SENT to SQS successfully. interactionId={}, messageId={}", interactionId,
                     messageId);
         } catch (Exception e) {
-            LOG.error("[SQS_PUBLISH_STEP]:: FAILED. interactionId={}", interactionId, e);
+            LOG.error("[SQS_PUBLISH_STEP]:: FAILED while publishing to queue {}. interactionId={}", context.getQueueUrl(), interactionId, e);
             throw new RuntimeException(
-                    "SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
+                    "SQS Publish Step Failed for interactionId " + interactionId + " while publising to queue " + context.getQueueUrl() + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -112,9 +112,9 @@ public class SqsPublishStep implements MessageProcessingStep {
             LOG.info("[SQS_PUBLISH_STEP]:: MESSAGE_SENT to SQS successfully. interactionId={}, messageId={}", interactionId,
                     messageId);
         } catch (Exception e) {
-            LOG.error("[SQS_PUBLISH_STEP]:: FAILED. interactionId={}", interactionId, e);
+            LOG.error("[SQS_PUBLISH_STEP]:: FAILED while publishing to queue {}. interactionId={}", context.getQueueUrl(), interactionId, e);
             throw new RuntimeException(
-                    "SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
+                    "SQS Publish Step Failed for interactionId " + interactionId + " while publising to queue " + context.getQueueUrl() + " with error: " + e.getMessage(), e);
         }
     }
 

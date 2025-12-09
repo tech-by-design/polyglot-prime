@@ -103,8 +103,8 @@ public class S3UploadStep implements MessageProcessingStep {
             context.setS3Response(s3Response);
             LOG.info("[S3_UPLOAD_STEP]:: File and metadata uploaded successfully. interactionId={}", interactionId);
         } catch (Exception e) {
-            LOG.error("[S3_UPLOAD_STEP]:: S3 Upload Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("[S3_UPLOAD_STEP]:: S3 Upload Step Failed. interactionId=" + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[S3_UPLOAD_STEP]:: S3 Upload Step Failed while uploading to bucket {}. interactionId={}", context.getDataBucketName(), interactionId, e);
+            throw new RuntimeException("[S3_UPLOAD_STEP]:: S3 Upload Step Failed while uploading to bucket " + context.getDataBucketName() + ". interactionId=" + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -144,8 +144,8 @@ public class S3UploadStep implements MessageProcessingStep {
                         interactionId);
             }
         } catch (Exception e) {
-            LOG.error("[S3_UPLOAD_STEP]:: FAILED. interactionId={}", interactionId, e);
-            throw new RuntimeException("S3 Upload Step Failed for interactionId=" + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[S3_UPLOAD_STEP]:: FAILED while uploading to bucket {}. interactionId={}", context.getDataBucketName(), interactionId, e);
+            throw new RuntimeException("S3 Upload Step Failed for interactionId=" + interactionId + " while uploading to bucket " + context.getDataBucketName() + " with error: " + e.getMessage(), e);
         }
     }
 

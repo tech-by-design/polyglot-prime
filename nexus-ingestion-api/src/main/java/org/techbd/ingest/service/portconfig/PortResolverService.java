@@ -97,8 +97,7 @@ public class PortResolverService {
 
         LOG.warn("[PORT_CONFIG_ERROR] No configuration found for port {} sourceId={} msgType={} interactionId={}",
                 context.getDestinationPort(), context.getSourceId(), context.getMsgType(), context.getInteractionId());
-
-        return Optional.empty();
+        throw new IllegalArgumentException("No configuration found for the given port = "+context.getDestinationPort()+" sourceId ="+context.getSourceId()+" msgType ="+context.getMsgType()+" interactionId ="+context.getInteractionId());
     }
 
 }
