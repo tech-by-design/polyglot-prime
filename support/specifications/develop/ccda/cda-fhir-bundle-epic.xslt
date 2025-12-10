@@ -98,15 +98,17 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
 
- <!-- <xsl:variable name="encounterStatus" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:statusCode/@code"/> -->
-
   <!-- Check whether the CCDA from Guthrie and get Encounter Status in a separate logic -->
   <!-- Determine if this is a Guthrie CCDA -->
   <xsl:variable name="IsGuthrieCCDA"
       select="contains(/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name, 'Guthrie')" />
 
-  <!-- Encounter status from the Guthrie path -->
-  <xsl:variable name="guthrieEncounterStatus"
+  <!-- Encounter status from the encounters section only for Guthrie-->
+  <xsl:variable name="guthrieEncounterStatusFromAct"
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:entryRelationship[1]/ccda:act/ccda:statusCode/@code"/>
+
+  <!-- Encounter status from the default path for Guthrie-->
+  <xsl:variable name="guthrieEncounterStatusDefault"
       select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:statusCode/@code" />
 
   <!-- Encounter status from the normal encounters section -->
@@ -116,12 +118,17 @@
   <!-- Final encounterStatus -->
   <xsl:variable name="encounterStatus">
       <xsl:choose>
-          <!-- Case 1: Guthrie AND Guthrie encounter status exists -->
-          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatus) &gt; 0">
-              <xsl:value-of select="$guthrieEncounterStatus"/>
+          <!-- Case 1: Guthrie AND Guthrie encounter status exists from entryRelationship.act-->
+          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatusFromAct) &gt; 0">
+              <xsl:value-of select="$guthrieEncounterStatusFromAct"/>
           </xsl:when>
 
-          <!-- Case 2: Otherwise use normal encounter status -->
+          <!-- Case 2: Guthrie AND Guthrie encounter status exists from encompassingEncounter-->
+          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatusDefault) &gt; 0">
+              <xsl:value-of select="$guthrieEncounterStatusDefault"/>
+          </xsl:when>
+
+          <!-- Case 3: Otherwise use normal encounter status -->
           <xsl:otherwise>
               <xsl:value-of select="$normalEncounterStatus"/>
           </xsl:otherwise>
