@@ -1870,7 +1870,7 @@ BEGIN
     END IF;
   
 	IF (NOT v_return_status) THEN
-    IF(LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
+    IF(p_nature <> 'Original FHIR Payload') THEN
         SELECT 
         fhir_req.client_ip_address,         fhir_req.user_agent,                fhir_req.bundle_id, 
         fhir_req.bundle_last_updated,       fhir_req.organization_id,           fhir_req.organization_name, 
@@ -1895,155 +1895,169 @@ BEGIN
     ELSE
         
         v_user_agent                := p_additional_details->'request'->>'User-Agent';    
-        v_client_ip_address         := p_additional_details->'request'->>'remoteAddr';
+        v_client_ip_address         := p_additional_details->'request'->>'remoteAddr';  
+        v_interaction_start_time 	:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
+        v_interaction_end_time 		:= v_created_at;
+                 
+		WITH patient_resource AS (
+		    SELECT jsonb_path_query_first(
+		               p_payload,
+		               '$.entry[*].resource?(@.resourceType == "Patient")'
+		           ) AS pr
+		)
+		SELECT
+			jsonb_path_query_first(pr, '$.id') #>> '{}',
+		    jsonb_path_query_first(pr, '$.identifier[*]?(@.type.coding[0].code == "MR").value') #>> '{}',		
+		    jsonb_path_query_first(pr, '$.identifier[*]?(@.type.coding[0].code == "MR").system') #>> '{}',
+			jsonb_path_query_first(pr, '$.identifier[*]?(@.type.coding[0].code == "MA").value') #>> '{}',		
+		    regexp_replace(
+		        COALESCE(
+		            jsonb_path_query_first(
+		                pr,
+		                '$.identifier[*]?(@.type.coding[0].code == "MR").assigner.reference'
+		            ) #>> '{}',
+		            ''
+		        ),
+		        '^Organization/', ''
+		    )
+		INTO v_patient_id,
+			 v_patient_mrn,
+		     v_patient_mrn_source_system,		     
+			 v_medicaid_cin,
+			 v_organization_id
+		FROM patient_resource;
 
-        /*SELECT hdrs->>'value'
-        INTO v_client_ip_address_forwarded
-        FROM jsonb_array_elements(p_additional_details->'request'->'headers') AS hdrs
-        WHERE hdrs->>'name' = 'x-forwarded-for';*/
-    
-        -- Extract the value of X-Observability-Metric-Interaction-Start-Time
-        v_interaction_start_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
-    
-        -- Extract the value of X-Observability-Metric-Interaction-Finish-Time
-        /*SELECT header->>'value' 
-        INTO v_interaction_end_time
-        FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
-        WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';*/
-        v_interaction_end_time := v_created_at;
-
-        SELECT entry->'resource'->>'id'
-        INTO v_patient_id
-        FROM jsonb_array_elements(p_payload->'entry') AS entry
-        WHERE entry->'resource'->>'resourceType' = 'Patient'
-        LIMIT 1;
-                   
-        SELECT 
-        identifier_element->>'value', 
-        regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', ''),
-        identifier_element->>'system'
-        INTO v_patient_mrn, v_organization_id, v_patient_mrn_source_system
-        FROM jsonb_array_elements(p_payload->'entry') AS entry,
-        jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-        WHERE entry->'resource'->>'resourceType' = 'Patient'
-        AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
-        LIMIT 1;           
-      
-        SELECT entry.value->'resource'->>'name' 
-        INTO v_organization_name
-        FROM jsonb_array_elements(p_payload->'entry') AS entry(value)
-        WHERE 
-        entry.value->'resource'->>'resourceType' = 'Organization' 
-        AND entry.value->'resource'->>'id' = v_organization_id;
-              
-        SELECT identifier_element->>'value'
-        INTO v_medicaid_cin
-        FROM jsonb_array_elements(p_payload->'entry') AS entry,
-        jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-        WHERE entry->'resource'->>'resourceType' = 'Patient'
-        AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
-        LIMIT 1;                        
-        
-        SELECT
-        p_payload->>'id',
-        p_payload->'meta'->>'lastUpdated'
-        INTO v_bundle_id, v_bundle_last_updated
-        WHERE
-        p_payload->>'resourceType' = 'Bundle'
-        LIMIT 1;        
+		IF v_organization_id IS NOT NULL AND v_organization_id <> '' THEN
+	        SELECT COALESCE(jsonb_path_query_first(
+	                   p_payload,
+	                   format(
+	                       '$.entry[*].resource?(@.resourceType == "Organization" && @.id == "%s").name',
+	                       v_organization_id
+	                   )::jsonpath
+	               ) #>> '{}', '')
+	        INTO v_organization_name;
+	    ELSE
+	        v_organization_name := NULL;
+	    END IF;
+  
+		IF p_payload->>'resourceType' = 'Bundle' THEN
+		    v_bundle_id := p_payload->>'id';
+		    v_bundle_last_updated := p_payload->'meta'->>'lastUpdated';
+		END IF;   
     
         SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
         INTO v_resource_type_set
         FROM jsonb_array_elements(p_payload->'entry') AS entry
-        WHERE entry ? 'resource';   
+        WHERE entry ? 'resource';        
 
-        WITH categories AS (
-            SELECT 
-                STRING_AGG(category, ', ') AS bundle_type
-            FROM (
-				-- Screening
-                SELECT 'Screening' AS category
-                FROM jsonb_array_elements(p_payload->'entry') AS entry
-                WHERE entry->'resource'->>'resourceType' = 'Observation'
-                /*AND EXISTS (
-                    SELECT 1 
-                    FROM jsonb_array_elements(entry->'resource'->'code'->'coding') AS coding
-                    WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN', '100698-0', 'NYSAHCHRSN')
-                )*/
-				AND jsonb_typeof(entry->'resource'->'hasMember') = 'array'
-          		AND jsonb_array_length(entry->'resource'->'hasMember') > 0
-                AND EXISTS (
-                    SELECT 1
-                    FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
-                    WHERE RIGHT(profile, LENGTH('shinny-observation-screening-response')) = 'shinny-observation-screening-response'
-                )
+		WITH bundle_type_flags AS (
 
-                UNION
+		    ----------------------------------------------------------------------
+		    -- SCREENING
+		    ----------------------------------------------------------------------
 
-				-- Assessment
-                SELECT 'Assessment'
-                FROM jsonb_array_elements(p_payload->'entry') AS entry
-                WHERE entry->'resource'->>'resourceType' = 'Condition'
-                AND EXISTS (
-                    SELECT 1
-                    FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
-                    WHERE RIGHT(profile, LENGTH('SHINNY-SDOHCC-Condition')) = 'SHINNY-SDOHCC-Condition'
-					   OR RIGHT(profile, LENGTH('SDOHCC-Condition')) = 'SDOHCC-Condition' 
-                )
-
-                UNION
-
-				-- Referral
-                SELECT 'Referral'
-                FROM jsonb_array_elements(p_payload->'entry') AS entry
-                WHERE (entry->'resource'->>'resourceType' = 'ServiceRequest'
-                    AND EXISTS (
-                        SELECT 1
-                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
-                        WHERE RIGHT(profile, LENGTH('SHINNYSDOHServiceRequest')) = 'SHINNYSDOHServiceRequest'
-						   OR RIGHT(profile, LENGTH('SDOHCC-ServiceRequest')) = 'SDOHCC-ServiceRequest' 
-                    ))
-                OR (entry->'resource'->>'resourceType' = 'Task'
-                    AND EXISTS (
-                        SELECT 1
-                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
-                        WHERE RIGHT(profile, LENGTH('SHINNYSDOHTaskForReferralManagement')) = 'SHINNYSDOHTaskForReferralManagement'
-						   OR RIGHT(profile, LENGTH('SDOHCC-TaskForReferralManagement')) = 'SDOHCC-TaskForReferralManagement'
-                    ))
-            ) AS category_list
-        )
-        SELECT bundle_type INTO v_bundle_type FROM categories;  
+		    SELECT
+		        CASE
+		            WHEN jsonb_path_exists(
+		                    p_payload,
+		                    '$.entry[*].resource?(
+		                        @.resourceType == "Observation"
+		                        && @.hasMember.size() > 0
+		                        && @.meta.profile[*] like_regex "shinny-observation-screening-response$"
+		                    )'
+		                )
+		            THEN 'Screening'
+		            ELSE NULL
+		        END AS category
+		
+		    UNION ALL
+		
+		    ----------------------------------------------------------------------
+		    -- ASSESSMENT
+		    ----------------------------------------------------------------------
+		    SELECT
+		        CASE
+		            WHEN jsonb_path_exists(
+		                    p_payload,
+		                    '$.entry[*].resource?(
+		                        @.resourceType == "Condition"
+		                        && (
+		                              @.meta.profile[*] like_regex "SHINNY-SDOHCC-Condition$"
+		                              || @.meta.profile[*] like_regex "SDOHCC-Condition$"
+		                           )
+		                    )'
+		                )
+		            THEN 'Assessment'
+		            ELSE NULL
+		        END
+		
+		    UNION ALL
+		
+		    ----------------------------------------------------------------------
+		    -- REFERRAL
+		    ----------------------------------------------------------------------
+		    SELECT
+		        CASE
+		            WHEN jsonb_path_exists(
+		                    p_payload,
+		                    '$.entry[*].resource?(
+		                        (
+		                            @.resourceType == "ServiceRequest"
+		                            && (
+		                                    @.meta.profile[*] like_regex "SHINNYSDOHServiceRequest$"
+		                                    || @.meta.profile[*] like_regex "SDOHCC-ServiceRequest$"
+		                               )
+		                        )
+		                        ||
+		                        (
+		                            @.resourceType == "Task"
+		                            && (
+		                                    @.meta.profile[*] like_regex "SHINNYSDOHTaskForReferralManagement$"
+		                                    || @.meta.profile[*] like_regex "SDOHCC-TaskForReferralManagement$"
+		                               )
+		                        )
+		                    )'
+		                )
+		            THEN 'Referral'
+		            ELSE NULL
+		        END
+		)
+		
+		SELECT STRING_AGG(category, ', ')
+		INTO v_bundle_type
+		FROM bundle_type_flags
+		WHERE category IS NOT NULL;
     
     END IF; /*End of : Original FHIR Payload*/
     
     -- Save the action from the OperationOutcome->techByDesignDisposition
-    IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
-        v_issues_count              := jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);            
-        v_outbound_http_message     := "substring"((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);    
+    IF p_nature = 'techByDesignDisposition' THEN 
+        v_issues_count              := COALESCE(jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text), 0);            
+        v_outbound_http_message     := substring((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);    
         v_bundle_session_id         := p_payload->'OperationOutcome'->>'bundleSessionId';                     
         v_validation_engine         := (p_payload->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
         v_ig_version                := (p_payload->'OperationOutcome'->'validationResults'->0->>'igVersion');        
         v_profile_url               := (p_payload->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
-        v_is_bundle_valid           := (p_payload->'OperationOutcome'->'validationResults'->0->>'valid');      
+        v_is_bundle_valid           := (p_payload->'OperationOutcome'->'validationResults'->0->>'valid')::BOOLEAN;     
         v_validation_initiated_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
         v_validation_completed_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
         
         v_techbd_disposition_action := p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
         IF v_techbd_disposition_action = 'discard' THEN
             v_interaction_end_time  := v_created_at;
-            v_issues_count          := jsonb_array_length((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);
+            v_issues_count          := COALESCE(jsonb_array_length((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text), 0);
         END IF;
     END IF;
 
-    IF (LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'), LOWER('Forwarded HTTP Request Replay'), LOWER('Forwarded HTTP Response Replay'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
+    IF (p_nature IN('Forwarded HTTP Response Error', 'Forwarded HTTP Response', 'Forward HTTP Request', 'Forwarded HTTP Request Replay', 'Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')) THEN
         v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 
-        IF(LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response Replay Error'))) THEN
+        IF(p_nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')) THEN
             v_passed := FALSE;
             v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);              
         END IF;
             
-        IF(LOWER(p_nature) IN (LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay'))) THEN 
+        IF(p_nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay')) THEN 
             v_response_status := substring(p_payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');                   
             IF v_response_status IS NOT NULL AND v_response_status = 'PASS' THEN
                 v_passed := TRUE;
@@ -2222,7 +2236,7 @@ BEGIN
 
     IF (v_return IS NOT NULL) THEN
         IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/' OR p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN
-            IF(LOWER(p_nature) = LOWER('techByDesignDisposition')) THEN
+            IF(p_nature = 'techByDesignDisposition') THEN
                 CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
                     p_hub_interaction_id, 
                     p_tenant_id, 
@@ -2252,7 +2266,7 @@ BEGIN
                 );
                 v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Insert into sat_interaction_fhir_validation_issue');
             END IF;              
-            IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN
+            IF(p_nature = 'Original FHIR Payload') THEN
                 CALL techbd_udi_ingress.insert_fhir_screening_info(
                     p_hub_interaction_id, 
                     p_tenant_id, 
@@ -2294,7 +2308,7 @@ BEGIN
     END IF; 
 
     -- Save the details from the techByDesignDisposition to other natures also
-    IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
+    IF p_nature = 'techByDesignDisposition' THEN    
         UPDATE techbd_udi_ingress.sat_interaction_fhir_request
             SET --issues_count          = COALESCE(v_issues_count, 0),          
                 outbound_http_message   = v_outbound_http_message,      
@@ -2311,7 +2325,7 @@ BEGIN
                                                THEN v_created_at 
                                                ELSE interaction_end_time 
                                             END
-        WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
+        WHERE hub_interaction_id = p_hub_interaction_id AND nature != 'techByDesignDisposition';
         
         --Update ig_version in sat_interaction_user table
         IF(p_uri='/Bundle' OR p_uri='/Bundle/') THEN
@@ -2357,12 +2371,12 @@ BEGIN
     END IF;    
     
     -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
-    IF (LOWER(p_nature) IN(LOWER('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
+    IF (p_nature IN('Forwarded HTTP Response Error', 'Forwarded HTTP Response', 'Forwarded HTTP Response Replay Error', 'Forwarded HTTP Response Replay')) THEN
         UPDATE techbd_udi_ingress.sat_interaction_fhir_request
             SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
         WHERE hub_interaction_id = p_hub_interaction_id;
 
-		IF (LOWER(p_nature) IN (LOWER('Forwarded HTTP Response Replay Error'), LOWER('Forwarded HTTP Response Replay'))) THEN
+		IF (p_nature IN ('Forwarded HTTP Response Replay Error', 'Forwarded HTTP Response Replay')) THEN
 			--Update replay_status and replay_on values in 'Forwarded HTTP Response Error'
 			UPDATE techbd_udi_ingress.sat_interaction_fhir_request
 	            SET replay_status = CASE WHEN p_to_state = 'COMPLETE' THEN 'True' ELSE 'False' END,
@@ -2827,15 +2841,15 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_info (
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_exception_id 	                TEXT;
-    v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+    v_exception_id  text;
+    v_error_msg     text;
+    v_error_type    text;
+    v_sqlstate      text;
+    v_pg_detail     text;
+    v_pg_hint       text;
+    v_pg_context    text;
+    v_created_by    text := COALESCE(created_by, current_user);
+    v_provenance    text := COALESCE(provenance, 'unknown');
 BEGIN
     INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_info (
         sat_interaction_fhir_screening_info_id,
@@ -2854,94 +2868,165 @@ BEGIN
         elaboration,
         created_by,
         provenance,
-		tenant_id
+        tenant_id
     )
-    SELECT 
-        gen_random_uuid()::TEXT,
-        insert_fhir_screening_info.hub_interaction_id,
-        insert_fhir_screening_info.tenant_id,
-        insert_fhir_screening_info.created_at,
+    WITH json_data AS (
+        SELECT payload AS doc
+    ),
+
+    patient AS (
+        SELECT jsonb_path_query_first(
+                   doc,
+                   '$.entry[*].resource?(@.resourceType == "Patient")'::jsonpath
+               ) AS pr
+        FROM json_data
+    ),
+
+    organization AS (
+        SELECT org
+        FROM json_data,
+             LATERAL jsonb_path_query(
+                 doc,
+                 '$.entry[*].resource?(@.resourceType == "Organization")'::jsonpath
+             ) AS t(org)
+    ),
+
+    observations AS (
+        SELECT obs
+        FROM json_data,
+             LATERAL jsonb_path_query(
+                 doc,
+                 '$.entry[*].resource?(@.resourceType == "Observation")'::jsonpath
+             ) AS t(obs)
+    ),
+
+    areas AS (
+        SELECT DISTINCT
+            jsonb_path_query_first(
+                obs,
+                '$.category[*].coding[*]?(@.system == "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes").display'::jsonpath
+            ) #>> '{}' AS display
+        FROM observations
+    ),
+
+    mrn_extracted AS (
+        SELECT
+            jsonb_path_query_first(
+                pr,
+                '$.identifier[*]?(@.type.coding[0].code == "MR").value'::jsonpath
+            ) #>> '{}' AS mrn_value,
+            jsonb_path_query_first(
+                pr,
+                '$.identifier[*]?(@.type.coding[0].code == "MR").system'::jsonpath
+            ) #>> '{}' AS mrn_system,
+            regexp_replace(
+                COALESCE(
+                    jsonb_path_query_first(
+                        pr,
+                        '$.identifier[*]?(@.type.coding[0].code == "MR").assigner.reference'::jsonpath
+                    ) #>> '{}',
+                    ''
+                ),
+                '^Organization/', ''
+            ) AS org_from_mrn
+        FROM patient
+    ),
+
+    patient_name AS (
+        SELECT
+            jsonb_path_query_first(
+                pr,
+                '$.name[0].text'::jsonpath
+            ) #>> '{}' AS full_name,
+            jsonb_path_query_first(
+                pr,
+                '$.name[0].family'::jsonpath
+            ) #>> '{}' AS last_name,
+            (
+                SELECT string_agg(gval #>> '{}', ' ')
+                FROM jsonb_path_query(
+                         pr,
+                         '$.name[0].given[*]'::jsonpath
+                     ) AS g(gval)
+            ) AS first_name
+        FROM patient
+    ),
+
+    organization_strings AS (
+        SELECT
+            string_agg(org #>> '{id}',   ', ') AS org_ids,
+            string_agg(org #>> '{name}', ', ') AS org_names
+        FROM organization
+    ),
+
+    total_safety AS (
+        SELECT
+            jsonb_path_query_first(
+                obs,
+                '$.valueCodeableConcept.coding[*]?(@.code == "{score}").display'::jsonpath
+            ) #>> '{}' AS score
+        FROM observations
+        WHERE jsonb_path_exists(
+                  obs,
+                  '$.code.coding[*]?(@.display == "Total Safety Score")'::jsonpath
+              )
+    )
+
+    SELECT
+        gen_random_uuid()::text                                   AS sat_screening_id,
+        hub_interaction_id                                        AS hub_interaction_id,
+        uri                                                       AS qe_name,
+        created_at                                                AS submitted_date_time,
         CASE
-            WHEN (insert_fhir_screening_info.payload ->> 'resourceType' = 'Bundle') THEN (insert_fhir_screening_info.payload -> 'meta' ->> 'lastUpdated')
+            WHEN payload->>'resourceType' = 'Bundle'
+            THEN payload->'meta'->>'lastUpdated'
             ELSE NULL
-        END AS survey_date_time,
-        (SELECT id.value ->> 'value'
-		   FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value),
-		        jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
-		   WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
-		     AND EXISTS (
-		         SELECT 1
-		         FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
-		         WHERE coding.value ->> 'code' = 'MR'
-		     )
-		   LIMIT 1) AS patient_mrn,
-        (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text'
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) AS full_name,
-        (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'family'
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) AS last_name,
-        (SELECT array_to_string(ARRAY(SELECT jsonb_array_elements_text((((entry.value -> 'resource') -> 'name') -> 0) -> 'given')), ' ')
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) AS first_name,
-        (SELECT string_agg((entry.value -> 'resource') ->> 'id', ', ')
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Organization'
-         LIMIT 1) AS org_id,
-        (SELECT string_agg((entry.value -> 'resource') ->> 'name', ', ')
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Organization'
-         LIMIT 1) AS org_name,
-        (SELECT string_agg(DISTINCT coding.value ->> 'display', ', ')
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-             JOIN LATERAL jsonb_array_elements((entry.value -> 'resource') -> 'category') category(value) ON true
-             JOIN LATERAL jsonb_array_elements(category.value -> 'coding') coding(value) ON true
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Observation' AND (coding.value ->> 'system') = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes'
-         LIMIT 1) AS areas_of_interest,
-        (SELECT value_coding.value ->> 'display'
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource') -> 'code') -> 'coding') code_coding(value) ON true
-             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource') -> 'valueCodeableConcept') -> 'coding') value_coding(value) ON true
-          WHERE (code_coding.value ->> 'display') = 'Total Safety Score' AND (value_coding.value ->> 'code') = '{score}'
-         LIMIT 1) AS total_safety_score,
-        insert_fhir_screening_info.elaboration,
-        insert_fhir_screening_info.created_by,
-        insert_fhir_screening_info.provenance,
-		insert_fhir_screening_info.tenant_id
-    WHERE (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
-           FROM jsonb_array_elements(payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) IS NOT NULL;
+        END                                                       AS survey_date_time,
+        mrn_extracted.mrn_value                                   AS patient_mrn,
+        patient_name.full_name                                    AS full_name,
+        patient_name.last_name                                    AS last_name,
+        patient_name.first_name                                   AS first_name,
+        organization_strings.org_ids                              AS org_id,
+        organization_strings.org_names                            AS org_name,
+        (SELECT string_agg(display, ', ') FROM areas)             AS areas_of_interest,
+        (SELECT score FROM total_safety LIMIT 1)                  AS total_safety_score,
+        elaboration                                               AS elaboration,
+        v_created_by                                              AS created_by,
+        v_provenance                                              AS provenance,
+        tenant_id                                                 AS tenant_id
+    FROM mrn_extracted
+    LEFT JOIN patient_name        ON true
+    LEFT JOIN organization_strings ON true
+    -- A: skip insert when MRN is missing
+    WHERE mrn_extracted.mrn_value IS NOT NULL;
+
 EXCEPTION
-   WHEN OTHERS THEN
-	    -- Capture exception details
-	    GET STACKED DIAGNOSTICS
-	        v_error_msg = MESSAGE_TEXT,
-	        v_sqlstate = RETURNED_SQLSTATE,
-	        v_pg_detail = PG_EXCEPTION_DETAIL,
-	        v_pg_hint = PG_EXCEPTION_HINT,
-	        v_pg_context = PG_EXCEPTION_CONTEXT;
-	        v_error_type = 'SQL';
-	
-	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
-	       
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id, NULL),
-		insert_fhir_screening_info.uri,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance, 
-		null::jsonb, insert_fhir_screening_info.tenant_id, insert_fhir_screening_info.hub_interaction_id);
-END;         
+    WHEN OTHERS THEN
+        GET STACKED DIAGNOSTICS
+            v_error_msg  = MESSAGE_TEXT,
+            v_sqlstate   = RETURNED_SQLSTATE,
+            v_pg_detail  = PG_EXCEPTION_DETAIL,
+            v_pg_hint    = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+        v_error_type := 'SQL';
+
+        -- Let register_issue generate an exception id if NULL is passed
+        v_exception_id := techbd_udi_ingress.register_issue(
+            NULL,
+            uri,
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            v_provenance,
+            NULL::jsonb,
+            tenant_id,
+            hub_interaction_id
+        );
+END;        
 $$;
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_validation_issues(text,text,jsonb,text,text,jsonb);
@@ -3216,68 +3301,17 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_patient (
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_exception_id 	                TEXT;
-    v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+    v_exception_id  TEXT;
+    v_error_msg     TEXT;
+    v_error_type    TEXT;
+    v_sqlstate      TEXT;
+    v_pg_detail     TEXT;
+    v_pg_hint       TEXT;
+    v_pg_context    TEXT;
+
+    v_created_by    TEXT := COALESCE(created_by, current_user);
+    v_provenance    TEXT := COALESCE(provenance, 'unknown');
 BEGIN
-    WITH filtered_data AS (
-        SELECT 
-                insert_fhir_screening_patient.hub_interaction_id AS hub_interaction_id,
-                insert_fhir_screening_patient.tenant_id AS tenant_id,
-                v_created_by,
-                v_provenance,
-                insert_fhir_screening_patient.elaboration AS elaboration,
-                insert_fhir_screening_patient.payload ->> 'created_at' AS created_at,
-                (entry.value -> 'resource') ->> 'id' AS patient_id,
-                (entry.value -> 'resource') ->> 'resourceType' AS patient_resource_type,
-                (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text' AS full_name,
-                (((entry.value -> 'resource') -> 'name') -> 0) ->> 'family' AS last_name,
-                array_to_string(ARRAY(
-                    SELECT jsonb_array_elements_text((((entry.value -> 'resource') -> 'name') -> 0) -> 'given'))
-                , ' ') AS first_name,
-                (entry.value -> 'resource') ->> 'gender' AS gender,
-                (entry.value -> 'resource') ->> 'birthDate' AS birth_date,
-                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'text' AS address,
-                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'city' AS city,
-                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'state' AS state,
-                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'postalCode' AS postal_code,
-                ((((((entry.value -> 'resource') -> 'communication') -> 0) -> 'language') -> 'coding') -> 0) ->> 'code' AS language,
-				(
-			        SELECT id.value ->> 'value'
-			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
-			        WHERE EXISTS (
-			            SELECT 1
-			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
-			            WHERE coding.value ->> 'code' = 'MR'
-			        )
-			        LIMIT 1
-			    ) AS medical_record_number,
-				(
-			        SELECT id.value ->> 'value'
-			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
-			        WHERE EXISTS (
-			            SELECT 1
-			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
-			            WHERE coding.value ->> 'code' = 'SS'
-			        )
-			        LIMIT 1
-			    ) AS social_security_number,
-                array_to_string(
-                    ARRAY(
-                        SELECT (org_entry.value -> 'resource') ->> 'id'
-                        FROM jsonb_array_elements(insert_fhir_screening_patient.payload -> 'entry') AS org_entry
-                        WHERE (org_entry.value -> 'resource' ->> 'resourceType') = 'Organization'
-                    ), ', '
-                ) AS organization_ids 
-        FROM LATERAL jsonb_array_elements(insert_fhir_screening_patient.payload -> 'entry') entry
-        WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
-    )
     INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_patient (
         sat_interaction_fhir_screening_patient_id,
         hub_interaction_id,
@@ -3301,58 +3335,123 @@ BEGIN
         created_by,
         provenance,
         primary_org_id,
-		tenant_id
+        tenant_id
     )
-    SELECT gen_random_uuid()::TEXT,
-        filtered_data.hub_interaction_id,
-        filtered_data.tenant_id,
-        filtered_data.medical_record_number,
-        filtered_data.patient_id,
-        filtered_data.patient_resource_type,
-        filtered_data.full_name,
-        filtered_data.first_name,
-        filtered_data.last_name,
-        filtered_data.gender,
-        filtered_data.birth_date,
-        filtered_data.address,
-        filtered_data.city,
-        filtered_data.state,
-        filtered_data.postal_code,
-        filtered_data.language,
-        filtered_data.social_security_number,
-        filtered_data.organization_ids,
-        filtered_data.elaboration,
-        filtered_data.v_created_by,
-        filtered_data.v_provenance,
+    WITH patient_resource AS (
+        SELECT jsonb_path_query_first(
+                   payload,
+                   '$.entry[*].resource?(@.resourceType == "Patient")'::jsonpath
+               ) AS pr
+    ),
+
+    org_ids AS (
+        SELECT string_agg(
+                   (org #>> '{id}'),
+                   ', '
+               ) AS organization_ids
+        FROM jsonb_path_query(
+                 payload,
+                 '$.entry[*].resource?(@.resourceType == "Organization")'::jsonpath
+             ) AS t(org)
+    ),
+
+    patient_parsed AS (
+        SELECT
+            -- Basic info
+            pr->>'id' AS patient_id,
+            pr->>'resourceType' AS patient_type,
+            pr->>'gender' AS gender,
+            pr->>'birthDate' AS birth_date,
+
+            -- Name fields
+            jsonb_path_query_first(pr, '$.name[0].text'::jsonpath) #>> '{}' AS full_name,
+            jsonb_path_query_first(pr, '$.name[0].family'::jsonpath) #>> '{}' AS last_name,
+
+            (
+                SELECT string_agg(g #>> '{}', ' ')
+                FROM jsonb_path_query(pr, '$.name[0].given[*]'::jsonpath) AS t(g)
+            ) AS first_name,
+
+            -- Address fields
+            jsonb_path_query_first(pr, '$.address[0].text'::jsonpath)       #>> '{}' AS address,
+            jsonb_path_query_first(pr, '$.address[0].city'::jsonpath)       #>> '{}' AS city,
+            jsonb_path_query_first(pr, '$.address[0].state'::jsonpath)      #>> '{}' AS state,
+            jsonb_path_query_first(pr, '$.address[0].postalCode'::jsonpath) #>> '{}' AS postal_code,
+
+            -- Language
+            jsonb_path_query_first(
+                pr,
+                '$.communication[0].language.coding[0].code'::jsonpath
+            ) #>> '{}' AS language,
+
+            -- Identifiers
+            jsonb_path_query_first(
+                pr,
+                '$.identifier[*]?(@.type.coding[0].code == "MR").value'::jsonpath
+            ) #>> '{}' AS medical_record_number,
+
+            jsonb_path_query_first(
+                pr,
+                '$.identifier[*]?(@.type.coding[0].code == "SS").value'::jsonpath
+            ) #>> '{}' AS social_security_number
+
+        FROM patient_resource
+    )
+
+    SELECT
+        gen_random_uuid()::TEXT,
+        hub_interaction_id,
+        tenant_id,                   -- qe_name
+        medical_record_number,
+        patient_id,
+        patient_type,
+        full_name,
+        first_name,
+        last_name,
+        gender,
+        birth_date,
+        address,
+        city,
+        state,
+        postal_code,
+        language,
+        social_security_number,
+        organization_ids,
+        elaboration,
+        v_created_by,
+        v_provenance,
         primary_org_id,
-		filtered_data.tenant_id
-    FROM filtered_data;
+        tenant_id
+    FROM patient_parsed
+    CROSS JOIN org_ids;
+
 EXCEPTION
-   WHEN OTHERS THEN
-	    -- Capture exception details
-	    GET STACKED DIAGNOSTICS
-	        v_error_msg = MESSAGE_TEXT,
-	        v_sqlstate = RETURNED_SQLSTATE,
-	        v_pg_detail = PG_EXCEPTION_DETAIL,
-	        v_pg_hint = PG_EXCEPTION_HINT,
-	        v_pg_context = PG_EXCEPTION_CONTEXT;
-	        v_error_type = 'SQL';
-	
-	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
-	       
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-		insert_fhir_screening_patient.uri,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance, null::jsonb, insert_fhir_screening_patient.tenant_id, insert_fhir_screening_patient.hub_interaction_id);
-END;         
+    WHEN OTHERS THEN
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate  = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint   = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+
+        v_error_type := 'SQL';
+
+        v_exception_id := techbd_udi_ingress.register_issue(
+            NULL,
+            uri,
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            v_provenance,
+            NULL::jsonb,
+            tenant_id,
+            hub_interaction_id
+        );
+END;        
 $$;
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_organization(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
@@ -3370,35 +3469,16 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_organizatio
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_exception_id 	                TEXT;
-    v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+    v_exception_id  TEXT;
+    v_error_msg     TEXT;
+    v_error_type    TEXT;
+    v_sqlstate      TEXT;
+    v_pg_detail     TEXT;
+    v_pg_hint       TEXT;
+    v_pg_context    TEXT;
+    v_created_by    TEXT := COALESCE(created_by, current_user);
+    v_provenance    TEXT := COALESCE(provenance, 'unknown');
 BEGIN
-    WITH filtered_data AS (
-        SELECT 
-                insert_fhir_screening_organization.hub_interaction_id AS hub_interaction_id,
-                insert_fhir_screening_organization.tenant_id AS tenant_id,
-                v_created_by,
-                v_provenance,
-                insert_fhir_screening_organization.elaboration AS elaboration,
-                insert_fhir_screening_organization.payload ->> 'created_at' AS created_at,
-                (entry.value -> 'resource'::text) ->> 'id'::text AS org_id,
-                (entry.value -> 'resource'::text) ->> 'resourceType'::text AS org_resource_type,
-                (entry.value -> 'resource'::text) ->> 'name'::text AS org_name,
-                (entry.value -> 'resource'::text) ->> 'active'::text AS org_active,
-                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS org_address,
-                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS org_city,
-                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS org_state,
-                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS org_postal_code 
-        FROM LATERAL jsonb_array_elements(insert_fhir_screening_organization.payload -> 'entry') entry
-        WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Organization'
-    )
     INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_organization (
         sat_interaction_fhir_screening_organization_id,
         hub_interaction_id,
@@ -3414,50 +3494,75 @@ BEGIN
         elaboration,
         created_by,
         provenance,
-		tenant_id 
+        tenant_id
     )
-    SELECT gen_random_uuid()::TEXT,
-        filtered_data.hub_interaction_id,
-        filtered_data.tenant_id,
-        filtered_data.org_id,
-        filtered_data.org_resource_type,
-        filtered_data.org_name,
-        filtered_data.org_active,
-        filtered_data.org_address,
-        filtered_data.org_city,
-        filtered_data.org_state,
-        filtered_data.org_postal_code,
-        filtered_data.elaboration,
-        filtered_data.v_created_by,
-        filtered_data.v_provenance,
-		filtered_data.tenant_id 
-    FROM filtered_data;
+    WITH organizations AS (
+        SELECT
+            -- Entire Organization resource JSON
+            value AS org
+        FROM jsonb_path_query(
+                payload,
+                '$.entry[*].resource?(@.resourceType == "Organization")'::jsonpath
+        ) AS t(value)
+    ),
+    parsed_org AS (
+        SELECT
+            org->>'id'                      AS org_id,
+            org->>'resourceType'            AS org_type,
+            org->>'name'                    AS org_name,
+            org->>'active'                  AS org_active,
+            jsonb_path_query_first(org, '$.address[0].text'::jsonpath) #>> '{}' AS org_address,
+            jsonb_path_query_first(org, '$.address[0].city'::jsonpath) #>> '{}' AS org_city,
+            jsonb_path_query_first(org, '$.address[0].state'::jsonpath ) #>> '{}' AS org_state,
+            jsonb_path_query_first(org, '$.address[0].postalCode'::jsonpath ) #>> '{}' AS org_postal_code
+
+        FROM organizations
+    )
+    SELECT
+        gen_random_uuid()::text,
+        hub_interaction_id,
+        tenant_id,
+        org_id,
+        org_type,
+        org_name,
+        org_active,
+        org_address,
+        org_city,
+        org_state,
+        org_postal_code,
+        elaboration,
+        v_created_by,
+        v_provenance,
+        tenant_id
+    FROM parsed_org;
+
 EXCEPTION
-   WHEN OTHERS THEN
-	    -- Capture exception details
-	    GET STACKED DIAGNOSTICS
-	        v_error_msg = MESSAGE_TEXT,
-	        v_sqlstate = RETURNED_SQLSTATE,
-	        v_pg_detail = PG_EXCEPTION_DETAIL,
-	        v_pg_hint = PG_EXCEPTION_HINT,
-	        v_pg_context = PG_EXCEPTION_CONTEXT;
-	        v_error_type = 'SQL';
-	
-	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
-	       
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-		insert_fhir_screening_organization.uri,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance, null::jsonb, insert_fhir_screening_organization.tenant_id, insert_fhir_screening_organization.hub_interaction_id);
-END;         
+    WHEN OTHERS THEN
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate  = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint   = PG_EXCEPTION_HINT,
+            v_pg_context= PG_EXCEPTION_CONTEXT;
+
+        v_error_type := 'SQL';
+
+        v_exception_id := techbd_udi_ingress.register_issue(
+            NULL,
+            uri,
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            v_provenance,
+            NULL::jsonb,
+            tenant_id,
+            hub_interaction_id
+        );
+END;        
 $$;
 
 /*******************************************************************************************************************************
@@ -6286,41 +6391,11 @@ BEGIN
 
 	IF NOT v_return_status THEN
 	    -- Attempt to insert into hub_interaction
-		BEGIN	   	    
 	        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
-	        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance);
+	        VALUES (p_interaction_id, p_interaction_key, v_created_at, v_created_by, v_provenance)
+			ON CONFLICT (hub_interaction_id) DO NOTHING;
 
 	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Inserted into hub_interaction');  
-	    EXCEPTION
-	        WHEN unique_violation THEN
-	            IF NOT p_hub_upsert_behavior THEN
-	                -- Capture exception details
-	                GET STACKED DIAGNOSTICS
-	                    v_error_msg = MESSAGE_TEXT,
-	                    v_sqlstate = RETURNED_SQLSTATE,
-	                    v_pg_detail = PG_EXCEPTION_DETAIL,
-	                    v_pg_hint = PG_EXCEPTION_HINT,
-	                    v_pg_context = PG_EXCEPTION_CONTEXT;
-	                    v_error_type = 'SQL';
-	
-	                v_is_exception := false; -- It is set to false because in the second insert, with another nature, the same hub_interaction_id is used, which should not register as an exception.
-	            END IF;
-	       WHEN OTHERS THEN
-	        	GET STACKED DIAGNOSTICS
-	                v_error_msg = MESSAGE_TEXT,
-	                v_sqlstate = RETURNED_SQLSTATE,
-	                v_pg_detail = PG_EXCEPTION_DETAIL,
-	                v_pg_hint = PG_EXCEPTION_HINT,
-	                v_pg_context = PG_EXCEPTION_CONTEXT;
-	                v_error_type = 'SQL';
-	
-	         	v_is_exception := true;				
-				v_return_status := true;
-				v_return := jsonb_build_object('error', v_error_msg, 
-									  	 'payload', p_payload,
-										 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
-										 'interaction_id', p_interaction_id);
-	    END;
 	
 		-- Insert into link table
 		IF NOT v_return_status AND p_hub_nexus_interaction_id IS NOT NULL then
