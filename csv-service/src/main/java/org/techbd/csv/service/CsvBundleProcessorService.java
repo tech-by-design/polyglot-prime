@@ -623,25 +623,25 @@ private List<Object> processScreening(final String groupKey,
                     } else if (reason.contains("not valid UTF-8 encoded")) {
                         return "wrong-encoding|File is not UTF-8 encoded";
                     }else if (reason.contains("Null bytes")) {
-                        return "invalid-content-null-bytes|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     }else if (reason.contains("Control characters")) {
-                        return "invalid-content-control|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("surrogate")) {
-                        return "invalid-content-surrogates|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("Unicode non-characters")) {
-                        return "invalid-content-noncharacters|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("Problematic whitespace")) {
-                        return "invalid-content-whitespace|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("Invisible format characters")) {
-                        return "invalid-content-format|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("Zero-width characters")) {
-                        return "invalid-content-zero-width|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     }else if (reason.contains("BOM character in middle")) {
-                        return "invalid-content-bom-middle|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.contains("Private use area characters")) {
-                        return "invalid-content-private-use|Invalid characters";
+                        return "Invalid characters|Invalid characters|" + reason;
                     } else if (reason.startsWith("File contains invalid characters")) {
-                        return "invalid-content-other|Invalid characters";} 
+                        return "Invalid characters|Invalid characters|" + reason;} 
                     else {
                         return "unknown|Unknown reason";
                     }
