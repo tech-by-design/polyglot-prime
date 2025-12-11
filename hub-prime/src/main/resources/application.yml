@@ -118,11 +118,16 @@ org:
           username: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_USERNAME:}
           password: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD:}
           driverClassName: org.postgresql.Driver
-          maximumPoolSize: 10           # Recommended pool size for a 2 vCPU Aurora instance (formula: vCPU * 2 + overhead)
-          minimumIdle: 5                # Minimum number of idle connections kept ready (half of maxPoolSize)
-          idleTimeout: 60000            # 1 minute – aggressively removes idle connections to avoid unnecessary DB load
-          connectionTimeout: 20000      # 20 seconds to wait for a connection from the pool before timing out
-          maxLifetime: 1800000          # 30 minutes – maximum lifetime before a connection is replaced (safe for Aurora)
+          # maximumPoolSize: 10           # Recommended pool size for a 2 vCPU Aurora instance (formula: vCPU * 2 + overhead)
+          # minimumIdle: 5                # Minimum number of idle connections kept ready (half of maxPoolSize)
+          # idleTimeout: 60000            # 1 minute – aggressively removes idle connections to avoid unnecessary DB load
+          # connectionTimeout: 20000      # 20 seconds to wait for a connection from the pool before timing out
+          # maxLifetime: 1800000          # 30 minutes – maximum lifetime before a connection is replaced (safe for Aurora)
+          maximumPoolSize: 500      # Set to 500 as per your request
+          minimumIdle: 100          # Minimum idle connections in the pool
+          idleTimeout: 300000       # 30 seconds to wait for a connection from the pool
+          connectionTimeout: 30000  # 5 minutes - idle connections are removed after this time
+          maxLifetime: 1800000      # 30 minutes - connections are refreshed after this time
 management:
   tracing:
     sampling:

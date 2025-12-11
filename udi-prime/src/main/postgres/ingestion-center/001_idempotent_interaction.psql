@@ -2975,7 +2975,7 @@ BEGIN
     SELECT
         gen_random_uuid()::text                                   AS sat_screening_id,
         hub_interaction_id                                        AS hub_interaction_id,
-        uri                                                       AS qe_name,
+        tenant_id                                                 AS qe_name,
         created_at                                                AS submitted_date_time,
         CASE
             WHEN payload->>'resourceType' = 'Bundle'
