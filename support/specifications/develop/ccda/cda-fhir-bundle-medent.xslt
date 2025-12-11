@@ -109,7 +109,7 @@
 
   <!-- Encounter status from the normal encounters section -->
   <xsl:variable name="normalEncounterStatus"
-      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter[1]/ccda:entryRelationship[1]/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter[1]/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
 
   <!-- Final encounterStatus -->
   <xsl:variable name="encounterStatus">
