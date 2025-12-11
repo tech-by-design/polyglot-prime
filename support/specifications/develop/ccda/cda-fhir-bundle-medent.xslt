@@ -88,10 +88,16 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
   
-  <!-- Check whether the CCDA from Guthrie and get Encounter Status in a separate logic -->
-  <!-- Determine if this is a Guthrie CCDA -->
+  <!-- Check whether the CCDA from Guthrie or Mohawk Valley Health System and get Encounter Status in a separate logic -->
+  <!-- Determine if the CCDA is from Guthrie or Mohawk Valley Health System -->
+  <xsl:variable name="orgName"
+    select="translate(
+                string(/ccda:ClinicalDocument/ccda:author[1]/ccda:assignedAuthor/ccda:representedOrganization/ccda:name), 
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                'abcdefghijklmnopqrstuvwxyz'
+           )"/>
   <xsl:variable name="IsGuthrieCCDA"
-      select="contains(/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name, 'Guthrie')" />
+      select="contains($orgName, 'guthrie') or contains($orgName, 'mohawk')"/>
 
   <!-- Encounter status from the encounters section only for Guthrie-->
   <xsl:variable name="guthrieEncounterStatusFromAct"
@@ -103,7 +109,7 @@
 
   <!-- Encounter status from the normal encounters section -->
   <xsl:variable name="normalEncounterStatus"
-      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:entryRelationship/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter[1]/ccda:entryRelationship[1]/ccda:act/ccda:entryRelationship/ccda:observation/ccda:statusCode/@code"/>
 
   <!-- Final encounterStatus -->
   <xsl:variable name="encounterStatus">
