@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:hl7="urn:hl7-org:v3"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -8,6 +9,9 @@
 
     <xsl:output method="xml" indent="yes"/>
     <xsl:strip-space elements="*"/>
+
+    <!-- top-level variable: true if any consent observation 59284-0 exists -->
+    <xsl:variable name="hasConsent" select="count(//hl7:observation[hl7:code/@code='59284-0']) &gt; 0"/>
 
     <!-- Root template -->
     <xsl:template match="/hl7:ClinicalDocument">
@@ -43,12 +47,13 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
-            <!-- Consent -->
+            <!-- Consent (same style as Epic for easy diff) -->
             <xsl:choose>
                 <xsl:when test="hl7:authorization/hl7:consent[hl7:code[@code='59284-0']]">
                     <xsl:copy-of select="hl7:authorization"/>
                 </xsl:when>
                 <xsl:otherwise>
+                    <!-- keep Epic-style explicit deny node so diffs clearly show consent differences -->
                     <authorization>
                         <consent>
                             <id root="2.16.840.1.113883.3.933"/>
@@ -77,8 +82,9 @@
                         </xsl:if>
                     
                     <!-- Observations -->
+                    <!-- Athena: observations variable (returns hl7:entry nodes only; supports organizer/component/observation) -->
                     <xsl:variable name="observations" select="hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='29762-2']]/hl7:entry[
-                        hl7:observation/hl7:entryRelationship/hl7:observation/hl7:entryRelationship/hl7:observation[
+                        hl7:observation/hl7:entryRelationship/hl7:observation[
                             (
                                 hl7:code[
                                     (@codeSystemName = 'LOINC' or @codeSystemName = 'SNOMED' or @codeSystemName = 'SNOMED CT')
@@ -101,7 +107,8 @@
                                 and string-length(hl7:value/@value) > 0
                             )
                         ]
-                    ]"/>
+                    ]                    
+                    "/>
                     <xsl:if test="$observations">
                         <component>
                             <section ID="observations">
@@ -130,4 +137,28 @@
 
         </xsl:element>
     </xsl:template>
+
+    <!-- Top-level observation template: redaction when no consent -->
+    <xsl:template match="hl7:observation">
+        <xsl:choose>
+            <!-- Always allow the explicit consent observation itself -->
+            <xsl:when test="hl7:code/@code = '59284-0'">
+                <xsl:copy-of select="."/>
+            </xsl:when>
+
+            <!-- If any consent observation exists anywhere in the document, allow all observations -->
+            <xsl:when test="$hasConsent">
+                <xsl:copy-of select="."/>
+            </xsl:when>
+
+            <!-- Otherwise redact PHI: keep only code/effectiveTime and attributes -->
+            <xsl:otherwise>
+                <xsl:copy>
+                    <xsl:copy-of select="hl7:code | hl7:effectiveTime | @*"/>
+                    <!-- intentionally omit hl7:value, hl7:performer, hl7:participant, hl7:entryRelationship content, etc. -->
+                </xsl:copy>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
 </xsl:stylesheet>
