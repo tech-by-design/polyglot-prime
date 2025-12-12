@@ -65,10 +65,10 @@
     },
     {
       "type": "Lookup Manager",
-      "channel": "lookup_group_schemafiles_export.json",
+      "channel": "lookup_group_config_export.json",
       "version": "",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-11-26"
+      "editedby": "jewelbonnie",
+      "date": "2025-12-12"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -80,9 +80,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.1",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-11-26"
+      "version": "0.5.3",
+      "editedby": "jewelbonnie",
+      "date": "2025-12-12"
     }
   ],
   "transformations": {
