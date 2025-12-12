@@ -118,7 +118,9 @@ org:
           username: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_USERNAME:}
           password: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD:}
           driverClassName: org.postgresql.Driver
-          maximumPoolSize: 10           # Recommended pool size for a 2 vCPU Aurora instance (formula: vCPU * 2 + overhead)
+          maximumPoolSize: 10   # The maximum number of database connections HikariCP can open simultaneously. 
+                      # For Aurora instances, a common guideline is: vCPUs × 2 + a small overhead 
+                      # (e.g., for a 2-vCPU Aurora instance → recommended range is ~8–10).
           minimumIdle: 5                # Minimum number of idle connections kept ready (half of maxPoolSize)
           idleTimeout: 60000            # 1 minute – aggressively removes idle connections to avoid unnecessary DB load
           connectionTimeout: 20000      # 20 seconds to wait for a connection from the pool before timing out
