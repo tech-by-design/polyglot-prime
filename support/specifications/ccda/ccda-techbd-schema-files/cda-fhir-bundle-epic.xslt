@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Version : 0.1.4 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -97,8 +98,52 @@
   <!-- Remove unwanted space,if any -->
   <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
 
+  <!-- Check whether the CCDA from Guthrie or Mohawk Valley Health System and get Encounter Status in a separate logic -->
+  <!-- Determine if the CCDA is from Guthrie or Mohawk Valley Health System -->
+  <xsl:variable name="orgName"
+    select="translate(
+                string(/ccda:ClinicalDocument/ccda:author[1]/ccda:assignedAuthor/ccda:representedOrganization/ccda:name), 
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                'abcdefghijklmnopqrstuvwxyz'
+           )"/>
+  <xsl:variable name="IsGuthrieCCDA"
+      select="contains($orgName, 'guthrie') or contains($orgName, 'mohawk')"/>
+
+  <!-- Encounter status from the encounters section only for Guthrie-->
+  <xsl:variable name="guthrieEncounterStatusFromAct"
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:entryRelationship[1]/ccda:act/ccda:statusCode/@code"/>
+
+  <!-- Encounter status from the default path for Guthrie-->
+  <xsl:variable name="guthrieEncounterStatusDefault"
+      select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:statusCode/@code" />
+
+  <!-- Encounter status from the normal encounters section -->
+  <xsl:variable name="normalEncounterStatus"
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:statusCode/@code"/>
+
+  <!-- Final encounterStatus -->
+  <xsl:variable name="encounterStatus">
+      <xsl:choose>
+          <!-- Case 1: Guthrie AND Guthrie encounter status exists from entryRelationship.act-->
+          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatusFromAct) &gt; 0">
+              <xsl:value-of select="$guthrieEncounterStatusFromAct"/>
+          </xsl:when>
+
+          <!-- Case 2: Guthrie AND Guthrie encounter status exists from encompassingEncounter-->
+          <xsl:when test="$IsGuthrieCCDA and string-length($guthrieEncounterStatusDefault) &gt; 0">
+              <xsl:value-of select="$guthrieEncounterStatusDefault"/>
+          </xsl:when>
+
+          <!-- Case 3: Otherwise use normal encounter status -->
+          <xsl:otherwise>
+              <xsl:value-of select="$normalEncounterStatus"/>
+          </xsl:otherwise>
+      </xsl:choose>
+  </xsl:variable>
+  <!-- End of Guthrie logic -->
+
   <!-- Get Organization name from the first encounter entry -->
-  <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
+  <xsl:variable name="organizationName" select="normalize-space(/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name)"/>
 
   <xsl:template match="/">
   {
@@ -125,7 +170,7 @@
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
                                 | /ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location
-                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:location/ccda:healthCareFacility/ccda:location
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole
                                 "/>
             <!-- Call Grouper Observation template -->
             <xsl:call-template name="GrouperObservation"/>
@@ -198,27 +243,16 @@
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
                                 <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                            </xsl:choose>"
                         </xsl:if>
-                        <xsl:if test="
-                            ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
-                        ">
-                            , "text": "<xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:value-of select="normalize-space(.)"/>
-                                          <xsl:if test="position() != last()">, </xsl:if>
-                                      </xsl:for-each>
-                                      <xsl:if test="ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
-                                      </xsl:if>"
+                        <xsl:variable name="formattedAddress">
+                            <xsl:call-template name="format-address">
+                                <xsl:with-param name="addr" select="../ccda:addr"/>
+                            </xsl:call-template>
+                        </xsl:variable>
+
+                        <xsl:if test="normalize-space($formattedAddress) != ''">
+                            , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
                             , "line": [
@@ -228,20 +262,20 @@
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
+                        <xsl:if test="normalize-space(ccda:city)">
+                            , "city": "<xsl:value-of select="normalize-space(ccda:city)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
+                        <xsl:if test="normalize-space(ccda:county)">
+                            , "district": "<xsl:value-of select="normalize-space(ccda:county)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
+                        <xsl:if test="normalize-space(ccda:state)">
+                            , "state": "<xsl:value-of select="normalize-space(ccda:state)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
+                        <xsl:if test="normalize-space(ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="normalize-space(ccda:postalCode)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
+                        <xsl:if test="normalize-space(ccda:country)">
+                            , "country": "<xsl:value-of select="normalize-space(ccda:country)"/>"
                         </xsl:if>
                         <xsl:if test="ccda:useablePeriod">
                             ,"period": {
@@ -290,7 +324,7 @@
             ]
         </xsl:if>
         
-      <xsl:if test="ccda:patient/ccda:raceCode or ccda:patient/ccda:ethnicGroupCode or ccda:patient/ccda:administrativeGenderCode/@code">
+      <xsl:if test="ccda:patient/ccda:raceCode or ccda:patient/ccda:ethnicGroupCode/@code or ccda:patient/ccda:administrativeGenderCode/@code">
       , "extension": [
         <!-- Declare OMB code sets -->
         <xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
@@ -299,7 +333,8 @@
         <!-- RACE extension -->
         <xsl:if test="ccda:patient/ccda:raceCode">
           {
-            "extension": [
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+            "extension": [              
               <xsl:for-each select="ccda:patient/ccda:raceCode">
                 <xsl:variable name="raceCode">
                   <xsl:choose>
@@ -357,14 +392,15 @@
                                   <xsl:if test='position() != last()'>, </xsl:if>
                                 </xsl:for-each>"
               }
-            ],
-            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-          },
+            ]            
+          }
         </xsl:if>
-
+      
         <!-- ETHNICITY extension -->
-        <xsl:if test="ccda:patient/ccda:ethnicGroupCode">
+        <xsl:if test="ccda:patient/ccda:ethnicGroupCode/@code">
+          <xsl:if test="ccda:patient/ccda:raceCode">,</xsl:if>
           {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
             "extension": [
               <xsl:for-each select="ccda:patient/ccda:ethnicGroupCode">
                 <xsl:variable name="ethCode">
@@ -422,15 +458,15 @@
                                   <xsl:if test='position() != last()'>, </xsl:if>
                                 </xsl:for-each>"
               }
-            ],
-            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+            ]            
           }
         </xsl:if>
 
         <!-- GenderCode extension -->
         <xsl:if test="string(ccda:patient/ccda:administrativeGenderCode/@code)">
-        ,{
-            "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender", 
+          <xsl:if test="ccda:patient/ccda:raceCode or ccda:patient/ccda:ethnicGroupCode/@code">,</xsl:if>
+        {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex", 
             "valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
                               <xsl:with-param name='genderCode' select='ccda:patient/ccda:administrativeGenderCode/@code'/>
                           </xsl:call-template>"
@@ -535,7 +571,8 @@
       , "communication" : [{
         "language" : {
           "coding" : [{
-                "code" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/@code"/>"
+                "code" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/@code"/>",
+                "system" : "urn:ietf:bcp:47"
               }]
         }
         <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:preferenceInd/@value)">
@@ -563,7 +600,7 @@
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -615,7 +652,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
+        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1]) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                   <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
@@ -633,9 +670,9 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1])  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {                        
-                        "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
+                        "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1], ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
                 }
@@ -653,14 +690,6 @@
             }
         ]
         </xsl:if>
-        <xsl:if test="string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension) or string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:name)">
-        , "serviceProvider": {
-            <xsl:if test="string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension)"> 
-              "reference": "Organization/<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension"/>",
-            </xsl:if>
-            "display": "<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:name"/>"
-        }
-        </xsl:if>      
       }      
       , "request" : {
         "method" : "POST",
@@ -671,6 +700,7 @@
 
   <!-- Encounter Template -->
   <xsl:template name="ComponentEncounter" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter">
+    <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:code/@code)">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
@@ -680,12 +710,8 @@
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
-        <!-- "identifier" : [{          
-          "system" : "urn:oid:<xsl:value-of select="ccda:id/@root"/>",
-          "value" : "<xsl:value-of select="ccda:id/@extension"/>"
-        }], -->
         "status": "<xsl:call-template name='mapEncounterStatus'>
-                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                            <xsl:with-param name='statusCode' select='$encounterStatus'/>
                         </xsl:call-template>",
         <xsl:if test="string($encounterType)">
           <xsl:variable name="encounterTypeDisplay">
@@ -717,7 +743,6 @@
           "display" : "<xsl:value-of select="$patientResourceName"/>"
         }
         <xsl:choose>
-          <!-- Check if low or high exists -->
           <xsl:when test="string(ccda:effectiveTime/ccda:low/@value) or string(ccda:effectiveTime/ccda:high/@value)">
             , "period": {
               "start": "<xsl:call-template name='formatDateTime'>
@@ -728,7 +753,6 @@
                     </xsl:call-template>"
             }
           </xsl:when>
-          <!-- Check if only value exists -->
           <xsl:when test="string(ccda:effectiveTime/@value)">
             , "period": {
               "start": "<xsl:call-template name='formatDateTime'>
@@ -737,7 +761,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:participant/@typeCode) and (string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
+        <xsl:if test="string(ccda:participant/@typeCode) and (string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1]) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                     <xsl:if test="string(ccda:participant/@typeCode)"> 
@@ -755,9 +779,9 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1])  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {
-                        "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
+                        "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given[1], ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
                 }
@@ -775,20 +799,13 @@
             }
         ]
         </xsl:if>
-        <xsl:if test="string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension) or string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:name)">
-        , "serviceProvider": {
-            <xsl:if test="string(ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension)"> 
-              "reference": "Organization/<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:id/@extension"/>",
-            </xsl:if>
-            "display": "<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:serviceProviderOrganization/ccda:name"/>"
-        }
-        </xsl:if>
       }      
       , "request" : {
         "method" : "POST",
         "url" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>"
       }
     }
+    </xsl:if>
   </xsl:template>
 
   <!-- Consent Template -->
@@ -935,7 +952,7 @@
         </xsl:if>
         "name" : "<xsl:choose>
                     <xsl:when test="$organizationName"><xsl:value-of select="$organizationName"/></xsl:when>
-                    <xsl:otherwise><xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/></xsl:otherwise>
+                    <xsl:otherwise><xsl:value-of select="normalize-space(ccda:assignedAuthor/ccda:representedOrganization/ccda:name)"/></xsl:otherwise>
                   </xsl:choose>"
         <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom[not(@nullFlavor)]">
             , "telecom": [
@@ -975,27 +992,16 @@
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
                                 <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
-                        </xsl:if>
-                        <xsl:if test="
-                            ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
-                        ">
-                            , "text": "<xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:value-of select="normalize-space(.)"/>
-                                          <xsl:if test="position() != last()">, </xsl:if>
-                                      </xsl:for-each>
-                                      <xsl:if test="ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
-                                      </xsl:if>"
+                            </xsl:choose>"
+                        </xsl:if>                        
+                        <xsl:variable name="formattedAddress">
+                            <xsl:call-template name="format-address">
+                                <xsl:with-param name="addr" select="../ccda:addr"/>
+                            </xsl:call-template>
+                        </xsl:variable>
+
+                        <xsl:if test="normalize-space($formattedAddress) != ''">
+                            , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
                             , "line": [
@@ -1005,20 +1011,23 @@
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
-                        </xsl:if>
                         <xsl:if test="string(ccda:country)">
                             , "country": "<xsl:value-of select="ccda:country"/>"
+                        </xsl:if>
+                        <xsl:if test="normalize-space(ccda:city)">
+                            , "city": "<xsl:value-of select="normalize-space(ccda:city)"/>"
+                        </xsl:if>
+                        <xsl:if test="normalize-space(ccda:county)">
+                            , "district": "<xsl:value-of select="normalize-space(ccda:county)"/>"
+                        </xsl:if>
+                        <xsl:if test="normalize-space(ccda:state)">
+                            , "state": "<xsl:value-of select="normalize-space(ccda:state)"/>"
+                        </xsl:if>
+                        <xsl:if test="normalize-space(ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="normalize-space(ccda:postalCode)"/>"
+                        </xsl:if>
+                        <xsl:if test="normalize-space(ccda:country)">
+                            , "country": "<xsl:value-of select="normalize-space(ccda:country)"/>"
                         </xsl:if>
                         <xsl:if test="ccda:useablePeriod">
                             ,"period": {
@@ -1189,6 +1198,7 @@
                     "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
                     "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
                   },
+                  "language": "en",
                   "status": "<xsl:call-template name='mapObservationStatus'>
                                 <xsl:with-param name='statusCode' select='ccda:observation/ccda:statusCode/@code'/>
                             </xsl:call-template>",
@@ -1202,25 +1212,27 @@
                                       <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                     </xsl:call-template>"
                       }
-                      <xsl:choose>
-                        <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
-                          <xsl:choose>
-                            <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
-                              , {
-                                  "system": "http://snomed.info/sct",
-                                  "code": "365458002",
-                                  "display": "Education and/or schooling finding"
-                                }
-                            </xsl:when>
-                          </xsl:choose>
-                        </xsl:when>
-                      </xsl:choose>
                       ],
                       "text" : "<xsl:call-template name="mapSDOHCategoryText">
                                   <xsl:with-param name="questionCode" select="$questionCode"/>
                                   <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                 </xsl:call-template>"
                     },
+                    <xsl:choose>
+                      <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
+                        <xsl:choose>
+                          <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
+                            { 
+                              "coding": [{
+                                "system": "http://snomed.info/sct",
+                                "code": "365458002",
+                                "display": "Education and/or schooling finding"
+                              }]
+                            },
+                          </xsl:when>
+                        </xsl:choose>
+                      </xsl:when>
+                    </xsl:choose>
                     {
                       "coding": [{
                           "system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -1239,15 +1251,15 @@
                       {
                         "system": "http://loinc.org",
                         "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
-                        "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                        "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
                       }
                     ]
                     <xsl:choose>
                       <xsl:when test="ccda:observation/ccda:code/@originalText">
-                        , "text": "<xsl:value-of select='ccda:observation/ccda:code/@originalText'/>"
+                        , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
                       </xsl:when>
                       <xsl:when test="ccda:observation/ccda:code/@displayName">
-                        , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                        , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
                       </xsl:when>
                     </xsl:choose>
                   },
@@ -1281,15 +1293,15 @@
                                     {
                                       "system": "http://loinc.org",
                                       "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
-                                      "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                      "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
                                     }
                                   ]
                                   <xsl:choose>
                                     <xsl:when test="ccda:observation/ccda:code/@originalText">
-                                      , "text": "<xsl:value-of select='ccda:observation/ccda:code/@originalText'/>"
+                                      , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
                                     </xsl:when>
                                     <xsl:when test="ccda:observation/ccda:code/@displayName">
-                                      , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                      , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
                                     </xsl:when>
                                   </xsl:choose>
                                 },
@@ -1454,102 +1466,123 @@
 
 <xsl:template name="mapObservationStatus">
     <xsl:param name="statusCode"/>
+        
+    <!-- Convert value to lowercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz')" />
+
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">final</xsl:when>
-        <xsl:when test="$statusCode = 'final'">final</xsl:when>
-        <xsl:when test="$statusCode = 'active'">preliminary</xsl:when>
-        <xsl:when test="$statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'held'">registered</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">registered</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'completed'">final</xsl:when>
+        <xsl:when test="$cleanCode = 'final'">final</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">preliminary</xsl:when>
+        <xsl:when test="$cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'held'">registered</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">registered</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified'">entered-in-error</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapEncounterStatus">
+<xsl:template name="mapEncounterStatus"> 
     <xsl:param name="statusCode"/>
+    
+    <!-- Convert value to lowercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz')" />
+
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed' or 
-                        $statusCode = 'normal'">finished</xsl:when>
-        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled' or 
-                        $statusCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
-        <xsl:when test="$statusCode = 'nullified' or 
-                        $statusCode = 'corrected'">entered-in-error</xsl:when>
-        <xsl:when test="$statusCode = 'new'">planned</xsl:when>
+        <xsl:when test="$cleanCode = 'completed' or 
+                        $cleanCode = 'normal'">finished</xsl:when>
+        <xsl:when test="$cleanCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled' or 
+                        $cleanCode = 'aborted'">cancelled</xsl:when>
+        <xsl:when test="$cleanCode = 'suspended'">on-hold</xsl:when>
+        <xsl:when test="$cleanCode = 'nullified' or 
+                        $cleanCode = 'corrected'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'new'">planned</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapParticipantType">
     <xsl:param name="typeCode"/>
+            
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($typeCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
+
     <xsl:choose>
-        <xsl:when test="$typeCode = 'ADM'">admitter</xsl:when>
-        <xsl:when test="$typeCode = 'ATND'">attender</xsl:when>
-        <xsl:when test="$typeCode = 'CALLBCK'">callback contact</xsl:when>
-        <xsl:when test="$typeCode = 'CON'">consultant</xsl:when>
-        <xsl:when test="$typeCode = 'DIS'">discharger</xsl:when>
-        <xsl:when test="$typeCode = 'ESC'">escort</xsl:when>
-        <xsl:when test="$typeCode = 'REF'">referrer</xsl:when>
-        <xsl:when test="$typeCode = 'SPRF'">secondary performer</xsl:when>
-        <xsl:when test="$typeCode = 'PPRF'">primary performer</xsl:when>
-        <xsl:when test="$typeCode = 'PART'">Participation</xsl:when>
-        <xsl:when test="$typeCode = 'translator'">Translator</xsl:when>
-        <xsl:when test="$typeCode = 'emergency'">Emergency</xsl:when>
-        <xsl:when test="$typeCode = 'AUT'">author (originator)</xsl:when>
-        <xsl:when test="$typeCode = 'INF'">informant</xsl:when>
-        <xsl:when test="$typeCode = 'TRANS'">Transcriber</xsl:when>
-        <xsl:when test="$typeCode = 'ENT'">data entry person</xsl:when>
-        <xsl:when test="$typeCode = 'WIT'">witness</xsl:when>
-        <xsl:when test="$typeCode = 'NOTARY'">notary</xsl:when>
-        <xsl:when test="$typeCode = 'CST'">custodian</xsl:when>
-        <xsl:when test="$typeCode = 'DIR'">direct target</xsl:when>
-        <xsl:when test="$typeCode = 'ALY'">analyte</xsl:when>
-        <xsl:when test="$typeCode = 'BBY'">baby</xsl:when>
-        <xsl:when test="$typeCode = 'CAT'">catalyst</xsl:when>
-        <xsl:when test="$typeCode = 'CSM'">consumable</xsl:when>
-        <xsl:when test="$typeCode = 'TPA'">therapeutic agent</xsl:when>
-        <xsl:when test="$typeCode = 'DEV'">device</xsl:when>
-        <xsl:when test="$typeCode = 'NRD'">non-reuseable device</xsl:when>
-        <xsl:when test="$typeCode = 'RDV'">reusable device</xsl:when>
-        <xsl:when test="$typeCode = 'DON'">donor</xsl:when>
-        <xsl:when test="$typeCode = 'EXPAGNT'">ExposureAgent</xsl:when>
-        <xsl:when test="$typeCode = 'EXPART'">ExposureParticipation</xsl:when>
-        <xsl:when test="$typeCode = 'EXPTRGT'">ExposureTarget</xsl:when>
-        <xsl:when test="$typeCode = 'EXSRC'">ExposureSource</xsl:when>
-        <xsl:when test="$typeCode = 'PRD'">product</xsl:when>
-        <xsl:when test="$typeCode = 'SBJ'">subject</xsl:when>
-        <xsl:when test="$typeCode = 'SPC'">specimen</xsl:when>
-        <xsl:when test="$typeCode = 'IND'">indirect target</xsl:when>
-        <xsl:when test="$typeCode = 'BEN'">beneficiary</xsl:when>
-        <xsl:when test="$typeCode = 'CAGNT'">causative agent</xsl:when>
-        <xsl:when test="$typeCode = 'COV'">coverage target</xsl:when>
-        <xsl:when test="$typeCode = 'GUAR'">guarantor party</xsl:when>
-        <xsl:when test="$typeCode = 'HLD'">holder</xsl:when>
-        <xsl:when test="$typeCode = 'RCT'">record target</xsl:when>
-        <xsl:when test="$typeCode = 'RCV'">receiver</xsl:when>
-        <xsl:when test="$typeCode = 'IRCP'">information recipient</xsl:when>
-        <xsl:when test="$typeCode = 'NOT'">urgent notification contact</xsl:when>
-        <xsl:when test="$typeCode = 'PRCP'">primary information recipient</xsl:when>
-        <xsl:when test="$typeCode = 'REFB'">Referred By</xsl:when>
-        <xsl:when test="$typeCode = 'REFT'">Referred to</xsl:when>
-        <xsl:when test="$typeCode = 'TRC'">tracker</xsl:when>
-        <xsl:when test="$typeCode = 'LOC'">location</xsl:when>
-        <xsl:when test="$typeCode = 'DST'">destination</xsl:when>
-        <xsl:when test="$typeCode = 'ELOC'">entry location</xsl:when>
-        <xsl:when test="$typeCode = 'ORG'">origin</xsl:when>
-        <xsl:when test="$typeCode = 'RML'">remote</xsl:when>
-        <xsl:when test="$typeCode = 'VIA'">via</xsl:when>
-        <xsl:when test="$typeCode = 'PRF'">performer</xsl:when>
-        <xsl:when test="$typeCode = 'DIST'">distributor</xsl:when>
-        <xsl:when test="$typeCode = 'PPRF'">primary performer</xsl:when>
-        <xsl:when test="$typeCode = 'SPRF'">secondary performer</xsl:when>
-        <xsl:when test="$typeCode = 'RESP'">responsible party</xsl:when>
-        <xsl:when test="$typeCode = 'VRF'">verifier</xsl:when>
-        <xsl:when test="$typeCode = 'AUTHEN'">authenticator</xsl:when>
-        <xsl:when test="$typeCode = 'LA'">legal authenticator</xsl:when>
+        <xsl:when test="$cleanCode = 'ADM'">admitter</xsl:when>
+        <xsl:when test="$cleanCode = 'ATND'">attender</xsl:when>
+        <xsl:when test="$cleanCode = 'CALLBCK'">callback contact</xsl:when>
+        <xsl:when test="$cleanCode = 'CON'">consultant</xsl:when>
+        <xsl:when test="$cleanCode = 'DIS'">discharger</xsl:when>
+        <xsl:when test="$cleanCode = 'ESC'">escort</xsl:when>
+        <xsl:when test="$cleanCode = 'REF'">referrer</xsl:when>
+        <xsl:when test="$cleanCode = 'SPRF'">secondary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'PPRF'">primary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'PART'">Participation</xsl:when>
+        <xsl:when test="$cleanCode = 'TRANSLATOR'">Translator</xsl:when>
+        <xsl:when test="$cleanCode = 'EMERGEMCY'">Emergency</xsl:when>
+        <xsl:when test="$cleanCode = 'AUT'">author (originator)</xsl:when>
+        <xsl:when test="$cleanCode = 'INF'">informant</xsl:when>
+        <xsl:when test="$cleanCode = 'TRANS'">Transcriber</xsl:when>
+        <xsl:when test="$cleanCode = 'ENT'">data entry person</xsl:when>
+        <xsl:when test="$cleanCode = 'WIT'">witness</xsl:when>
+        <xsl:when test="$cleanCode = 'NOTARY'">notary</xsl:when>
+        <xsl:when test="$cleanCode = 'CST'">custodian</xsl:when>
+        <xsl:when test="$cleanCode = 'DIR'">direct target</xsl:when>
+        <xsl:when test="$cleanCode = 'ALY'">analyte</xsl:when>
+        <xsl:when test="$cleanCode = 'BBY'">baby</xsl:when>
+        <xsl:when test="$cleanCode = 'CAT'">catalyst</xsl:when>
+        <xsl:when test="$cleanCode = 'CSM'">consumable</xsl:when>
+        <xsl:when test="$cleanCode = 'TPA'">therapeutic agent</xsl:when>
+        <xsl:when test="$cleanCode = 'DEV'">device</xsl:when>
+        <xsl:when test="$cleanCode = 'NRD'">non-reuseable device</xsl:when>
+        <xsl:when test="$cleanCode = 'RDV'">reusable device</xsl:when>
+        <xsl:when test="$cleanCode = 'DON'">donor</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPAGNT'">ExposureAgent</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPART'">ExposureParticipation</xsl:when>
+        <xsl:when test="$cleanCode = 'EXPTRGT'">ExposureTarget</xsl:when>
+        <xsl:when test="$cleanCode = 'EXSRC'">ExposureSource</xsl:when>
+        <xsl:when test="$cleanCode = 'PRD'">product</xsl:when>
+        <xsl:when test="$cleanCode = 'SBJ'">subject</xsl:when>
+        <xsl:when test="$cleanCode = 'SPC'">specimen</xsl:when>
+        <xsl:when test="$cleanCode = 'IND'">indirect target</xsl:when>
+        <xsl:when test="$cleanCode = 'BEN'">beneficiary</xsl:when>
+        <xsl:when test="$cleanCode = 'CAGNT'">causative agent</xsl:when>
+        <xsl:when test="$cleanCode = 'COV'">coverage target</xsl:when>
+        <xsl:when test="$cleanCode = 'GUAR'">guarantor party</xsl:when>
+        <xsl:when test="$cleanCode = 'HLD'">holder</xsl:when>
+        <xsl:when test="$cleanCode = 'RCT'">record target</xsl:when>
+        <xsl:when test="$cleanCode = 'RCV'">receiver</xsl:when>
+        <xsl:when test="$cleanCode = 'IRCP'">information recipient</xsl:when>
+        <xsl:when test="$cleanCode = 'NOT'">urgent notification contact</xsl:when>
+        <xsl:when test="$cleanCode = 'PRCP'">primary information recipient</xsl:when>
+        <xsl:when test="$cleanCode = 'REFB'">Referred By</xsl:when>
+        <xsl:when test="$cleanCode = 'REFT'">Referred to</xsl:when>
+        <xsl:when test="$cleanCode = 'TRC'">tracker</xsl:when>
+        <xsl:when test="$cleanCode = 'LOC'">location</xsl:when>
+        <xsl:when test="$cleanCode = 'DST'">destination</xsl:when>
+        <xsl:when test="$cleanCode = 'ELOC'">entry location</xsl:when>
+        <xsl:when test="$cleanCode = 'ORG'">origin</xsl:when>
+        <xsl:when test="$cleanCode = 'RML'">remote</xsl:when>
+        <xsl:when test="$cleanCode = 'VIA'">via</xsl:when>
+        <xsl:when test="$cleanCode = 'PRF'">performer</xsl:when>
+        <xsl:when test="$cleanCode = 'DIST'">distributor</xsl:when>
+        <xsl:when test="$cleanCode = 'PPRF'">primary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'SPRF'">secondary performer</xsl:when>
+        <xsl:when test="$cleanCode = 'RESP'">responsible party</xsl:when>
+        <xsl:when test="$cleanCode = 'VRF'">verifier</xsl:when>
+        <xsl:when test="$cleanCode = 'AUTHEN'">authenticator</xsl:when>
+        <xsl:when test="$cleanCode = 'LA'">legal authenticator</xsl:when>
         <xsl:otherwise>Unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1585,64 +1618,67 @@
   </xsl:choose>
 </xsl:template>
 
-<xsl:template name="mapQuestionnaireStatus">
-    <xsl:param name="statusCode"/>
-    <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">active</xsl:when>
-        <xsl:when test="$statusCode = 'final'">active</xsl:when>
-        <xsl:when test="$statusCode = 'active'">active</xsl:when>
-        <xsl:when test="$statusCode = 'aborted'">retired</xsl:when>
-        <xsl:when test="$statusCode = 'cancelled'">retired</xsl:when>
-        <xsl:when test="$statusCode = 'held'">draft</xsl:when>
-        <xsl:when test="$statusCode = 'suspended'">draft</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">retired</xsl:when>
-        <xsl:otherwise>unknown</xsl:otherwise>
-    </xsl:choose>
-</xsl:template>
-
 <xsl:template name="mapMaritalStatus">
     <xsl:param name="statusCode"/>
+        
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
     <xsl:choose>
-        <xsl:when test="$statusCode = 'M'">married</xsl:when>
-        <xsl:when test="$statusCode = 'S'">Never Married</xsl:when>
-        <xsl:when test="$statusCode = 'A'">Annulled</xsl:when>
-        <xsl:when test="$statusCode = 'D'">Divorced</xsl:when>
-        <xsl:when test="$statusCode = 'I'">Interlocutory</xsl:when>
-        <xsl:when test="$statusCode = 'L'">Legally Separated</xsl:when>
-        <xsl:when test="$statusCode = 'C'">Common Law</xsl:when>
-        <xsl:when test="$statusCode = 'P'">Polygamous</xsl:when>
-        <xsl:when test="$statusCode = 'T'">Domestic partner</xsl:when>
-        <xsl:when test="$statusCode = 'U'">unmarried</xsl:when>
-        <xsl:when test="$statusCode = 'W'">Widowed</xsl:when>
+        <xsl:when test="$cleanCode = 'M'">married</xsl:when>
+        <xsl:when test="$cleanCode = 'S'">Never Married</xsl:when>
+        <xsl:when test="$cleanCode = 'A'">Annulled</xsl:when>
+        <xsl:when test="$cleanCode = 'D'">Divorced</xsl:when>
+        <xsl:when test="$cleanCode = 'I'">Interlocutory</xsl:when>
+        <xsl:when test="$cleanCode = 'L'">Legally Separated</xsl:when>
+        <xsl:when test="$cleanCode = 'C'">Common Law</xsl:when>
+        <xsl:when test="$cleanCode = 'P'">Polygamous</xsl:when>
+        <xsl:when test="$cleanCode = 'T'">Domestic partner</xsl:when>
+        <xsl:when test="$cleanCode = 'U'">unmarried</xsl:when>
+        <xsl:when test="$cleanCode = 'W'">Widowed</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapMaritalStatusCode">
     <xsl:param name="statusCode"/>
+            
+    <!-- Convert value to uppercase for case-insensitive matching -->
+    <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($statusCode)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
     <xsl:choose>
-  <xsl:when test='$statusCode = "M" or
-                  $statusCode = "S" or
-                  $statusCode = "A" or
-                  $statusCode = "D" or
-                  $statusCode = "I" or
-                  $statusCode = "L" or
-                  $statusCode = "C" or
-                  $statusCode = "P" or
-                  $statusCode = "T" or
-                  $statusCode = "U" or
-                  $statusCode = "W"'>
-    <xsl:value-of select='$statusCode'/>
-  </xsl:when>
-  <xsl:otherwise/>
-</xsl:choose>
+        <xsl:when test='$cleanCode = "M" or
+                  $cleanCode = "S" or
+                  $cleanCode = "A" or
+                  $cleanCode = "D" or
+                  $cleanCode = "I" or
+                  $cleanCode = "L" or
+                  $cleanCode = "C" or
+                  $cleanCode = "P" or
+                  $cleanCode = "T" or
+                  $cleanCode = "U" or
+                  $cleanCode = "W"'>
+          <xsl:value-of select='$cleanCode'/>
+        </xsl:when>
+        <xsl:otherwise/>
+    </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapAdministrativeGenderCode">
   <xsl:param name="genderCode"/>
+              
+  <!-- Convert value to uppercase for case-insensitive matching -->
+  <xsl:variable name="cleanCode"
+      select="translate(normalize-space(string($genderCode)),
+                        'abcdefghijklmnopqrstuvwxyz',
+                        'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
   <xsl:choose>
-    <xsl:when test="$genderCode = 'M' or $genderCode = 'Male' or $genderCode = 'male'">M</xsl:when>
-    <xsl:when test="$genderCode = 'F' or $genderCode = 'Female' or $genderCode = 'female'">F</xsl:when>
+    <xsl:when test="$cleanCode = 'M' or $cleanCode = 'MALE'">M</xsl:when>
+    <xsl:when test="$cleanCode = 'F' or $cleanCode = 'FEMALE'">F</xsl:when>
     <xsl:otherwise>UNK</xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -1804,7 +1840,7 @@
   <xsl:template name="GrouperObservation">
     <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship"/>
     <xsl:variable name="grouperScreening" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation"/>
-    <xsl:if test="$grouperObs">
+    <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
             <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>
@@ -1874,9 +1910,7 @@
             </xsl:if>
             "category": [
               {
-                "coding": [
-                  <xsl:value-of select='$categoryXml'/>
-                ]
+                "coding": <xsl:value-of select='$categoryXml'/>
               },
               {
                 "coding": [{
@@ -1956,42 +1990,30 @@
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$locationMetaProfileUrl'/>"]
         }
-        <xsl:if test="ccda:name">
-          ,"name": "<xsl:value-of select="ccda:name"/>"
+        <xsl:if test="normalize-space(ccda:name)">
+          ,"name": "<xsl:value-of select="normalize-space(ccda:name)"/>"
         </xsl:if>
 
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address": [
-                <xsl:for-each select="ccda:addr[not(@nullFlavor)]">
+            , "address": 
                     {
-                        <xsl:if test="string(@use)">
+                        <xsl:if test="string(ccda:addr/@use)">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                                <xsl:when test="ccda:addr/@use='HP' or ccda:addr/@use='H'">home</xsl:when>
+                                <xsl:when test="ccda:addr/@use='WP'">work</xsl:when>
+                                <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
+                                <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
+                                <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
+                            </xsl:choose>"
                         </xsl:if>
-                        <xsl:if test="
-                            ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
-                        ">
-                            , "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:value-of select="normalize-space(.)"/>
-                                          <xsl:if test="position() != last()">, </xsl:if>
-                                      </xsl:for-each>
-                                      <xsl:if test="ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
-                                      </xsl:if>"
+                        <xsl:variable name="formattedAddress">
+                            <xsl:call-template name="format-address">
+                                <xsl:with-param name="addr" select="ccda:addr"/>
+                            </xsl:call-template>
+                        </xsl:variable>
+
+                        <xsl:if test="normalize-space($formattedAddress) != ''">
+                            , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
                             , "line": [
@@ -2001,39 +2023,37 @@
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:city)">
+                            , "city": "<xsl:value-of select="normalize-space(ccda:addr/ccda:city)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:county)">
+                            , "district": "<xsl:value-of select="normalize-space(ccda:addr/ccda:county)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:state)">
+                            , "state": "<xsl:value-of select="normalize-space(ccda:addr/ccda:state)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="normalize-space(ccda:addr/ccda:postalCode)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:country)">
+                            , "country": "<xsl:value-of select="normalize-space(ccda:addr/ccda:country)"/>"
                         </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
+                        <xsl:if test="ccda:addr/ccda:useablePeriod">
                             ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">
                                     "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
+                                                  <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:low/@value"/>
                                               </xsl:call-template>"
                                 </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:high/@value)">
+                                    <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
                                     "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
+                                                <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:high/@value"/>
                                             </xsl:call-template>"
                                 </xsl:if>
                             }
                         </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
+                    } 
         </xsl:if>
       },
       "request" : {
@@ -2043,10 +2063,10 @@
     }
   </xsl:if>
   </xsl:template>
-
+  
   <!-- Location Template from Encounters section -->
-  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole/ccda:playingEntity">
-  <xsl:if test="string($locationResourceId)">
+  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">
+  <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location/ccda:healthCareFacility/ccda:location/ccda:name) and string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
       "resource": {
@@ -2056,42 +2076,30 @@
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["<xsl:value-of select='$locationMetaProfileUrl'/>"]
         }
-        <xsl:if test="ccda:name">
-          ,"name": "<xsl:value-of select="ccda:name"/>"
+        <xsl:if test="normalize-space(ccda:playingEntity/ccda:name)">
+          ,"name": "<xsl:value-of select="normalize-space(ccda:playingEntity/ccda:name)"/>"
         </xsl:if>
 
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
-            , "address": [
-                <xsl:for-each select="ccda:addr[not(@nullFlavor)]">
+            , "address": 
                     {
-                        <xsl:if test="string(@use)">
+                        <xsl:if test="string(ccda:addr/@use)">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
+                                <xsl:when test="ccda:addr/@use='HP' or ccda:addr/@use='H'">home</xsl:when>
+                                <xsl:when test="ccda:addr/@use='WP'">work</xsl:when>
+                                <xsl:when test="ccda:addr/@use='TMP'">temp</xsl:when>
+                                <xsl:when test="ccda:addr/@use='OLD' or ccda:addr/@use='BAD'">old</xsl:when>
+                                <xsl:otherwise><xsl:value-of select="ccda:addr/@use"/></xsl:otherwise>
+                            </xsl:choose>"
                         </xsl:if>
-                        <xsl:if test="
-                            ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != ''] 
-                            or ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']
-                        ">
-                            , "text": "<xsl:for-each select="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:value-of select="normalize-space(.)"/>
-                                          <xsl:if test="position() != last()">, </xsl:if>
-                                      </xsl:for-each>
-                                      <xsl:if test="ccda:addr/ccda:city[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:city)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:addr/ccda:state[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(ccda:state)"/>
-                                      </xsl:if>
-                                      <xsl:if test="ccda:addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != '']">
-                                          <xsl:text> </xsl:text><xsl:value-of select="normalize-space(ccda:postalCode)"/>
-                                      </xsl:if>"
+                        <xsl:variable name="formattedAddress">
+                            <xsl:call-template name="format-address">
+                                <xsl:with-param name="addr" select="ccda:addr"/>
+                            </xsl:call-template>
+                        </xsl:variable>
+
+                        <xsl:if test="normalize-space($formattedAddress) != ''">
+                            , "text": "<xsl:value-of select="$formattedAddress"/>"
                         </xsl:if>
                         <xsl:if test="ccda:addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
                             , "line": [
@@ -2101,39 +2109,37 @@
                                 </xsl:for-each>
                             ]
                         </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:city)">
+                            , "city": "<xsl:value-of select="normalize-space(ccda:addr/ccda:city)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:county)">
+                            , "district": "<xsl:value-of select="normalize-space(ccda:addr/ccda:county)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:state)">
+                            , "state": "<xsl:value-of select="normalize-space(ccda:addr/ccda:state)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:postalCode)">
+                            , "postalCode": "<xsl:value-of select="normalize-space(ccda:addr/ccda:postalCode)"/>"
                         </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
+                        <xsl:if test="normalize-space(ccda:addr/ccda:country)">
+                            , "country": "<xsl:value-of select="normalize-space(ccda:addr/ccda:country)"/>"
                         </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
+                        <xsl:if test="ccda:addr/ccda:useablePeriod">
                             ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">
                                     "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
+                                                  <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:low/@value"/>
                                               </xsl:call-template>"
                                 </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
+                                <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:high/@value)">
+                                    <xsl:if test="string(ccda:addr/ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
                                     "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
+                                                <xsl:with-param name="dateTime" select="ccda:addr/ccda:useablePeriod/ccda:high/@value"/>
                                             </xsl:call-template>"
                                 </xsl:if>
                             }
                         </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
+                    } 
         </xsl:if>
       },
       "request" : {
@@ -2167,6 +2173,48 @@
         <xsl:text>http://loinc.org</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <!-- Template to format an address -->
+  <xsl:template name="format-address">
+      <xsl:param name="addr"/>
+
+      <!-- Extract components -->
+      <xsl:variable name="street">
+          <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+              <xsl:value-of select="normalize-space(.)"/>
+              <xsl:if test="position() != last()">, </xsl:if>
+          </xsl:for-each>
+      </xsl:variable>
+
+      <xsl:variable name="city"  select="normalize-space($addr/ccda:city[not(@nullFlavor) and normalize-space(.) != ''])"/>
+      <xsl:variable name="state" select="normalize-space($addr/ccda:state[not(@nullFlavor) and normalize-space(.) != ''])"/>
+      <xsl:variable name="zip"   select="normalize-space($addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != ''])"/>
+
+      <!-- Build the final string -->
+      <xsl:variable name="fullAddress">
+          <xsl:if test="string-length(normalize-space($street)) &gt; 0">
+              <xsl:value-of select="$street"/>
+          </xsl:if>
+
+          <xsl:if test="$city != ''">
+              <xsl:if test="normalize-space($street) != ''">, </xsl:if>
+              <xsl:value-of select="$city"/>
+          </xsl:if>
+
+          <xsl:if test="$state != ''">
+              <xsl:if test="$city != '' or normalize-space($street) != ''">, </xsl:if>
+              <xsl:value-of select="$state"/>
+          </xsl:if>
+
+          <xsl:if test="$zip != ''">
+              <xsl:text> </xsl:text>
+              <xsl:value-of select="$zip"/>
+          </xsl:if>
+      </xsl:variable>
+
+      <!-- Output trimmed -->
+      <xsl:value-of select="normalize-space($fullAddress)"/>
   </xsl:template>
 
 </xsl:stylesheet>
