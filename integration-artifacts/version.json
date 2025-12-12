@@ -65,6 +65,13 @@
     },
     {
       "type": "Lookup Manager",
+      "channel": "lookup_group_schemafiles_export.json",
+      "version": "",
+      "editedby": "jewelbonnie",
+      "date": "2025-12-12"
+    },
+    {
+      "type": "Lookup Manager",
       "channel": "lookup_group_config_export.json",
       "version": "",
       "editedby": "jewelbonnie",
