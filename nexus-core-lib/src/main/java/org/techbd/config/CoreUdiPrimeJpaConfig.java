@@ -1,8 +1,5 @@
 package org.techbd.config;
 
-import java.sql.Connection;
-import java.util.List;
-
 import javax.sql.DataSource;
 
 import org.jooq.DSLContext;
@@ -12,71 +9,83 @@ import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.DefaultDSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@org.springframework.context.annotation.Configuration
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+@Configuration
 @EnableTransactionManagement
 public class CoreUdiPrimeJpaConfig {
-
-    @Autowired
+@Autowired
     private Environment environment;
-
-    @Bean
+ 
+    @Bean(name = "udiPrimaryDataSource")
     @Primary
-    @Lazy
     @ConditionalOnProperty(name = "org.techbd.udi.prime.jdbc.url")
-    @ConfigurationProperties(prefix = "org.techbd.udi.prime.jdbc")
     public DataSource udiPrimaryDataSource() {
-        return DataSourceBuilder.create().build();
-    }
+        String jdbcUrl = environment.getProperty("org.techbd.udi.prime.jdbc.url");
+        String username = environment.getProperty("org.techbd.udi.prime.jdbc.username");
+        String password = environment.getProperty("org.techbd.udi.prime.jdbc.password");
+        String driverClassName = environment.getProperty("org.techbd.udi.prime.jdbc.driverClassName", "org.postgresql.Driver");
+        
+        Integer maximumPoolSize = environment.getProperty("org.techbd.udi.prime.jdbc.maximumPoolSize", Integer.class, 10);
+        Integer minimumIdle = environment.getProperty("org.techbd.udi.prime.jdbc.minimumIdle", Integer.class, 5);
+        Long idleTimeout = environment.getProperty("org.techbd.udi.prime.jdbc.idleTimeout", Long.class, 60000L);
+        Long connectionTimeout = environment.getProperty("org.techbd.udi.prime.jdbc.connectionTimeout", Long.class, 20000L);
+        Long maxLifetime = environment.getProperty("org.techbd.udi.prime.jdbc.maxLifetime", Long.class, 1800000L);
+        Long leakDetectionThreshold = environment.getProperty("org.techbd.udi.prime.jdbc.leakDetectionThreshold", Long.class, 30000L);
 
-    public record DataSourceHealthCheckResult(DataSource dataSrc, Exception error, Environment environment,
-            String... expected) {
-
-        public boolean isAlive() {
-            return error == null;
+        // Validation
+        if (jdbcUrl == null || jdbcUrl.trim().isEmpty()) {
+            throw new IllegalStateException("Primary database jdbcUrl is not configured! Property: org.techbd.udi.prime.jdbc.url");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalStateException("Primary database username is not configured! Property: org.techbd.udi.prime.jdbc.username");
+        }
+        if (password == null) {
+            throw new IllegalStateException("Primary database password is not configured! Property: org.techbd.udi.prime.jdbc.password");
         }
 
-        public List<String> expectedConf() {
-            return Configuration.checkProperties(environment, expected);
-        }
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setDriverClassName(driverClassName);
+        config.setMaximumPoolSize(maximumPoolSize);
+        config.setMinimumIdle(minimumIdle);
+        config.setIdleTimeout(idleTimeout);
+        config.setConnectionTimeout(connectionTimeout);
+        config.setMaxLifetime(maxLifetime);
+        config.setLeakDetectionThreshold(leakDetectionThreshold);
+        config.setPoolName("PrimaryHikariPool");
+        
+        return new HikariDataSource(config);
     }
 
-    public DataSourceHealthCheckResult udiPrimaryDataSrcHealth() {
-        final var ds = udiPrimaryDataSource();
-        try (@SuppressWarnings("PMD.UnusedLocalVariable")
-        Connection connection = ds.getConnection()) {
-            return new DataSourceHealthCheckResult(ds, null, environment,
-                    "${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}");
-        } catch (Exception e) {
-            return new DataSourceHealthCheckResult(null, e, environment,
-                    "${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}");
-        }
-    }
-
-    @Bean
+    @Bean(name = "primaryDslContext")
+    @Primary
     public DSLContext dsl() {
         return new DefaultDSLContext(configuration());
     }
 
+    @Bean(name = "primaryJooqConfiguration")
+    @Primary
     public org.jooq.Configuration configuration() {
         final var jooqConfiguration = new DefaultConfiguration();
-        jooqConfiguration.set(connectionProvider());
+        jooqConfiguration.set(primaryConnectionProvider());
         jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
-        // jooqConfiguration
-        // .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
         return jooqConfiguration;
     }
 
-    @Bean
-    public DataSourceConnectionProvider connectionProvider() {
+    @Bean(name = "primaryConnectionProvider")
+    @Primary
+    public DataSourceConnectionProvider primaryConnectionProvider() {
         return new DataSourceConnectionProvider(new TransactionAwareDataSourceProxy(udiPrimaryDataSource()));
     }
 }

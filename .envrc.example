@@ -9,6 +9,10 @@ export sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL=jdbc:postgresql://aws.neon.tech/pers
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME=persistence-prime
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD=**********
 
+export sandbox_TECHBD_UDI_DS_SECONDARY_JDBC_URL=jdbc:postgresql://aws.neon.tech/persistence-prime
+export sandbox_TECHBD_UDI_DS_SECONDARY_JDBC_USERNAME=persistence-prime
+export sandbox_TECHBD_UDI_DS_SECONDARY_JDBC_PASSWORD=**********
+
 # these are the `orchctl.ts` SFTP accounts that will be made browsable;
 # ensure sequence of _0_, _1_, etc. are correct, they map to
 # org.techbd.orchestrate.sftp.account.orchctlts in application.yml

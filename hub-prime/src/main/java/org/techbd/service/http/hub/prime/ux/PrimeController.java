@@ -5,12 +5,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jooq.impl.DSL;
-import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,10 +17,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.techbd.CoreUdiSecondaryJpaConfig;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
@@ -37,12 +34,12 @@ import lib.aide.tabular.JooqRowsSupplier;
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
-    private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final CoreUdiSecondaryJpaConfig udiPrimeJpaConfig;
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
 
-    public PrimeController(final Presentation presentation, final CoreUdiPrimeJpaConfig udiPrimeJpaConfig,
+    public PrimeController(final Presentation presentation, final CoreUdiSecondaryJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
