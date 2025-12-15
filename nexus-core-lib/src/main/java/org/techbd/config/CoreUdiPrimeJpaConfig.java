@@ -39,8 +39,7 @@ public class CoreUdiPrimeJpaConfig {
         Long idleTimeout = environment.getProperty("org.techbd.udi.prime.jdbc.idleTimeout", Long.class, 60000L);
         Long connectionTimeout = environment.getProperty("org.techbd.udi.prime.jdbc.connectionTimeout", Long.class, 20000L);
         Long maxLifetime = environment.getProperty("org.techbd.udi.prime.jdbc.maxLifetime", Long.class, 1800000L);
-        Long leakDetectionThreshold = environment.getProperty("org.techbd.udi.prime.jdbc.leakDetectionThreshold", Long.class, 30000L);
-
+    
         // Validation
         if (jdbcUrl == null || jdbcUrl.trim().isEmpty()) {
             throw new IllegalStateException("Primary database jdbcUrl is not configured! Property: org.techbd.udi.prime.jdbc.url");
@@ -62,7 +61,6 @@ public class CoreUdiPrimeJpaConfig {
         config.setIdleTimeout(idleTimeout);
         config.setConnectionTimeout(connectionTimeout);
         config.setMaxLifetime(maxLifetime);
-        config.setLeakDetectionThreshold(leakDetectionThreshold);
         config.setPoolName("PrimaryHikariPool");
         
         return new HikariDataSource(config);

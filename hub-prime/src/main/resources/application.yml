@@ -123,7 +123,6 @@ org:
           idleTimeout: 60000            # 1 minute – aggressively removes idle connections to avoid unnecessary DB load
           connectionTimeout: 20000      # 20 seconds to wait for a connection from the pool before timing out
           maxLifetime: 1800000          # 30 minutes – maximum lifetime before a connection is replaced (safe for Aurora)
-          leakDetectionThreshold: 30000
       secondary:
         jdbc:
           url: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_SECONDARY_JDBC_URL}
@@ -135,7 +134,6 @@ org:
           idleTimeout: 60000            # 1 minute – aggressively removes idle connections to avoid unnecessary DB load
           connectionTimeout: 20000      # 20 seconds to wait for a connection from the pool before timing out
           maxLifetime: 1800000          # 30 minutes – maximum lifetime before a connection is replaced (safe for Aurora)
-          leakDetectionThreshold: 30000
 management:
   tracing:
     sampling:
