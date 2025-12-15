@@ -44,10 +44,10 @@
     },
     {
       "type": "HL7v2",
-      "channel": "",
-      "version": "",
-      "editedby": "",
-      "date": ""
+      "channel": "TechBD HL7 Workflow.xml",
+      "version": "0.1.8",
+      "editedby": "jewelbonnie",
+      "date": "2025-12-15"
     },
     {
       "type": "HL7v2",
