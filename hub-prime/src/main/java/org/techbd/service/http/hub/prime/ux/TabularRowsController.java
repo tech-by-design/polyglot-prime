@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.http.hub.prime.ux.validator.Validator;
-import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +47,7 @@ import lib.aide.tabular.JooqRowsSupplierForSP;
 import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsRequestForSP;
 import lib.aide.tabular.TabularRowsResponse;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 
 @Controller
 @Tag(name = "Tech by Design Hub Tabular Row API Endpoints for AG Grid")
@@ -57,15 +57,15 @@ public class TabularRowsController {
 
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
-    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
     private final List<Validator> validators;
     @Autowired
     private FileDownloadProperties fileDownloadProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
-    public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig, List<Validator> validators) {
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+    public TabularRowsController(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, List<Validator> validators) {
+        this.udiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         this.validators = validators;
     }
 

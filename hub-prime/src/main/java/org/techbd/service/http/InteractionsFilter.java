@@ -28,7 +28,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
-import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,7 +55,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
     @Autowired
-    private UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
 
     private InteractionPersistRules iprDB;
 
