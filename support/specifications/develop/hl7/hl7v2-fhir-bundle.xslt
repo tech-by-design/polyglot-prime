@@ -228,28 +228,28 @@
 			<xsl:for-each select="//PID.13[normalize-space(PID.13.1)] | //PID.14[normalize-space(PID.14.1)] | //PID.40[normalize-space(PID.40.1)]">
 			  {
 				<!-- system -->
-				<xsl:if test="*[3]">
-				  "system": "<xsl:choose>
-							  <xsl:when test="*[3]='PH' or *[3]='TEL'">phone</xsl:when>
-							  <xsl:when test="*[3]='EM' or *[3]='MAIL'">email</xsl:when>
-							  <xsl:otherwise>other</xsl:otherwise>
-							</xsl:choose>",
-				</xsl:if>
+        "system": "<xsl:choose>
+          <xsl:when test="normalize-space(*[3]) = 'PH' or normalize-space(*[3]) = 'TEL'">phone</xsl:when>
+          <xsl:when test="normalize-space(*[3]) = 'EM' or normalize-space(*[3]) = 'MAIL'">email</xsl:when>
+          <xsl:otherwise>other</xsl:otherwise>
+        </xsl:choose>",
 
 				<!-- use -->
-				<xsl:if test="*[2]">
-				  "use": "<xsl:choose>
-						   <xsl:when test="*[2]='WPN' or *[2]='WP'">work</xsl:when>
-						   <xsl:when test="*[2]='PRN' or *[2]='H'">home</xsl:when>
-						   <xsl:when test="*[2]='NET' or *[2]='MC'">mobile</xsl:when>
-						   <xsl:when test="*[2]='TMP'">temp</xsl:when>
-						   <xsl:when test="*[2]='BAD'">old</xsl:when>
-						   <xsl:otherwise><xsl:value-of select="*[2]"/></xsl:otherwise>
-						 </xsl:choose>",
-				</xsl:if>
+				<xsl:if test="normalize-space(*[2])">
+          "use": "<xsl:choose>
+            <xsl:when test="*[2]='WPN' or *[2]='WP'">work</xsl:when>
+            <xsl:when test="*[2]='PRN' or *[2]='H'">home</xsl:when>
+            <xsl:when test="*[2]='NET' or *[2]='MC'">mobile</xsl:when>
+            <xsl:when test="*[2]='TMP'">temp</xsl:when>
+            <xsl:when test="*[2]='BAD'">old</xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="*[2]"/>
+            </xsl:otherwise>
+          </xsl:choose>",
+        </xsl:if>
 
 				<!-- value -->
-				"value": "<xsl:value-of select="*[1]"/>"
+				"value": "<xsl:value-of select="normalize-space(*[1])"/>"
 			  }<xsl:if test="position() != last()">,</xsl:if>
 			</xsl:for-each>
 		  ]
@@ -925,92 +925,138 @@
            </xsl:otherwise>
          </xsl:choose>"
 
-        <xsl:if test="//ORC.23">
-		  , "telecom": [
-			<xsl:for-each select="//ORC.23">
-			  {
-				<xsl:if test="string(//ORC.23.1)">
-				  "value": "<xsl:value-of select='//ORC.23.1'/>"
-				</xsl:if>
-				<xsl:if test="string(//ORC.23.3)">
-				  <xsl:if test="string(//ORC.23.1)">, </xsl:if>
-				  "system": "<xsl:choose>
-					<xsl:when test="//ORC.23.3 = 'PH'">phone</xsl:when>
-					<xsl:when test="//ORC.23.3 = 'FX'">fax</xsl:when>
-					<xsl:when test="//ORC.23.3 = 'Internet'">email</xsl:when>
-					<xsl:otherwise>other</xsl:otherwise>
-				  </xsl:choose>"
-				</xsl:if>
-				<xsl:if test="string(//ORC.23.2)">
-				  <xsl:if test="string(//ORC.23.1) or string(//ORC.23.3)">, </xsl:if>
-				  "use": "<xsl:choose>
-					<xsl:when test="//ORC.23.2 = 'WP'">work</xsl:when>
-					<xsl:when test="//ORC.23.2 = 'H'">home</xsl:when>
-					<xsl:when test="//ORC.23.2 = 'TMP'">temp</xsl:when>
-					<xsl:when test="//ORC.23.2 = 'MC' or ORC.23.2 = 'PG'">mobile</xsl:when>
-					<xsl:otherwise><xsl:value-of select='//ORC.23.2'/></xsl:otherwise>
-				  </xsl:choose>"
-				</xsl:if>
-			  }<xsl:if test="position() != last()">,</xsl:if>
-			</xsl:for-each>
-		  ]
-		</xsl:if>
-        <xsl:if test="//ORC.22">
-		  , "address": [
-			<xsl:for-each select="//ORC.22">
-			  {
-				<xsl:variable name="comma" select="false()" />
-				<xsl:if test="string(ORC.22.7)">
-				  "use": "<xsl:choose>
-							<xsl:when test="ORC.22.7 = 'H' or ORC.22.7 = 'HP'">home</xsl:when>
-							<xsl:when test="ORC.22.7 = 'WP'">work</xsl:when>
-							<xsl:when test="ORC.22.7 = 'TMP'">temp</xsl:when>
-							<xsl:when test="ORC.22.7 = 'OLD' or ORC.22.7 = 'BAD'">old</xsl:when>
-							<xsl:otherwise><xsl:value-of select="ORC.22.7"/></xsl:otherwise>
-						 </xsl:choose>"
-				  <xsl:text>,</xsl:text>
-				</xsl:if>
+        <xsl:if test="//ORC.23[normalize-space(ORC.23.1) 
+                     or normalize-space(ORC.23.2) 
+                     or normalize-space(ORC.23.3)]">
+          , "telecom": [
+            <xsl:for-each select="//ORC.23[
+                                    normalize-space(ORC.23.1) 
+                                    or normalize-space(ORC.23.2) 
+                                    or normalize-space(ORC.23.3)
+                                  ]">
+              {
+                <xsl:if test="normalize-space(ORC.23.1)">
+                  "value": "<xsl:value-of select='ORC.23.1'/>"
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.1) or string(ORC.22.2) or string(ORC.22.3) or string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6)">
-				  "text": "<xsl:value-of select="normalize-space(concat(ORC.22.1, ' ', ORC.22.2, ' ', ORC.22.3, ' ', ORC.22.4, ' ', ORC.22.5, ' ', ORC.22.6))"/>"
-				  <xsl:if test="string(ORC.22.1) or string(ORC.22.2)">,<xsl:text/></xsl:if>
-				</xsl:if>
+                <xsl:if test="normalize-space(ORC.23.3)">
+                  <xsl:if test="normalize-space(ORC.23.1)">, </xsl:if>
+                  "system": "<xsl:choose>
+                    <xsl:when test="ORC.23.3 = 'PH'">phone</xsl:when>
+                    <xsl:when test="ORC.23.3 = 'FX'">fax</xsl:when>
+                    <xsl:when test="ORC.23.3 = 'Internet'">email</xsl:when>
+                    <xsl:otherwise>other</xsl:otherwise>
+                  </xsl:choose>"
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.1) or string(ORC.22.2)">
-				  "line": [
-					<xsl:if test="string(ORC.22.1)">
-					  "<xsl:value-of select='ORC.22.1'/>"<xsl:if test="string(ORC.22.2)">,</xsl:if>
-					</xsl:if>
-					<xsl:if test="string(ORC.22.2)">
-					  "<xsl:value-of select='ORC.22.2'/>"
-					</xsl:if>
-				  ]
-				  <xsl:if test="string(ORC.22.3) or string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6) or string(ORC.22.9)">,<xsl:text/></xsl:if>
-				</xsl:if>
+                <xsl:if test="normalize-space(ORC.23.2)">
+                  <xsl:if test="normalize-space(ORC.23.1) 
+                                or normalize-space(ORC.23.3)">, </xsl:if>
+                  "use": "<xsl:choose>
+                    <xsl:when test="ORC.23.2 = 'WP'">work</xsl:when>
+                    <xsl:when test="ORC.23.2 = 'H'">home</xsl:when>
+                    <xsl:when test="ORC.23.2 = 'TMP'">temp</xsl:when>
+                    <xsl:when test="ORC.23.2 = 'MC' or ORC.23.2 = 'PG'">mobile</xsl:when>
+                    <xsl:otherwise>
+                      <xsl:value-of select="ORC.23.2"/>
+                    </xsl:otherwise>
+                  </xsl:choose>"
+                </xsl:if>
+              }<xsl:if test="position() != last()">,</xsl:if>
+            </xsl:for-each>
+          ]
+        </xsl:if>
 
-				<xsl:if test="string(ORC.22.3)">
-				  "city": "<xsl:value-of select='ORC.22.3'/>"<xsl:if test="string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6) or string(ORC.22.9)">,<xsl:text/></xsl:if>
-				</xsl:if>
+        <xsl:if test="//ORC.22[
+                normalize-space(ORC.22.1)
+                or normalize-space(ORC.22.2)
+                or normalize-space(ORC.22.3)
+                or normalize-space(ORC.22.4)
+                or normalize-space(ORC.22.5)
+                or normalize-space(ORC.22.6)
+                or normalize-space(ORC.22.7)
+                or normalize-space(ORC.22.9)
+              ]">
+          , "address": [
+            <xsl:for-each select="//ORC.22[
+                                    normalize-space(ORC.22.1)
+                                    or normalize-space(ORC.22.2)
+                                    or normalize-space(ORC.22.3)
+                                    or normalize-space(ORC.22.4)
+                                    or normalize-space(ORC.22.5)
+                                    or normalize-space(ORC.22.6)
+                                    or normalize-space(ORC.22.7)
+                                    or normalize-space(ORC.22.9)
+                                  ]">
+              {
+                <xsl:if test="normalize-space(ORC.22.7)">
+                  "use": "<xsl:choose>
+                    <xsl:when test="ORC.22.7 = 'H' or ORC.22.7 = 'HP'">home</xsl:when>
+                    <xsl:when test="ORC.22.7 = 'WP'">work</xsl:when>
+                    <xsl:when test="ORC.22.7 = 'TMP'">temp</xsl:when>
+                    <xsl:when test="ORC.22.7 = 'OLD' or ORC.22.7 = 'BAD'">old</xsl:when>
+                    <xsl:otherwise>
+                      <xsl:value-of select="ORC.22.7"/>
+                    </xsl:otherwise>
+                  </xsl:choose>"
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.9)">
-				  "district": "<xsl:value-of select='ORC.22.9'/>"<xsl:if test="string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6)">,<xsl:text/></xsl:if>
-				</xsl:if>
+                <xsl:if test="normalize-space(ORC.22.1)
+                              or normalize-space(ORC.22.2)
+                              or normalize-space(ORC.22.3)
+                              or normalize-space(ORC.22.4)
+                              or normalize-space(ORC.22.5)
+                              or normalize-space(ORC.22.6)">
+                  <xsl:if test="normalize-space(ORC.22.7)">, </xsl:if>
+                  "text": "<xsl:value-of
+                      select="normalize-space(
+                        concat(
+                          ORC.22.1, ' ',
+                          ORC.22.2, ' ',
+                          ORC.22.3, ' ',
+                          ORC.22.4, ' ',
+                          ORC.22.5, ' ',
+                          ORC.22.6
+                        )
+                      )"/>"
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.4)">
-				  "state": "<xsl:value-of select='ORC.22.4'/>"<xsl:if test="string(ORC.22.5) or string(ORC.22.6)">,<xsl:text/></xsl:if>
-				</xsl:if>
+                <xsl:if test="normalize-space(ORC.22.1) or normalize-space(ORC.22.2)">
+                  , "line": [
+                    <xsl:if test="normalize-space(ORC.22.1)">
+                      "<xsl:value-of select='ORC.22.1'/>"
+                      <xsl:if test="normalize-space(ORC.22.2)">,</xsl:if>
+                    </xsl:if>
+                    <xsl:if test="normalize-space(ORC.22.2)">
+                      "<xsl:value-of select='ORC.22.2'/>"
+                    </xsl:if>
+                  ]
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.5)">
-				  "postalCode": "<xsl:value-of select='ORC.22.5'/>"<xsl:if test="string(ORC.22.6)">,<xsl:text/></xsl:if>
-				</xsl:if>
+                <xsl:if test="normalize-space(ORC.22.3)">
+                  , "city": "<xsl:value-of select='ORC.22.3'/>"
+                </xsl:if>
 
-				<xsl:if test="string(ORC.22.6)">
-				  "country": "<xsl:value-of select='ORC.22.6'/>"
-				</xsl:if>
-			  }<xsl:if test="position() != last()">,</xsl:if>
-			</xsl:for-each>
-		  ]
-		</xsl:if>
+                <xsl:if test="normalize-space(ORC.22.9)">
+                  , "district": "<xsl:value-of select='ORC.22.9'/>"
+                </xsl:if>
+
+                <xsl:if test="normalize-space(ORC.22.4)">
+                  , "state": "<xsl:value-of select='ORC.22.4'/>"
+                </xsl:if>
+
+                <xsl:if test="normalize-space(ORC.22.5)">
+                  , "postalCode": "<xsl:value-of select='ORC.22.5'/>"
+                </xsl:if>
+
+                <xsl:if test="normalize-space(ORC.22.6)">
+                  , "country": "<xsl:value-of select='ORC.22.6'/>"
+                </xsl:if>
+              }<xsl:if test="position() != last()">,</xsl:if>
+            </xsl:for-each>
+          ]
+        </xsl:if>
+
       },
       "request" : {
         "method" : "POST",
@@ -1204,12 +1250,28 @@
 
 <!-- Consent Template -->
   <xsl:template name="ConsentFromOBX">
-  <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.1) = '105511-0'][1]"/>
+  <!-- <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.1) = '105511-0'][1]"/> -->
+   <xsl:variable name="consentOBX"
+    select="//OBX[
+        normalize-space(OBX.3/OBX.3.1) = '105511-0'
+        or
+        translate(
+            normalize-space(OBX.3/OBX.3.2),
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            'abcdefghijklmnopqrstuvwxyz'
+        ) = 'ahc-hrsn patient consent'
+    ][1]"
+  />
   
    <!-- Define boolean: is consent given -->
+  <xsl:variable name="valueLower"
+    select="translate(normalize-space($consentOBX/OBX.5/OBX.5.2),
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                      'abcdefghijklmnopqrstuvwxyz')" />
+
   <xsl:variable name="isConsentGiven"
-                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Patient Consents') or 
-                        contains(normalize-space($consentOBX/OBX.5/OBX.5.2), 'Yes')"/>
+      select="contains($valueLower, 'patient consents')
+              or contains($valueLower, 'yes')" />
 						
   {
     "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
@@ -1385,7 +1447,11 @@
 		  <!-- Loop through OBX siblings under the current OBR and filter -->
 		  <xsl:for-each select="following-sibling::OBX[
 								  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
-								  and normalize-space(OBX.3/OBX.3.2) != 'AHC-HRSN Patient Consent'
+								  and (normalize-space(OBX.3/OBX.3.1) != '105511-0' and translate(
+                      normalize-space(OBX.3/OBX.3.2),
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                      'abcdefghijklmnopqrstuvwxyz'
+                  ) != 'ahc-hrsn patient consent')
 								  and contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
 								  and not(preceding-sibling::OBX[
 									  normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
