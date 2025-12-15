@@ -47,6 +47,8 @@ import lib.aide.tabular.JooqRowsSupplierForSP;
 import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsRequestForSP;
 import lib.aide.tabular.TabularRowsResponse;
+
+import org.techbd.CoreUdiSecondaryJpaConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 
 @Controller
@@ -58,14 +60,16 @@ public class TabularRowsController {
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final CoreUdiSecondaryJpaConfig udiSecondaryJpaConfig;
     private final List<Validator> validators;
     @Autowired
     private FileDownloadProperties fileDownloadProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
-    public TabularRowsController(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, List<Validator> validators) {
+    public TabularRowsController(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,final CoreUdiSecondaryJpaConfig udiSecondaryJpaConfig, List<Validator> validators) {
         this.udiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.udiSecondaryJpaConfig = udiSecondaryJpaConfig;
         this.validators = validators;
     }
 
@@ -92,7 +96,7 @@ public class TabularRowsController {
         return new JooqRowsSupplier.Builder()
                 .withRequest(payload)
                 .withTable(Tables.class, schemaName, masterTableNameOrViewName)
-                .withDSL(udiPrimeJpaConfig.dsl())
+                .withDSL(udiSecondaryJpaConfig.dsl())
                 .withLogger(LOG)
                 .includeGeneratedSqlInResp(includeGeneratedSqlInResp)
                 .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
@@ -135,7 +139,7 @@ public class TabularRowsController {
         }
 
         try {
-            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(udiPrimeJpaConfig.dsl())
+            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(udiSecondaryJpaConfig.dsl())
                     .withSchemaName(schemaName)
                     .withStoredProcName(storedProcName)
                     .withParamsJson(storedProcparams)
@@ -177,7 +181,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = udiSecondaryJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue)))
                 .fetch()
                 .intoMaps();
@@ -225,7 +229,7 @@ public class TabularRowsController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
 
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = udiSecondaryJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(columnValue2))))
                 .fetch()
@@ -285,7 +289,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = udiSecondaryJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName1)).eq(DSL.val(decodedColumnValue1))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(decodedColumnValue2)))
                         .and(DSL.field(typableTable.column(columnName3)).eq(DSL.val(decodedColumnValue3))))
@@ -482,7 +486,7 @@ public class TabularRowsController {
 
         JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
             .withTable(Tables.class, schemaName, tableName)
-            .withDSL(udiPrimeJpaConfig.dsl())
+            .withDSL(udiSecondaryJpaConfig.dsl())
             .withLogger(LOG)
             .build();
 

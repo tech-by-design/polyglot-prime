@@ -2,6 +2,7 @@ package org.techbd.service.http.hub.prime.ux;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -9,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
+import org.techbd.CoreUdiSecondaryJpaConfig;
 
 import lib.aide.tabular.TabularRowsRequest;
 
@@ -21,7 +22,7 @@ class TabularRowsControllerTest {
     private TabularRowsController tabularRowsController;
 
     @Mock
-    private CoreUdiPrimeJpaConfig udiPrimeJpaConfig;  // Mock any other dependencies
+    private CoreUdiSecondaryJpaConfig udiPrimeJpaConfig;  // Mock any other dependencies
 
     @BeforeEach
     void setUp() {
