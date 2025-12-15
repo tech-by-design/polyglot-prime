@@ -1,18 +1,19 @@
-<channel version="4.6.0">
-  <id>dc8ab30d-0a78-4072-bbe7-89dc4ac30c27</id>
+<channel version="4.6.1">
+  <id>2f6cff1f-6cbb-4042-9ddd-1f2a23633a2a</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.7</description>
-  <revision>62</revision>
-  <sourceConnector version="4.6.0">
+  <description>Version: 0.1.8
+Implemented Lookup Manager–based configuration management.</description>
+  <revision>35</revision>
+  <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
           <verifyHostname>false</verifyHostname>
@@ -34,11 +35,11 @@
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.6.0">
+      <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
         <port>9006</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.6.0">
+      <sourceConnectorProperties version="4.6.1">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -93,9 +94,9 @@
       <timeout>30000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.6.0">
+    <transformer version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>FileName validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -127,6 +128,8 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }
 
+//var UuidCreator = Packages.com.github.f4b6a3.uuid.UuidCreator;
+//var interactionId = UuidCreator.getTimeOrdered().toString();
 var interactionId = java.util.UUID.randomUUID().toString();
 globalMap.put(&apos;interactionId&apos;, interactionId);
 var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;&#xd;
@@ -250,11 +253,11 @@ for (var i = 0; i &lt; lines.length; i++) {
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
       <outboundDataType>HL7V2</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
           <stripNamespaces>false</stripNamespaces>
         </serializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
           <splitType>Element_Name</splitType>
           <elementName></elementName>
           <level>1</level>
@@ -262,8 +265,8 @@ for (var i = 0; i &lt; lines.length; i++) {
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
           <handleRepetitions>true</handleRepetitions>
           <handleSubcomponents>true</handleSubcomponents>
           <useStrictParser>false</useStrictParser>
@@ -272,16 +275,16 @@ for (var i = 0; i &lt; lines.length; i++) {
           <segmentDelimiter>\r</segmentDelimiter>
           <convertLineBreaks>true</convertLineBreaks>
         </serializationProperties>
-        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
           <useStrictParser>false</useStrictParser>
           <useStrictValidation>false</useStrictValidation>
           <segmentDelimiter>\r</segmentDelimiter>
         </deserializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
           <splitType>MSH_Segment</splitType>
           <batchScript></batchScript>
         </batchProperties>
-        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
           <segmentDelimiter>\r</segmentDelimiter>
           <successfulACKCode>AA</successfulACKCode>
           <successfulACKMessage></successfulACKMessage>
@@ -292,7 +295,7 @@ for (var i = 0; i &lt; lines.length; i++) {
           <msh15ACKAccept>false</msh15ACKAccept>
           <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
         </responseGenerationProperties>
-        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
           <successfulACKCode>AA,CA</successfulACKCode>
           <errorACKCode>AE,CE</errorACKCode>
           <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -302,9 +305,9 @@ for (var i = 0; i &lt; lines.length; i++) {
         </responseValidationProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.6.0">
+    <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos; or &apos;/hl7v2/Bundle/$validate/&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -317,7 +320,7 @@ for (var i = 0; i &lt; lines.length; i++) {
             <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -336,12 +339,12 @@ for (var i = 0; i &lt; lines.length; i++) {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.6.0">
+    <connector version="4.6.1">
       <metaDataId>1</metaDataId>
       <name>Destination 1</name>
-      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.0">
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.1">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.6.0">
+        <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -365,9 +368,9 @@ for (var i = 0; i &lt; lines.length; i++) {
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables/>
       </properties>
-      <transformer version="4.6.0">
+      <transformer version="4.6.1">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>HL7 Validation</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -633,7 +636,7 @@ function validateOneOfGroups(groups, hl7Text) {
     return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>Common Js func.</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -688,8 +691,8 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
 function sendDataLedgerSync(payload) {
     logger.info(logPrefix + &quot;sendDataLedgerSync: &quot; + payload);
     
-    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);
-    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+    var apiUrl = globalMap.get(&quot;datalakeApiUrl&quot;);
+    var dataLedgerApiKey = globalMap.get(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
 
     logger.info(logPrefix + &quot;API URL: &quot; + apiUrl);
 
@@ -744,7 +747,7 @@ function sendDataLedgerSync(payload) {
     }
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>Validate HTTP Request and collect headers</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -858,7 +861,7 @@ if (missingHeaders.length &gt; 0) {
 var missingEnvVars = [];
 
 // Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
-var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
+var fhirBundleSubmissionApiUrl = globalMap.get(&quot;fhirBundleSubmissionApiUrl&quot;);
 if(fhirBundleSubmissionApiUrl != null) {
     globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
     logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
@@ -876,7 +879,7 @@ if (missingEnvVars.length &gt; 0) {
 
 logger.info(&quot;HTTP request validation ended.&quot;);</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>step_validate_profile_urls_env_variables</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
@@ -891,18 +894,18 @@ logger.info(&quot;HTTP request validation ended.&quot;);</script>
 var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
 function set_fhir_resource_profile_urls(transformer) {
-	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
-	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
-	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
-	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
-	var consentMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
-	var organizationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
-	var observationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
-	var observationSexualOrientationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
-	var questionnaireMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
-	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
-	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
-	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
+	var baseFhirUrl = globalMap.get(&quot;BASE_FHIR_URL&quot;);   
+	var bundleMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_BUNDLE&quot;);
+	var patientMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_PATIENT&quot;);
+	var encounterMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_ENCOUNTER&quot;);
+	var consentMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_CONSENT&quot;);
+	var organizationMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_ORGANIZATION&quot;);
+	var observationMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_OBSERVATION&quot;);
+	var observationSexualOrientationMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
+	var questionnaireMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
+	var questionnaireResponseMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
+	var practitionerMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_PRACTITIONER&quot;);
+	var procedureMetaProfileUrl = globalMap.get(&quot;PROFILE_URL_PROCEDURE&quot;);
 
 	if(baseFhirUrl != null) {
 		transformer.setParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
@@ -1305,7 +1308,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
     return transformer;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>API endpoint processing</name>
             <sequenceNumber>4</sequenceNumber>
             <enabled>true</enabled>
@@ -1488,7 +1491,7 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 
 
 	// Check if tracking is enabled
-	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+	var trackingEnabled = globalMap.get(&quot;DATA_LEDGER_TRACKING&quot;);
 	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
 	    logger.info(logPrefix + &quot;data ledger api call -BEGIN received&quot;);
 	    try {
@@ -1705,7 +1708,7 @@ try {
 
 
     // Retrieve the VALID_URLS environment variable (comma-separated list)
-		var validUrlsEnv = java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
+		var validUrlsEnv = globalMap.get(&quot;MC_VALID_FHIR_URLS&quot;);
 		logger.info(logPrefix + &quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
 		
 		// Convert VALID_URLS to an array for validation
@@ -1808,8 +1811,8 @@ return value;
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>HL7V2</inboundDataType>
         <outboundDataType>XML</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
             <handleRepetitions>true</handleRepetitions>
             <handleSubcomponents>true</handleSubcomponents>
             <useStrictParser>false</useStrictParser>
@@ -1818,16 +1821,16 @@ return value;
             <segmentDelimiter>\r</segmentDelimiter>
             <convertLineBreaks>true</convertLineBreaks>
           </serializationProperties>
-          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
             <useStrictParser>false</useStrictParser>
             <useStrictValidation>false</useStrictValidation>
             <segmentDelimiter>\r</segmentDelimiter>
           </deserializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
             <splitType>MSH_Segment</splitType>
             <batchScript></batchScript>
           </batchProperties>
-          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
             <segmentDelimiter>\r</segmentDelimiter>
             <successfulACKCode>AA</successfulACKCode>
             <successfulACKMessage></successfulACKMessage>
@@ -1838,7 +1841,7 @@ return value;
             <msh15ACKAccept>false</msh15ACKAccept>
             <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
           </responseGenerationProperties>
-          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
             <successfulACKCode>AA,CA</successfulACKCode>
             <errorACKCode>AE,CE</errorACKCode>
             <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -1847,11 +1850,11 @@ return value;
             <originalIdMapVariable></originalIdMapVariable>
           </responseValidationProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1860,17 +1863,17 @@ return value;
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.0">
+      <responseTransformer version="4.6.1">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>XML</inboundDataType>
         <outboundDataType>XML</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1878,11 +1881,11 @@ return value;
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1891,7 +1894,7 @@ return value;
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.0">
+      <filter version="4.6.1">
         <elements/>
       </filter>
       <transportName>Channel Writer</transportName>
@@ -1899,12 +1902,12 @@ return value;
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="4.6.0">
+    <connector version="4.6.1">
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
         <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
             <mutualTlsEnabled>false</mutualTlsEnabled>
             <verifyHostname>false</verifyHostname>
@@ -1926,7 +1929,7 @@ return value;
             <truststoreUid/>
           </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         </pluginProperties>
-        <destinationConnectorProperties version="4.6.0">
+        <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2060,14 +2063,14 @@ return value;
         <charset>UTF-8</charset>
         <socketTimeout>30000</socketTimeout>
       </properties>
-      <transformer version="4.6.0">
+      <transformer version="4.6.1">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>HL7V2</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
             <handleRepetitions>true</handleRepetitions>
             <handleSubcomponents>true</handleSubcomponents>
             <useStrictParser>false</useStrictParser>
@@ -2076,16 +2079,16 @@ return value;
             <segmentDelimiter>\r</segmentDelimiter>
             <convertLineBreaks>true</convertLineBreaks>
           </serializationProperties>
-          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
             <useStrictParser>false</useStrictParser>
             <useStrictValidation>false</useStrictValidation>
             <segmentDelimiter>\r</segmentDelimiter>
           </deserializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
             <splitType>MSH_Segment</splitType>
             <batchScript></batchScript>
           </batchProperties>
-          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
             <segmentDelimiter>\r</segmentDelimiter>
             <successfulACKCode>AA</successfulACKCode>
             <successfulACKMessage></successfulACKMessage>
@@ -2096,7 +2099,7 @@ return value;
             <msh15ACKAccept>false</msh15ACKAccept>
             <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
           </responseGenerationProperties>
-          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
             <successfulACKCode>AA,CA</successfulACKCode>
             <errorACKCode>AE,CE</errorACKCode>
             <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -2105,33 +2108,33 @@ return value;
             <originalIdMapVariable></originalIdMapVariable>
           </responseValidationProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.0">
+      <responseTransformer version="4.6.1">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.0">
+      <filter version="4.6.1">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2203,7 +2206,378 @@ function toJsonb(value) {
     logger.info(&quot;jsonbObj: &quot; + jsonbObj);
     return jsonbObj;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*********************************
+    AWS SECRETS MANAGER HELPER
+*********************************/
+function fetchSecret(secretName) {
+    var region = &quot;us-east-1&quot;;
 
+    var Region = Packages.software.amazon.awssdk.regions.Region;
+    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+
+    try {
+        var client = SecretsManagerClient.builder()
+            .region(Region.of(region))
+            .build();
+
+        var request = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        var response = client.getSecretValue(request);
+        client.close();
+
+        return response.secretString();
+
+    } catch (e) {
+        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | &quot; + e);
+        throw e;
+    }
+}
+
+/****************************************************************************************
+ //** CHANGES MADE FOR IMPLEMENTING LOOKUP MANAGER CONFIG:
+ //** JDBC URL is fetched as a plain-text AWS Secret
+ //** JDBC Username &amp; Password are fetched from AWS Secrets Manager (JSON secret)
+ //** Lookup Manager stores ONLY the secret names
+ //** Replaced System.getenv() based configuration
+****************************************************************************************/
+
+try {
+    var ttlHours = 24 * 20;
+
+    /*************** JDBC URL (PLAIN TEXT) ****************/
+    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+
+    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
+        throw &quot;MC_JDBC_URL not configured in Lookup Manager&quot;;
+    }
+
+    var jdbcUrl = fetchSecret(jdbcUrlSecretName).trim();
+
+    if (!jdbcUrl) {
+        throw &quot;Empty JDBC URL returned from AWS Secrets Manager&quot;;
+    }
+
+    /*************** JDBC CREDENTIALS (JSON SECRET) ****************/
+    var rdsSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRETS&quot;, ttlHours);
+
+    if (!rdsSecretName || rdsSecretName.trim() === &quot;&quot;) {
+        throw &quot;SM_KEY_RDS_SECRETS not configured in Lookup Manager&quot;;
+    }
+
+    var rdsSecret = JSON.parse(fetchSecret(rdsSecretName));
+
+    if (!rdsSecret.username || !rdsSecret.password) {
+        throw &quot;Incomplete JDBC credentials in AWS Secrets Manager&quot;;
+    }
+
+    /*************** STORE VALUES ****************/
+//    channelMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
+//    channelMap.put(&quot;jdbcUsername&quot;, rdsSecret.username);
+//    channelMap.put(&quot;jdbcPassword&quot;, rdsSecret.password);
+
+    globalMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
+    globalMap.put(&quot;jdbcUsername&quot;, rdsSecret.username);
+    globalMap.put(&quot;jdbcPassword&quot;, rdsSecret.password);
+
+    logger.info(&quot;✔ HL7 JDBC configuration loaded (CCDA aligned)&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ HL7 JDBC initialization failed during channel deploy: &quot; + e);
+    throw e; // Fail channel deployment
+}
+
+/********************************************
+    3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
+********************************************/
+try {
+    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+
+    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+    }
+
+    var fhirApiUrl = fetchSecret(fhirSecretName);
+
+    fhirApiUrl = fhirApiUrl.trim(); 
+    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
+    }
+
+    //channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
+    globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
+    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
+    throw e;
+}
+
+/////////////
+/********************************************
+    2️⃣ FETCH DATA LEDGER API KEY (Plain text)
+********************************************/
+
+try {
+    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    //&quot;techbd-nyec-dataledger-api-key&quot;;
+    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+    globalMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
+
+    logger.info(&quot;✔ DataLedger API Key loaded into globalMap&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
+}
+/////////////////////////////////////////////////////////////////////////
+///********************************************
+//    3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
+//********************************************/
+//try {
+//    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+//
+//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var fhirApiUrl = fetchSecret(fhirSecretName);
+//
+//    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
+//        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
+//    }
+//
+//    //channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
+//    globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
+//    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot;);
+//
+//} catch (e) {
+//    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
+//    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
+//    throw e;
+//}
+
+///********************************************
+//    6️⃣ FETCH JDBC URL (Plain text)
+//********************************************/
+//try {
+//    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+//
+//    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value MC_JDBC_URL does not contain a secret name.&quot;;
+//    }
+//
+//    // Get REAL jdbc URL from AWS
+//    var jdbcUrl = fetchSecret(jdbcUrlSecretName);
+//
+//    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
+//        throw &quot;AWS Secret for MC_JDBC_URL returned empty.&quot;;
+//    }
+//
+//    jdbcUrl = jdbcUrl.trim(); // IMPORTANT: remove trailing spaces
+//    globalMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
+//    logger.info(&quot;✔ JDBC URL loaded from AWS Secret Manager: &quot; + jdbcUrl);
+//
+//} catch (e) {
+//    logger.error(&quot;❌ Error fetching JDBC URL: &quot; + e);
+//    setErrorResponse(500, &quot;Failed to load JDBC URL&quot;);
+//    throw e;
+//}
+
+
+/********************************************
+    4️⃣ FETCH CSV SERVICE API URL (Plain text)
+********************************************/
+try {
+    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+
+    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var csvServiceUrl = fetchSecret(csvSecretName);
+
+    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
+    }
+
+    //channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
+    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
+    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
+    throw e;
+}
+
+
+/********************************************
+    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
+********************************************/
+try {
+    var datalakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+
+    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var datalakeApiUrl = fetchSecret(datalakeSecretName);
+
+    if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
+    }
+
+    //channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
+    globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
+    logger.info(&quot;✔ Datalake API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+    throw e;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/****************************************************************************************
+ * LOAD FHIR BASE URL &amp; PROFILE URLs USING LOOKUP HELPER ONLY
+ * Runs once at channel deploy time
+ ****************************************************************************************/
+
+try {
+    var ttlHours = 24 * 20;
+
+    // Base FHIR URL
+    var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;, ttlHours);
+    if (!baseFhirUrl || baseFhirUrl.trim() === &quot;&quot;) {
+        throw &quot;BASE_FHIR_URL is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;BASE_FHIR_URL&quot;, baseFhirUrl.trim());
+
+    // Profile URLs
+    var bundleProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;, ttlHours);
+    if (!bundleProfile || bundleProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_BUNDLE is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_BUNDLE&quot;, bundleProfile.trim());
+
+    var patientProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;, ttlHours);
+    if (!patientProfile || patientProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_PATIENT is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_PATIENT&quot;, patientProfile.trim());
+
+    var encounterProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;, ttlHours);
+    if (!encounterProfile || encounterProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_ENCOUNTER is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_ENCOUNTER&quot;, encounterProfile.trim());
+
+    var consentProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;, ttlHours);
+    if (!consentProfile || consentProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_CONSENT is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_CONSENT&quot;, consentProfile.trim());
+
+    var orgProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;, ttlHours);
+    if (!orgProfile || orgProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_ORGANIZATION is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_ORGANIZATION&quot;, orgProfile.trim());
+
+    var obsProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;, ttlHours);
+    if (!obsProfile || obsProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_OBSERVATION is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_OBSERVATION&quot;, obsProfile.trim());
+
+    var sexualOrientationProfile =
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;, ttlHours);
+    if (!sexualOrientationProfile || sexualOrientationProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_SEXUAL_ORIENTATION is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(
+        &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;,
+        sexualOrientationProfile.trim()
+    );
+
+    var questionnaireProfile =
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;, ttlHours);
+    if (!questionnaireProfile || questionnaireProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_QUESTIONNAIRE is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_QUESTIONNAIRE&quot;, questionnaireProfile.trim());
+
+    var questionnaireResponseProfile =
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;, ttlHours);
+    if (!questionnaireResponseProfile || questionnaireResponseProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(
+        &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;,
+        questionnaireResponseProfile.trim()
+    );
+
+    var practitionerProfile =
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;, ttlHours);
+    if (!practitionerProfile || practitionerProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_PRACTITIONER is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_PRACTITIONER&quot;, practitionerProfile.trim());
+
+    var procedureProfile =
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;, ttlHours);
+    if (!procedureProfile || procedureProfile.trim() === &quot;&quot;) {
+        throw &quot;PROFILE_URL_PROCEDURE is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;PROFILE_URL_PROCEDURE&quot;, procedureProfile.trim());
+
+    // Static / optional profile
+    globalMap.put(
+        &quot;PROFILE_URL_LOCATION&quot;,
+        &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;
+    );
+
+    logger.info(&quot;✔ FHIR base URL and profile URLs loaded from Lookup Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Failed to load FHIR URLs from Lookup Manager during deploy: &quot; + e);
+    throw e; // Stop channel deployment
+}
+
+//////////////////////////////////////////////////////////////////////////
+try {
+    var ttlHours = 24 * 20;
+
+    // DATA_LEDGER_TRACKING (true / false)
+    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    if (!trackingEnabled || trackingEnabled.trim() === &quot;&quot;) {
+        throw &quot;DATA_LEDGER_TRACKING is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, trackingEnabled.trim());
+
+    // MC_VALID_FHIR_URLS (comma-separated list)
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
+        throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
+
+    logger.info(&quot;✔ Tracking flag and valid FHIR URLs loaded from Lookup Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Failed to load tracking / valid URLs config: &quot; + e);
+    throw e;
+}
+/********************************************
+    DONE
+********************************************/
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
 	
@@ -2220,44 +2594,14 @@ function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operat
 	try {
 	    logger.info(&quot;Inside DB Try&quot;);
 
-	    var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
-		if(jdbcUrl != null) {
-		    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
-		    logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
-		} else {
-		    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
-		    logger.error(errorMessage);
-		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		    throw errorMessage; // Stop further processing by throwing an exception
-		}
-		
-		var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
-		if(jdbcUsername != null) {
-		    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
-		    logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
-		} else {
-		    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
-		    logger.error(errorMessage);
-		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		    throw errorMessage; // Stop further processing by throwing an exception
-		}
-		
-		var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
-		if(jdbcPassword != null) {
-		    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
-		    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
-		} else {
-		    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
-		    logger.error(errorMessage);
-		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-		    throw errorMessage; // Stop further processing by throwing an exception
-		}
-
-	    // Database connection details
+		// Database connection details
 		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
 		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
 		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
 
+		if (!dbUrl || !dbUser || !dbPassword) {
+   	 	throw &quot;JDBC configuration missing in globalMap&quot;;
+		}
 		//Devl
 	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
 
@@ -2349,7 +2693,7 @@ globalMap.put(&apos;saveHL7Payload&apos;, saveHL7Payload);</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.6.0">
+  <properties version="4.6.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -2372,7 +2716,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.6.0">
+    <attachmentProperties version="4.6.1">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -2387,15 +2731,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763634036259</time>
+        <time>1765805059054</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>5</userId>
+      <userId>10</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>
