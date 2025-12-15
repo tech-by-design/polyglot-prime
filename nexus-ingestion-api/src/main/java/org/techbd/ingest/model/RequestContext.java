@@ -30,38 +30,40 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class RequestContext {
-    private final Map<String, String> headers;
-    private final String requestUrl;
-    private final String tenantId;
-    private final String interactionId;
-    private final ZonedDateTime uploadTime;
-    private final String timestamp;
-    private final String fileName;
-    private final long fileSize;
-    private final String objectKey;
-    private final String metadataKey;
-    private final String ackObjectKey;
-    private final String fullS3DataPath;
-    private final String fullS3AckMessagePath;
-    private final String fullS3MetadataPath;
-    private final String userAgent;
-    private final String fullRequestUrl;
-    private final String queryParams;
-    private final String protocol;
-    private final String localAddress;
-    private final String remoteAddress;
-    private final String sourceIp;
-    private final String destinationIp;
-    private final String destinationPort;
-    private final MessageSourceType messageSourceType;
-    private final String dataBucketName;
-    private final String metaDataBucketName;
+    private  Map<String, String> headers;
+    private  String requestUrl;
+    private  String tenantId;
+    private  String interactionId;
+    private  ZonedDateTime uploadTime;
+    private  String timestamp;
+    private  String fileName;
+    private  long fileSize;
+    private String objectKey;
+    private String metadataKey;
+    private String ackObjectKey;
+    private  String fullS3DataPath;
+    private  String fullS3AckMessagePath;
+    private  String fullS3MetadataPath;
+    private  String userAgent;
+    private  String fullRequestUrl;
+    private  String queryParams;
+    private  String protocol;
+    private  String localAddress;
+    private  String remoteAddress;
+    private  String sourceIp;
+    private  String destinationIp;
+    private  String destinationPort;
+    private  MessageSourceType messageSourceType;
+    private String dataBucketName;
+    private String metaDataBucketName;
     private String messageGroupId;
     private String s3Response;
     private String messageId;
     private String techBdIngestionApiVersion;
     private Map<String,String> additionalParameters;
     private String queueUrl;
+    private String sourceId;
+    private String msgType;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,
@@ -97,6 +99,13 @@ public class RequestContext {
         this.dataBucketName = dataBucketName;
         this.metaDataBucketName = metadataBucketName;
         this.techBdIngestionApiVersion = techBdIngestionApiVersion;
+    }
+
+    public RequestContext(String interactionId, int requestPort, String sourceId2, String msgType2) {
+        this.interactionId = interactionId;
+        this.destinationPort = String.valueOf(requestPort);
+        this.sourceId = sourceId2;
+        this.msgType = msgType2;
     }
 }
 

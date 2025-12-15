@@ -289,6 +289,7 @@ $procedure$
  */
 
  DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_http_request;
+ /*
  CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request(offset_value numeric DEFAULT 0, limit_value numeric DEFAULT 100)
  RETURNS TABLE(sat_interaction_http_request_id text, interaction_id text, uri text, nature text, tenant_id text, user_agent text, client_ip_address text, content_type text, payload jsonb, elaboration jsonb, from_state text, to_state text, state_transition_reason text, request_created_at timestamp with time zone, request_created_by text, request_provenance text, interaction_created_at timestamp with time zone, interaction_created_by text, interaction_provenance text, issues_count integer, resource_types text, start_time text, finish_time text, duration_millisecs numeric)
  LANGUAGE plpgsql
@@ -379,6 +380,8 @@ $procedure$
     END;
     $function$
     ;
+
+    */
 
 /*************************************
 * The stored procedure register_expectation_http_request aims to insert expectation data into two tables: hub_expectation and sat_expectation_http_request. It performs the following steps:

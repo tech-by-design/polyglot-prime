@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
-import org.techbd.udi.UdiPrimeJpaConfig;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +25,6 @@ public class ContentController {
     private final Presentation presentation;
 
     public ContentController(final Presentation presentation,
-            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.presentation = presentation;

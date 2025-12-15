@@ -1,0 +1,49 @@
+name: Manual Playwright Tests-Devl
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-playwright:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api-automation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: api-automation/package-lock.json
+
+      - name: Write .env values using echo
+        run: |
+          echo "TENANT=test_automation" >> .env
+          echo "HOST_NAME=https://synthetic.fhir.api.devl.techbd.org" >> .env
+          echo "FHIR_BUNDLE_VALIDATE=/Bundle/\$validate" >> .env
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Playwright tests (allow failures)
+        run: |
+          npx playwright test > playwright-test-output.log 2>&1 || true
+
+      - name: Output Playwright test results
+        run: cat playwright-test-output.log
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            api-automation/playwright-report/**
+            api-automation/test-results/**
+            playwright-test-output.log

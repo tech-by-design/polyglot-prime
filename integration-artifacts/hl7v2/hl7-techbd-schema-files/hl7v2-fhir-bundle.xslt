@@ -1204,12 +1204,28 @@
 
 <!-- Consent Template -->
   <xsl:template name="ConsentFromOBX">
-  <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.2) = 'AHC-HRSN Patient Consent'][1]"/>
+  <!-- <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.1) = '105511-0'][1]"/> -->
+   <xsl:variable name="consentOBX"
+    select="//OBX[
+        normalize-space(OBX.3/OBX.3.1) = '105511-0'
+        or
+        translate(
+            normalize-space(OBX.3/OBX.3.2),
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            'abcdefghijklmnopqrstuvwxyz'
+        ) = 'ahc-hrsn patient consent'
+    ][1]"
+  />
   
    <!-- Define boolean: is consent given -->
+  <xsl:variable name="valueLower"
+    select="translate(normalize-space($consentOBX/OBX.5/OBX.5.2),
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                      'abcdefghijklmnopqrstuvwxyz')" />
+
   <xsl:variable name="isConsentGiven"
-                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Patient Consents') or 
-                        contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Yes')"/>
+      select="contains($valueLower, 'patient consents')
+              or contains($valueLower, 'yes')" />
 						
   {
     "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
@@ -1385,7 +1401,11 @@
 		  <!-- Loop through OBX siblings under the current OBR and filter -->
 		  <xsl:for-each select="following-sibling::OBX[
 								  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
-								  and normalize-space(OBX.3/OBX.3.2) != 'AHC-HRSN Patient Consent'
+								  and (normalize-space(OBX.3/OBX.3.1) != '105511-0' and translate(
+                      normalize-space(OBX.3/OBX.3.2),
+                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                      'abcdefghijklmnopqrstuvwxyz'
+                  ) != 'ahc-hrsn patient consent')
 								  and contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
 								  and not(preceding-sibling::OBX[
 									  normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)

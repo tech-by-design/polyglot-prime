@@ -33,3 +33,7 @@ management:
       enabled: true
     os:
       enabled: true
+spring:
+  datasource:
+    hikari:
+      leak-detection-threshold: 60000 # Log warnings for leaked connections

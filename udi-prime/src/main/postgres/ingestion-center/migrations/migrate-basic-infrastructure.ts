@@ -1249,6 +1249,37 @@ const migrateSP = pgSQLa.storedProcedure(
          
           --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_user'
+                AND indexname = 'idx_sat_interaction_user_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_user_start_time
+                  ON techbd_udi_ingress.sat_interaction_user (interaction_start_time);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_user'
+                AND indexname = 'idx_sat_interaction_user_hub_id'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_user_hub_id
+                  ON techbd_udi_ingress.sat_interaction_user (hub_interaction_id);
+          END IF;
+
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'idx_sat_interaction_fhir_request_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_fhir_request_start_time
+                  ON techbd_udi_ingress.sat_interaction_fhir_request (interaction_start_time);
+          END IF;          
+
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       ${jsonActionRule}

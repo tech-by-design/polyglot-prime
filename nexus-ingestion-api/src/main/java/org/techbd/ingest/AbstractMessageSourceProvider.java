@@ -109,5 +109,15 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
     @Override
     public String getDestinationPort(Map<String, String> headers) {
         return HttpUtil.extractDestinationPort(headers);        
+    }    
+
+    @Override
+    public String getDataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
+    }
+
+    @Override
+    public String getMetadataBucketName() {
+        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 }

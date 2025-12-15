@@ -39,21 +39,56 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         this.LOG = appLogger.getLogger(WsaHeaderInterceptor.class);
     }
 
+    /**
+     * Checks if the current request is targeting the /ws endpoint.
+     * Only /ws requests should be processed by this interceptor.
+     */
+    private boolean isWsEndpoint(MessageContext messageContext) {
+        try {
+            var transportContext = TransportContextHolder.getTransportContext();
+            if (transportContext != null && transportContext.getConnection() instanceof HttpServletConnection) {
+                var connection = (HttpServletConnection) transportContext.getConnection();
+                HttpServletRequest httpRequest = connection.getHttpServletRequest();
+                String requestUri = httpRequest.getRequestURI();
+                boolean isWs = "/ws".equals(requestUri);
+                
+                if (!isWs) {
+                    LOG.debug("Skipping interceptor processing for non-/ws endpoint: {}", requestUri);
+                }
+                
+                return isWs;
+            }
+        } catch (Exception e) {
+            LOG.warn("Error checking request URI: {}", e.getMessage());
+        }
+        return false;
+    }
+
     @Override
     public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
+        // Only process if request is to /ws endpoint
+        if (!isWsEndpoint(messageContext)) {
+            return true; // Continue chain but skip processing
+        }
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         messageContext.getRequest().writeTo(out);
         String soapXml = out.toString(StandardCharsets.UTF_8);
         messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, soapXml);
 
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
-        LOG.info("handleRequest: Captured SOAP request. interactionId={}", interactionId);
+        LOG.info("handleRequest: Captured SOAP request for /ws endpoint. interactionId={}", interactionId);
 
         return true;
     }
 
     @Override
     public boolean handleResponse(MessageContext messageContext, Object endpoint) throws Exception {
+        // Only process if request is to /ws endpoint
+        if (!isWsEndpoint(messageContext)) {
+            return true; // Continue chain but skip processing
+        }
+
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
@@ -64,7 +99,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         String rawSoapMessage = (String) messageContext.getProperty(Constants.RAW_SOAP_ATTRIBUTE);
 
         messageContext.setProperty(Constants.INTERACTION_ID, interactionId);
-        LOG.info("handleResponse: Processing SOAP response. interactionId={}", interactionId);
+        LOG.info("handleResponse: Processing SOAP response for /ws endpoint. interactionId={}", interactionId);
 
         messageProcessorService.processMessage(context, rawSoapMessage,
                 Hl7Util.soapMessageToString(message, interactionId));
@@ -74,6 +109,11 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
 
     @Override
     public boolean handleFault(MessageContext messageContext, Object endpoint) throws Exception {
+        // Only process if request is to /ws endpoint
+        if (!isWsEndpoint(messageContext)) {
+            return true; // Continue chain but skip processing
+        }
+
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
 
         try {
@@ -82,10 +122,11 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 faultMessage.writeTo(out);
                 String faultXml = out.toString(StandardCharsets.UTF_8);
-                LOG.error("handleFault: SOAP Fault encountered. interactionId={}, fault={}", interactionId, faultXml);
+                LOG.error("handleFault: SOAP Fault encountered for /ws endpoint. interactionId={}, fault={}", 
+                         interactionId, faultXml);
             }
         } catch (Exception e) {
-            LOG.error("handleFault: Exception while processing SOAP fault. interactionId={}, error={}", 
+            LOG.error("handleFault: Exception while processing SOAP fault for /ws endpoint. interactionId={}, error={}", 
                       interactionId, e.getMessage(), e);
         }
 
@@ -94,15 +135,21 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
 
     @Override
     public void afterCompletion(MessageContext messageContext, Object endpoint, Exception ex) throws Exception {
+        // Only process if request is to /ws endpoint
+        if (!isWsEndpoint(messageContext)) {
+            return; // Skip processing
+        }
+
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
         String status = (ex == null) ? "SUCCESS" : "FAILURE";
 
         if (ex != null) {
             LOG.error(
-                    "afterCompletion: SOAP interaction completed with ERROR. interactionId={}, errorMessage={}, stackTrace={}",
+                    "afterCompletion: SOAP interaction completed with ERROR for /ws endpoint. interactionId={}, errorMessage={}, stackTrace={}",
                     interactionId, ex.getMessage(), ex);
         } else {
-            LOG.info("afterCompletion: SOAP interaction completed. interactionId={}, status={}", interactionId, status);
+            LOG.info("afterCompletion: SOAP interaction completed for /ws endpoint. interactionId={}, status={}", 
+                    interactionId, status);
         }
     }
 

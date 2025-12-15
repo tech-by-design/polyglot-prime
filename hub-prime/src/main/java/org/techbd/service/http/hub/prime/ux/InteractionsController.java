@@ -1,20 +1,13 @@
 package org.techbd.service.http.hub.prime.ux;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
-import org.techbd.udi.UdiPrimeJpaConfig;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -30,7 +23,6 @@ public class InteractionsController {
     private final SftpManager sftpManager;
 
     public InteractionsController(final Presentation presentation,
-            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
@@ -80,7 +72,7 @@ public class InteractionsController {
     // }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "Hub & API Interactions", title = "Hub & API Interactions", siblingOrder = 80)
+    @RouteMapping(label = "Hub Interactions", title = "Hub Interactions", siblingOrder = 80)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
@@ -88,8 +80,20 @@ public class InteractionsController {
     @GetMapping("/interactions/observe")
     @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 90)
     public String osberve(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/interactions/observe", model, request);
+        return "redirect:/interactions/observe/api-performance";        
     }
+
+    @GetMapping("/interactions/observe/api-performance")
+    @RouteMapping(label = "API", title = "API", siblingOrder = 10)
+    public String apiPerformance(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/interactions/api-performance", model, request);
+    }         
+
+    @GetMapping("/interactions/observe/user-interaction-performance")
+    @RouteMapping(label = "User Interactions", title = "User Interactions", siblingOrder = 20)
+    public String userInteractionPerformance(final Model model, final HttpServletRequest request) {        
+        return presentation.populateModel("page/interactions/user-interaction-performance", model, request);
+    }         
 
     @GetMapping("/interactions/provenance")
     @RouteMapping(label = "Provenance", title = "Provenance", siblingOrder = 100)

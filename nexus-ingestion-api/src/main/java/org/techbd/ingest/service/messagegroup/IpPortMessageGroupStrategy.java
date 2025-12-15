@@ -1,4 +1,4 @@
-package org.techbd.ingest.service;
+package org.techbd.ingest.service.messagegroup;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import org.techbd.ingest.model.RequestContext;
 
 
 @Component
-@Order(4)
+@Order(5)
 public class IpPortMessageGroupStrategy implements MessageGroupStrategy {
     @Override
     public boolean supports(RequestContext context) {

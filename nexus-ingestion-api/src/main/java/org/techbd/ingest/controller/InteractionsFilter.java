@@ -18,8 +18,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -30,12 +33,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.feature.FeatureEnum;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,20 +51,23 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.techbd.ingest.commons.Constants;
-
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
+
 
     private final TemplateLogger LOG;
 
     private final PortConfig portConfig;
+    private final PortResolverService portResolverService;
     private final S3Client s3Client;
-    private final Cache<String, X509Certificate[]> caCache;  // Use Caffeine or Guava for caching
+    private final Cache<String, X509Certificate[]> caCache;
+    private static final Pattern PATH_PATTERN = Pattern.compile("^/(?:ingest/)?([^/]+)/([^/]+)(?:/.*)?$");
 
-    // constructor now accepts PortConfig
-    public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, S3Client s3Client) {
+    public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, 
+                             PortResolverService portResolverService, S3Client s3Client) {
         this.LOG = appLogger.getLogger(InteractionsFilter.class);
         this.portConfig = portConfig;
+        this.portResolverService = portResolverService;
         this.s3Client = s3Client;
         this.caCache = CacheBuilder.newBuilder().expireAfterWrite(Duration.ofMinutes(60)).build();
     }
@@ -71,7 +80,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
             LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
                     origRequest.getRequestURI());
 
-            // DEBUG: list all headers received (temporary - remove this later)
+           if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
             try {
                 Enumeration<String> headerNames = origRequest.getHeaderNames();
                 if (headerNames != null) {
@@ -88,31 +97,47 @@ public class InteractionsFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
             }
+        }
+            
+                
+              String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
 
-            if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-
-                String interactionId = UUID.randomUUID().toString();
-                origRequest.setAttribute("interactionId", interactionId);
+                if (StringUtils.isEmpty(interactionId)) {
+                    interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
+                }
+                if (StringUtils.isEmpty(interactionId)) {
+                    interactionId = UUID.randomUUID().toString();
+                }
+        
+                origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
                 LOG.info("Incoming Request - interactionId={}", interactionId);
 
                 // 1) determine request port (prefer X-Forwarded-Port header)
                 int requestPort = resolveRequestPort(origRequest);
-                LOG.info("InteractionsFilter: resolved request port={}", requestPort);
+                LOG.info("InteractionsFilter: resolved request port={} interactionId: {}", requestPort, interactionId);
 
-                // 2) find port config entry that matches the request port
-                PortConfig.PortEntry portEntry = null;
-                if (portConfig != null && portConfig.isLoaded()) {
-                    for (PortConfig.PortEntry e : portConfig.getPortConfigurationList()) {
-                        if (e != null && e.port == requestPort) {
-                            portEntry = e;
-                            break;
-                        }
-                    }
+                // 2) Extract sourceId and msgType from URI path
+                String requestUri = origRequest.getRequestURI();
+                String sourceId = null;
+                String msgType = null;
+                
+                Matcher matcher = PATH_PATTERN.matcher(requestUri);
+                if (matcher.matches()) {
+                    sourceId = matcher.group(1);
+                    msgType = matcher.group(2);
+                    LOG.info("InteractionsFilter: extracted from path - sourceId={}, msgType={} interactionId: {}", sourceId, msgType, interactionId);
+                } else {
+                    LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {} interactionId: {}", requestUri, interactionId);
                 }
 
-                if (portEntry == null) {
-                    String msg = String.format("No port configuration entry found for port %d - rejecting request",
-                            requestPort);
+               RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
+
+                // 4) Use PortResolverService to find the matching port entry
+                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context);
+
+                if (portEntryOpt.isEmpty()) {
+                    String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s - rejecting request",
+                            requestPort, sourceId, msgType);
                     LOG.warn("InteractionsFilter: {}", msg);
                     origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
                     origResponse.setContentType("application/json;charset=UTF-8");
@@ -126,7 +151,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     }
                     return;
                 }
-                LOG.info("InteractionsFilter: found PortConfig entry for port {} -> {}", requestPort, portEntry);
+
+                PortConfig.PortEntry portEntry = portEntryOpt.get();
+                LOG.info("InteractionsFilter: resolved PortConfig entry for port {} -> sourceId={}, msgType={}, route={}", 
+                        requestPort, portEntry.sourceId, portEntry.msgType, portEntry.route);
 
                 // 3) If this port config requires mtls via mtls field, client must supply
                 // header
@@ -320,14 +348,17 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
                 chain.doFilter(origRequest, origResponse);
                 return;
-            }
-
-            LOG.info("InteractionsFilter: feature disabled or excluded URI - continuing chain");
         }
         chain.doFilter(origRequest, origResponse);
     }
 
-    // helper to resolve X-Forwarded-Port (case-insensitive) or fallback to server port
+    /**
+     * Resolves the request port by checking the X-Forwarded-Port header (case-insensitive)
+     * or falling back to the server port.
+     *
+     * @param req the HTTP servlet request
+     * @return the resolved port number
+     */
     private int resolveRequestPort(HttpServletRequest req) {
         var headerNames = req.getHeaderNames();
         if (headerNames != null) {

@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 /**
- * {@code S3UploadStep} is a {@link MessageProcessingStep} implementation
+ * {@code S3UploadStep is a {@link MessageProcessingStep} implementation
  * responsible for uploading files or raw content along with metadata to Amazon
  * S3.
  * <p>
@@ -47,7 +47,7 @@ public class S3UploadStep implements MessageProcessingStep {
     private final S3Client s3Client;
 
     /**
-     * Constructs an S3UploadStep with required dependencies.
+     * Constructs an {@code S3UploadStep} with required dependencies.
      *
      * @param s3UploadService Service for uploading files and strings to S3.
      * @param metadataBuilderService Service for building metadata for S3
@@ -67,7 +67,7 @@ public class S3UploadStep implements MessageProcessingStep {
         this.appConfig = appConfig;
         this.s3Client = s3Client;
         this.LOG = appLogger.getLogger(S3UploadStep.class);
-        LOG.info("S3UploadStep initialized");
+        LOG.info("[S3_UPLOAD_STEP] initialized");
     }
 
     /**
@@ -79,7 +79,7 @@ public class S3UploadStep implements MessageProcessingStep {
     @Override
     public void process(RequestContext context, MultipartFile file) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with MultipartFile. interactionId={}, filename={}",
+        LOG.info("[S3_UPLOAD_STEP]:: process called with MultipartFile. interactionId={}, filename={}",
                 interactionId,
                 file != null ? file.getOriginalFilename() : "null");
         try {
@@ -94,17 +94,17 @@ public class S3UploadStep implements MessageProcessingStep {
             if (file == null || file.isEmpty()) {
                 throw new IllegalArgumentException("Uploaded file is null or empty");
             }
-            LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
+            LOG.info("[S3_UPLOAD_STEP]:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
                     metaDataBucketName, metadataKey, interactionId);
             uploadStringContent(metaDataBucketName, metadataKey, metadataContent, null, interactionId);
-            LOG.info("S3UploadStep:: Uploading file to S3 bucket {} using key {} for interactionId={}",
+            LOG.info("[S3_UPLOAD_STEP]:: Uploading file to S3 bucket {} using key {} for interactionId={}",
                     bucketName, objectKey, interactionId);
             String s3Response = uploadFile(objectKey, bucketName, file, metadata, interactionId);
             context.setS3Response(s3Response);
-            LOG.info("S3UploadStep:: File and metadata uploaded successfully. interactionId={}", interactionId);
+            LOG.info("[S3_UPLOAD_STEP]:: File and metadata uploaded successfully. interactionId={}", interactionId);
         } catch (Exception e) {
-            LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("S3UploadStep:: S3 Upload Step Failed. interactionId=" + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[S3_UPLOAD_STEP]:: S3 Upload Step Failed while uploading to bucket {}. interactionId={}", context.getDataBucketName(), interactionId, e);
+            throw new RuntimeException("[S3_UPLOAD_STEP]:: S3 Upload Step Failed while uploading to bucket " + context.getDataBucketName() + ". interactionId=" + interactionId + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -116,7 +116,7 @@ public class S3UploadStep implements MessageProcessingStep {
      */
     public void process(RequestContext context, String content, String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("S3UploadStep:: process called with String content. interactionId={}", interactionId);
+        LOG.debug("[S3_UPLOAD_STEP]:: BEGIN process called with String content. interactionId={}", interactionId);
         try {
             Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
             Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
@@ -127,25 +127,25 @@ public class S3UploadStep implements MessageProcessingStep {
             String metadataKey = context.getMetadataKey();
             String acknowledgementKey = context.getAckObjectKey();
 
-            LOG.info("S3UploadStep:: Uploading metadata to S3 bucket {} using key {} for interactionId={}",
+            LOG.info("[S3_UPLOAD_STEP]:: UPLOADING_METADATA to S3 bucket {} using key {} for interactionId={}",
                     metaDataBucketName, metadataKey, interactionId);
             uploadStringContent(metaDataBucketName, metadataKey, metadataContent, null, interactionId);
 
-            LOG.info("S3UploadStep:: Uploading content to S3 bucket {} using key {} for interactionId={}",
+            LOG.info("[S3_UPLOAD_STEP]:: UPLOADING_CONTENT to S3 bucket {} using key {} for interactionId={}",
                     bucketName, objectKey, interactionId);
             uploadStringContent(bucketName, objectKey, content, metadata, interactionId);
 
             if (ackMessage != null && !ackMessage.isEmpty()) {
-                LOG.info("S3UploadStep:: Uploading Acknowledgement message content to S3 bucket {} using key {} for interactionId={}",
+                LOG.info("[S3_UPLOAD_STEP]:: UPLOADING_ACK_MESSAGE to S3 bucket {} using key {} for interactionId={}",
                         bucketName, acknowledgementKey, interactionId);
                 uploadStringContent(bucketName, acknowledgementKey, ackMessage, metadata, interactionId);
             } else {
-                LOG.info("S3UploadStep:: No Acknowledgement message available to upload for interactionId={}",
+                LOG.info("[S3_UPLOAD_STEP]:: NO_ACK_MESSAGE available to upload for interactionId={}",
                         interactionId);
             }
         } catch (Exception e) {
-            LOG.error("S3UploadStep:: S3 Upload Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("S3 Upload Step Failed for interactionId=" + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[S3_UPLOAD_STEP]:: FAILED while uploading to bucket {}. interactionId={}", context.getDataBucketName(), interactionId, e);
+            throw new RuntimeException("S3 Upload Step Failed for interactionId=" + interactionId + " while uploading to bucket " + context.getDataBucketName() + " with error: " + e.getMessage(), e);
         }
     }
 
@@ -171,7 +171,7 @@ public class S3UploadStep implements MessageProcessingStep {
             PutObjectRequest request = requestBuilder.build();
             PutObjectResponse response = s3Client.putObject(request, RequestBody.fromBytes(contentBytes));
 
-            LOG.info("[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
+            LOG.debug("[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
                     interactionId,
                     s3Client.serviceClientConfiguration().endpointOverride().orElse(null),
                     bucketName,
@@ -209,7 +209,7 @@ public class S3UploadStep implements MessageProcessingStep {
             PutObjectRequest request = requestBuilder.build();
             PutObjectResponse response = s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-            LOG.info("[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
+            LOG.debug("[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
                     interactionId,
                     s3Client.serviceClientConfiguration().endpointOverride().orElse(null),
                     bucketName,

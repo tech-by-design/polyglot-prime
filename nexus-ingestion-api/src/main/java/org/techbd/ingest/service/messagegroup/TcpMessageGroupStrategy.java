@@ -1,4 +1,4 @@
-package org.techbd.ingest.service;
+package org.techbd.ingest.service.messagegroup;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.Order;

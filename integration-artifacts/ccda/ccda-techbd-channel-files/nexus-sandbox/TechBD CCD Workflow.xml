@@ -1,16 +1,16 @@
-<channel version="4.6.0">
-  <id>1f14d3a9-82a9-4b2c-8b0d-a2992aca7d07</id>
+<channel version="4.6.1">
+  <id>595f2397-f04b-483b-84e3-2a7bc8a52384</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.5.2
-Implemented source system.</description>
-  <revision>14</revision>
-  <sourceConnector version="4.6.0">
+  <description>Version: 0.5.3
+Implemented Lookup Manager.</description>
+  <revision>42</revision>
+  <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
           <verifyHostname>false</verifyHostname>
@@ -31,15 +31,15 @@ Implemented source system.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.6.0">
+      <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
         <port>9002</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.6.0">
+      <sourceConnectorProperties version="4.6.1">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -94,9 +94,9 @@ Implemented source system.</description>
       <timeout>300000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.6.0">
+    <transformer version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>DB Save</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -235,7 +235,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	}
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>Common JS functions</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -304,8 +304,18 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
 function sendDataLedgerSync(payload) {
     logger.info(&quot;sendDataLedgerSync: &quot; + payload);
     
-    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);
-    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+    var apiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+
+// 1️⃣ Load secret name from Lookup Manager (NOT sensitive)
+var dataLedgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+
+// 2️⃣ Fetch real API key from AWS Secrets Manager
+var dataLedgerApiKey = fetchSecret(dataLedgerSecretName);
+
+// 3️⃣ Store real key into channelMap
+channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerApiKey);
+
+logger.info(&quot;✔ DataLedger API Key loaded from AWS&quot;);
 
     logger.info(&quot;API URL: &quot; + apiUrl);
 
@@ -520,12 +530,200 @@ function extractClinicalDocument(rawXml) {
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>Validate HTTP Request and collect headers</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
+///////////////////////////////////////////////////////////////////////////////////////////
+/*******************************
+    AWS Secrets Manager Loader
+********************************/
 
+function fetchSecret(secretName) {
+    var region = &quot;us-east-1&quot;;
+
+    var Region = Packages.software.amazon.awssdk.regions.Region;
+    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+
+    try {
+        var client = SecretsManagerClient.builder()
+            .region(Region.of(region))
+            .build();
+
+        var request = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        var response = client.getSecretValue(request);
+        client.close();
+
+        var value = response.secretString();
+        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
+
+        return value;
+
+    } catch (e) {
+        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
+        throw e;
+    }
+}
+
+/********************************************
+    1️⃣ FETCH JDBC SECRET (JSON secret)
+********************************************/
+
+try {
+  
+var jdbcSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRETS&quot;, ttlHours);
+
+    var jdbcSecretString = fetchSecret(jdbcSecretName);
+
+
+    //var jdbcSecretString = fetchSecret(jdbcSecretName);
+    var jdbcSecret = JSON.parse(jdbcSecretString);
+
+    channelMap.put(&quot;JDBC_HOST&quot;, jdbcSecret.host);
+    channelMap.put(&quot;JDBC_PORT&quot;, jdbcSecret.port);
+    channelMap.put(&quot;JDBC_DB&quot;, jdbcSecret.dbname);
+    channelMap.put(&quot;JDBC_USERNAME&quot;, jdbcSecret.username);
+    channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbcSecret.password);
+
+    logger.info(&quot;✔ JDBC credentials loaded into channelMap&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing JDBC secret: &quot; + e.message);
+}
+
+/********************************************
+    2️⃣ FETCH DATA LEDGER API KEY (Plain text)
+********************************************/
+
+try {
+    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    //&quot;techbd-nyec-dataledger-api-key&quot;;
+    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
+
+    logger.info(&quot;✔ DataLedger API Key loaded into channelMap&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
+}
+/////////////////////////////////////////////////////////////////////////
+/********************************************
+    3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
+********************************************/
+try {
+    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+
+    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+    }
+
+    var fhirApiUrl = fetchSecret(fhirSecretName);
+
+    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
+    globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
+    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
+    throw e;
+}
+
+/********************************************
+    6️⃣ FETCH JDBC URL (Plain text)
+********************************************/
+try {
+    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+
+    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value MC_JDBC_URL does not contain a secret name.&quot;;
+    }
+
+    // Get REAL jdbc URL from AWS
+    var jdbcUrl = fetchSecret(jdbcUrlSecretName);
+
+    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for MC_JDBC_URL returned empty.&quot;;
+    }
+
+    jdbcUrl = jdbcUrl.trim(); // IMPORTANT: remove trailing spaces
+    channelMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
+    logger.info(&quot;✔ JDBC URL loaded from AWS Secret Manager: &quot; + jdbcUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching JDBC URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load JDBC URL&quot;);
+    throw e;
+}
+
+
+/********************************************
+    4️⃣ FETCH CSV SERVICE API URL (Plain text)
+********************************************/
+try {
+    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+
+    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var csvServiceUrl = fetchSecret(csvSecretName);
+
+    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
+    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
+    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
+    throw e;
+}
+
+
+/********************************************
+    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
+********************************************/
+try {
+    var datalakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+
+    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var datalakeApiUrl = fetchSecret(datalakeSecretName);
+
+    if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
+    globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
+    logger.info(&quot;✔ Datalake API URL loaded from AWS Secret Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+    throw e;
+}
+
+/********************************************
+    DONE
+********************************************/
+/////////////////////////////////////////////////////////////////////////////////////////
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 logger.info(&quot;Request URL: &quot; + requestedPath);
 
@@ -712,18 +910,40 @@ extractClinicalDocument(rawData);
 
 // Initialize missing environment variables array
 var missingEnvVars = [];
+///////////////////////////////////////////////////////////
+//// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+//var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+//if(fhirBundleSubmissionApiUrl != null) {
+//    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+//    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+//} else {
+//    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+//}
 
-// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
-var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
-if(fhirBundleSubmissionApiUrl != null) {
-    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
-    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+// 1️⃣ Get the AWS secret name from Lookup Manager
+var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+
+if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL secret name not set in Lookup Manager&quot;);
 } else {
-    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+
+    // 2️⃣ Fetch the REAL URL from AWS Secrets Manager
+    var fhirBundleSubmissionApiUrl = fetchSecret(fhirSecretName).trim();
+
+    if (!fhirBundleSubmissionApiUrl || fhirBundleSubmissionApiUrl.trim() === &quot;&quot;) {
+        missingEnvVars.push(&quot;AWS Secret for MC_FHIR_BUNDLE_SUBMISSION_API_URL returned empty value&quot;);
+    } else {
+        // 3️⃣ Store real value for later use
+        globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+        logger.info(&quot;FHIR Bundle Submission API URL (from AWS): &quot; + fhirBundleSubmissionApiUrl);
+    }
 }
 
+
+/////////////////////////////////////
+
 // Fetch and check environment variable: MC_CCDA_SCHEMA_FOLDER
-var ccdaSchemaFolder = java.lang.System.getenv(&quot;MC_CCDA_SCHEMA_FOLDER&quot;);
+var ccdaSchemaFolder = LookupHelper.get(&quot;Config&quot;, &quot;MC_CCDA_SCHEMA_FOLDER&quot;, ttlHours);
 if (ccdaSchemaFolder != null) {
     channelMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
     logger.info(&quot;ccdaSchemaFolder: &quot; + ccdaSchemaFolder);
@@ -815,7 +1035,9 @@ function getManufacturerModelName(xmlData) {
      }
 }
 
-var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+var jdbcUrl = channelMap.get(&quot;jdbcUrl&quot;);
+//LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+
 if(jdbcUrl != null) {
     globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
     logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
@@ -826,29 +1048,32 @@ if(jdbcUrl != null) {
     throw errorMessage; // Stop further processing by throwing an exception
 }
 
-var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+var jdbcUsername = channelMap.get(&quot;JDBC_USERNAME&quot;);
+//LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
 if(jdbcUsername != null) {
     globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
     logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
 } else {
-    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+    var errorMessage = &apos;JDBC_USERNAME missing from AWS secret.&apos;;
     logger.error(errorMessage);
     setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
     throw errorMessage; // Stop further processing by throwing an exception
 }
 
-var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
-if(jdbcPassword != null) {
+
+var jdbcPassword = channelMap.get(&quot;JDBC_PASSWORD&quot;);
+
+  if(jdbcPassword != null) {
     globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
-    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+logger.info(&quot;jdbcPassword loaded successfully.&quot;);
 } else {
-    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+    var errorMessage = &apos;JDBC_PASSWORD missing from AWS secret&apos;;
     logger.error(errorMessage);
     setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
     throw errorMessage; // Stop further processing by throwing an exception
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>step_validate_profile_urls_env_variables</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
@@ -1382,18 +1607,18 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 }
 
 function set_fhir_resource_profile_urls(transformer) {
-	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
-	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
-	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
-	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
-	var consentMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
-	var organizationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
-	var observationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
-	var observationSexualOrientationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
-	var questionnaireMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
-	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
-	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
-	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
+	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;, ttlHours);   
+	var bundleMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;, ttlHours); 
+	var patientMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;, ttlHours);
+	var encounterMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;, ttlHours);
+	var consentMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;, ttlHours); 
+	var organizationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;, ttlHours);
+	var observationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;, ttlHours);
+	var observationSexualOrientationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;, ttlHours);
+	var questionnaireMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;, ttlHours);
+	var questionnaireResponseMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;, ttlHours);
+	var practitionerMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;, ttlHours);
+	var procedureMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;, ttlHours);
 	//var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
 	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
@@ -1494,7 +1719,7 @@ function getConsentResourceStatus(sourceXml) {
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>API endpoint processing</name>
           <sequenceNumber>4</sequenceNumber>
           <enabled>true</enabled>
@@ -1847,7 +2072,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	
 	
 		// Check if tracking is enabled
-		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+		var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
 		    logger.info(&quot;data ledger api call -BEGIN received&quot;);
 		    try {
@@ -2244,7 +2469,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
 			
 			// Retrieve the VALID_URLS environment variable (comma-separated list)
-			var validUrlsEnv = Packages.java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
+			var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
 			logger.info(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
 			
 			// Convert VALID_URLS to an array for validation
@@ -2352,11 +2577,11 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
           <stripNamespaces>false</stripNamespaces>
         </serializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
           <splitType>Element_Name</splitType>
           <elementName></elementName>
           <level>1</level>
@@ -2364,16 +2589,16 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.6.0">
+    <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/$validate/&apos; or &apos;/ccda/Bundle/$validate&apos; or &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -2386,7 +2611,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             <string>&apos;/ccda/Bundle&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>false</enabled>
@@ -2405,12 +2630,12 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.6.0">
+    <connector version="4.6.1">
       <metaDataId>1</metaDataId>
       <name>dest_bundle_validate</name>
-      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.0">
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.1">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.6.0">
+        <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2434,45 +2659,45 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables/>
       </properties>
-      <transformer version="4.6.0">
+      <transformer version="4.6.1">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.0">
+      <responseTransformer version="4.6.1">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.0">
+      <filter version="4.6.1">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2489,12 +2714,12 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="4.6.0">
+    <connector version="4.6.1">
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
         <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
             <mutualTlsEnabled>false</mutualTlsEnabled>
             <verifyHostname>false</verifyHostname>
@@ -2516,7 +2741,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             <truststoreUid/>
           </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         </pluginProperties>
-        <destinationConnectorProperties version="4.6.0">
+        <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2536,7 +2761,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
-        <host>https://1.nexus-txd.sbx.techbd.org:9000/Bundle/</host>
+        <host>${fhirBundleSubmissionApiUrl}</host>
         <useProxyServer>false</useProxyServer>
         <proxyAddress></proxyAddress>
         <proxyPort></proxyPort>
@@ -2668,45 +2893,45 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         <charset>UTF-8</charset>
         <socketTimeout>300000</socketTimeout>
       </properties>
-      <transformer version="4.6.0">
+      <transformer version="4.6.1">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.0">
+      <responseTransformer version="4.6.1">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.0">
+      <filter version="4.6.1">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2716,7 +2941,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
               <string>&apos;bundle&apos;</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -2736,8 +2961,84 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>// Modify the message variable below to pre process data
-return message;</preprocessingScript>
+  <preprocessingScript>///*******************************
+//    AWS Secrets Manager Loader
+//********************************/
+//
+//function fetchSecret(secretName) {
+//    var region = &quot;us-east-1&quot;;
+//
+//    var Region = Packages.software.amazon.awssdk.regions.Region;
+//    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+//    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+//
+//    try {
+//        var client = SecretsManagerClient.builder()
+//            .region(Region.of(region))
+//            .build();
+//
+//        var request = GetSecretValueRequest.builder()
+//            .secretId(secretName)
+//            .build();
+//
+//        var response = client.getSecretValue(request);
+//        client.close();
+//
+//        var value = response.secretString();
+//        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
+//
+//        return value;
+//
+//    } catch (e) {
+//        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
+//        throw e;
+//    }
+//}
+//
+///********************************************
+//    1️⃣ FETCH JDBC SECRET (JSON secret)
+//********************************************/
+//
+//try {
+//  
+//var jdbcSecretName = &quot;sandbox-interface-engine-rds-secrets&quot;;
+//    var jdbcSecretString = fetchSecret(jdbcSecretName);
+//
+//
+//    //var jdbcSecretString = fetchSecret(jdbcSecretName);
+//    var jdbcSecret = JSON.parse(jdbcSecretString);
+//
+//    channelMap.put(&quot;JDBC_HOST&quot;, jdbcSecret.host);
+//    channelMap.put(&quot;JDBC_PORT&quot;, jdbcSecret.port);
+//    channelMap.put(&quot;JDBC_DB&quot;, jdbcSecret.dbname);
+//    channelMap.put(&quot;JDBC_USERNAME&quot;, jdbcSecret.username);
+//    channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbcSecret.password);
+//
+//    logger.info(&quot;✔ JDBC credentials loaded into channelMap&quot;);
+//
+//} catch (e) {
+//    logger.error(&quot;❌ Error processing JDBC secret: &quot; + e.message);
+//}
+//
+///********************************************
+//    2️⃣ FETCH DATA LEDGER API KEY (Plain text)
+//********************************************/
+//
+//try {
+//    var ledgerSecretName = &quot;techbd-nyec-dataledger-api-key&quot;;
+//    var dataLedgerKey = fetchSecret(ledgerSecretName);
+//
+//    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
+//
+//    logger.info(&quot;✔ DataLedger API Key loaded into channelMap&quot;);
+//
+//} catch (e) {
+//    logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
+//}
+//
+///********************************************
+//    DONE
+//********************************************/</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 
@@ -2772,7 +3073,7 @@ return;
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.6.0">
+  <properties version="4.6.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -2795,7 +3096,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.6.0">
+    <attachmentProperties version="4.6.1">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -2810,7 +3111,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1764150698737</time>
+        <time>1765529226443</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2826,17 +3127,19 @@ return;</undeployScript>
         <channelIds>
           <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
           <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
-          <string>1f14d3a9-82a9-4b2c-8b0d-a2992aca7d07</string>
+          <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
           <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
           <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
           <string>a841f60d-4223-48de-aa35-a2714b609ac6</string>
           <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
-          <string>14111208-19b9-4253-9e7b-50e4e03e0dd0</string>
+          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
+          <string>873588e2-8903-4e9c-b8f3-c44889f22392</string>
           <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>df3ac4da-5ed1-4043-a3ee-885c0eaee101</string>
           <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>1bc85cd3-7c82-4ae1-b493-d8cf401072bf</string>
           <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
           <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
-          <string>dbc62d38-c440-4cd8-89e5-d026f33a570c</string>
           <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
           <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
         </channelIds>

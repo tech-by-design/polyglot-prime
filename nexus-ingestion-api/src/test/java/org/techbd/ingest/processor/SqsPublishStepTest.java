@@ -1,10 +1,8 @@
 
 package org.techbd.ingest.processor;
-import static org.mockito.Mockito.mock;
-import org.techbd.ingest.config.PortConfig;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,9 +17,10 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.service.messagegroup.MessageGroupService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
@@ -92,12 +91,12 @@ class SqsPublishStepTest {
                 "192.168.1.1",
                 "192.168.1.2",
                 "8080",null,null,null,MessageSourceType.HTTP_INGEST,"TEST","TEST","0.700.0");
+                context.setQueueUrl("http://dummy-queue-url");
         when(appLogger.getLogger(SqsPublishStep.class)).thenReturn(templateLogger);
         when(appConfig.getVersion()).thenReturn("1.0.0");
     // Add PortConfig mock
     PortConfig portConfig = mock(PortConfig.class);
-    sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, appConfig,
-        messageGroupService, appLogger, portConfig);
+    sqsPublishStep = new SqsPublishStep(sqsClient, objectMapper, metadataBuilderService, messageGroupService, appLogger);
     }
 
     @Test

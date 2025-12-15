@@ -5,26 +5,19 @@ import java.util.Map;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.commons.MessageSourceType;
-import org.techbd.ingest.config.AppConfig;
-import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.service.messagegroup.MessageGroupService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SqsException;
 
 /**
- * {@code SqsPublishStep} is a {@link MessageProcessingStep} implementation
+ * {@code [SQS_PUBLISH_STEP]} is a {@link MessageProcessingStep} implementation
  * responsible for publishing messages to an Amazon SQS queue.
  * <p>
  * This step is typically used to send messages containing metadata and content
@@ -47,162 +40,82 @@ public class SqsPublishStep implements MessageProcessingStep {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final MetadataBuilderService metadataBuilderService;
-    private final AppConfig appConfig;
     private final MessageGroupService messageGroupService;
-    private final PortConfig portConfig;
 
     public SqsPublishStep(SqsClient sqsClient, ObjectMapper objectMapper, MetadataBuilderService metadataBuilderService,
-            AppConfig appConfig, MessageGroupService messageGroupService, AppLogger appLogger, PortConfig portConfig) {
+            MessageGroupService messageGroupService, AppLogger appLogger) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.metadataBuilderService = metadataBuilderService;
         this.messageGroupService = messageGroupService;
-        this.appConfig = appConfig;
-        this.portConfig = portConfig;
         this.LOG = appLogger.getLogger(SqsPublishStep.class);
-        LOG.info("SqsPublishStep initialized");
+        LOG.info("[SQS_PUBLISH_STEP] initialized");
     }
 
     @Override
     public void process(RequestContext context, MultipartFile file) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("SqsPublishStep:: process called with MultipartFile. interactionId={}, filename={}", interactionId,
+        LOG.debug("[SQS_PUBLISH_STEP]:: process called with MultipartFile. interactionId={}, filename={}", interactionId,
                 file != null ? file.getOriginalFilename() : "null");
+
+        if (context == null || context.getQueueUrl() == null || context.getQueueUrl().isBlank()) {
+            throw new IllegalArgumentException(
+                    "[SQS_PUBLISH_STEP]:: Queue URL is null or empty for interactionId=" + interactionId);
+        }
+
         try {
             final var messageGroupId = messageGroupService.createMessageGroupId(context, interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             String messageJson = objectMapper.writeValueAsString(message);
-            String queueUrl = resolveQueueUrl(context,interactionId);
-            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
+            LOG.info("[SQS_PUBLISH_STEP]:: SENDING_MESSAGE to SQS. interactionId={}, queueUrl={}", interactionId,
+                    context.getQueueUrl());
 
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(queueUrl)
+                    .queueUrl(context.getQueueUrl())
                     .messageBody(messageJson)
                     .messageGroupId(messageGroupId)
                     .build())
                     .messageId();
-            if (context != null) {
-                context.setMessageId(messageId);
-            }
-            LOG.info("SqsPublishStep:: Message sent to SQS successfully. interactionId={}, messageId={}", interactionId,
+            context.setMessageId(messageId);
+            LOG.info("[SQS_PUBLISH_STEP]:: MESSAGE_SENT to SQS successfully. interactionId={}, messageId={}", interactionId,
                     messageId);
         } catch (Exception e) {
-            LOG.error("SqsPublishStep:: SQS Publish Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[SQS_PUBLISH_STEP]:: FAILED while publishing to queue {}. interactionId={}", context.getQueueUrl(), interactionId, e);
+            throw new RuntimeException(
+                    "SQS Publish Step Failed for interactionId " + interactionId + " while publising to queue " + context.getQueueUrl() + " with error: " + e.getMessage(), e);
         }
     }
 
     public void process(RequestContext context, String content, String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
-        LOG.info("SqsPublishStep:: process called with String content. interactionId={}", interactionId);
+        LOG.debug("[SQS_PUBLISH_STEP]:: process called with String content. interactionId={}", interactionId);
+
+        if (context == null || context.getQueueUrl() == null || context.getQueueUrl().isBlank()) {
+            throw new IllegalArgumentException(
+                    "[SQS_PUBLISH_STEP]:: Queue URL is null or empty for interactionId=" + interactionId);
+        }
+
         try {
             final var messageGroupId = messageGroupService.createMessageGroupId(context, interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             String messageJson = objectMapper.writeValueAsString(message);
-            String queueUrl = resolveQueueUrl(context,interactionId);
-            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
+            LOG.info("[SQS_PUBLISH_STEP]:: SENDING_MESSAGE to SQS. interactionId={}, queueUrl={}", interactionId,
+                    context.getQueueUrl());
 
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(queueUrl)
+                    .queueUrl(context.getQueueUrl())
                     .messageBody(messageJson)
                     .messageGroupId(messageGroupId)
                     .build())
                     .messageId();
-            if (context != null) {
-                context.setMessageId(messageId);
-            }
-            LOG.info("SqsPublishStep:: Message sent to SQS successfully. interactionId={}, messageId={}", interactionId,
+            context.setMessageId(messageId);
+            LOG.info("[SQS_PUBLISH_STEP]:: MESSAGE_SENT to SQS successfully. interactionId={}, messageId={}", interactionId,
                     messageId);
         } catch (Exception e) {
-            LOG.error("SqsPublishStep:: SQS Publish Step Failed. interactionId={}", interactionId, e);
-            throw new RuntimeException("SQS Publish Step Failed for interactionId " + interactionId + " with error: " + e.getMessage(), e);
+            LOG.error("[SQS_PUBLISH_STEP]:: FAILED while publishing to queue {}. interactionId={}", context.getQueueUrl(), interactionId, e);
+            throw new RuntimeException(
+                    "SQS Publish Step Failed for interactionId " + interactionId + " while publising to queue " + context.getQueueUrl() + " with error: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Resolves the SQS queue URL based on the port config and request context.
-     * Falls back to default if no match.
-     */
-    private String resolveQueueUrl(RequestContext context , String interactionId) {
-        int requestPort = -1;
-        try {
-            Map<String, String> headers = context.getHeaders();
-
-            // case-insensitive header lookup helper
-            java.util.function.BiFunction<Map<String, String>, String, String> findHeader = (h, name) -> {
-                if (h == null) {
-                    return null;
-                }
-                String v = h.get(name);
-                if (v != null) {
-                    return v;
-                }
-                for (Map.Entry<String, String> e : h.entrySet()) {
-                    if (e.getKey() != null && e.getKey().equalsIgnoreCase(name)) {
-                        return e.getValue();
-                    }
-                }
-                return null;
-            };
-
-            // 1) Check X-TechBd-Queue-Name override first (case-insensitive).
-            String overrideQueue = findHeader.apply(headers, "X-TechBd-Queue-Name");
-            if (overrideQueue != null && !overrideQueue.isBlank()) {
-                try {
-                    // Try to resolve the queue via SQS API (treat header value as queue name).
-                    GetQueueUrlResponse resp = sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(overrideQueue).build());
-                    String resolvedQueueUrl = resp.queueUrl();
-                    LOG.info("SqsPublishStep:: Using X-TechBd-Queue-Name override, resolved queue url: {} interactionID : {}", resolvedQueueUrl, interactionId);
-                    //return resolvedQueueUrl;
-                    return overrideQueue;
-                } catch (SqsException e) {
-                    LOG.warn("SqsPublishStep:: X-TechBd-Queue-Name '{}' could not be resolved by SQS: {}. Falling back to default queue . interactionID : {}", overrideQueue, e.getMessage(), interactionId,e);
-                    // fall through to default/port-config resolution
-                } catch (RuntimeException e) {
-                    LOG.warn("SqsPublishStep:: Error while resolving X-TechBd-Queue-Name '{}': {}. Falling back to default queue. interactionID : {}", overrideQueue, e.getMessage(), interactionId,e);
-                    // fall through to default/port-config resolution
-                }
-            }
-
-            // 2) Resolve port from x-forwarded-port (case-insensitive)
-            String portHeader = findHeader.apply(headers, Constants.REQ_X_FORWARDED_PORT);
-            if (portHeader == null) {
-                portHeader = findHeader.apply(headers, "x-forwarded-port");
-            }
-
-            if (portHeader != null && !portHeader.isBlank()) {
-                requestPort = Integer.parseInt(portHeader);
-                LOG.info("SqsPublishStep:: Using x-forwarded-port header value: {} interactionId :{}", requestPort, interactionId);
-            } else {
-                if ((MessageSourceType.MLLP == context.getMessageSourceType()
-                        || MessageSourceType.TCP == context.getMessageSourceType())
-                        && context.getDestinationPort() != null
-                        && !context.getDestinationPort().isBlank()) {
-                    requestPort = Integer.parseInt(context.getDestinationPort());
-                    LOG.info("SqsPublishStep:: x-forwarded-port header missing or blank; Fetching details using destination port : {} for {} SQS queue selection interactionId :{} ", requestPort, context.getMessageSourceType(), interactionId);
-                } else {
-                    LOG.info("SqsPublishStep:: x-forwarded-port header missing or blank; messageSourceType=null interactionId :{} ", interactionId);
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("SqsPublishStep:: Could not parse request port from x-forwarded-port header: {} interactionId :{}", e.getMessage(), interactionId,e);
-        }
-
-        if (portConfig != null && portConfig.isLoaded() && requestPort > 0) {
-            for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                if (entry.port == requestPort && entry.queue != null && !entry.queue.isBlank()) {
-                    LOG.info("SqsPublishStep:: Using queue {} from port config for port {}: interactionId {}", entry.queue, requestPort, interactionId);
-                    return entry.queue;
-                }
-            }
-            LOG.warn("SqsPublishStep:: No matching port entry found in port config for port {}. Falling back to default queue :{}  interactionId :{}", requestPort, appConfig.getAws().getSqs().getFifoQueueUrl(), interactionId);
-        } else if (requestPort > 0) {
-            LOG.warn("SqsPublishStep:: Port config unavailable or not loaded. Falling back to default queue :{} for port {}. interactionId :{}", appConfig.getAws().getSqs().getFifoQueueUrl(), requestPort, interactionId);
-        }
-
-        // Fallback to default
-        LOG.info("SqsPublishStep:: Using default SQS queue : {} from AppConfig. interactionId :{}", appConfig.getAws().getSqs().getFifoQueueUrl(), interactionId);
-        return appConfig.getAws().getSqs().getFifoQueueUrl();
     }
 
     @Override

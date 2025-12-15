@@ -1,4 +1,4 @@
-package org.techbd.ingest.service;
+package org.techbd.ingest.service.messagegroup;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.Order;
@@ -8,7 +8,7 @@ import org.techbd.ingest.model.RequestContext;
 
 
 @Component
-@Order(3)
+@Order(4)
 public class TenantMessageGroupStrategy implements MessageGroupStrategy {
     @Override
     public boolean supports(RequestContext context) {

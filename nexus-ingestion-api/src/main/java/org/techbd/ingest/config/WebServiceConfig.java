@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.config.annotation.WsConfigurationSupport;
 import org.springframework.ws.server.EndpointInterceptor;
 import org.springframework.ws.soap.SoapMessageFactory;
@@ -52,6 +53,16 @@ public class WebServiceConfig extends WsConfigurationSupport {
     @Override
     protected void addInterceptors(List<EndpointInterceptor> interceptors) {
         interceptors.add(new WsaHeaderInterceptor(soapResponseUtil, messageProcessorService, appConfig,LOG));
+    }
+   
+    @Bean
+    public WebServiceTemplate webServiceTemplate() {
+        SaajSoapMessageFactory messageFactory = new SaajSoapMessageFactory();
+        messageFactory.afterPropertiesSet();
+
+        WebServiceTemplate template = new WebServiceTemplate();
+        template.setMessageFactory(messageFactory);
+        return template;
     }
 
     @Bean

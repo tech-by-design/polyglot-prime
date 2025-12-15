@@ -1,14 +1,13 @@
 package org.techbd.ingest.controller;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -18,12 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.AbstractMessageSourceProvider;
-import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.service.SoapForwarderService;
+import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
@@ -32,37 +32,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.techbd.ingest.config.PortConfig;
 
 /**
- * Controller for handling data ingestion requests. This controller processes
- * file uploads and string content ingestion.
+ * Controller for handling data ingestion requests.
+ * Supports both multipart file uploads and raw body content.
  */
 @RestController
+@RequestMapping("/ingest")
 public class DataIngestionController extends AbstractMessageSourceProvider {
 
+    private final SoapForwarderService forwarder;
     private final TemplateLogger LOG;
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
-    private final AppConfig appConfig;
-    private final PortConfig portConfig;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger, PortConfig portConfig) {
+    public DataIngestionController(
+            MessageProcessorService messageProcessorService,
+            ObjectMapper objectMapper,
+            AppConfig appConfig,
+            AppLogger appLogger,
+            PortResolverService portResolverService,
+            SoapForwarderService forwarder) {
         super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
-        this.appConfig = appConfig;
-        this.portConfig = portConfig;
-        LOG = appLogger.getLogger(DataIngestionController.class);
+        this.forwarder = forwarder;
+        this.LOG = appLogger.getLogger(DataIngestionController.class);
         LOG.info("DataIngestionController initialized");
     }
 
     /**
-     * Health check endpoint using HEAD method on /ingest endpoint.
-     *
-     * @return A response entity indicating service health status.
+     * Health check endpoint.
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<Void> healthCheck() {
@@ -75,222 +75,136 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
     }
 
     /**
-     * Endpoint to handle ingestion requests.
-     *
-     * This endpoint can accept either: - a file upload (multipart/form-data) -
-     * raw data in the body (JSON, XML, plain text, HL7, etc.)
-     *
-     * If raw body data is provided, a filename is generated based on the
-     * Content-Type header.
-     *
-     * @param file The optional file to be ingested (when multipart/form-data).
-     * @param body The optional raw payload (when Content-Type is
-     * JSON/XML/Text).
-     * @param headers The request headers containing metadata.
-     * @param request The HTTP servlet request.
-     * @return A response entity containing the result of the ingestion process.
-     * @throws Exception If an error occurs during processing.
+     * Universal ingest endpoint supporting:
+     * - /ingest (no params)
+     * - /ingest/ (no params with trailing slash)
+     * - /ingest/{sourceId}/{msgType} (with params)
+     * 
+     * Handles both multipart file uploads and raw body content.
      */
-    @PostMapping(value = "/ingest", consumes = {
-        MediaType.MULTIPART_FORM_DATA_VALUE,
-        "multipart/related",
-        "application/xop+xml",
-        MediaType.TEXT_XML_VALUE,
-        MediaType.APPLICATION_XML_VALUE,
-        MediaType.ALL_VALUE
-    })
+    @PostMapping(
+            value = {"", "/", "/{sourceId}/{msgType}"},
+            consumes = {
+                    MediaType.MULTIPART_FORM_DATA_VALUE,
+                    "multipart/related",
+                    "application/xop+xml",
+                    MediaType.TEXT_XML_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    MediaType.ALL_VALUE
+            }
+    )
     public ResponseEntity<String> ingest(
+            @PathVariable(name = "sourceId", required = false) String sourceId,
+            @PathVariable(name = "msgType", required = false) String msgType,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestBody(required = false) String body,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request,
             HttpServletResponse response) throws Exception {
+
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
-        LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+        LOG.info("Received ingest request. interactionId={} sourceId={} msgType={}",
+                interactionId, sourceId, msgType);
 
-        // Get the request port from x-forwarded-port header
-        String portHeader = headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault("x-forwarded-port", null));
-        int requestPort = -1;
-        if (portHeader != null) {
-            try {
-                requestPort = Integer.parseInt(portHeader);
-            } catch (NumberFormatException e) {
-                LOG.error("Invalid x-forwarded-port header value: {}", portHeader);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Header 'x-forwarded-port' is not set properly with a valid port number");
-            }
-        } else {
-            LOG.error("Missing x-forwarded-port header");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Header 'x-forwarded-port' is not set properly with a valid port number");
-        }
-        LOG.info("DataIngestionController:: Request received on port {}", requestPort);
-
-        // Check port config for matching port and route == "/hold"
-        if (portConfig.isLoaded()) {
-            for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                if (entry.port == requestPort && "/hold".equals(entry.route)) {
-                    LOG.info("DataIngestionController: Matched /hold route for port {}. Forwarding to /hold. request={}, response={}", requestPort, request, response);
-                    if (response == null) {
-                        LOG.error("DataIngestionController: HttpServletResponse is null before forwarding to /hold! This will cause a NullPointerException.");
-                    }
-                    try {
-                        request.getRequestDispatcher("/hold").forward(request, response);
-                        LOG.info("DataIngestionController: Successfully forwarded to /hold for port {}", requestPort);
-                    } catch (Exception ex) {
-                        LOG.error("DataIngestionController: Exception while forwarding to /hold for port {}: {}", requestPort, ex.getMessage(), ex);
-                        throw ex;
-                    }
-                    return ResponseEntity.status(HttpStatus.OK).body("Forwarded to /hold");
-                }
-            }
-        } else {
-            String errorMsg = "Failed to load port configuration JSON from S3";
-            LOG.error(errorMsg);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMsg);
+        // Validate that request contains data
+        if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {
+            LOG.warn("Empty request received. interactionId={}", interactionId);
+            throw new IllegalArgumentException("Request must contain either a file or body");
         }
 
-        Map<String, String> responseMap;
+        // Check for SOAP forwarding first (before processing)
+        if (body != null && !body.isBlank() && isSoapRequest(msgType)) {
+            LOG.info("SOAP forwarding to /ws endpoint sourceId={} msgType={} interactionId={}",
+                    sourceId, msgType, interactionId);
+            return forwarder.forward(request, body, sourceId, msgType, interactionId);
+        }
 
-        if (file != null && !file.isEmpty()) {
-            LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
+        Map<String, String> result = Optional.ofNullable(file)
+                .filter(f -> !f.isEmpty())
+                .map(f -> processMultipartFile(sourceId, msgType, headers, request, interactionId, f))
+                .orElseGet(() -> processRawBody(sourceId, msgType, headers, request, response, interactionId, body));
+
+        String json = objectMapper.writeValueAsString(result);
+        LOG.info("Returning response for interactionId={}", interactionId);
+        return ResponseEntity.ok(json);
+    }
+
+    /**
+     * Processes multipart file uploads.
+     */
+    private Map<String, String> processMultipartFile(
+            String sourceId,
+            String msgType,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            String interactionId,
+            MultipartFile file) {
+        
+        try {
+            LOG.info("File received: {} ({} bytes). interactionId={}",
                     file.getOriginalFilename(), file.getSize(), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, file.getSize(), file.getOriginalFilename());
-            responseMap = messageProcessorService.processMessage(context, file);
 
-        } else if (body != null && !body.isBlank()) {
+            RequestContext context = createRequestContext(
+                    interactionId, headers, request, file.getSize(), file.getOriginalFilename());
+
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+
+            return messageProcessorService.processMessage(context, file);
+        } catch (Exception e) {
+            LOG.error("Error processing multipart file. interactionId={}", interactionId, e);
+            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Processes raw request body content.
+     */
+    private Map<String, String> processRawBody(
+            String sourceId,
+            String msgType,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String interactionId,
+            String body) {
+        
+        try {
             String contentType = request.getContentType();
             String extension = HttpUtil.resolveExtension(contentType);
             String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-            LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
-                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, body.length(), generatedFileName);
-            responseMap = messageProcessorService.processMessage(context, body);
 
-        } else {
-            LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
-            throw new IllegalArgumentException("Request must contain either a file or body data");
+            LOG.info("Raw body received (Content-Type={}): interactionId={}",
+                    contentType, interactionId);
+
+            RequestContext context = createRequestContext(
+                    interactionId, headers, request, body.length(), generatedFileName);
+
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+
+            return messageProcessorService.processMessage(context, body);
+        } catch (Exception e) {
+            LOG.error("Error processing raw body. interactionId={}", interactionId, e);
+            throw new RuntimeException("Failed to process body: " + e.getMessage(), e);
         }
-        LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
-        String responseJson = objectMapper.writeValueAsString(responseMap);
-        LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
-        return ResponseEntity.ok(responseJson);
+    }
+
+    /**
+     * Determines if the request should be forwarded to SOAP endpoint.
+     */
+    private boolean isSoapRequest(String msgType) {
+        if (msgType == null) {
+            return false;
+        }
+        String normalized = msgType.trim().toLowerCase();
+        return normalized.equals("pix") 
+                || normalized.equals("pnr") 
+                || normalized.equals("ws");
     }
 
     @Override
     public MessageSourceType getMessageSource() {
         return MessageSourceType.HTTP_INGEST;
-    }
-
-    @Override
-    public String getDataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
-    }
-
-    @Override
-    public String getMetadataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
-    }
-
-    /**
-     * Build the metadata key including optional per-port metadataDir prefix.
-     */
-    @Override
-    public String getDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        String prefix = "";
-        try {
-            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
-            if (portHeader == null) {
-                portHeader = HttpUtil.extractDestinationPort(headers);
-            }
-            if (portHeader != null) {
-                try {
-                    int requestPort = Integer.parseInt(portHeader);
-                    if (!portConfig.isLoaded()) {
-                        portConfig.loadConfig();
-                    }
-                    if (portConfig.isLoaded()) {
-                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                            if (entry.port == requestPort) {
-                                String dataDir = entry.dataDir;
-                                if (dataDir != null && !dataDir.isBlank()) {
-                                    String normalized = dataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                                    if (!normalized.isEmpty()) {
-                                        prefix = normalized + "/";
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    } else {
-                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
-                    }
-                } catch (NumberFormatException nfe) {
-                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
-        }
-
-        // build metadata relative key (same semantics as previous default)
-        Instant now = Instant.now();
-        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String dataKey = String.format("data/%s/%s_%s", datePath, interactionId, timestamp);
-
-        return (prefix.isEmpty() ? "" : prefix) + dataKey;
-    }
-
-    /**
-     * Build the metadata key including optional per-port metadataDir prefix.
-     */
-    @Override
-    public String getMetaDataKey(String interactionId, Map<String, String> headers, String originalFileName, String timestamp) {
-        String prefix = "";
-        try {
-            String portHeader = headers != null ? headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, headers.getOrDefault(Constants.REQ_X_FORWARDED_PORT, null)) : null;
-            if (portHeader == null) {
-                portHeader = HttpUtil.extractDestinationPort(headers);
-            }
-            if (portHeader != null) {
-                try {
-                    int requestPort = Integer.parseInt(portHeader);
-                    if (!portConfig.isLoaded()) {
-                        portConfig.loadConfig();
-                    }
-                    if (portConfig.isLoaded()) {
-                        for (PortConfig.PortEntry entry : portConfig.getPortConfigurationList()) {
-                            if (entry.port == requestPort) {
-                                String metadataDir = entry.metadataDir;
-                                if (metadataDir != null && !metadataDir.isBlank()) {
-                                    String normalized = metadataDir.replaceAll("^/+", "").replaceAll("/+$", "");
-                                    if (!normalized.isEmpty()) {
-                                        prefix = normalized + "/";
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    } else {
-                        LOG.warn("PortConfig not loaded; using default metadata key and no prefix");
-                    }
-                } catch (NumberFormatException nfe) {
-                    LOG.warn("Invalid x-forwarded-port header value: {} — using default metadata key and no prefix", portHeader);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
-        }
-
-        // build metadata relative key (same semantics as previous default)
-        Instant now = Instant.now();
-        ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
-        String datePath = uploadTime.format(Constants.DATE_PATH_FORMATTER);
-        String metaKey = String.format("metadata/%s/%s_%s_metadata.json", datePath, interactionId, timestamp);
-
-        return (prefix.isEmpty() ? "" : prefix) + metaKey;
     }
 }

@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.checkerframework.checker.units.qual.m;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
@@ -73,6 +72,23 @@ public class CsvBundleProcessorService {
         this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         this.LOG = appLogger.getLogger(CsvBundleProcessorService.class);
     }
+
+    private static final Map<String, String> DESCRIPTION_MAP = Map.ofEntries(
+            Map.entry("invalid-prefix", "Filenames must start with one of the following prefixes: "),
+            Map.entry("incomplete-group-due-to-encoding", "Not processed as other files in the group were not UTF-8 encoded"),
+            Map.entry("wrong-encoding", "File is not UTF-8 encoded"),
+            Map.entry("invalid-content-null-bytes", "File contains null bytes"),
+            Map.entry("invalid-content-control", "File contains control characters"),
+            Map.entry("invalid-content-surrogates", "File contains invalid surrogate characters"),
+            Map.entry("invalid-content-noncharacters", "File contains Unicode non-characters"),
+            Map.entry("invalid-content-whitespace", "File contains problematic whitespace characters"),
+            Map.entry("invalid-content-format", "File contains invisible format characters"),
+            Map.entry("invalid-content-zero-width", "File contains zero-width characters"),
+            Map.entry("invalid-content-bom-middle", "File contains a Byte Order Mark (BOM) in the middle of the content"),
+            Map.entry("invalid-content-private-use", "File contains private-use area Unicode characters"),
+            Map.entry("invalid-content-other", "File contains invalid characters"),
+            Map.entry("content validation errors", "Not processed as other files in the group have content validation errors")
+        );
 
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
@@ -563,11 +579,33 @@ private List<Object> processScreening(final String groupKey,
                     String reason = fd.reason();
                     if (reason == null || reason.contains("Invalid file prefix")) {
                         return "invalid-prefix|Invalid file prefix";
-                    } else if (reason.contains("Group blocked by")) {
+                    } else if (reason.contains("group have content validation errors")) {
+                        return "content validation errors|" + reason;
+                    } else if (reason.contains("group were not UTF-8 encoded")) {
                         return "incomplete-group-due-to-encoding|" + reason;
-                    } else if (reason.contains("not UTF-8 encoded")) {
+                    } else if (reason.contains("not valid UTF-8 encoded")) {
                         return "wrong-encoding|File is not UTF-8 encoded";
-                    } else {
+                    }else if (reason.contains("Null bytes")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    }else if (reason.contains("Control characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("surrogate")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Unicode non-characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Problematic whitespace")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Invisible format characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Zero-width characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    }else if (reason.contains("BOM character in middle")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Private use area characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.startsWith("File contains invalid characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;} 
+                    else {
                         return "unknown|Unknown reason";
                     }
                 }));
@@ -575,26 +613,21 @@ private List<Object> processScreening(final String groupKey,
         List<Map<String, Object>> errors = new ArrayList<>();
     
         for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
-            String[] keyParts = entry.getKey().split("\\|", 2);
+            String[] keyParts = entry.getKey().split("\\|", 3);
             String subType = keyParts[0];
             String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
-    
-            String description;
-            switch (subType) {
-                case "invalid-prefix":
-                    description = "Filenames must start with one of the following prefixes: " +
-                            Arrays.stream(FileType.values())
-                                    .map(Enum::name)
-                                    .collect(Collectors.joining(", "));
-                    break;
-                case "incomplete-group-due-to-encoding":
-                    description = "Not processed as other files in the group were not UTF-8 encoded";
-                    break;
-                case "wrong-encoding":
-                    description = "File is not UTF-8 encoded";
-                    break;
-                default:
-                    description = "Unknown reason";
+            String errorDetail = (keyParts.length > 2 && keyParts[2] != null) ? keyParts[2] : "";
+            String description = DESCRIPTION_MAP.getOrDefault(subType, "Unknown reason");
+
+            // Special handling for invalid-prefix (dynamic list)
+            if ("invalid-prefix".equals(subType)) {
+                description += Arrays.stream(FileType.values())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+            }
+            // Append detail if present & not for invalid-prefix
+            if (!errorDetail.isEmpty() && !"invalid-prefix".equals(subType)) {
+                description = errorDetail;
             }
     
             List<String> filenames = entry.getValue().stream()
