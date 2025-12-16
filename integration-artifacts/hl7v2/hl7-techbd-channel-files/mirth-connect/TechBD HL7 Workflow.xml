@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.8</description>
-  <revision>33</revision>
+  <description>Version: 0.1.9</description>
+  <revision>36</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1640,7 +1640,7 @@ try {
 
     transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
 
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
@@ -2142,7 +2142,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1765274159776</time>
+        <time>1765881420461</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2151,6 +2151,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>
