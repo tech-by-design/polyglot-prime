@@ -8,8 +8,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.techbd.CoreUdiReaderConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
+import org.techbd.config.CoreUdiReaderConfig;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -34,18 +37,30 @@ import lib.aide.tabular.JooqRowsSupplier;
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
-    private final CoreUdiReaderConfig udiPrimeJpaConfig;
+    private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
+    private CoreUdiReaderConfig udiReaderConfig;
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
 
-    public PrimeController(final Presentation presentation, final CoreUdiReaderConfig udiPrimeJpaConfig,
+    public PrimeController(final Presentation presentation,CoreUdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.udiPrimeJpaConfig = udiPrimeJpaConfig;   
     }
 
+    @Autowired(required = false)
+    public void setUdiReaderConfig(CoreUdiReaderConfig udiReaderConfig) {
+        this.udiReaderConfig = udiReaderConfig;
+    }
+    
+    private DSLContext getDsl() {
+        if (udiReaderConfig != null) {
+            return udiReaderConfig.dsl();
+        }
+        return udiPrimeJpaConfig.dsl();
+    }
     @GetMapping("/home")
     @RouteMapping(label = "Home", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
@@ -80,7 +95,7 @@ public class PrimeController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
                  //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase())) 
                  .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
                          .and(typableTable.column("widget_name").cast(String.class).eq("FHIR"))
@@ -196,7 +211,7 @@ public class PrimeController {
         try {
             final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                     viewName);
-            List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+            List<Map<String, Object>> fhirSubmission = getDsl().selectFrom(typableTable.table())
                     .fetch()
                     .intoMaps();
             if (CollectionUtils.isNotEmpty(fhirSubmission)) {
@@ -227,7 +242,7 @@ public class PrimeController {
     //     final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
 
     //     // Query the view and fetch the results
-    //     List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+    //     List<Map<String, Object>> fhirSubmission = udiReaderConfig.dsl().selectFrom(typableTable.table())
     //             .fetch()
     //             .intoMaps(); 
     //     // Check if data is available
@@ -326,7 +341,7 @@ public class PrimeController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())  
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())  
                .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
                          .and(typableTable.column("widget_name").cast(String.class).eq("CSV"))
                        )
@@ -377,7 +392,7 @@ public class PrimeController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
                  .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
                          .and(typableTable.column("widget_name").cast(String.class).eq("CCDA"))
                        )
@@ -427,7 +442,7 @@ public class PrimeController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
                  .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
                          .and(typableTable.column("widget_name").cast(String.class).eq("HL7V2"))
                        )

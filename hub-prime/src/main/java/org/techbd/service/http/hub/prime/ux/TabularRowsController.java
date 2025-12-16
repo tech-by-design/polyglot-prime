@@ -48,7 +48,7 @@ import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsRequestForSP;
 import lib.aide.tabular.TabularRowsResponse;
 
-import org.techbd.CoreUdiReaderConfig;
+import org.techbd.config.CoreUdiReaderConfig;
 import org.techbd.config.CoreUdiPrimeJpaConfig;
 
 @Controller
@@ -60,19 +60,30 @@ public class TabularRowsController {
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
-    private final CoreUdiReaderConfig udiReaderConfig;
+    private CoreUdiReaderConfig udiReaderConfig;
     private final List<Validator> validators;
     @Autowired
     private FileDownloadProperties fileDownloadProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
-    public TabularRowsController(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,final CoreUdiReaderConfig udiReaderConfig, List<Validator> validators) {
-        this.udiPrimeJpaConfig = coreUdiPrimeJpaConfig;
-        this.udiReaderConfig = udiReaderConfig;
+    public TabularRowsController(List<Validator> validators,CoreUdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.validators = validators;
+        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
+    @Autowired(required = false)
+    public void setUdiReaderConfig(CoreUdiReaderConfig udiReaderConfig) {
+        this.udiReaderConfig = udiReaderConfig;
+    }
+
+    // Helper method to get the DSLContext, prefer reader if available
+    private DSLContext getDsl() {
+        if (udiReaderConfig != null) {
+            return udiReaderConfig.dsl();
+        }
+        return udiPrimeJpaConfig.dsl();
+    }
     @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
             Retrieves rows from a specified master table or view, within a specific schema.
             The request body contains the filter criteria (via `TabularRowsRequest`) used to query the data.
@@ -96,7 +107,7 @@ public class TabularRowsController {
         return new JooqRowsSupplier.Builder()
                 .withRequest(payload)
                 .withTable(Tables.class, schemaName, masterTableNameOrViewName)
-                .withDSL(udiReaderConfig.dsl())
+                .withDSL(getDsl())
                 .withLogger(LOG)
                 .includeGeneratedSqlInResp(includeGeneratedSqlInResp)
                 .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
@@ -139,7 +150,7 @@ public class TabularRowsController {
         }
 
         try {
-            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(udiReaderConfig.dsl())
+            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(getDsl())
                     .withSchemaName(schemaName)
                     .withStoredProcName(storedProcName)
                     .withParamsJson(storedProcparams)
@@ -181,7 +192,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiReaderConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue)))
                 .fetch()
                 .intoMaps();
@@ -229,7 +240,7 @@ public class TabularRowsController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
 
-        List<Map<String, Object>> result = udiReaderConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(columnValue2))))
                 .fetch()
@@ -289,7 +300,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiReaderConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName1)).eq(DSL.val(decodedColumnValue1))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(decodedColumnValue2)))
                         .and(DSL.field(typableTable.column(columnName3)).eq(DSL.val(decodedColumnValue3))))
@@ -486,7 +497,7 @@ public class TabularRowsController {
 
         JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
             .withTable(Tables.class, schemaName, tableName)
-            .withDSL(udiReaderConfig.dsl())
+            .withDSL(getDsl())
             .withLogger(LOG)
             .build();
 
