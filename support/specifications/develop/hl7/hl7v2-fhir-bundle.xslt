@@ -302,10 +302,14 @@
                               <xsl:otherwise>detailed</xsl:otherwise>
                             </xsl:choose>",
                     "valueCoding": {
-                      "system": "<xsl:choose>
-                                    <xsl:when test="PID.10.1 = 'UNK' or PID.10.1 = 'ASKU'">http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:when>
-                                    <xsl:otherwise>urn:oid:<xsl:value-of select="PID.10.3"/></xsl:otherwise>
-                                  </xsl:choose>",
+                      <xsl:choose>
+                        <xsl:when test="PID.10.1 = 'UNK' or PID.10.1 = 'ASKU'">
+                          "system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                        </xsl:when>
+                        <xsl:when test="normalize-space(PID.10.3)">
+                          "system": "urn:oid:<xsl:value-of select='PID.10.3'/>",
+                        </xsl:when>
+                      </xsl:choose>
                       "code": "<xsl:value-of select="PID.10.1"/>",
                       "display": "<xsl:value-of select="PID.10.2"/>"
                     }
@@ -336,7 +340,11 @@
                               <xsl:otherwise>detailed</xsl:otherwise>
                             </xsl:choose>",
                     "valueCoding": {
-                      "system": "urn:oid:<xsl:value-of select='PID.22.3'/>",
+                      <xsl:choose>
+                        <xsl:when test="normalize-space(PID.22.3)">
+                          "system": "urn:oid:<xsl:value-of select='PID.22.3'/>",
+                        </xsl:when>
+                      </xsl:choose>                      
                       "code": "<xsl:value-of select='PID.22.1'/>",
                       "display": "<xsl:value-of select='PID.22.2'/>"
                     }
@@ -1188,88 +1196,89 @@
       <xsl:text>,</xsl:text>
       "subject": {
         "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
-        "display": "<xsl:value-of select='normalize-space(concat(
-		  //PID/PID.5/PID.5.1, &quot; &quot;, 
-		  //PID/PID.5/PID.5.2, &quot; &quot;, 
-		  //PID/PID.5/PID.5.3, &quot;  &quot;, 
-		  //PID/PID.9/PID.9.1, &quot; &quot;, 
-		  //PID/PID.9/PID.9.2, &quot; &quot;, 
-		  //PID/PID.9/PID.9.3
-		))'/>"
-
+        "display": "<xsl:value-of select="$patientResourceName"/>"
       }
 
-		<xsl:if test="(//OBR.32/OBR.32.1 or //OBR.34/OBR.34.1) and (//ROL/ROL.4/ROL.4.3 or //ROL/ROL.4/ROL.4.2)">
-			<xsl:text>,</xsl:text>
-			"participant": [{
-			  "type": [{
-				"coding": [{
-				  "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
-				  "code": "<xsl:choose>
-						   <xsl:when test='normalize-space(//OBR.32/OBR.32.1)'>
-							 <xsl:value-of select='substring-before(//OBR.32/OBR.32.1, "&amp;")'/>
-						   </xsl:when>
-						   <xsl:when test='normalize-space(//OBR.34/OBR.34.1)'>
-							 <xsl:value-of select='substring-before(//OBR.34/OBR.34.1, "&amp;")'/>
-						   </xsl:when>
-						 </xsl:choose>",
-
-				"display": "<xsl:choose>
-					  <xsl:when test='normalize-space(//OBR.32/OBR.32.1)'>
-						<xsl:variable name='fv32' select='//OBR.32/OBR.32.1'/>
-						<xsl:variable name='after32' select='substring-after($fv32, "&amp;")'/>
-						<xsl:variable name='sub2_32' select='substring-before($after32, "&amp;")'/>
-						<xsl:variable name='sub3_32' select='substring-after($after32, "&amp;")'/>
-						<xsl:value-of select='normalize-space(concat($sub3_32, " ", $sub2_32))'/>
-					  </xsl:when>
-
-					  <xsl:when test='normalize-space(//OBR.34/OBR.34.1)'>
-						<xsl:variable name='fv34' select='//OBR.34/OBR.34.1'/>
-						<xsl:variable name='after34' select='substring-after($fv34, "&amp;")'/>
-						<xsl:variable name='sub2_34' select='substring-before($after34, "&amp;")'/>
-						<xsl:variable name='sub3_34' select='substring-after($after34, "&amp;")'/>
-						<xsl:value-of select='normalize-space(concat($sub3_34, " ", $sub2_34))'/>
-					  </xsl:when>
-
-					</xsl:choose>"
-				}]
-			  }],
-			  "individual": {
-				<!-- "reference": "Practitioner/<xsl:value-of select='//ROL/ROL.4/ROL.4.1'/>", -->
-				"display": "<xsl:value-of select='normalize-space(concat(//ROL/ROL.4/ROL.4.3, &quot; &quot;, //ROL/ROL.4/ROL.4.2))'/>"
-			  }
-			}]
-		</xsl:if>
-
-      <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
+    <xsl:if test="
+          (normalize-space(//OBR[1]/OBR.32/OBR.32.1) or normalize-space(//OBR[1]/OBR.34/OBR.34.1))
+      and (normalize-space(//ROL[1]/ROL.4/ROL.4.2) or normalize-space(//ROL[1]/ROL.4/ROL.4.3))
+      ">
         <xsl:text>,</xsl:text>
-        "location": [{
-          "location": {
-            <!-- "reference": "Location/<xsl:value-of select='//PV1/PV1.3/PV1.3.1'/>", -->
-            "display": "<xsl:choose>
-			  <xsl:when test='string(//PV1/PV1.3/PV1.3.4)'>
-				<xsl:value-of select='//PV1/PV1.3/PV1.3.4'/>
-			  </xsl:when>
-			  <xsl:otherwise>
-				<xsl:value-of select='//PV1/PV1.3/PV1.3.7'/>
-			  </xsl:otherwise>
-			</xsl:choose>"
+        "participant": [
+          {
+            "type": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+
+                    <!-- code -->
+                    "code": "<xsl:choose>
+                      <xsl:when test="normalize-space(//OBR[1]/OBR.32/OBR.32.1)">
+                        <xsl:value-of select="substring-before(concat(//OBR[1]/OBR.32/OBR.32.1,'&amp;'),'&amp;')"/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <xsl:value-of select="substring-before(concat(//OBR[1]/OBR.34/OBR.34.1,'&amp;'),'&amp;')"/>
+                      </xsl:otherwise>
+                    </xsl:choose>",
+
+                    <!-- display -->
+                    "display": "<xsl:choose>
+                      <xsl:when test="normalize-space(//OBR[1]/OBR.32/OBR.32.1)">
+                        <xsl:variable name="v32" select="//OBR[1]/OBR.32/OBR.32.1"/>
+                        <xsl:value-of select="
+                          normalize-space(
+                            concat(
+                              substring-after(substring-after($v32,'&amp;'),'&amp;'),
+                              ' ',
+                              substring-before(substring-after($v32,'&amp;'),'&amp;')
+                            )
+                          )"/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <xsl:variable name="v34" select="//OBR[1]/OBR.34/OBR.34.1"/>
+                        <xsl:value-of select="
+                          normalize-space(
+                            concat(
+                              substring-after(substring-after($v34,'&amp;'),'&amp;'),
+                              ' ',
+                              substring-before(substring-after($v34,'&amp;'),'&amp;')
+                            )
+                          )"/>
+                      </xsl:otherwise>
+                    </xsl:choose>"
+                  }
+                ]
+              }
+            ],
+
+            "individual": {
+              "display": "<xsl:value-of select="normalize-space(concat(//ROL[1]/ROL.4/ROL.4.3, ' ', //ROL[1]/ROL.4/ROL.4.2))"/>"
+            }
           }
-        }]
+        ]
       </xsl:if>
 
-      <xsl:if test="string(//PL.1) or string(//PL.6)">
-	  <xsl:text>,</xsl:text>
-	  "serviceProvider": {
-		<xsl:if test="string(//PL.1)">
-		  "reference": "Organization/<xsl:value-of select='//PL.1'/>"
-		  <xsl:if test="string(//PL.6)">,</xsl:if>
-		</xsl:if>
-		<xsl:if test="string(//PL.6)">
-		  "display": "<xsl:value-of select='//PL.6'/>"
-		</xsl:if>
-	  }
-	</xsl:if>
+      <xsl:if test="normalize-space(//PV1[1]/PV1.3/PV1.3.1)">
+        <xsl:text>,</xsl:text>
+        "location": [
+          {
+            "location": {
+              "display": "<xsl:choose>
+                <xsl:when test="normalize-space(//PV1[1]/PV1.3/PV1.3.4)">
+                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.4)"/>
+                </xsl:when>
+                <xsl:when test="normalize-space(//PV1[1]/PV1.3/PV1.3.7)">
+                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.7)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.1)"/>
+                </xsl:otherwise>
+              </xsl:choose>"
+            }
+          }
+        ]
+      </xsl:if>
     },
     "request": {
       "method": "POST",
