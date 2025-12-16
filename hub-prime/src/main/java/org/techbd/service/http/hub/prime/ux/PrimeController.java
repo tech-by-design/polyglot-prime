@@ -17,7 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.techbd.CoreUdiSecondaryJpaConfig;
+import org.techbd.CoreUdiReaderConfig;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -34,12 +34,12 @@ import lib.aide.tabular.JooqRowsSupplier;
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
-    private final CoreUdiSecondaryJpaConfig udiPrimeJpaConfig;
+    private final CoreUdiReaderConfig udiPrimeJpaConfig;
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
 
-    public PrimeController(final Presentation presentation, final CoreUdiSecondaryJpaConfig udiPrimeJpaConfig,
+    public PrimeController(final Presentation presentation, final CoreUdiReaderConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
