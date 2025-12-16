@@ -1,4 +1,4 @@
-package org.techbd;
+package org.techbd.config;
 
 import javax.sql.DataSource;
 

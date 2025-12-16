@@ -109,6 +109,7 @@ org:
                   - [^/Bundle/.*, POST, persistReqPayload persistRespPayload]         
           saveUserDataToInteractions: true
     udi:
+      uiReadsFromReaderEnabled: ${ORG_TECHBD_DB_READ_WRITE_SPLIT_ENABLED:false}
       prime:
         jdbc: 
           # the reason `url` and `jdbcUrl` are both supplied is that some poolers

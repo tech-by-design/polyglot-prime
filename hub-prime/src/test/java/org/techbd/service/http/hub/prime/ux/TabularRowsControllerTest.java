@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.techbd.CoreUdiReaderConfig;
+import org.techbd.config.CoreUdiReaderConfig;
 
 import lib.aide.tabular.TabularRowsRequest;
 
