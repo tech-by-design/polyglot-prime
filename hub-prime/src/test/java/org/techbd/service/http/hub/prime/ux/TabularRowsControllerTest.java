@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.techbd.CoreUdiSecondaryJpaConfig;
+import org.techbd.CoreUdiReaderConfig;
 
 import lib.aide.tabular.TabularRowsRequest;
 
@@ -22,7 +22,7 @@ class TabularRowsControllerTest {
     private TabularRowsController tabularRowsController;
 
     @Mock
-    private CoreUdiSecondaryJpaConfig udiPrimeJpaConfig;  // Mock any other dependencies
+    private CoreUdiReaderConfig udiReaderConfig;
 
     @BeforeEach
     void setUp() {

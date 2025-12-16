@@ -20,7 +20,13 @@ import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 @EnableTransactionManagement
-public class CoreUdiSecondaryJpaConfig {
+@ConditionalOnProperty(
+    prefix = "org.techbd.udi",
+    name = "uiReadsFromReaderEnabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
+public class CoreUdiReaderConfig {
     @Autowired
     private Environment environment;
 
