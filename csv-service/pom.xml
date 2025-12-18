@@ -13,6 +13,7 @@
     </parent>
 
     <artifactId>csv-service</artifactId>
+    <packaging>jar</packaging>
     <name>CSV Service</name>
     <description>Standalone WAR for CSV Processing</description>
     <repositories>
@@ -281,9 +282,20 @@
             </testResource>
         </testResources>
         <plugins>
-             <plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+                <executions>
+                   <execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
