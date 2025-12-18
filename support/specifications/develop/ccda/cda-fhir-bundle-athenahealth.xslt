@@ -1088,12 +1088,23 @@
 
         <xsl:if test="string($categoryCode)">
 
+          <xsl:variable name="resourceUUID">
+            <xsl:choose>
+              <xsl:when test="normalize-space(ccda:id/@extension)">
+                <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:variable>
+
           <xsl:variable name="observationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
               <!-- <xsl:with-param name="prefixString" select="$questionCode"/>
               <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/> -->
               <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-              <xsl:with-param name="sha256ResourceId" select="ccda:id/@root"/>
+              <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
             </xsl:call-template>
           </xsl:variable>
           ,{
@@ -1245,11 +1256,24 @@
                   <xsl:if test="exsl:node-set($derivedObservations)/ccda:observation">
                     "derivedFrom": [
                       <xsl:for-each select="exsl:node-set($derivedObservations)/ccda:observation">
-                        <xsl:variable name="code" select="ccda:code/@code"/>
+                        <!-- <xsl:variable name="code" select="ccda:code/@code"/> -->
+                        <xsl:variable name="resourceUUID">
+                          <xsl:choose>
+                            <xsl:when test="normalize-space(ccda:id/@extension)">
+                              <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+                            </xsl:otherwise>
+                          </xsl:choose>
+                        </xsl:variable>
+                
                         <xsl:variable name="observationResourceId">
                           <xsl:call-template name="generateFixedLengthResourceId">
-                            <xsl:with-param name="prefixString" select="$code"/>
-                            <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                            <!-- <xsl:with-param name="prefixString" select="$code"/>
+                            <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/> -->
+                            <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+                            <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
                           </xsl:call-template>
                         </xsl:variable>
                         { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
@@ -1875,12 +1899,24 @@
               <!-- Output JSON from filtered set -->
               <xsl:for-each select="exsl:node-set($filteredObservations)/ccda:observation">
                 <!-- <xsl:variable name="questionCode" select="ccda:code/@code"/> -->
+
+                <xsl:variable name="resourceUUID">
+                  <xsl:choose>
+                    <xsl:when test="normalize-space(ccda:id/@extension)">
+                      <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                      <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+                    </xsl:otherwise>
+                  </xsl:choose>
+                </xsl:variable>
+
                 <xsl:variable name="observationResourceId">
                   <xsl:call-template name="generateFixedLengthResourceId">
                     <!-- <xsl:with-param name="prefixString" select="$questionCode"/>
                     <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/> -->
                     <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                    <xsl:with-param name="sha256ResourceId" select="ccda:id/@root"/>
+                    <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
                   </xsl:call-template>
                 </xsl:variable>
                 { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
