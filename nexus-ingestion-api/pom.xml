@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>nexus-ingestion-api</artifactId>
+    <packaging>jar</packaging>
     <name>nexus-ingestion-api</name>
     <description>Nexus Ingestion API</description>
 
@@ -256,6 +257,17 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                   <configuration>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+                <executions>
+                   <execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
