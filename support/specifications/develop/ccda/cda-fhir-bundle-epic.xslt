@@ -1340,11 +1340,13 @@
                         <xsl:if test="exsl:node-set($derivedObservations)/ccda:observation">
                           "derivedFrom": [
                             <xsl:for-each select="exsl:node-set($derivedObservations)/ccda:observation">
-                              <xsl:variable name="code" select="ccda:code/@code"/>
+                              <!-- <xsl:variable name="code" select="ccda:code/@code"/> -->
                               <xsl:variable name="observationResourceId">
                                 <xsl:call-template name="generateFixedLengthResourceId">
-                                  <xsl:with-param name="prefixString" select="$code"/>
-                                  <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                                  <!-- <xsl:with-param name="prefixString" select="$code"/>
+                                  <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/> -->
+                                  <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+                                  <xsl:with-param name="sha256ResourceId" select="ccda:id/@extension"/>
                                 </xsl:call-template>
                               </xsl:variable>
                               { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
