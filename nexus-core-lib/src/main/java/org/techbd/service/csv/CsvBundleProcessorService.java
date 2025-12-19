@@ -19,12 +19,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -61,15 +63,15 @@ public class CsvBundleProcessorService {
     private final FHIRService fhirService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final CoreAppConfig coreAppConfig;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,
-    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
+    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, @Qualifier("primaryDslContext") final DSLContext primaryDslContext,AppLogger appLogger) {
         this.csvToFhirConverter = csvToFhirConverter;
         this.fhirService = fhirService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreAppConfig = coreAppConfig;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         this.LOG = appLogger.getLogger(CsvBundleProcessorService.class);
     }
 
@@ -202,13 +204,13 @@ public class CsvBundleProcessorService {
         additionalDetails.put("isValid", outcome.isValid());
         return additionalDetails;
     }
+    @Transactional
     private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
             final String masterInteractionId, final Map<String,Object> requestParameters,CsvProcessingMetrics metrics) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         //final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {
@@ -288,6 +290,7 @@ public class CsvBundleProcessorService {
                 "description", validationDescription));
     }
 
+    @Transactional
     private void saveFhirConversionStatus(final boolean isValid, final String masterInteractionId, final String groupKey,
             final String groupInteractionId, final String interactionId, final Map<String,Object> requestParameters,
             final String payload, final Map<String, Object> operationOutcome,
@@ -298,8 +301,7 @@ public class CsvBundleProcessorService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionCsvRequest();
         try {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             initRIHR.setPOrigin("http");
             initRIHR.setPInteractionId(groupInteractionId);
             initRIHR.setPGroupHubInteractionId(groupInteractionId);

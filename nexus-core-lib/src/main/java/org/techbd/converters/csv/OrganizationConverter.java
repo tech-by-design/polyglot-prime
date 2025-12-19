@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
@@ -17,9 +18,9 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -38,8 +39,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public OrganizationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public OrganizationConverter(CodeLookupService codeLookupService, @Qualifier("primaryDslContext") final DSLContext dslContext, AppLogger appLogger) {
+        super(codeLookupService,dslContext);
         LOG = appLogger.getLogger(OrganizationConverter.class);
     }
 

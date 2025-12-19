@@ -24,9 +24,10 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.DateUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -43,8 +44,8 @@ import org.techbd.csv.util.CsvConversionUtil;
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
         private final TemplateLogger LOG;
-        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-                super(codeLookupService,coreUdiPrimeJpaConfig);
+        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService, @Qualifier("primaryDslContext") DSLContext primaryDslContext, AppLogger appLogger) {
+                super(codeLookupService,primaryDslContext);
                 LOG = appLogger.getLogger(ScreeningResponseObservationConverter.class);
         }
 

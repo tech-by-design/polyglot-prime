@@ -16,9 +16,9 @@ import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.joda.time.DateTime;
+import org.jooq.DSLContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -47,8 +47,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(7)
 public class ProcedureConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public ProcedureConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public ProcedureConverter(CodeLookupService codeLookupService,final DSLContext primaryDslContext, AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         LOG = appLogger.getLogger(ProcedureConverter.class);
     }
 

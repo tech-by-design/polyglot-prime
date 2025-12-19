@@ -9,8 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.corelib.config.Configuration;
 import org.techbd.corelib.config.Constants;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.config.Helpers;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
 import org.techbd.corelib.util.CoreFHIRUtil;
@@ -59,19 +60,19 @@ public class FhirController {
         private final OrchestrationEngine engine;
         private final AppConfig appConfig;
         private final DataLedgerApiClient dataLedgerApiClient;
-        private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        private final DSLContext primaryDslContext;
         private final FHIRService fhirService;
         private final Tracer tracer;
 
         public FhirController(final OrchestrationEngine engine,
         final AppConfig appConfig ,final DataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService
-        ,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) throws IOException {
+        ,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) throws IOException {
                 this.appConfig = appConfig;
                 this.engine = engine;
                 this.fhirService = fhirService;
                 this.dataLedgerApiClient = dataLedgerApiClient;
                  this.tracer = GlobalOpenTelemetry.get().getTracer("FhirController");
-                this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+                this.primaryDslContext = primaryDslContext;
         }
 
         @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -180,9 +181,8 @@ public class FhirController {
         public Object bundleStatus(
                         @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true) @PathVariable String bundleSessionId,
                         final Model model, HttpServletRequest request) {
-                final var jooqDSL = coreUdiPrimeJpaConfig.dsl();
                 try {
-                        final var result = jooqDSL.select()
+                        final var result = primaryDslContext.select()
                                         .from(INTERACTION_HTTP_REQUEST)
                                         .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(bundleSessionId))
                                         .fetch();

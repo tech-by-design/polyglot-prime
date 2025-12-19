@@ -14,14 +14,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.corelib.config.Configuration;
 import org.techbd.corelib.config.Constants;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.config.Origin;
 import org.techbd.corelib.config.SourceType;
 import org.techbd.corelib.config.State;
@@ -49,21 +50,21 @@ public class CsvService {
     private final TemplateLogger LOG;
     private final CsvBundleProcessorService csvBundleProcessorService;
     private final DataLedgerApiClient coreDataLedgerApiClient;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
     private final TaskExecutor asyncTaskExecutor;
     private final AppConfig appConfig;
 
     public CsvService(
             final CsvOrchestrationEngine engine,
             final CsvBundleProcessorService csvBundleProcessorService,
-            final DataLedgerApiClient coreDataLedgerApiClient,
-            final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
+            final DataLedgerApiClient coreDataLedgerApiClient, 
+            @Qualifier("primaryDslContext") DSLContext primaryDslContext,
             @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor,
             final AppConfig appConfig,AppLogger appLogger) {
         this.engine = engine;
         this.csvBundleProcessorService = csvBundleProcessorService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         this.asyncTaskExecutor = asyncTaskExecutor;
         this.appConfig = appConfig;
         this.LOG = appLogger.getLogger(CsvService.class);
@@ -76,9 +77,7 @@ public class CsvService {
                 zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(zipFileInteractionId, jooqCfg, requestParameters, file,
+            saveArchiveInteraction(zipFileInteractionId, requestParameters, file,
                     CsvProcessingState.PROCESSING_COMPLETED);
             saveIncomingFileToInboundFolder(file, zipFileInteractionId);         
             session = engine.session()
@@ -102,14 +101,14 @@ public class CsvService {
         }
     }
 
+    @Transactional
     private void saveArchiveInteractionStatus(
             String zipFileInteractionId,
-            org.jooq.Configuration jooqCfg,
             CsvProcessingState state,Map<String,Object> requestParameters) {
 
         LOG.info("CsvService saveArchiveInteraction - STATUS UPDATE ONLY | zipFileInteractionId: {}, newState: {}",
                 zipFileInteractionId, state.name());
-
+        final var jooqCfg = primaryDslContext.configuration();
         final var updateRIHR = new SatInteractionCsvRequestUpserted();
 
         try {
@@ -150,9 +149,11 @@ public class CsvService {
         }
     }
 
-    private void saveArchiveInteraction(String zipFileInteractionId, final org.jooq.Configuration jooqCfg,
+    @Transactional
+    private void saveArchiveInteraction(String zipFileInteractionId,
             final Map<String, Object> requestParameters,
             final MultipartFile file, final CsvProcessingState state) {
+        final var jooqCfg = primaryDslContext.configuration();        
         final var tenantId = requestParameters.get(Constants.TENANT_ID);
         LOG.info("CsvService saveArchiveInteraction  -BEGIN zipFileInteractionId  : {} tenant id : {}",
                 zipFileInteractionId, tenantId);
@@ -236,7 +237,7 @@ public class CsvService {
 
         coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, provenance,
                 SourceType.CSV.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
-        saveArchiveInteraction(interactionId, jooqCfg, requestParams, file, CsvProcessingState.RECEIVED);
+        saveArchiveInteraction(interactionId, requestParams, file, CsvProcessingState.RECEIVED);
     }
 
     private List<Object> processSync(
@@ -245,13 +246,12 @@ public class CsvService {
             Map<String, Object> requestParams,
             Map<String, Object> responseParams,
             MultipartFile file,
-            org.jooq.Configuration jooqCfg,
             long start) throws Exception {
 
         CsvOrchestrationEngine.OrchestrationSession session = null;
 
         try {
-            saveArchiveInteractionStatus(interactionId, jooqCfg,
+            saveArchiveInteractionStatus(interactionId, 
                     CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
@@ -280,9 +280,8 @@ public class CsvService {
         } catch (Exception ex) {
             LOG.error("Synchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                     interactionId, ex.getMessage(), ex);
-            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_FAILED, requestParams);
-            SystemDiagnosticsLogger.logResourceStats(interactionId,
-                    coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,appConfig.getVersion());
+            saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_FAILED, requestParams);
+            SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,appConfig.getVersion());
             throw ex;
         } finally {
             engine.clear(session);
@@ -298,12 +297,11 @@ public class CsvService {
             Map<String, Object> requestParams,
             Map<String, Object> responseParams,
             MultipartFile file,
-            org.jooq.Configuration jooqCfg,
             long start) {        
         CompletableFuture.runAsync(() -> {
             CsvOrchestrationEngine.OrchestrationSession session = null;
             try {
-                saveArchiveInteractionStatus(interactionId, jooqCfg,
+                saveArchiveInteractionStatus(interactionId, 
                         CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
 
                 session = engine.session()
@@ -333,10 +331,9 @@ public class CsvService {
             } catch (Exception ex) {
                 LOG.error("Asynchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                         interactionId, ex.getMessage(), ex);
-                saveArchiveInteractionStatus(interactionId, jooqCfg,
+                saveArchiveInteractionStatus(interactionId, 
                         CsvProcessingState.PROCESSING_FAILED, requestParams);
-                SystemDiagnosticsLogger.logResourceStats(interactionId,
-                        coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,appConfig.getVersion());
+                SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,appConfig.getVersion());
             } finally {
                 engine.clear(session);
                 long durationMs = (System.nanoTime() - start) / 1_000_000;
@@ -366,8 +363,7 @@ public class CsvService {
         final var tenantId = (String) requestParameters.get(Constants.TENANT_ID);
         final var provenance = "%s.processZipFile".formatted(CsvService.class.getName());
         final String isSync = String.valueOf(requestParameters.get(Constants.IMMEDIATE));
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
 
         LOG.info("CsvService processZipFile - BEGIN zipFileInteractionId: {} tenantId: {} isSync: {}",
                 zipFileInteractionId, tenantId, isSync);
@@ -380,11 +376,11 @@ public class CsvService {
         if ("true".equalsIgnoreCase(isSync)) {
             LOG.info("Starting synchronous processing for zipFileInteractionId: {}", zipFileInteractionId);
             return processSync(zipFileInteractionId, tenantId, requestParameters, responseParameters, file,
-                    jooqCfg, start);
+                     start);
         } else {
             LOG.info("Starting asynchronous processing for zipFileInteractionId: {}", zipFileInteractionId);
             processAsync(zipFileInteractionId, tenantId, requestParameters, responseParameters, file,
-                    jooqCfg, start);
+                     start);
 
             Map<String, Object> response = buildAsyncResponse(zipFileInteractionId);
             LOG.info("Returning interim async response for zipFileInteractionId: {} tenantId: {}",
@@ -393,12 +389,12 @@ public class CsvService {
         }
     }
 
+    @Transactional
     private void saveFullOperationOutcome(final Map<String, Object> fullOperationOutcome,
                     final String masterInteractionId, Map<String, Object> requestParameters) {
             LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
                             masterInteractionId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
@@ -437,13 +433,12 @@ public class CsvService {
             }
     }
 
-    
+    @Transactional
     private void saveFullOperationOutcome(final List<Object> fullOperationOutcome,
                     final String masterInteractionId, Map<String, Object> requestParameters) {
             LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
                             masterInteractionId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
@@ -482,8 +477,10 @@ public class CsvService {
             }
     }
     
+    @Transactional
     private void saveMiscErrorsForValidation(final List<FileDetail> filesNotProcessed,
-            final String masterInteractionId, final Map<String, Object> requestParameters, final String originalFileName, CsvProcessingMetrics metricsBuilder) {
+            final String masterInteractionId, final Map<String, Object> requestParameters,
+             final String originalFileName, CsvProcessingMetrics metricsBuilder) {
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
             return;
         }
@@ -494,8 +491,7 @@ public class CsvService {
         final List<Object> miscErrors = List.of(fileNotProcessedError);
         
         LOG.info("SaveMiscErrorsForValidation: BEGIN for zipFileInteractionId: {}", masterInteractionId);
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {

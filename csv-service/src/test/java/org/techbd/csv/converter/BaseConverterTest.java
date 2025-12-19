@@ -1,7 +1,10 @@
 package org.techbd.csv.converter;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,30 +16,30 @@ import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
+import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.csv.converters.BaseConverter;
 import org.techbd.csv.model.DemographicData;
 import org.techbd.csv.model.QeAdminData;
 import org.techbd.csv.model.ScreeningObservationData;
 import org.techbd.csv.model.ScreeningProfileData;
 import org.techbd.csv.service.CodeLookupService;
-import org.techbd.corelib.util.CoreFHIRUtil;
 
 class BaseConverterTest {
 
     private BaseConverter baseConverter;
     private CodeLookupService mockCodeLookupService;
-    private CoreUdiPrimeJpaConfig mockCoreUdiPrimeJpaConfig;
+    private DSLContext mockDSLContext;
 
     @BeforeEach
     void setUp() throws Exception {
         mockCodeLookupService = mock(CodeLookupService.class);
         //CoreFHIRUtil.initialize(CsvTestHelper.getProfileMap(), CsvTestHelper.BASE_FHIR_URL);
         // Create a concrete subclass of BaseConverter for testing
-        baseConverter = new BaseConverter(mockCodeLookupService,mockCoreUdiPrimeJpaConfig) {
+        baseConverter = new BaseConverter(mockCodeLookupService,mockDSLContext) {
             @Override
             public ResourceType getResourceType() {
                 return ResourceType.Patient; // Example resource type

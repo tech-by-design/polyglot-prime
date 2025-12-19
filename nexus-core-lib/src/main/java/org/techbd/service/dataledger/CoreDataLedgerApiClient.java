@@ -11,10 +11,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.techbd.config.Configuration;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 import org.techbd.util.AWSUtil;
 import org.techbd.util.AppLogger;
@@ -33,10 +35,10 @@ public class CoreDataLedgerApiClient {
     private final HttpClient client = HttpClient.newHttpClient();
     private final org.techbd.config.CoreAppConfig appConfig;
     private final TemplateLogger LOG;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-    public CoreDataLedgerApiClient(CoreAppConfig appConfig,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
+    private final DSLContext primaryDslContext;
+    public CoreDataLedgerApiClient(CoreAppConfig appConfig, @Qualifier("primaryDslContext") DSLContext primaryDslContext,AppLogger appLogger) {
         this.appConfig = appConfig;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         LOG = appLogger.getLogger(CoreDataLedgerApiClient.class);
     }
 
@@ -135,14 +137,14 @@ public class CoreDataLedgerApiClient {
                 });
     }
 
+    @Transactional
     private void saveSentActionDiagnosticData(String interactionId, String apiUrl, String requestPayload,
             HttpResponse<String> response, String errorMessage,
             String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source,
             Map<String, Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId);
             satDiagnosticDataledgerApiUpserted.setDataledgerUrl(apiUrl);
             satDiagnosticDataledgerApiUpserted.setCreatedBy(CoreDataLedgerApiClient.class.getName());
@@ -184,14 +186,14 @@ public class CoreDataLedgerApiClient {
         }
     }
 
+    @Transactional
     private void saveReceivedActionDiagnosticData(String interactionId, String apiUrl, String responsePayload,
             HttpResponse<String> response, String receivedReason,
             String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source,
             Map<String, Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
 
             satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId);
             satDiagnosticDataledgerApiUpserted.setDataledgerUrl(apiUrl);

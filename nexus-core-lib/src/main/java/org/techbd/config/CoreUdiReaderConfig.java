@@ -50,15 +50,15 @@ public class CoreUdiReaderConfig {
         // Validation
         if (jdbcUrl == null || jdbcUrl.trim().isEmpty()) {
             throw new IllegalStateException(
-                    "Secondary database jdbcUrl is not configured! Property: org.techbd.udi.secondary.jdbc.url");
+                    "Reader database jdbcUrl is not configured! Property: org.techbd.udi.secondary.jdbc.url");
         }
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalStateException(
-                    "Secondary database username is not configured! Property: org.techbd.udi.secondary.jdbc.username");
+                    "Reader database username is not configured! Property: org.techbd.udi.secondary.jdbc.username");
         }
         if (password == null) {
             throw new IllegalStateException(
-                    "Secondary database password is not configured! Property: org.techbd.udi.secondary.jdbc.password");
+                    "Reader database password is not configured! Property: org.techbd.udi.secondary.jdbc.password");
         }
 
         HikariConfig config = new HikariConfig();
@@ -71,7 +71,7 @@ public class CoreUdiReaderConfig {
         config.setIdleTimeout(idleTimeout);
         config.setConnectionTimeout(connectionTimeout);
         config.setMaxLifetime(maxLifetime);
-        config.setPoolName("SecondaryHikariPool");
+        config.setPoolName("ReaderHikariPool");
 
         return new HikariDataSource(config);
     }

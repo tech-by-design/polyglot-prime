@@ -17,8 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -37,7 +39,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.fhir.FHIRService;
 import org.techbd.service.fhir.FhirReplayService;
@@ -70,7 +71,7 @@ public class FhirController {
         private final OrchestrationEngine engine;
         private final CoreAppConfig appConfig;
         private final CoreDataLedgerApiClient dataLedgerApiClient;
-        private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        private final DSLContext primaryDslContext;
         private final FHIRService fhirService;
         private final FhirReplayService fhirReplayService;
         private final Tracer tracer;
@@ -78,7 +79,7 @@ public class FhirController {
         public FhirController(final Tracer tracer,final OrchestrationEngine engine,
         final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,
         final FHIRService fhirService, final FhirReplayService fhirReplayService
-        ,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) throws IOException {
+        ,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) throws IOException {
                 // String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
                 // appConfig = ConfigLoader.loadConfig(activeProfile);
                 // this.fhirService = new FHIRService();
@@ -93,7 +94,7 @@ public class FhirController {
                 this.fhirService = fhirService;
                 this.dataLedgerApiClient = dataLedgerApiClient;
                 this.tracer = tracer;
-                this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+                this.primaryDslContext = primaryDslContext;
                 this.fhirReplayService = fhirReplayService;
         }
 
@@ -319,9 +320,8 @@ public class FhirController {
         public Object bundleStatus(
                         @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true) @PathVariable String bundleSessionId,
                         final Model model, HttpServletRequest request) {
-                final var jooqDSL = coreUdiPrimeJpaConfig.dsl();
                 try {
-                        final var result = jooqDSL.select()
+                        final var result = primaryDslContext.select()
                                         .from(INTERACTION_HTTP_REQUEST)
                                         .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(bundleSessionId))
                                         .fetch();

@@ -80,6 +80,7 @@ springdoc:
   show-actuator: true 
 
 server:
+  port: 9997
   servlet:
     context-path: /
     session:

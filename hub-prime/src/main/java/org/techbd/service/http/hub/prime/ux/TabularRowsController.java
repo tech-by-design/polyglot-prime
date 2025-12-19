@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.techbd.service.http.hub.prime.ux.config.FileDownloadProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,9 +49,6 @@ import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsRequestForSP;
 import lib.aide.tabular.TabularRowsResponse;
 
-import org.techbd.config.CoreUdiReaderConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
-
 @Controller
 @Tag(name = "Tech by Design Hub Tabular Row API Endpoints for AG Grid")
 public class TabularRowsController {
@@ -59,30 +57,30 @@ public class TabularRowsController {
 
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
-    private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
-    private CoreUdiReaderConfig udiReaderConfig;
+    private final DSLContext primaryDslContext;
+    private DSLContext readerDSlContext;
     private final List<Validator> validators;
     @Autowired
     private FileDownloadProperties fileDownloadProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
-    public TabularRowsController(List<Validator> validators,CoreUdiPrimeJpaConfig udiPrimeJpaConfig) {
+    public TabularRowsController(List<Validator> validators,@Qualifier("primaryDslContext") DSLContext primaryDslContext) {
         this.validators = validators;
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
     }
 
     @Autowired(required = false)
-    public void setUdiReaderConfig(CoreUdiReaderConfig udiReaderConfig) {
-        this.udiReaderConfig = udiReaderConfig;
+    public void setUdiReaderConfig(@Qualifier("secondaryDslContext") DSLContext readerDSlContext) {
+        this.readerDSlContext = readerDSlContext    ;
     }
 
     // Helper method to get the DSLContext, prefer reader if available
     private DSLContext getDsl() {
-        if (udiReaderConfig != null) {
-            return udiReaderConfig.dsl();
+        if (readerDSlContext != null) {
+            return readerDSlContext;
         }
-        return udiPrimeJpaConfig.dsl();
+        return primaryDslContext;
     }
     @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
             Retrieves rows from a specified master table or view, within a specific schema.
@@ -348,7 +346,7 @@ public class TabularRowsController {
         try {
             // Define the table based on schema and table name
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-            final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
+            final var jooqCfg = primaryDslContext.configuration();
 
             // Filter validators based on the table name
             Validator tableValidator = validators.stream()
@@ -376,7 +374,7 @@ public class TabularRowsController {
 
             if (primaryKeyValue != null) {
                 // Update statement
-                var updateStep = udiPrimeJpaConfig.dsl().update(typableTable.table())
+                var updateStep = primaryDslContext.update(typableTable.table())
                         .set(rowData.entrySet().stream()
                                 .collect(Collectors.toMap(
                                         e -> DSL.field(typableTable.column(e.getKey())),
@@ -400,9 +398,6 @@ public class TabularRowsController {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
                 }
             } else {
-                // Perform an insert if no primary key value is provided
-                DSLContext dsl = udiPrimeJpaConfig.dsl();
-
                 // Prepare the data for insertion
                 Map<org.jooq.Field<?>, Object> dataToInsert = rowData.entrySet().stream()
                         .collect(Collectors.toMap(
@@ -419,7 +414,7 @@ public class TabularRowsController {
                 dataToInsert.put(DSL.field(typableTable.column("created_by")), TabularRowsController.class.getName());
                 dataToInsert.put(DSL.field(typableTable.column("provenance")), provenance);
 
-                dsl.insertInto(typableTable.table())
+                primaryDslContext.insertInto(typableTable.table())
                         .set(dataToInsert)
                         .execute();
 
@@ -456,7 +451,7 @@ public class TabularRowsController {
 
         try {
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-            int deletedRows = udiPrimeJpaConfig.dsl().deleteFrom(typableTable.table())
+            int deletedRows = primaryDslContext.deleteFrom(typableTable.table())
                     .where(DSL.field(typableTable.column(columnName)).eq(primaryKey))
                     .execute();
 

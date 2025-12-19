@@ -19,17 +19,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.checkerframework.checker.units.qual.m;
-import org.checkerframework.checker.units.qual.t;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.corelib.config.Configuration;
 import org.techbd.corelib.config.Constants;
-import org.techbd.csv.config.AppConfig;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
-import org.techbd.csv.config.Nature;
 import org.techbd.corelib.config.SourceType;
 import org.techbd.corelib.config.State;
+import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
+import org.techbd.corelib.service.dataledger.DataLedgerApiClient.DataLedgerPayload;
+import org.techbd.corelib.util.AppLogger;
+import org.techbd.corelib.util.CoreFHIRUtil;
+import org.techbd.corelib.util.TemplateLogger;
+import org.techbd.csv.config.AppConfig;
+import org.techbd.csv.config.Nature;
 import org.techbd.csv.converters.CsvToFhirConverter;
 import org.techbd.csv.feature.FeatureEnum;
 import org.techbd.csv.model.CsvDataValidationStatus;
@@ -42,14 +47,9 @@ import org.techbd.csv.model.PayloadAndValidationOutcome;
 import org.techbd.csv.model.QeAdminData;
 import org.techbd.csv.model.ScreeningObservationData;
 import org.techbd.csv.model.ScreeningProfileData;
-import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
-import org.techbd.corelib.service.dataledger.DataLedgerApiClient.DataLedgerPayload;
+import org.techbd.csv.util.CsvConversionUtil;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
-import org.techbd.corelib.util.AppLogger;
-import org.techbd.corelib.util.TemplateLogger;
-import org.techbd.csv.util.CsvConversionUtil;
-import org.techbd.corelib.util.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -63,17 +63,17 @@ public class CsvBundleProcessorService {
     // private final FHIRService fhirService;
     private final DataLedgerApiClient coreDataLedgerApiClient;
     private final AppConfig appConfig;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
     private final FhirValidationServiceClient fhirValidationServiceClient;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter,
-    DataLedgerApiClient coreDataLedgerApiClient,AppConfig appConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
+    DataLedgerApiClient coreDataLedgerApiClient,AppConfig appConfig, @Qualifier("primaryDslContext") DSLContext primaryDslContext,
     AppLogger appLogger, FhirValidationServiceClient fhirValidationServiceClient) {
         this.csvToFhirConverter = csvToFhirConverter;
         // this.fhirService = fhirService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.appConfig = appConfig;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         this.fhirValidationServiceClient = fhirValidationServiceClient;
         this.LOG = appLogger.getLogger(CsvBundleProcessorService.class);
     }
@@ -207,13 +207,13 @@ public class CsvBundleProcessorService {
         additionalDetails.put("isValid", outcome.isValid());
         return additionalDetails;
     }
+    @Transactional
     private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
             final String masterInteractionId, final Map<String,Object> requestParameters,CsvProcessingMetrics metrics) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         //final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {
@@ -293,6 +293,7 @@ public class CsvBundleProcessorService {
                 "description", validationDescription));
     }
 
+    @Transactional
     private void saveFhirConversionStatus(final boolean isValid, final String masterInteractionId, final String groupKey,
             final String groupInteractionId, final String interactionId, final Map<String,Object> requestParameters,
             final String payload, final Map<String, Object> operationOutcome,
@@ -303,8 +304,7 @@ public class CsvBundleProcessorService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionCsvRequest();
         try {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             initRIHR.setPOrigin("http");
             initRIHR.setPInteractionId(groupInteractionId);
             initRIHR.setPGroupHubInteractionId(groupInteractionId);

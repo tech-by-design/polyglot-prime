@@ -14,12 +14,12 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -39,7 +39,7 @@ class ScreeningResponseObservationConverterTest {
     CodeLookupService codeLookupService;
     
     @Mock
-    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    DSLContext dslContext;
     
     @Mock
     AppLogger appLogger;
@@ -55,7 +55,7 @@ class ScreeningResponseObservationConverterTest {
         when(appLogger.getLogger(ScreeningResponseObservationConverter.class)).thenReturn(templateLogger);
         
         // Manually instantiate the converter after mocks are set up
-        converter = new ScreeningResponseObservationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+        converter = new ScreeningResponseObservationConverter(codeLookupService, dslContext, appLogger);
         
         Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
         profileMapField.setAccessible(true);

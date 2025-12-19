@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -14,24 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
-import org.techbd.conf.Configuration;
-import org.techbd.config.CoreAppConfig;
-import org.techbd.service.constants.SourceType;
+import org.techbd.service.InteractionService;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
 
 import jakarta.annotation.PostConstruct;
@@ -52,10 +43,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
     private String defaultPersistStrategy;
 
-    @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
-    private boolean saveUserDataToInteractions;
     @Autowired
-    private CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
+    private InteractionService interactionService;
 
     private InteractionPersistRules iprDB;
 
@@ -63,9 +52,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private String allowedHostsString;
 
     private List<String> allowedHosts;
-
-    @Autowired
-    private CoreAppConfig coreAppConfig;
 
     @PostConstruct
     private void init() {
@@ -222,59 +208,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
         && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
-            final var rihr = new RegisterUserInteraction();
-            try {
-                LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
-                rre.interactionId().toString(), rre.tenant());
-                final var tenant = rre.tenant();
-                final var dsl = udiPrimeJpaConfig.dsl();
-                rihr.setPInteractionId(rre.interactionId().toString());
-                rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(
-                        Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
-                                tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
-                rihr.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                rihr.setPInteractionKey(requestURI);
-                rihr.setPSourceType(SourceType.FHIR.name());
-                rihr.setPPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
-                rihr.setPCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
-                rihr.setPCreatedBy(InteractionsFilter.class.getName());
-                rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
-                rihr.setPProvenance(provenance);
-                // User details
-                if (saveUserDataToInteractions) {
-                    var curUserName = "API_USER";
-                    var gitHubLoginId = "N/A";
-                    final var sessionId = origRequest.getRequestedSessionId();
-                    var userRole = "API_ROLE";
-
-                    final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
-                    if (curUser.isPresent()) {
-                        final var ghUser = curUser.get().ghUser();
-                        if (null != ghUser) {
-                            curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
-                            gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
-                            userRole = curUser.get().principal().getAuthorities().stream()
-                                    .map(GrantedAuthority::getAuthority)
-                                    .collect(Collectors.joining(","));
-                            LOG.info("userRole: " + userRole);
-                            userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented as part of Auth
-                        }
-                    }
-                    rihr.setPUserName(curUserName);
-                    rihr.setPUserId(gitHubLoginId);
-                    rihr.setPUserSession(sessionId);
-                    rihr.setPUserRole(userRole);
-                } else {
-                    LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
-                            + saveUserDataToInteractions);
-                }
-
-                rihr.execute(dsl.configuration());
-                LOG.info("REGISTER State None : END for  interaction id : {} tenant id : {}",
-                rre.interactionId().toString(), rre.tenant());
-            } catch (Exception e) {
-                LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL " + rihr.getName() + " error",  rre.interactionId().toString(), rre.tenant(),e);
-            }
+            interactionService.saveInteractionToDatabase(rre, requestURI, createdAt, provenance, origRequest);
         }
         mutatableResp.copyBodyToResponse();
     }

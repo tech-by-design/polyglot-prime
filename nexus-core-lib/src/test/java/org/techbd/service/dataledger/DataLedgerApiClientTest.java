@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.Action;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.Actor;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
@@ -34,7 +34,7 @@ class DataLedgerApiClientTest {
     private CoreAppConfig coreAppConfig;
 
     @Mock
-    private CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private DSLContext dslContext;
 
     private static MockedStatic<HttpClient> mockedHttpClient;
     private static HttpClient httpClient;
@@ -60,7 +60,7 @@ class DataLedgerApiClientTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        coreDataLedgerApiClient = new CoreDataLedgerApiClient(coreAppConfig,coreUdiPrimeJpaConfig,appLogger);
+        coreDataLedgerApiClient = new CoreDataLedgerApiClient(coreAppConfig,dslContext,appLogger);
         when(mock(org.jooq.DSLContext.class).configuration()).thenReturn(mock(org.jooq.Configuration.class));
     }
 
