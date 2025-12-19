@@ -118,8 +118,34 @@
       select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:statusCode/@code" />
 
   <!-- Encounter status from the normal encounters section -->
-  <xsl:variable name="normalEncounterStatus"
-      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:statusCode/@code"/>
+  <!-- <xsl:variable name="normalEncounterStatus"
+      select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:statusCode/@code"/> -->
+  <xsl:variable name="normalEncounterStatus">
+    <xsl:choose>
+      <!-- Case 1: statusCode exists -->
+      <xsl:when test="
+        string-length(
+          normalize-space(
+            /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:statusCode/@code
+          )
+        ) &gt; 0
+      ">
+        <xsl:value-of select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/ccda:statusCode/@code"/>
+      </xsl:when>
+
+      <!-- Case 2: statusCode missing AND moodCode = EVN -->
+      <xsl:when test="
+        normalize-space(
+          /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter[1]/@moodCode
+        ) = 'EVN'
+      ">
+        completed
+      </xsl:when>
+
+      <!-- Case 3: Otherwise empty -->
+      <xsl:otherwise/>    
+    </xsl:choose>
+  </xsl:variable>
 
   <!-- Final encounterStatus -->
   <xsl:variable name="encounterStatus">

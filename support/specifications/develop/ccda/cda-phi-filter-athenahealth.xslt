@@ -47,13 +47,36 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
-            <!-- Consent (same style as Epic for easy diff) -->
+            <!-- Consent details are in Social History section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value (Yes/No)  -->
+            <xsl:variable name="consent" select="
+                hl7:component/hl7:structuredBody/hl7:component
+                /hl7:section[hl7:code[@code='29762-2']]
+                /hl7:entry/hl7:observation/hl7:entryRelationship
+                /hl7:observation[hl7:code/@code = '105511-0']
+            "/>   
             <xsl:choose>
+                <xsl:when test="$consent">
+                    <xsl:variable name="consentDisplay">
+                        <xsl:choose>
+                            <!-- <xsl:when test="$consent/hl7:value/@displayName = 'Permit' or $consent/hl7:value/@code = 'LA33-6'">permit</xsl:when> -->
+                            <xsl:when test="$consent/hl7:value/@code = 'LA33-6'">permit</xsl:when>
+                            <xsl:otherwise>deny</xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:variable>
+                    <authorization>
+                        <consent>
+                            <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
+                            <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+                                <xsl:attribute name="displayName"><xsl:value-of select="$consentDisplay"/></xsl:attribute>
+                            </code>
+                            <xsl:copy-of select="$consent/hl7:statusCode"/>
+                        </consent>
+                    </authorization>
+                </xsl:when>
                 <xsl:when test="hl7:authorization/hl7:consent[hl7:code[@code='59284-0']]">
                     <xsl:copy-of select="hl7:authorization"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <!-- keep Epic-style explicit deny node so diffs clearly show consent differences -->
                     <authorization>
                         <consent>
                             <id root="2.16.840.1.113883.3.933"/>
