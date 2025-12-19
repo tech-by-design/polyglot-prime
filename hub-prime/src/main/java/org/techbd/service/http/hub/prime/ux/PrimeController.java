@@ -12,6 +12,7 @@ import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
-import org.techbd.config.CoreUdiReaderConfig;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -37,29 +36,29 @@ import lib.aide.tabular.JooqRowsSupplier;
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
-    private final CoreUdiPrimeJpaConfig udiPrimeJpaConfig;
-    private CoreUdiReaderConfig udiReaderConfig;
+    private final DSLContext primaryDslContext;
+    private DSLContext readerDslContext;
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
 
-    public PrimeController(final Presentation presentation,CoreUdiPrimeJpaConfig udiPrimeJpaConfig,
+    public PrimeController(final Presentation presentation,@Qualifier("primaryDslContext") DSLContext primaryDslContext,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;   
+        this.primaryDslContext = primaryDslContext;   
     }
 
     @Autowired(required = false)
-    public void setUdiReaderConfig(CoreUdiReaderConfig udiReaderConfig) {
-        this.udiReaderConfig = udiReaderConfig;
+    public void setReaderDslContext(@Qualifier("secondaryDslContext") DSLContext readerDslContext) {
+        this.readerDslContext = readerDslContext;
     }
     
     private DSLContext getDsl() {
-        if (udiReaderConfig != null) {
-            return udiReaderConfig.dsl();
+        if (readerDslContext != null) {
+            return readerDslContext;
         }
-        return udiPrimeJpaConfig.dsl();
+        return primaryDslContext;
     }
     @GetMapping("/home")
     @RouteMapping(label = "Home", siblingOrder = 0)

@@ -5,11 +5,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -19,6 +21,8 @@ import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import ca.uhn.fhir.rest.annotation.Transaction;
 
 /**
  * Service class for saving various stages of HL7 message processing to the
@@ -31,12 +35,12 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 @Service
 public class HL7Service {
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDSLContext;
     private final TemplateLogger logger;
     private final CoreAppConfig coreAppConfig;
 
-    public HL7Service(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, final AppLogger appLogger, final CoreAppConfig coreAppConfig) {
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+    public HL7Service(@Qualifier("primaryDslContext") final DSLContext primaryDSLContext, final AppLogger appLogger, final CoreAppConfig coreAppConfig) {
+        this.primaryDSLContext = primaryDSLContext;
         this.logger = appLogger.getLogger(HL7Service.class);
         this.coreAppConfig = coreAppConfig;
     }    
@@ -51,6 +55,7 @@ public class HL7Service {
      * @param operationOutcome A map containing operation outcome or metadata
      * @return true if the data is successfully saved, false otherwise
      */
+    @Transactional
     public boolean saveOriginalHl7Payload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress) {
@@ -61,7 +66,7 @@ public class HL7Service {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDSLContext.configuration();
             var rihr = new RegisterInteractionHl7Request();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -119,7 +124,7 @@ public class HL7Service {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDSLContext.configuration();
             var rihr = new RegisterInteractionHl7Request();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -179,7 +184,7 @@ public class HL7Service {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDSLContext.configuration();
             var rihr = new RegisterInteractionHl7Request();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);

@@ -12,6 +12,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
@@ -24,7 +25,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.OrganizationConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -48,7 +48,7 @@ class OrganizationConverterTest {
     CodeLookupService codeLookupService;
     
     @Mock
-    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    DSLContext dslContext;
     
     @Mock
     AppLogger appLogger;
@@ -64,7 +64,7 @@ class OrganizationConverterTest {
             when(appLogger.getLogger(OrganizationConverter.class)).thenReturn(templateLogger);
             
             // Manually instantiate the converter after mocks are set up
-            organizationConverter = new OrganizationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+            organizationConverter = new OrganizationConverter(codeLookupService, dslContext, appLogger);
             
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);

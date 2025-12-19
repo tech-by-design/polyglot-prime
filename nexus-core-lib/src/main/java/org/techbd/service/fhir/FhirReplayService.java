@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.GetFhirBundlesToReplay;
 import org.techbd.udi.auto.jooq.ingress.routines.GetFhirPayloadForNyec;
 import org.techbd.udi.auto.jooq.ingress.routines.UpdateFhirReplayStatus;
@@ -36,17 +36,17 @@ public class FhirReplayService {
 
     private CoreAppConfig appConfig;
 
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
 
     private final TaskExecutor asyncTaskExecutor;
 
     public FhirReplayService(FHIRService fhirService, AppLogger appLogger, CoreAppConfig appConfig,
-            CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
+            @Qualifier("primaryDslContext") final DSLContext primaryDslContext,
             @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor) {
         this.fhirService = fhirService;
         this.LOG = appLogger.getLogger(FhirReplayService.class);
         this.appConfig = appConfig;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         this.asyncTaskExecutor = asyncTaskExecutor;
     }
 
@@ -54,8 +54,7 @@ public class FhirReplayService {
             OffsetDateTime endDate) {
         LOG.info("FHIR-REPLAY Starting replayBundles for replayId={} | startDate={} | endDate={}",
                 replayId, startDate, endDate);
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         Map<String, Object> bundlesResponse = getBundlesToReplay(jooqCfg,replayId, startDate, endDate);
 
         if (bundlesResponse.isEmpty() || !bundlesResponse.containsKey("bundles")) {
@@ -116,8 +115,7 @@ public class FhirReplayService {
                             source);
                         // Call scoring engine
 
-                        fhirService.sendToScoringEngine(
-                                jooqCfg,
+                        fhirService.sendToScoringEngine(                                
                                 null,
                                 appConfig.getDefaultDatalakeApiUrl(),
                                 MediaType.APPLICATION_JSON_VALUE,

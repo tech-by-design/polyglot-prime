@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -47,8 +47,8 @@ class PatientConverterTest {
         CodeLookupService codeLookupService;
         
         @Mock
-        CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
-        
+        DSLContext mockDSLContext;
+
         @Mock
         AppLogger appLogger;
         
@@ -60,7 +60,7 @@ class PatientConverterTest {
         @BeforeEach
         void setUp() throws Exception {
                 when(appLogger.getLogger(PatientConverter.class)).thenReturn(templateLogger);
-                patientConverter = new PatientConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+                patientConverter = new PatientConverter(codeLookupService, mockDSLContext, appLogger);
                 
                 Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
                 profileMapField.setAccessible(true);

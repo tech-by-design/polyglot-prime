@@ -30,13 +30,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.State;
 import org.techbd.model.csv.CsvDataValidationStatus;
@@ -68,17 +70,17 @@ public class CsvOrchestrationEngine {
     private final ConcurrentHashMap<String, OrchestrationSession> sessions;
     private final CoreAppConfig coreAppConfig;
     private final VfsCoreService vfsCoreService;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDSLContext;
     private final CsvBundleProcessorService csvBundleProcessorService;
     private static TemplateLogger log;
     private static final Pattern FILE_PATTERN = Pattern.compile(
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
-    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger,  CsvBundleProcessorService csvBundleProcessorService) {
+    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService, @Qualifier("primaryDslContext") final DSLContext primaryDSLContext,AppLogger appLogger,  CsvBundleProcessorService csvBundleProcessorService) {
         this.sessions = new ConcurrentHashMap<>();
         this.coreAppConfig = coreAppConfig;
         this.vfsCoreService = vfsCoreService;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDSLContext = primaryDSLContext;
         log = appLogger.getLogger(CsvOrchestrationEngine.class);
         this.csvBundleProcessorService = csvBundleProcessorService;
     }
@@ -267,12 +269,12 @@ public class CsvOrchestrationEngine {
                     file.getOriginalFilename(), masterInteractionId);
         }
 
+        @Transactional
         private void saveScreeningGroup(final String groupInteractionId, final Map<String,Object> requestParameters,
                 final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
             log.info("CsvOrchestrationEngine saveScreeningGroup REGISTER State NONE to CSV_ACCEPT: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var forwardedAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionCsvRequest();
             try {
@@ -371,14 +373,14 @@ public class CsvOrchestrationEngine {
             return false;
         }
 
+        @Transactional
         private void saveValidationResults(final Map<String, Object> validationResults,
                 final String masterInteractionId,
                 final String groupInteractionId,
                 final String tenantId) {
             log.info("CsvOrchestrationEngine REGISTER State VALIDATION CSV_ACCEPT TO VALIDATION : BEGIN for zipFileInteractionId : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionCsvRequest();
             try {
@@ -425,12 +427,12 @@ public class CsvOrchestrationEngine {
             }
         }
 
+        @Transactional
         private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
                 final String masterInteractionId,CsvProcessingMetrics metrics) {
             log.info("SaveCombinedValidationResults: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {

@@ -14,9 +14,10 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -35,8 +36,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(5)
 public class EncounterConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public EncounterConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public EncounterConverter(CodeLookupService codeLookupService, @Qualifier("primaryDslContext") final DSLContext primaryDslContext, AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         this.LOG = appLogger.getLogger(EncounterConverter.class);
     }
 

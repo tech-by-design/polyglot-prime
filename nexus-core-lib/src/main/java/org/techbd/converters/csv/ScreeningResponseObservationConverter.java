@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -24,9 +25,9 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -43,8 +44,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
         private final TemplateLogger LOG;
-        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-                super(codeLookupService,coreUdiPrimeJpaConfig);
+        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,@Qualifier("primaryDslContext") final DSLContext primaryDslContext, AppLogger appLogger) {
+                super(codeLookupService,primaryDslContext);
                 LOG = appLogger.getLogger(ScreeningResponseObservationConverter.class);
         }
 

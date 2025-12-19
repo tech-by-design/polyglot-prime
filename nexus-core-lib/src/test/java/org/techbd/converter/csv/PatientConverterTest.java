@@ -12,6 +12,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
@@ -33,7 +34,6 @@ import org.techbd.service.csv.CodeLookupService;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 
 import static org.mockito.Mockito.when;
 
@@ -48,7 +48,7 @@ class PatientConverterTest {
         CodeLookupService codeLookupService;
         
         @Mock
-        CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        DSLContext dslContext;
         
         @Mock
         AppLogger appLogger;
@@ -61,7 +61,7 @@ class PatientConverterTest {
         @BeforeEach
         void setUp() throws Exception {
                 when(appLogger.getLogger(PatientConverter.class)).thenReturn(templateLogger);
-                patientConverter = new PatientConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+                patientConverter = new PatientConverter(codeLookupService, dslContext, appLogger);
                 
                 Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
                 profileMapField.setAccessible(true);

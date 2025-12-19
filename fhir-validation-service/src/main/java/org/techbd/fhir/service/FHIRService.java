@@ -16,14 +16,16 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.techbd.corelib.config.Configuration;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.config.Helpers;
 import org.techbd.corelib.config.Nature;
 import org.techbd.corelib.config.SourceType;
@@ -69,16 +71,16 @@ public class FHIRService {
     private final AppConfig appConfig;
 	private final DataLedgerApiClient coreDataLedgerApiClient;
     private final OrchestrationEngine engine;
-	private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+	private final DSLContext primaDslContext;
 	private Tracer tracer;
 
 	public FHIRService(AppConfig appConfig, DataLedgerApiClient coreDataLedgerApiClient, OrchestrationEngine engine,
-	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
+	@Qualifier("primaryDslContext") final DSLContext primaryDslContext, AppLogger appLogger) {
 		this.appConfig = appConfig;
 		this.coreDataLedgerApiClient = coreDataLedgerApiClient;
 		this.tracer = GlobalOpenTelemetry.get().getTracer("FHIRService");
 		this.engine = engine;
-		this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+		this.primaDslContext = primaryDslContext;
 		LOG = appLogger.getLogger(FHIRService.class);
 	}
 
@@ -156,10 +158,9 @@ public class FHIRService {
 				SourceType.FHIR.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
 			}
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
-			final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            
 			if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
-				registerOriginalPayload(jooqCfg, requestParameters,
+				registerOriginalPayload(requestParameters,
 						payload, interactionId, groupInteractionId, masterInteractionId,
 						source, requestUriToBeOverriden, coRrelationId);
 			}
@@ -175,7 +176,7 @@ public class FHIRService {
                         source);
                                                final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
 				if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
-					payloadWithDisposition = registerValidationResults(jooqCfg, requestParameters,
+					payloadWithDisposition = registerValidationResults(requestParameters,
 							result, interactionId, groupInteractionId, masterInteractionId,
 							source, requestUriToBeOverriden);
 				}
@@ -193,7 +194,7 @@ public class FHIRService {
                     return payloadWithDisposition;
                 }
             } catch (final JsonValidationException ex) {
-				payloadWithDisposition = registerValidationResults(jooqCfg, requestParameters,
+				payloadWithDisposition = registerValidationResults(requestParameters,
 						buildOperationOutcome(ex, interactionId), interactionId, groupInteractionId, masterInteractionId,
 						source, requestUriToBeOverriden);
                 LOG.info("Exception occurred: {} while processing bundle for interaction id :{} ", ex.getMessage(),interactionId); 
@@ -289,7 +290,8 @@ public class FHIRService {
 		final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
 		return result;
 	}
-	private void registerOriginalPayload(final org.jooq.Configuration jooqCfg,
+	@Transactional
+	private void registerOriginalPayload(
 			final Map<String, Object> requestParameters,
 			final String payload,
 			final String interactionId,
@@ -300,6 +302,7 @@ public class FHIRService {
 			final String coRrelationId) throws IOException {
 		final Span span = tracer.spanBuilder("FHIRService.registerOriginalPayload").startSpan();
 		try {
+			final var jooqCfg = primaDslContext.configuration();
 			LOG.info(
 					"FHIRService -  REGISTER Original Payload BEGIN  for interaction id: {}",interactionId);
 			final var rihr = new RegisterInteractionFhirRequest();
@@ -351,7 +354,8 @@ public class FHIRService {
 		}
 	}
 
-	private Map<String, Object> registerValidationResults(final org.jooq.Configuration jooqCfg,
+	@Transactional
+	private Map<String, Object> registerValidationResults(
 			final Map<String, Object> requestParameters,
 			final Map<String, Object> immediateResult,
 			final String interactionId,
@@ -361,6 +365,7 @@ public class FHIRService {
 			final String requestUriToBeOverriden) throws IOException {
 		final Span span = tracer.spanBuilder("FHIRService.registerValidationResults").startSpan();
 		try {
+			final var jooqCfg = primaDslContext.configuration();
 			LOG.info("FHIRService REGISTER Validation Results BEGIN  for interaction id: {}",interactionId);
 			final var rihr = new RegisterInteractionFhirRequest();
 			final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());

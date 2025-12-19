@@ -13,13 +13,14 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -38,8 +39,8 @@ import io.micrometer.common.util.StringUtils;
 @Order(4)
 public class ConsentConverter extends BaseConverter {
 
-    public ConsentConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public ConsentConverter(CodeLookupService codeLookupService,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) {
+        super(codeLookupService,primaryDslContext);
     }
     private static final Logger LOG = LoggerFactory.getLogger(ConsentConverter.class.getName());
 

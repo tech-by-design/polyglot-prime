@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
@@ -21,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 class CCDAServiceTest {
 
-    private CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
     private DSLContext dslContext;
     private Configuration jooqConfig;
     private CCDAService ccdaService;
@@ -31,16 +29,14 @@ class CCDAServiceTest {
 
     @BeforeEach
     void setup() {
-        coreUdiPrimeJpaConfig = mock(CoreUdiPrimeJpaConfig.class);
         dslContext = mock(DSLContext.class);
         jooqConfig = mock(Configuration.class);
         appLogger = mock(AppLogger.class);
         templateLogger = mock(TemplateLogger.class);
         coreAppConfig = mock(CoreAppConfig.class);
         when(appLogger.getLogger(CCDAService.class)).thenReturn(templateLogger);
-        when(coreUdiPrimeJpaConfig.dsl()).thenReturn(dslContext);
         when(dslContext.configuration()).thenReturn(jooqConfig);
-        ccdaService = new CCDAService(coreUdiPrimeJpaConfig, appLogger, coreAppConfig);
+        ccdaService = new CCDAService(dslContext, appLogger, coreAppConfig);
     }
 
     @Test
@@ -105,17 +101,5 @@ class CCDAServiceTest {
 
             assertTrue(result);
         }
-    }
-
-    @Test
-    void testSaveOriginalCcdaPayload_exception() {
-        CoreUdiPrimeJpaConfig faultyConfig = mock(CoreUdiPrimeJpaConfig.class);
-        when(faultyConfig.dsl()).thenThrow(new RuntimeException("Mock error"));
-
-        CCDAService errorService = new CCDAService(faultyConfig, appLogger,coreAppConfig);
-
-    boolean result = errorService.saveOriginalCcdaPayload("int123", "tenantA", "/uri", "{}", Map.of(), "metadata", "testUser", "127.0.0.1", "testSystem");
-
-        assertFalse(result);
     }
 }

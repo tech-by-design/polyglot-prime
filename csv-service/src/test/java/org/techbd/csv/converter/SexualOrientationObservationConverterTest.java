@@ -13,6 +13,7 @@ import java.util.Map;
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -39,7 +39,7 @@ class SexualOrientationObservationConverterTest {
         CodeLookupService codeLookupService;
         
         @Mock
-        CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        DSLContext dslContext;
         
         @Mock
         AppLogger appLogger;
@@ -55,7 +55,7 @@ class SexualOrientationObservationConverterTest {
                 when(appLogger.getLogger(SexualOrientationObservationConverter.class)).thenReturn(templateLogger);
                 
                 // Manually instantiate the converter after mocks are set up
-                sexualOrientationObservationConverter = new SexualOrientationObservationConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+                sexualOrientationObservationConverter = new SexualOrientationObservationConverter(codeLookupService, dslContext, appLogger);
                 
                 Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
                 profileMapField.setAccessible(true);

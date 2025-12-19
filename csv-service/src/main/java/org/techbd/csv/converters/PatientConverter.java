@@ -26,9 +26,10 @@ import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.DateUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -44,8 +45,8 @@ import org.techbd.csv.util.CsvConversionUtil;
 @Order(2)
 public class PatientConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public PatientConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public PatientConverter(CodeLookupService codeLookupService, @Qualifier("primaryDslContext") DSLContext primaryDslContext, AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         LOG = appLogger.getLogger(PatientConverter.class);
     }
 

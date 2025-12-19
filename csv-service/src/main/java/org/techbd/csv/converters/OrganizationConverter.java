@@ -17,9 +17,10 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.corelib.config.CoreUdiPrimeJpaConfig;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.DateUtil;
 import org.techbd.corelib.util.TemplateLogger;
@@ -38,8 +39,8 @@ import org.techbd.csv.util.CsvConversionUtil;
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public OrganizationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public OrganizationConverter(CodeLookupService codeLookupService, @Qualifier("primaryDslContext") DSLContext primaryDslContext,AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         LOG = appLogger.getLogger(OrganizationConverter.class);
     }
 
