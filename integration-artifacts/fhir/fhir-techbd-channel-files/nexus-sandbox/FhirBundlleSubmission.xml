@@ -1,49 +1,491 @@
-<channel version="4.5.3">
-    <id>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</id>
-    <nextMetaDataId>4</nextMetaDataId>
-    <name>FhirBundlleSubmission</name>
-    <description>Version: 0.1.2</description>
-    <revision>1293</revision>
-    <sourceConnector version="4.5.3">
-      <metaDataId>0</metaDataId>
-      <name>sourceConnector</name>
-      <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
-        <pluginProperties>
-          <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-    <authType>NONE</authType>
-          </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
-    <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>false</mutualTlsEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>true</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
-        <listenerConnectorProperties version="4.5.3">
-          <host>0.0.0.0</host>
-          <port>9000</port>
-        </listenerConnectorProperties>
-        <sourceConnectorProperties version="4.5.3">
-          <responseVariable>finalResponse</responseVariable>
-          <respondAfterProcessing>true</respondAfterProcessing>
-          <processBatch>false</processBatch>
-          <firstResponse>false</firstResponse>
-          <processingThreads>1</processingThreads>
+<channel version="4.6.0">
+  <id>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</id>
+  <nextMetaDataId>4</nextMetaDataId>
+  <name>FhirBundlleSubmission</name>
+  <description>Version: 0.1.2</description>
+  <revision>40</revision>
+  <sourceConnector version="4.6.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
+      <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.6.0">
+        <host>0.0.0.0</host>
+        <port>9000</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.6.0">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>false</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes></binaryMimeTypes>
+      <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
+      <responseContentType>application/fhir+json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode>200</responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Expose-Headers</string>
+          <list>
+            <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>10000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.6.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <name>lookup_manager</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>logger.info(&quot;HTTP request validation started.&quot;);
+///////////////////////////////////////////////////////////////////////////////////////////
+/*******************************
+    AWS Secrets Manager Loader
+********************************/
+// Lookup cache TTL: 20 days
+var ttlHours = 24 * 20;
+
+function fetchSecret(secretName) {
+    var region = &quot;us-east-1&quot;;
+
+    var Region = Packages.software.amazon.awssdk.regions.Region;
+    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+
+    try {
+        var client = SecretsManagerClient.builder()
+            .region(Region.of(region))
+            .build();
+
+        var request = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        var response = client.getSecretValue(request);
+        client.close();
+
+        var value = response.secretString();
+        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
+
+        return value;
+
+    } catch (e) {
+        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
+        throw e;
+    }
+}
+
+/********************************************
+    1️⃣ FETCH JDBC SECRET (JSON secret)
+********************************************/
+
+try {
+  
+var jdbcSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRETS&quot;, ttlHours);
+
+    var jdbcSecretString = fetchSecret(jdbcSecretName);
+
+
+    //var jdbcSecretString = fetchSecret(jdbcSecretName);
+    var jdbcSecret = JSON.parse(jdbcSecretString);
+
+    channelMap.put(&quot;JDBC_HOST&quot;, jdbcSecret.host);
+    channelMap.put(&quot;JDBC_PORT&quot;, jdbcSecret.port);
+    channelMap.put(&quot;JDBC_DB&quot;, jdbcSecret.dbname);
+    channelMap.put(&quot;JDBC_USERNAME&quot;, jdbcSecret.username);
+    channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbcSecret.password);
+
+    logger.info(&quot;✔ JDBC credentials loaded into channelMap&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing JDBC secret: &quot; + e.message);
+}
+
+/********************************************
+    2️⃣ FETCH DATA LEDGER API KEY (Plain text)
+********************************************/
+
+try {
+    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    //&quot;techbd-nyec-dataledger-api-key&quot;;
+    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
+
+    logger.info(&quot;✔ DataLedger API Key loaded into channelMap&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
+}
+/////////////////////////////////////////////////////////////////////////
+/********************************************
+    3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
+********************************************/
+try {
+    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+
+    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+    }
+
+    var fhirChannelUrl = fetchSecret(fhirSecretName);
+
+    if (!fhirChannelUrl || fhirChannelUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for FHIR CHANNEL URL returned empty.&quot;;
+    }
+    channelMap.put(&quot;FHIR_CHANNEL_URL&quot;, fhirChannelUrl);
+    globalMap.put(&quot;fhirChannelUrl&quot;, fhirChannelUrl);
+    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot; + fhirChannelUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching FHIR CHANNEL URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load FHIR CHANNEL URL&quot;);
+    throw e;
+}
+
+/********************************************
+    6️⃣ FETCH JDBC URL (Plain text)
+********************************************/
+try {
+    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+
+    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value MC_JDBC_URL does not contain a secret name.&quot;;
+    }
+
+    // Get REAL jdbc URL from AWS
+    var jdbcUrl = fetchSecret(jdbcUrlSecretName);
+
+    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for MC_JDBC_URL returned empty.&quot;;
+    }
+
+    jdbcUrl = jdbcUrl.trim(); // IMPORTANT: remove trailing spaces
+    channelMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
+    logger.info(&quot;✔ JDBC URL loaded from AWS Secret Manager: &quot; + jdbcUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching JDBC URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load JDBC URL&quot;);
+    throw e;
+}
+
+
+/********************************************
+    4️⃣ FETCH CSV SERVICE API URL (Plain text)
+********************************************/
+try {
+    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+
+    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var csvServiceUrl = fetchSecret(csvSecretName);
+
+    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
+    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
+    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot; + csvServiceUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
+    throw e;
+}
+
+
+/********************************************
+    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
+********************************************/
+try {
+    var datalakeApiUrl = &quot;&quot;;
+    var incomingHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
+
+    if (incomingHeader != null &amp;&amp; incomingHeader.trim() !== &quot;&quot;) {
+        datalakeApiUrl = incomingHeader.trim();
+        logger.info(&quot;✔ Datalake API URL loaded from request header: &quot; + datalakeApiUrl);
+    } else {
+        var datalakeSecretName = LookupHelper.get(
+            &quot;Config&quot;,
+            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;,
+            ttlHours
+        );
+
+        if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+            throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+        }
+
+        datalakeApiUrl = fetchSecret(datalakeSecretName);
+
+        if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+            throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
+        }
+
+        datalakeApiUrl = datalakeApiUrl.trim();
+        logger.info(&quot;✔ Datalake API URL loaded from AWS Secret Manager: &quot; + datalakeApiUrl);
+    }
+
+    channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
+    globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+    throw e;
+}
+
+
+
+
+
+&#xd;
+&#xd;
+&#xd;
+/********************************************&#xd;
+    6️⃣ FETCH DATA LEDGER API KEY (Plain text)&#xd;
+********************************************/&#xd;
+&#xd;
+try {&#xd;
+    var lakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;, ttlHours);&#xd;
+    var dataLakeApiKey = fetchSecret(lakeSecretName);&#xd;
+&#xd;
+    channelMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);&#xd;
+&#xd;
+    logger.info(&quot;✔ DataLake API Key loaded into channelMap&quot;);&#xd;
+&#xd;
+} catch (e) {&#xd;
+    logger.error(&quot;❌ Error processing DataLake API Key secret: &quot; + e.message);&#xd;
+}&#xd;
+
+
+
+/********************************************
+    7️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
+********************************************/
+try {
+    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;, ttlHours);
+
+    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value BL_FHIR_BUNDLE_VALIDATION_API_URL does not contain a secret name.&quot;;
+    }
+
+    var fhirApiUrl = fetchSecret(fhirSecretName);
+
+    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
+    }
+	fhirApiUrl = fhirApiUrl + &quot;/Bundle/$validate&quot;;
+    channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
+    globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
+    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot; + fhirApiUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
+    throw e;
+}
+
+
+
+/********************************************
+    DONE
+********************************************/
+
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <name>FHIR Validation</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>// Use logger.info with a single string (no channelMap arg)
+var requestedPath = channelMap.get(&apos;requestedPath&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: Request URL: &quot; + requestedPath);
+channelMap.put(&quot;requestUri&quot;, requestedPath);
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}
+
+&#xd;
+//if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
+var fhirJson  = connectorMessage.getRawData();
+channelMap.put(&apos;fhirJson&apos;, fhirJson);
+
+
+var interactionId = channelMap.get(&apos;interactionId&apos;);
+var validationSeverityLevel = channelMap.get(&apos;validationSeverityLevel&apos;);
+var source = channelMap.get(&apos;source&apos;);
+var igVersion = channelMap.get(&apos;igVersion&apos;);
+var elaboration = channelMap.get(&apos;elaboration&apos;);
+var groupInteractionId = channelMap.get(&apos;groupInteractionId&apos;);
+var masterInteractionId = channelMap.get(&apos;masterInteractionId&apos;);
+&#xd;
+
+logger.info(&quot;Channel Name: &quot; + channelName);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
+
+
+
+
+channelMap.put(&apos;interactionId&apos;, interactionId);
+channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
+channelMap.put(&apos;source&apos;,source);
+channelMap.put(&apos;igVersion&apos;, igVersion);
+channelMap.put(&apos;elaboration&apos;, elaboration);
+channelMap.put(&apos;groupInteractionId&apos;, groupInteractionId);
+channelMap.put(&apos;masterInteractionId&apos;, masterInteractionId);
+
+
+
+//logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  inside channel processor -BEGIN: &quot; + channelMap);
+
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); 
+channelMap.put(&apos;tenantId&apos;, tenantId);
+
+
+
+&#xd;
+&#xd;
+var userAgent = channelMap.get(&apos;userAgent&apos;);
+logger.info(&quot;userAgentL: &quot; + userAgent);&#xd;
+channelMap.put(&apos;userAgent&apos;, userAgent);
+
+
+channelMap.put(&quot;endpoint&quot;, &quot;submission&quot;);
+responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
+//}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.6.0">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/&apos; or &apos;/Bundle&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/Bundle/&apos;</string>
+            <string>&apos;/Bundle&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.6.0">
+      <metaDataId>1</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
               <string>Default Resource</string>
@@ -51,16 +493,14 @@
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
-        </sourceConnectorProperties>
-        <xmlBody>false</xmlBody>
-        <parseMultipart>false</parseMultipart>
-        <includeMetadata>false</includeMetadata>
-        <binaryMimeTypes></binaryMimeTypes>
-        <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
-        <responseContentType>application/fhir+json</responseContentType>
-        <responseDataTypeBinary>false</responseDataTypeBinary>
-        <responseStatusCode>200</responseStatusCode>
-        <responseHeaders class="linked-hash-map">
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${FHIR_API_URL}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map">
           <entry>
             <string>Access-Control-Allow-Origin</string>
             <list>
@@ -85,1731 +525,1555 @@
               <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
             </list>
           </entry>
-        </responseHeaders>
-        <responseHeadersVariable></responseHeadersVariable>
-        <useResponseHeadersVariable>false</useResponseHeadersVariable>
-        <charset>DEFAULT_ENCODING</charset>
-        <contextPath>/</contextPath>
-        <timeout>10000</timeout>
-        <staticResources/>
+          <entry>
+            <string>X-TechBD-Tenant-ID</string>
+            <list>
+              <string>${tenantId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Content-Type</string>
+            <list>
+              <string>application/fhir+json</string>
+            </list>
+          </entry>
+          <entry>
+            <string>User-Agent</string>
+            <list>
+              <string>${userAgent}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Credentials</string>
+            <list>
+              <string>true</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Interaction-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Request-URI</string>
+            <list>
+              <string>${requestUri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${validationSeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-SHIN-NY-IG-Version</string>
+            <list>
+              <string>${igVersion}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Override-Request-URI</string>
+            <list>
+              <string>${requestUri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Source-Type</string>
+            <list>
+              <string>${source}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Group-Interaction-ID</string>
+            <list>
+              <string>${groupInteractionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Master-Interaction-ID</string>
+            <list>
+              <string>${masterInteractionId}</string>
+            </list>
+          </entry>
+        </headers>
+        <parameters class="linked-hash-map">
+          <entry>
+            <string>source</string>
+            <list>
+              <string>${source}</string>
+            </list>
+          </entry>
+        </parameters>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content>${fhirJson}</content>
+        <contentType>application/fhir+json</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>30000</socketTimeout>
       </properties>
-      <transformer version="4.5.3">
+      <transformer version="4.6.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.6.0">
+        <elements/>
+      </filter>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="4.6.0">
+      <metaDataId>3</metaDataId>
+      <name>dest_datalake</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${DATALAKE_API_URL}?processingAgent=${tenantId}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map">
+          <entry>
+            <string>X-TechBD-Tenant-ID</string>
+            <list>
+              <string>${tenantId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Content-Type</string>
+            <list>
+              <string>application/json</string>
+            </list>
+          </entry>
+          <entry>
+            <string>x-api-key</string>
+            <list>
+              <string>${DATA_LAKE_API_KEY}</string>
+            </list>
+          </entry>
+        </headers>
+        <parameters class="linked-hash-map"/>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content>${updatedFhirJson}</content>
+        <contentType>application/fhir+json</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>30000</socketTimeout>
+      </properties>
+      <transformer version="4.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
-            <name>FHIR Validation</name>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+            <name>destination_datalake</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
-            <script>// Use logger.info with a single string (no channelMap arg)
-  var requestedPath = channelMap.get(&apos;requestedPath&apos;);
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: Request URL: &quot; + requestedPath);
-  channelMap.put(&quot;requestUri&quot;, requestedPath);
-  if (requestedPath == &quot;/&quot;) {&#xd;
-      return;&#xd;
-  }
+            <script>// ---------------------- BEGIN: integrated helper + usage block ----------------------
+var Instant = Packages.java.time.Instant;&#xd;
+var Duration = Packages.java.time.Duration;
+
+
+
+
+
+var interactionId = channelMap.get(&quot;interactionId&quot;);
+var validationSeverityLevel = channelMap.get(&quot;validationSeverityLevel&quot;);
+var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
+var sendDataLedgerSync = globalMap.get(&apos;sendDataLedgerSync&apos;);
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+var actionDiscard = &quot;&quot;;
+
+var requestUri = channelMap.get(&quot;requestUri&quot;);&#xd;
+
+
+// Safe single-parse helper (handles java.lang.String)
+function parseOnceMaybeString(v) {
+    if (v === null || v === undefined) return null;
+    try {
+        if (typeof v === &apos;string&apos;) return JSON.parse(v);
+        if (v &amp;&amp; v.getClass &amp;&amp; v.getClass().getName &amp;&amp; (v.getClass().getName().indexOf(&apos;String&apos;) !== -1 || v.getClass().getName().indexOf(&apos;StringBuilder&apos;) !== -1)) {
+            return JSON.parse(v.toString());
+        }
+        if (typeof v === &apos;object&apos;) return v;
+    } catch (e) {
+        try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: parseOnceMaybeString: JSON.parse failed: &quot; + e); } catch(ignore){}
+        return null;
+    }
+    return null;
+}
+
+
+
+// extractIssueAndDisposition(operationOutcomePayload, validationSeverityLevel)
+function extractIssueAndDisposition(operationOutcomePayload, validationSeverityLevel) {
+    if (operationOutcomePayload === null || operationOutcomePayload === undefined) {
+        try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: operationOutcomePayload is null/undefined&quot;); } catch(e){}
+        return null;
+    }
+    var payloadObj = parseOnceMaybeString(operationOutcomePayload);
+    if (!payloadObj &amp;&amp; operationOutcomePayload &amp;&amp; typeof operationOutcomePayload === &apos;object&apos;) payloadObj = operationOutcomePayload;
+    if (!payloadObj || typeof payloadObj !== &apos;object&apos;) {
+        try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: payload not parseable as object&quot;); } catch(e){}
+        return null;
+    }
+
+    // tolerate OperationOutcome or operationOutcome key
+    var operationOutcomeMap = payloadObj.OperationOutcome !== undefined ? payloadObj.OperationOutcome
+                             : (payloadObj.operationOutcome !== undefined ? payloadObj.operationOutcome : null);
+
+    if (!operationOutcomeMap || typeof operationOutcomeMap !== &apos;object&apos;) {
+        try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition: OperationOutcome map missing&quot;); } catch(e){}
+        return null;
+    }
+
+    // validationResults
+    var validationResults = operationOutcomeMap.validationResults !== undefined ? operationOutcomeMap.validationResults
+                          : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;validationResults&apos;) : null);
+
+    if (!validationResults || !(validationResults instanceof Array) || validationResults.length === 0) {
+        try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: validationResults missing or empty&quot;); } catch(e){}
+        return null;
+    }
+
+    var validationResult = validationResults[0];
+    if (!validationResult || typeof validationResult !== &apos;object&apos;) {
+        try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition: first validationResult missing or not an object&quot;); } catch(e){}
+        return null;
+    }
+
+    var innerOperationOutcome = validationResult.operationOutcome !== undefined ? validationResult.operationOutcome
+                              : (validationResult.get ? validationResult.get(&apos;operationOutcome&apos;) : null);
+
+    var issuesRaw = innerOperationOutcome &amp;&amp; innerOperationOutcome.issue !== undefined ? innerOperationOutcome.issue
+                  : (innerOperationOutcome &amp;&amp; innerOperationOutcome.get ? innerOperationOutcome.get(&apos;issue&apos;) : null);
+
+    // severity threshold (default to &quot;error&quot; if not provided)
+   // var sev = (validationSeverityLevel &amp;&amp; typeof validationSeverityLevel === &apos;string&apos; &amp;&amp; validationSeverityLevel.trim().length &gt; 0)
+    //          ? validationSeverityLevel.trim().toLowerCase() : &apos;error&apos;;
+	   var sev = (validationSeverityLevel &amp;&amp; String(validationSeverityLevel).trim().length &gt; 0)
+    ? String(validationSeverityLevel).trim().toLowerCase()
+    : &apos;error&apos;;
+
+
+ 
+   logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  Severity level (sev): &quot; + sev);&#xd;
+	//logger.info(&quot;[TECHBD extractIssueAndDisposition] Allowed severities: &quot; + iterableToArrayStr(allowedSeverities));
+    var allowedSeverities;
+    switch (sev) {
+        case &apos;fatal&apos;:
+            allowedSeverities = new Set([&apos;fatal&apos;]);
+            break;
+        case &apos;warning&apos;:
+            allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;,&apos;warning&apos;]);
+            break;
+        case &apos;information&apos;:
+            allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;,&apos;warning&apos;,&apos;information&apos;]);
+            break;
+        case &apos;error&apos;:
+        default:
+            allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;]);
+            break;
+    }
+
+    var filteredIssues = [];
+    if (issuesRaw &amp;&amp; issuesRaw instanceof Array) {
+        for (var i = 0; i &lt; issuesRaw.length; i++) {
+            var issue = issuesRaw[i];
+            if (!issue || typeof issue !== &apos;object&apos;) continue;
+            var severity = issue.severity !== undefined ? issue.severity : (issue.get ? issue.get(&apos;severity&apos;) : null);
+            if (severity &amp;&amp; allowedSeverities.has(severity.toLowerCase())) {
   
-  &#xd;
-  //if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
-  var fhirJson  = connectorMessage.getRawData();
-  channelMap.put(&apos;fhirJson&apos;, fhirJson);
+                filteredIssues.push(issue);
+            }
+        }
+    }
   
-  
-  var interactionId = channelMap.get(&apos;interactionId&apos;);
-  var validationSeverityLevel = channelMap.get(&apos;validationSeverityLevel&apos;);
-  var source = channelMap.get(&apos;source&apos;);
-  var igVersion = channelMap.get(&apos;igVersion&apos;);
-  var elaboration = channelMap.get(&apos;elaboration&apos;);
-  var groupInteractionId = channelMap.get(&apos;groupInteractionId&apos;);
-  var masterInteractionId = channelMap.get(&apos;masterInteractionId&apos;);
-  &#xd;
-  
-  logger.info(&quot;Channel Name: &quot; + channelName);
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
-  
-  var dataLakeApiUrl = java.lang.System.getenv(&quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);&#xd;
-  var dataLakeApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;); ;
-  var fhirSubmissionApiUrl = java.lang.System.getenv(&quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;); 
-  fhirSubmissionApiUrl = fhirSubmissionApiUrl + &quot;/Bundle/$validate&quot;;
-  
-  
-  channelMap.put(&quot;dataLakeApiUrl&quot;,dataLakeApiUrl);
-  channelMap.put(&quot;dataLakeApiKey&quot;,dataLakeApiKey);
-  channelMap.put(&quot;fhirSubmissionApiUrl&quot;,fhirSubmissionApiUrl);
-  channelMap.put(&apos;interactionId&apos;, interactionId);
-  channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
-  channelMap.put(&apos;source&apos;,source);
-  channelMap.put(&apos;igVersion&apos;, igVersion);
-  channelMap.put(&apos;elaboration&apos;, elaboration);
-  channelMap.put(&apos;groupInteractionId&apos;, groupInteractionId);
-  channelMap.put(&apos;masterInteractionId&apos;, masterInteractionId);
-  
-  
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  inside channel processor -BEGIN: &quot; + channelMap);
-  
-  var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); 
-  channelMap.put(&apos;tenantId&apos;, tenantId);
-  
-  
-  
-  &#xd;
-  &#xd;
-  var userAgent = channelMap.get(&apos;userAgent&apos;);
-  logger.info(&quot;userAgentL: &quot; + userAgent);&#xd;
-  channelMap.put(&apos;userAgent&apos;, userAgent);
-  
-  
-  channelMap.put(&quot;endpoint&quot;, &quot;submission&quot;);
-  responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
-  //}</script>
+    if (filteredIssues.length === 0) {
+        var infoIssue = { severity: &apos;information&apos;,
+                          diagnostics: &apos;Validation successful. No issues found at or above severity level: &apos; + sev,
+                          code: &apos;informational&apos; };
+        filteredIssues.push(infoIssue);
+    }
+
+    var result = {};
+    try {
+        result.resourceType = operationOutcomeMap.resourceType !== undefined ? operationOutcomeMap.resourceType
+                             : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;resourceType&apos;) : undefined);
+    } catch(e) { result.resourceType = undefined; }
+
+    result.issue = filteredIssues;
+
+    try {
+        var tbd = operationOutcomeMap.techByDesignDisposition !== undefined ? operationOutcomeMap.techByDesignDisposition
+                  : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;techByDesignDisposition&apos;) : null);
+        if (tbd) result.techByDesignDisposition = tbd;
+    } catch(e) {}
+
+    return result;
+}
+
+// appendToBundlePayload(payload, extractedOutcome) mirror of your Java method
+function appendToBundlePayload(payload, extractedOutcome) {
+    var bundleObj = parseOnceMaybeString(payload);
+    if (!bundleObj &amp;&amp; payload &amp;&amp; typeof payload === &apos;object&apos;) bundleObj = payload;
+    if (!bundleObj || typeof bundleObj !== &apos;object&apos;) {
+        bundleObj = { entry: [] };
+        try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: appendToBundlePayload: created new bundle because payload was missing/unparseable&quot;); } catch(e){}
+    }
+    if (!bundleObj.entry || !(bundleObj.entry instanceof Array)) bundleObj.entry = [];
+
+    var parsedOutcome = (extractedOutcome === null || extractedOutcome === undefined) ? null : extractedOutcome;
+    // if outcome could be a string, try parse once (function above)
+    var tryParsed = parseOnceMaybeString(parsedOutcome);
+    if (tryParsed) parsedOutcome = tryParsed;
+    if (!parsedOutcome &amp;&amp; parsedOutcome !== null &amp;&amp; typeof parsedOutcome === &apos;object&apos;) parsedOutcome = parsedOutcome;
+
+    var newEntry = { resource: parsedOutcome };
+    bundleObj.entry.push(newEntry);
+
+    // return shallow copy (similar to Java new HashMap&lt;&gt;(payload) and put entry)
+    var finalPayload = {};
+    for (var k in bundleObj) {
+        if (Object.prototype.hasOwnProperty.call(bundleObj, k)) finalPayload[k] = bundleObj[k];
+    }
+    return finalPayload;
+}
+
+
+function isActionDiscard(updatedPayload) {
+    // helper to read property from Java Map or JS object
+    function getProp(obj, key) {
+        if (obj == null) return null;
+        if (typeof obj.get === &apos;function&apos;) {
+            try { return obj.get(key); } catch(e) { return null; }
+        }
+        return obj[key];
+    }
+
+    // helper to iterate a java.util.List or JS Array
+    function iterateList(list, fn) {
+        if (list == null) return false;
+        try {
+            if (typeof list.size === &apos;function&apos; &amp;&amp; typeof list.get === &apos;function&apos;) {
+                for (var i = 0; i &lt; list.size(); i++) {
+                    if (fn(list.get(i), i)) return true;
+                }
+                return false;
+            } else if (Array.isArray(list)) {
+                for (var j = 0; j &lt; list.length; j++) {
+                    if (fn(list[j], j)) return true;
+                }
+                return false;
+            } else if (typeof list.iterator === &apos;function&apos;) {
+                var it = list.iterator();
+                var idx = 0;
+                while (it.hasNext()) {
+                    if (fn(it.next(), idx++)) return true;
+                }
+                return false;
+            }
+        } catch(e) {
+            logger.error(&quot;iterateList error: &quot; + e);
+        }
+        return false;
+    }
+
+    // normalize payload: if string try parse
+    var obj = updatedPayload;
+    if (typeof updatedPayload === &apos;string&apos;) {
+        try {
+            obj = JSON.parse(updatedPayload);
+        } catch (e) {
+            logger.info(&quot;isActionDiscard: payload is not valid JSON string&quot;);
+            return false;
+        }
+    }
+
+    // if payload itself is OperationOutcome (rare)
+    var maybeOp = getProp(obj, &apos;OperationOutcome&apos;);
+    if (maybeOp) {
+        // if OperationOutcome is an object that contains techByDesignDisposition
+        var dispositions = getProp(maybeOp, &apos;techByDesignDisposition&apos;);
+        if (iterateList(dispositions, function(d) {
+            var action = getProp(d, &apos;action&apos;);
+            return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
+        })) return true;
+    }
+
+    // If this is a Bundle with entries, look in each entry.resource
+    var entries = getProp(obj, &apos;entry&apos;);
+    if (entries) {
+        var found = iterateList(entries, function(entry) {
+            var resource = getProp(entry, &apos;resource&apos;);
+            if (!resource) return false;
+            var rType = getProp(resource, &apos;resourceType&apos;);
+            // check if this resource is OperationOutcome
+            if (rType &amp;&amp; String(rType).toLowerCase() === &apos;operationoutcome&apos;) {
+                var dispositions = getProp(resource, &apos;techByDesignDisposition&apos;);
+                return iterateList(dispositions, function(d) {
+                    var action = getProp(d, &apos;action&apos;);
+                    return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
+                });
+            }
+            return false;
+        });
+        if (found) return true;
+    }
+
+    // Also check top-level techByDesignDisposition if present directly on payload
+    var topDispositions = getProp(obj, &apos;techByDesignDisposition&apos;);
+    if (topDispositions) {
+        if (iterateList(topDispositions, function(d) {
+            var action = getProp(d, &apos;action&apos;);
+            return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
+        })) return true;
+    }
+
+    return false;
+}
+
+
+
+
+// ---------------------- usage: extract rawResponseMsg, call functions and persist ----------------------
+
+// 1) extract rawResponseMsg safely from responseMap
+var destName = &apos;dest_bundle&apos;;
+var rawResponseMsg = null;
+try {
+    var destResp = responseMap.get(destName);
+    if (destResp) {
+        if (typeof destResp.getMessage === &apos;function&apos;) {
+            rawResponseMsg = destResp.getMessage();
+        } else if (destResp.message !== undefined) {
+            rawResponseMsg = destResp.message;
+        } else {
+            rawResponseMsg = destResp.toString();
+        }
+    } else {
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:No response found in responseMap for &quot; + destName);
+    }
+} catch (e) {
+    rawResponseMsg = null;
+    try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Error while extracting rawResponseMsg: &quot; + e); } catch(ignore){}
+}
+
+// 2) get rawFhir
+var rawFhir = null;
+try { rawFhir = channelMap.get(&apos;fhirJson&apos;); } catch(e) { rawFhir = null; }
+
+// 3) call extractIssueAndDisposition (use &quot;error&quot; per your request)
+
+var extractedPayload = null;
+try {
+    extractedPayload = extractIssueAndDisposition(rawResponseMsg, validationSeverityLevel);
+} catch (e) {
+    try { logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition threw: &quot; + e); } catch(ignore){}
+    extractedPayload = null;
+}
+
+
+try{
+var bundleJson = JSON.parse(rawFhir);&#xd;
+// Extract bundle id &#xd;
+var bundleId = bundleJson.id ;&#xd;
+var dataId = interactionId;&#xd;
+
+	if (bundleId != null &amp;&amp; bundleId.toString().trim().length &gt; 0) {
+		 dataId = bundleId;
+	}
+}catch (e) {
+    var rawErrorResponse = JSON.stringify({
+        error: &quot;Invalid JSON payload&quot;,
+        message: e.toString()
+    });
+    //responseMap.put(&apos;finalResponse&apos;, rawErrorResponse);
+    responseMap.put(&apos;finalResponse&apos;, rawResponseMsg);
+    throw rawErrorResponse;
+}
+
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:dataId  for datalake: &quot; + dataId);
+
+
+
+// 4) append to bundle if we got something
+if (extractedPayload) {
+    try {
+        var updatedPayload = appendToBundlePayload(rawFhir, extractedPayload);
+
+
+		logger.info(JSON.stringify(updatedPayload));
+		logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   BEFORE&quot;);
+		if (isActionDiscard(JSON.stringify(updatedPayload))) {
+			logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   INSIDE&quot;);
+			channelMap.put(&apos;finalResponse&apos;, JSON.stringify(updatedPayload));
+			channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
+			actionDiscard = &quot;discard&quot;;&#xd;
+		    //return;
+		}
+		logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   AFTER&quot;);
+		
+		if (updatedPayload == null) {
+			channelMap.put(&apos;finalResponse&apos;, JSON.stringify(updatedPayload));
+			channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
+		   //  return;
+		}
+
+        
+	if( actionDiscard != &quot;discard&quot;){
+        // persist updated bundle back (try channelMap first, fallback to responseMap)
+        try {
+            var updatedStr = JSON.stringify(updatedPayload);
+            //logger.info(updatedStr);
+            channelMap.put(&apos;updatedFhirJson&apos;, updatedStr);
+            try { 
+            //channelMap.put(&apos;fhirJson&apos;, updatedStr); 
+            logger.info(&quot;Saved updated bundle to channelMap.fhirJson&quot;); 
+           
+		responseMap.put(&apos;updatedFhirJson&apos;, updatedStr);
+		//channelMap.put(&apos;updatedFhirJson&apos;, updatedStr);
+
+
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA LEDGER STARTS&quot;);
+		
+		var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {&#xd;
+	    // Add 3 more random digits to simulate microseconds&#xd;
+	    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);&#xd;
+	    return &apos;.&apos; + micros + &apos;Z&apos;;&#xd;
+	   });
+		//save Datakledger starts
+	var payloadDataLedger = JSON.stringify({&#xd;
+	        executedAt: currentTimestampBegin,&#xd;
+	        actor: &quot;TechBD&quot;,&#xd;
+	        action: &quot;sent&quot;, &#xd;
+	        destination: &quot;NYeC&quot;,&#xd;
+	        dataId: dataId,&#xd;
+	        payloadType: &quot;hrsnBundle&quot;&#xd;
+	    });
+	    	    
+		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+		&#xd;
+		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -BEGIN received&quot;);&#xd;
+		    try {&#xd;
+		        sendDataLedgerSync(payloadDataLedger);&#xd;
+		    } catch (e) {&#xd;
+		        logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Error occurred while sending data to Data Ledger: &quot; + e.message);&#xd;
+		    }&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -END received&quot;);&#xd;
+		} else {&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);&#xd;
+		}
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA LEDGER ENDS&quot;);
+		//save Datakledger ends
+		
+		// Save to DB starts
+		var operation = &quot;saveForwardFHIRPayload&quot;;
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:saveForwardFHIRPayload - FHIR Data Lake Forward Payload save &quot;);
+		&#xd;
+		try{&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Forward : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);
+			var start = Instant.now();  
+			&#xd;
+		     var operation = &quot;saveForwardFHIRPayload&quot;;&#xd;
+		     var result = saveFHIRPayload(&#xd;
+			   interactionId,&#xd;
+			   tenantId,&#xd;
+			   requestUri , //sourceMap.get(&apos;contextPath&apos;),&#xd;
+			   JSON.stringify(updatedPayload),&#xd;
+			   operation&#xd;
+			);
+			var end = Instant.now();
+			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:REGISTER State Forward : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
+		} catch (e) {
+			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:ERROR:: REGISTER State Forward CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
+			var errorMsg;&#xd;
+	            if (e instanceof JavaException) {&#xd;
+	                errorMsg = &quot;ERROR:: REGISTER State Forward CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
+	                throw errorMessage;&#xd;
+	            } else {&#xd;
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
+	                throw errorMessage;&#xd;
+	            }&#xd;
+		}&#xd;
+&#xd;
+		/// Save to DB ends
+&#xd;
+
+            
+            
+            } 
+            catch (e) { responseMap.put(&apos;updatedFhirJson&apos;, updatedStr); logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Saved updated bundle to responseMap.updatedFhirJson&quot;); }
+        } catch (e) {
+            try { responseMap.put(&apos;updatedFhirJson&apos;, updatedStr); logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Saved updated bundle object to responseMap.updatedFhirJson&quot;); } catch(ignore){}
+        }
+	} // isActionDiscard
+
+        try { responseMap.put(&apos;finalResponse&apos;, rawResponseMsg); } catch(ignore){}
+    } catch (e) {
+        try { logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Failed to append extractedPayload: &quot; + e); } catch(ignore){}
+    }
+} else {
+    try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: No extractedPayload produced — nothing appended.&quot;); } catch(ignore){}
+}
+
+// ---------------------- END block ----------------------
+
+/*
+function iterableToArrayStr(col) {&#xd;
+    if (col == null) return &quot;&quot;;&#xd;
+    try {&#xd;
+        // plain JS array&#xd;
+        if (Array.isArray(col)) return col.join(&quot;, &quot;);&#xd;
+        // JS Set&#xd;
+        if (typeof col.values === &apos;function&apos;) {&#xd;
+            var a = [];&#xd;
+            var it = col.values();&#xd;
+            // iterator may be an object with next() or a simple iterable&#xd;
+            try {&#xd;
+                var next;&#xd;
+                while (!(next = it.next()).done) {&#xd;
+                    a.push(next.value);&#xd;
+                }&#xd;
+                return a.join(&quot;, &quot;);&#xd;
+            } catch(e) {&#xd;
+                // fallback for older engines: use forEach if present&#xd;
+                if (typeof col.forEach === &apos;function&apos;) {&#xd;
+                    col.forEach(function(v){ a.push(v); });&#xd;
+                    return a.join(&quot;, &quot;);&#xd;
+                }&#xd;
+            }&#xd;
+        }&#xd;
+        // Java collection (has iterator())&#xd;
+        if (typeof col.iterator === &apos;function&apos;) {&#xd;
+            var arr = [];&#xd;
+            var it2 = col.iterator();&#xd;
+            while (it2.hasNext()) {&#xd;
+                arr.push(it2.next());&#xd;
+            }&#xd;
+            return arr.join(&quot;, &quot;);&#xd;
+        }&#xd;
+        // Java List with size()/get()&#xd;
+        if (typeof col.size === &apos;function&apos; &amp;&amp; typeof col.get === &apos;function&apos;) {&#xd;
+            var arr2 = [];&#xd;
+            for (var i = 0; i &lt; col.size(); i++) arr2.push(col.get(i));&#xd;
+            return arr2.join(&quot;, &quot;);&#xd;
+        }&#xd;
+        // last resort&#xd;
+        return String(col);&#xd;
+    } catch (err) {&#xd;
+        return String(col);&#xd;
+    }&#xd;
+}
+*/</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <filter version="4.5.3">
-        <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
-            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/&apos; or &apos;/Bundle&apos;</name>
-            <sequenceNumber>0</sequenceNumber>
-            <enabled>true</enabled>
-            <field>sourceMap.get(&apos;contextPath&apos;)</field>
-            <condition>EQUALS</condition>
-            <values>
-              <string>&apos;/Bundle/&apos;</string>
-              <string>&apos;/Bundle&apos;</string>
-            </values>
-          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
-            <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
-            <sequenceNumber>1</sequenceNumber>
-            <enabled>true</enabled>
-            <operator>AND</operator>
-            <field>sourceMap.get(&apos;method&apos;)</field>
-            <condition>EQUALS</condition>
-            <values>
-              <string>&apos;POST&apos;</string>
-            </values>
-          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        </elements>
+      <responseTransformer version="4.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.6.0">
+        <elements/>
       </filter>
-      <transportName>HTTP Listener</transportName>
-      <mode>SOURCE</mode>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
-    </sourceConnector>
-    <destinationConnectors>
-      <connector version="4.5.3">
-        <metaDataId>1</metaDataId>
-        <name>dest_bundle</name>
-        <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.5.3">
-          <pluginProperties>
-            <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
-    <sslEnabled>false</sslEnabled>
-              <mutualTlsEnabled>false</mutualTlsEnabled>
-              <verifyHostname>false</verifyHostname>
-              <keystorePath/>
-              <keystorePassword/>
-              <certAlias/>
-              <certPassword/>
-              <truststorePath/>
-              <truststorePassword/>
-              <tls13>true</tls13>
-              <tls12>true</tls12>
-              <tls11>true</tls11>
-              <keystoreType/>
-              <truststoreType/>
-              <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-              <keystoreUid/>
-              <myCertificateAlias/>
-              <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-              <truststoreUid/>
-            </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-          </pluginProperties>
-          <destinationConnectorProperties version="4.5.3">
-            <queueEnabled>false</queueEnabled>
-            <sendFirst>false</sendFirst>
-            <retryIntervalMillis>10000</retryIntervalMillis>
-            <regenerateTemplate>false</regenerateTemplate>
-            <retryCount>0</retryCount>
-            <rotate>false</rotate>
-            <includeFilterTransformer>false</includeFilterTransformer>
-            <threadCount>1</threadCount>
-            <threadAssignmentVariable></threadAssignmentVariable>
-            <validateResponse>false</validateResponse>
-            <resourceIds class="linked-hash-map">
-              <entry>
-                <string>Default Resource</string>
-                <string>[Default Resource]</string>
-              </entry>
-            </resourceIds>
-            <queueBufferSize>1000</queueBufferSize>
-            <reattachAttachments>true</reattachAttachments>
-          </destinationConnectorProperties>
-          <host>${fhirSubmissionApiUrl}</host>
-          <useProxyServer>false</useProxyServer>
-          <proxyAddress></proxyAddress>
-          <proxyPort></proxyPort>
-          <method>post</method>
-          <headers class="linked-hash-map">
-            <entry>
-              <string>Access-Control-Allow-Origin</string>
-              <list>
-                <string>*</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Access-Control-Allow-Methods</string>
-              <list>
-                <string>GET, POST, OPTIONS</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Access-Control-Allow-Headers</string>
-              <list>
-                <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Access-Control-Expose-Headers</string>
-              <list>
-                <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI,X-Correlation-ID,X-TechBD-HealthCheck</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Tenant-ID</string>
-              <list>
-                <string>${tenantId}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Content-Type</string>
-              <list>
-                <string>application/fhir+json</string>
-              </list>
-            </entry>
-            <entry>
-              <string>User-Agent</string>
-              <list>
-                <string>${userAgent}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Access-Control-Allow-Credentials</string>
-              <list>
-                <string>true</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Interaction-ID</string>
-              <list>
-                <string>${interactionId}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Request-URI</string>
-              <list>
-                <string>${requestUri}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Validation-Severity-Level</string>
-              <list>
-                <string>${validationSeverityLevel}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-SHIN-NY-IG-Version</string>
-              <list>
-                <string>${igVersion}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Override-Request-URI</string>
-              <list>
-                <string>${requestUri}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Source-Type</string>
-              <list>
-                <string>${source}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Elaboration</string>
-              <list>
-                <string>${elaboration}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Group-Interaction-ID</string>
-              <list>
-                <string>${groupInteractionId}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>X-TechBD-Master-Interaction-ID</string>
-              <list>
-                <string>${masterInteractionId}</string>
-              </list>
-            </entry>
-          </headers>
-          <parameters class="linked-hash-map">
-            <entry>
-              <string>source</string>
-              <list>
-                <string>${source}</string>
-              </list>
-            </entry>
-          </parameters>
-          <useHeadersVariable>false</useHeadersVariable>
-          <headersVariable></headersVariable>
-          <useParametersVariable>false</useParametersVariable>
-          <parametersVariable></parametersVariable>
-          <responseXmlBody>false</responseXmlBody>
-          <responseParseMultipart>true</responseParseMultipart>
-          <responseIncludeMetadata>false</responseIncludeMetadata>
-          <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
-          <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
-          <multipart>false</multipart>
-          <useAuthentication>false</useAuthentication>
-          <authenticationType>Basic</authenticationType>
-          <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
-          <username></username>
-          <password></password>
-          <content>${fhirJson}</content>
-          <contentType>application/fhir+json</contentType>
-          <dataTypeBinary>false</dataTypeBinary>
-          <charset>UTF-8</charset>
-          <socketTimeout>30000</socketTimeout>
-        </properties>
-        <transformer version="4.5.3">
-          <elements/>
-          <inboundTemplate encoding="base64"></inboundTemplate>
-          <outboundTemplate encoding="base64"></outboundTemplate>
-          <inboundDataType>RAW</inboundDataType>
-          <outboundDataType>RAW</outboundDataType>
-          <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </inboundProperties>
-          <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </outboundProperties>
-        </transformer>
-        <responseTransformer version="4.5.3">
-          <elements/>
-          <inboundDataType>RAW</inboundDataType>
-          <outboundDataType>RAW</outboundDataType>
-          <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </inboundProperties>
-          <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </outboundProperties>
-        </responseTransformer>
-        <filter version="4.5.3">
-          <elements/>
-        </filter>
-        <transportName>HTTP Sender</transportName>
-        <mode>DESTINATION</mode>
-        <enabled>true</enabled>
-        <waitForPrevious>true</waitForPrevious>
-      </connector>
-      <connector version="4.5.3">
-        <metaDataId>3</metaDataId>
-        <name>dest_datalake</name>
-        <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.5.3">
-          <pluginProperties>
-            <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
-    <sslEnabled>false</sslEnabled>
-              <mutualTlsEnabled>false</mutualTlsEnabled>
-              <verifyHostname>false</verifyHostname>
-              <keystorePath/>
-              <keystorePassword/>
-              <certAlias/>
-              <certPassword/>
-              <truststorePath/>
-              <truststorePassword/>
-              <tls13>true</tls13>
-              <tls12>true</tls12>
-              <tls11>true</tls11>
-              <keystoreType/>
-              <truststoreType/>
-              <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-              <keystoreUid/>
-              <myCertificateAlias/>
-              <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-              <truststoreUid/>
-            </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-          </pluginProperties>
-          <destinationConnectorProperties version="4.5.3">
-            <queueEnabled>false</queueEnabled>
-            <sendFirst>false</sendFirst>
-            <retryIntervalMillis>10000</retryIntervalMillis>
-            <regenerateTemplate>false</regenerateTemplate>
-            <retryCount>0</retryCount>
-            <rotate>false</rotate>
-            <includeFilterTransformer>false</includeFilterTransformer>
-            <threadCount>1</threadCount>
-            <threadAssignmentVariable></threadAssignmentVariable>
-            <validateResponse>false</validateResponse>
-            <resourceIds class="linked-hash-map">
-              <entry>
-                <string>Default Resource</string>
-                <string>[Default Resource]</string>
-              </entry>
-            </resourceIds>
-            <queueBufferSize>1000</queueBufferSize>
-            <reattachAttachments>true</reattachAttachments>
-          </destinationConnectorProperties>
-          <host>${dataLakeApiUrl}?processingAgent=${tenantId}</host>
-          <useProxyServer>false</useProxyServer>
-          <proxyAddress></proxyAddress>
-          <proxyPort></proxyPort>
-          <method>post</method>
-          <headers class="linked-hash-map">
-            <entry>
-              <string>X-TechBD-Tenant-ID</string>
-              <list>
-                <string>${tenantId}</string>
-              </list>
-            </entry>
-            <entry>
-              <string>Content-Type</string>
-              <list>
-                <string>application/json</string>
-              </list>
-            </entry>
-            <entry>
-              <string>x-api-key</string>
-              <list>
-                <string>${dataLakeApiKey}</string>
-              </list>
-            </entry>
-          </headers>
-          <parameters class="linked-hash-map"/>
-          <useHeadersVariable>false</useHeadersVariable>
-          <headersVariable></headersVariable>
-          <useParametersVariable>false</useParametersVariable>
-          <parametersVariable></parametersVariable>
-          <responseXmlBody>false</responseXmlBody>
-          <responseParseMultipart>true</responseParseMultipart>
-          <responseIncludeMetadata>false</responseIncludeMetadata>
-          <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
-          <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
-          <multipart>false</multipart>
-          <useAuthentication>false</useAuthentication>
-          <authenticationType>Basic</authenticationType>
-          <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
-          <username></username>
-          <password></password>
-          <content>${updatedFhirJson}</content>
-          <contentType>application/fhir+json</contentType>
-          <dataTypeBinary>false</dataTypeBinary>
-          <charset>UTF-8</charset>
-          <socketTimeout>30000</socketTimeout>
-        </properties>
-        <transformer version="4.5.3">
-          <elements>
-            <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
-              <name>destination_datalake</name>
-              <sequenceNumber>0</sequenceNumber>
-              <enabled>true</enabled>
-              <script>// ---------------------- BEGIN: integrated helper + usage block ----------------------
-  var Instant = Packages.java.time.Instant;&#xd;
-  var Duration = Packages.java.time.Duration;
-  
-  
-  
-  
-  
-  var interactionId = channelMap.get(&quot;interactionId&quot;);
-  var validationSeverityLevel = channelMap.get(&quot;validationSeverityLevel&quot;);
-  var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
-  var sendDataLedgerSync = globalMap.get(&apos;sendDataLedgerSync&apos;);
-  var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-  var actionDiscard = &quot;&quot;;
-  
-  var requestUri = channelMap.get(&quot;requestUri&quot;);&#xd;
-  
-  
-  // Safe single-parse helper (handles java.lang.String)
-  function parseOnceMaybeString(v) {
-      if (v === null || v === undefined) return null;
-      try {
-          if (typeof v === &apos;string&apos;) return JSON.parse(v);
-          if (v &amp;&amp; v.getClass &amp;&amp; v.getClass().getName &amp;&amp; (v.getClass().getName().indexOf(&apos;String&apos;) !== -1 || v.getClass().getName().indexOf(&apos;StringBuilder&apos;) !== -1)) {
-              return JSON.parse(v.toString());
-          }
-          if (typeof v === &apos;object&apos;) return v;
-      } catch (e) {
-          try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: parseOnceMaybeString: JSON.parse failed: &quot; + e); } catch(ignore){}
-          return null;
-      }
-      return null;
-  }
-  
-  
-  
-  // extractIssueAndDisposition(operationOutcomePayload, validationSeverityLevel)
-  function extractIssueAndDisposition(operationOutcomePayload, validationSeverityLevel) {
-      if (operationOutcomePayload === null || operationOutcomePayload === undefined) {
-          try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: operationOutcomePayload is null/undefined&quot;); } catch(e){}
-          return null;
-      }
-      var payloadObj = parseOnceMaybeString(operationOutcomePayload);
-      if (!payloadObj &amp;&amp; operationOutcomePayload &amp;&amp; typeof operationOutcomePayload === &apos;object&apos;) payloadObj = operationOutcomePayload;
-      if (!payloadObj || typeof payloadObj !== &apos;object&apos;) {
-          try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: payload not parseable as object&quot;); } catch(e){}
-          return null;
-      }
-  
-      // tolerate OperationOutcome or operationOutcome key
-      var operationOutcomeMap = payloadObj.OperationOutcome !== undefined ? payloadObj.OperationOutcome
-                               : (payloadObj.operationOutcome !== undefined ? payloadObj.operationOutcome : null);
-  
-      if (!operationOutcomeMap || typeof operationOutcomeMap !== &apos;object&apos;) {
-          try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition: OperationOutcome map missing&quot;); } catch(e){}
-          return null;
-      }
-  
-      // validationResults
-      var validationResults = operationOutcomeMap.validationResults !== undefined ? operationOutcomeMap.validationResults
-                            : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;validationResults&apos;) : null);
-  
-      if (!validationResults || !(validationResults instanceof Array) || validationResults.length === 0) {
-          try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: extractIssueAndDisposition: validationResults missing or empty&quot;); } catch(e){}
-          return null;
-      }
-  
-      var validationResult = validationResults[0];
-      if (!validationResult || typeof validationResult !== &apos;object&apos;) {
-          try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition: first validationResult missing or not an object&quot;); } catch(e){}
-          return null;
-      }
-  
-      var innerOperationOutcome = validationResult.operationOutcome !== undefined ? validationResult.operationOutcome
-                                : (validationResult.get ? validationResult.get(&apos;operationOutcome&apos;) : null);
-  
-      var issuesRaw = innerOperationOutcome &amp;&amp; innerOperationOutcome.issue !== undefined ? innerOperationOutcome.issue
-                    : (innerOperationOutcome &amp;&amp; innerOperationOutcome.get ? innerOperationOutcome.get(&apos;issue&apos;) : null);
-  
-      // severity threshold (default to &quot;error&quot; if not provided)
-     // var sev = (validationSeverityLevel &amp;&amp; typeof validationSeverityLevel === &apos;string&apos; &amp;&amp; validationSeverityLevel.trim().length &gt; 0)
-      //          ? validationSeverityLevel.trim().toLowerCase() : &apos;error&apos;;
-         var sev = (validationSeverityLevel &amp;&amp; String(validationSeverityLevel).trim().length &gt; 0)
-      ? String(validationSeverityLevel).trim().toLowerCase()
-      : &apos;error&apos;;
-  
-  
-   
-     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  Severity level (sev): &quot; + sev);&#xd;
-      //logger.info(&quot;[TECHBD extractIssueAndDisposition] Allowed severities: &quot; + iterableToArrayStr(allowedSeverities));
-      var allowedSeverities;
-      switch (sev) {
-          case &apos;fatal&apos;:
-              allowedSeverities = new Set([&apos;fatal&apos;]);
-              break;
-          case &apos;warning&apos;:
-              allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;,&apos;warning&apos;]);
-              break;
-          case &apos;information&apos;:
-              allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;,&apos;warning&apos;,&apos;information&apos;]);
-              break;
-          case &apos;error&apos;:
-          default:
-              allowedSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;]);
-              break;
-      }
-  
-      var filteredIssues = [];
-      if (issuesRaw &amp;&amp; issuesRaw instanceof Array) {
-          for (var i = 0; i &lt; issuesRaw.length; i++) {
-              var issue = issuesRaw[i];
-              if (!issue || typeof issue !== &apos;object&apos;) continue;
-              var severity = issue.severity !== undefined ? issue.severity : (issue.get ? issue.get(&apos;severity&apos;) : null);
-              if (severity &amp;&amp; allowedSeverities.has(severity.toLowerCase())) {
-    
-                  filteredIssues.push(issue);
-              }
-          }
-      }
-    
-      if (filteredIssues.length === 0) {
-          var infoIssue = { severity: &apos;information&apos;,
-                            diagnostics: &apos;Validation successful. No issues found at or above severity level: &apos; + sev,
-                            code: &apos;informational&apos; };
-          filteredIssues.push(infoIssue);
-      }
-  
-      var result = {};
-      try {
-          result.resourceType = operationOutcomeMap.resourceType !== undefined ? operationOutcomeMap.resourceType
-                               : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;resourceType&apos;) : undefined);
-      } catch(e) { result.resourceType = undefined; }
-  
-      result.issue = filteredIssues;
-  
-      try {
-          var tbd = operationOutcomeMap.techByDesignDisposition !== undefined ? operationOutcomeMap.techByDesignDisposition
-                    : (operationOutcomeMap.get ? operationOutcomeMap.get(&apos;techByDesignDisposition&apos;) : null);
-          if (tbd) result.techByDesignDisposition = tbd;
-      } catch(e) {}
-  
-      return result;
-  }
-  
-  // appendToBundlePayload(payload, extractedOutcome) mirror of your Java method
-  function appendToBundlePayload(payload, extractedOutcome) {
-      var bundleObj = parseOnceMaybeString(payload);
-      if (!bundleObj &amp;&amp; payload &amp;&amp; typeof payload === &apos;object&apos;) bundleObj = payload;
-      if (!bundleObj || typeof bundleObj !== &apos;object&apos;) {
-          bundleObj = { entry: [] };
-          try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: appendToBundlePayload: created new bundle because payload was missing/unparseable&quot;); } catch(e){}
-      }
-      if (!bundleObj.entry || !(bundleObj.entry instanceof Array)) bundleObj.entry = [];
-  
-      var parsedOutcome = (extractedOutcome === null || extractedOutcome === undefined) ? null : extractedOutcome;
-      // if outcome could be a string, try parse once (function above)
-      var tryParsed = parseOnceMaybeString(parsedOutcome);
-      if (tryParsed) parsedOutcome = tryParsed;
-      if (!parsedOutcome &amp;&amp; parsedOutcome !== null &amp;&amp; typeof parsedOutcome === &apos;object&apos;) parsedOutcome = parsedOutcome;
-  
-      var newEntry = { resource: parsedOutcome };
-      bundleObj.entry.push(newEntry);
-  
-      // return shallow copy (similar to Java new HashMap&lt;&gt;(payload) and put entry)
-      var finalPayload = {};
-      for (var k in bundleObj) {
-          if (Object.prototype.hasOwnProperty.call(bundleObj, k)) finalPayload[k] = bundleObj[k];
-      }
-      return finalPayload;
-  }
-  
-  
-  function isActionDiscard(updatedPayload) {
-      // helper to read property from Java Map or JS object
-      function getProp(obj, key) {
-          if (obj == null) return null;
-          if (typeof obj.get === &apos;function&apos;) {
-              try { return obj.get(key); } catch(e) { return null; }
-          }
-          return obj[key];
-      }
-  
-      // helper to iterate a java.util.List or JS Array
-      function iterateList(list, fn) {
-          if (list == null) return false;
-          try {
-              if (typeof list.size === &apos;function&apos; &amp;&amp; typeof list.get === &apos;function&apos;) {
-                  for (var i = 0; i &lt; list.size(); i++) {
-                      if (fn(list.get(i), i)) return true;
-                  }
-                  return false;
-              } else if (Array.isArray(list)) {
-                  for (var j = 0; j &lt; list.length; j++) {
-                      if (fn(list[j], j)) return true;
-                  }
-                  return false;
-              } else if (typeof list.iterator === &apos;function&apos;) {
-                  var it = list.iterator();
-                  var idx = 0;
-                  while (it.hasNext()) {
-                      if (fn(it.next(), idx++)) return true;
-                  }
-                  return false;
-              }
-          } catch(e) {
-              logger.error(&quot;iterateList error: &quot; + e);
-          }
-          return false;
-      }
-  
-      // normalize payload: if string try parse
-      var obj = updatedPayload;
-      if (typeof updatedPayload === &apos;string&apos;) {
-          try {
-              obj = JSON.parse(updatedPayload);
-          } catch (e) {
-              logger.info(&quot;isActionDiscard: payload is not valid JSON string&quot;);
-              return false;
-          }
-      }
-  
-      // if payload itself is OperationOutcome (rare)
-      var maybeOp = getProp(obj, &apos;OperationOutcome&apos;);
-      if (maybeOp) {
-          // if OperationOutcome is an object that contains techByDesignDisposition
-          var dispositions = getProp(maybeOp, &apos;techByDesignDisposition&apos;);
-          if (iterateList(dispositions, function(d) {
-              var action = getProp(d, &apos;action&apos;);
-              return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
-          })) return true;
-      }
-  
-      // If this is a Bundle with entries, look in each entry.resource
-      var entries = getProp(obj, &apos;entry&apos;);
-      if (entries) {
-          var found = iterateList(entries, function(entry) {
-              var resource = getProp(entry, &apos;resource&apos;);
-              if (!resource) return false;
-              var rType = getProp(resource, &apos;resourceType&apos;);
-              // check if this resource is OperationOutcome
-              if (rType &amp;&amp; String(rType).toLowerCase() === &apos;operationoutcome&apos;) {
-                  var dispositions = getProp(resource, &apos;techByDesignDisposition&apos;);
-                  return iterateList(dispositions, function(d) {
-                      var action = getProp(d, &apos;action&apos;);
-                      return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
-                  });
-              }
-              return false;
-          });
-          if (found) return true;
-      }
-  
-      // Also check top-level techByDesignDisposition if present directly on payload
-      var topDispositions = getProp(obj, &apos;techByDesignDisposition&apos;);
-      if (topDispositions) {
-          if (iterateList(topDispositions, function(d) {
-              var action = getProp(d, &apos;action&apos;);
-              return action != null &amp;&amp; String(action).trim().toLowerCase() === &apos;discard&apos;;
-          })) return true;
-      }
-  
-      return false;
-  }
-  
-  
-  
-  
-  // ---------------------- usage: extract rawResponseMsg, call functions and persist ----------------------
-  
-  // 1) extract rawResponseMsg safely from responseMap
-  var destName = &apos;dest_bundle&apos;;
-  var rawResponseMsg = null;
-  try {
-      var destResp = responseMap.get(destName);
-      if (destResp) {
-          if (typeof destResp.getMessage === &apos;function&apos;) {
-              rawResponseMsg = destResp.getMessage();
-          } else if (destResp.message !== undefined) {
-              rawResponseMsg = destResp.message;
-          } else {
-              rawResponseMsg = destResp.toString();
-          }
-      } else {
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:No response found in responseMap for &quot; + destName);
-      }
-  } catch (e) {
-      rawResponseMsg = null;
-      try { logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Error while extracting rawResponseMsg: &quot; + e); } catch(ignore){}
-  }
-  
-  // 2) get rawFhir
-  var rawFhir = null;
-  try { rawFhir = channelMap.get(&apos;fhirJson&apos;); } catch(e) { rawFhir = null; }
-  
-  // 3) call extractIssueAndDisposition (use &quot;error&quot; per your request)
-  
-  var extractedPayload = null;
-  try {
-      extractedPayload = extractIssueAndDisposition(rawResponseMsg, validationSeverityLevel);
-  } catch (e) {
-      try { logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:extractIssueAndDisposition threw: &quot; + e); } catch(ignore){}
-      extractedPayload = null;
-  }
-  
-  
-  try{
-  var bundleJson = JSON.parse(rawFhir);&#xd;
-  // Extract bundle id &#xd;
-  var bundleId = bundleJson.id ;&#xd;
-  var dataId = interactionId;&#xd;
-  
-      if (bundleId != null &amp;&amp; bundleId.toString().trim().length &gt; 0) {
-           dataId = bundleId;
-      }
-  }catch (e) {
-      var rawErrorResponse = JSON.stringify({
-          error: &quot;Invalid JSON payload&quot;,
-          message: e.toString()
-      });
-      //responseMap.put(&apos;finalResponse&apos;, rawErrorResponse);
-      responseMap.put(&apos;finalResponse&apos;, rawResponseMsg);
-      throw rawErrorResponse;
-  }
-  
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:dataId  for datalake: &quot; + dataId);
-  
-  
-  
-  // 4) append to bundle if we got something
-  if (extractedPayload) {
-      try {
-          var updatedPayload = appendToBundlePayload(rawFhir, extractedPayload);
-  
-  
-          logger.info(JSON.stringify(updatedPayload));
-          logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   BEFORE&quot;);
-          if (isActionDiscard(JSON.stringify(updatedPayload))) {
-              logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   INSIDE&quot;);
-              channelMap.put(&apos;finalResponse&apos;, JSON.stringify(updatedPayload));
-              channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
-              actionDiscard = &quot;discard&quot;;&#xd;
-              //return;
-          }
-          logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   AFTER&quot;);
-          
-          if (updatedPayload == null) {
-              channelMap.put(&apos;finalResponse&apos;, JSON.stringify(updatedPayload));
-              channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
-             //  return;
-          }
-  
-          
-      if( actionDiscard != &quot;discard&quot;){
-          // persist updated bundle back (try channelMap first, fallback to responseMap)
-          try {
-              var updatedStr = JSON.stringify(updatedPayload);
-              //logger.info(updatedStr);
-              channelMap.put(&apos;updatedFhirJson&apos;, updatedStr);
-              try { 
-              //channelMap.put(&apos;fhirJson&apos;, updatedStr); 
-              logger.info(&quot;Saved updated bundle to channelMap.fhirJson&quot;); 
-             
-          responseMap.put(&apos;updatedFhirJson&apos;, updatedStr);
-          //channelMap.put(&apos;updatedFhirJson&apos;, updatedStr);
-  
-  
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA LEDGER STARTS&quot;);
-          
-          var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {&#xd;
-          // Add 3 more random digits to simulate microseconds&#xd;
-          var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);&#xd;
-          return &apos;.&apos; + micros + &apos;Z&apos;;&#xd;
-         });
-          //save Datakledger starts
-      var payloadDataLedger = JSON.stringify({&#xd;
-              executedAt: currentTimestampBegin,&#xd;
-              actor: &quot;TechBD&quot;,&#xd;
-              action: &quot;sent&quot;, &#xd;
-              destination: &quot;NYeC&quot;,&#xd;
-              dataId: dataId,&#xd;
-              payloadType: &quot;hrsnBundle&quot;&#xd;
-          });
-                  
-          var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
-          &#xd;
-          if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -BEGIN received&quot;);&#xd;
-              try {&#xd;
-                  sendDataLedgerSync(payloadDataLedger);&#xd;
-              } catch (e) {&#xd;
-                  logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Error occurred while sending data to Data Ledger: &quot; + e.message);&#xd;
-              }&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -END received&quot;);&#xd;
-          } else {&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);&#xd;
-          }
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA LEDGER ENDS&quot;);
-          //save Datakledger ends
-          
-          // Save to DB starts
-          var operation = &quot;saveForwardFHIRPayload&quot;;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:saveForwardFHIRPayload - FHIR Data Lake Forward Payload save &quot;);
-          &#xd;
-          try{&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Forward : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);
-              var start = Instant.now();  
-              &#xd;
-               var operation = &quot;saveForwardFHIRPayload&quot;;&#xd;
-               var result = saveFHIRPayload(&#xd;
-                 interactionId,&#xd;
-                 tenantId,&#xd;
-                 requestUri , //sourceMap.get(&apos;contextPath&apos;),&#xd;
-                 JSON.stringify(updatedPayload),&#xd;
-                 operation&#xd;
-              );
-              var end = Instant.now();
-              var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:REGISTER State Forward : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
-          } catch (e) {
-              LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:ERROR:: REGISTER State Forward CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
-              var errorMsg;&#xd;
-                  if (e instanceof JavaException) {&#xd;
-                      errorMsg = &quot;ERROR:: REGISTER State Forward CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
-                      throw errorMessage;&#xd;
-                  } else {&#xd;
-                      errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
-                      throw errorMessage;&#xd;
-                  }&#xd;
-          }&#xd;
-  &#xd;
-          /// Save to DB ends
-  &#xd;
-  
-              
-              
-              } 
-              catch (e) { responseMap.put(&apos;updatedFhirJson&apos;, updatedStr); logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Saved updated bundle to responseMap.updatedFhirJson&quot;); }
-          } catch (e) {
-              try { responseMap.put(&apos;updatedFhirJson&apos;, updatedStr); logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Saved updated bundle object to responseMap.updatedFhirJson&quot;); } catch(ignore){}
-          }
-      } // isActionDiscard
-  
-          try { responseMap.put(&apos;finalResponse&apos;, rawResponseMsg); } catch(ignore){}
-      } catch (e) {
-          try { logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Failed to append extractedPayload: &quot; + e); } catch(ignore){}
-      }
-  } else {
-      try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: No extractedPayload produced — nothing appended.&quot;); } catch(ignore){}
-  }
-  
-  // ---------------------- END block ----------------------
-  
-  /*
-  function iterableToArrayStr(col) {&#xd;
-      if (col == null) return &quot;&quot;;&#xd;
-      try {&#xd;
-          // plain JS array&#xd;
-          if (Array.isArray(col)) return col.join(&quot;, &quot;);&#xd;
-          // JS Set&#xd;
-          if (typeof col.values === &apos;function&apos;) {&#xd;
-              var a = [];&#xd;
-              var it = col.values();&#xd;
-              // iterator may be an object with next() or a simple iterable&#xd;
-              try {&#xd;
-                  var next;&#xd;
-                  while (!(next = it.next()).done) {&#xd;
-                      a.push(next.value);&#xd;
-                  }&#xd;
-                  return a.join(&quot;, &quot;);&#xd;
-              } catch(e) {&#xd;
-                  // fallback for older engines: use forEach if present&#xd;
-                  if (typeof col.forEach === &apos;function&apos;) {&#xd;
-                      col.forEach(function(v){ a.push(v); });&#xd;
-                      return a.join(&quot;, &quot;);&#xd;
-                  }&#xd;
-              }&#xd;
-          }&#xd;
-          // Java collection (has iterator())&#xd;
-          if (typeof col.iterator === &apos;function&apos;) {&#xd;
-              var arr = [];&#xd;
-              var it2 = col.iterator();&#xd;
-              while (it2.hasNext()) {&#xd;
-                  arr.push(it2.next());&#xd;
-              }&#xd;
-              return arr.join(&quot;, &quot;);&#xd;
-          }&#xd;
-          // Java List with size()/get()&#xd;
-          if (typeof col.size === &apos;function&apos; &amp;&amp; typeof col.get === &apos;function&apos;) {&#xd;
-              var arr2 = [];&#xd;
-              for (var i = 0; i &lt; col.size(); i++) arr2.push(col.get(i));&#xd;
-              return arr2.join(&quot;, &quot;);&#xd;
-          }&#xd;
-          // last resort&#xd;
-          return String(col);&#xd;
-      } catch (err) {&#xd;
-          return String(col);&#xd;
-      }&#xd;
-  }
-  */</script>
-            </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          </elements>
-          <inboundTemplate encoding="base64"></inboundTemplate>
-          <outboundTemplate encoding="base64"></outboundTemplate>
-          <inboundDataType>RAW</inboundDataType>
-          <outboundDataType>RAW</outboundDataType>
-          <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </inboundProperties>
-          <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </outboundProperties>
-        </transformer>
-        <responseTransformer version="4.5.3">
-          <elements/>
-          <inboundDataType>RAW</inboundDataType>
-          <outboundDataType>RAW</outboundDataType>
-          <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </inboundProperties>
-          <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
-              <splitType>JavaScript</splitType>
-              <batchScript></batchScript>
-            </batchProperties>
-          </outboundProperties>
-        </responseTransformer>
-        <filter version="4.5.3">
-          <elements/>
-        </filter>
-        <transportName>HTTP Sender</transportName>
-        <mode>DESTINATION</mode>
-        <enabled>true</enabled>
-        <waitForPrevious>true</waitForPrevious>
-      </connector>
-    </destinationConnectors>
-    <preprocessingScript>// Modify the message variable below to pre process data
-  //logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
-  //var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-  //if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
-  //    return;
-  //}
-  //TODO - check and add other parameters /header validation for /Bundle
-  //logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);
-  
-  ///////////////////////////////////////////////////////////////////////////
-  // Access the required header values using getHeader method
-  
-  var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-  
-  // Read both headers
-  var overridePath = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Override-Request-URI&apos;);
-  var requestUri = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Request-URI&apos;);
-  
-  // Use whichever is present and non-empty (first check override, otherwise requestUri)
-  var effectivePath = (overridePath &amp;&amp; overridePath.trim() !== &apos;&apos;) 
-      ? overridePath.trim() 
-      : (requestUri &amp;&amp; requestUri.trim() !== &apos;&apos;) 
-          ? requestUri.trim() 
-          : null;
-  
-  // If we found a usable override path, apply it
-  if (effectivePath !== null) {
-      requestedPath = effectivePath;
-  }
-  
-  channelMap.put(&quot;requestedPath&quot;, requestedPath);
-  
-  
-  
-  if (requestedPath == &quot;/&quot;) {&#xd;
-      return;&#xd;
-  }&#xd;
-  
-  
-  
-  channelMap.put(&apos;channelName&apos;,channelName);
-  
-  
-  var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
-  var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
-  
-  var interactionId;
-  
-  if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &apos;&apos;) {
-      interactionId = incomingInteractionId;
-  } else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
-      interactionId = incomingCorrelationId;
-  } else {
-      interactionId = java.util.UUID.randomUUID().toString();
-  }
-  
-  
-  channelMap.put(&apos;interactionId&apos;, interactionId);
-  
-  var groupInteractionId = &quot;&quot;;
-  var incomingGroupId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-  
-  if (incomingGroupId != null &amp;&amp; incomingGroupId.trim() !== &apos;&apos;) {
-      groupInteractionId = incomingGroupId.trim();
-  }
-  
-  var masterInteractionId = &quot;&quot;;
-  var incomingMasterId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Master-Interaction-ID&apos;);
-  
-  if (incomingMasterId != null &amp;&amp; incomingMasterId.trim() !== &apos;&apos;) {
-      masterInteractionId = incomingMasterId.trim();
-  }
-  
-  channelMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
-  channelMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
-  
-  
-  /*
-  var source = &quot;FHIR&quot;;
-  var incomingSource = sourceMap.get(&apos;source&apos;);
-  
-  if (incomingSource != null &amp;&amp; incomingSource.trim() !== &apos;&apos;) {
-      source = incomingSource;
-  }
-  
-  channelMap.put(&apos;source&apos;, source);
-  logger.info(&quot;Source: &quot; + source);
-  */
-  
-  
-  // Get the URI from sourceMap
-  var uri = sourceMap.get(&apos;uri&apos;);
-  logger.info(&quot;URI from sourceMap: &quot; + uri);
-  
-  var getQueryParameter = globalMap.get(&apos;getQueryParam&apos;);
-  //Extract &apos;source&apos;
-  var source = getQueryParameter(uri, &apos;source&apos;);
-  
-  if (!source || source.trim() === &apos;&apos;) {
-      var headerSource = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-      if (headerSource &amp;&amp; headerSource.trim() !== &apos;&apos;) {
-          source = headerSource.trim();
-      } else {
-          source = &apos;FHIR&apos;;
-      }
-  }
-  
-  // Store back for further use
-  channelMap.put(&apos;source&apos;, source);
-  
-  
-  var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); // Mirth helper that accepts channelMap
-  channelMap.put(&apos;tenantId&apos;, tenantId);
-  
-  
-  &#xd;
-  var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);&#xd;
-  channelMap.put(&apos;userAgent&apos;, userAgent);
-  
-  
-  
-  
-  var severity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;)
-              || $(&apos;headers&apos;).getHeader(&apos;x-techbd-validation-severity-level&apos;);
-  
-  logger.info(&quot;Validation Severity: &quot; + severity);
-  
-  
-  
-  var validationSeverityLevel = &quot;error&quot;;&#xd;
-  var incomingSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
-  
-  &#xd;
-  &#xd;
-  // If header has valid value, use it; otherwise keep default&#xd;
-  if (incomingSeverity != null &amp;&amp; incomingSeverity.trim() !== &apos;&apos;) {&#xd;
-      validationSeverityLevel = incomingSeverity;&#xd;
-  }&#xd;
-  
-  channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
-  
-  
-  var igVersion = &quot;&quot;;
-  var incomingIgVersion = $(&apos;headers&apos;).getHeader(&apos;X-SHIN-NY-IG-Version&apos;);
-  
-  if (incomingIgVersion != null &amp;&amp; incomingIgVersion.trim() !== &apos;&apos;) {
-      igVersion = incomingIgVersion;
-  }
-  
-  channelMap.put(&apos;igVersion&apos;, igVersion);
-  logger.info(&quot;IG Version: &quot; + igVersion);
-  
-  
-  var elaboration = &quot;&quot;;
-  var incomingElaboration = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Elaboration&apos;);
-  
-  // If header has valid value, use it; otherwise keep default (empty string or any fallback)
-  if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;&apos;) {
-      elaboration = incomingElaboration.trim();
-  }
-  
-  channelMap.put(&quot;elaboration&quot;, elaboration);
-  
-  
-  
-  
-  // Check if the header is null or empty
-  if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
-      // Log the error for debugging
-      var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
-      logger.error(errorMessage);
-      setErrorResponsePre(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-      throw errorMessage; // Stop further processing by throwing an exception
-  }
-  
-  function setErrorResponsePre(statusCode, errorMessage) {
-      responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
-      responseMap.put(&apos;message&apos;, errorMessage);
-      responseMap.put(&apos;finalResponse&apos;, createJsonResponsePre(statusCode, errorMessage));
-  }
-  
-  function createJsonResponsePre(status, message) {
-      return JSON.stringify({ status: status, message: message });
-  }
-  return message;</preprocessingScript>
-    <postprocessingScript>var Instant = Packages.java.time.Instant;&#xd;
-  var Duration = Packages.java.time.Duration;
-  var chlName = channelMap.get(&apos;channelName&apos;);
-  var interactionId = channelMap.get(&quot;interactionId&quot;);
-  var isActionDiscard = channelMap.get(&quot;isActionDiscard&quot;);
-  var requestUri = channelMap.get(&quot;requestUri&quot;);;
-  
-  
-  var requestedPath = channelMap.get(&apos;requestedPath&apos;);
-  if (requestedPath == &quot;/&quot;) {&#xd;
-      return;&#xd;
-  }
-  
-  &#xd;
-  
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
-  &#xd;
-  &#xd;
-  var destinationDataLakeName = &quot;dest_datalake&quot;;
-      var destinationDataLakeResponse = responseMap.get(destinationDataLakeName);
-      
-      // Check if the response exists
-      if (destinationDataLakeResponse &amp;&amp; isActionDiscard != &quot;discard&quot;) {
-  
-  
-  &#xd;
-  var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);&#xd;
-  var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
-  
-  
-  var source =  sourceMap.get(&apos;contextPath&apos;);&#xd;
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  source: ---&quot; + source);
-          
-          var responseDataLakeStatus = destinationDataLakeResponse.getStatus();  // HTTP status code
-          var responseDataLakeData = destinationDataLakeResponse.getMessage();   // Response message body
-          responseMap.put(&apos;dataLakeResponse&apos;, responseDataLakeData);
-          
-          // Log the response details
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response from DataLake&quot; + destinationDataLakeResponse + &quot;:&quot;);
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Status Code from DataLake: &quot; + responseDataLakeStatus);
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response Data from DataLake: &quot; + responseDataLakeData);
-  
-  
-  
-  
-  
-  
-          var dlResponse = JSON.parse(responseDataLakeData);&#xd;
-          &#xd;
-          // Extract status safely&#xd;
-          var status = (dlResponse.status || &quot;&quot;).toLowerCase();&#xd;
-          &#xd;
-          if (status === &quot;success&quot;) {&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Sucess&quot;);
-              var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRSuccess - FHIR Data Lake Complete Payload save &quot;);&#xd;
-          &#xd;
-          try{&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; requestUri : &quot; + requestUri);&#xd;
-              var start = Instant.now();  
-              &#xd;
-               var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
-               var result = saveFHIRPayload(&#xd;
-                 interactionId,&#xd;
-                 tenantId,&#xd;
-                 requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
-                 responseDataLakeData , // JSON.stringify(responseDataLakeData),&#xd;
-                 operation&#xd;
-              );&#xd;
-              var end = Instant.now();&#xd;
-              var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
-          } catch (e) {&#xd;
-              LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
-              var errorMsg;&#xd;
-                  if (e instanceof JavaException) {&#xd;
-                      errorMsg = &quot;ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
-                      throw errorMessage;&#xd;
-                  } else {&#xd;
-                      errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
-                      throw errorMessage;&#xd;
-                  }&#xd;
-          }&#xd;
-          } else {&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: error - status: &quot; + status);
-              var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRFailure - FHIR Data Lake Forward Payload save &quot;);&#xd;
-          &#xd;
-          try{&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);&#xd;
-              var start = Instant.now();  
-  
-          &#xd;
-               var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
-               var result = saveFHIRPayload(&#xd;
-                 interactionId,&#xd;
-                 tenantId,&#xd;
-                 requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
-                 responseDataLakeData , //JSON.stringify(responseDataLakeData),&#xd;
-                 operation&#xd;
-              );&#xd;
-              var end = Instant.now();&#xd;
-              var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
-          } catch (e) {&#xd;
-              LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
-              var errorMsg;&#xd;
-                  if (e instanceof JavaException) {&#xd;
-                      errorMsg = &quot;ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
-                      throw errorMessage;&#xd;
-                  } else {&#xd;
-                      errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
-                      throw errorMessage;&#xd;
-                  }&#xd;
-          }&#xd;
-          }
-          
-          
-          
-  
-  
-          
-  
-      } else {
-          logger.info(&quot;N[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: response found for destination Data Lake: &quot; + destinationDataLakeName);
-      }
-  
-  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor ENDS.&quot;);
-  
-  return;
-  </postprocessingScript>
-    <deployScript>// This script executes once when the channel is deployed
-  // You only have access to the globalMap and globalChannelMap here to persist data
-  
-  /**
-  * Util function to generate json string wit hstatus and message
-  */
-  
-  function createJsonResponse(status, message) {
-      return JSON.stringify({ status: status, message: message });
-  }
-  
-  /**
-  * Util function to set error response.
-  */
-  function setErrorResponse(statusCode, errorMessage) {
-      responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
-      responseMap.put(&apos;message&apos;, errorMessage);
-      responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
-  }
-  
-  
-  var PGobject = Packages.org.postgresql.util.PGobject;&#xd;
-  &#xd;
-  function toJsonb(value) {&#xd;
-      var jsonbObj = new PGobject();&#xd;
-      jsonbObj.setType(&quot;jsonb&quot;);&#xd;
-  &#xd;
-      if (typeof value === &quot;object&quot;) {&#xd;
-          value = JSON.stringify(value);&#xd;
-      }&#xd;
-      &#xd;
-      jsonbObj.setValue(value);&#xd;
-      logger.info(&quot;jsonbObj: &quot; + jsonbObj);&#xd;
-      return jsonbObj;&#xd;
-  }
-  
-  function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation) {&#xd;
-      &#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:tenantId: &quot; + tenantId);&#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:requestUri: &quot; + requestUri);&#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:payloadJson: &quot; + payloadJson);&#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: operation: &quot; + operation);&#xd;
-      &#xd;
-      var DriverManager = java.sql.DriverManager;&#xd;
-      var conn = null;&#xd;
-      var stmt = null;
-  &#xd;
-      &#xd;
-      try {&#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Inside DB Try&quot;);&#xd;
-  &#xd;
-          var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);&#xd;
-          if(jdbcUrl != null) {&#xd;
-              globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUrl: &quot; + jdbcUrl);&#xd;
-          } else {&#xd;
-              var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;&#xd;
-              logger.error(errorMessage);&#xd;
-              setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
-              throw errorMessage; // Stop further processing by throwing an exception&#xd;
-          }&#xd;
-          &#xd;
-          var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);&#xd;
-          if(jdbcUsername != null) {&#xd;
-              globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUsername: &quot; + jdbcUsername);&#xd;
-          } else {&#xd;
-              var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;&#xd;
-              logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: &quot; +errorMessage);&#xd;
-              setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
-              throw errorMessage; // Stop further processing by throwing an exception&#xd;
-          }&#xd;
-          &#xd;
-          var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);&#xd;
-          if(jdbcPassword != null) {&#xd;
-              globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);&#xd;
-              //logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);&#xd;
-          } else {&#xd;
-              var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;&#xd;
-              logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: &quot;  + errorMessage);&#xd;
-              setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
-              throw errorMessage; // Stop further processing by throwing an exception&#xd;
-          }&#xd;
-  &#xd;
-          // Database connection details&#xd;
-          var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);&#xd;
-          var dbUser = globalMap.get(&apos;jdbcUsername&apos;);&#xd;
-          var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);&#xd;
-  &#xd;
-          //Devl&#xd;
-          conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);&#xd;
-  &#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Database connection established successfully.&quot;);&#xd;
-      &#xd;
-          var sql = &quot;select techbd_udi_ingress.register_interaction_fhir_request(?::text,?::text,?::jsonb,?::jsonb,?::text,?::jsonb,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
-          var sql =
-            &quot;select techbd_udi_ingress.register_interaction_fhir_request(&quot; +
-            &quot;?::text, ?::text, ?::jsonb, ?::jsonb, ?::text, ?::text, ?::text, ?::jsonb, &quot; +
-            &quot;?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, &quot; +
-            &quot;?::timestamptz, ?::text, ?::boolean, ?::text, ?::text, ?::text, ?::text, ?::text, ?::jsonb, ?::text&quot; +
-            &quot;)&quot;;
-  &#xd;
-       // prepareCall(sql) done before
-          stmt = conn.prepareCall(sql);
-          
-          // 1. p_interaction_id
-          stmt.setString(1, interactionId);
-          
-          // 2. p_interaction_key  (you stated second is requestUri)
-          stmt.setString(2, requestUri);
-          
-          // 3. p_nature jsonb -- include tenantId inside nature as you did
-          var natureObj;
-          if (operation === &quot;saveForwardFHIRPayload&quot;) {
-            natureObj = { nature: &apos;Forward HTTP Request&apos;, tenant_id: tenantId };
-          } else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
-            natureObj = { nature: &apos;Forwarded HTTP Response&apos;, tenant_id: tenantId };
-          } else if (operation === &quot;saveForwardFHIRFailure&quot;) {
-            natureObj = { nature: &apos;Forwarded HTTP Response Error&apos;, tenant_id: tenantId };
-          } else {
-            natureObj = { nature: operation || &apos;UNKNOWN&apos;, tenant_id: tenantId };
-          }
-          stmt.setObject(3, toJsonb(JSON.stringify(natureObj)), java.sql.Types.OTHER);
-          // 4. p_payload jsonb: set payload JSON or NULL for og case
-          if (operation === &quot;saveForwardFHIRPayload&quot;) {
-             stmt.setObject(4, toJsonb(payloadJson), java.sql.Types.OTHER);
-          } else {
-            // if payloadJson is already a JSON string
-            stmt.setObject(4, payloadJson, java.sql.Types.OTHER);
-          }
-          
-          // 5. p_hub_nexus_interaction_id text
-          stmt.setNull(5, java.sql.Types.VARCHAR);
-          
-          // 6. p_payload_text text (if you want to store as raw text) — choose either text or null
-          // If you don&apos;t want to store text version, leave NULL:
-          stmt.setNull(6, java.sql.Types.VARCHAR);
-          
-          // 7. p_rule_namespace text
-          stmt.setNull(7, java.sql.Types.VARCHAR);
-          
-          // 8. p_elaboration jsonb
-          stmt.setNull(8, java.sql.Types.OTHER);
-          
-          // 9. p_content_type text
-          stmt.setNull(9, java.sql.Types.VARCHAR);
-          
-          // 10. p_from_state text  (you were setting these earlier to &quot;DISPOSITION&quot;/&quot;FORWARD&quot;, etc.)
-          if (operation === &quot;saveForwardFHIRPayload&quot;) {
-            stmt.setString(10, &quot;DISPOSITION&quot;);
-            stmt.setString(11, &quot;FORWARD&quot;);
-          } else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
-            stmt.setString(10, &quot;FORWARD&quot;);
-            stmt.setString(11, &quot;COMPLETE&quot;);
-          } else if (operation === &quot;saveForwardFHIRFailure&quot;) {
-            stmt.setString(10, &quot;FORWARD&quot;);
-            stmt.setString(11, &quot;FAIL&quot;);
-          } else {
-            stmt.setNull(10, java.sql.Types.VARCHAR);
-            stmt.setNull(11, java.sql.Types.VARCHAR);
-          }
-          
-          // 12. p_state_transition_reason
-          stmt.setNull(12, java.sql.Types.VARCHAR);
-          
-          // 13. p_user_id
-          stmt.setNull(13, java.sql.Types.VARCHAR);
-          
-          // 14. p_user_name
-          stmt.setNull(14, java.sql.Types.VARCHAR);
-          
-          // 15. p_user_session
-          stmt.setNull(15, java.sql.Types.VARCHAR);
-          
-          // 16. p_user_role
-          stmt.setNull(16, java.sql.Types.VARCHAR);
-          
-          // 17. p_created_by
-          stmt.setNull(17, java.sql.Types.VARCHAR);
-          
-          // 18. p_created_at (timestamp with time zone)
-          stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE); // java.sql.Types.TIMESTAMP_WITH_TIMEZONE
-          
-          // 19. p_provenance
-          stmt.setNull(19, java.sql.Types.VARCHAR); //java.sql.Types.TIMESTAMP_WITH_TIMEZONE
-          //stmt.setTimestamp(18, java.sql.Timestamp.from(startTime));&#xd;
-          //stmt.setTimestamp(19, java.sql.Timestamp.from(endTime));
-          
-          // 20. p_hub_upsert_behavior boolean
-          stmt.setNull(20, java.sql.Types.BOOLEAN);
-          
-          // 21. p_source_hub_interaction_id
-          stmt.setNull(21, java.sql.Types.VARCHAR);
-          
-          // 22. p_origin
-          stmt.setNull(22, java.sql.Types.VARCHAR);
-          
-          // 23. p_source_type
-          stmt.setNull(23, java.sql.Types.VARCHAR);
-          
-          // 24. p_group_hub_interaction_id
-          stmt.setNull(24, java.sql.Types.VARCHAR);
-          
-          // 25. p_request_source
-          stmt.setNull(25, java.sql.Types.VARCHAR);
-          
-          // 26. p_additional_details jsonb
-              if (operation === &quot;saveForwardFHIRSuccess&quot; || operation === &quot;saveForwardFHIRFailure&quot;) {	
-              var endTime = java.time.Instant.now();
-              var finishIso;&#xd;
-              if (endTime instanceof java.time.Instant) {&#xd;
-                  finishIso = endTime.toString(); // good ISO format e.g. 2025-11-12T14:09:47.637109646Z&#xd;
-              } else if (typeof endTime === &apos;string&apos;) {&#xd;
-                  finishIso = endTime;&#xd;
-              } else {&#xd;
-                  finishIso = (new Date()).toISOString();&#xd;
-              }
-          //stmt.setNull(26, java.sql.Types.OTHER);
-          
-          var additionalDetailsObj = {&#xd;
-            request: {&#xd;
-              &quot;X-Observability-Metric-Interaction-Finish-Time&quot;: finishIso&#xd;
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+//logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
+//var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+//if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
+//    return;
+//}
+//TODO - check and add other parameters /header validation for /Bundle
+//logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+
+// Read both headers
+var overridePath = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Override-Request-URI&apos;);
+var requestUri = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Request-URI&apos;);
+
+// Use whichever is present and non-empty (first check override, otherwise requestUri)
+var effectivePath = (overridePath &amp;&amp; overridePath.trim() !== &apos;&apos;) 
+    ? overridePath.trim() 
+    : (requestUri &amp;&amp; requestUri.trim() !== &apos;&apos;) 
+        ? requestUri.trim() 
+        : null;
+
+// If we found a usable override path, apply it
+if (effectivePath !== null) {
+    requestedPath = effectivePath;
+}
+
+channelMap.put(&quot;requestedPath&quot;, requestedPath);
+
+
+
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}&#xd;
+
+
+
+channelMap.put(&apos;channelName&apos;,channelName);
+
+
+var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
+var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
+
+var interactionId;
+
+if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &apos;&apos;) {
+    interactionId = incomingInteractionId;
+} else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
+    interactionId = incomingCorrelationId;
+} else {
+    interactionId = java.util.UUID.randomUUID().toString();
+}
+
+
+channelMap.put(&apos;interactionId&apos;, interactionId);
+
+var groupInteractionId = &quot;&quot;;
+var incomingGroupId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
+
+if (incomingGroupId != null &amp;&amp; incomingGroupId.trim() !== &apos;&apos;) {
+    groupInteractionId = incomingGroupId.trim();
+}
+
+var masterInteractionId = &quot;&quot;;
+var incomingMasterId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Master-Interaction-ID&apos;);
+
+if (incomingMasterId != null &amp;&amp; incomingMasterId.trim() !== &apos;&apos;) {
+    masterInteractionId = incomingMasterId.trim();
+}
+
+channelMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
+channelMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
+
+
+
+
+
+
+/*
+var source = &quot;FHIR&quot;;
+var incomingSource = sourceMap.get(&apos;source&apos;);
+
+if (incomingSource != null &amp;&amp; incomingSource.trim() !== &apos;&apos;) {
+    source = incomingSource;
+}
+
+channelMap.put(&apos;source&apos;, source);
+logger.info(&quot;Source: &quot; + source);
+*/
+
+
+// Get the URI from sourceMap
+var uri = sourceMap.get(&apos;uri&apos;);
+logger.info(&quot;URI from sourceMap: &quot; + uri);
+
+var getQueryParameter = globalMap.get(&apos;getQueryParam&apos;);
+//Extract &apos;source&apos;
+var source = getQueryParameter(uri, &apos;source&apos;);
+
+if (!source || source.trim() === &apos;&apos;) {
+    var headerSource = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
+    if (headerSource &amp;&amp; headerSource.trim() !== &apos;&apos;) {
+        source = headerSource.trim();
+    } else {
+        source = &apos;FHIR&apos;;
+    }
+}
+
+// Store back for further use
+channelMap.put(&apos;source&apos;, source);
+
+
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); // Mirth helper that accepts channelMap
+channelMap.put(&apos;tenantId&apos;, tenantId);
+
+
+&#xd;
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);&#xd;
+channelMap.put(&apos;userAgent&apos;, userAgent);
+
+
+
+
+var severity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;)
+            || $(&apos;headers&apos;).getHeader(&apos;x-techbd-validation-severity-level&apos;);
+
+logger.info(&quot;Validation Severity: &quot; + severity);
+
+
+
+var validationSeverityLevel = &quot;error&quot;;&#xd;
+var incomingSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
+
+&#xd;
+&#xd;
+// If header has valid value, use it; otherwise keep default&#xd;
+if (incomingSeverity != null &amp;&amp; incomingSeverity.trim() !== &apos;&apos;) {&#xd;
+    validationSeverityLevel = incomingSeverity;&#xd;
+}&#xd;
+
+channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
+
+
+var igVersion = &quot;&quot;;
+var incomingIgVersion = $(&apos;headers&apos;).getHeader(&apos;X-SHIN-NY-IG-Version&apos;);
+
+if (incomingIgVersion != null &amp;&amp; incomingIgVersion.trim() !== &apos;&apos;) {
+    igVersion = incomingIgVersion;
+}
+
+channelMap.put(&apos;igVersion&apos;, igVersion);
+logger.info(&quot;IG Version: &quot; + igVersion);
+
+
+var elaboration = &quot;&quot;;
+var incomingElaboration = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Elaboration&apos;);
+
+// If header has valid value, use it; otherwise keep default (empty string or any fallback)
+if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;&apos;) {
+    elaboration = incomingElaboration.trim();
+}
+
+channelMap.put(&quot;elaboration&quot;, elaboration);
+
+
+
+
+// Check if the header is null or empty
+if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
+    // Log the error for debugging
+    var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+    logger.error(errorMessage);
+    setErrorResponsePre(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+function setErrorResponsePre(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponsePre(statusCode, errorMessage));
+}
+
+function createJsonResponsePre(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+return message;</preprocessingScript>
+  <postprocessingScript>var Instant = Packages.java.time.Instant;&#xd;
+var Duration = Packages.java.time.Duration;
+var chlName = channelMap.get(&apos;channelName&apos;);
+var interactionId = channelMap.get(&quot;interactionId&quot;);
+var isActionDiscard = channelMap.get(&quot;isActionDiscard&quot;);
+var requestUri = channelMap.get(&quot;requestUri&quot;);;
+
+
+var requestedPath = channelMap.get(&apos;requestedPath&apos;);
+if (requestedPath == &quot;/&quot;) {&#xd;
+	return;&#xd;
+}
+
+&#xd;
+
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
+&#xd;
+&#xd;
+var destinationDataLakeName = &quot;dest_datalake&quot;;
+	var destinationDataLakeResponse = responseMap.get(destinationDataLakeName);
+	
+	// Check if the response exists
+	if (destinationDataLakeResponse &amp;&amp; isActionDiscard != &quot;discard&quot;) {
+
+
+&#xd;
+var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);&#xd;
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
+
+
+var source =  sourceMap.get(&apos;contextPath&apos;);&#xd;
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  source: ---&quot; + source);
+		
+	    var responseDataLakeStatus = destinationDataLakeResponse.getStatus();  // HTTP status code
+	    var responseDataLakeData = destinationDataLakeResponse.getMessage();   // Response message body
+		responseMap.put(&apos;dataLakeResponse&apos;, responseDataLakeData);
+		
+	    // Log the response details
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response from DataLake&quot; + destinationDataLakeResponse + &quot;:&quot;);
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Status Code from DataLake: &quot; + responseDataLakeStatus);
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response Data from DataLake: &quot; + responseDataLakeData);
+	    
+	    
+
+
+
+
+
+		//var dlResponse = JSON.parse(responseDataLakeData);&#xd;
+		&#xd;
+		// Extract status safely&#xd;
+		//var status = (dlResponse.status || &quot;&quot;).toLowerCase();
+		var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);&#xd;		&#xd;
+
+
+		var status = &quot;&quot;;
+		
+		try {
+		    // Validate DataLake API URL first
+		    if (!datalakeApiUrl || datalakeApiUrl.trim() === &apos;&apos;) {
+		        responseDataLakeData = JSON.stringify({
+		            status: &quot;failure&quot;,
+		            error: &quot;DataLake API URL is empty or missing&quot;,
+		            message: &quot;DataLake API URL is empty or missing&quot;,
+		            tenantId: tenantId,
+		            rootCause: &quot;Invalid configuration&quot;,
+		            mostSpecificCause: &quot;Missing DataLake API URL&quot;,
+		            dataLakeApiBaseURL: datalakeApiUrl
+		        });
+		    }
+		    else if (!/^https?:\/\//i.test(datalakeApiUrl)) {
+		        responseDataLakeData = JSON.stringify({
+		            status: &quot;failure&quot;,
+		            error: &quot;Invalid DataLake API URL scheme&quot;,
+		            message: &quot;DataLake API URL must start with http or https&quot;,
+		            tenantId: tenantId,
+		            rootCause: &quot;Invalid URL scheme&quot;,
+		            mostSpecificCause: &quot;Unsupported protocol in DataLake API URL&quot;,
+		            dataLakeApiBaseURL: datalakeApiUrl
+		        });
+		    }
+		
+		    // Parse DataLake response if present
+		    if (responseDataLakeData &amp;&amp; responseDataLakeData.trim() !== &quot;&quot;) {
+		        var dlResponse = JSON.parse(responseDataLakeData);
+		        status = (dlResponse.status || &quot;&quot;).toLowerCase();
+		    }
+		
+		} catch (e) {
+		    logger.error(&quot;Invalid JSON from DataLake: &quot; + e);
+		    logger.info(destinationDataLakeResponse);
+		    var destinationDataLakeResponseStr = String(destinationDataLakeResponse);
+		    responseDataLakeData = JSON.stringify({
+		        status: &quot;failure&quot;,
+		        error: e.toString(),
+		        message: &quot;Invalid JSON received from DataLake&quot;, 
+		        tenantId: tenantId,
+		        rootCause:destinationDataLakeResponseStr , // &quot;JSON parsing error&quot; ,
+		        mostSpecificCause: e.message,
+		        dataLakeApiBaseURL: datalakeApiUrl
+		    });
+		
+		    status = &quot;failure&quot;;
+		}
+
+
+
+		
+&#xd;
+		&#xd;
+		if (status === &quot;success&quot;) {&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Sucess&quot;);
+		    var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRSuccess - FHIR Data Lake Complete Payload save &quot;);&#xd;
+		&#xd;
+		try{&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; requestUri : &quot; + requestUri);&#xd;
+			var start = Instant.now();  
+			&#xd;
+		     var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
+		     var result = saveFHIRPayload(&#xd;
+			   interactionId,&#xd;
+			   tenantId,&#xd;
+			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
+			   responseDataLakeData , // JSON.stringify(responseDataLakeData),&#xd;
+			   operation&#xd;
+			);&#xd;
+			var end = Instant.now();&#xd;
+			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
+		} catch (e) {&#xd;
+			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
+			var errorMsg;&#xd;
+	            if (e instanceof JavaException) {&#xd;
+	                errorMsg = &quot;ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
+	                throw errorMessage;&#xd;
+	            } else {&#xd;
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
+	                throw errorMessage;&#xd;
+	            }&#xd;
+		}&#xd;
+		} else {&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: error - status: &quot; + status);
+		    var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRFailure - FHIR Data Lake Forward Payload save &quot;);&#xd;
+		&#xd;
+		try{&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);&#xd;
+			var start = Instant.now();  
+
+		&#xd;
+		     var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
+		     var result = saveFHIRPayload(&#xd;
+			   interactionId,&#xd;
+			   tenantId,&#xd;
+			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
+			   responseDataLakeData , //JSON.stringify(responseDataLakeData),&#xd;
+			   operation&#xd;
+			);&#xd;
+			var end = Instant.now();&#xd;
+			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
+		} catch (e) {&#xd;
+			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
+			var errorMsg;&#xd;
+	            if (e instanceof JavaException) {&#xd;
+	                errorMsg = &quot;ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
+	                throw errorMessage;&#xd;
+	            } else {&#xd;
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
+	                throw errorMessage;&#xd;
+	            }&#xd;
+		}&#xd;
+		}
+		
+		
+		
+
+
+		
+
+	} else {
+	    logger.info(&quot;N[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: response found for destination Data Lake: &quot; + destinationDataLakeName);
+	}
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor ENDS.&quot;);
+
+return;
+</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+
+var PGobject = Packages.org.postgresql.util.PGobject;&#xd;
+&#xd;
+function toJsonb(value) {&#xd;
+    var jsonbObj = new PGobject();&#xd;
+    jsonbObj.setType(&quot;jsonb&quot;);&#xd;
+&#xd;
+	if (typeof value === &quot;object&quot;) {&#xd;
+        value = JSON.stringify(value);&#xd;
+    }&#xd;
+    &#xd;
+    jsonbObj.setValue(value);&#xd;
+    logger.info(&quot;jsonbObj: &quot; + jsonbObj);&#xd;
+    return jsonbObj;&#xd;
+}
+
+function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation) {&#xd;
+	&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:tenantId: &quot; + tenantId);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:requestUri: &quot; + requestUri);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:payloadJson: &quot; + payloadJson);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: operation: &quot; + operation);&#xd;
+	&#xd;
+	var DriverManager = java.sql.DriverManager;&#xd;
+	var conn = null;&#xd;
+	var stmt = null;
+&#xd;
+	&#xd;
+	try {&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Inside DB Try&quot;);&#xd;
+&#xd;
+	    var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);&#xd;
+		if(jdbcUrl != null) {&#xd;
+		    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUrl: &quot; + jdbcUrl);&#xd;
+		} else {&#xd;
+		    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;&#xd;
+		    logger.error(errorMessage);&#xd;
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
+		    throw errorMessage; // Stop further processing by throwing an exception&#xd;
+		}&#xd;
+		&#xd;
+		var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);&#xd;
+		if(jdbcUsername != null) {&#xd;
+		    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);&#xd;
+		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUsername: &quot; + jdbcUsername);&#xd;
+		} else {&#xd;
+		    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;&#xd;
+		    logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: &quot; +errorMessage);&#xd;
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
+		    throw errorMessage; // Stop further processing by throwing an exception&#xd;
+		}&#xd;
+		&#xd;
+		var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);&#xd;
+		if(jdbcPassword != null) {&#xd;
+		    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);&#xd;
+		    //logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);&#xd;
+		} else {&#xd;
+		    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;&#xd;
+		    logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: &quot;  + errorMessage);&#xd;
+		    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)&#xd;
+		    throw errorMessage; // Stop further processing by throwing an exception&#xd;
+		}&#xd;
+&#xd;
+	    // Database connection details&#xd;
+		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);&#xd;
+		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);&#xd;
+		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);&#xd;
+&#xd;
+		//Devl&#xd;
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);&#xd;
+&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Database connection established successfully.&quot;);&#xd;
+	&#xd;
+		var sql = &quot;select techbd_udi_ingress.register_interaction_fhir_request(?::text,?::text,?::jsonb,?::jsonb,?::text,?::jsonb,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+		var sql =
+		  &quot;select techbd_udi_ingress.register_interaction_fhir_request(&quot; +
+		  &quot;?::text, ?::text, ?::jsonb, ?::jsonb, ?::text, ?::text, ?::text, ?::jsonb, &quot; +
+		  &quot;?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, &quot; +
+		  &quot;?::timestamptz, ?::text, ?::boolean, ?::text, ?::text, ?::text, ?::text, ?::text, ?::jsonb, ?::text&quot; +
+		  &quot;)&quot;;
+&#xd;
+	 // prepareCall(sql) done before
+		stmt = conn.prepareCall(sql);
+		
+		// 1. p_interaction_id
+		stmt.setString(1, interactionId);
+		
+		// 2. p_interaction_key  (you stated second is requestUri)
+		stmt.setString(2, requestUri);
+		
+		// 3. p_nature jsonb -- include tenantId inside nature as you did
+		var natureObj;
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		  natureObj = { nature: &apos;Forward HTTP Request&apos;, tenant_id: tenantId };
+		} else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
+		  natureObj = { nature: &apos;Forwarded HTTP Response&apos;, tenant_id: tenantId };
+		} else if (operation === &quot;saveForwardFHIRFailure&quot;) {
+		  natureObj = { nature: &apos;Forwarded HTTP Response Error&apos;, tenant_id: tenantId };
+		} else {
+		  natureObj = { nature: operation || &apos;UNKNOWN&apos;, tenant_id: tenantId };
+		}
+		stmt.setObject(3, toJsonb(JSON.stringify(natureObj)), java.sql.Types.OTHER);
+		// 4. p_payload jsonb: set payload JSON or NULL for og case
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		   stmt.setObject(4, toJsonb(payloadJson), java.sql.Types.OTHER);
+		} else {
+		  // if payloadJson is already a JSON string
+		  stmt.setObject(4, payloadJson, java.sql.Types.OTHER);
+		}
+		
+		// 5. p_hub_nexus_interaction_id text
+		stmt.setNull(5, java.sql.Types.VARCHAR);
+		
+		// 6. p_payload_text text (if you want to store as raw text) — choose either text or null
+		// If you don&apos;t want to store text version, leave NULL:
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+		
+		// 7. p_rule_namespace text
+		stmt.setNull(7, java.sql.Types.VARCHAR);
+		
+		// 8. p_elaboration jsonb
+		stmt.setNull(8, java.sql.Types.OTHER);
+		
+		// 9. p_content_type text
+		stmt.setNull(9, java.sql.Types.VARCHAR);
+		
+		// 10. p_from_state text  (you were setting these earlier to &quot;DISPOSITION&quot;/&quot;FORWARD&quot;, etc.)
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		  stmt.setString(10, &quot;DISPOSITION&quot;);
+		  stmt.setString(11, &quot;FORWARD&quot;);
+		} else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
+		  stmt.setString(10, &quot;FORWARD&quot;);
+		  stmt.setString(11, &quot;COMPLETE&quot;);
+		} else if (operation === &quot;saveForwardFHIRFailure&quot;) {
+		  stmt.setString(10, &quot;FORWARD&quot;);
+		  stmt.setString(11, &quot;FAIL&quot;);
+		} else {
+		  stmt.setNull(10, java.sql.Types.VARCHAR);
+		  stmt.setNull(11, java.sql.Types.VARCHAR);
+		}
+		
+		// 12. p_state_transition_reason
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		
+		// 13. p_user_id
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		
+		// 14. p_user_name
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		
+		// 15. p_user_session
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		
+		// 16. p_user_role
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		
+		// 17. p_created_by
+		stmt.setNull(17, java.sql.Types.VARCHAR);
+		
+		// 18. p_created_at (timestamp with time zone)
+		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE); // java.sql.Types.TIMESTAMP_WITH_TIMEZONE
+		
+		// 19. p_provenance
+		stmt.setNull(19, java.sql.Types.VARCHAR); //java.sql.Types.TIMESTAMP_WITH_TIMEZONE
+		//stmt.setTimestamp(18, java.sql.Timestamp.from(startTime));&#xd;
+		//stmt.setTimestamp(19, java.sql.Timestamp.from(endTime));
+		
+		// 20. p_hub_upsert_behavior boolean
+		stmt.setNull(20, java.sql.Types.BOOLEAN);
+		
+		// 21. p_source_hub_interaction_id
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		
+		// 22. p_origin
+		stmt.setNull(22, java.sql.Types.VARCHAR);
+		
+		// 23. p_source_type
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		
+		// 24. p_group_hub_interaction_id
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		
+		// 25. p_request_source
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		
+		// 26. p_additional_details jsonb
+			if (operation === &quot;saveForwardFHIRSuccess&quot; || operation === &quot;saveForwardFHIRFailure&quot;) {	
+			var endTime = java.time.Instant.now();
+			var finishIso;&#xd;
+			if (endTime instanceof java.time.Instant) {&#xd;
+			    finishIso = endTime.toString(); // good ISO format e.g. 2025-11-12T14:09:47.637109646Z&#xd;
+			} else if (typeof endTime === &apos;string&apos;) {&#xd;
+			    finishIso = endTime;&#xd;
+			} else {&#xd;
+			    finishIso = (new Date()).toISOString();&#xd;
+			}
+		//stmt.setNull(26, java.sql.Types.OTHER);
+		
+		var additionalDetailsObj = {&#xd;
+		  request: {&#xd;
+		    &quot;X-Observability-Metric-Interaction-Finish-Time&quot;: finishIso&#xd;
+		  }&#xd;
+		};
+		stmt.setObject(26, toJsonb(additionalDetailsObj), java.sql.Types.OTHER);
+		} else{
+		stmt.setNull(26, java.sql.Types.OTHER);
+		}
+		
+		// 27. p_techbd_version_number text
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		
+		// execute
+		var result = stmt.execute();
+
+
+
+		&#xd;
+	&#xd;
+&#xd;
+	   &#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  Stored procedure executed, result: &quot; + result);&#xd;
+	&#xd;
+	} catch (e) {&#xd;
+	    logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Error executing stored procedure: &quot; + e);&#xd;
+	} finally {&#xd;
+	    if (stmt != null) stmt.close();&#xd;
+	    if (conn != null) conn.close();&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  DB connection closed.&quot;);&#xd;
+	}&#xd;
+}&#xd;
+&#xd;
+globalMap.put(&apos;saveFHIRPayload&apos;, saveFHIRPayload);
+
+
+
+function sendDataLedgerSync(payload) {&#xd;
+    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  sendDataLedgerSync: &quot; + payload);&#xd;
+    &#xd;
+    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);&#xd;
+    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);&#xd;
+&#xd;
+    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: API URL: ####### &quot; + apiUrl);
+     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA_LEDGER_API_URL####### &quot; + java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;));
+      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  TECHBD_NYEC_DATALEDGER_API_KEY ####### &quot; + java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;));&#xd;
+&#xd;
+    if (apiUrl == null) {&#xd;
+        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);&#xd;
+    }&#xd;
+    if (dataLedgerApiKey == null) {&#xd;
+        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);&#xd;
+    }&#xd;
+&#xd;
+    try {&#xd;
+        var HttpClients = org.apache.http.impl.client.HttpClients;&#xd;
+        var HttpPost = org.apache.http.client.methods.HttpPost;&#xd;
+        var StringEntity = org.apache.http.entity.StringEntity;&#xd;
+        var EntityUtils = org.apache.http.util.EntityUtils;&#xd;
+&#xd;
+        var httpClient = HttpClients.createDefault();&#xd;
+        var httpPost = new HttpPost(apiUrl);&#xd;
+&#xd;
+        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);&#xd;
+        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);&#xd;
+       &#xd;
+        if (dataLedgerApiKey != null) {&#xd;
+        	httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header&#xd;
+        }&#xd;
+&#xd;
+        var entity = new StringEntity(payload, &quot;UTF-8&quot;);&#xd;
+        httpPost.setEntity(entity);&#xd;
+&#xd;
+        var response = httpClient.execute(httpPost);&#xd;
+        try {&#xd;
+            var statusCode = response.getStatusLine().getStatusCode();&#xd;
+            logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: sendDataLedgerSync response status: &quot; + statusCode);&#xd;
+            var responseBody = EntityUtils.toString(response.getEntity());&#xd;
+&#xd;
+            if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {&#xd;
+                logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Response: &quot; + responseBody);&#xd;
+                return {&#xd;
+                    statusCode: statusCode,&#xd;
+                    body: responseBody&#xd;
+                };&#xd;
+            } else {&#xd;
+                logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);&#xd;
+                throw new Error(&quot;Request failed with status &quot; + statusCode);&#xd;
             }&#xd;
-          };
-          stmt.setObject(26, toJsonb(additionalDetailsObj), java.sql.Types.OTHER);
-          } else{
-          stmt.setNull(26, java.sql.Types.OTHER);
-          }
-          
-          // 27. p_techbd_version_number text
-          stmt.setNull(27, java.sql.Types.VARCHAR);
-          
-          // execute
-          var result = stmt.execute();
-  
-  
-  
-          &#xd;
-      &#xd;
-  &#xd;
-         &#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  Stored procedure executed, result: &quot; + result);&#xd;
-      &#xd;
-      } catch (e) {&#xd;
-          logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Error executing stored procedure: &quot; + e);&#xd;
-      } finally {&#xd;
-          if (stmt != null) stmt.close();&#xd;
-          if (conn != null) conn.close();&#xd;
-          logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  DB connection closed.&quot;);&#xd;
-      }&#xd;
-  }&#xd;
-  &#xd;
-  globalMap.put(&apos;saveFHIRPayload&apos;, saveFHIRPayload);
-  
-  
-  
-  function sendDataLedgerSync(payload) {&#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  sendDataLedgerSync: &quot; + payload);&#xd;
-      &#xd;
-      var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);&#xd;
-      var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);&#xd;
-  &#xd;
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: API URL: ####### &quot; + apiUrl);
-       logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA_LEDGER_API_URL####### &quot; + java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;));
-        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  TECHBD_NYEC_DATALEDGER_API_KEY ####### &quot; + java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;));&#xd;
-  &#xd;
-      if (apiUrl == null) {&#xd;
-          throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);&#xd;
-      }&#xd;
-      if (dataLedgerApiKey == null) {&#xd;
-          throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);&#xd;
-      }&#xd;
-  &#xd;
-      try {&#xd;
-          var HttpClients = org.apache.http.impl.client.HttpClients;&#xd;
-          var HttpPost = org.apache.http.client.methods.HttpPost;&#xd;
-          var StringEntity = org.apache.http.entity.StringEntity;&#xd;
-          var EntityUtils = org.apache.http.util.EntityUtils;&#xd;
-  &#xd;
-          var httpClient = HttpClients.createDefault();&#xd;
-          var httpPost = new HttpPost(apiUrl);&#xd;
-  &#xd;
-          httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);&#xd;
-          httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);&#xd;
-         &#xd;
-          if (dataLedgerApiKey != null) {&#xd;
-              httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header&#xd;
-          }&#xd;
-  &#xd;
-          var entity = new StringEntity(payload, &quot;UTF-8&quot;);&#xd;
-          httpPost.setEntity(entity);&#xd;
-  &#xd;
-          var response = httpClient.execute(httpPost);&#xd;
-          try {&#xd;
-              var statusCode = response.getStatusLine().getStatusCode();&#xd;
-              logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: sendDataLedgerSync response status: &quot; + statusCode);&#xd;
-              var responseBody = EntityUtils.toString(response.getEntity());&#xd;
-  &#xd;
-              if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {&#xd;
-                  logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Response: &quot; + responseBody);&#xd;
-                  return {&#xd;
-                      statusCode: statusCode,&#xd;
-                      body: responseBody&#xd;
-                  };&#xd;
-              } else {&#xd;
-                  logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);&#xd;
-                  throw new Error(&quot;Request failed with status &quot; + statusCode);&#xd;
-              }&#xd;
-          } finally {&#xd;
-              EntityUtils.consumeQuietly(response.getEntity());&#xd;
-          }&#xd;
-      } catch (error) {&#xd;
-          logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Request Failed: &quot; + error.message);&#xd;
-          throw error;&#xd;
-      }&#xd;
-  }&#xd;
-  
-  globalMap.put(&apos;sendDataLedgerSync&apos;, sendDataLedgerSync);
-  
-  // Function to extract a query param from the URI&#xd;
-  function getQueryParam(uriString, paramName) {&#xd;
-      if (!uriString) return null;&#xd;
-      var regex = new RegExp(&apos;[?&amp;]&apos; + paramName + &apos;=([^&amp;]*)&apos;, &apos;i&apos;);&#xd;
-      var match = uriString.match(regex);&#xd;
-      return (match &amp;&amp; match[1]) ? decodeURIComponent(match[1]) : null;&#xd;
-  }
-  globalMap.put(&apos;getQueryParam&apos;, getQueryParam);
-  
-  return;</deployScript>
-    <undeployScript>// This script executes once when the channel is undeployed
-  // You only have access to the globalMap and globalChannelMap here to persist data
-  return;</undeployScript>
-    <properties version="4.5.3">
-      <clearGlobalChannelMap>true</clearGlobalChannelMap>
-      <messageStorageMode>DEVELOPMENT</messageStorageMode>
-      <encryptData>false</encryptData>
-      <encryptAttachments>false</encryptAttachments>
-      <encryptCustomMetaData>false</encryptCustomMetaData>
-      <removeContentOnCompletion>false</removeContentOnCompletion>
-      <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
-      <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
-      <initialState>STARTED</initialState>
-      <storeAttachments>true</storeAttachments>
-      <metaDataColumns>
-        <metaDataColumn>
-          <name>SOURCE</name>
-          <type>STRING</type>
-          <mappingName>mirth_source</mappingName>
-        </metaDataColumn>
-        <metaDataColumn>
-          <name>TYPE</name>
-          <type>STRING</type>
-          <mappingName>mirth_type</mappingName>
-        </metaDataColumn>
-      </metaDataColumns>
-      <attachmentProperties version="4.5.3">
-        <type>None</type>
-        <properties/>
-      </attachmentProperties>
-      <resourceIds class="linked-hash-map">
-        <entry>
-          <string>Default Resource</string>
-          <string>[Default Resource]</string>
-        </entry>
-      </resourceIds>
-    </properties>
-    <exportData>
-      <metadata>
-        <enabled>true</enabled>
-        <lastModified>
-          <time>1764737191716</time>
-          <timezone>Asia/Kolkata</timezone>
-        </lastModified>
-        <pruningSettings>
-          <archiveEnabled>true</archiveEnabled>
-          <pruneErroredMessages>false</pruneErroredMessages>
-        </pruningSettings>
-        <userId>1</userId>
-      </metadata>
-      <channelTags>
-        <channelTag>
-          <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
-          <name>Active</name>
-          <channelIds>
-            <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
-            <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
-            <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
-            <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
-            <string>95a4b010-c209-4904-8500-433538921ae5</string>
-            <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
-            <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
-            <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
-            <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
-          </channelIds>
-          <backgroundColor>
-            <red>0</red>
-            <green>255</green>
-            <blue>0</blue>
-            <alpha>255</alpha>
-          </backgroundColor>
-        </channelTag>
-      </channelTags>
-    </exportData>
-  </channel>
+        } finally {&#xd;
+            EntityUtils.consumeQuietly(response.getEntity());&#xd;
+        }&#xd;
+    } catch (error) {&#xd;
+        logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Request Failed: &quot; + error.message);&#xd;
+        throw error;&#xd;
+    }&#xd;
+}&#xd;
+
+globalMap.put(&apos;sendDataLedgerSync&apos;, sendDataLedgerSync);
+
+// Function to extract a query param from the URI&#xd;
+function getQueryParam(uriString, paramName) {&#xd;
+    if (!uriString) return null;&#xd;
+    var regex = new RegExp(&apos;[?&amp;]&apos; + paramName + &apos;=([^&amp;]*)&apos;, &apos;i&apos;);&#xd;
+    var match = uriString.match(regex);&#xd;
+    return (match &amp;&amp; match[1]) ? decodeURIComponent(match[1]) : null;&#xd;
+}
+globalMap.put(&apos;getQueryParam&apos;, getQueryParam);
+
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.6.0">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>message_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>message_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.6.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1766393266884</time>
+        <timezone>Asia/Kolkata</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+    <channelTags>
+      <channelTag>
+        <id>21a1ccfb-1032-4cc8-892b-a24eb24cca62</id>
+        <name>ActiveFHIR</name>
+        <channelIds>
+          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
+          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
+        </channelIds>
+        <backgroundColor>
+          <red>204</red>
+          <green>0</green>
+          <blue>204</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
+  </exportData>
+</channel>
