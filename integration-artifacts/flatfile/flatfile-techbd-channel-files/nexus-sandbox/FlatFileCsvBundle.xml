@@ -1,44 +1,23 @@
-<channel version="4.5.3">
+<channel version="4.6.0">
   <id>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
   <description>Version: 0.8.0</description>
-  <revision>44</revision>
-  <sourceConnector version="4.5.3">
+  <revision>4</revision>
+  <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
-  <sslEnabled>false</sslEnabled>
-          <mutualTlsEnabled>false</mutualTlsEnabled>
-          <verifyHostname>false</verifyHostname>
-          <keystorePath/>
-          <keystorePassword/>
-          <certAlias/>
-          <certPassword/>
-          <truststorePath/>
-          <truststorePassword/>
-          <tls13>true</tls13>
-          <tls12>true</tls12>
-          <tls11>true</tls11>
-          <keystoreType/>
-          <truststoreType/>
-          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-          <keystoreUid/>
-          <myCertificateAlias/>
-          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-          <truststoreUid/>
-        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.5.3">
+      <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
         <port>9004</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.5.3">
+      <sourceConnectorProperties version="4.6.0">
         <responseVariable>fhirResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -93,9 +72,9 @@
       <timeout>30000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.5.3">
+    <transformer version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>common js function</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -112,12 +91,99 @@ function createJsonResponse(status, message) {
 function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
     responseMap.put(&apos;message&apos;, errorMessage);
-    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+    //responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+    responseMap.put(&apos;fhirResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
-          <name>Validate HTTP Request and collect headers</name>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <name>lookup_manager</name>
           <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>logger.info(&quot;HTTP request validation started.&quot;);
+///////////////////////////////////////////////////////////////////////////////////////////
+/*******************************
+    AWS Secrets Manager Loader
+********************************/
+// Lookup cache TTL: 20 days
+var ttlHours = 24 * 20;
+
+function fetchSecret(secretName) {
+    var region = &quot;us-east-1&quot;;
+
+    var Region = Packages.software.amazon.awssdk.regions.Region;
+    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+
+    try {
+        var client = SecretsManagerClient.builder()
+            .region(Region.of(region))
+            .build();
+
+        var request = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        var response = client.getSecretValue(request);
+        client.close();
+
+        var value = response.secretString();
+        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
+
+        return value;
+
+    } catch (e) {
+        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
+        throw e;
+    }
+}
+
+
+var dataLakeApiUrl = &quot;&quot;;
+var incomingDataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
+
+if (incomingDataLakeApiUrl != null &amp;&amp; incomingDataLakeApiUrl.trim() !== &apos;&apos;) {
+    dataLakeApiUrl = incomingDataLakeApiUrl.trim();
+}
+ logger.info(&quot;dataLakeApiUrl in CSV: &quot; + dataLakeApiUrl);
+channelMap.put(&quot;dataLakeApiUrl&quot;, dataLakeApiUrl);
+
+
+
+/********************************************
+    2️⃣ FETCH CSV SERVICE API URL (Plain text)
+********************************************/
+try {
+    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+
+    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+    }
+
+    var csvServiceUrl = fetchSecret(csvSecretName);
+
+    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
+    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
+    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot; + csvServiceUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
+    throw e;
+}
+
+
+
+/********************************************
+    DONE
+********************************************/</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+          <name>Validate HTTP Request and collect headers</name>
+          <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>///////////////////////////////////////////////////////////////////////////
 // Access the required header values using getHeader method
@@ -126,6 +192,50 @@ channelMap.put(&apos;tenantId&apos;, tenantId);
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
 channelMap.put(&apos;userAgent&apos;, userAgent);
 logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] X-TechBD-Tenant-ID: &quot; + tenantId);
+
+
+// Parse the incoming request (assumes multipart form data)
+var rawData = connectorMessage.getRawData();
+
+// Check if rawData is empty
+if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] &quot; + errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+//Check the file type, only .xml and .txt allowed
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+
+if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
+    filename = filenameMatch[1];
+    logger.info(&quot;Filename: &quot; + filename);
+    channelMap.put(&apos;filename&apos;, filename);
+	logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] filename &quot; + filename);
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
+    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
+    logger.info(&quot;File extension: &quot; + extension);
+
+    if (extension !== &quot;zip&quot; ) {
+       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .zip is allowed.&quot;;
+       logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] &quot; + errorMessage);
+       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    	  throw errorMessage; // Stop further processing by throwing an exception
+    }
+} else {
+    logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+var baseFhirURL =  $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+channelMap.put(&apos;baseFhirURL&apos;, baseFhirURL);
 
 // Check if the header is null or empty
 if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
@@ -175,9 +285,9 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
 }
 ///////////////////////////////////////////////////////////////////////////</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>FHIR validation and submission</name>
-          <sequenceNumber>2</sequenceNumber>
+          <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
           <script>/* ----------------- Compact SimpleMultipartFile (in-memory) ----------------- */
 function SimpleMultipartFile(originalFilename, contentType, contentBytes) {
@@ -269,22 +379,22 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.5.3">
+    <filter version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/flatfile/csv/Bundle&apos; or &apos;/flatfile/csv/Bundle/&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -295,7 +405,7 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form
             <string>&apos;/flatfile/csv/Bundle/&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -314,12 +424,12 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.5.3">
+    <connector version="4.6.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.5.3">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.5.3">
+        <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -351,12 +461,23 @@ var filename = channelMap.get(&apos;multipartFileName&apos;) || &apos;uploaded-f
 var tenantId = channelMap.get(&apos;tenantId&apos;) || &apos;defaultTenant&apos;;
 var userAgent = channelMap.get(&apos;userAgent&apos;) || &apos;MirthConnector/1.0&apos;;
 var sourceParam = &apos;CSV&apos;;
+var baseFhirURL =  channelMap.get(&apos;baseFhirURL&apos;); 
+
+// Read &apos;immediate&apos; parameter from request (like how headers are fetched)
+var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim();
+logger.info(&quot;======================================&quot; + immediateParam);
+
+var csvServiceApiUrl = channelMap.get(&apos;CSV_SERVICE_API_URL&apos;);
+logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;);
+
+csvServiceApiUrl = csvServiceApiUrl.trim();
+logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;);
 
 // --- Build URL with query parameter ---
-var urlStr = &quot;https://nexus.csv.sandbox.techbd.org/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam);
-//var urlStr = &quot;http://localhost:8080/flatfile/csv/Bundle?source=&quot; + encodeURIComponent(sourceParam);
-//var urlStr = &quot;https://synthetic.fhir.api.devl.techbd.org/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam);
-//var urlStr = &quot;https://1.nexus-txd.sbx.techbd.org:9005/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam);
+//var urlStr = &quot;http://10.10.11.253:8082/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+//var urlStr = &quot;https://nexus.csv.sandbox.techbd.org/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+var urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+
 
 
 // --- Import Apache HttpClient classes ---
@@ -390,6 +511,8 @@ channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
 logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 
+var dataLakeApiUrl = channelMap.get(&apos;dataLakeApiUrl&apos;);
+
 // --- Set required headers ---
 post.setHeader(new BasicHeader(&quot;Accept&quot;, &quot;application/fhir+json&quot;));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Tenant-ID&quot;, tenantId));
@@ -403,6 +526,10 @@ post.setHeader(new BasicHeader(&quot;X-TechBD-Override-Request-URI&quot;, uri));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Request-URI&quot;, uri));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Validation-Severity-Level&quot;, severityLevel));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Source-Type&quot;, sourceParam));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Base-FHIR-URL&quot;, baseFhirURL));
+post.setHeader(new BasicHeader(&quot;X-TechBD-DataLake-API-URL&quot;, dataLakeApiUrl));
+
+
 
 // --- Include additional headers from channelMap if any ---
 var headerParameters = channelMap.get(&quot;headerParameters&quot;);
@@ -437,43 +564,43 @@ channelMap.put(&quot;fhirResponseCode&quot;, responseCode);
 responseMap.put(&apos;fhirResponse&apos;, responseStr);
 </script>
       </properties>
-      <transformer version="4.5.3">
+      <transformer version="4.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.5.3">
+      <responseTransformer version="4.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.5.3">
+      <filter version="4.6.0">
         <elements/>
       </filter>
       <transportName>JavaScript Writer</transportName>
@@ -490,7 +617,7 @@ return;</postprocessingScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.5.3">
+  <properties version="4.6.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
@@ -513,7 +640,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.5.3">
+    <attachmentProperties version="4.6.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -528,14 +655,29 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763543107592</time>
-        <timezone>Asia/Calcutta</timezone>
+        <time>1766393293995</time>
+        <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>1</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>52f6893c-6432-4dc0-a476-67b827cb3497</id>
+        <name>ActiveCSV</name>
+        <channelIds>
+          <string>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>153</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
