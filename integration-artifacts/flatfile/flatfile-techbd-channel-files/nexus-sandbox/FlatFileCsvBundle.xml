@@ -2,8 +2,8 @@
   <id>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.8.0</description>
-  <revision>4</revision>
+  <description>Version: 0.9.0</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -655,7 +655,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1766393293995</time>
+        <time>1766395007375</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
