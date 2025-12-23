@@ -2,8 +2,8 @@
   <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.37</description>
-  <revision>75</revision>
+  <description>Version: 0.4.38</description>
+  <revision>84</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -89,7 +89,7 @@ function toJsonb(value) {
     }
     
     jsonbObj.setValue(value);
-    logger.info(&quot;jsonbObj: &quot; + jsonbObj);
+    //logger.info(&quot;jsonbObj: &quot; + jsonbObj);
     return jsonbObj;
 }
 
@@ -103,14 +103,12 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	logger.info(&quot;operation: &quot; + operation);
 
 	var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-	logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
 	//If any error happens in between, find the ccda source type from the input file
 	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
 		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
 		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
 		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
 		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
 	}
 	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
 	
@@ -399,6 +397,7 @@ function extractClinicalDocument(rawXml) {
 	try {
 		//var rawXml = message.toString();  // Or sourceXml.toString(), if defined
 		logger.info(&quot;rawXml: &quot; + rawXml);
+		
 		rawXml = String(rawXml).replace(/^\uFEFF/, &apos;&apos;).trim();  // remove BOM and leading/trailing whitespace
 		var extractedXml = &quot;&quot;;
 		var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
@@ -418,7 +417,7 @@ function extractClinicalDocument(rawXml) {
 		        extractedXml = xmlDeclaration + extractedXml;
 		    }
 		
-		    logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
+		    //logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
 		    channelMap.put(&apos;fileContent&apos;, extractedXml);
 		    msg = channelMap.get(&apos;fileContent&apos;);
 
@@ -434,7 +433,7 @@ function extractClinicalDocument(rawXml) {
 			} catch (e) {
 				var errorMsg;
 		            if (e instanceof JavaException) {
-		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		                errorMsg = &quot;CCDA Original Payload save: &quot; + e.toString();
 		            } else {
 		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
 		            }
@@ -454,7 +453,7 @@ function extractClinicalDocument(rawXml) {
 			} catch (e) {
 				var errorMsg;
 		            if (e instanceof JavaException) {
-		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
+		                errorMsg = &quot;CCDA Original Payload save: &quot; + e.toString();
 		            } else {
 		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
 		            }
@@ -667,7 +666,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
-    logger.info(&quot;File extension: &quot; + extension);
+    //logger.info(&quot;File extension: &quot; + extension);
 
     if (extension !== &quot;xml&quot; &amp;&amp; extension !== &quot;txt&quot;) {
        var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .xml and .txt are allowed.&quot;;
@@ -705,7 +704,7 @@ if (ccdaSchemaFolder != null) {
     channelMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
     logger.info(&quot;ccdaSchemaFolder: &quot; + ccdaSchemaFolder);
     channelMap.put(&apos;xsdFilePath&apos;, ccdaSchemaFolder + &apos;/CDA.xsd&apos;);
-    logger.info(&quot;using xsdFilePath: &quot; + channelMap.get(&apos;xsdFilePath&apos;));
+    //logger.info(&quot;using xsdFilePath: &quot; + channelMap.get(&apos;xsdFilePath&apos;));
 } else {
     missingEnvVars.push(&quot;MC_CCDA_SCHEMA_FOLDER is not set&quot;);
 }
@@ -769,8 +768,8 @@ function getManufacturerModelName(xmlData) {
 			channelMap.put(&apos;cdaPhiFilter&apos;, cdaPhiFilterXsltPath);
 			channelMap.put(&apos;cdaPhiBundle&apos;, cdaFhirBundleXsltPath);
 			
-			logger.info(&quot;using cdaPhiFilter: &quot; + channelMap.get(&apos;cdaPhiFilter&apos;));
-			logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
+			//logger.info(&quot;using cdaPhiFilter: &quot; + channelMap.get(&apos;cdaPhiFilter&apos;));
+			//logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
 
 		} else {
 		    logger.error(&quot;xmlData is undefined or empty.&quot;);
@@ -806,7 +805,7 @@ if(jdbcUrl != null) {
 var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
 if(jdbcUsername != null) {
     globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
-    logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
+    //logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
 } else {
     var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
     logger.error(errorMessage);
@@ -817,7 +816,7 @@ if(jdbcUsername != null) {
 var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
 if(jdbcPassword != null) {
     globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
-    logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+    //logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
 } else {
     var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
     logger.error(errorMessage);
@@ -937,14 +936,14 @@ function getEncounterEffectiveTime(encounterNodeList) {
     // Try to get low/@value
     var lowValue = encounterNode.*::effectiveTime.*::low.@value.toString();
     if (lowValue &amp;&amp; lowValue.length &gt; 0) {
-        logger.info(&quot;effectiveTime (low): &quot; + lowValue);
+        //logger.info(&quot;effectiveTime (low): &quot; + lowValue);
         return lowValue;
     }
 
     // Try to get effectiveTime/@value
     var directValue = encounterNode.*::effectiveTime.@value.toString();
     if (directValue &amp;&amp; directValue.length &gt; 0) {
-        logger.info(&quot;effectiveTime (direct): &quot; + directValue);
+        //logger.info(&quot;effectiveTime (direct): &quot; + directValue);
         return directValue;
     }
 
@@ -960,7 +959,6 @@ function generateSHA256Id(resource, resourceName, resourceIdName, transformer, a
 
         if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
             combinedText += additionalString;
-            logger.info(&quot;Including additionalString in SHA-256: &quot; + additionalString);
         }
 
         var resourceText = resourceName + resource.toString().trim();
@@ -969,7 +967,6 @@ function generateSHA256Id(resource, resourceName, resourceIdName, transformer, a
         // Generate SHA-256 hash
         var sha256Hash = generateSHA256(new java.lang.String(combinedText));
         transformer.setParameter(resourceIdName, sha256Hash);
-        logger.info(resourceIdName + &quot; : &quot; + sha256Hash);
     } else {
         logger.error(resourceName + &quot; not found in the XML.&quot;);
     }
@@ -1097,7 +1094,6 @@ function getObservationCategoryCodes(transformer, observations) {
 	// set context variable
 	//msg[&apos;categoryXml&apos;] = categoryXml;
 	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
-	logger.info(&quot;categoryXml : &quot; + categoryXml);
 	return transformer;
 }
 
@@ -1167,7 +1163,6 @@ function getMultipleAnswersForComponent(transformer, observations) {
 	}
 
 	transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
-	logger.info(&quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));
 	return transformer;
 }
 
@@ -1417,6 +1412,8 @@ function getConsentResourceStatus(sourceXml) {
 		var consentInfo = {};
 	    	consentInfo.code = &apos;Consent-Status&apos;;
 	    	consentInfo.status = &quot;TechBD-Generated&quot;;
+	    	var ehrVendor = (channelMap.get(&apos;ehrVendor&apos;) || &apos;&apos;).toLowerCase();
+	    	var ccdaConsentCode = ehrVendor == &apos;athenahealth&apos; ? &apos;29762-2&apos; : &apos;47519-4&apos;;
 		
 		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
 		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
@@ -1433,7 +1430,7 @@ function getConsentResourceStatus(sourceXml) {
 			for each (var section in xmlDoc..section) {
 			    var sectionCode = section.code.@code.toString();
 			
-			    if (sectionCode == &quot;47519-4&quot;) {
+			    if (sectionCode == ccdaConsentCode) {
 			        // Inside the correct section
 			        for each (var entry in section.entry) {
 			            for each (var observation in entry.observation) {
@@ -1505,7 +1502,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	              throw new Error(&quot;No XML data received in the request.&quot;);
 	          }
 	
-	    		logger.info(&quot;Source XML Content: &quot; + sourceXml);
+	    		//logger.info(&quot;Source XML Content: &quot; + sourceXml);
     		
 		} catch (e) {
 			var errorMsg;
@@ -1580,7 +1577,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		
         // Validate CCD
         var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+        //logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
 
         // Load the XSD schema
         var xsdFile = new java.io.File(xsdFilePath);
@@ -1625,10 +1622,10 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
 
 			// SAVE VALIDATION RESULT
-			logger.info(&quot;DB Validation Save inside Validate&quot;);
+			//logger.info(&quot;DB Validation Save inside Validate&quot;);
 		     var tenantId = channelMap.get(&apos;tenantId&apos;);
 		     logger.info(&quot;tenant Id: &quot; + tenantId);
-		     logger.info(&quot;successResponse: &quot; + successResponse);
+		     //logger.info(&quot;successResponse: &quot; + successResponse);
 		     var operation = &quot;saveValidationSuccess&quot;;
 		     var result = saveCcdaPayload(
 			    interactionId,
@@ -1728,7 +1725,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		         throw new Error(&quot;No XML data received in the request.&quot;);
 		     }
 		
-			logger.info(&quot;Source XML Content: &quot; + sourceXml); 
+			//logger.info(&quot;Source XML Content: &quot; + sourceXml); 
 		} catch (e) {
 	            var errorMsg;
 	            if (e instanceof JavaException) {
@@ -1803,7 +1800,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	//**/////////CCDA Validation Begin///////////////**///
 		   // Validate CCD
 	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-	        logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
+	        //logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
 	
 	        // Load the XSD schema
 	        var xsdFile = new java.io.File(xsdFilePath);
@@ -1972,7 +1969,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			    }
 			}
 	
-			logger.info(&quot;Current Timestamp: &quot; + currentTimestamp); // Log the timestamp
+			//logger.info(&quot;Current Timestamp: &quot; + currentTimestamp); // Log the timestamp
 	
 			// Prepare input and output streams
 			var xmlInputStream = new java.io.StringReader(phiFilteredXml);
@@ -1987,7 +1984,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 				// Store the transformed XML in the channel map
 				var ccdFhirBundle = xmlOutputStream.toString();
 				channelMap.put(&apos;ccd_fhir_bundle&apos;, ccdFhirBundle);
-				logger.info(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle);
+				//logger.info(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle);
 	
 				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object
 				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
@@ -2473,7 +2470,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1763552332242</time>
+        <time>1766400410582</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2482,5 +2479,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
