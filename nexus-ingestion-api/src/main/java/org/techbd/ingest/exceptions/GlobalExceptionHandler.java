@@ -1,4 +1,4 @@
-package org.techbd.ingest;
+package org.techbd.ingest.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,22 +13,24 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
-import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     private TemplateLogger LOG;
+    private ObjectMapper objectMapper;
 
     public GlobalExceptionHandler(AppLogger appLogger) {
         this.LOG = appLogger.getLogger(GlobalExceptionHandler.class);
+        this.objectMapper = new ObjectMapper();
     }
-    public record ErrorResponse(String status, String message) {}
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
@@ -83,57 +85,52 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
-        return handleException(ex, "An unexpected system error occurred : " +ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return handleException(ex, "An unexpected system error occurred : " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * Central exception handler that generates error trace ID, creates structured responses,
+     * and logs detailed information for debugging.
+     */
     private ResponseEntity<ErrorResponse> handleException(Exception ex, String userMessage, HttpStatus status) {
-        logErrorWithRequestContext(userMessage, ex);
-        ErrorResponse response = new ErrorResponse("Error", userMessage);
+        // Generate unique error trace ID
+        String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+        
+        // Extract interaction ID from request
+        String interactionId = extractInteractionId();
+        
+        // Create client-facing error response
+        ErrorResponse.Error errorDetails = new ErrorResponse.Error(
+            status.value(),
+            userMessage,
+            interactionId,
+            errorTraceId
+        );
+        ErrorResponse response = new ErrorResponse(errorDetails);
+        
+        // Log detailed error information for debugging
+        LogUtil.logDetailedError(status.value(), userMessage, interactionId, errorTraceId, ex);
+        
         return new ResponseEntity<>(response, status);
     }
 
-    private void logErrorWithRequestContext(String contextMessage, Exception ex) {
+    /**
+     * Extracts the interaction ID from the current request.
+     */
+    private String extractInteractionId() {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-            HttpSession session = request.getSession(false);
-            String tenantId = request.getHeader(Constants.REQ_HEADER_TENANT_ID);
-            String sessionId = session != null ? session.getId() : "No session";
-            String userAgent = request.getHeader("User-Agent");
-            String remoteAddr = request.getRemoteAddr();
-            String forwardedFor = request.getHeader(Constants.REQ_HEADER_X_FORWARDED_FOR);
-            String realIp = request.getHeader(Constants.REQ_HEADER_X_REAL_IP);
-            String serverIp = request.getHeader(Constants.REQ_X_SERVER_IP);
-            String serverPort = request.getHeader(Constants.REQ_X_SERVER_PORT);
-            String method = request.getMethod();
-            String uri = request.getRequestURI();
-            String queryString = request.getQueryString();
-            LOG.error("""
-                    Exception occurred:
-                    -> Context Message         : {}
-                    -> Tenant ID               : {}
-                    -> Session ID              : {}
-                    -> HTTP Method             : {}
-                    -> URI                     : {}
-                    -> Query String            : {}
-                    -> User-Agent              : {}
-                    -> Remote Address          : {}
-                    -> X-Forwarded-For (source): {}
-                    -> X-Real-IP (source)      : {}
-                    -> X-Server-IP (destination IDP) : {}
-                    -> X-Server-Port (destination port): {}
-                    -> Exception               : {}: {}
-                    """,
-                    contextMessage, tenantId, sessionId, method, uri, queryString,
-                    userAgent, remoteAddr,
-                    forwardedFor, realIp,
-                    serverIp, serverPort,
-                    ex.getClass().getSimpleName(), ex.getMessage(), ex);
-        } catch (Exception loggingEx) {
-            LOG.error("Failed to log error context: {}", loggingEx.getMessage(), loggingEx);
+            // Assuming interaction ID is stored as a request attribute
+            Object interactionId = request.getAttribute("interactionId");
+            return interactionId != null ? interactionId.toString() : "unknown";
+        } catch (Exception e) {
+            return "unknown";
         }
     }
 
-
+    /**
+     * Determines appropriate error message for multipart/file upload exceptions.
+     */
     private String getMultipartErrorMessage(Throwable cause) {
         if (cause == null) return "File upload failed.";
         String msg = cause.getMessage() != null ? cause.getMessage().toLowerCase() : "";
