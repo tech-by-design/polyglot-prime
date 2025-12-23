@@ -1084,12 +1084,22 @@
               </xsl:variable>
 
         <xsl:if test="string($categoryCode)">
+            <xsl:variable name="observationPrefix">
+                <xsl:choose>                  
+                  <xsl:when test="ccda:observation/ccda:code/@code = '95614-4'"> <!-- Total Safety Score -->
+                    <xsl:value-of select="concat($facilityID, '-', ccda:observation/ccda:value/@value)"/>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <xsl:value-of select="concat($facilityID, '-')"/>
+                  </xsl:otherwise>
+                </xsl:choose>
+              </xsl:variable>
 
             <xsl:variable name="observationResourceId">
               <xsl:call-template name="generateFixedLengthResourceId">
                 <!-- <xsl:with-param name="prefixString" select="$questionCode"/>
                 <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/> -->
-                <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+                <xsl:with-param name="prefixString" select="normalize-space($observationPrefix)"/>
                 <xsl:with-param name="sha256ResourceId" select="ccda:observation/ccda:id/@extension"/>
               </xsl:call-template>
             </xsl:variable>
