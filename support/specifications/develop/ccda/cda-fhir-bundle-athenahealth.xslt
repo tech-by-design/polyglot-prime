@@ -990,11 +990,30 @@
   <!-- Sexual orientation Observation Template -->
   <xsl:template name="SexualOrientation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='sexualOrientation']/ccda:entry/ccda:observation">
     <xsl:if test="string(ccda:code/@code) = '76690-7'">
+
+      <xsl:variable name="resourceUUID">
+          <xsl:choose>
+            <xsl:when test="normalize-space(ccda:id/@extension)">
+              <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="$sexualOrientationResourceId"/>
+            </xsl:otherwise>
+          </xsl:choose>
+      </xsl:variable>
+
+      <xsl:variable name="sexualOrientationResourceUUId">
+        <xsl:call-template name="generateFixedLengthResourceId">
+          <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+          <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+        </xsl:call-template>
+      </xsl:variable>
+
       ,{
-        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>",
+        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceUUId'/>",
         "resource": {
           "resourceType": "Observation",
-          "id": "<xsl:value-of select='$sexualOrientationResourceId'/>",
+          "id": "<xsl:value-of select='$sexualOrientationResourceUUId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
             "profile" : ["<xsl:value-of select='$observationSexualOrientationMetaProfileUrlFull'/>"]
@@ -1076,7 +1095,7 @@
         },
         "request" : {
           "method" : "POST",
-          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>"
+          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceUUId'/>"
         }
       }
     </xsl:if>
@@ -1806,10 +1825,24 @@
     <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation"/>
     <xsl:variable name="grouperScreening" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation[1]"/>
     <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
+
+        <xsl:variable name="resourceUUID">
+          <xsl:choose>
+            <xsl:when test="normalize-space($grouperScreening/ccda:id/@extension)">
+              <xsl:value-of select="normalize-space($grouperScreening/ccda:id/@extension)"/>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="normalize-space($grouperObservationResourceSha256Id)"/>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
-            <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>
-            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
+            <!-- <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>
+            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/> -->
+            <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+            <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
           </xsl:call-template>
         </xsl:variable>
         ,{
