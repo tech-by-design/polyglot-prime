@@ -20,10 +20,12 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import ca.uhn.hl7v2.DefaultHapiContext;
@@ -466,6 +468,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     /**
      * Main message handler - routes to HL7 or generic handler based on MLLP detection
+     * MODIFIED: Added error trace ID generation and structured logging
      */
     private void handleMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId) {
         String clientIP = ctx.channel().attr(CLIENT_IP_KEY).get();
@@ -513,14 +516,20 @@ public class NettyTcpServer implements MessageSourceProvider {
                     destinationIP, destinationPort, portEntryOpt);
         }
     }
-private boolean detectTcpDelimiterWrapper(String message) {
-    if (message == null || message.length() < 3) {
-        return false;
+
+    private boolean detectTcpDelimiterWrapper(String message) {
+        if (message == null || message.length() < 3) {
+            return false;
+        }
+        return message.charAt(0) == tcpStartDelimiter
+                && message.charAt(message.length() - 2) == tcpEndDelimiter1
+                && message.charAt(message.length() - 1) == tcpEndDelimiter2;
     }
-    return message.charAt(0) == tcpStartDelimiter
-            && message.charAt(message.length() - 2) == tcpEndDelimiter1
-            && message.charAt(message.length() - 1) == tcpEndDelimiter2;
-}
+
+    /**
+     * Handle HL7 messages with MLLP protocol
+     * MODIFIED: Added error trace ID generation for all NACK scenarios
+     */
     private void handleHL7Message(
             ChannelHandlerContext ctx,
             String rawMessage,
@@ -534,6 +543,8 @@ private boolean detectTcpDelimiterWrapper(String message) {
         String ackMessage = null;
         Message hl7Message = null;
         boolean nackGenerated = false;
+        String errorTraceId = null;
+        
         try {
             try {
                 cleanMsg = unwrapMllp(rawMessage);
@@ -549,7 +560,8 @@ private boolean detectTcpDelimiterWrapper(String message) {
                 ackMessage = new PipeParser().encode(ack);
                 logger.info("HL7_ACK_GENERATED [interactionId={}]", interactionId);
             } catch (HL7Exception e) {
-                logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", interactionId, e.getMessage(), e);
+                logger.error("HL7_PARSE_ERROR [interactionId={}]: Parsing failed due to error {} .. Continue generating manual ACK", 
+                        interactionId, e.getMessage(), e);
             }
 
             RequestContext requestContext = buildRequestContext(
@@ -568,7 +580,8 @@ private boolean detectTcpDelimiterWrapper(String message) {
                 if (hl7Message != null) {
                     zntPresent = extractZntSegment(hl7Message, requestContext, interactionId.toString());
                     if (!zntPresent) {
-                        logger.warn("ZNT_EXTRACTION_FAILED_USING_TERSER [interactionId={}] - proceed extracting manually", interactionId);
+                        logger.warn("ZNT_EXTRACTION_FAILED_USING_TERSER [interactionId={}] - proceed extracting manually", 
+                                interactionId);
                         zntPresent = extractZntSegmentManually(cleanMsg, requestContext, interactionId.toString());
                     }
                 } else {
@@ -577,17 +590,38 @@ private boolean detectTcpDelimiterWrapper(String message) {
                             cleanMsg,
                             "AA",
                             null,
-                            interactionId.toString());
+                            interactionId.toString(),
+                            null); // No errorTraceId for successful ACK
                     nackGenerated = false;
                 }
 
                 if (!zntPresent) {
-                    logger.warn("MISSING_ZNT_NACK [interactionId={}] - sending NACK due to missing ZNT segment", interactionId);
-                    String nack = createHL7AckFromMsh(cleanMsg, "AR", "Missing ZNT segment", interactionId.toString());
+                    // Generate error trace ID for missing ZNT
+                    errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+                    
+                    logger.warn("MISSING_ZNT_NACK [interactionId={}] [errorTraceId={}] - sending NACK due to missing ZNT segment", 
+                            interactionId, errorTraceId);
+                    
+                    // Log detailed error
+                    LogUtil.logDetailedError(
+                        400, 
+                        "Missing ZNT segment", 
+                        interactionId.toString(), 
+                        errorTraceId,
+                        new IllegalArgumentException("Required ZNT segment not found in HL7 message")
+                    );
+                    
+                    String nack = createHL7AckFromMsh(
+                            cleanMsg, 
+                            "AR", 
+                            "Missing ZNT segment", 
+                            interactionId.toString(),
+                            errorTraceId);
                     sendResponseAndClose(ctx, wrapMllp(nack), interactionId, "HL7_NACK_MISSING_ZNT");
                     return;
                 }
             }
+            
             if (!nackGenerated) {
                 messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
             }
@@ -597,22 +631,41 @@ private boolean detectTcpDelimiterWrapper(String message) {
             sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
 
         } catch (Exception e) {
-            logger.error("PROCESSING_ERROR Sending Reject NACK(AR) [interactionId={}]: {}", interactionId, e.getMessage(), e);
+            // Generate error trace ID for processing errors
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            logger.error("PROCESSING_ERROR [interactionId={}] [errorTraceId={}] Sending Reject NACK(AR): {}", 
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error
+            LogUtil.logDetailedError(
+                500, 
+                "Internal processing error", 
+                interactionId.toString(), 
+                errorTraceId,
+                e
+            );
+            
             // Final fallback NACK (AR)
             String errorAck = createHL7AckFromMsh(
                     cleanMsg != null ? cleanMsg : unwrapMllp(rawMessage),
                     "AR",
                     e.getMessage(),
-                    interactionId.toString());
+                    interactionId.toString(),
+                    errorTraceId);
             sendResponseAndClose(ctx, wrapMllp(errorAck), interactionId, "HL7_NACK");
         }
     }
 
     /**
      * Handle non-MLLP messages with simple acknowledgment
+     * MODIFIED: Added error trace ID generation for NACK scenarios
      */
     private void handleGenericMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
-            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort, Optional<PortConfig.PortEntry> portEntryOpt) {
+            String clientIP, Integer clientPort, String destinationIP, Integer destinationPort, 
+            Optional<PortConfig.PortEntry> portEntryOpt) {
+        String errorTraceId = null;
+        
         try {
             String cleanMsg = rawMessage.trim();
             RequestContext requestContext = buildRequestContext(
@@ -642,9 +695,22 @@ private boolean detectTcpDelimiterWrapper(String message) {
             sendResponseAndClose(ctx, ackMessage + "\n", interactionId, "SIMPLE_ACK");
 
         } catch (Exception e) {
-            logger.error("GENERIC_PROCESSING_ERROR [interactionId={}]: {}",
-                    interactionId, e.getMessage(), e);
-            String errorResponse = generateSimpleNack(interactionId.toString(), e.getMessage()) + "\n";
+            // Generate error trace ID for processing errors
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            logger.error("GENERIC_PROCESSING_ERROR [interactionId={}] [errorTraceId={}]: {}",
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error
+            LogUtil.logDetailedError(
+                500, 
+                "Generic message processing error", 
+                interactionId.toString(), 
+                errorTraceId,
+                e
+            );
+            
+            String errorResponse = generateSimpleNack(interactionId.toString(), e.getMessage(), errorTraceId) + "\n";
             sendResponseAndClose(ctx, errorResponse, interactionId, "SIMPLE_NACK");
         }
     }
@@ -785,7 +851,12 @@ private boolean detectTcpDelimiterWrapper(String message) {
         return mshFields;
     }
 
-    private String createHL7AckFromMsh(String originalMessage, String ackCode, String errorText, String interactionId) {
+    /**
+     * Create HL7 ACK/NACK from MSH segment
+     * MODIFIED: Added errorTraceId parameter and included in NTE segment
+     */
+    private String createHL7AckFromMsh(String originalMessage, String ackCode, String errorText, 
+            String interactionId, String errorTraceId) {
 
         Map<String, String> msh = parseMshSegment(originalMessage);
 
@@ -833,9 +904,14 @@ private boolean detectTcpDelimiterWrapper(String message) {
                     .append(genericError.substring(0, Math.min(80, genericError.length())))
                     .append("\r");
 
+            // NTE with errorTraceId if NACK
             nack.append("NTE|1||InteractionID: ").append(interactionId)
-                    .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion())
-                    .append("\r");
+                    .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
+            if (errorTraceId != null) {
+                nack.append(" | ErrorTraceID: ").append(errorTraceId);
+            }
+            nack.append("\r");
+            
             return nack.toString();
         }
 
@@ -881,13 +957,18 @@ private boolean detectTcpDelimiterWrapper(String message) {
                     .append("\r");
         }
 
-        // NTE
+        // NTE with errorTraceId
         ack.append("NTE").append(fieldSep)
                 .append("1").append(fieldSep)
                 .append(fieldSep)
                 .append("InteractionID: ").append(interactionId)
-                .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion())
-                .append("\r");
+                .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
+        
+        // Add ErrorTraceID only for NACKs (non-AA acknowledgments)
+        if (errorTraceId != null && !"AA".equals(finalAckCode)) {
+            ack.append(" | ErrorTraceID: ").append(errorTraceId);
+        }
+        ack.append("\r");
 
         return ack.toString();
     }
@@ -1043,11 +1124,13 @@ private boolean detectTcpDelimiterWrapper(String message) {
 
     /**
      * Generate simple NACK for non-MLLP messages
+     * MODIFIED: Added errorTraceId parameter with caret separator format
      */
-    private String generateSimpleNack(String interactionId, String errorMessage) {
+    private String generateSimpleNack(String interactionId, String errorMessage, String errorTraceId) {
         String sanitizedError = errorMessage.replace("|", " ").replace("\n", " ");
-        return String.format("NACK|%s|ERROR|%s|%s",
+        return String.format("NACK|InteractionId^%s|ErrorTraceId^%s|ERROR|%s|%s",
                 interactionId,
+                errorTraceId,
                 sanitizedError,
                 Instant.now().toString());
     }
