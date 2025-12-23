@@ -1826,23 +1826,11 @@
     <xsl:variable name="grouperScreening" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation[1]"/>
     <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
 
-        <xsl:variable name="resourceUUID">
-          <xsl:choose>
-            <xsl:when test="normalize-space($grouperScreening/ccda:id/@extension)">
-              <xsl:value-of select="normalize-space($grouperScreening/ccda:id/@extension)"/>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:value-of select="normalize-space($grouperObservationResourceSha256Id)"/>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
-            <!-- <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>
-            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/> -->
+            <!-- <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>-->
             <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-            <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
           </xsl:call-template>
         </xsl:variable>
         ,{

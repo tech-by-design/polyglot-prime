@@ -1869,25 +1869,12 @@
     </xsl:variable>
 
     <xsl:if test="($grouperObs != '') and (normalize-space($categoryXml) != '[]')">
-      <xsl:for-each select="$grouperObs[ccda:code/@code = $screeningCode]"> <!--'96777-8'-->
-
-        <xsl:variable name="resourceUUID">
-          <xsl:choose>
-            <xsl:when test="normalize-space(ccda:id/@extension)">
-              <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:value-of select="normalize-space($grouperObservationResourceSha256Id)"/>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        
+      <xsl:for-each select="$grouperObs[ccda:code/@code = $screeningCode]"> <!--'96777-8'-->       
         <xsl:variable name="grouperObservationResourceId">
           <xsl:call-template name="generateFixedLengthResourceId">
-            <!-- <xsl:with-param name="prefixString" select="concat(generate-id(ccda:code/@code), position())"/>
-            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/> -->
+            <!-- <xsl:with-param name="prefixString" select="concat(generate-id(ccda:code/@code), position())"/>-->
             <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-            <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
           </xsl:call-template>
         </xsl:variable>
         ,{
