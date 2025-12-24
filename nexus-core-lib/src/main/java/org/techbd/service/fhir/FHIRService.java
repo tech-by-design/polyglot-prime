@@ -325,7 +325,54 @@ public class FHIRService {
 		}
 
 	}
-	
+
+	/**
+	 * Resolves the effective processingAgent value based on feature configuration
+	 * and the incoming tenant identifier.
+	 * https://github.com/tech-by-design/polyglot-prime/issues/2490
+	 * <p>
+	 * Behavior:
+	 * <ul>
+	 * <li>If feature flag is disabled or configuration is missing → returns the
+	 * original tenantId.</li>
+	 * <li>If tenantId is null → returns null.</li>
+	 * <li>If configured tenantIds list is null or empty → returns the original
+	 * tenantId.</li>
+	 * <li><b>Case-sensitive match:</b> If the incoming tenantId exactly matches any
+	 * configured tenantId
+	 * (after trimming and ignoring null/blank entries) → returns the configured
+	 * processingAgent value
+	 * exactly as configured (no transformation).</li>
+	 * <li>If no match → returns the original tenantId.</li>
+	 * </ul>
+	 *
+	 * @param tenantId incoming tenant identifier from the request
+	 * @return overridden processingAgent when rules match, otherwise the original
+	 *         tenantId
+	 */
+	private String resolveProcessingAgent(String tenantId) {
+
+		var cfg = coreAppConfig.getProcessingAgent();
+
+		if (tenantId == null || cfg == null || !cfg.isFeatureEnabled()) {
+			return tenantId;
+		}
+
+		if (cfg.getTenantIds() == null) {
+			return tenantId;
+		}
+
+		boolean match = cfg.getTenantIds().stream()
+				.filter(t -> t != null)
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.anyMatch(t -> t.equals(tenantId));
+
+		return match
+				? cfg.getValue()
+				: tenantId;
+	}
+
 
 	public Map<String, Object> buildOperationOutcome(final JsonValidationException ex,
 															final String interactionId) {
@@ -1293,7 +1340,7 @@ public class FHIRService {
 				CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
         // Post request to scoring engine
         webClient.post()
-                .uri("?processingAgent=" + tenantId)
+                .uri("?processingAgent=" + resolveProcessingAgent(tenantId))
                 .body(BodyInserters.fromValue(
                         bundlePayloadWithDisposition != null ? bundlePayloadWithDisposition : payload))
                 .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
@@ -1655,7 +1702,7 @@ public class FHIRService {
 				initRIHR.setPCreatedAt(forwardedAt); // don't let DB set this, use app
 				// time
 				initRIHR.setPCreatedBy(FHIRService.class.getName());
-				initRIHR.setPProvenance(provenance);
+				initRIHR.setPProvenance(buildProvenance(provenance, tenantId, bundleAsyncInteractionId));
 				initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
 				final var start = Instant.now();
 				final var execResult = initRIHR.execute(jooqCfg);
@@ -1682,6 +1729,19 @@ public class FHIRService {
 			span.end();
 		}
 	}
+	
+	private String buildProvenance(final String provenance, final String tenantId,String interactionId) {
+		try {
+			Map<String, Object> provenanceMap = Map.of(
+					"provenance", provenance,
+					"processingAgent", resolveProcessingAgent(tenantId));
+			return Configuration.objectMapper.writeValueAsString(provenanceMap);
+		} catch (Exception ex) {
+			LOG.error("Failed to construct provenance JSON, falling back to raw provenance"+interactionId, ex);
+			return provenance;
+		}
+	}
+
 
 	@Transactional
 	private void registerStateComplete(final String bundleAsyncInteractionId,
