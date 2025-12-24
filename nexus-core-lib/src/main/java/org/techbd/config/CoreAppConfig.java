@@ -1,5 +1,6 @@
 package org.techbd.config;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -28,6 +29,17 @@ public class CoreAppConfig {
     private boolean dataLedgerDiagnostics;    
     private String validationSeverityLevel;
     private String dataLedgerApiKeySecretName;
+
+    private ProcessingAgentConfig processingAgent;
+
+    @Getter
+    @Setter
+    public static class ProcessingAgentConfig {
+        private boolean featureEnabled;
+        private String value;
+        private List<String> tenantIds;
+    }
+
     @Getter
     @Setter
     public static class FhirV4Config {

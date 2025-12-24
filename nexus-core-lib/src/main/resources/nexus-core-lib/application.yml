@@ -83,3 +83,7 @@ org:
         cmd: /usr/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-via-mtls.sh
         # Wait time to receive response from scoring engine
         timeout: 180
+      processing-agent:
+        feature-enabled: ${ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED:false}
+        tenant-ids: ${ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS}
+        value: ${ORG_TECHBD_PROCESSING_AGENT_VALUE:TXD}  
