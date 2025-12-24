@@ -366,7 +366,7 @@ public class FHIRService {
 				.filter(t -> t != null)
 				.map(String::trim)
 				.filter(s -> !s.isEmpty())
-				.anyMatch(t -> t.equals(tenantId));
+				.anyMatch(t -> t.equalsIgnoreCase(tenantId));
 
 		return match
 				? cfg.getValue()
