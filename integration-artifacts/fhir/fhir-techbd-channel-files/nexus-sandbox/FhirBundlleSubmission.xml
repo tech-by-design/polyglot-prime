@@ -2,13 +2,34 @@
   <id>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.0</description>
-  <revision>44</revision>
+  <description>Version: 0.8.1</description>
+  <revision>79</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -43,7 +64,7 @@
         <entry>
           <string>Access-Control-Allow-Origin</string>
           <list>
-            <string>*</string>
+            <string>${HUB_UI_URL}</string>
           </list>
         </entry>
         <entry>
@@ -136,6 +157,11 @@ var jdbcSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRE
     channelMap.put(&quot;JDBC_USERNAME&quot;, jdbcSecret.username);
     channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbcSecret.password);
 
+
+     globalMap.put(&quot;JDBC_USERNAME&quot;, jdbcSecret.username);
+     globalMap.put(&quot;JDBC_PASSWORD&quot;, jdbcSecret.password);
+
+ 
     logger.info(&quot;✔ JDBC credentials loaded into channelMap&quot;);
 
 } catch (e) {
@@ -151,8 +177,9 @@ try {
     //&quot;techbd-nyec-dataledger-api-key&quot;;
     var dataLedgerKey = fetchSecret(ledgerSecretName);
 
-    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
-
+    channelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
+    
+	globalMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
     logger.info(&quot;✔ DataLedger API Key loaded into channelMap&quot;);
 
 } catch (e) {
@@ -287,7 +314,7 @@ try {
 &#xd;
 &#xd;
 /********************************************&#xd;
-    6️⃣ FETCH DATA LEDGER API KEY (Plain text)&#xd;
+    6️⃣ FETCH DATA LAKE API KEY (Plain text)&#xd;
 ********************************************/&#xd;
 &#xd;
 try {&#xd;
@@ -331,6 +358,68 @@ try {
 }
 
 
+
+
+/********************************************
+    8️⃣ FETCH DATA LEDGER API URL (Plain text)
+********************************************/
+
+try {
+    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    //&quot;techbd-nyec-dataledger-api-key&quot;;
+    var dataLedgerUrl = fetchSecret(ledgerSecretName);
+
+    channelMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerUrl);
+     globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerUrl);
+
+    logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + dataLedgerUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger API URL  secret: &quot; + e.message);
+}
+
+
+/********************************************
+    9️⃣ FETCH DATA LEDGER  DATA_LEDGER_TRACKING (Plain text)
+********************************************/
+
+try {
+    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    //&quot;techbd-nyec-dataledger-api-key&quot;;
+    var dataLedgerTracking = fetchSecret(ledgerSecretName);
+
+    channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
+    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
+
+    logger.info(&quot;✔ DataLedger Tracking loaded into channelMap&quot;+ dataLedgerTracking);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger Tracking secret: &quot; + e.message);
+}
+
+
+/********************************************
+    10️⃣ FETCH HUB UI URL (Plain text)
+********************************************/
+try {
+    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+    }
+    // Fetch actual HUB UI URL from AWS Secrets Manager
+    var hubUiUrl = fetchSecret(hubUiSecretName);
+    if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
+    }
+    hubUiUrl = hubUiUrl.trim();
+    channelMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+    logger.info(&quot;✔ HUB UI URL loaded from AWS Secrets Manager: &quot; + hubUiUrl);
+} catch (e) {
+    logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
+    throw e;
+}
 
 /********************************************
     DONE
@@ -474,7 +563,29 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -504,7 +615,7 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
           <entry>
             <string>Access-Control-Allow-Origin</string>
             <list>
-              <string>*</string>
+              <string>${HUB_UI_URL}</string>
             </list>
           </entry>
           <entry>
@@ -681,7 +792,29 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <metaDataId>3</metaDataId>
       <name>dest_datalake</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -756,6 +889,8 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>// ---------------------- BEGIN: integrated helper + usage block ----------------------
+logger.info(&quot;DESTINATION STARTS ###&quot;);
+
 var Instant = Packages.java.time.Instant;&#xd;
 var Duration = Packages.java.time.Duration;
 
@@ -1079,7 +1214,7 @@ var dataId = interactionId;&#xd;
     throw rawErrorResponse;
 }
 
-
+logger.info(&quot;dataId &quot; + dataId);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:dataId  for datalake: &quot; + dataId);
 
 
@@ -1138,13 +1273,14 @@ if (extractedPayload) {
 	        dataId: dataId,&#xd;
 	        payloadType: &quot;hrsnBundle&quot;&#xd;
 	    });
+	    logger.info(&quot;payloadDataLedger : &quot; + payloadDataLedger)
 	    	    
-		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+		var trackingEnabled = channelMap.get(&quot;DATA_LEDGER_TRACKING&quot;);
 		&#xd;
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {&#xd;
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -BEGIN received&quot;);&#xd;
 		    try {&#xd;
-		        sendDataLedgerSync(payloadDataLedger);&#xd;
+		        sendDataLedgerSync(payloadDataLedger,interactionId);&#xd;
 		    } catch (e) {&#xd;
 		        logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Error occurred while sending data to Data Ledger: &quot; + e.message);&#xd;
 		    }&#xd;
@@ -1205,6 +1341,8 @@ if (extractedPayload) {
 } else {
     try { logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: No extractedPayload produced — nothing appended.&quot;); } catch(ignore){}
 }
+
+logger.info(&quot;DESTINATION ENDS ###&quot;);
 
 // ---------------------- END block ----------------------
 
@@ -1731,7 +1869,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	try {&#xd;
 	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Inside DB Try&quot;);&#xd;
 &#xd;
-	    var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);&#xd;
+	    var jdbcUrl = globalMap.get(&apos;jdbcUrl&apos;);&#xd;
 		if(jdbcUrl != null) {&#xd;
 		    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);&#xd;
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUrl: &quot; + jdbcUrl);&#xd;
@@ -1742,7 +1880,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		    throw errorMessage; // Stop further processing by throwing an exception&#xd;
 		}&#xd;
 		&#xd;
-		var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);&#xd;
+		var jdbcUsername = globalMap.get(&apos;JDBC_USERNAME&apos;);&#xd;
 		if(jdbcUsername != null) {&#xd;
 		    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);&#xd;
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: jdbcUsername: &quot; + jdbcUsername);&#xd;
@@ -1753,7 +1891,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		    throw errorMessage; // Stop further processing by throwing an exception&#xd;
 		}&#xd;
 		&#xd;
-		var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);&#xd;
+		var jdbcPassword = globalMap.get(&apos;JDBC_PASSWORD&apos;);&#xd;
 		if(jdbcPassword != null) {&#xd;
 		    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);&#xd;
 		    //logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);&#xd;
@@ -1936,15 +2074,15 @@ globalMap.put(&apos;saveFHIRPayload&apos;, saveFHIRPayload);
 
 
 
-function sendDataLedgerSync(payload) {&#xd;
+function sendDataLedgerSync(payload,interactionId) {&#xd;
     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  sendDataLedgerSync: &quot; + payload);&#xd;
     &#xd;
-    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);&#xd;
-    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);&#xd;
+    var apiUrl = globalMap.get(&quot;DATA_LEDGER_API_URL&quot;);&#xd;
+    var dataLedgerApiKey = globalMap.get(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);&#xd;
 &#xd;
     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: API URL: ####### &quot; + apiUrl);
-     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA_LEDGER_API_URL####### &quot; + java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;));
-      logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  TECHBD_NYEC_DATALEDGER_API_KEY ####### &quot; + java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;));&#xd;
+     logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA_LEDGER_API_URL####### &quot; + globalMap.get(&quot;DATA_LEDGER_API_URL&quot;));
+      //logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  TECHBD_NYEC_DATALEDGER_API_KEY ####### &quot; + globalMap.get(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;));&#xd;
 &#xd;
     if (apiUrl == null) {&#xd;
         throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);&#xd;
@@ -1972,8 +2110,9 @@ function sendDataLedgerSync(payload) {&#xd;
         var entity = new StringEntity(payload, &quot;UTF-8&quot;);&#xd;
         httpPost.setEntity(entity);&#xd;
 &#xd;
-        var response = httpClient.execute(httpPost);&#xd;
-        try {&#xd;
+        &#xd;
+        try {
+        	var response = httpClient.execute(httpPost);&#xd;
             var statusCode = response.getStatusLine().getStatusCode();&#xd;
             logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: sendDataLedgerSync response status: &quot; + statusCode);&#xd;
             var responseBody = EntityUtils.toString(response.getEntity());&#xd;
@@ -1989,7 +2128,8 @@ function sendDataLedgerSync(payload) {&#xd;
                 throw new Error(&quot;Request failed with status &quot; + statusCode);&#xd;
             }&#xd;
         } finally {&#xd;
-            EntityUtils.consumeQuietly(response.getEntity());&#xd;
+            EntityUtils.consumeQuietly(response.getEntity());
+             httpClient.close();&#xd;
         }&#xd;
     } catch (error) {&#xd;
         logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Data Ledger API Request Failed: &quot; + error.message);&#xd;
@@ -2050,7 +2190,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1766395422151</time>
+        <time>1767015518728</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
@@ -2060,6 +2200,20 @@ return;</undeployScript>
       <userId>1</userId>
     </metadata>
     <channelTags>
+      <channelTag>
+        <id>ea05c512-48d4-4e2c-a1b1-657b51dc0a63</id>
+        <name>0_8_1</name>
+        <channelIds>
+          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
+          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
       <channelTag>
         <id>21a1ccfb-1032-4cc8-892b-a24eb24cca62</id>
         <name>ActiveFHIR</name>
