@@ -1,9 +1,9 @@
 <channel version="4.6.0">
   <id>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</id>
-  <nextMetaDataId>4</nextMetaDataId>
+  <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.0</description>
-  <revision>12</revision>
+  <description>Version: 0.8.1</description>
+  <revision>109</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -12,6 +12,27 @@
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -43,7 +64,7 @@
         <entry>
           <string>Access-Control-Allow-Origin</string>
           <list>
-            <string>*</string>
+            <string>${HUB_UI_URL}</string>
           </list>
         </entry>
         <entry>
@@ -151,7 +172,7 @@ try {
     //&quot;techbd-nyec-dataledger-api-key&quot;;
     var dataLedgerKey = fetchSecret(ledgerSecretName);
 
-    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
+    channelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
 
     logger.info(&quot;✔ DataLedger API Key loaded into channelMap&quot;);
 
@@ -176,7 +197,7 @@ try {
     }
     channelMap.put(&quot;FHIR_CHANNEL_URL&quot;, fhirChannelUrl);
     globalMap.put(&quot;fhirChannelUrl&quot;, fhirChannelUrl);
-    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot; + fhirChannelUrl);
+    logger.info(&quot;✔ FHIR CHANNEL URL loaded from AWS Secret Manager&quot; + fhirChannelUrl);
 
 } catch (e) {
     logger.error(&quot;❌ Error fetching FHIR CHANNEL URL: &quot; + e);
@@ -331,6 +352,29 @@ try {
 }
 
 
+/********************************************
+    8️⃣ FETCH HUB UI URL (Plain text)
+********************************************/
+try {
+    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+    }
+    // Fetch actual HUB UI URL from AWS Secrets Manager
+    var hubUiUrl = fetchSecret(hubUiSecretName);
+    if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
+    }
+    hubUiUrl = hubUiUrl.trim();
+    channelMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+    logger.info(&quot;✔ HUB UI URL loaded from AWS Secrets Manager: &quot; + hubUiUrl);
+} catch (e) {
+    logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
+    throw e;
+}
+
 
 /********************************************
     DONE
@@ -366,7 +410,6 @@ channelMap.put(&quot;requestUri&quot;, requestedPath);
 if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }
-
 if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
 var fhirJson  = connectorMessage.getRawData();
 channelMap.put(&apos;fhirJson&apos;, fhirJson);
@@ -379,30 +422,27 @@ var elaboration = channelMap.get(&apos;elaboration&apos;);
 &#xd;
 
 
-logger.info(&quot;Channel Name: &quot; + channelName);
+logger.info(&quot;Channel Name: - &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
-
 
 
 
 channelMap.put(&apos;interactionId&apos;, interactionId);&#xd;
 channelMap.put(&quot;validationSeverityLevel&quot;,validationSeverityLevel);
-channelMap.put(&quot;fhirSubmissionApiUrl&quot;,fhirSubmissionApiUrl);
+//channelMap.put(&quot;fhirSubmissionApiUrl&quot;,fhirSubmissionApiUrl);
 channelMap.put(&apos;source&apos;,source);
 channelMap.put(&apos;igVersion&apos;, igVersion);
 channelMap.put(&apos;elaboration&apos;, elaboration);
 
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
+//logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
 
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
+//logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
 
 
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); 
 channelMap.put(&apos;tenantId&apos;, tenantId);
 
-
-&#xd;
 &#xd;
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);&#xd;
 channelMap.put(&apos;userAgent&apos;, userAgent);
@@ -411,6 +451,7 @@ channelMap.put(&apos;userAgent&apos;, userAgent);
 
 channelMap.put(&quot;endpoint&quot;, &quot;validate&quot;);
 responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
+
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
@@ -467,7 +508,29 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -497,7 +560,7 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
           <entry>
             <string>Access-Control-Allow-Origin</string>
             <list>
-              <string>*</string>
+              <string>${HUB_UI_URL}</string>
             </list>
           </entry>
           <entry>
@@ -801,6 +864,7 @@ if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }
 
+
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
 var endpoint = channelMap.get(&quot;endpoint&quot;);
 if(endpoint == &apos;validate&apos;) {&#xd;
@@ -823,6 +887,10 @@ if(endpoint == &apos;validate&apos;) {&#xd;
 	}&#xd;
 }&#xd;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor ENDS.&quot;);
+
+
+
+
 
 return;
 </postprocessingScript>
@@ -914,7 +982,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1766396384436</time>
+        <time>1767015485930</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
@@ -925,18 +993,44 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
+        <id>ea05c512-48d4-4e2c-a1b1-657b51dc0a63</id>
+        <name>0_8_1</name>
+        <channelIds>
+          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
+          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+      <channelTag>
         <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
         <name>Active</name>
         <channelIds>
+          <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
           <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
-          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
-          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
+          <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
+          <string>82cfe815-833d-4a56-95e0-4fc5570962cf</string>
           <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
-          <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>
           <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
+          <string>fe70827b-3f88-4a81-bd75-fe95792e5de6</string>
+          <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
+          <string>467f826d-1a1b-4e15-84b6-6c4c71968059</string>
+          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
+          <string>873588e2-8903-4e9c-b8f3-c44889f22392</string>
+          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
+          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>1bc85cd3-7c82-4ae1-b493-d8cf401072bf</string>
           <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
           <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
           <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
+          <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
         </channelIds>
         <backgroundColor>
           <red>0</red>
