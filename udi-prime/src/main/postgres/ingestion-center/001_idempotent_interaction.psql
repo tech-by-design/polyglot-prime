@@ -1950,83 +1950,7 @@ BEGIN
         FROM jsonb_array_elements(p_payload->'entry') AS entry
         WHERE entry ? 'resource';        
 
-		WITH bundle_type_flags AS (
-
-		    ----------------------------------------------------------------------
-		    -- SCREENING
-		    ----------------------------------------------------------------------
-
-		    SELECT
-		        CASE
-		            WHEN jsonb_path_exists(
-		                    p_payload,
-		                    '$.entry[*].resource?(
-		                        @.resourceType == "Observation"
-		                        && @.hasMember.size() > 0
-		                        && @.meta.profile[*] like_regex "shinny-observation-screening-response$"
-		                    )'
-		                )
-		            THEN 'Screening'
-		            ELSE NULL
-		        END AS category
-		
-		    UNION ALL
-		
-		    ----------------------------------------------------------------------
-		    -- ASSESSMENT
-		    ----------------------------------------------------------------------
-		    SELECT
-		        CASE
-		            WHEN jsonb_path_exists(
-		                    p_payload,
-		                    '$.entry[*].resource?(
-		                        @.resourceType == "Condition"
-		                        && (
-		                              @.meta.profile[*] like_regex "SHINNY-SDOHCC-Condition$"
-		                              || @.meta.profile[*] like_regex "SDOHCC-Condition$"
-		                           )
-		                    )'
-		                )
-		            THEN 'Assessment'
-		            ELSE NULL
-		        END
-		
-		    UNION ALL
-		
-		    ----------------------------------------------------------------------
-		    -- REFERRAL
-		    ----------------------------------------------------------------------
-		    SELECT
-		        CASE
-		            WHEN jsonb_path_exists(
-		                    p_payload,
-		                    '$.entry[*].resource?(
-		                        (
-		                            @.resourceType == "ServiceRequest"
-		                            && (
-		                                    @.meta.profile[*] like_regex "SHINNYSDOHServiceRequest$"
-		                                    || @.meta.profile[*] like_regex "SDOHCC-ServiceRequest$"
-		                               )
-		                        )
-		                        ||
-		                        (
-		                            @.resourceType == "Task"
-		                            && (
-		                                    @.meta.profile[*] like_regex "SHINNYSDOHTaskForReferralManagement$"
-		                                    || @.meta.profile[*] like_regex "SDOHCC-TaskForReferralManagement$"
-		                               )
-		                        )
-		                    )'
-		                )
-		            THEN 'Referral'
-		            ELSE NULL
-		        END
-		)
-		
-		SELECT STRING_AGG(category, ', ')
-		INTO v_bundle_type
-		FROM bundle_type_flags
-		WHERE category IS NOT NULL;
+		v_bundle_type := techbd_udi_ingress.get_fhir_bundle_type(p_payload);
     
     END IF; /*End of : Original FHIR Payload*/
     
@@ -9608,3 +9532,186 @@ BEGIN
     FROM user_interactions ui;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_bundle_type(p_payload jsonb)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+  DECLARE
+    v_category text := null;
+  BEGIN
+	WITH bundle_type_flags AS (
+		----------------------------------------------------------------------
+	    -- REFERRAL
+	    ----------------------------------------------------------------------
+	    SELECT
+	        CASE
+	            WHEN jsonb_path_exists(
+	                    p_payload,
+	                    '$.entry[*].resource?(
+	                        (
+	                            @.resourceType == "ServiceRequest"
+	                            && @.meta.profile[*] like_regex "SHINNYSDOHServiceRequest$"
+	                        )
+	                        ||
+	                        (
+	                            @.resourceType == "Task"
+	                            && @.meta.profile[*] like_regex "SHINNYSDOHTaskForReferralManagement$"
+	                        )
+	                    )'
+	                )
+	            THEN 'Referral'
+	            ELSE NULL
+	        END AS category
+
+		UNION ALL
+	
+	    ----------------------------------------------------------------------
+	    -- ASSESSMENT
+	    ----------------------------------------------------------------------
+		SELECT
+		    CASE
+		        WHEN jsonb_path_exists(
+		            p_payload,
+		            '$.entry[*].resource ? (
+		                (
+		                    @.resourceType == "Condition"
+		                    && @.meta.profile[*] like_regex "SHINNY-SDOHCC-Condition$"
+		                )
+		                ||
+		                (
+		                    @.resourceType == "QuestionnaireResponse"
+		                    && (
+		                        @.questionnaire like_regex "SHINNYApprovalQuestionnaire$"
+		
+		                        || (
+		                            @.questionnaire like_regex "SHINNYAdministrativeQuestionnaire$"
+		                            && exists(@.item[*].item[*].answer[*].valueCoding.display)
+		                        )
+		
+		                        || (
+		                            @.questionnaire like_regex "SHINNYServiceDuplicationQuestionnaire$"
+		                            && exists(@.item[*].item[*].item[*].answer[*].valueCoding.display)
+		                        )
+		                    )
+		                )
+		            )'
+		        )
+		        THEN 'Assessment'
+		        ELSE NULL
+		    END AS category
+
+		UNION ALL
+
+	    ----------------------------------------------------------------------
+	    -- SCREENING
+	    ----------------------------------------------------------------------
+
+	    SELECT
+	        CASE
+	            WHEN jsonb_path_exists(
+	                    p_payload,
+	                    '$.entry[*].resource?(
+	                        @.resourceType == "Observation"
+	                        && @.hasMember.size() > 0
+	                        && @.meta.profile[*] like_regex "shinny-observation-screening-response$"
+	                    )'
+	                )
+	            THEN 'Screening'
+	            ELSE NULL
+	        END AS category
+	
+	    UNION ALL
+
+	    ----------------------------------------------------------------------
+	    -- CONSENT_ONLY
+	    ----------------------------------------------------------------------
+
+	    SELECT
+		    CASE
+		        WHEN
+		            -- 1. Consent with shinny-Consent profile exists
+		            jsonb_path_exists(
+		                p_payload,
+		                '$.entry[*].resource ? (
+		                    @.resourceType == "Consent"
+		                    && @.meta.profile[*] like_regex "shinny-Consent$"
+		                )'
+		            )
+		
+		            -- 2. NO Observation, Condition, ServiceRequest, or Task exists
+		            AND NOT jsonb_path_exists(
+		                p_payload,
+		                '$.entry[*].resource ? (
+		                    @.resourceType == "Observation"
+		                    || @.resourceType == "Condition"
+		                    || @.resourceType == "ServiceRequest"
+		                    || @.resourceType == "Task"
+		                )'
+		            )
+		
+		            -- 3. NO QuestionnaireResponse with restricted profiles
+		            AND NOT jsonb_path_exists(
+		                p_payload,
+		                '$.entry[*].resource ? (
+					        @.resourceType == "QuestionnaireResponse"
+					        && (
+					            @.questionnaire like_regex "SHINNYApprovalQuestionnaire$"
+					            || @.questionnaire like_regex "SHINNYAdministrativeQuestionnaire$"
+					            || @.questionnaire like_regex "SHINNYServiceDuplicationQuestionnaire$"
+					        )
+					    )'
+		            )
+		
+		        THEN 'Consent_Only'
+		        ELSE NULL
+		    END AS category
+
+		UNION ALL
+
+	    ----------------------------------------------------------------------
+	    -- OUTREACH_ONLY
+	    ----------------------------------------------------------------------
+
+	    SELECT
+		    CASE
+		        WHEN
+		            -- 1. NO Observation, Condition, ServiceRequest, consent or Task exists
+		            NOT jsonb_path_exists(
+		                p_payload,
+		                '$.entry[*].resource ? (
+		                    @.resourceType == "Observation"
+		                    || @.resourceType == "Condition"
+		                    || @.resourceType == "ServiceRequest"
+		                    || @.resourceType == "Task"
+							|| @.resourceType == "Consent"
+		                )'
+		            )
+		
+		            -- 2. NO QuestionnaireResponse with restricted profiles
+		            AND NOT jsonb_path_exists(
+		                p_payload,
+		                '$.entry[*].resource ? (
+					        @.resourceType == "QuestionnaireResponse"
+					        && (
+					            @.questionnaire like_regex "SHINNYApprovalQuestionnaire$"
+					            || @.questionnaire like_regex "SHINNYAdministrativeQuestionnaire$"
+					            || @.questionnaire like_regex "SHINNYServiceDuplicationQuestionnaire$"
+					        )
+					    )'
+		            )
+		
+		        THEN 'Outreach_Only'
+		        ELSE NULL
+		    END AS category
+	    
+	)
+	
+	SELECT STRING_AGG(category, ', ') into v_category
+	FROM bundle_type_flags
+	WHERE category IS NOT NULL;
+
+	RETURN v_category;
+END;
+$function$
+;
