@@ -1,19 +1,19 @@
-<channel version="4.6.1">
-  <id>2f6cff1f-6cbb-4042-9ddd-1f2a23633a2a</id>
+<channel version="4.6.0">
+  <id>ec9c3233-54f3-4995-b808-7592e512037b</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.8
-Implemented Lookup Manager–based configuration management.</description>
-  <revision>35</revision>
-  <sourceConnector version="4.6.1">
+  <description>Version: 0.1.9
+Implemented Lookup Manager–based configuration for Access-Control-Allow-Origin.</description>
+  <revision>25</revision>
+  <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
           <verifyHostname>false</verifyHostname>
@@ -35,11 +35,11 @@ Implemented Lookup Manager–based configuration management.</description>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.6.1">
+      <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
         <port>9006</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.6.1">
+      <sourceConnectorProperties version="4.6.0">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -65,7 +65,7 @@ Implemented Lookup Manager–based configuration management.</description>
         <entry>
           <string>Access-Control-Allow-Origin</string>
           <list>
-            <string>*</string>
+            <string>${HUB_UI_URL}</string>
           </list>
         </entry>
         <entry>
@@ -94,9 +94,9 @@ Implemented Lookup Manager–based configuration management.</description>
       <timeout>30000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.6.1">
+    <transformer version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
           <name>FileName validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -253,11 +253,11 @@ for (var i = 0; i &lt; lines.length; i++) {
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
       <outboundDataType>HL7V2</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
           <stripNamespaces>false</stripNamespaces>
         </serializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
           <splitType>Element_Name</splitType>
           <elementName></elementName>
           <level>1</level>
@@ -265,8 +265,8 @@ for (var i = 0; i &lt; lines.length; i++) {
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
           <handleRepetitions>true</handleRepetitions>
           <handleSubcomponents>true</handleSubcomponents>
           <useStrictParser>false</useStrictParser>
@@ -275,16 +275,16 @@ for (var i = 0; i &lt; lines.length; i++) {
           <segmentDelimiter>\r</segmentDelimiter>
           <convertLineBreaks>true</convertLineBreaks>
         </serializationProperties>
-        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
+        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
           <useStrictParser>false</useStrictParser>
           <useStrictValidation>false</useStrictValidation>
           <segmentDelimiter>\r</segmentDelimiter>
         </deserializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
           <splitType>MSH_Segment</splitType>
           <batchScript></batchScript>
         </batchProperties>
-        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
+        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
           <segmentDelimiter>\r</segmentDelimiter>
           <successfulACKCode>AA</successfulACKCode>
           <successfulACKMessage></successfulACKMessage>
@@ -295,7 +295,7 @@ for (var i = 0; i &lt; lines.length; i++) {
           <msh15ACKAccept>false</msh15ACKAccept>
           <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
         </responseGenerationProperties>
-        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
+        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
           <successfulACKCode>AA,CA</successfulACKCode>
           <errorACKCode>AE,CE</errorACKCode>
           <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -305,9 +305,9 @@ for (var i = 0; i &lt; lines.length; i++) {
         </responseValidationProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.6.1">
+    <filter version="4.6.0">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos; or &apos;/hl7v2/Bundle/$validate/&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -320,7 +320,7 @@ for (var i = 0; i &lt; lines.length; i++) {
             <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -339,12 +339,12 @@ for (var i = 0; i &lt; lines.length; i++) {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.6.1">
+    <connector version="4.6.0">
       <metaDataId>1</metaDataId>
       <name>Destination 1</name>
-      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.1">
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.6.1">
+        <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -368,9 +368,9 @@ for (var i = 0; i &lt; lines.length; i++) {
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables/>
       </properties>
-      <transformer version="4.6.1">
+      <transformer version="4.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
             <name>HL7 Validation</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -636,7 +636,7 @@ function validateOneOfGroups(groups, hl7Text) {
     return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
             <name>Common Js func.</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -747,7 +747,7 @@ function sendDataLedgerSync(payload) {
     }
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
             <name>Validate HTTP Request and collect headers</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -879,7 +879,7 @@ if (missingEnvVars.length &gt; 0) {
 
 logger.info(&quot;HTTP request validation ended.&quot;);</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
             <name>step_validate_profile_urls_env_variables</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
@@ -1308,7 +1308,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
     return transformer;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
             <name>API endpoint processing</name>
             <sequenceNumber>4</sequenceNumber>
             <enabled>true</enabled>
@@ -1811,8 +1811,8 @@ return value;
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>HL7V2</inboundDataType>
         <outboundDataType>XML</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
             <handleRepetitions>true</handleRepetitions>
             <handleSubcomponents>true</handleSubcomponents>
             <useStrictParser>false</useStrictParser>
@@ -1821,16 +1821,16 @@ return value;
             <segmentDelimiter>\r</segmentDelimiter>
             <convertLineBreaks>true</convertLineBreaks>
           </serializationProperties>
-          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
             <useStrictParser>false</useStrictParser>
             <useStrictValidation>false</useStrictValidation>
             <segmentDelimiter>\r</segmentDelimiter>
           </deserializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
             <splitType>MSH_Segment</splitType>
             <batchScript></batchScript>
           </batchProperties>
-          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
             <segmentDelimiter>\r</segmentDelimiter>
             <successfulACKCode>AA</successfulACKCode>
             <successfulACKMessage></successfulACKMessage>
@@ -1841,7 +1841,7 @@ return value;
             <msh15ACKAccept>false</msh15ACKAccept>
             <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
           </responseGenerationProperties>
-          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
             <successfulACKCode>AA,CA</successfulACKCode>
             <errorACKCode>AE,CE</errorACKCode>
             <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -1850,11 +1850,11 @@ return value;
             <originalIdMapVariable></originalIdMapVariable>
           </responseValidationProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1863,17 +1863,17 @@ return value;
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.1">
+      <responseTransformer version="4.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>XML</inboundDataType>
         <outboundDataType>XML</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1881,11 +1881,11 @@ return value;
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.1">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.6.0">
             <stripNamespaces>false</stripNamespaces>
           </serializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.6.0">
             <splitType>Element_Name</splitType>
             <elementName></elementName>
             <level>1</level>
@@ -1894,7 +1894,7 @@ return value;
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.1">
+      <filter version="4.6.0">
         <elements/>
       </filter>
       <transportName>Channel Writer</transportName>
@@ -1902,12 +1902,12 @@ return value;
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="4.6.1">
+    <connector version="4.6.0">
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
         <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
             <mutualTlsEnabled>false</mutualTlsEnabled>
             <verifyHostname>false</verifyHostname>
@@ -1929,7 +1929,7 @@ return value;
             <truststoreUid/>
           </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         </pluginProperties>
-        <destinationConnectorProperties version="4.6.1">
+        <destinationConnectorProperties version="4.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2063,14 +2063,14 @@ return value;
         <charset>UTF-8</charset>
         <socketTimeout>30000</socketTimeout>
       </properties>
-      <transformer version="4.6.1">
+      <transformer version="4.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>HL7V2</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.1">
-          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.6.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.6.0">
             <handleRepetitions>true</handleRepetitions>
             <handleSubcomponents>true</handleSubcomponents>
             <useStrictParser>false</useStrictParser>
@@ -2079,16 +2079,16 @@ return value;
             <segmentDelimiter>\r</segmentDelimiter>
             <convertLineBreaks>true</convertLineBreaks>
           </serializationProperties>
-          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.1">
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.6.0">
             <useStrictParser>false</useStrictParser>
             <useStrictValidation>false</useStrictValidation>
             <segmentDelimiter>\r</segmentDelimiter>
           </deserializationProperties>
-          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.6.0">
             <splitType>MSH_Segment</splitType>
             <batchScript></batchScript>
           </batchProperties>
-          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.1">
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.6.0">
             <segmentDelimiter>\r</segmentDelimiter>
             <successfulACKCode>AA</successfulACKCode>
             <successfulACKMessage></successfulACKMessage>
@@ -2099,7 +2099,7 @@ return value;
             <msh15ACKAccept>false</msh15ACKAccept>
             <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
           </responseGenerationProperties>
-          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.1">
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.6.0">
             <successfulACKCode>AA,CA</successfulACKCode>
             <errorACKCode>AE,CE</errorACKCode>
             <rejectedACKCode>AR,CR</rejectedACKCode>
@@ -2108,33 +2108,33 @@ return value;
             <originalIdMapVariable></originalIdMapVariable>
           </responseValidationProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.1">
+      <responseTransformer version="4.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.1">
+      <filter version="4.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2334,60 +2334,6 @@ try {
 } catch (e) {
     logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
 }
-/////////////////////////////////////////////////////////////////////////
-///********************************************
-//    3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
-//********************************************/
-//try {
-//    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
-//
-//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
-//    }
-//
-//    var fhirApiUrl = fetchSecret(fhirSecretName);
-//
-//    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
-//        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
-//    }
-//
-//    //channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
-//    globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
-//    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot;);
-//
-//} catch (e) {
-//    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
-//    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
-//    throw e;
-//}
-
-///********************************************
-//    6️⃣ FETCH JDBC URL (Plain text)
-//********************************************/
-//try {
-//    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
-//
-//    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value MC_JDBC_URL does not contain a secret name.&quot;;
-//    }
-//
-//    // Get REAL jdbc URL from AWS
-//    var jdbcUrl = fetchSecret(jdbcUrlSecretName);
-//
-//    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
-//        throw &quot;AWS Secret for MC_JDBC_URL returned empty.&quot;;
-//    }
-//
-//    jdbcUrl = jdbcUrl.trim(); // IMPORTANT: remove trailing spaces
-//    globalMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
-//    logger.info(&quot;✔ JDBC URL loaded from AWS Secret Manager: &quot; + jdbcUrl);
-//
-//} catch (e) {
-//    logger.error(&quot;❌ Error fetching JDBC URL: &quot; + e);
-//    setErrorResponse(500, &quot;Failed to load JDBC URL&quot;);
-//    throw e;
-//}
-
 
 /********************************************
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
@@ -2441,6 +2387,40 @@ try {
     setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
     throw e;
 }
+/////////////////////////////////////////////////////
+
+
+/********************************************
+    7️⃣ FETCH HUB UI URL (Plain text)
+********************************************/
+// Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header.
+try {
+    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+ 
+    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
+        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+    }
+ 
+    // Fetch actual HUB UI URL from AWS Secrets Manager
+    var hubUiUrl = fetchSecret(hubUiSecretName);
+ 
+    if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
+        throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
+    }
+ 
+    hubUiUrl = hubUiUrl.trim();
+ 
+   
+    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+ 
+    logger.info(&quot;✔ HUB UI URL loaded from AWS Secrets Manager: &quot;);
+ 
+} catch (e) {
+    logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
+    throw e;
+}
+////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /****************************************************************************************
  * LOAD FHIR BASE URL &amp; PROFILE URLs USING LOOKUP HELPER ONLY
@@ -2575,8 +2555,6 @@ try {
 /********************************************
     DONE
 ********************************************/
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
@@ -2693,7 +2671,7 @@ globalMap.put(&apos;saveHL7Payload&apos;, saveHL7Payload);</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.6.1">
+  <properties version="4.6.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -2716,7 +2694,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.6.1">
+    <attachmentProperties version="4.6.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -2731,14 +2709,62 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1765805059054</time>
+        <time>1767012837230</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>1</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>75bfe4aa-da9e-4a5b-99ee-780377b3a0ae</id>
+        <name>0_1_9</name>
+        <channelIds>
+          <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+      <channelTag>
+        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
+        <name>Active</name>
+        <channelIds>
+          <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
+          <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
+          <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
+          <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
+          <string>82cfe815-833d-4a56-95e0-4fc5570962cf</string>
+          <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
+          <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>
+          <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
+          <string>fe70827b-3f88-4a81-bd75-fe95792e5de6</string>
+          <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
+          <string>467f826d-1a1b-4e15-84b6-6c4c71968059</string>
+          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
+          <string>873588e2-8903-4e9c-b8f3-c44889f22392</string>
+          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
+          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
+          <string>95a4b010-c209-4904-8500-433538921ae5</string>
+          <string>1bc85cd3-7c82-4ae1-b493-d8cf401072bf</string>
+          <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
+          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+          <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
+          <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
+        </channelIds>
+        <backgroundColor>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>

@@ -45,9 +45,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "jewelbonnie",
-      "date": "2025-12-15"
+      "date": "2025-12-30"
     },
     {
       "type": "HL7v2",
@@ -75,7 +75,7 @@
       "channel": "lookup_group_config_export.json",
       "version": "",
       "editedby": "jewelbonnie",
-      "date": "2025-12-12"
+      "date": "2025-12-30"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -87,9 +87,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.3",
+      "version": "0.5.4",
       "editedby": "jewelbonnie",
-      "date": "2025-12-12"
+      "date": "2025-12-30"
     }
   ],
   "transformations": {
