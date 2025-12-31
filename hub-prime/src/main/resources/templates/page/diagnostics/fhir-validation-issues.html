@@ -80,8 +80,7 @@
 
         const schemaName = 'techbd_udi_ingress';
         const storedProcName = 'get_fhir_session_diagnostics';
-        const detailStoredProcName = 'get_fhir_session_diagnostics_details';
-        const fhirValidationIssue = 'fhir_session_diagnostics_details';
+        const detailStoredProcName = 'get_fhir_session_diagnostics_details'; 
         // Date formatting function
         const formatDate = (date) => {
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -91,57 +90,28 @@
         };
 
         const fhirValidationIssueColumnDefs = [
-            { headerName: "TechBD Interaction ID", field: "session_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the interaction during which the issue occurred" },
-            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the bundle during which the issue occurred" },
-            { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
+            { headerName: "Message", field: "message", filter: "agTextColumnFilter", headerTooltip: "The validation message associated with the issue" },
+            { headerName: "Severity", field: "severity", filter: "agTextColumnFilter", headerTooltip: "The severity of the issue" },
             { headerName: "Issue Line", field: "line", filter: "agTextColumnFilter", headerTooltip: "The line number where the issue occurred" },
             { headerName: "Issue Column", field: "col_no", filter: "agTextColumnFilter", headerTooltip: "The column number where the issue occurred" },
             { headerName: "Diagnostics", field: "diagnostics", filter: "agTextColumnFilter", headerTooltip: "The diagnostics associated with the issue" },
         ];
 
-        function transformFhirValidationIssues(response) {
-            const transformedData = response.data.map(issue => {
-                return {
-                    validation_engine: issue.validation_engine ,  // Keep the validation engine
-                    message: issue.message ,  // Default message if none exists
-                    severity: issue.severity ,  // Default severity if none exists 
-                    encountered_date: issue.encountered_date  ,  // Set to encountered date or default
-                    ig_version: issue.ig_version  ,  // Set to ig_version, default to "Unknown" if not available 
-                    tenant_id: issue.tenant_id  ,  // Mapping tenant_id
-                    session_id: issue.session_id  ,  // Mapping session_id
-                    line: issue.line  ,  // Mapping line
-                    column: issue.col_no  ,  // Mapping column
-                    uri: issue.uri  ,  // Mapping uri
-                    diagnostics: issue.diagnostics  ,  // Mapping diagnostics
-                    bundle_id: issue.bundle_id  ,  // Mapping bundle_id
-                    elaboration: issue.elaboration   // Mapping elaboration
-                };
-            });
-
-                return transformedData;
-            }
+ 
 
         function getFhirValidationIssueGridData(params) {
-            const ig_version = params.data.ig_version;
-            const message = params.data.message;
-            const encountered_date = params.data.encountered_date;
-            const severity = params.data.severity;
-            const tenant_id = params.data.tenant_id;
-            const validation_engine = params.data.validation_engine;
-
-            // Get current date range from date pickers
             const startDate = $('#start-date').datepicker('getDate');
             const endDate = $('#end-date').datepicker('getDate');
-            const formattedStartDate = formatDate(startDate);
-            const formattedEndDate = formatDate(endDate);
 
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);           
+            
+            const hub_interaction_id = params.data.hub_interaction_id; 
+            
             const storedProcParams = {
-                "p_tenant_id": tenant_id,
-                "p_severity": severity,
-                "p_message": message,
-                "p_ig_version": ig_version,
-                "p_validation_engine": validation_engine,
-                "p_encountered_date": encountered_date   
+                "p_start_date": formattedStartDate,
+                "p_end_date": formattedEndDate,
+                "p_hub_interaction_id": hub_interaction_id
             };
 
             const gridRequestBody = {
@@ -194,7 +164,7 @@
             })
             .catch(error => {
                 console.error('Error fetching FHIR validation issue details: ' + error);
-                params.failCallback();
+              //  params.failCallback();
             });
         }
         document.addEventListener('DOMContentLoaded', function () {
@@ -252,21 +222,31 @@
                     "p_end_date": formattedEndDate
                 };
 
-                helpers.injectDateRangeText('date-range', 'This data grid provides a high-level summary view on the Data Quality page, highlighting errors in submissions to facilitate swift identification and resolution from <b>{startDate}</b> to <b>{endDate}</b>. Key fields such as Date, Tenant ID, Issue Message, Severity, IG Version, HAPI Version, and Issue Count are displayed, offering a comprehensive snapshot of data quality issues. The Severity field categorizes issues into ERROR and WARNING, enabling users to prioritize their efforts effectively. A drill-down feature enables users to explore detailed insights for each entry, including additional context like the associated Bundle ID and other relevant information. This functionality ensures efficient error tracing and resolution, streamlining the data validation process and enhancing overall submission quality.');
-
+                helpers.injectDateRangeText(
+                                            'date-range',
+                                            'This table displays FHIR validation interactions from <b>{startDate}</b> to <b>{endDate}</b>. The grid shows TechBD Interaction ID, Tenant ID, Bundle ID, URI, Created At, IG Version, Tech by Design Version, and HAPI Version. Expand any row to view detailed validation issues for the interaction, including the issue message, line, column, and diagnostics. Issues are categorized by severity (warning, error, fatal) to help users quickly identify and prioritize validation problems.'
+                                            );
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
 
                 const agGridInstance = new AGGridAideBuilder()
-                    .withColumnDefs([
-                         { headerName: "Encountered Date", field: "encountered_date", sortable: true,   filter: "agDateColumnFilter", cellRenderer: 'agGroupCellRenderer', headerTooltip: "Date indicating when the issue was encountered." },
-                        { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },
-                        { headerName: "Severity", field: "severity", filter: "agTextColumnFilter", headerTooltip: "The severity of the issue." },
-                        { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter", headerTooltip: "A description of the issue." },
+                    .withColumnDefs([                       
+                        { headerName: "TechBD Interaction ID", field: "hub_interaction_id", sortable: true,   cellRenderer: 'agGroupCellRenderer', filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the interaction." },
+                        { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the FHIR bundle." },                        
+                        { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },                        
+                        { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction." },
+                        { headerName: "Created At", sort: "desc", field: "created_at", filter: "agDateColumnFilter",  headerTooltip: "Date indicating when the issue was encountered." },
                         { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
                         { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" }, 
-                        { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
-                        { headerName: "Issue Count", field: "issue_count", filter: "agTextColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
+                        { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },                        
+                        // {
+                        // headerName: "Payload with Issues", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        // headerTooltip: "Download Payload with Issues", filter: false, suppressFilter: true, sortable: false
+                        // }, 
+                        // {
+                        // headerName: "Original FHIR Payload", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        // headerTooltip: "Download Original FHIR Payload", filter: false, suppressFilter: true, sortable: false
+                        // }                       
                     ])
                     .withServerSideDatasource(
                         window.shell.serverSideUrl(url),
