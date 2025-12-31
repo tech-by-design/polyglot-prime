@@ -527,4 +527,64 @@ public class TabularRowsController {
                 .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
                 .body(content);
     }
+
+    
+    @Operation(summary = "Download file from a table by ID and nature", description = "Downloads a file and its name from the specified table and column when the row matches a given nature value.")
+    @GetMapping(value = "/api/ux/tabular/jooq/download/{schemaName}/{tableName}/{fileContentColName}/{idColumn}/{id}/nature/{natureValue}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<byte[]> downloadFileByIdAndNature(
+            @PathVariable String schemaName,
+            @PathVariable String tableName,
+            @PathVariable String fileContentColName,
+            @PathVariable String idColumn,
+            @PathVariable String id,
+            @PathVariable String natureValue,
+            @RequestParam(value = "fileName", required = true) String fileName
+    ) {
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(idColumn).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(fileContentColName).matches()) {
+            throw new IllegalArgumentException("Invalid schema, table, or column name.");
+        }
+
+        JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
+            .withTable(Tables.class, schemaName, tableName)
+            .withDSL(getDsl())
+            .withLogger(LOG)
+            .build();
+
+        // Decode nature value from path and use the column name "nature" by convention
+        String decodedNature = URLDecoder.decode(natureValue, StandardCharsets.UTF_8);
+        byte[] content = jooqRowsSupplier.downloadFileByIdAndNature(id, idColumn, fileContentColName, "nature", decodedNature);
+        int maxContentSize = fileDownloadProperties != null ? fileDownloadProperties.getMaxDownloadJsonPrettyPrintSizeBytes() : 1 * 1024 * 1024;
+        String resolvedFileName = (fileName != null && !fileName.isBlank()) ? fileName : "downloaded_file.dat";
+        boolean prettifyContent = false;
+        if (fileName != null && !fileName.isBlank()) {
+            try {
+                boolean endsWithJson = fileName.trim().toLowerCase().endsWith(".json");
+                if (endsWithJson && content != null && content.length < maxContentSize) {
+                    prettifyContent = true;
+                }
+                resolvedFileName = fileName;
+            } catch (Exception e) {
+                LOG.debug("fileName check failed, using as-is: {}", e.getMessage());
+                resolvedFileName = fileName;
+            }
+        }
+        if (prettifyContent) {
+            try {
+                // Try to parse and pretty-print the content
+                Object json = objectMapper.readValue(content, Object.class);
+                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+                String prettyJson = writer.writeValueAsString(json);
+                content = prettyJson.getBytes(StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                LOG.debug("File content is not valid JSON, sending as-is: {}", e.getMessage());
+            }
+        }
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
+                .body(content);
+    }    
 }

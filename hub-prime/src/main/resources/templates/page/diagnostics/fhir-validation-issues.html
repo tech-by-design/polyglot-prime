@@ -3,7 +3,7 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-   
+
     <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
     <style>
@@ -17,6 +17,7 @@
             font-weight: bold;
             margin: 12px 0px 11px 15px;
         }
+
         li {
             margin-bottom: 10px;
         }
@@ -24,12 +25,12 @@
         #date-picker-container {
             margin-top: 20px;
             display: flex;
-            gap: 10px;  
-            align-items: center;  
+            gap: 10px;
+            align-items: center;
             justify-content: flex-start;
         }
 
-        .date-picker-label{      
+        .date-picker-label {
             width: 100px;
             line-height: 35px;
         }
@@ -64,8 +65,7 @@
             font-size: 16px;
             display: none;
         }
-
-        </style>
+    </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -73,6 +73,7 @@
     <script src="https://www.jsviews.com/download/jsrender.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
@@ -80,7 +81,7 @@
 
         const schemaName = 'techbd_udi_ingress';
         const storedProcName = 'get_fhir_session_diagnostics';
-        const detailStoredProcName = 'get_fhir_session_diagnostics_details'; 
+        const detailStoredProcName = 'get_fhir_session_diagnostics_details';
         // Date formatting function
         const formatDate = (date) => {
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -97,17 +98,17 @@
             { headerName: "Diagnostics", field: "diagnostics", filter: "agTextColumnFilter", headerTooltip: "The diagnostics associated with the issue" },
         ];
 
- 
+
 
         function getFhirValidationIssueGridData(params) {
             const startDate = $('#start-date').datepicker('getDate');
             const endDate = $('#end-date').datepicker('getDate');
 
             const formattedStartDate = formatDate(startDate);
-            const formattedEndDate = formatDate(endDate);           
-            
-            const hub_interaction_id = params.data.hub_interaction_id; 
-            
+            const formattedEndDate = formatDate(endDate);
+
+            const hub_interaction_id = params.data.hub_interaction_id;
+
             const storedProcParams = {
                 "p_start_date": formattedStartDate,
                 "p_end_date": formattedEndDate,
@@ -136,40 +137,72 @@
                 },
                 body: JSON.stringify(gridRequestBody)
             })
-            .then(response => {
-                if (response.url.includes('/?timeout=true')) {
-                    window.location.href = '/?timeout=true';
-                    return null;
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(response => {
-                let rowData = response;
-
-                if (!Array.isArray(rowData)) {
-                    if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
-                        rowData = rowData.rows;
-                    } else if(rowData && rowData.data && Array.isArray(rowData.data)){
-                        rowData = rowData.data;
-                    } else {
-                        console.error("Unexpected response format:", response);
-                        rowData = [];
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true';
+                        return null;
                     }
-                }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    let rowData = response;
 
-                params.successCallback(rowData, rowData.length);
-            })
-            .catch(error => {
-                console.error('Error fetching FHIR validation issue details: ' + error);
-              //  params.failCallback();
-            });
+                    if (!Array.isArray(rowData)) {
+                        if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                            rowData = rowData.rows;
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
+                            rowData = rowData.data;
+                        } else {
+                            console.error("Unexpected response format:", response);
+                            rowData = [];
+                        }
+                    }
+
+                    params.successCallback(rowData, rowData.length);
+                })
+                .catch(error => {
+                    console.error('Error fetching FHIR validation issue details: ' + error);
+                    //  params.failCallback();
+                });
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const helpers = new Helpers();
+
+            function downloadOperationOutcome(params) {
+
+                const hubInteractionId = params.data.hub_interaction_id;
+                const nature = encodeURIComponent('techByDesignDisposition');
+                const file_name = hubInteractionId + '_' + nature + '.json';
+
+                // Create the URL for the API call                
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_fhir_request/payload/hub_interaction_id/${hubInteractionId}/nature/${nature}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="${apiUrl}" title="${file_name}" return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }
+            function downloadOriginalFHIRPayload(params) {
+                const hubInteractionId = params.data.hub_interaction_id;
+                const nature = encodeURIComponent('Original FHIR Payload');
+                const file_name = hubInteractionId + '_' + nature + '.json';
+
+                // Create the URL for the API call                
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_fhir_request/payload/hub_interaction_id/${hubInteractionId}/nature/${nature}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="${apiUrl}" title="${file_name}" return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }
 
             // Initialize date range
             const today = new Date();
@@ -182,7 +215,7 @@
             // Datepicker Initialization
             $("#start-date, #end-date").datepicker({
                 dateFormat: "mm-dd-yy",
-                onSelect: function() {
+                onSelect: function () {
                     const startDate = $('#start-date').datepicker('getDate');
                     const endDate = $('#end-date').datepicker('getDate');
                     const formattedStartDate = formatDate(startDate);
@@ -202,15 +235,15 @@
             updateGridWithDates(oneWeekAgo, today);
 
             // Search Button Click Handler
-            $('#searchButton').click(function() {
+            $('#searchButton').click(function () {
                 $('#serverDataGrid').empty();
                 const startDate = $('#start-date').datepicker('getDate');
                 const endDate = $('#end-date').datepicker('getDate');
                 updateGridWithDates(startDate, endDate);
             });
 
-            $('#clearButton').click(function() {
-               location.reload();
+            $('#clearButton').click(function () {
+                location.reload();
             });
 
             function updateGridWithDates(startDate, endDate) {
@@ -223,30 +256,30 @@
                 };
 
                 helpers.injectDateRangeText(
-                                            'date-range',
-                                            'This table displays FHIR validation interactions from <b>{startDate}</b> to <b>{endDate}</b>. The grid shows TechBD Interaction ID, Tenant ID, Bundle ID, URI, Created At, IG Version, Tech by Design Version, and HAPI Version. Expand any row to view detailed validation issues for the interaction, including the issue message, line, column, and diagnostics. Issues are categorized by severity (warning, error, fatal) to help users quickly identify and prioritize validation problems.'
-                                            );
+                    'date-range',
+                    'This table displays FHIR validation interactions from <b>{startDate}</b> to <b>{endDate}</b>. The grid shows TechBD Interaction ID, Tenant ID, Bundle ID, URI, Created At, IG Version, Tech by Design Version, and HAPI Version. Expand any row to view detailed validation issues for the interaction, including the issue message, line, column, and diagnostics. Issues are categorized by severity (warning, error, fatal) to help users quickly identify and prioritize validation problems.'
+                );
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
 
                 const agGridInstance = new AGGridAideBuilder()
-                    .withColumnDefs([                       
-                        { headerName: "TechBD Interaction ID", field: "hub_interaction_id", sortable: true,   cellRenderer: 'agGroupCellRenderer', filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the interaction." },
-                        { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the FHIR bundle." },                        
-                        { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },                        
+                    .withColumnDefs([
+                        { headerName: "TechBD Interaction ID", field: "hub_interaction_id", sortable: true, cellRenderer: 'agGroupCellRenderer', filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the interaction." },
+                        { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the FHIR bundle." },
+                        { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "The unique identifier for the TechBD tenant." },
                         { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction." },
-                        { headerName: "Created At", sort: "desc", field: "created_at", filter: "agDateColumnFilter",  headerTooltip: "Date indicating when the issue was encountered." },
+                        { headerName: "Created At", sort: "desc", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Date indicating when the issue was encountered." },
                         { headerName: "IG Version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
-                        { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" }, 
-                        { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },                        
+                        { headerName: "Tech by Design Version", field: "techbd_version_number", filter: "agTextColumnFilter", headerTooltip: "The Tech by Design Version Number" },
+                        { headerName: "HAPI Version", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
+                        {
+                            headerName: "FHIR Payload", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadOriginalFHIRPayload,
+                            headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, sortable: false
+                        },
                         // {
-                        // headerName: "Payload with Issues", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        // headerTooltip: "Download Payload with Issues", filter: false, suppressFilter: true, sortable: false
-                        // }, 
-                        // {
-                        // headerName: "Original FHIR Payload", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        // headerTooltip: "Download Original FHIR Payload", filter: false, suppressFilter: true, sortable: false
-                        // }                       
+                        // headerName: "OperationOutcome", field: "test", cellClass: "flex justify-center items-center", cellRenderer: downloadOperationOutcome,
+                        // headerTooltip: "Download OperationOutcome", filter: false, suppressFilter: true, sortable: false
+                        // }                     
                     ])
                     .withServerSideDatasource(
                         window.shell.serverSideUrl(url),
