@@ -756,4 +756,36 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         }
         return null;
     }
+
+    /**
+     * Downloads file content from a specific column for a given ID and an additional "nature" check.
+     * <p>
+     * This method is intended for use in API endpoints that serve file downloads where the
+     * resource must match both the id and an additional nature/value column (e.g. `/nature/{natureValue}`).
+     *
+     * @param id The primary key or unique identifier value for the row.
+     * @param idColumn The name of the ID column.
+     * @param fileDataColumn The name of the column containing the file data.
+     * @param natureColumn The name of the column containing the nature/value to check.
+     * @param natureValue The expected value for the nature column (from a path variable).
+     * @return The file content as a byte array, or null if not found or on error.
+     */
+    public byte[] downloadFileByIdAndNature(Object id, String idColumn, String fileDataColumn, String natureColumn,
+            Object natureValue) {
+        try {
+            Field<Object> idField = typableTable.column(idColumn);
+            Field<Object> natureField = typableTable.column(natureColumn);
+            Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            Record record = dsl.select(binaryField)
+                    .from(typableTable.table)
+                    .where(idField.eq(id).and(natureField.eq(natureValue)))
+                    .fetchOne();
+            if (record != null) {
+                return record.get(binaryField);
+            }
+        } catch (Exception e) {
+            LOG.error("Error downloading file for id: {} and nature value: {}", id, natureValue, e);
+        }
+        return null;
+    }    
 }
