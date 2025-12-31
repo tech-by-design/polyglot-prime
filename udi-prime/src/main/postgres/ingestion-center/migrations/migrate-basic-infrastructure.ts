@@ -741,7 +741,8 @@ const dependencies = [
   "../001_idempotent_interaction.psql",
   "../002_idempotent_diagnostics.psql",
   "../003_idempotent_migration.psql",
-  "../load_ref_code_lookup.psql",  
+  "../load_ref_code_lookup.psql", 
+  "../007_idempotent_interaction.psql",
 ] as const;
 
 const testMigrateDependencies = [
