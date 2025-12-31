@@ -462,6 +462,7 @@ public class JooqRowsSupplierForSP {
                         zipFileHubInteractionId);
                 return DSL.table(functionCall);
             }
+  
             case "get_fhir_session_diagnostics" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
@@ -474,29 +475,22 @@ public class JooqRowsSupplierForSP {
                         "techbd_udi_ingress.get_fhir_session_diagnostics(DATE '%s', DATE '%s')",
                         startDate, endDate);
                 return DSL.table(functionCall);
-            }
+            }            
+ 
             case "get_fhir_session_diagnostics_details" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
 
-                String tenantId = paramMap.get("p_tenant_id");
-                String severity = paramMap.get("p_severity");
-                String message = paramMap.get("p_message");
-                String igVersion = paramMap.get("p_ig_version");
-                String validationEngine = paramMap.get("p_validation_engine");
-                String encounteredDate = paramMap.get("p_encountered_date");
+                String hubInteractionId = paramMap.get("p_hub_interaction_id"); 
+                String startDate = paramMap.get("p_start_date");
+                String endDate = paramMap.get("p_end_date");                
 
                 // Create a table from the function call using raw SQL with proper null handling
                 String functionCall = String.format(
-                        "techbd_udi_ingress.get_fhir_session_diagnostics_details( %s, %s, %s, %s, %s,DATE %s)",
-                        tenantId != null ? "'" + tenantId + "'" : "NULL",
-                        severity != null ? "'" + severity + "'" : "NULL",
-                        message != null ? "'" + message.replace("'", "''") + "'" : "NULL",
-                        igVersion != null ? "'" + igVersion + "'" : "NULL",
-                        validationEngine != null ? "'" + validationEngine + "'" : "NULL",
-                        encounteredDate != null ? "'" + encounteredDate + "'" : "NULL");
+                        "techbd_udi_ingress.get_fhir_session_diagnostics_details(DATE '%s', DATE '%s', %s)",
+                        startDate, endDate, hubInteractionId != null ? "'" + hubInteractionId + "'" : "NULL");
                 return DSL.table(functionCall);
-            }
+            }  
             case "get_fhir_validation_issue_details" -> {
                 // Parse parameters from JSON
                 objectMapper = new ObjectMapper();
@@ -516,7 +510,7 @@ public class JooqRowsSupplierForSP {
                     source != null ? "'" + source.replace("'", "''") + "'" : "NULL"
                 );
                 return DSL.table(functionCall);
-            }            
+            }                           
             case "get_interaction_http_request" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);

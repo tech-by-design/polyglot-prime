@@ -9715,3 +9715,96 @@ AS $function$
 END;
 $function$
 ;
+
+
+/****************
+-- Retrieves FHIR session diagnostics within a date range, grouped by hub_interaction_id, returning the latest interaction metadata for sessions with validation issues
+******************/
+
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_session_diagnostics(DATE, DATE);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_session_diagnostics(
+    p_start_date DATE,
+    p_end_date   DATE
+)
+RETURNS TABLE (
+    hub_interaction_id     TEXT,
+    created_at             TIMESTAMPTZ,
+    tenant_id              TEXT,
+    bundle_id              TEXT,
+    uri                    TEXT,
+    ig_version             TEXT,
+    techbd_version_number  TEXT,
+    validation_engine      TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sifsd.hub_interaction_id,
+        MAX(sifsd.created_at)             AS created_at,
+        MAX(sifsd.tenant_id)              AS tenant_id,
+        MAX(sifsd.bundle_id)              AS bundle_id,
+        MAX(sifsd.uri)                    AS uri,
+        MAX(sifsd.ig_version)             AS ig_version,
+        MAX(sifsd.techbd_version_number)  AS techbd_version_number,
+        MAX(sifsd.validation_engine)      AS validation_engine
+    FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic sifsd
+    WHERE
+        LOWER(sifsd.severity) IN ('warning', 'error', 'fatal')
+        AND sifsd.message <> ''
+        AND sifsd.created_at >= p_start_date
+        AND sifsd.created_at < (p_end_date + 1)
+    GROUP BY
+        sifsd.hub_interaction_id
+    ORDER BY
+        created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+
+/****************
+-- Retrieves detailed FHIR validation issues within a date range, optionally filtered by hub_interaction_id, including severity, message, line, column, and diagnostics
+******************/
+
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_session_diagnostics_details(
+    TEXT, TEXT, TEXT, TEXT, TEXT, DATE
+);
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_session_diagnostics_details(
+    DATE, DATE, TEXT
+);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_session_diagnostics_details(
+    p_start_date DATE,
+    p_end_date   DATE,
+    p_hub_interaction_id TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    session_id TEXT,
+    severity TEXT,
+    message TEXT,
+    line TEXT,
+    col_no TEXT,             -- renamed (was "column")
+    diagnostics TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT     
+        sifsd.session_id,
+        LOWER(sifsd.severity) AS severity,
+        sifsd.message,
+        sifsd.line,
+        sifsd."column" AS col_no,  -- map the quoted table column into the renamed output
+        sifsd.diagnostics              
+    FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic sifsd
+    WHERE
+        (p_hub_interaction_id IS NULL OR sifsd.hub_interaction_id = p_hub_interaction_id)  
+        AND LOWER(sifsd.severity) IN ('warning', 'error', 'fatal') 
+        AND sifsd.message <> '' 
+        AND sifsd.created_at >= p_start_date
+        AND sifsd.created_at < (p_end_date + 1)
+    ORDER BY sifsd.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
