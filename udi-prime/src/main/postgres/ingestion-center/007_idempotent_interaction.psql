@@ -1,0 +1,88 @@
+/*****************************************************************************************************************
+-- Created function to list all bundles with details which are not in 'COMPLETED' status within the given date range.
+******************************************************************************************************************/
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_bundles_replayed(start_time timestamp with time zone DEFAULT NULL::timestamp with time zone, end_time timestamp with time zone DEFAULT NULL::timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_return jsonb := '{}'::jsonb;
+BEGIN 
+    WITH prioritized_json AS (
+        SELECT
+            rq.bundle_id,
+            rq.hub_interaction_id,
+            rq.tenant_id,
+            rq.source_type,
+            rq.uri,
+            rq.group_hub_interaction_id,
+            rq.source_hub_interaction_id,
+            rd.replay_status,
+            rd.error_message AS rd_error_message,
+            rq.error_message AS rq_error_message,
+			rq.created_at,
+			rq.nature,
+			COALESCE(rq.replay_on, rq.created_at) AS submissionAttemptedDate,
+            CASE 
+                WHEN rq.nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN rq.nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request rq
+        LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
+          ON rq.bundle_id = rd.bundle_id
+         AND rq.hub_interaction_id = rd.hub_interaction_id
+        WHERE rq.to_state = 'FAIL'
+          AND rq.bundle_id IS NOT NULL
+          AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (rq.nature = 'Forwarded HTTP Response Replay Error')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            rq.nature = 'Forwarded HTTP Response Error'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = rq.bundle_id
+		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
+		            )		            
+		        )
+		     )
+		 -- Apply date filter
+         AND (rq.created_at >= start_time AND rq.created_at <= end_time)
+    )
+    SELECT jsonb_build_object(
+        'bundle_count', COUNT(bundle_id),
+        'bundles', jsonb_agg(
+            jsonb_build_object(
+                'bundleid', bundle_id,
+				'created_at', created_at,
+				'nature', nature,
+                'interactionid', hub_interaction_id,
+                'tenantID', tenant_id,
+                'source', source_type,
+                'uri', uri,
+                'errorMessage', COALESCE(rd_error_message::text, ''),
+                'groupInteractionId', CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
+                'zipInteractionID', CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END,
+                'submissionAttemptedDate', submissionAttemptedDate,
+                'submissionFailedReason', COALESCE(rd_error_message::text, rq_error_message::text, '')
+            )
+        )
+    )
+    INTO v_return
+    FROM (
+        SELECT DISTINCT ON (bundle_id, hub_interaction_id)
+            *
+        FROM prioritized_json
+        ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ) final_json;
+
+    RETURN COALESCE(v_return, jsonb_build_object(
+        'bundle_count', 0,
+        'bundles', '[]'::jsonb
+    ));
+END;
+$function$
+;

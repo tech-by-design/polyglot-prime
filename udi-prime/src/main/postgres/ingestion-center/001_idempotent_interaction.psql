@@ -9533,6 +9533,10 @@ BEGIN
 END;
 $$;
 
+/*****************************************************************************************************************
+-- Get the bundle type from the given FHIR bundle as REFERRAL, ASSESSMENT, SCREENING, CONSENT_ONLY or OUTREACH_ONLY
+******************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_bundle_type(jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_bundle_type(p_payload jsonb)
  RETURNS text
  LANGUAGE plpgsql
