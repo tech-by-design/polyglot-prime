@@ -69,6 +69,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 .withMatchers(
                         regexAndMethods == null
                                 ? List.of(
+                                    "^/Bundles/status/nyec-submission-failed",
                                         "^/login",
                                         "^/home",
                                         "^/docs", "^/docs/techbd-hub", "^/docs/shinny-fhir-ig", "^/docs/swagger-ui",

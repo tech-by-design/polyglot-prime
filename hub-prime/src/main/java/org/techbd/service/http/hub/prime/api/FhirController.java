@@ -384,7 +384,8 @@ public class FhirController {
         @ResponseBody
         public Object replayBundles(
                         @RequestHeader("X-TechBD-StartDate") String startDateStr,
-                        @RequestHeader("X-TechBD-EndDate") String endDateStr,HttpServletRequest request) {
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId, HttpServletRequest request) {
 
                 UUID interactionId = UUID.randomUUID();
                  try {
@@ -405,7 +406,7 @@ public class FhirController {
                         LOG.info("Replaying Bundles from {} to {} for interactionId {}", startDate, endDate,
                                         interactionId);
 
-                        return fhirReplayService.replayBundles(request,interactionId.toString(), startDate, endDate);
+                        return fhirReplayService.replayBundles(request,interactionId.toString(), startDate, endDate,tenantId);
 
                 } catch (DateTimeParseException e) {
                         LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for interactionId {}",
@@ -417,6 +418,67 @@ public class FhirController {
                 } 
         }
 
+        @GetMapping(value = { "/Bundles/status/nyec-submission-failed", "/Bundles/status/nyec-submission-failed/" })
+        @Operation(summary = "Retrieve FHIR Bundles that failed NYEC submission", description = """
+                        Fetches bundles that failed NYEC submission within the specified date/datetime range.
+                        Optionally filter by tenant ID.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved failed bundles."),
+                        @ApiResponse(responseCode = "400", description = "Invalid or missing parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getFailedNyecSubmissions(
+                        @RequestHeader("X-TechBD-StartDate") String startDateStr,
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+
+                try {
+                        if (startDateStr.equals(endDateStr)) {
+                                throw new IllegalArgumentException(
+                                                "startDate cannot be same as endDate for requestId: " + requestId);
+                        }
+                        OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
+                        OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
+
+                        // Validate date range
+                        if (endDate.isBefore(startDate)) {
+                                throw new IllegalArgumentException(
+                                                "endDate cannot be before startDate for requestId: " + requestId);
+                        }
+
+                        LOG.info("Fetching failed NYEC submissions from {} to {} for requestId {} | tenantId={}",
+                                        startDate, endDate, requestId, tenantId != null ? tenantId : "ALL");
+                        return fhirReplayService.getFailedNyecSubmissionBundles(
+                                        startDate,
+                                        endDate,tenantId);
+
+                } catch (DateTimeParseException e) {
+                        LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for requestId {}",
+                                        startDateStr, endDateStr, requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message",
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                                        "requestId", requestId.toString());
+                } catch (IllegalArgumentException e) {
+                        LOG.error("Validation error for requestId {}: {}", requestId, e.getMessage());
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", e.getMessage(),
+                                        "requestId", requestId.toString());
+                } catch (Exception e) {
+                        LOG.error("Unexpected error fetching failed NYEC submissions for requestId {}", requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", "An unexpected error occurred while fetching failed submissions",
+                                        "requestId", requestId.toString());
+                }
+        }
 
         private OffsetDateTime parseFlexibleDate(String input, boolean isStart) {
                 if (input == null || input.isBlank()) {

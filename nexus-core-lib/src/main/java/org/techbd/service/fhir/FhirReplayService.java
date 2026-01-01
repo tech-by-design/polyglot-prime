@@ -19,6 +19,7 @@ import org.techbd.config.Configuration;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.GetFhirBundlesToReplay;
 import org.techbd.udi.auto.jooq.ingress.routines.GetFhirPayloadForNyec;
+import org.techbd.udi.auto.jooq.ingress.routines.GetNyecSubmissionFailedBundles;
 import org.techbd.udi.auto.jooq.ingress.routines.UpdateFhirReplayStatus;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
@@ -51,12 +52,11 @@ public class FhirReplayService {
     }
 
     public Map<String, Object> replayBundles(HttpServletRequest request, String replayId, OffsetDateTime startDate,
-            OffsetDateTime endDate) {
+            OffsetDateTime endDate,String tenantId) {
         LOG.info("FHIR-REPLAY Starting replayBundles for replayId={} | startDate={} | endDate={}",
                 replayId, startDate, endDate);
         final var jooqCfg = primaryDslContext.configuration();
-        Map<String, Object> bundlesResponse = getBundlesToReplay(jooqCfg,replayId, startDate, endDate);
-
+        Map<String, Object> bundlesResponse = getBundlesToReplay(jooqCfg,replayId, startDate, endDate,tenantId);
         if (bundlesResponse.isEmpty() || !bundlesResponse.containsKey("bundles")) {
             LOG.warn("FHIR-REPLAY No bundles found to replay for replayId={}", replayId);
             return Map.of(
@@ -97,7 +97,7 @@ public class FhirReplayService {
                 final var bundleInteractionId = (String) bundle.get("interactionid");
                 final var groupInteractionId = (String) bundle.get("groupInteractionId");
                 final var zipInteractionId = (String) bundle.get("zipInteractionID");
-                final var tenantId = (String) bundle.get("tenantID");
+                final var tenant = (String) bundle.get("tenantID");
                 final var source = (String) bundle.get("source");
                 final var requestUri = (String) bundle.get("uri");
                 var errorMessage = (String) bundle.get("errorMessage");
@@ -111,7 +111,7 @@ public class FhirReplayService {
                             zipInteractionId,
                             groupInteractionId,
                             bundleId,
-                            tenantId,
+                            tenant,
                             source);
                         // Call scoring engine
 
@@ -119,7 +119,7 @@ public class FhirReplayService {
                                 null,
                                 appConfig.getDefaultDatalakeApiUrl(),
                                 MediaType.APPLICATION_JSON_VALUE,
-                                tenantId,
+                                tenant,
                                 null,
                                 provenance,
                                 null,
@@ -140,7 +140,7 @@ public class FhirReplayService {
                                 zipInteractionId,
                                 groupInteractionId,
                                 bundleId,
-                                tenantId,
+                                tenant,
                                 source);
                     
                 } catch (Exception e) {
@@ -210,10 +210,61 @@ public class FhirReplayService {
         }
     }
 
+    /**
+     * Fetches FHIR bundles that failed NYEC submission within the specified date
+     * range.
+     * Optionally filters by tenant ID if provided.
+     *
+     * @param jooqCfg   The jOOQ configuration
+     * @param startDate The start date/time of the search range
+     * @param endDate   The end date/time of the search range
+     * @return Map containing bundle_count and list of failed bundles
+     */
+    public Map<String, Object> getFailedNyecSubmissionBundles(
+            final OffsetDateTime startDate,
+            final OffsetDateTime endDate,final String tenantId) {
+
+        LOG.info("Fetching failed NYEC submission bundles | startDate={} | endDate={}",
+                startDate, endDate);
+
+        try {
+            final var jooqCfg = primaryDslContext.configuration();
+            final var getNyecSubmissionFailedBundles = new GetNyecSubmissionFailedBundles();
+            getNyecSubmissionFailedBundles.setPStartTime(startDate);
+            getNyecSubmissionFailedBundles.setPEndTime(endDate);
+            getNyecSubmissionFailedBundles.setPTenantId(tenantId);
+            int executeResult = getNyecSubmissionFailedBundles.execute(jooqCfg);
+            final var responseJson = (JsonNode) getNyecSubmissionFailedBundles.getReturnValue();
+            if (responseJson == null || responseJson.isEmpty()) {
+                LOG.warn("No failed NYeC submission bundles found | startDate={} | endDate={}",
+                        startDate, endDate);
+                return Map.of(
+                        "bundle_count", 0,
+                        "bundles", "\"No failed NYeC submission bundles found in the specified date range.\"");
+            }
+            final Map<String, Object> response = Configuration.objectMapper.convertValue(responseJson, Map.class);
+            LOG.info("FHIR-REPLAY Found {} failed NYeC submission bundles",
+                    response.getOrDefault("bundle_count", 0));
+            
+            if (response.getOrDefault("bundle_count", 0).equals(0)) {
+                LOG.warn("No failed NYeC submission bundles found | startDate={} | endDate={}",
+                        startDate, endDate);
+                return Map.of(
+                        "bundle_count", 0,
+                        "bundles", "No failed NYeC submission bundles found in the specified date range.\"");
+            }        
+            return response;
+        } catch (Exception e) {
+            LOG.error("Error fetching failed NYeC submission bundles | startDate={} | endDate={} : {}",
+                    startDate, endDate, e.getMessage(), e);
+            throw new RuntimeException("Failed to fetch failed NYEC submission bundles", e);
+        }
+    }
+
     private Map<String, Object> getBundlesToReplay(final org.jooq.Configuration jooqCfg,
             final String interactionId,
             final OffsetDateTime startDate,
-            final OffsetDateTime endDate) {
+            final OffsetDateTime endDate,String teanantId) {
         LOG.info("FHIR-REPLAY Fetching bundles to replay for interactionId={} | startDate={} | endDate={}",
                 interactionId, startDate, endDate);
 
@@ -223,6 +274,7 @@ public class FhirReplayService {
             getFhirBundlesToReplay.setPReplayMasterId(interactionId);
             getFhirBundlesToReplay.setStartTime(startDate);
             getFhirBundlesToReplay.setEndTime(endDate);
+            getFhirBundlesToReplay.setPTenantId(teanantId);
 
             // Execute the stored procedure
             int executeResult = getFhirBundlesToReplay.execute(jooqCfg);
