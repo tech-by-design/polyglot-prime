@@ -176,7 +176,7 @@
 
                 const hubInteractionId = params.data.hub_interaction_id;
                 const nature = encodeURIComponent('techByDesignDisposition');
-                const file_name = hubInteractionId + '_' + nature + '.json';
+                const file_name = hubInteractionId + '_OperationOutcome.json';
 
                 // Create the URL for the API call                
                 const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_fhir_request/payload/hub_interaction_id/${hubInteractionId}/nature/${nature}?fileName=${file_name}`;
@@ -276,10 +276,10 @@
                             headerName: "FHIR Payload", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadOriginalFHIRPayload,
                             headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, sortable: false
                         },
-                        // {
-                        // headerName: "OperationOutcome", field: "test", cellClass: "flex justify-center items-center", cellRenderer: downloadOperationOutcome,
-                        // headerTooltip: "Download OperationOutcome", filter: false, suppressFilter: true, sortable: false
-                        // }                     
+                        {
+                        headerName: "OperationOutcome", field: "test", cellClass: "flex justify-center items-center", cellRenderer: downloadOperationOutcome,
+                        headerTooltip: "Download OperationOutcome", filter: false, suppressFilter: true, sortable: false
+                        }                     
                     ])
                     .withServerSideDatasource(
                         window.shell.serverSideUrl(url),
