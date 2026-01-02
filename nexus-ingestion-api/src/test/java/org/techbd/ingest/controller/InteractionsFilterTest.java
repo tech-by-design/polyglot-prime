@@ -22,6 +22,7 @@ import org.mockito.MockitoAnnotations;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.FilterChain;
@@ -59,6 +60,9 @@ class InteractionsFilterTest {
     private FilterChain filterChain;
 
     @Mock
+    private SoapFaultUtil soapFaultUtil;
+
+    @Mock
     private PortResolverService portResolverService;
 
     private InteractionsFilter interactionsFilter;
@@ -78,7 +82,7 @@ class InteractionsFilterTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(any(Class.class))).thenReturn(templateLogger);
-        interactionsFilter = new InteractionsFilter(appLogger, portConfig,portResolverService, s3Client);
+        interactionsFilter = new InteractionsFilter(appLogger, portConfig,portResolverService, s3Client, soapFaultUtil);
     }
 
     @Nested

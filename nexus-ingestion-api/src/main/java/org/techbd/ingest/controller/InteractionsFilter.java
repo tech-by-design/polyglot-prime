@@ -3,8 +3,10 @@ package org.techbd.ingest.controller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
@@ -31,11 +33,15 @@ import org.bouncycastle.openssl.PEMParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
+import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import com.google.common.cache.Cache;
@@ -50,57 +56,61 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import org.techbd.ingest.commons.Constants;
+
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
 
-
     private final TemplateLogger LOG;
-
     private final PortConfig portConfig;
     private final PortResolverService portResolverService;
     private final S3Client s3Client;
     private final Cache<String, X509Certificate[]> caCache;
+    private final SoapFaultUtil soapFaultUtil;
     private static final Pattern PATH_PATTERN = Pattern.compile("^/(?:ingest/)?([^/]+)/([^/]+)(?:/.*)?$");
 
     public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, 
-                             PortResolverService portResolverService, S3Client s3Client) {
+                             PortResolverService portResolverService, S3Client s3Client, SoapFaultUtil soapFaultUtil) {
         this.LOG = appLogger.getLogger(InteractionsFilter.class);
         this.portConfig = portConfig;
         this.portResolverService = portResolverService;
         this.s3Client = s3Client;
+        this.soapFaultUtil = soapFaultUtil;
         this.caCache = CacheBuilder.newBuilder().expireAfterWrite(Duration.ofMinutes(60)).build();
     }
 
     @Override
     protected void doFilterInternal(final HttpServletRequest origRequest, final HttpServletResponse origResponse,
             final FilterChain chain) throws IOException, ServletException {
-        if (!origRequest.getRequestURI().equals("/")
-                && !origRequest.getRequestURI().startsWith("/actuator/health")) {
-            LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
-                    origRequest.getRequestURI());
+        boolean isSoapEndpoint = origRequest.getRequestURI().startsWith("/ws");
+        String interactionId = null;
+        
+        try {
+            if (!origRequest.getRequestURI().equals("/")
+                    && !origRequest.getRequestURI().startsWith("/actuator/health")) {
+                LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
+                        origRequest.getRequestURI());
 
-           if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-            try {
-                Enumeration<String> headerNames = origRequest.getHeaderNames();
-                if (headerNames != null) {
-                    while (headerNames.hasMoreElements()) {
-                        String name = headerNames.nextElement();
-                        List<String> values = new ArrayList<>();
-                        Enumeration<String> vals = origRequest.getHeaders(name);
-                        while (vals.hasMoreElements()) {
-                            values.add(vals.nextElement());
+               if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+                try {
+                    Enumeration<String> headerNames = origRequest.getHeaderNames();
+                    if (headerNames != null) {
+                        while (headerNames.hasMoreElements()) {
+                            String name = headerNames.nextElement();
+                            List<String> values = new ArrayList<>();
+                            Enumeration<String> vals = origRequest.getHeaders(name);
+                            while (vals.hasMoreElements()) {
+                                values.add(vals.nextElement());
+                            }
+                            LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
                         }
-                        LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
                     }
+                } catch (Exception e) {
+                    LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
                 }
-            } catch (Exception e) {
-                LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
             }
-        }
-            
                 
-              String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
+                
+              interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
 
                 if (StringUtils.isEmpty(interactionId)) {
                     interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
@@ -348,8 +358,93 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
                 chain.doFilter(origRequest, origResponse);
                 return;
+            }
+            chain.doFilter(origRequest, origResponse);
+            
+        } catch (Exception e) {
+            // NEW: Handle SOAP-specific errors
+            if (isSoapEndpoint && isSoapParsingError(e)) {
+                // Use fallback for interactionId if not set yet
+                if (interactionId == null) {
+                    interactionId = "unknown";
+                }
+                handleSoapError(origRequest, origResponse, e, interactionId);
+            } else {
+                // Re-throw non-SOAP errors
+                throw e;
+            }
         }
-        chain.doFilter(origRequest, origResponse);
+    }
+    /**
+     * Check if the exception is related to SOAP parsing/message creation
+     */
+    private boolean isSoapParsingError(Exception e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return false;
+        }
+        
+        return message.contains("Unable to create SOAP message") ||
+               message.contains("Empty request body") ||
+               message.contains("Unable to create envelope") ||
+               message.contains("SAAJ0511") ||
+               e instanceof IOException;
+    }
+
+    /**
+     * Generate and send SOAP fault response with error trace ID
+     */
+    private void handleSoapError(HttpServletRequest request, HttpServletResponse response, 
+                                 Exception e, String interactionId) {
+        String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+        
+        try {
+            // Determine error message
+            String errorMessage = "Unable to process SOAP request";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("Empty request body")) {
+                    errorMessage = "Empty request body - no SOAP message provided";
+                } else if (e.getMessage().contains("Unable to create envelope")) {
+                    errorMessage = "Invalid SOAP message format";
+                } else {
+                    errorMessage = e.getMessage();
+                }
+            }
+            
+            LOG.error("InteractionsFilter:: SOAP parsing error. interactionId={}, errorTraceId={}, error={}", 
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                400, 
+                "SOAP parsing error: " + errorMessage, 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
+            
+            // Determine SOAP version and generate fault using utility
+            String contentType = request.getContentType();
+            boolean isSoap12 = soapFaultUtil.isSoap12(contentType);
+            
+            String soapFault = soapFaultUtil.createSoapFault(errorMessage, interactionId, errorTraceId, isSoap12);
+            
+            // Set response
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType(isSoap12 ? "application/soap+xml; charset=utf-8" : "text/xml; charset=utf-8");
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            
+            PrintWriter writer = response.getWriter();
+            writer.write(soapFault);
+            writer.flush();
+            
+            LOG.info("InteractionsFilter:: Sent SOAP fault response. interactionId={}, errorTraceId={}", 
+                    interactionId, errorTraceId);
+            
+        } catch (Exception ex) {
+            LOG.error("InteractionsFilter:: Failed to generate SOAP fault response. interactionId={}, errorTraceId={}, error={}", 
+                    interactionId, errorTraceId, ex.getMessage(), ex);
+        }
     }
 
     /**
@@ -462,5 +557,4 @@ public class InteractionsFilter extends OncePerRequestFilter {
             throw new CertificateException("Certificate chain validation failed: " + details.toString(), e);
         }
     }
-
 }

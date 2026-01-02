@@ -13,10 +13,12 @@ import org.techbd.ingest.AbstractMessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 import org.techbd.iti.schema.ObjectFactory;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
@@ -83,6 +85,8 @@ public class PnrEndpoint extends AbstractMessageSourceProvider {
             interactionId = UUID.randomUUID().toString();
         }
         
+        String errorTraceId = null;
+        
         try {
             log.info("PnrEndpoint:: Received ProvideAndRegisterDocumentSet-b (ITI-41) request. sourceId={} msgType={} interactionId={}",
                     sourceId, msgType, interactionId);
@@ -104,10 +108,22 @@ public class PnrEndpoint extends AbstractMessageSourceProvider {
             return jaxbResponse;
             
         } catch (Exception e) {
-            log.error("PnrEndpoint:: Exception processing ITI-41 request. sourceId={} msgType={} interactionId={}, error={}", 
-                sourceId, msgType, interactionId, e.getMessage(), e);
+            // Generate error trace ID
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
             
-            RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId);
+            log.error("PnrEndpoint:: Exception processing ITI-41 request. sourceId={} msgType={} interactionId={}, errorTraceId={}, error={}", 
+                sourceId, msgType, interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                500, 
+                "Exception processing ProvideAndRegisterDocumentSet-b (ITI-41) request", 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
+            
+            RegistryResponseType response = ackService.createPnrAcknowledgement("Failure", interactionId, errorTraceId);
             ObjectFactory factory = new ObjectFactory();
             return factory.createRegistryResponse(response);
         }

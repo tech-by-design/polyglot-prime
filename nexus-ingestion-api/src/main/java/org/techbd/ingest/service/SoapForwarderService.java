@@ -19,7 +19,9 @@ import org.springframework.ws.transport.context.TransportContext;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpUrlConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,6 +59,8 @@ public class SoapForwarderService {
      */
     public ResponseEntity<String> forward(HttpServletRequest request, String body, 
                                           String sourceId, String msgType, String interactionId) {
+        String errorTraceId = null;
+        
         try {
             String contentType = request.getContentType();
             LOG.info("SoapForwarderService:: Forwarding request. ContentType={} sourceId={} msgType={} interactionId={}", 
@@ -139,7 +143,20 @@ public class SoapForwarderService {
                 .body(soapResponse);
 
         } catch (Exception e) {
-            LOG.error("SoapForwarderService:: Error forwarding request. interactionId={}", interactionId, e);
+            // Generate error trace ID for forwarding errors
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            LOG.error("SoapForwarderService:: Error forwarding request. interactionId={}, errorTraceId={}, error={}", 
+                interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                500, 
+                "SOAP forwarding error", 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
             
             // Determine SOAP version for fault response
             String soapVersion = determineSoapVersion(body);
@@ -149,7 +166,7 @@ public class SoapForwarderService {
                 .header("Content-Type", soapVersion.equals(SOAPConstants.SOAP_1_2_PROTOCOL) 
                     ? "application/soap+xml; charset=utf-8" 
                     : "text/xml; charset=utf-8")
-                .body(createSoapFault(e.getMessage(), soapVersion));
+                .body(createSoapFault(e.getMessage(), soapVersion, interactionId, errorTraceId));
         }
     }
 
@@ -325,17 +342,20 @@ public class SoapForwarderService {
     /**
      * Creates a SOAP fault message for error responses.
      * Creates SOAP 1.1 or 1.2 fault based on the protocol version.
+     * MODIFIED: Added interactionId and errorTraceId parameters
      * 
      * @param errorMessage The error message
      * @param soapProtocol The SOAP protocol version
+     * @param interactionId The interaction ID for tracking
+     * @param errorTraceId The error trace ID for debugging
      * @return SOAP fault XML string
      */
-    private String createSoapFault(String errorMessage, String soapProtocol) {
+    private String createSoapFault(String errorMessage, String soapProtocol, String interactionId, String errorTraceId) {
         if (soapProtocol.equals(SOAPConstants.SOAP_1_2_PROTOCOL)) {
-            // SOAP 1.2 Fault
+            // SOAP 1.2 Fault with error details
             return """
                 <?xml version="1.0" encoding="UTF-8"?>
-                <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+                <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:err="http://techbd.org/errorinfo">
                     <env:Body>
                         <env:Fault>
                             <env:Code>
@@ -344,23 +364,31 @@ public class SoapForwarderService {
                             <env:Reason>
                                 <env:Text xml:lang="en">%s</env:Text>
                             </env:Reason>
+                            <env:Detail>
+                                <err:InteractionId>%s</err:InteractionId>
+                                <err:ErrorTraceId>%s</err:ErrorTraceId>
+                            </env:Detail>
                         </env:Fault>
                     </env:Body>
                 </env:Envelope>
-                """.formatted(escapeXml(errorMessage));
+                """.formatted(escapeXml(errorMessage), escapeXml(interactionId), escapeXml(errorTraceId));
         } else {
-            // SOAP 1.1 Fault
+            // SOAP 1.1 Fault with error details
             return """
                 <?xml version="1.0" encoding="UTF-8"?>
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:err="http://techbd.org/errorinfo">
                     <soap:Body>
                         <soap:Fault>
                             <faultcode>soap:Server</faultcode>
                             <faultstring>%s</faultstring>
+                            <detail>
+                                <err:InteractionId>%s</err:InteractionId>
+                                <err:ErrorTraceId>%s</err:ErrorTraceId>
+                            </detail>
                         </soap:Fault>
                     </soap:Body>
                 </soap:Envelope>
-                """.formatted(escapeXml(errorMessage));
+                """.formatted(escapeXml(errorMessage), escapeXml(interactionId), escapeXml(errorTraceId));
         }
     }
 
