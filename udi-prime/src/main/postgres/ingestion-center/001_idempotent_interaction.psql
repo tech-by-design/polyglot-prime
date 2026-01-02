@@ -2708,7 +2708,7 @@ BEGIN
             insert_fhir_session_diagnostic.tenant_id,
             insert_fhir_session_diagnostic.uri,
             insert_fhir_session_diagnostic.bundle_session_id,
-            session_diagnostic_set.severity,
+            LOWER(session_diagnostic_set.severity),
             session_diagnostic_set.message,
             session_diagnostic_set.line,
             session_diagnostic_set.column,
@@ -9279,7 +9279,7 @@ AS $function$
 		            AND NOT jsonb_path_exists(
 		                p_payload,
 		                '$.entry[*].resource ? (
-		                    @.resourceType == "Observation"
+		                    (@.resourceType == "Observation" && @.meta.profile[*] like_regex "shinny-observation-screening-response$")
 		                    || @.resourceType == "Condition"
 		                    || @.resourceType == "ServiceRequest"
 		                    || @.resourceType == "Task"
@@ -9316,7 +9316,7 @@ AS $function$
 		            NOT jsonb_path_exists(
 		                p_payload,
 		                '$.entry[*].resource ? (
-		                    @.resourceType == "Observation"
+		                    (@.resourceType == "Observation" && @.meta.profile[*] like_regex "shinny-observation-screening-response$")
 		                    || @.resourceType == "Condition"
 		                    || @.resourceType == "ServiceRequest"
 		                    || @.resourceType == "Task"
