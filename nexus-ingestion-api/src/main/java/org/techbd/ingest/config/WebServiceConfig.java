@@ -136,7 +136,12 @@ public class WebServiceConfig extends WsConfigurationSupport {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 inputStream.transferTo(baos);
                 byte[] bytes = baos.toByteArray();
-                
+
+                // Check for empty request body
+                if (bytes == null || bytes.length == 0) {
+                    throw new IOException("Empty request body - no SOAP message provided");
+                }
+
                 // Check if it's MTOM multipart content from HTTP header
                 if (httpContentType != null && httpContentType.contains("multipart/related")) {
                     // Handle MTOM - create MIME headers from HTTP request

@@ -14,10 +14,12 @@ import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
@@ -79,6 +81,8 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             interactionId = UUID.randomUUID().toString();
         }
         
+        String errorTraceId = null;
+        
         try {
             log.info("PixEndpoint:: Received PRPA_IN201301UV02 request. sourceId={} msgType={} interactionId={}", 
                 sourceId, msgType, interactionId);
@@ -98,9 +102,22 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
-            log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, error={}",
-                    interactionId, e.getMessage(), e);
-            return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
+            // Generate error trace ID
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            log.error("PixEndpoint:: Exception processing PRPA_IN201301UV02. interactionId={}, errorTraceId={}, error={}",
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                500, 
+                "Exception processing PRPA_IN201301UV02", 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
+            
+            return ackService.createPixAcknowledgmentError("Internal server error", interactionId, errorTraceId);
         } 
     }
 
@@ -125,6 +142,8 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             interactionId = UUID.randomUUID().toString();
         }
         
+        String errorTraceId = null;
+        
         try {
             log.info("PixEndpoint:: Received PRPA_IN201302UV02 request. sourceId={} msgType={} interactionId={}", 
                 sourceId, msgType, interactionId);
@@ -144,9 +163,22 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
-            log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, error={}",
-                    interactionId, e.getMessage(), e);
-            return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
+            // Generate error trace ID
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            log.error("PixEndpoint:: Exception processing PRPA_IN201302UV02. interactionId={}, errorTraceId={}, error={}",
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                500, 
+                "Exception processing PRPA_IN201302UV02", 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
+            
+            return ackService.createPixAcknowledgmentError("Internal server error", interactionId, errorTraceId);
         } 
     }
 
@@ -171,6 +203,8 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             interactionId = UUID.randomUUID().toString();
         }
         
+        String errorTraceId = null;
+        
         try {
             log.info("PixEndpoint:: Received PRPA_IN201304UV02 request. sourceId={} msgType={} interactionId={}", 
                 sourceId, msgType, interactionId);
@@ -190,9 +224,22 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             httpRequest.setAttribute(Constants.REQUEST_CONTEXT, context);
             return response;
         } catch (Exception e) {
-            log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, error={}",
-                    interactionId, e.getMessage(), e);
-            return ackService.createPixAcknowledgmentError("Internal server error", interactionId);
+            // Generate error trace ID
+            errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+            
+            log.error("PixEndpoint:: Exception processing PRPA_IN201304UV02. interactionId={}, errorTraceId={}, error={}",
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Log detailed error to CloudWatch
+            LogUtil.logDetailedError(
+                500, 
+                "Exception processing PRPA_IN201304UV02", 
+                interactionId, 
+                errorTraceId, 
+                e
+            );
+            
+            return ackService.createPixAcknowledgmentError("Internal server error", interactionId, errorTraceId);
         } 
     }
 
