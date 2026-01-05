@@ -44,6 +44,7 @@ BEGIN
 		                SELECT 1
 		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
 		                WHERE sub.bundle_id = fhir.bundle_id
+						  AND sub.hub_interaction_id = fhir.hub_interaction_id
 		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
 		            )
 		            -- Apply date filter only for Response Error
@@ -121,6 +122,7 @@ BEGIN
 		                SELECT 1
 		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
 		                WHERE sub.bundle_id = rq.bundle_id
+						  AND sub.hub_interaction_id = rq.hub_interaction_id
 		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
 		            )
 		            -- Apply date filter only for Response Error
@@ -246,7 +248,12 @@ $function$;
 -- Function to list all bundles with details which are not in 'COMPLETED' status within the given date range.
 ******************************************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_nyec_submission_failed_bundles(p_start_time timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_time timestamp with time zone DEFAULT NULL::timestamp with time ZONE, p_tenant_id text DEFAULT NULL::text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text, boolean);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_nyec_submission_failed_bundles(
+    p_start_time timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+    p_end_time timestamp with time zone DEFAULT NULL::timestamp with time ZONE, 
+    p_tenant_id text DEFAULT NULL::text,
+    p_includeDetails boolean DEFAULT false)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -290,6 +297,7 @@ BEGIN
 		                SELECT 1
 		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
 		                WHERE sub.bundle_id = rq.bundle_id
+						  AND sub.hub_interaction_id = rq.hub_interaction_id
 		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
 		            )		            
 		        )
@@ -301,23 +309,31 @@ BEGIN
     )
     SELECT jsonb_build_object(
         'bundle_count', COUNT(bundle_id),
+		'startDate', p_start_time,
+        'endDate', p_end_time,
         'bundles', jsonb_agg(
-            jsonb_build_object(
-                'bundleid', bundle_id,
-				'created_at', created_at,
-				'nature', nature,
-                'interactionid', hub_interaction_id,
-                'tenantID', tenant_id,
-                'source', source_type,
-                'uri', uri,
-                'errorMessage', COALESCE(rd_error_message::text, ''),
-                'groupInteractionId', CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
-                'zipInteractionID', CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END,
-                'submissionAttemptedDate', submissionAttemptedDate,
-                'submissionFailedReason', COALESCE(rd_error_message::text, rq_error_message::text, ''),
-				'startDate', p_start_time,
-            	'endDate', p_end_time
-            )
+			CASE
+	            WHEN p_includeDetails THEN
+		            jsonb_build_object(
+		                'bundleid', bundle_id,
+						'created_at', created_at,
+						'nature', nature,
+		                'interactionid', hub_interaction_id,
+		                'tenantID', tenant_id,
+		                'source', source_type,
+		                'uri', uri,
+		                'errorMessage', COALESCE(rd_error_message::text, ''),
+		                'groupInteractionId', CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
+		                'zipInteractionID', CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END,
+		                'submissionAttemptedDate', submissionAttemptedDate,
+		                'submissionFailedReason', COALESCE(rd_error_message::text, rq_error_message::text, '')
+		            )
+				ELSE
+	                jsonb_build_object(
+	                    'bundleid', bundle_id,
+	                    'interactionid', hub_interaction_id
+	                )
+        	END
         )
     )
     INTO v_return
