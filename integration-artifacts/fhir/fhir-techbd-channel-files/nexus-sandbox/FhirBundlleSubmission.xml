@@ -1,9 +1,9 @@
 <channel version="4.6.0">
-  <id>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</id>
+  <id>9e22ec82-73ee-4565-8c5e-60a51e941cca</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.1</description>
-  <revision>79</revision>
+  <description>Version: 0.8.2</description>
+  <revision>171</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -904,6 +904,7 @@ var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
 var sendDataLedgerSync = globalMap.get(&apos;sendDataLedgerSync&apos;);
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 var actionDiscard = &quot;&quot;;
+channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
 
 var requestUri = channelMap.get(&quot;requestUri&quot;);&#xd;
 
@@ -1224,7 +1225,6 @@ if (extractedPayload) {
     try {
         var updatedPayload = appendToBundlePayload(rawFhir, extractedPayload);
 
-
 		logger.info(JSON.stringify(updatedPayload));
 		logger.info(&quot;[CHANNEL: 1115 TECHBD  - isActionDiscard(updatedPayload)   BEFORE&quot;);
 		if (isActionDiscard(JSON.stringify(updatedPayload))) {
@@ -1241,7 +1241,6 @@ if (extractedPayload) {
 			channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
 		   //  return;
 		}
-
         
 	if( actionDiscard != &quot;discard&quot;){
         // persist updated bundle back (try channelMap first, fallback to responseMap)
@@ -1290,6 +1289,7 @@ if (extractedPayload) {
 		}
 		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: DATA LEDGER ENDS&quot;);
 		//save Datakledger ends
+		channelMap.put(&apos;isActionDiscard&apos;, &quot;&quot;);channelMap.put(&apos;isActionDiscard&apos;, &quot;&quot;);
 		
 		// Save to DB starts
 		var operation = &quot;saveForwardFHIRPayload&quot;;
@@ -1641,7 +1641,7 @@ if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }
 
-&#xd;
+
 
 
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
@@ -2190,25 +2190,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1767015518728</time>
+        <time>1767595890705</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>3</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ea05c512-48d4-4e2c-a1b1-657b51dc0a63</id>
-        <name>0_8_1</name>
+        <id>989bb0ca-99be-40f9-a116-a6da9257c181</id>
+        <name>0_8_2</name>
         <channelIds>
           <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
-          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
+          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
@@ -2218,7 +2218,6 @@ return;</undeployScript>
         <id>21a1ccfb-1032-4cc8-892b-a24eb24cca62</id>
         <name>ActiveFHIR</name>
         <channelIds>
-          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
           <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
         </channelIds>
         <backgroundColor>
