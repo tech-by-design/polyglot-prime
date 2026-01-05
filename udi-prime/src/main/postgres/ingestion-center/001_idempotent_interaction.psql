@@ -9373,31 +9373,29 @@ RETURNS TABLE (
     ig_version             TEXT,
     techbd_version_number  TEXT,
     validation_engine      TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        sifsd.hub_interaction_id,
-        MAX(sifsd.created_at)             AS created_at,
-        MAX(sifsd.tenant_id)              AS tenant_id,
-        MAX(sifsd.bundle_id)              AS bundle_id,
-        MAX(sifsd.uri)                    AS uri,
-        MAX(sifsd.ig_version)             AS ig_version,
-        MAX(sifsd.techbd_version_number)  AS techbd_version_number,
-        MAX(sifsd.validation_engine)      AS validation_engine
-    FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic sifsd
-    WHERE
-        LOWER(sifsd.severity) IN ('warning', 'error', 'fatal')
-        AND sifsd.message <> ''
-        AND sifsd.created_at >= p_start_date
-        AND sifsd.created_at < (p_end_date + 1)
-    GROUP BY
-        sifsd.hub_interaction_id
-    ORDER BY
-        created_at DESC;
-END;
-$$ LANGUAGE plpgsql;
-
+) 
+LANGUAGE sql
+STABLE
+AS $$
+SELECT DISTINCT ON (hub_interaction_id)
+    hub_interaction_id,
+    created_at,
+    tenant_id,
+    bundle_id,
+    uri,
+    ig_version,
+    techbd_version_number,
+    validation_engine
+FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+WHERE
+    LOWER(severity) IN ('warning','error','fatal')
+    AND message <> ''
+    AND created_at >= p_start_date::timestamptz
+    AND created_at <  (p_end_date + 1)::timestamptz
+ORDER BY
+    hub_interaction_id,
+    created_at DESC;
+$$;
 
 /****************
 -- Retrieves detailed FHIR validation issues within a date range, optionally filtered by hub_interaction_id, including severity, message, line, column, and diagnostics
