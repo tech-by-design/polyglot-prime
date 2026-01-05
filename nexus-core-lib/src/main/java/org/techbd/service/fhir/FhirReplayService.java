@@ -222,7 +222,7 @@ public class FhirReplayService {
      */
     public Map<String, Object> getFailedNyecSubmissionBundles(
             final OffsetDateTime startDate,
-            final OffsetDateTime endDate,final String tenantId) {
+            final OffsetDateTime endDate,final String tenantId,boolean includeDetails) {
 
         LOG.info("Fetching failed NYEC submission bundles | startDate={} | endDate={}",
                 startDate, endDate);
@@ -233,6 +233,7 @@ public class FhirReplayService {
             getNyecSubmissionFailedBundles.setPStartTime(startDate);
             getNyecSubmissionFailedBundles.setPEndTime(endDate);
             getNyecSubmissionFailedBundles.setPTenantId(tenantId);
+            getNyecSubmissionFailedBundles.setPIncludedetails(Boolean.valueOf(includeDetails));
             int executeResult = getNyecSubmissionFailedBundles.execute(jooqCfg);
             final var responseJson = (JsonNode) getNyecSubmissionFailedBundles.getReturnValue();
             if (responseJson == null || responseJson.isEmpty()) {

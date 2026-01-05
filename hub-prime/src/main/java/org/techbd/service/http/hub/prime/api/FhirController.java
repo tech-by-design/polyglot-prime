@@ -433,6 +433,7 @@ public class FhirController {
                         @RequestHeader("X-TechBD-StartDate") String startDateStr,
                         @RequestHeader("X-TechBD-EndDate") String endDateStr,
                         @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        @RequestHeader(value = "X-TechBD-IncludeDetails", required = false) boolean includeDetails,
                         HttpServletRequest request) {
 
                 UUID requestId = UUID.randomUUID();
@@ -455,7 +456,7 @@ public class FhirController {
                                         startDate, endDate, requestId, tenantId != null ? tenantId : "ALL");
                         return fhirReplayService.getFailedNyecSubmissionBundles(
                                         startDate,
-                                        endDate,tenantId);
+                                        endDate,tenantId,includeDetails);
 
                 } catch (DateTimeParseException e) {
                         LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for requestId {}",
