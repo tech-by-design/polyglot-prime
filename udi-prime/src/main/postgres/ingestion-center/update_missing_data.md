@@ -5,6 +5,7 @@ This repository contains the following SQL scripts located in `udi-prime/src/mai
 - `update_csv_validation_status.psql`
 - `update_tenant_ids.psql`
 - `update_tenant_ids_of_http_requests.psql`
+- `add_partial_indexes.psql`
 
 The purpose of this script is to 
 - fill the `number_of_fhir_bundles_generated_from_zip_file` column and `data_validation_status` column into `sat_interaction_zip_file_request` table for showing the `FHIR Count` and `CSV Validation Status` in `CSV via HTTPs` page.
@@ -46,4 +47,10 @@ psql -h <hostname> -U <admin_user> -d <database_name> -f update_tenant_ids.psql
 Run the SQL script to fill the new column:
 ```bash
 psql -h <hostname> -U <admin_user> -d <database_name> -f update_tenant_ids_of_http_requests.psql
+```
+
+### Step 4: Execute the SQL file to add a partial index and optimize the performance of the `get_fhir_session_diagnostics` function.
+Run the SQL script to add the partial index:
+```bash
+psql -h <hostname> -U <admin_user> -d <database_name> -f add_partial_indexes.psql
 ```

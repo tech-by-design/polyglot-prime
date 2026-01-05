@@ -9388,7 +9388,7 @@ SELECT DISTINCT ON (hub_interaction_id)
     validation_engine
 FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
 WHERE
-    LOWER(severity) IN ('warning','error','fatal')
+    severity IN ('warning','error','fatal')
     AND message <> ''
     AND created_at >= p_start_date::timestamptz
     AND created_at <  (p_end_date + 1)::timestamptz
