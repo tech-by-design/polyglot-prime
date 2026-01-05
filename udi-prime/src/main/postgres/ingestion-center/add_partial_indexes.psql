@@ -1,0 +1,33 @@
+DO $add_partial_index$
+BEGIN
+PERFORM pg_advisory_lock(hashtext('partial_index'));
+BEGIN
+RAISE NOTICE 'Start adding partial index to table ';
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND indexname  = 'idx_sat_diag_fn_fast'
+    ) THEN
+        CREATE INDEX CONCURRENTLY idx_sat_diag_fn_fast
+        ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+        (
+          hub_interaction_id,
+          created_at DESC
+        )
+        INCLUDE (
+          tenant_id,
+          bundle_id,
+          uri,
+          ig_version,
+          techbd_version_number,
+          validation_engine
+        )
+        WHERE severity IN ('warning','error','fatal')
+          AND message IS NOT NULL
+          AND message <> '';
+    END IF;
+END;
+PERFORM pg_advisory_unlock(hashtext('partial_index'));
+END;
+$add_partial_index$;
