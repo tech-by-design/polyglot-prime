@@ -9376,7 +9376,7 @@ RETURNS TABLE (
 ) 
 LANGUAGE sql
 STABLE
-AS $$
+AS $function$
 SELECT DISTINCT ON (hub_interaction_id)
     hub_interaction_id,
     created_at,
@@ -9389,13 +9389,13 @@ SELECT DISTINCT ON (hub_interaction_id)
 FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
 WHERE
     severity IN ('warning','error','fatal')
-    AND message <> ''
-    AND created_at >= p_start_date::timestamptz
-    AND created_at <  (p_end_date + 1)::timestamptz
+    AND message IS DISTINCT FROM ''
+    AND created_at >= p_start_date::timestamp
+    AND created_at <  (p_end_date::timestamp + interval '1 day')
 ORDER BY
     hub_interaction_id,
     created_at DESC;
-$$;
+$function$;
 
 /****************
 -- Retrieves detailed FHIR validation issues within a date range, optionally filtered by hub_interaction_id, including severity, message, line, column, and diagnostics
@@ -9416,18 +9416,21 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_session_diagnostics_detai
     p_hub_interaction_id TEXT DEFAULT NULL
 )
 RETURNS TABLE (
+    hub_interaction_id TEXT,
     session_id TEXT,
     severity TEXT,
     message TEXT,
     line TEXT,
     col_no TEXT,             -- renamed (was "column")
     diagnostics TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT     
+)
+LANGUAGE sql
+ STABLE
+AS $function$
+SELECT 
+        sifsd.hub_interaction_id,    
         sifsd.session_id,
-        LOWER(sifsd.severity) AS severity,
+        sifsd.severity AS severity,
         sifsd.message,
         sifsd.line,
         sifsd."column" AS col_no,  -- map the quoted table column into the renamed output
@@ -9435,10 +9438,9 @@ BEGIN
     FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic sifsd
     WHERE
         (p_hub_interaction_id IS NULL OR sifsd.hub_interaction_id = p_hub_interaction_id)  
-        AND LOWER(sifsd.severity) IN ('warning', 'error', 'fatal') 
-        AND sifsd.message <> '' 
-        AND sifsd.created_at >= p_start_date
-        AND sifsd.created_at < (p_end_date + 1)
-    ORDER BY sifsd.created_at DESC;
-END;
-$$ LANGUAGE plpgsql;
+        AND sifsd.severity IN ('warning', 'error', 'fatal') 
+        AND sifsd.message IS DISTINCT FROM '' 
+        AND sifsd.created_at >= p_start_date::timestamp
+        AND sifsd.created_at <  (p_end_date::timestamp + interval '1 day')
+    ORDER BY sifsd.hub_interaction_id, sifsd.created_at DESC;
+$function$;
