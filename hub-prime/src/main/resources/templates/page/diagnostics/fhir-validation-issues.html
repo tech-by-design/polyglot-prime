@@ -207,7 +207,7 @@
             // Initialize date range
             const today = new Date();
             const oneWeekAgo = new Date(today);
-            oneWeekAgo.setDate(today.getDate() - 7);
+            oneWeekAgo.setDate(today.getDate() - 3);
 
             let initialStartDate = formatDate(oneWeekAgo);
             let initialEndDate = formatDate(today);
@@ -257,7 +257,7 @@
 
                 helpers.injectDateRangeText(
                     'date-range',
-                    'This table displays FHIR validation interactions from <b>{startDate}</b> to <b>{endDate}</b>. The grid shows TechBD Interaction ID, Tenant ID, Bundle ID, URI, Created At, IG Version, Tech by Design Version, and HAPI Version. Expand any row to view detailed validation issues for the interaction, including the issue message, line, column, and diagnostics. Issues are categorized by severity (warning, error, fatal) to help users quickly identify and prioritize validation problems.'
+                    `This table displays FHIR validation interactions from <b>${formattedStartDate}</b> to <b>${formattedEndDate}</b>. The grid shows TechBD Interaction ID, Tenant ID, Bundle ID, URI, Created At, IG Version, Tech by Design Version, and HAPI Version. Expand any row to view detailed validation issues for the interaction, including the issue message, line, column, and diagnostics. Issues are categorized by severity (warning, error, fatal) to help users quickly identify and prioritize validation problems.`
                 );
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
