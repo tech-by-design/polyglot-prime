@@ -1863,7 +1863,6 @@ BEGIN
 	
     IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
         WHERE t.hub_interaction_id = p_hub_interaction_id) THEN
-        --AND t."key" = p_uri) then
             v_return_status := true; 
             v_return := NULL;
 			v_error_msg := 'hub_interaction_id is not in the hub_interaction table.';
@@ -1978,7 +1977,30 @@ BEGIN
 
         IF(p_nature IN ('Forwarded HTTP Response Error', 'Forwarded HTTP Response Replay Error')) THEN
             v_passed := FALSE;
-            v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);              
+            --v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2); 
+            v_error_message :=
+					COALESCE(
+						-- 1️. responseBody.message (if responseBody exists and is valid JSON)
+					    NULLIF(
+					        CASE
+					            WHEN p_payload ? 'responseBody'
+					                 AND (p_payload ->> 'responseBody') ~ '^\s*\{'       --check if responseBody looks like JSON before casting
+					            THEN (p_payload ->> 'responseBody')::jsonb ->> 'message'
+					        END,
+					        ''
+					    ),
+						-- 2️. message
+					    NULLIF(p_payload ->> 'message', ''),
+						-- 3️. parsed error (text after ': ')
+					    CASE
+					        WHEN POSITION(':' IN p_payload ->> 'error') > 0
+					        THEN SUBSTRING(
+					                 p_payload ->> 'error'
+					                 FROM POSITION(':' IN p_payload ->> 'error') + 2
+					             )
+					        ELSE p_payload ->> 'error'
+					    END
+					);             
         END IF;
             
         IF(p_nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Replay')) THEN 
@@ -4521,7 +4543,8 @@ RETURNS TABLE (
     hub_interaction_id TEXT,
     sat_interaction_http_request_id TEXT,
     qe_name TEXT,
-    created_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE, 
+    error_message TEXT
 ) AS $$
 BEGIN
     RETURN QUERY EXECUTE format(
@@ -4529,7 +4552,8 @@ BEGIN
             sihr.hub_interaction_id,
             sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
             sihr.tenant_id_lower AS qe_name,
-            sihr.created_at
+            sihr.created_at,
+            sihr.error_message
          FROM 
             techbd_udi_ingress.sat_interaction_fhir_request sihr
          WHERE  
