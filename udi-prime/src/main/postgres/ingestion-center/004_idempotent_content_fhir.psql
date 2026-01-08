@@ -426,49 +426,61 @@ RETURNS TABLE (
     ig_version TEXT,
     issue_date TEXT,
     source TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        sifvi.validation_engine,
-        sifvi.issue,
-        sifvi.severity AS issue_severity,
-        COUNT(*) AS issue_count,
-        MAX(sifvi.date_time) AS most_recent_date,
-        COALESCE(sifvi.ig_version, 'Unknown') AS ig_version,
-        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') AS issue_date,
+) 
+LANGUAGE sql
+ STABLE
+AS $function$
+    WITH filtered AS (
+    SELECT 
+        validation_engine,
+        issue,
+        severity AS issue_severity,        
+        COALESCE(ig_version, 'Unknown') AS ig_version,
+        date_time,
+        TO_CHAR(DATE_TRUNC('day', date_time), 'MM-DD-YYYY') AS issue_date,
         profile_url_domain AS source
-    FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue sifvi
+    FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
     WHERE
-        sifvi.date_time >= CURRENT_DATE - INTERVAL '5 days'
+        date_time >= now() - interval '5 days'
+        AND severity IS NOT NULL
+        AND severity <> ''
         AND (
-            sifvi.issue ILIKE '%has not been checked because it is unknown%' OR
-            sifvi.issue ILIKE '%Unknown profile%' OR
-            sifvi.issue ILIKE '%Unknown extension%' OR
-            sifvi.issue ILIKE '%Unknown Code System%' OR
-            sifvi.issue ILIKE '%not found%' OR
-            sifvi.issue ILIKE '%has not been checked because it could not be found%' OR
-            sifvi.issue ILIKE '%Unable to find a match for profile%' OR
-            sifvi.issue ILIKE '%None of the codings provided%' OR
-            sifvi.issue ILIKE '%Unable to expand ValueSet%' OR
-            sifvi.issue ILIKE '%Slicing cannot be evaluated%' OR
-            sifvi.issue ILIKE '%could not be resolved%'
+            issue ILIKE '%has not been checked because it is unknown%' OR
+            issue ILIKE '%Unknown profile%' OR
+            issue ILIKE '%Unknown extension%' OR
+            issue ILIKE '%Unknown Code System%' OR
+            issue ILIKE '%not found%' OR
+            issue ILIKE '%has not been checked because it could not be found%' OR
+            issue ILIKE '%Unable to find a match for profile%' OR
+            issue ILIKE '%None of the codings provided%' OR
+            issue ILIKE '%Unable to expand ValueSet%' OR
+            issue ILIKE '%Slicing cannot be evaluated%' OR
+            issue ILIKE '%could not be resolved%'
         )
-        AND sifvi.severity != ''
-        AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(sifvi.ig_version, 'Unknown') = p_ig_version)
-        AND (NULLIF(p_validation_engine, '') IS NULL OR sifvi.validation_engine = p_validation_engine)
-        AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY') = p_issue_date)
-        AND (NULLIF(p_source, '') IS NULL OR sifvi.profile_url_domain = p_source)
+        AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(ig_version, 'Unknown') = p_ig_version)
+        AND (NULLIF(p_validation_engine, '') IS NULL OR validation_engine = p_validation_engine)
+        AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', date_time), 'MM-DD-YYYY') = p_issue_date)
+        AND (NULLIF(p_source, '') IS NULL OR profile_url_domain = p_source)
+)
+    SELECT
+        validation_engine,
+        issue,
+        issue_severity,
+        COUNT(*) AS issue_count,
+        MAX(date_time) AS most_recent_date,
+        ig_version,
+        issue_date,
+        source
+    FROM filtered
     GROUP BY
-        sifvi.validation_engine,
-        sifvi.issue,
-        sifvi.severity,
-        sifvi.profile_url_domain,
-        COALESCE(sifvi.ig_version, 'Unknown'),
-        TO_CHAR(DATE_TRUNC('day', sifvi.date_time), 'MM-DD-YYYY')
-    ORDER BY MAX(sifvi.date_time) DESC;
-END;
-$$ LANGUAGE plpgsql;
+        validation_engine,
+        issue,
+        issue_severity,
+        source,
+        ig_version,
+        issue_date
+    ORDER BY MAX(date_time) DESC;
+$function$;
 
 
 /****************************************************************************************

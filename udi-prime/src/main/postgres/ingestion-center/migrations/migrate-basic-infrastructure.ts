@@ -1082,9 +1082,9 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_issue_idx_date_issue';
           END IF;
           
-          -- FHIR validation issue indexes
-          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_idx_date_time') THEN
-              EXECUTE 'CREATE INDEX sat_interaction_fhir_validation_idx_date_time ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time)';
+          -- Drop obsolete index if exists
+          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_idx_date_time') THEN
+              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_idx_date_time';
           END IF;
 
           IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_created_at') THEN
