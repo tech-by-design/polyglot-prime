@@ -1,0 +1,34 @@
+
+\echo '============================================================'
+\echo 'START: Creating partial index `idx_fhir_val_issue_date_cover`'
+\echo '==========================================================='
+
+-- Prevent concurrent execution
+SELECT pg_advisory_lock(hashtext('partial_index_ig_publication'));
+
+-- Drop the index
+DROP INDEX CONCURRENTLY IF EXISTS techbd_udi_ingress.idx_fhir_val_issue_date_cover;
+
+-- Create index
+CREATE INDEX CONCURRENTLY idx_fhir_val_issue_date_cover
+ON techbd_udi_ingress.sat_interaction_fhir_validation_issue
+(
+  date_time DESC
+)
+INCLUDE (
+  issue,
+  severity,
+  validation_engine,
+  profile_url_domain,
+  ig_version
+)
+WHERE
+  severity IS NOT NULL
+  AND severity <> '';
+
+-- Release lock
+SELECT pg_advisory_unlock(hashtext('partial_index_ig_publication'));
+
+\echo '==========================================================='
+\echo 'END: Partial index `idx_fhir_val_issue_date_cover` completed'
+\echo '==========================================================='
