@@ -4521,7 +4521,8 @@ RETURNS TABLE (
     hub_interaction_id TEXT,
     sat_interaction_http_request_id TEXT,
     qe_name TEXT,
-    created_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE,
+    error_message text
 ) AS $$
 BEGIN
     RETURN QUERY EXECUTE format(
@@ -4529,7 +4530,8 @@ BEGIN
             sihr.hub_interaction_id,
             sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
             sihr.tenant_id_lower AS qe_name,
-            sihr.created_at
+            sihr.created_at,
+            sihr.error_message
          FROM 
             techbd_udi_ingress.sat_interaction_fhir_request sihr
          WHERE  

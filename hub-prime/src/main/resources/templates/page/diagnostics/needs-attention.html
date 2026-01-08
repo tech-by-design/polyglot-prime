@@ -177,6 +177,8 @@
                         }
                     },
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter" },
+                    { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter" },
+                   
                 ],
                 detailRowHeight: 280,
                 defaultColDef: {
@@ -188,14 +190,14 @@
             const gridOptions = {
                 columnDefs: [
                     {
-                        headerName: "TechBD Tenant ID",
+                        headerName: "QE",
                         field: "qe_name",
                         filter: "agTextColumnFilter",
                         cellRenderer: qeNameCellRenderer,
                         headerTooltip: "ID of the tenant involved in the interaction"
                     },
                     {
-                        headerName: "TechBD Tenant ID to Tech by Design",
+                        headerName: "QE to Tech by Design",
                         field: "qe_total_submissions",
                         // cellRenderer: cellRenderer1,
                         // cellStyle: function (params) {
@@ -206,7 +208,7 @@
                         //     return null;
                         // },
                         filter: "agNumberColumnFilter",
-                        headerTooltip: "FHIR File count from TechBD Tenant ID to Tech by Design"
+                        headerTooltip: "FHIR File count from QE to Tech by Design"
                     },
                     {
                         headerName: "Tech by Design to SHIN-NY Data Lake",
@@ -398,7 +400,7 @@
                     "end_date": formattedEndDate,
                 };
 
-                helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the TechBD Tenant ID to Tech by Design then to the SHIN-NY Data Lake from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
+                helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the QE to Tech by Design then to the SHIN-NY Data Lake from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
 
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
@@ -437,7 +439,7 @@
             </div>
             <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
-                <li>The file count from TechBD Tenant ID to Tech by Design should match.</li>
+                <li>The file count from QE to Tech by Design should match.</li>
                 <li>The file count from Tech by Design to SHIN-NY Data Lake should match.</li>
                 <li>If any of the numbers in one column do not match the corresponding numbers in another column, it
                     indicates an error, and the mismatched numbers are highlighted in red.</li>
