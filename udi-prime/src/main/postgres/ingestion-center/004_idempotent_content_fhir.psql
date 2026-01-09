@@ -505,7 +505,7 @@ SELECT
 FROM
     techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE
-    date_time >= CURRENT_DATE - INTERVAL '5 days'
+    date_time >= CURRENT_DATE - INTERVAL '3 days'
     AND (
         issue LIKE '%has not been checked because it is unknown%'
         OR issue LIKE '%Unknown profile%'
