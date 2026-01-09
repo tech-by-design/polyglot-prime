@@ -4583,7 +4583,8 @@ RETURNS TABLE (
     hub_interaction_id text,
     sat_interaction_http_request_id text,
     qe_name TEXT,
-    created_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE,
+    error_message text
 ) AS $$
 BEGIN
     RETURN QUERY
