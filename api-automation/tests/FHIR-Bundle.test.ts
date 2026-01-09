@@ -370,3 +370,137 @@ test("TC 29: Verify validation error for a Task that does not have status reason
     );
     logger.info("TC 29 - Test execution completed");
 });
+
+test("TC 30: Verify validation error for a screening Observation with both dataAbsentReason and an observation answer value present.", async ({ request }) => {
+    logger.info(`Starting test: TC 30 - Verify validation error for a screening Observation with both dataAbsentReason and an observation answer value present`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase30.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase30
+    );
+    logger.info("TC 30 - Test execution completed");
+});
+
+test("TC 31: Verify mandatory fields validation errors for missing elements in the Bundle resource.", async ({ request }) => {
+    logger.info(`Starting test: TC 31 - Verify mandatory fields validation errors for missing elements in the Bundle resource.`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase31.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase31
+    );
+    logger.info("TC 31 - Test execution completed");
+});
+
+test("TC 32: Verify mandatory fields validation errors for missing elements in the Patient resource. ", async ({ request }) => {
+    logger.info(`Starting test: TC 32 - Verify mandatory fields validation errors for missing elements in the Patient resource`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase32.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase32
+    );
+    logger.info("TC 32 - Test execution completed");
+});
+
+test("TC 33: Verify mandatory fields validation errors for missing elements in the Organization resource ", async ({ request }) => {
+    logger.info(`Starting test: TC 33 - Verify mandatory fields validation errors for missing elements in the Organization resource `);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase33.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase33
+    );
+    logger.info("TC 33 - Test execution completed");
+});
+
+test("TC 34: Verify mandatory fields validation errors for missing elements in the Consent resource ", async ({ request }) => {
+    logger.info(`Starting test: TC 34 - Verify mandatory fields validation errors for missing elements in the Consent resource `);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase34.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase34
+    );
+    logger.info("TC 34 - Test execution completed");
+});
+
+test("TC 35: Verify mandatory fields validation errors for missing elements in the Encounter resource ", async ({ request }) => {
+    logger.info(`Starting test: TC 35 - Verify mandatory fields validation errors for missing elements in the Encounter resource `);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase35.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase35
+    );
+    logger.info("TC 35 - Test execution completed");
+});
+
+test("TC 36: Verify mandatory fields validation errors for missing elements in the Observation resource ", async ({ request }) => {
+    logger.info(`Starting test: TC 36 - Verify mandatory fields validation errors for missing elements in the Observation resource `);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase36.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase36
+    );
+    logger.info("TC 36 - Test execution completed");
+});
+
+test("TC 37: Verify validation error for an array object not declared as an array in the Bundle.", async ({ request }) => {
+    logger.info(`Starting test: TC 37 - Verify validation error for an array object not declared as an array in the Bundle.`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase37.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase37
+    );
+    logger.info("TC 37 - Test execution completed");
+});
+
+test("TC 38: Verify validation error for a non-array object incorrectly declared as an array in the Bundle", async ({ request }) => {
+    logger.info(`Starting test: TC 38 - Verify validation error for a non-array object incorrectly declared as an array in the Bundle`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase38.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase38
+    );
+    logger.info("TC 38 - Test execution completed");
+});
+
+test("TC 39: Verify validation error for a screening resource containing unrecognized property elements", async ({ request }) => {
+    logger.info(`Starting test: TC 39 - Verify validation error for a screening resource containing unrecognized property elements`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase39.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase39
+    );
+    logger.info("TC 39 - Test execution completed");
+});
+
+test("TC 40: Verify validation error for a screening bundle with invalid Bundle last updated date", async ({ request }) => {
+    logger.info(`Starting test: TC 40 - Verify validation error for a screening bundle with invalid Bundle last updated date`);
+    await runBundleValidationTest(
+        "AHCHRSNScreeningResponse_testcase40.json",
+        endpoint as string,
+        tenant as string,
+        request,
+        expectedValidationIssues.testcase40
+    );
+    logger.info("TC 40 - Test execution completed");
+});
+
+
