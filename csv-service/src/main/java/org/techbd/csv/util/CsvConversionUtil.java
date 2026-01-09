@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.corelib.config.Constants;
+import org.techbd.csv.config.AppConfig;
 import org.techbd.csv.model.DemographicData;
+import org.techbd.csv.model.FileDetail;
 import org.techbd.csv.model.QeAdminData;
 import org.techbd.csv.model.ScreeningObservationData;
 import org.techbd.csv.model.ScreeningProfileData;
@@ -237,6 +241,53 @@ public class CsvConversionUtil {
         } catch (Exception e) {
             throw new RuntimeException("Error generating SHA-256 hash", e);
         }
+    }
+     public static Map<String, Object> createOperationOutcomeForError(AppConfig appConfig,
+            final String masterInteractionId,
+            final String groupInteractionId,
+            final String patientMrIdValue,
+            final String encounterId,
+            final Exception e,
+            final Map<String, Object> provenance,List<FileDetail> fileDetails,final Map<String, Object> requestParameters) {
+        if (e == null) {
+            return Collections.emptyMap();
+        }
+
+        final String diagnosticsMessage = "Error processing data for Master Interaction ID: " + masterInteractionId +
+                ", Interaction ID: " + groupInteractionId +
+                ", Patient MRN: " + patientMrIdValue +
+                ", EncounterID : " + encounterId +
+                ", Error: " + e.getMessage();
+
+        final String remediationMessage = "Error processing data.";
+                // Get severity level from header or use default
+            String severityLevel = appConfig.getValidationSeverityLevel(); // Get default from config
+            if (requestParameters != null && requestParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
+                severityLevel = ((String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL)).toLowerCase();
+            }
+
+        final String errorType = (e.getMessage() != null && e.getMessage().contains("Foreign Key Error"))
+            ? "data-integrity"
+            : "processing-error";
+
+        final Map<String, Object> errorDetails = Map.of(
+            "type", errorType,
+            "severity", severityLevel,
+            "description", remediationMessage,
+            "message", diagnosticsMessage);
+
+        return Map.of(
+                "masterInteractionId", masterInteractionId,
+                "groupInteractionId", groupInteractionId,
+                Constants.TECHBD_VERSION, appConfig.getVersion(),
+                "patientMrId", patientMrIdValue,
+                "encounterId", encounterId,
+                "provenance", provenance,
+                "fileDetails", fileDetails,
+                "validationResults", Map.of(
+                        "errors", List.of(errorDetails),
+                        "resourceType", "OperationOutcome")
+                        );
     }
 
 }
