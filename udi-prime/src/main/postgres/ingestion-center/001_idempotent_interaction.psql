@@ -1969,6 +1969,7 @@ BEGIN
         IF v_techbd_disposition_action = 'discard' THEN
             v_interaction_end_time  := v_created_at;
             v_issues_count          := COALESCE(jsonb_array_length((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text), 0);
+            v_error_message			:= p_payload->'OperationOutcome'->'techByDesignDisposition'->0->'actionPayload'->>'message';   
         END IF;
     END IF;
 
@@ -2270,7 +2271,8 @@ BEGIN
                                                WHEN v_techbd_disposition_action = 'discard' 
                                                THEN v_created_at 
                                                ELSE interaction_end_time 
-                                            END
+                                            END,
+                error_message			= v_error_message                            
         WHERE hub_interaction_id = p_hub_interaction_id AND nature != 'techByDesignDisposition';
         
         --Update ig_version in sat_interaction_user table
@@ -4589,7 +4591,8 @@ BEGIN
         sihr.hub_interaction_id,
         sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
         sihr.tenant_id_lower AS qe_name,
-        sihr.created_at
+        sihr.created_at,
+		sihr.error_message
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
@@ -4597,12 +4600,13 @@ BEGIN
         AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
-        AND NOT EXISTS (
+        /*AND NOT EXISTS (
             SELECT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request sihr2
             WHERE sihr2.hub_interaction_id = sihr.hub_interaction_id
               AND sihr2.nature = ANY (ARRAY['Forwarded HTTP Response', 'Forwarded HTTP Response Error'])
-        )
+        )*/
+		AND techbd_disposition_action = 'discard'
     ORDER BY sihr.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
