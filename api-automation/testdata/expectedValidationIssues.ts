@@ -233,7 +233,310 @@ export const expectedValidationIssues = {
         }
     ],
 
+    testcase30: [
+        {
+            severity: "error",
+            messageContains: "Constraint failed: obs-6: 'dataAbsentReason SHALL only be present if Observation.value[x] is not present'"
+        }
+    ],
+    testcase31: [
+        {
+            severity: "error",
+            messageContains: "Bundle.id: minimum required = 1, but only found 0"
+        },
+        // {
+        //     severity: "error",
+        //     messageContains: "Bundle.type: minimum required = 1, but only found 0"
+        // },
+        {
+            severity: "error",
+            messageContains: "Meta.lastUpdated: minimum required = 1, but only found 0"
+        }
+    ],
+    testcase32: [
+        {
+            severity: "error",
+            messageContains: "Patient.id: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Patient.name: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Meta.lastUpdated: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Patient.identifier:MR.value: minimum required = 1"
+        },
+        {
+            severity: "error",
+            messageContains: "Patient.identifier.value: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: bdl-3: 'entry.request mandatory for batch/transaction/history, otherwise prohibited'"
+        }
+    ],
+    testcase33: [
+        {
+            severity: "error",
+            messageContains: "Organization.active: minimum required = 1, but only found 0 "
+        },
+        {
+            severity: "error",
+            messageContains: "Organization.name: minimum required = 1, but only found 0 "
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Bundle-Patient-Org-RI: 'Checks for RI between Patient & Assigning Org'"
+        },
+        {
+            severity: "error",
+            messageContains: "The fullUrl 'http://test.shinny.org/us/ny/hrsn/Organization/OrganizationExampleOther-SCN1' looks like a RESTful server URL, but the resource has no id"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: bdl-3: 'entry.request mandatory for batch/transaction/history, otherwise prohibited'"
+        }
 
+    ],
+    testcase34: [
+        {
+            severity: "error",
+            messageContains: "Consent.id: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Meta.lastUpdated: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.status: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.scope: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.category: minimum required = 1, but only found 0 "
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.patient: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.dateTime: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.organization: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.source[x]: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Consent.provision: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: bdl-3: 'entry.request mandatory for batch/transaction/history, otherwise prohibited'"
+        },
+        {
+            severity: "error",
+            messageContains: "The fullUrl 'http://test.shinny.org/us/ny/hrsn/Consent/ConsentExample' looks like a RESTful server URL, but the resource has no id"
+        }
 
+    ],
+    testcase35: [
+        {
+            severity: "error",
+            messageContains: "Encounter.status: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Encounter.class: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Encounter.id: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Encounter.type: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Encounter.subject: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Meta.lastUpdated: minimum required = 1, but only found 0 "
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: bdl-3: 'entry.request mandatory for batch/transaction/history, otherwise prohibited'"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Bundle-Encounter-RI: 'Checks for RI between all resources & Encounter'"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Bundle-Obs-Patient-RI: 'Checks for RI between Obs & Patient'"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Bundle-Obs-Encounter-RI: 'Checks for RI between Screening Obs & Encounter'"
+        },
+        {
+            severity: "error",
+            messageContains: "The fullUrl 'http://test.shinny.org/us/ny/hrsn/Encounter/EncounterExample' looks like a RESTful server URL, but the resource has no id"
+        }
+
+    ],
+    testcase36: [
+        {
+            severity: "error",
+            messageContains: "Observation.status: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.code: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.id: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.category: minimum required = 3, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.subject: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.encounter: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Observation.effective[x]: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Meta.lastUpdated: minimum required = 1, but only found 0"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: bdl-3: 'entry.request mandatory for batch/transaction/history, otherwise prohibited'"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Bundle-Obs-hasMember-RI: 'Checks for RI between Observation & child Observations'"
+        },
+        {
+            severity: "error",
+            messageContains: "Constraint failed: SHINNY-Obs-Category: 'Ensure that all Observation categories have an SDOH code' "
+        },
+        {
+            severity: "error",
+            messageContains: "The fullUrl 'http://test.shinny.org/us/ny/hrsn/Observation/ObservationResponseHousingInstability71802-3' looks like a RESTful server URL, but the resource has no id"
+        }
+
+    ],
+    testcase37: [
+        {
+            severity: "error",
+            messageContains: "The property telecom must be a JSON Array, not an Object "
+        },
+        {
+            severity: "error",
+            messageContains: "The property address must be a JSON Array, not an Object"
+        },
+        {
+            severity: "error",
+            messageContains: "The property location must be a JSON Array, not an Object "
+        },
+        {
+            severity: "error",
+            messageContains: "The property performer must be a JSON Array, not an Object"
+        },
+        {
+            severity: "error",
+            messageContains: "The property interpretation must be a JSON Array, not an Object"
+        },
+        {
+            severity: "error",
+            messageContains: "The property name must be a JSON Array, not an Object"
+        },
+        {
+            severity: "error",
+            messageContains: "The property contact must be a JSON Array, not an Object"
+        },
+        {
+            severity: "error",
+            messageContains: "The property communication must be a JSON Array, not an Object"
+        }
+
+    ],
+    testcase38: [
+        {
+            severity: "error",
+            messageContains: "The property scope must be an Object, not an Array"
+        },
+        {
+            severity: "error",
+            messageContains: "The property address must be an Object, not an Array"
+        },
+        {
+            severity: "error",
+            messageContains: "The property managingOrganization must be an Object, not an Array"
+        },
+        {
+            severity: "error",
+            messageContains: "The property subject must be an Object, not an Array"
+        },
+        {
+            severity: "error",
+            messageContains: "The property encounter must be an Object, not an Array"
+        },
+        {
+            severity: "error",
+            messageContains: "The property hasMember must be an Array, not an Array"
+        },
+
+    ],
+    testcase39: [
+        {
+            severity: "error",
+            messageContains: "Unrecognized property 'dateTime'"
+        }
+    ],
+    testcase40: [
+        {
+            severity: "fatal",
+            messageContains: "HAPI-1821: [element=\"lastUpdated\"] Invalid attribute value \"2024-02-2300:00:00Z\": Invalid date/time format: \"2024-02-2300:00:00Z\": Expected character 'T' at index 10 but found 0"
+        }
+
+    ],
+    testcase41: [
+        {
+            severity: "error",
+            messageContains: "TECHBD-1002: Bundle profile url must be provided"
+        },
+    ],
+    testcase42: [
+        {
+            severity: "error",
+            messageContains: "TECHBD-1000: Invalid or Partial JSON"
+        },
+    ],
 };
 
