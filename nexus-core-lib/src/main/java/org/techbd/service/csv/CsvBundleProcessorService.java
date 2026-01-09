@@ -160,7 +160,7 @@ public class CsvBundleProcessorService {
             } catch (final Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
                 metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
-                final Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
+                final Map<String, Object> errors = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, groupInteractionId, "",
                         "", e, provenance,outcome.fileDetails(),requestParameters);                                
                 DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
                 CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
@@ -469,7 +469,7 @@ private List<Object> processScreening(final String groupKey,
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);
                         errorCount.incrementAndGet();
-                        final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                        final Map<String, Object> result = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
                                 new Exception("Bundle not created"),
                                 payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(),requestParameters);
@@ -487,7 +487,7 @@ private List<Object> processScreening(final String groupKey,
                 } catch (final Exception e) {
                     errorCount.incrementAndGet();
                     metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
-                    final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                    final Map<String, Object> result = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
                             payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(),requestParameters);
                     String bundleId =CoreFHIRUtil.extractBundleId(bundle, tenantId);                                
@@ -521,51 +521,6 @@ private List<Object> processScreening(final String groupKey,
         return List.of(); // return an empty list if the input is null
     }
 
-    private Map<String, Object> createOperationOutcomeForError(
-            final String masterInteractionId,
-            final String groupInteractionId,
-            final String patientMrIdValue,
-            final String encounterId,
-            final Exception e,
-            final Map<String, Object> provenance,List<FileDetail> fileDetails,final Map<String, Object> requestParameters) {
-        if (e == null) {
-            return Collections.emptyMap();
-        }
-
-        final String diagnosticsMessage = "Error processing data for Master Interaction ID: " + masterInteractionId +
-                ", Interaction ID: " + groupInteractionId +
-                ", Patient MRN: " + patientMrIdValue +
-                ", EncounterID : " + encounterId +
-                ", Error: " + e.getMessage();
-
-        final String remediationMessage = "Error processing data.";
-                // Get severity level from header or use default
-            String severityLevel = coreAppConfig.getValidationSeverityLevel(); // Get default from config
-            if (requestParameters != null && requestParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
-                severityLevel = ((String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL)).toLowerCase();
-            }
-        final String errorType = (e.getMessage() != null && e.getMessage().contains("Foreign Key Error"))
-            ? "data-integrity"
-            : "processing-error";
-        final Map<String, Object> errorDetails = Map.of(
-                "type", errorType,
-                "severity", severityLevel,
-                "description", remediationMessage,
-                "message", diagnosticsMessage);
-
-        return Map.of(
-                "masterInteractionId", masterInteractionId,
-                "groupInteractionId", groupInteractionId,
-                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
-                "patientMrId", patientMrIdValue,
-                "encounterId", encounterId,
-                "provenance", provenance,
-                "fileDetails", fileDetails,
-                "validationResults", Map.of(
-                        "errors", List.of(errorDetails),
-                        "resourceType", "OperationOutcome")
-                        );
-    }
     public Map<String, Object> createOperationOutcomeForFileNotProcessed(
         final String masterInteractionId,
         final List<FileDetail> filesNotProcessed,

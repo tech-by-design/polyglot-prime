@@ -29,6 +29,7 @@ import org.techbd.config.Nature;
 import org.techbd.config.Origin;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
+import org.techbd.model.csv.CsvDataValidationStatus;
 import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.service.csv.engine.CsvOrchestrationEngine;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
@@ -93,7 +94,7 @@ public class CsvService {
             saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
             return fullOperationOutcome;
         } finally {
-            if (null == session) {
+            if (null != session) {
                 engine.clear(session);
             }
         }
@@ -102,7 +103,7 @@ public class CsvService {
     @Transactional
     private void saveArchiveInteractionStatus(
             String zipFileInteractionId,
-            CsvProcessingState state,Map<String,Object> requestParameters) {
+            CsvProcessingState state,Map<String,Object> requestParameters,CsvProcessingMetrics.CsvProcessingMetricsBuilder metricsBuilder) {
 
         LOG.info("CsvService saveArchiveInteraction - STATUS UPDATE ONLY | zipFileInteractionId: {}, newState: {}",
                 zipFileInteractionId, state.name());
@@ -114,6 +115,10 @@ public class CsvService {
             updateRIHR.setInteractionId(zipFileInteractionId);
             updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
+             if (CsvProcessingState.PROCESSING_FAILED == state && null!= metricsBuilder && CsvDataValidationStatus.SUCCESS.getDescription().equals(
+                metricsBuilder.build().getDataValidationStatus())) {
+                updateRIHR.setPDataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+            }
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             updateRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
             // Extract and set client IP address and user agent for consistency
@@ -247,10 +252,12 @@ public class CsvService {
             long start) throws Exception {
 
         CsvOrchestrationEngine.OrchestrationSession session = null;
+        List<Object> fullOperationOutcome = null;
+        boolean processingSuccessful = false;
 
         try {
-            saveArchiveInteractionStatus(interactionId, 
-                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
+            saveArchiveInteractionStatus(interactionId,
+                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams, null);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -262,7 +269,7 @@ public class CsvService {
 
             engine.orchestrate(session);
 
-            List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
+            fullOperationOutcome = csvBundleProcessorService.processPayload(
                     interactionId,
                     session.getPayloadAndValidationOutcomes(),
                     session.getFilesNotProcessed(),
@@ -270,19 +277,34 @@ public class CsvService {
                     responseParams,
                     tenantId,
                     file.getOriginalFilename(),
-                    (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
+                    (String) requestParams.get(Constants.BASE_FHIR_URL), session.getMetricsBuilder());
 
-            saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+            processingSuccessful = true;
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
             return fullOperationOutcome;
         } catch (Exception ex) {
             LOG.error("Synchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                     interactionId, ex.getMessage(), ex);
-            saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_FAILED, requestParams);
-            SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,coreAppConfig.getVersion());
+            SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,
+                    coreAppConfig.getVersion());
             throw ex;
         } finally {
-            engine.clear(session);
+            try {
+                saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                if (processingSuccessful) {
+                    saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_COMPLETED,
+                            requestParams, session.getMetricsBuilder());
+                } else {
+                    saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_FAILED,
+                            requestParams, session.getMetricsBuilder());
+                }
+            } catch (Exception finallyEx) {
+                LOG.error("Error saving final status for zipFileInteractionId: {}", interactionId,
+                        finallyEx);
+            }
+            if (null != session) {
+                engine.clear(session);
+            }
             long durationMs = (System.nanoTime() - start) / 1_000_000;
             LOG.info("Synchronous cleanup complete for zipFileInteractionId: {}, Total time taken: {} ms",
                     interactionId, durationMs);
@@ -298,9 +320,11 @@ public class CsvService {
             long start) {        
         CompletableFuture.runAsync(() -> {
             CsvOrchestrationEngine.OrchestrationSession session = null;
+            List<Object> fullOperationOutcome = null;
+            boolean processingSuccessful = false;
             try {
                 saveArchiveInteractionStatus(interactionId, 
-                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
+                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams, null);
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
@@ -313,7 +337,7 @@ public class CsvService {
 
                 engine.orchestrate(session);
 
-                List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
+                fullOperationOutcome = csvBundleProcessorService.processPayload(
                         interactionId,
                         session.getPayloadAndValidationOutcomes(),
                         session.getFilesNotProcessed(),
@@ -323,17 +347,32 @@ public class CsvService {
                         file.getOriginalFilename(),
                         (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
 
-                saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                processingSuccessful = true;
                 LOG.info("Asynchronous processing completed for zipFileInteractionId: {}",
                         interactionId);
             } catch (Exception ex) {
                 LOG.error("Asynchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                         interactionId, ex.getMessage(), ex);
                 saveArchiveInteractionStatus(interactionId, 
-                        CsvProcessingState.PROCESSING_FAILED, requestParams);
+                        CsvProcessingState.PROCESSING_FAILED, requestParams, session.getMetricsBuilder());
                 SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,coreAppConfig.getVersion());
             } finally {
-                engine.clear(session);
+                try {
+                    saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                    if (processingSuccessful) {
+                       saveArchiveInteractionStatus(interactionId,
+                                CsvProcessingState.PROCESSING_COMPLETED, requestParams, session.getMetricsBuilder());
+                    } else if (!processingSuccessful) {
+                        saveArchiveInteractionStatus(interactionId,
+                                CsvProcessingState.PROCESSING_FAILED, requestParams, session.getMetricsBuilder());
+                    }
+                } catch (Exception finallyEx) {
+                    LOG.error("Error saving final status for zipFileInteractionId: {}", interactionId,
+                            finallyEx);
+                }
+                if (null != session) {
+                    engine.clear(session);
+                }
                 long durationMs = (System.nanoTime() - start) / 1_000_000;
                 LOG.info("Asynchronous cleanup complete for zipFileInteractionId: {}, Total time taken: {} ms",
                         interactionId, durationMs);
