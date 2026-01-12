@@ -805,7 +805,6 @@ export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
 // Get readonly user from environment variable
 const readonlyUser = Deno.env.get("TECHBD_UDI_DS_READER_JDBC_USERNAME") || "techbd_readonly_user";
 
-console.log("+++++++++++++++++++++read_only_user++++++++++"+readonlyUser)
 
 const migrateSP = pgSQLa.storedProcedure(
   prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
