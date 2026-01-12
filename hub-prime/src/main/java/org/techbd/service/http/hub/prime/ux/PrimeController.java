@@ -51,13 +51,16 @@ public class PrimeController {
 
     @Autowired(required = false)
     public void setReaderDslContext(@Qualifier("secondaryDslContext") DSLContext readerDslContext) {
+        LOG.info("READER INSTANCE CONFIGURED SUCCESSFULLY!!");
         this.readerDslContext = readerDslContext;
     }
     
     private DSLContext getDsl() {
         if (readerDslContext != null) {
+            LOG.info("READER INSTANCE - Exceuting Query");
             return readerDslContext;
         }
+        LOG.info("WRITER INSTANCE - Exceuting Query");
         return primaryDslContext;
     }
     @GetMapping("/home")
