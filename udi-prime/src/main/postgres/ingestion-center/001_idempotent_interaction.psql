@@ -4597,7 +4597,7 @@ BEGIN
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
-        AND sihr.nature = 'Original FHIR Payload'
+        AND sihr.nature = 'techByDesignDisposition'
         AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
