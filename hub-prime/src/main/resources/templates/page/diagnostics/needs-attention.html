@@ -278,9 +278,14 @@
                         headerName: "Valid Bundles",
                         field: "shinny_datalake_submissions_failed",
                         filter: "agNumberColumnFilter",
+                          valueGetter: (params) => {
+                                const success = params.data.shinny_datalake_submissions ?? 0;
+                                const failed = params.data.shinny_datalake_submissions_failed ?? 0;
+                                return success + failed;
+                            },
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.data.qe_total_submissions !== params.data.shinny_datalake_submissions_failed) {
+                            if (params.data.qe_total_submissions !== params.value) {
                                 return { color: 'red' };
                             }
                             return null;
