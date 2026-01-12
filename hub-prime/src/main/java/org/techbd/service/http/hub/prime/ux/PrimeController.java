@@ -57,10 +57,10 @@ public class PrimeController {
     
     private DSLContext getDsl() {
         if (readerDslContext != null) {
-            LOG.info("READER INSTANCE - Exceuting Query");
+            // LOG.info("READER INSTANCE - Exceuting Query");
             return readerDslContext;
         }
-        LOG.info("WRITER INSTANCE - Exceuting Query");
+        // LOG.info("WRITER INSTANCE - Exceuting Query");
         return primaryDslContext;
     }
     @GetMapping("/home")

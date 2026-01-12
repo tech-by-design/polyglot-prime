@@ -802,6 +802,11 @@ function formatDateToCustomString(date: Date): string {
 
 export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
 
+// Get readonly user from environment variable
+const readonlyUser = Deno.env.get("TECHBD_UDI_DS_READER_JDBC_USERNAME") || "techbd_readonly_user";
+
+console.log("+++++++++++++++++++++read_only_user++++++++++"+readonlyUser)
+
 const migrateSP = pgSQLa.storedProcedure(
   prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
     migrationInput.description,
@@ -840,6 +845,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHttpRequestSat}
 
       ${interactionFhirRequestSat}
+
+      GRANT USAGE ON SCHEMA techbd_udi_ingress TO ${readonlyUser};
+      GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_ingress TO ${readonlyUser};
+
       -- Check and add 'replay_status' column if it does not exist
       IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                     WHERE table_schema = 'techbd_udi_ingress'

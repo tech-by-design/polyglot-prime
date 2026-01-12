@@ -79,10 +79,10 @@ public class TabularRowsController {
     // Helper method to get the DSLContext, prefer reader if available
     private DSLContext getDsl() {
         if (readerDSlContext != null) {
-            LOG.info("READER INSTANCE - Exceuting Query");
+            // LOG.info("READER INSTANCE - Exceuting Query");
             return readerDSlContext;
         }
-        LOG.info("WRITER INSTANCE - Exceuting Query");
+        // LOG.info("WRITER INSTANCE - Exceuting Query");
         return primaryDslContext;
     }
     @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
