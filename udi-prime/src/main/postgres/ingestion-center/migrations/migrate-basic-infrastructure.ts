@@ -802,9 +802,11 @@ function formatDateToCustomString(date: Date): string {
 
 export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
 
-// Get readonly user from environment variable
-const readonlyUser = Deno.env.get("TECHBD_UDI_DS_READER_JDBC_USERNAME") || "techbd_readonly_user";
-
+// Get readonly user from environment variable with profile prefix
+const profile = Deno.env.get("SPRING_PROFILES_ACTIVE");
+const readonlyUser = Deno.env.get(`${profile}_TECHBD_UDI_DS_READER_JDBC_USERNAME`);
+console.log("------- Profile: " + profile);
+console.log("------- Readonly User: " + readonlyUser);
 
 const migrateSP = pgSQLa.storedProcedure(
   prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
@@ -844,9 +846,6 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHttpRequestSat}
 
       ${interactionFhirRequestSat}
-
-      GRANT USAGE ON SCHEMA techbd_udi_ingress TO ${readonlyUser};
-      GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_ingress TO ${readonlyUser};
 
       -- Check and add 'replay_status' column if it does not exist
       IF NOT EXISTS (SELECT 1 FROM information_schema.columns
@@ -1909,6 +1908,12 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
       
       ${testDependenciesSQL}
+
+      GRANT USAGE ON SCHEMA techbd_udi_ingress TO ${readonlyUser};
+      GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_ingress TO ${readonlyUser};
+
+      GRANT USAGE ON SCHEMA info_schema_lifecycle TO ${readonlyUser};
+      GRANT SELECT ON ALL TABLES IN SCHEMA info_schema_lifecycle TO ${readonlyUser};
 
       ${searchPathAssurance}
       DECLARE
