@@ -802,12 +802,6 @@ function formatDateToCustomString(date: Date): string {
 
 export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
 
-// Get readonly user from environment variable with profile prefix
-const profile = Deno.env.get("SPRING_PROFILES_ACTIVE");
-const readonlyUser = Deno.env.get(`${profile}_TECHBD_UDI_DS_READER_JDBC_USERNAME`);
-console.log("------- Profile: " + profile);
-console.log("------- Readonly User: " + readonlyUser);
-
 const migrateSP = pgSQLa.storedProcedure(
   prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
     migrationInput.description,
@@ -1908,12 +1902,6 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
       
       ${testDependenciesSQL}
-
-      GRANT USAGE ON SCHEMA techbd_udi_ingress TO ${readonlyUser};
-      GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_ingress TO ${readonlyUser};
-
-      GRANT USAGE ON SCHEMA info_schema_lifecycle TO ${readonlyUser};
-      GRANT SELECT ON ALL TABLES IN SCHEMA info_schema_lifecycle TO ${readonlyUser};
 
       ${searchPathAssurance}
       DECLARE
