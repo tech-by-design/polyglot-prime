@@ -298,7 +298,7 @@
                         filter: "agNumberColumnFilter",
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.data.qe_total_submissions !== params.data.shinny_datalake_submissions) {
+                            if (params.value !== params.data.shinny_datalake_submissions) {
                                 return { color: 'red' };
                             }
                             return null;
