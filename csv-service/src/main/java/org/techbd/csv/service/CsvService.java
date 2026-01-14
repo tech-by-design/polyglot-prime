@@ -118,7 +118,7 @@ public class CsvService {
             updateRIHR.setInteractionId(zipFileInteractionId);
             updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
-            if (CsvProcessingState.PROCESSING_FAILED == state && CsvDataValidationStatus.SUCCESS.getDescription().equals(
+            if (CsvProcessingState.PROCESSING_FAILED == state && null != metricsBuilder && CsvDataValidationStatus.SUCCESS.getDescription().equals(
                 metricsBuilder.build().getDataValidationStatus())) {
                 updateRIHR.setPDataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
             }
@@ -248,7 +248,7 @@ public class CsvService {
         boolean processingSuccessful = false;
         try {
             saveArchiveInteractionStatus(interactionId, 
-                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams,session.getMetricsBuilder());
+                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams,null);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -309,7 +309,7 @@ public class CsvService {
             boolean processingSuccessful = false;
             try {
                 saveArchiveInteractionStatus(interactionId, 
-                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams,session.getMetricsBuilder());
+                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams,null);
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
