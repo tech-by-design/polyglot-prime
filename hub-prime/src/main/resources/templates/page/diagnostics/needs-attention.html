@@ -150,6 +150,8 @@
                             buttonPressed = 'shinny_datalake_submissions';
                         } else if (clickedField === 'shinny_datalake_submissions_failed') {
                             buttonPressed = 'qc_test_submissions';
+                        }else if (clickedField === 'valid_bundles') {
+                            buttonPressed = 'valid_bundles';
                         }
 
                         const isSameDrilldown =
@@ -276,16 +278,11 @@
                     },
                     {
                         headerName: "Valid Bundles",
-                        field: "shinny_datalake_submissions_failed",
+                        field: "valid_bundles",
                         filter: "agNumberColumnFilter",
-                          valueGetter: (params) => {
-                                const success = params.data.shinny_datalake_submissions ?? 0;
-                                const failed = params.data.shinny_datalake_submissions_failed ?? 0;
-                                return success + failed;
-                            },
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.data.qe_total_submissions !== params.value) {
+                            if (params.data.qe_total_submissions !== params.data.valid_bundles) {
                                 return { color: 'red' };
                             }
                             return null;
@@ -298,7 +295,7 @@
                         filter: "agNumberColumnFilter",
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.value !== params.data.shinny_datalake_submissions) {
+                            if (params.data.valid_bundles !== params.data.shinny_datalake_submissions) {
                                 return { color: 'red' };
                             }
                             return null;
@@ -378,7 +375,7 @@
                         };
 
                     }
-                    else if (params.data.buttonPressed === 'qc_test_submissions') {
+                    else if (params.data.buttonPressed === 'valid_bundles') {
 
                                 const url = window.shell.serverSideUrl(
                                     `/api/ux/tabular/jooq/sp/${schemaName}/${missingSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`
