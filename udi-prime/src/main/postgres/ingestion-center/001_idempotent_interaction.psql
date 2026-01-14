@@ -4426,15 +4426,15 @@ BEGIN
         GROUP BY sihr.tenant_id_lower
     )
     SELECT 
-        qe_name,
-        qe_total_submissions,
-        shinny_datalake_submissions,
-        shinny_datalake_submissions_failed,
-        valid_bundles,
-        recently_created_at
-    FROM submission_counts
-    WHERE qe_total_submissions <> 0   -- ? filter non-zero records
-    ORDER BY recently_created_at DESC;
+        sc.qe_name,
+        sc.qe_total_submissions,
+        sc.shinny_datalake_submissions,
+        sc.shinny_datalake_submissions_failed,
+        sc.valid_bundles,
+        sc.recently_created_at
+    FROM submission_counts sc
+    WHERE sc.qe_total_submissions <> 0   -- ? filter non-zero records
+    ORDER BY sc.recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
 
