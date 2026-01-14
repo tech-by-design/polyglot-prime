@@ -4369,11 +4369,28 @@ RETURNS TABLE (
     qe_total_submissions BIGINT,
     shinny_datalake_submissions BIGINT,
     shinny_datalake_submissions_failed BIGINT,
+    valid_bundles BIGINT,
     recently_created_at TIMESTAMPTZ
 ) AS $$
 BEGIN
     RETURN QUERY
-    WITH submission_counts AS (
+    WITH base_interactions AS (
+        SELECT
+            hub_interaction_id,
+            tenant_id_lower
+        FROM techbd_udi_ingress.sat_interaction_fhir_request
+        WHERE nature = 'Original FHIR Payload'
+        AND created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
+        AND created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
+        AND tenant_id <> 'N/A'
+        AND uri = ANY (ARRAY[
+            '/Bundle', '/Bundle/',
+            '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
+            '/ccda/Bundle', '/ccda/Bundle/',
+            '/hl7v2/Bundle', '/hl7v2/Bundle/'
+        ])
+    ),
+    submission_counts AS (
         SELECT 
             sihr.tenant_id_lower AS qe_name,
             count(
@@ -4381,10 +4398,14 @@ BEGIN
                     WHEN sihr.nature = 'Original FHIR Payload' THEN 1
                 END) AS qe_total_submissions,
             COUNT(
-                CASE
+                /*CASE
                     WHEN sihr.nature = 'Forwarded HTTP Response'
                          OR (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status = 'True')
                     THEN 1
+                END*/
+                CASE
+                    WHEN (sihr.nature = 'Forwarded HTTP Response' OR sihr.nature = 'Forwarded HTTP Response Replay') AND sihr.to_state = 'COMPLETE'
+                    THEN 1 
                 END
             ) AS shinny_datalake_submissions,
             COUNT(
@@ -4393,24 +4414,27 @@ BEGIN
                     THEN 1
                 END
             ) AS shinny_datalake_submissions_failed, 
+            COUNT(
+                CASE
+                    WHEN sihr.nature = 'techByDesignDisposition' AND techbd_disposition_action != 'discard'
+                    THEN 1
+                END
+            ) AS valid_bundles,
             max(sihr.created_at) AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-        WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])
-            AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
-            AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
-            AND sihr.tenant_id <> 'N/A'
+        JOIN base_interactions bi ON bi.hub_interaction_id = sihr.hub_interaction_id
         GROUP BY sihr.tenant_id_lower
     )
     SELECT 
-        submission_counts.qe_name,
-        submission_counts.qe_total_submissions,
-        submission_counts.shinny_datalake_submissions,
-        submission_counts.shinny_datalake_submissions_failed,
-        submission_counts.recently_created_at
+        qe_name,
+        qe_total_submissions,
+        shinny_datalake_submissions,
+        shinny_datalake_submissions_failed,
+        valid_bundles,
+        recently_created_at
     FROM submission_counts
-    WHERE submission_counts.qe_total_submissions <> 0   -- ? filter non-zero records
-    ORDER BY submission_counts.recently_created_at DESC;
+    WHERE qe_total_submissions <> 0   -- ? filter non-zero records
+    ORDER BY recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
 
