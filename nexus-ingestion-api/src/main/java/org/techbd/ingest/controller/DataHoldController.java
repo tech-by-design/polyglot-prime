@@ -92,22 +92,9 @@ public class DataHoldController extends AbstractMessageSourceProvider {
         Map<String, String> responseMap;
 
         if (file != null && !file.isEmpty()) {
-            LOG.info("DataHoldController:: File received: {} ({} bytes). interactionId={}",
-                    file.getOriginalFilename(), file.getSize(), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, file.getSize(), file.getOriginalFilename());
-            responseMap = messageProcessorService.processMessage(context, file);
-
+            responseMap = processMultipartFile(file, headers, request, interactionId);
         } else if (body != null && !body.isBlank()) {
-            String contentType = request.getContentType();
-            String extension = HttpUtil.resolveExtension(contentType);
-            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-            LOG.info("DataHoldController:: Raw body received (Content-Type={}): {}... interactionId={}",
-                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
-            RequestContext context = createRequestContext(interactionId,
-                    headers, request, body.length(), generatedFileName);
-            responseMap = messageProcessorService.processMessage(context, body);
-
+            responseMap = processRawBody(body, headers, request, interactionId);
         } else {
             LOG.warn("DataHoldController:: Neither file nor body provided. interactionId={}", interactionId);
             throw new IllegalArgumentException("Request must contain either a file or body data");
@@ -116,6 +103,90 @@ public class DataHoldController extends AbstractMessageSourceProvider {
         String responseJson = objectMapper.writeValueAsString(responseMap);
         LOG.info("DataHoldController:: Returning response for interactionId={}", interactionId);
         return ResponseEntity.ok(responseJson);
+    }
+
+    /**
+     * Processes multipart file uploads.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
+     */
+    private Map<String, String> processMultipartFile(
+            MultipartFile file,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            String interactionId) {
+        
+        RequestContext context = null;
+        try {
+            LOG.info("DataHoldController:: File received: {} ({} bytes). interactionId={}",
+                    file.getOriginalFilename(), file.getSize(), interactionId);
+            
+            context = createRequestContext(interactionId,
+                    headers, request, file.getSize(), file.getOriginalFilename());
+            
+            return messageProcessorService.processMessage(context, file);
+        } catch (Exception e) {
+            LOG.error("DataHoldController:: Error processing multipart file. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("DataHoldController:: Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, file);
+                } catch (Exception storageException) {
+                    LOG.error("DataHoldController:: Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
+            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Processes raw request body content.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
+     */
+    private Map<String, String> processRawBody(
+            String body,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            String interactionId) {
+        
+        RequestContext context = null;
+        try {
+            String contentType = request.getContentType();
+            String extension = HttpUtil.resolveExtension(contentType);
+            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+            
+            LOG.info("DataHoldController:: Raw body received (Content-Type={}): {}... interactionId={}",
+                    contentType, body.substring(0, Math.min(200, body.length())), interactionId);
+            
+            context = createRequestContext(interactionId,
+                    headers, request, body.length(), generatedFileName);
+            
+            return messageProcessorService.processMessage(context, body);
+        } catch (Exception e) {
+            LOG.error("DataHoldController:: Error processing raw body. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("DataHoldController:: Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, body);
+                } catch (Exception storageException) {
+                    LOG.error("DataHoldController:: Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
+            throw new RuntimeException("Failed to process body: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -172,7 +243,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Error resolving per-port metadataDir prefix for metadata key", e);
+            LOG.error("Error resolving per-port dataDir prefix for data key", e);
         }
 
         // compute upload date parts (UTC)

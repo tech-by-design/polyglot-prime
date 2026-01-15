@@ -506,10 +506,47 @@ public class NettyTcpServer implements MessageSourceProvider {
         Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(initialContext);
         
         if (detectMllp(portEntryOpt)) {
+            if (isTcpDelimited) {
+                 handleConflictingWrapper(
+                    ctx, 
+                    rawMessage, 
+                    interactionId, 
+                    clientIP, 
+                    clientPort, 
+                    destinationIP, 
+                    destinationPort, 
+                    portEntryOpt,
+                    "TCP_DELIMITER_FOUND_EXPECTED_MLLP",
+                    "As per port configuration, expecting HL7 message with MLLP wrappers. Received message delimited with TCP delimiters instead.",
+                    isTcpDelimited
+                );
+                logger.warn("CONFLICTING_WRAPPERS_DETECTED [interactionId={}] - As per port configuration, expecting HL7 message with MLLP wrappers. Received message delimited with TCP delimiters instead.",
+                        interactionId);
+                        
+                return;
+            }
             logger.info("MLLP_DETECTED [interactionId={}] - Using HL7 processing with proper ACK", interactionId);
             handleHL7Message(ctx, rawMessage, interactionId, clientIP, clientPort,
                     destinationIP, destinationPort, portEntryOpt);
         } else {
+            if(isMllpWrapped) {
+                  handleConflictingWrapper(
+                    ctx, 
+                    rawMessage, 
+                    interactionId, 
+                    clientIP, 
+                    clientPort, 
+                    destinationIP, 
+                    destinationPort, 
+                    portEntryOpt,
+                    "MLLP_WRAPPER_FOUND_EXPECTED_TCP",
+                    "As per port configuration, expecting TCP delimited message. Received message with MLLP wrappers instead.",
+                    false
+                );
+                logger.warn("CONFLICTING_WRAPPERS_DETECTED [interactionId={}] - As per port configuration, expecting TCP delimited message. Received message with MLLP wrappers instead.",
+                        interactionId);
+                return;        
+            }
             logger.info("TCP_MODE_DETECTED [interactionId={}] - Using generic processing with simple ACK",
                     interactionId);
             handleGenericMessage(ctx, rawMessage, interactionId, clientIP, clientPort,
@@ -517,6 +554,109 @@ public class NettyTcpServer implements MessageSourceProvider {
         }
     }
 
+    /**
+     * Handles cases where the message wrapper type conflicts with port configuration.
+     * Generates a negative acknowledgment, sets ingestionFailed flag, and stores the original payload.
+     */
+    private void handleConflictingWrapper(
+            ChannelHandlerContext ctx,
+            String rawMessage,
+            UUID interactionId,
+            String clientIP,
+            Integer clientPort,
+            String destinationIP,
+            Integer destinationPort,
+            Optional<PortConfig.PortEntry> portEntryOpt,
+            String errorCode,
+            String errorMessage,
+            boolean genericNackExpected) {
+        
+        String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+        RequestContext requestContext = null;
+        
+        try {               
+            logger.error("CONFLICTING_WRAPPERS_DETECTED [interactionId={}] [errorTraceId={}] {}", 
+                    interactionId, errorTraceId, errorMessage);
+            
+            // Log detailed error
+            LogUtil.logDetailedError(
+                400, 
+                errorMessage, 
+                interactionId.toString(), 
+                errorTraceId,
+                new IllegalArgumentException("Wrapper mismatch: " + errorCode)
+            );
+            
+            // Build request context with ingestionFailed flag
+            requestContext = buildRequestContext(
+                    rawMessage,
+                    interactionId.toString(),
+                    portEntryOpt,
+                    String.valueOf(clientPort),
+                    clientIP,
+                    destinationIP,
+                    String.valueOf(destinationPort),
+                    MessageSourceType.MLLP);
+            
+            requestContext.setIngestionFailed(true);
+            
+            // Generate appropriate negative acknowledgment based on wrapper type
+            String nackMessage;
+            if (genericNackExpected) {
+                // TCP delimiter was used, send TCP-style NACK
+                nackMessage = String.format(
+                    "NACK|%s|%s|%s|%s",
+                    interactionId,
+                    errorTraceId,
+                    errorCode,
+                    errorMessage
+                );
+            } else {
+                // MLLP wrapper was used, send HL7 NACK
+                nackMessage = createHL7AckFromMsh(
+                        rawMessage,
+                        "AR",
+                        errorMessage,
+                        interactionId.toString(),
+                        errorTraceId);
+            }
+            
+            // Store original payload even though it has wrong wrapper
+            try {
+                messageProcessorService.processMessage(requestContext, rawMessage, nackMessage);
+                logger.info("CONFLICTING_WRAPPER_PAYLOAD_STORED [interactionId={}] [errorTraceId={}] - Original payload stored for troubleshooting", 
+                        interactionId, errorTraceId);
+            } catch (Exception storageException) {
+                logger.error("FAILED_TO_STORE_CONFLICTING_WRAPPER_PAYLOAD [interactionId={}] [errorTraceId={}] - Could not store original payload", 
+                        interactionId, errorTraceId, storageException);
+            }
+            if (genericNackExpected) {
+                sendResponseAndClose(ctx, nackMessage, interactionId, "TCP_NACK_WRAPPER_CONFLICT");
+            } else {
+                sendResponseAndClose(ctx, nackMessage, interactionId, "HL7_NACK_WRAPPER_CONFLICT");
+            }
+            
+        } catch (Exception e) {
+            logger.error("ERROR_HANDLING_WRAPPER_CONFLICT [interactionId={}] [errorTraceId={}]: {}", 
+                    interactionId, errorTraceId, e.getMessage(), e);
+            
+            // Try to store whatever we can
+            if (requestContext != null && rawMessage != null) {
+                try {
+                    requestContext.setIngestionFailed(true);
+                    messageProcessorService.processMessage(requestContext, rawMessage, null);
+                } catch (Exception storageException) {
+                    logger.error("FINAL_STORAGE_ATTEMPT_FAILED [interactionId={}] [errorTraceId={}]", 
+                            interactionId, errorTraceId, storageException);
+                }
+            }
+            
+            // Send generic error response
+            String genericNack = String.format("NACK|%s|%s|PROCESSING_ERROR|%s", 
+                    interactionId, errorTraceId, e.getMessage());
+            sendResponseAndClose(ctx, genericNack, interactionId, "NACK_PROCESSING_ERROR");
+        }
+    }
     private boolean detectTcpDelimiterWrapper(String message) {
         if (message == null || message.length() < 3) {
             return false;
@@ -544,7 +684,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         Message hl7Message = null;
         boolean nackGenerated = false;
         String errorTraceId = null;
-        
+        RequestContext requestContext = null;
         try {
             try {
                 cleanMsg = unwrapMllp(rawMessage);
@@ -564,7 +704,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                         interactionId, e.getMessage(), e);
             }
 
-            RequestContext requestContext = buildRequestContext(
+            requestContext = buildRequestContext(
                     cleanMsg,
                     interactionId.toString(),
                     portEntryOpt,
@@ -596,6 +736,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 }
 
                 if (!zntPresent) {
+                    requestContext.setIngestionFailed(true);
                     // Generate error trace ID for missing ZNT
                     errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
                     
@@ -617,15 +758,13 @@ public class NettyTcpServer implements MessageSourceProvider {
                             "Missing ZNT segment", 
                             interactionId.toString(),
                             errorTraceId);
+                    requestContext.setIngestionFailed(true);
+                    messageProcessorService.processMessage(requestContext, cleanMsg, nack);        
                     sendResponseAndClose(ctx, wrapMllp(nack), interactionId, "HL7_NACK_MISSING_ZNT");
                     return;
                 }
             }
-            
-            if (!nackGenerated) {
-                messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
-            }
-
+            messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
             // Send MLLP-wrapped ACK
             String response = wrapMllp(ackMessage);
             sendResponseAndClose(ctx, response, interactionId, "HL7_ACK");
@@ -653,6 +792,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                     e.getMessage(),
                     interactionId.toString(),
                     errorTraceId);
+            if (requestContext != null) {
+                requestContext.setIngestionFailed(true);
+                messageProcessorService.processMessage(requestContext, cleanMsg, errorAck);
+            }        
             sendResponseAndClose(ctx, wrapMllp(errorAck), interactionId, "HL7_NACK");
         }
     }
@@ -665,10 +808,11 @@ public class NettyTcpServer implements MessageSourceProvider {
             String clientIP, Integer clientPort, String destinationIP, Integer destinationPort, 
             Optional<PortConfig.PortEntry> portEntryOpt) {
         String errorTraceId = null;
-        
+        RequestContext requestContext = null;
+
         try {
             String cleanMsg = rawMessage.trim();
-            RequestContext requestContext = buildRequestContext(
+            requestContext = buildRequestContext(
                     cleanMsg,
                     interactionId.toString(),
                     portEntryOpt,
@@ -697,7 +841,9 @@ public class NettyTcpServer implements MessageSourceProvider {
         } catch (Exception e) {
             // Generate error trace ID for processing errors
             errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
-            
+            if (requestContext != null) {
+                requestContext.setIngestionFailed(true);
+            }
             logger.error("GENERIC_PROCESSING_ERROR [interactionId={}] [errorTraceId={}]: {}",
                     interactionId, errorTraceId, e.getMessage(), e);
             
@@ -711,6 +857,9 @@ public class NettyTcpServer implements MessageSourceProvider {
             );
             
             String errorResponse = generateSimpleNack(interactionId.toString(), e.getMessage(), errorTraceId) + "\n";
+            if (requestContext != null) {
+                messageProcessorService.processMessage(requestContext, rawMessage.trim(), errorResponse);
+            }
             sendResponseAndClose(ctx, errorResponse, interactionId, "SIMPLE_NACK");
         }
     }

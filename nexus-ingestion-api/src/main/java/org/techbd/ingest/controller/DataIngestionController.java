@@ -182,6 +182,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
     /**
      * Processes multipart file uploads.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
      */
     private Map<String, String> processMultipartFile(
             String sourceId,
@@ -191,11 +192,12 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             String interactionId,
             MultipartFile file) {
         
+        RequestContext context = null;
         try {
             LOG.info("File received: {} ({} bytes). interactionId={}",
                     file.getOriginalFilename(), file.getSize(), interactionId);
 
-            RequestContext context = createRequestContext(
+            context = createRequestContext(
                     interactionId, headers, request, file.getSize(), file.getOriginalFilename());
 
             context.setSourceId(sourceId);
@@ -204,12 +206,28 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             return messageProcessorService.processMessage(context, file);
         } catch (Exception e) {
             LOG.error("Error processing multipart file. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, file);
+                } catch (Exception storageException) {
+                    LOG.error("Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
             throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
         }
     }
 
     /**
      * Processes raw request body content.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
      */
     private Map<String, String> processRawBody(
             String sourceId,
@@ -220,6 +238,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             String interactionId,
             String body) {
         
+        RequestContext context = null;
         try {
             String contentType = request.getContentType();
             String extension = HttpUtil.resolveExtension(contentType);
@@ -228,7 +247,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             LOG.info("Raw body received (Content-Type={}): interactionId={}",
                     contentType, interactionId);
 
-            RequestContext context = createRequestContext(
+            context = createRequestContext(
                     interactionId, headers, request, body.length(), generatedFileName);
 
             context.setSourceId(sourceId);
@@ -237,6 +256,21 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             return messageProcessorService.processMessage(context, body);
         } catch (Exception e) {
             LOG.error("Error processing raw body. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, body);
+                } catch (Exception storageException) {
+                    LOG.error("Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
             throw new RuntimeException("Failed to process body: " + e.getMessage(), e);
         }
     }
