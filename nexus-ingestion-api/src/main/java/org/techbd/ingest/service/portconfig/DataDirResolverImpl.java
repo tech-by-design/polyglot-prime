@@ -190,7 +190,11 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String datePath = datePath(context);
         String stampedName = buildTimestampedName(context.getFileName(), context.getTimestamp());
         String tenantId = resolveTenantId(context);
-
+        String interactionId = context.getInteractionId();
+        boolean ingestionFailed = context.isIngestionFailed();
+        if (ingestionFailed) {
+            return String.format("error/%s/%s_%s_metadata.json", datePath, interactionId, context.getTimestamp());
+        }
         if (tenantId != null) {
             return String.format("hold/%s/%s/%s", tenantId, datePath, stampedName);
         } else {
@@ -202,7 +206,11 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String datePath = datePath(context);
         String stampedName = buildTimestampedName(context.getFileName(), context.getTimestamp());
         String tenantId = resolveTenantId(context);
-
+        String interactionId = context.getInteractionId();
+        boolean ingestionFailed = context.isIngestionFailed();
+        if (ingestionFailed) {
+            return String.format("error/%s/%s_%s_metadata.json", datePath, interactionId, context.getTimestamp());
+        }
         if (tenantId != null) {
             return String.format("hold/metadata/%s/%s/%s_metadata.json", tenantId, datePath, stampedName);
         } else {
@@ -214,7 +222,10 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String datePath = datePath(context);
         String interactionId = context.getInteractionId();
         String tenantId = resolveTenantId(context);
-
+        boolean ingestionFailed = context.isIngestionFailed();
+        if (ingestionFailed) {
+            return String.format("error/%s/%s_%s", datePath, interactionId, context.getTimestamp());
+        }
         if (tenantId != null) {
             return String.format("data/%s/%s/%s_%s", tenantId, datePath, interactionId, context.getTimestamp());
         } else {
@@ -226,7 +237,10 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String datePath = datePath(context);
         String interactionId = context.getInteractionId();
         String tenantId = resolveTenantId(context);
-
+        boolean ingestionFailed = context.isIngestionFailed();
+        if (ingestionFailed) {
+            return String.format("error/%s/%s_%s_metadata.json", datePath, interactionId, context.getTimestamp());
+        }
         if (tenantId != null) {
             return String.format(
                     "metadata/%s/%s/%s_%s_metadata.json",

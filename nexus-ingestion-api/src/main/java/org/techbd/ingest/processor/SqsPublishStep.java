@@ -120,6 +120,6 @@ public class SqsPublishStep implements MessageProcessingStep {
 
     @Override
     public boolean isEnabledFor(RequestContext context) {
-        return context.getMessageSourceType() != null && context.getMessageSourceType().shouldUploadToSqs();
+        return !context.isIngestionFailed() && context.getMessageSourceType() != null && context.getMessageSourceType().shouldUploadToSqs();
     }
 }
