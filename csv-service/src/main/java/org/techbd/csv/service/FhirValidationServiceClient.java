@@ -263,6 +263,7 @@ public class FhirValidationServiceClient {
         addOptionalHeader(headers, "X-TechBD-Provenance", request.provenance);
         addOptionalHeader(headers, "X-TechBD-Health-Check", request.healthCheck);
         addOptionalHeader(headers, "X-TechBD-Custom-DataLake-API", request.customDataLakeApi);
+        addOptionalHeader(headers, "X-TechBD-DataLake-API-URL", request.customDataLakeApi);
         addOptionalHeader(headers, "X-TechBD-DataLake-API-Content-Type", request.dataLakeApiContentType);
         addOptionalHeader(headers, "X-TechBD-MTLS-Strategy", request.mtlsStrategy);
         addOptionalHeader(headers, "X-TechBD-Elaboration", request.elaboration);
