@@ -87,7 +87,11 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String baseKey = isHold(entry)
                 ? buildHoldDataKey(context, entry)
                 : buildNormalDataKey(context, entry);
-        String finalKey = applyPrefix(entry != null ? entry.dataDir : null, baseKey);
+         // Apply prefix ONLY if not a failed ingestion
+        boolean ingestionFailed = context.isIngestionFailed();
+        String finalKey = ingestionFailed 
+                ? baseKey 
+                : applyPrefix(entry != null ? entry.dataDir : null, baseKey);
         LOG.debug("[DATA_DIR_RESOLVER] Resolved Data Key: {} | route: {} | port: {} | fileName: {} | tenantId: {}",
                 finalKey,
                 entry != null ? entry.route : "null",
@@ -105,10 +109,13 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
      * @return the resolved metadata key
      */
     private String resolveMetadataKey(RequestContext context, PortEntry entry) {
+        boolean ingestionFailed = context.isIngestionFailed();
         String baseKey = isHold(entry)
                 ? buildHoldMetadataKey(context, entry)
                 : buildNormalMetadataKey(context, entry);
-        String finalKey = applyPrefix(entry != null ? entry.metadataDir : null, baseKey);
+        String finalKey = ingestionFailed 
+                ? baseKey
+                : applyPrefix(entry != null ? entry.metadataDir : null, baseKey);
         LOG.debug("[DATA_DIR_RESOLVER] Resolved Metadata Key: {} | route: {} | port: {} | fileName: {} | tenantId: {}",
                 finalKey,
                 entry != null ? entry.route : "null",
@@ -193,7 +200,7 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         String interactionId = context.getInteractionId();
         boolean ingestionFailed = context.isIngestionFailed();
         if (ingestionFailed) {
-            return String.format("error/%s/%s_%s_metadata.json", datePath, interactionId, context.getTimestamp());
+            return String.format("error/%s/%s_%s", datePath, interactionId, context.getTimestamp());
         }
         if (tenantId != null) {
             return String.format("hold/%s/%s/%s", tenantId, datePath, stampedName);
