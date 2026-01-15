@@ -148,7 +148,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
                     faultException
                 );
                 
-                // Try to inject error trace ID into SOAP fault message
+                // Try to inject error trace ID into SOAP fault message (only if not already present)
                 try {
                     injectErrorTraceIdIntoFault(faultMessage, interactionId, errorTraceId);
                 } catch (Exception e) {
@@ -251,6 +251,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
 
     /**
      * Injects error trace ID into SOAP fault message as a detail element
+     * Only adds if not already present to avoid duplicates
      */
     private void injectErrorTraceIdIntoFault(SoapMessage faultMessage, String interactionId, String errorTraceId) {
         try {
@@ -263,24 +264,57 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
                     faultDetail = fault.addFaultDetail();
                 }
                 
-                // Add InteractionId as a detail element
-                var interactionIdElement = faultDetail.addFaultDetailElement(
-                    new javax.xml.namespace.QName("http://techbd.org/errorinfo", "InteractionId", "err")
-                );
-                interactionIdElement.addText(interactionId);
+                // Check if InteractionId and ErrorTraceId already exist
+                boolean hasInteractionId = hasDetailElement(faultDetail, "InteractionId");
+                boolean hasErrorTraceId = hasDetailElement(faultDetail, "ErrorTraceId");
                 
-                // Add ErrorTraceId as a detail element
-                var errorTraceIdElement = faultDetail.addFaultDetailElement(
-                    new javax.xml.namespace.QName("http://techbd.org/errorinfo", "ErrorTraceId", "err")
-                );
-                errorTraceIdElement.addText(errorTraceId);
+                if (hasInteractionId && hasErrorTraceId) {
+                    LOG.debug("Error trace details already present in SOAP fault, skipping injection. interactionId={}", interactionId);
+                    return;
+                }
                 
-                LOG.info("Successfully injected errorTraceId into SOAP fault. interactionId={}, errorTraceId={}", 
+                // Add InteractionId if not present
+                if (!hasInteractionId) {
+                    var interactionIdElement = faultDetail.addFaultDetailElement(
+                        new javax.xml.namespace.QName("http://techbd.org/errorinfo", "InteractionId", "err")
+                    );
+                    interactionIdElement.addText(interactionId);
+                    LOG.debug("Added InteractionId to SOAP fault. interactionId={}", interactionId);
+                }
+                
+                // Add ErrorTraceId if not present
+                if (!hasErrorTraceId) {
+                    var errorTraceIdElement = faultDetail.addFaultDetailElement(
+                        new javax.xml.namespace.QName("http://techbd.org/errorinfo", "ErrorTraceId", "err")
+                    );
+                    errorTraceIdElement.addText(errorTraceId);
+                    LOG.debug("Added ErrorTraceId to SOAP fault. errorTraceId={}", errorTraceId);
+                }
+                
+                LOG.info("Successfully injected error trace details into SOAP fault. interactionId={}, errorTraceId={}", 
                         interactionId, errorTraceId);
             }
         } catch (Exception e) {
             LOG.warn("Failed to inject errorTraceId into SOAP fault detail: {}", e.getMessage());
             // Non-critical failure - don't propagate
         }
+    }
+
+    /**
+     * Check if a detail element with the given local name exists in fault detail
+     */
+    private boolean hasDetailElement(org.springframework.ws.soap.SoapFaultDetail faultDetail, String localName) {
+        try {
+            var iterator = faultDetail.getDetailEntries();
+            while (iterator.hasNext()) {
+                var element = iterator.next();
+                if (element.getName().getLocalPart().equals(localName)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            LOG.debug("Error checking for detail element {}: {}", localName, e.getMessage());
+        }
+        return false;
     }
 }

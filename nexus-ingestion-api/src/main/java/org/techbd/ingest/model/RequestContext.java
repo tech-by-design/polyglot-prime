@@ -64,6 +64,7 @@ public class RequestContext {
     private String queueUrl;
     private String sourceId;
     private String msgType;
+    private boolean ingestionFailed;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,

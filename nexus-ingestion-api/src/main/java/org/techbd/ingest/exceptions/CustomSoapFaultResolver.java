@@ -6,6 +6,7 @@ import org.springframework.ws.soap.server.endpoint.SoapFaultMappingExceptionReso
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
@@ -14,7 +15,10 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Custom SOAP Fault Resolver that adds error trace ID to all SOAP faults,
- * including parsing errors that occur before reaching endpoint code.
+ * including MustUnderstand and other framework-level errors.
+ * 
+ * This resolver runs with order=0 to catch faults before other resolvers,
+ * including framework-generated faults like MustUnderstand.
  */
 @Component
 public class CustomSoapFaultResolver extends SoapFaultMappingExceptionResolver {
@@ -23,8 +27,9 @@ public class CustomSoapFaultResolver extends SoapFaultMappingExceptionResolver {
 
     public CustomSoapFaultResolver(AppLogger appLogger) {
         this.logger = appLogger.getLogger(CustomSoapFaultResolver.class);
-        // Set order to handle faults before default resolver
-        setOrder(1);
+        // CRITICAL: Set order to 0 to handle faults before other resolvers
+        // This ensures we catch MustUnderstand and other framework faults
+        setOrder(0);
     }
 
     @Override
@@ -34,28 +39,44 @@ public class CustomSoapFaultResolver extends SoapFaultMappingExceptionResolver {
         String interactionId = extractInteractionId();
         
         try {
-            // Get fault message
+            // Get fault message and code
             String faultMessage = fault.getFaultStringOrReason();
+            String faultCode = fault.getFaultCode() != null ? fault.getFaultCode().toString() : "UNKNOWN";
             
-            // Enhance message for empty body errors
-            if (ex.getMessage() != null && ex.getMessage().contains("Empty request body")) {
-                faultMessage = "Empty request body - no SOAP message provided";
+            // Determine error code based on fault type
+            int errorCode = 400; // Default to client error
+            if (faultMessage != null) {
+                if (faultMessage.contains("MustUnderstand")) {
+                    errorCode = 400; // Client didn't handle required header
+                    logger.warn("CustomSoapFaultResolver:: MustUnderstand fault detected. interactionId={}, errorTraceId={}", 
+                            interactionId, errorTraceId);
+                } else if (faultMessage.contains("Empty request body")) {
+                    faultMessage = "Empty request body - no SOAP message provided";
+                } else if (faultMessage.contains("Unable to create envelope")) {
+                    faultMessage = "Invalid SOAP message format";
+                }
             }
             
-            logger.error("CustomSoapFaultResolver:: SOAP Fault occurred. interactionId={}, errorTraceId={}, error={}", 
-                    interactionId, errorTraceId, ex.getMessage(), ex);
+            logger.error("CustomSoapFaultResolver:: SOAP Fault occurred. interactionId={}, errorTraceId={}, faultCode={}, error={}", 
+                    interactionId, errorTraceId, faultCode, ex != null ? ex.getMessage() : faultMessage);
+            
+            // Set ingestion failed flag in request context
+            setIngestionFailedFlag(interactionId);
             
             // Log detailed error to CloudWatch
             LogUtil.logDetailedError(
-                400, // Use 400 for client errors like empty body
-                "SOAP Fault: " + faultMessage, 
+                errorCode,
+                "SOAP Fault [" + faultCode + "]: " + faultMessage, 
                 interactionId, 
                 errorTraceId, 
-                ex
+                ex != null ? ex : new Exception(faultMessage)
             );
             
             // Add error trace information to fault detail
-            var faultDetail = fault.addFaultDetail();
+            var faultDetail = fault.getFaultDetail();
+            if (faultDetail == null) {
+                faultDetail = fault.addFaultDetail();
+            }
             
             // Add InteractionId
             var interactionIdElement = faultDetail.addFaultDetailElement(
@@ -69,8 +90,8 @@ public class CustomSoapFaultResolver extends SoapFaultMappingExceptionResolver {
             );
             errorTraceIdElement.addText(errorTraceId);
             
-            logger.info("CustomSoapFaultResolver:: Added error trace details to SOAP fault. interactionId={}, errorTraceId={}", 
-                    interactionId, errorTraceId);
+            logger.info("CustomSoapFaultResolver:: Added error trace details to SOAP fault. interactionId={}, errorTraceId={}, faultCode={}", 
+                    interactionId, errorTraceId, faultCode);
             
         } catch (Exception e) {
             logger.error("CustomSoapFaultResolver:: Failed to customize SOAP fault. interactionId={}, errorTraceId={}, error={}", 
@@ -106,5 +127,30 @@ public class CustomSoapFaultResolver extends SoapFaultMappingExceptionResolver {
         
         // Return unknown if not found
         return "unknown";
+    }
+
+    /**
+     * Set ingestion failed flag in request context
+     * This ensures failed requests are properly marked
+     */
+    private void setIngestionFailedFlag(String interactionId) {
+        try {
+            var transportContext = TransportContextHolder.getTransportContext();
+            if (transportContext != null && transportContext.getConnection() instanceof HttpServletConnection) {
+                var connection = (HttpServletConnection) transportContext.getConnection();
+                HttpServletRequest httpRequest = connection.getHttpServletRequest();
+                
+                // Get RequestContext and set failed flag
+                RequestContext context = (RequestContext) httpRequest.getAttribute(Constants.REQUEST_CONTEXT);
+                if (context != null) {
+                    context.setIngestionFailed(true);
+                    logger.info("CustomSoapFaultResolver:: Set ingestionFailed=true for interactionId={}", interactionId);
+                } else {
+                    logger.debug("CustomSoapFaultResolver:: RequestContext not yet available for interactionId={} (may be set later)", interactionId);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("CustomSoapFaultResolver:: Failed to set ingestionFailed flag: {}", e.getMessage());
+        }
     }
 }
