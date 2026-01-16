@@ -22,6 +22,7 @@ import org.techbd.ingest.util.TemplateLogger;
  *   <li>Handling {@code /hold} versus non-hold routing</li>
  *   <li>Building timestamped filenames</li>
  *   <li>Generating date-based folder paths (yyyy/MM/dd)</li>
+ *   <li>Ensuring error paths do NOT get prefixes applied</li>
  * </ul>
  *
  * <h3>Sample Output</h3>
@@ -35,8 +36,12 @@ import org.techbd.ingest.util.TemplateLogger;
  *      Metadata Key: metadata/2025/12/02/ABC123_20251202T143000Z_metadata.json
  *
  *  Hold mode with tenant (entry.route="/hold"):
- *      Data Key:     hold/netspective_pnr/2025/12/02/20251202T143000Z_sample.xml
- *      Metadata Key: hold/netspective_pnr/2025/12/02/20251202T143000Z_sample_metadata.json
+ *      Data Key:     prefix/hold/netspective_pnr/2025/12/02/20251202T143000Z_sample.xml
+ *      Metadata Key: prefix/hold/netspective_pnr/2025/12/02/20251202T143000Z_sample_metadata.json
+ *
+ *  Error mode (ingestionFailed=true) - NO PREFIX:
+ *      Data Key:     error/2025/12/02/ABC123_20251202T143000Z
+ *      Metadata Key: error/2025/12/02/ABC123_20251202T143000Z_metadata.json
  * </pre>
  */
 @Component
@@ -49,6 +54,7 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
 
     /**
      * Resolves and applies S3 object keys to the request context.
+     * Also updates the full S3 paths based on the resolved keys.
      *
      * @param context the request context to update
      * @param entry the port entry configuration
@@ -74,10 +80,46 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
             LOG.info("[DATA_DIR_RESOLVER] Resolved Ack Object Key: {} interactionId={}", ackObjectKey,
                     interactionId);
         }
+
+        // Update full S3 paths based on resolved keys
+        updateFullS3Paths(context, interactionId);
+    }
+
+    /**
+     * Updates the full S3 paths in the request context based on the resolved object keys.
+     * These full paths are used in the success response sent to the client.
+     * 
+     * The paths are constructed as: s3://{bucket}/{objectKey}
+     * 
+     * @param context the request context to update
+     * @param interactionId the interaction ID for logging
+     */
+    private void updateFullS3Paths(RequestContext context, String interactionId) {
+        // Update full S3 data path
+        if (context.getObjectKey() != null && context.getDataBucketName() != null) {
+            String fullS3DataPath = Constants.S3_PREFIX + context.getDataBucketName() + "/" + context.getObjectKey();
+            context.setFullS3DataPath(fullS3DataPath);
+            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Data Path: {} interactionId={}", fullS3DataPath, interactionId);
+        }
+
+        // Update full S3 metadata path
+        if (context.getMetadataKey() != null && context.getMetaDataBucketName() != null) {
+            String fullS3MetadataPath = Constants.S3_PREFIX + context.getMetaDataBucketName() + "/" + context.getMetadataKey();
+            context.setFullS3MetadataPath(fullS3MetadataPath);
+            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Metadata Path: {} interactionId={}", fullS3MetadataPath, interactionId);
+        }
+
+        // Update full S3 acknowledgement path
+        if (context.getAckObjectKey() != null && context.getDataBucketName() != null) {
+            String fullS3AckPath = Constants.S3_PREFIX + context.getDataBucketName() + "/" + context.getAckObjectKey();
+            context.setFullS3AckMessagePath(fullS3AckPath);
+            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Ack Path: {} interactionId={}", fullS3AckPath, interactionId);
+        }
     }
 
     /**
      * Builds the S3 key for the uploaded data object.
+     * IMPORTANT: Prefix is NOT applied for error paths (ingestionFailed=true).
      *
      * @param context the request context
      * @param entry the port entry configuration
