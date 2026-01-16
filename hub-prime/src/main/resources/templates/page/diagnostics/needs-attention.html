@@ -88,6 +88,7 @@
         const datalakeSubmissionDetailsSP = 'get_fhir_needs_attention_details';
         const missingSubmissionDetails = 'missing_datalake_submission_details';
         const missingSubmissionDetailsSP = 'get_missing_datalake_submission_details';
+        const missingTechByDesignDispositionDetails = 'get_missing_techByDesignDisposition_details';
         document.addEventListener('DOMContentLoaded', function () {
             const helpers = new Helpers();
             const modalAide = new ModalAide();
@@ -118,6 +119,21 @@
             }
 
                     function cellRenderer2(params) {
+
+                         const field = params.colDef.field;
+                            let showDrilldown = false;
+
+                            if (field === 'techbd_processed') {
+                                showDrilldown = params.data.qe_total_submissions !== params.data.techbd_processed;
+                            } else if (field === 'valid_bundles') {
+                                showDrilldown = params.data.techbd_processed !== params.data.valid_bundles;
+                            } else if (field === 'shinny_datalake_submissions') {
+                                showDrilldown = params.data.valid_bundles !== params.data.shinny_datalake_submissions;
+                            }
+
+                            if (!showDrilldown) {
+                                return params.value ?? 0;
+                            }
                         const container = document.createElement('div');
                         const arrow = document.createElement('span');
                         const button = document.createElement('button');
@@ -152,7 +168,10 @@
                             buttonPressed = 'qc_test_submissions';
                         }else if (clickedField === 'valid_bundles') {
                             buttonPressed = 'valid_bundles';
+                        }else if (clickedField === 'techbd_processed') {
+                            buttonPressed = 'techbd_processed';
                         }
+
 
                         const isSameDrilldown =
                             node.expanded && node.data.activeDrilldown === clickedField;
@@ -275,6 +294,19 @@
                         // },
                         filter: "agNumberColumnFilter",
                         headerTooltip: "FHIR File count from QE to Tech by Design"
+                    }, 
+                    {
+                        headerName: "TechBD Processed",
+                        field: "techbd_processed",
+                        filter: "agNumberColumnFilter",
+                        cellRenderer: cellRenderer2,
+                        cellStyle: function (params) {
+                            if (params.data.qe_total_submissions !== params.data.techbd_processed) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        },
+                        headerTooltip: "FHIR File count from Valid Bundles"
                     },
                     {
                         headerName: "Valid Bundles",
@@ -282,7 +314,7 @@
                         filter: "agNumberColumnFilter",
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.data.qe_total_submissions !== params.data.valid_bundles) {
+                            if (params.data.techbd_processed !== params.data.valid_bundles) {
                                 return { color: 'red' };
                             }
                             return null;
@@ -375,7 +407,45 @@
                         };
 
                     }
-                    else if (params.data.buttonPressed === 'valid_bundles') {
+                    else if (params.data.buttonPressed === 'techbd_processed') {
+
+                                const url = window.shell.serverSideUrl(
+                                    `/api/ux/tabular/jooq/sp/${schemaName}/${missingTechByDesignDispositionDetails}.json?storedProcparams=${paramsJson}`
+                                );
+
+                                return {
+                                    detailGridOptions: detailGridOptions2,
+                                    getDetailRowData: function (params) {
+                                        fetch(url, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify(gridRequestBody)
+                                        })
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    console.error('Error fetching data:', response.status, response.statusText);
+                                                    return null;
+                                                }
+                                                if (response.url.includes('/?timeout=true')) {
+                                                    window.location.href = '/?timeout=true';
+                                                    return null;
+                                                }
+                                                return response.json();
+                                            })
+                                            .then(responseData => {
+                                                const data = responseData.data;
+                                                params.successCallback(data || []);
+                                            });
+                                    },
+                                    defaultColDef: {
+                                        flex: 1,
+                                        filter: true
+                                    }
+                                };
+                            }
+                             else if (params.data.buttonPressed === 'valid_bundles') {
 
                                 const url = window.shell.serverSideUrl(
                                     `/api/ux/tabular/jooq/sp/${schemaName}/${missingSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`
