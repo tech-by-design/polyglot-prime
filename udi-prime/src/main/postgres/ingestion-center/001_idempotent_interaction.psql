@@ -4494,10 +4494,10 @@ BEGIN
         sc.qe_total_submissions, --1
         --(sc.qe_total_submissions - sc.valid_bundles - sc.invalid_bundles) AS missing_techByDesignDisposition, --2.2
         (sc.valid_bundles + sc.invalid_bundles) AS techbd_processed, --2
-        sc.valid_bundles, --3
-        --sc.valid_bundles_forwarded, --3
         sc.shinny_datalake_submissions, --Success submissions --4
         (sc.valid_bundles_forwarded - sc.shinny_datalake_submissions) AS shinny_datalake_submissions_failed, --4.1
+        sc.valid_bundles, --3
+        --sc.valid_bundles_forwarded, --3
         --sc.invalid_bundles, --2.1
         --(sc.valid_bundles - sc.valid_bundles_forwarded) AS missing_forward_request, --4.2
         sc.recently_created_at
@@ -4698,7 +4698,7 @@ BEGIN
                 AND r.to_state = ''COMPLETE''
         )
 
-        UNION ALL
+        /*UNION ALL
 
         -- 2️ Missing Forward HTTP Request
         SELECT
@@ -4725,7 +4725,7 @@ BEGIN
                 FROM techbd_udi_ingress.sat_interaction_fhir_request r
                 WHERE r.hub_interaction_id = bi.hub_interaction_id
                 AND (r.nature = ''Forward HTTP Request'')
-            )
+            )*/
             
         ORDER BY created_at DESC'
     )
