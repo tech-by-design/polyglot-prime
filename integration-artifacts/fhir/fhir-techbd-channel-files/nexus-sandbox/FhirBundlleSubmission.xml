@@ -1,14 +1,18 @@
 <channel version="4.6.0">
-  <id>9e22ec82-73ee-4565-8c5e-60a51e941cca</id>
+  <id>eb7b9426-2620-4037-aeec-eb45106175b2</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.2</description>
-  <revision>171</revision>
+  <description>Version: 0.8.3
+Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
+  <revision>42</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +34,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -173,9 +174,11 @@ var jdbcSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRE
 ********************************************/
 
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+//TODO remove commented lines
+//    var dataLedgerKey = fetchSecret(ledgerSecretName);
 
     channelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
     
@@ -190,13 +193,14 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirChannelUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
 
-    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
-    }
-
-    var fhirChannelUrl = fetchSecret(fhirSecretName);
+//TODO remove commented lines
+//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var fhirChannelUrl = fetchSecret(fhirSecretName);
 
     if (!fhirChannelUrl || fhirChannelUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for FHIR CHANNEL URL returned empty.&quot;;
@@ -243,13 +247,14 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
 
-    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
-    }
-
-    var csvServiceUrl = fetchSecret(csvSecretName);
+//TODO remove commented lines
+//    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var csvServiceUrl = fetchSecret(csvSecretName);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
@@ -277,17 +282,18 @@ try {
         datalakeApiUrl = incomingHeader.trim();
         logger.info(&quot;✔ Datalake API URL loaded from request header: &quot; + datalakeApiUrl);
     } else {
-        var datalakeSecretName = LookupHelper.get(
+        var datalakeApiUrl = LookupHelper.get(
             &quot;Config&quot;,
             &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;,
             ttlHours
         );
 
-        if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
-            throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
-        }
-
-        datalakeApiUrl = fetchSecret(datalakeSecretName);
+//TODO remove commented lines
+//        if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+//            throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+//        }
+//
+//        datalakeApiUrl = fetchSecret(datalakeSecretName);
 
         if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
             throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
@@ -318,8 +324,10 @@ try {
 ********************************************/&#xd;
 &#xd;
 try {&#xd;
-    var lakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;, ttlHours);&#xd;
-    var dataLakeApiKey = fetchSecret(lakeSecretName);&#xd;
+    var dataLakeApiKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;, ttlHours);
+
+    //TODO remove commented lines&#xd;
+//    var dataLakeApiKey = fetchSecret(lakeSecretName);&#xd;
 &#xd;
     channelMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);&#xd;
 &#xd;
@@ -335,13 +343,15 @@ try {&#xd;
     7️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;, ttlHours);
 
-    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value BL_FHIR_BUNDLE_VALIDATION_API_URL does not contain a secret name.&quot;;
-    }
 
-    var fhirApiUrl = fetchSecret(fhirSecretName);
+//TODO remove commented lines
+//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value BL_FHIR_BUNDLE_VALIDATION_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var fhirApiUrl = fetchSecret(fhirSecretName);
 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
@@ -365,14 +375,16 @@ try {
 ********************************************/
 
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    var dataLedgerApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerUrl = fetchSecret(ledgerSecretName);
+    
+    //TODO remove commented lines
+//    var dataLedgerUrl = fetchSecret(ledgerSecretName);
 
-    channelMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerUrl);
-     globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerUrl);
+    channelMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerApiUrl);
+     globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerApiUrl);
 
-    logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + dataLedgerUrl);
+    logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + dataLedgerApiUrl);
 
 } catch (e) {
     logger.error(&quot;❌ Error processing DataLedger API URL  secret: &quot; + e.message);
@@ -384,9 +396,11 @@ try {
 ********************************************/
 
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerTracking = fetchSecret(ledgerSecretName);
+   
+    //TODO remove commented lines
+//    var dataLedgerTracking = fetchSecret(ledgerSecretName);
 
     channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
@@ -402,12 +416,16 @@ try {
     10️⃣ FETCH HUB UI URL (Plain text)
 ********************************************/
 try {
-    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
-    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
-    }
-    // Fetch actual HUB UI URL from AWS Secrets Manager
-    var hubUiUrl = fetchSecret(hubUiSecretName);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+  
+    //TODO remove commented lines
+//    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+//    }
+//    // Fetch actual HUB UI URL from AWS Secrets Manager
+//    var hubUiUrl = fetchSecret(hubUiSecretName);
+
+
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
     }
@@ -2190,25 +2208,26 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1767595890705</time>
-        <timezone>Asia/Kolkata</timezone>
+        <time>1768554703865</time>
+        <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>3</userId>
+      <userId>1</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>989bb0ca-99be-40f9-a116-a6da9257c181</id>
-        <name>0_8_2</name>
+        <id>7b392d39-c6af-4558-86f3-a98f5238e670</id>
+        <name>0_8_3</name>
         <channelIds>
-          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
-          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
+          <string>5fada73c-ebce-4c9c-a309-bdd047912dcd</string>
+          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
+          <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
@@ -2218,7 +2237,13 @@ return;</undeployScript>
         <id>21a1ccfb-1032-4cc8-892b-a24eb24cca62</id>
         <name>ActiveFHIR</name>
         <channelIds>
+          <string>7acb6a40-87fa-4f3c-a158-cb6b60179ebd</string>
+          <string>4930eaf5-3c79-40e9-8426-1d41feac01e7</string>
+          <string>5fada73c-ebce-4c9c-a309-bdd047912dcd</string>
+          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
           <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
+          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
+          <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
         </channelIds>
         <backgroundColor>
           <red>204</red>
