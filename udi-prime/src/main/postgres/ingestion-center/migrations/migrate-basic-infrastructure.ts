@@ -1909,11 +1909,7 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ${testDependenciesSQL}
 
-      GRANT USAGE ON SCHEMA techbd_udi_ingress TO techbd_readonly_user;
-      GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_ingress TO techbd_readonly_user;
 
-      GRANT USAGE ON SCHEMA info_schema_lifecycle TO techbd_readonly_user;
-      GRANT SELECT ON ALL TABLES IN SCHEMA info_schema_lifecycle TO techbd_readonly_user;
 
       ${searchPathAssurance}
       DECLARE
