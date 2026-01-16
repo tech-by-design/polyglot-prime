@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>785baac8-14b8-4964-8992-572a90d357dc</id>
+  <id>1ca854d7-cebf-4897-a9ac-2a01e10ba533</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.5.5
-Implemented X-TechBD-DataLake-API-URL support .</description>
-  <revision>16</revision>
+  <description>Version: 0.5.6
+Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
+  <revision>18</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -307,10 +307,10 @@ function sendDataLedgerSync(payload) {
     var apiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
 
 // 1️⃣ Load secret name from Lookup Manager (NOT sensitive)
-var dataLedgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
-
+var dataLedgerApiKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+&#xd;//TODO remove the below line
 // 2️⃣ Fetch real API key from AWS Secrets Manager
-var dataLedgerApiKey = fetchSecret(dataLedgerSecretName);
+//var dataLedgerApiKey = fetchSecret(dataLedgerSecretName);
 
 // 3️⃣ Store real key into channelMap
 channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerApiKey);
@@ -601,9 +601,11 @@ var jdbcSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRE
 ********************************************/
 
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+//TODO remove line
+//    var dataLedgerKey = fetchSecret(ledgerSecretName);
 
     channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
@@ -617,13 +619,15 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
 
-    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
-    }
 
-    var fhirApiUrl = fetchSecret(fhirSecretName);
+//TODO remove lines
+//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var fhirApiUrl = fetchSecret(fhirSecretName);
 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
@@ -670,13 +674,13 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
-
-    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
-    }
-
-    var csvServiceUrl = fetchSecret(csvSecretName);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+//TODO remove lines
+//    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var csvServiceUrl = fetchSecret(csvSecretName);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
@@ -696,13 +700,13 @@ try {
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
-    var datalakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
 
-    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
-    }
-
-    var datalakeApiUrl = fetchSecret(datalakeSecretName);
+//    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var datalakeApiUrl = fetchSecret(datalakeSecretName);
 
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
@@ -739,9 +743,9 @@ try {
 ********************************************/
  
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerTracking = fetchSecret(ledgerSecretName);
+//    var dataLedgerTracking = fetchSecret(ledgerSecretName);
  
     channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
@@ -757,14 +761,14 @@ try {
 ********************************************/
 // Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header
 try {
-    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
  
-    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
-    }
- 
-    // Fetch actual HUB UI URL from AWS Secrets Manager
-    var hubUiUrl = fetchSecret(hubUiSecretName);
+//    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+//    }
+// 
+//    // Fetch actual HUB UI URL from AWS Secrets Manager
+//    var hubUiUrl = fetchSecret(hubUiSecretName);
  
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
@@ -3104,7 +3108,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768365971517</time>
+        <time>1768554685840</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3115,14 +3119,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fecedba4-55f5-4077-9995-e181c7b77308</id>
-        <name>0_5_5</name>
+        <id>d70d4d6b-56c6-4b1a-8e87-cc52f1ca3c9d</id>
+        <name>0_5_6</name>
         <channelIds>
-          <string>785baac8-14b8-4964-8992-572a90d357dc</string>
+          <string>1ca854d7-cebf-4897-a9ac-2a01e10ba533</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
@@ -3131,10 +3135,13 @@ return;</undeployScript>
         <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
         <name>Active</name>
         <channelIds>
+          <string>1ca854d7-cebf-4897-a9ac-2a01e10ba533</string>
           <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
           <string>6387f0ca-5310-4994-b9f6-e2e1dc233245</string>
           <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
           <string>07de8921-59c3-4539-8d69-b3c241b33d3d</string>
+          <string>3f305643-cfeb-439c-80a3-4dc0ed906590</string>
+          <string>54c19da2-1198-4eb8-b932-f8489e419e9d</string>
           <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
           <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
           <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
@@ -3149,7 +3156,6 @@ return;</undeployScript>
           <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
           <string>b5ce54b4-54a4-4173-9258-fcce5d81a231</string>
           <string>a2fdd3b6-8a2e-43cb-834b-f770f4b57d06</string>
-          <string>0211789c-68c9-4c9b-a502-43d0ca09217a</string>
           <string>b3aed8a2-8417-4575-93fb-3d6bfca955b5</string>
           <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
           <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>

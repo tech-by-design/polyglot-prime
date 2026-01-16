@@ -3,16 +3,16 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.0",
-      "editedby": "vinodaravind01",
-      "date": "2025-12-22"
+      "version": "0.8.1",
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     },
     {
       "type": "FHIR",
       "channel": "FhirBundleValidate.xml",
-      "version": "0.8.0",
-      "editedby": "vinodaravind01",
-      "date": "2025-12-22"
+      "version": "0.8.1",
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     },
     {
       "type": "CCDA",
@@ -31,9 +31,9 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.0",
-      "editedby": "vinodaravind01",
-      "date": "2025-12-22"
+      "version": "0.9.1",
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     },
     {
       "type": "FLAT FILE",
@@ -45,9 +45,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.11",
-      "editedby": "jewelbonnie",
-      "date": "2026-01-14"
+      "version": "0.1.12",
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     },
     {
       "type": "HL7v2",
@@ -74,8 +74,8 @@
       "type": "Lookup Manager",
       "channel": "lookup_group_config_export.json",
       "version": "",
-      "editedby": "jewelbonnie",
-      "date": "2025-12-30"
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -87,9 +87,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.5",
-      "editedby": "jewelbonnie",
-      "date": "2026-01-14"
+      "version": "0.5.6",
+      "editedby": "Arjun",
+      "date": "2026-01-16"
     }
   ],
   "transformations": {

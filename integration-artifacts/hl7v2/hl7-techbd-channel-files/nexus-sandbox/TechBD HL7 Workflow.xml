@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>0211789c-68c9-4c9b-a502-43d0ca09217a</id>
+  <id>8c7e0b65-c57d-478d-a67d-46caed412de7</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.11
-Implemented support for datalakeApiUrl header(X-TechBD-DataLake-API-URL).</description>
-  <revision>14</revision>
+  <description>Version: 0.1.12
+Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
+  <revision>10</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2268,13 +2268,15 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
 
-    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
-    }
+    //TODO remove lines
 
-    var fhirApiUrl = fetchSecret(fhirSecretName);
+//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var fhirApiUrl = fetchSecret(fhirSecretName);
 
     fhirApiUrl = fhirApiUrl.trim(); 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
@@ -2297,9 +2299,11 @@ try {
 ********************************************/
 
 try {
-    var ledgerSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
     //&quot;techbd-nyec-dataledger-api-key&quot;;
-    var dataLedgerKey = fetchSecret(ledgerSecretName);
+
+//TODO remove lines
+//    var dataLedgerKey = fetchSecret(ledgerSecretName);
 
     globalMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
@@ -2313,13 +2317,15 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
 
-    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
-    }
 
-    var csvServiceUrl = fetchSecret(csvSecretName);
+//TODO remove lines
+//    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var csvServiceUrl = fetchSecret(csvSecretName);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
@@ -2340,13 +2346,15 @@ try {
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
-    var datalakeSecretName = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
 
-    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
-    }
+//TODO remove lines
 
-    var datalakeApiUrl = fetchSecret(datalakeSecretName);
+//    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
+//        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
+//    }
+//
+//    var datalakeApiUrl = fetchSecret(datalakeSecretName);
 
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
@@ -2385,14 +2393,15 @@ try {
 ********************************************/
 // Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header.
 try {
-    var hubUiSecretName = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
  
-    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {
-        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
-    }
- 
-    // Fetch actual HUB UI URL from AWS Secrets Manager
-    var hubUiUrl = fetchSecret(hubUiSecretName);
+//TODO remove lines&#xd;
+
+//    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {//        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
+//    }
+// 
+//    // Fetch actual HUB UI URL from AWS Secrets Manager
+//    var hubUiUrl = fetchSecret(hubUiSecretName);
  
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
@@ -2750,7 +2759,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768366398069</time>
+        <time>1768554671745</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2761,13 +2770,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>9ed22df1-7bf8-4cec-ad9a-341ae7070aa2</id>
-        <name>0_1_11</name>
+        <id>4e509340-c1e4-4baa-b6f7-3751d92c7d00</id>
+        <name>0_1_12</name>
         <channelIds>
-          <string>0211789c-68c9-4c9b-a502-43d0ca09217a</string>
+          <string>8c7e0b65-c57d-478d-a67d-46caed412de7</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

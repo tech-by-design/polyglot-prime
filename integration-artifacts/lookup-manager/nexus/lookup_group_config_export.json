@@ -1,23 +1,23 @@
 {
   "group" : {
-    "id" : 1,
+    "id" : 3,
     "name" : "Config",
     "description" : "Environment variables needed for CCDA Workflow",
     "version" : "1",
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
-    "createdDate" : "2025-12-23T13:14:38.020+00:00",
-    "updatedDate" : "2025-12-23T13:14:38.020+00:00"
+    "createdDate" : "2026-01-14T10:28:06.079+00:00",
+    "updatedDate" : "2026-01-14T10:28:36.297+00:00"
   },
   "values" : {
     "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
-    "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "bl-fhir-bundle-validation-api-url",
-    "DATA_LEDGER_API_URL" : "data-ledger-api-url",
-    "DATA_LEDGER_TRACKING" : "data_ledger_tracking",
+    "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "https://nexus.fhir.sandbox.techbd.org",
+    "DATA_LEDGER_API_URL" : "https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger",
+    "DATA_LEDGER_TRACKING" : "false",
     "HL7_XSLT_PATH" : "/opt/bridgelink/hl7-techbd-schema-files",
-    "HUB_UI_URL" : "hub_ui_url",
+    "HUB_UI_URL" : "https://hub.sandbox.dev.techbd.org",
     "MC_CCDA_SCHEMA_FOLDER" : "/opt/bridgelink/ccda-techbd-schema-files/",
-    "MC_FHIR_BUNDLE_SUBMISSION_API_URL" : "mc-fhir-bundle-submission-api-url",
+    "MC_FHIR_BUNDLE_SUBMISSION_API_URL" : "https://bl.sbx.nexus.techbd.org:6000/Bundle",
     "MC_JDBC_PASSWORD" : "techbd-rds-secrets",
     "MC_JDBC_URL" : "mc-jdbc-url",
     "MC_JDBC_USERNAME" : "techbd-rds-secrets",
@@ -34,10 +34,10 @@
     "PROFILE_URL_QUESTIONNAIRE_RESPONSE" : "/StructureDefinition/shinny-questionnaire-response",
     "PROFILE_URL_SEXUAL_ORIENTATION" : "/StructureDefinition/shinny-observation-sexual-orientation",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
-    "TECHBD_CSV_SERVICE_API_URL" : "techbd-csv-service-api-url",
-    "TECHBD_DEFAULT_DATALAKE_API_URL" : "techbd-default-datalake-api-url",
+    "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
+    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle",
     "TECHBD_NYEC_DATALAKE_API_KEY" : "techbd-nyec-api-key",
-    "TECHBD_NYEC_DATALEDGER_API_KEY" : "techbd-nyec-dataledger-api-key"
+    "TECHBD_NYEC_DATALEDGER_API_KEY" : "v8sWlAsm5ZXG7GcuvMlB5uvLKWldCkn4ncZMVd30"
   },
-  "exportDate" : "2025-12-29T12:15:42.612+00:00"
+  "exportDate" : "2026-01-16T09:14:49.226+00:00"
 }
