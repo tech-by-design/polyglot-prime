@@ -76,7 +76,8 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
 
         // Wrap request to capture body
         CachedBodyHttpServletRequest cachedRequest = new CachedBodyHttpServletRequest(request);
-        
+        java.util.Map<String, String> capturedHeaders = extractHeaders(request);
+        cachedRequest.setAttribute("CAPTURED_HEADERS", capturedHeaders);
         // Wrap response to capture output
         ResponseWrapper responseWrapper = new ResponseWrapper(response);
         
@@ -259,16 +260,23 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
             
             // Populate headers if not set (required by S3UploadStep)
             if (context.getHeaders() == null) {
-                java.util.Map<String, String> headers = extractHeaders(request);
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, String> headers = (java.util.Map<String, String>) request
+                        .getAttribute("CAPTURED_HEADERS");
+
+                if (headers == null || headers.isEmpty()) {
+                    logger.warn("SoapFaultEnhancementFilter:: No pre-captured headers found, extracting again");
+                    headers = extractHeaders(request);
+                }
                 context.setHeaders(headers);
-                logger.debug("SoapFaultEnhancementFilter:: Populated {} headers for interactionId={}", 
+                logger.info("SoapFaultEnhancementFilter:: Populated {} headers for interactionId={}", 
                         headers.size(), context.getInteractionId());
             }
             
             // Populate uploadTime if not set
             if (context.getUploadTime() == null) {
                 context.setUploadTime(java.time.ZonedDateTime.now());
-                logger.debug("SoapFaultEnhancementFilter:: Set uploadTime to current time for interactionId={}", 
+                logger.info("SoapFaultEnhancementFilter:: Set uploadTime to current time for interactionId={}", 
                         context.getInteractionId());
             }
             
@@ -319,7 +327,7 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
                 }
             }
             
-            logger.debug("SoapFaultEnhancementFilter:: Extracted {} headers from request", headers.size());
+            logger.info("SoapFaultEnhancementFilter:: Extracted {} headers from request", headers.size());
             
         } catch (Exception e) {
             logger.warn("SoapFaultEnhancementFilter:: Failed to extract headers: {}", e.getMessage());
