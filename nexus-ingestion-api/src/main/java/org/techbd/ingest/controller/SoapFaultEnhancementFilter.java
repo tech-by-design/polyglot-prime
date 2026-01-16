@@ -25,6 +25,7 @@ import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
+import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 import org.w3c.dom.Document;
@@ -269,8 +270,10 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
                     headers = extractHeaders(request);
                 }
                 context.setHeaders(headers);
-                logger.info("SoapFaultEnhancementFilter:: Populated {} headers for interactionId={}", 
-                        headers.size(), context.getInteractionId());
+                final var destinationPort = HttpUtil.extractDestinationPort(headers);
+                context.setDestinationPort(destinationPort);
+                logger.info("SoapFaultEnhancementFilter:: Populated {} headers destinationPort :{} for interactionId={}", 
+                        headers.size(), destinationPort, context.getInteractionId());
             }
             
             // Populate uploadTime if not set
