@@ -4698,7 +4698,7 @@ BEGIN
                 AND r.to_state = ''COMPLETE''
         )
 
-        /*UNION ALL
+        UNION ALL
 
         -- 2️ Missing Forward HTTP Request
         SELECT
@@ -4725,7 +4725,7 @@ BEGIN
                 FROM techbd_udi_ingress.sat_interaction_fhir_request r
                 WHERE r.hub_interaction_id = bi.hub_interaction_id
                 AND (r.nature = ''Forward HTTP Request'')
-            )*/
+            )
             
         ORDER BY created_at DESC'
     )
