@@ -46,7 +46,7 @@ test("TC 2: Verify validation error for bundle with a meta.profile that does not
 });
 
 test("TC 3: Verify validation error for bundle with a Screening Observation but no Consent resource", async ({ request }) => {
-    logger.info(`Starting test: TC 1 - Verify validation error for bundle with a Screening Observation but no Consent resource`);
+    logger.info(`Starting test: TC 3 - Verify validation error for bundle with a Screening Observation but no Consent resource`);
     await runBundleValidationTest(
         "AHCHRSNScreeningResponse_testcase3.json",
         endpoint as string,
@@ -82,7 +82,7 @@ test("TC 5: Verify validation error for bundle without an Encounter", async ({ r
 });
 
 test("TC 6: Verify validation error for bundle without an Organization", async ({ request }) => {
-    logger.info(`Starting test: TC 1 - Verify validation error for bundle without an Organization`);
+    logger.info(`Starting test: TC 6 - Verify validation error for bundle without an Organization`);
     await runBundleValidationTest(
         "AHCHRSNScreeningResponse_testcase6.json",
         endpoint as string,
@@ -94,7 +94,7 @@ test("TC 6: Verify validation error for bundle without an Organization", async (
 });
 
 test("TC 7: Verify validation error for a screening observation without a performer", async ({ request }) => {
-    logger.info(`Starting test: TC 1 - Verify validation error for a screening observation without a performer`);
+    logger.info(`Starting test: TC 7 - Verify validation error for a screening observation without a performer`);
     await runBundleValidationTest(
         "AHCHRSNScreeningResponse_testcase7.json",
         endpoint as string,
@@ -137,7 +137,6 @@ test("TC 10: Verify validation error for a screening without a reference to an e
         tenant as string,
         request,
         expectedValidationIssues.testcase10
-
     );
     logger.info("TC 10 - Test execution completed");
 });
