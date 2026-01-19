@@ -1,4 +1,4 @@
-import { APIRequestContext } from "@playwright/test";
+import { APIRequestContext, expect } from "@playwright/test";
 import Logger from "../utils/logger-util"
 import fs from "fs";
 import path from "path";
@@ -136,6 +136,7 @@ export function validateIssues(interactionId: string | undefined, validationResu
   // Extract all errors and warnings from validationResults
   for (const result of validationResults) {
     if (result.operationOutcome?.issue) {
+      //console.log("operationOutcome issues:", result.operationOutcome.issue);
       for (const issue of result.operationOutcome.issue) {
         const sev = issue.severity?.toLowerCase() || "";
         if (sev === "error" || sev === "warning" || sev === "fatal") {
@@ -167,8 +168,6 @@ export function validateIssues(interactionId: string | undefined, validationResu
         `contains message: ${expected.messageContains} in interactionId: ${interactionId ?? "unknown"}`);
     }
   });
-
-
 }
 
 interface ApiResponse {
@@ -181,6 +180,7 @@ interface ApiResponse {
     resourceType: string;
     techBdVersion?: string;
     bundleSessionId?: string;
+    valid: boolean;
     validationResults?: Array<any>;
     techByDesignDisposition?: Array<any>;
   };
@@ -198,7 +198,7 @@ export async function runBundleValidationTest(
 
   // STEP 1 : Prepare for Bundle endpoint request
   await test.step("Prepare for Bundle endpoint request", async () => {
-    const filePath = path.join(__dirname, "../testdata/FHIR-Data", jsonFile);
+    const filePath = path.join(__dirname, "../testdata/FHIR-Data/NegativeTestData", jsonFile);
     const jsonData = fs.readFileSync(filePath, "utf-8");
     const fhirPayload = JSON.parse(jsonData);
     config = buildPostConfig(fhirbundle, fhirPayload, tenant);
@@ -208,6 +208,7 @@ export async function runBundleValidationTest(
   await test.step("Perform POST request to Bundle endpoint", async () => {
     logger.info("Sending POST request to the Bundle endpoint");
     responseData = await performRequest(config, request) as ApiResponse;
+    //console.log("Response Data:", responseData);
     if (!responseData) {
       throw new Error("Response data is null or undefined.");
     } else {
@@ -225,3 +226,49 @@ export async function runBundleValidationTest(
   });
 
 }
+
+export async function runValidBundleTest(
+  jsonFile: string,
+  fhirbundle: string,
+  tenant: string,
+  request: any
+
+) {
+  let responseData: ApiResponse | null = null;
+  let config: any;
+
+  // STEP 1 : Prepare for Bundle endpoint request
+  await test.step("Prepare for Bundle endpoint request", async () => {
+    const filePath = path.join(__dirname, "../testdata/FHIR-Data/PositiveTestData", jsonFile);
+    const jsonData = fs.readFileSync(filePath, "utf-8");
+    const fhirPayload = JSON.parse(jsonData);
+    config = buildPostConfig(fhirbundle, fhirPayload, tenant);
+  });
+
+  // STEP 2 : Perform POST request to Bundle endpoint
+  await test.step("Perform POST request to Bundle endpoint", async () => {
+    logger.info("Sending POST request to the Bundle endpoint");
+    responseData = await performRequest(config, request) as ApiResponse;
+    //console.log("Response Data:", responseData);
+    if (!responseData) {
+      throw new Error("Response data is null or undefined.");
+    } else {
+      logger.info("Bundle post request done successfully.");
+    }
+  });
+
+  // STEP 3 : Validate error message in validation results
+  await test.step("Validate response code", async () => {
+    if (responseData) {
+      const interactionId = responseData.OperationOutcome.bundleSessionId;
+      const validationResults = responseData.OperationOutcome.validationResults;
+      if (!validationResults || validationResults.length === 0) {
+        throw new Error("validationResults is undefined or empty.");
+      }
+      const validfhir = validationResults[0].valid;
+      expect(validfhir).toBe(true);
+      logger.info(`Bundle with interactionId: ${interactionId} validated successfully with valid status: ${validfhir}`);
+    }
+  });
+
+}                                                           
