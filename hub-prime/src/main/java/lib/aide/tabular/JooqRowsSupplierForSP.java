@@ -30,6 +30,7 @@ import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
+import org.techbd.udi.auto.jooq.ingress.tables.GetMissingTechbydesigndispositionDetails;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -523,19 +524,25 @@ public class JooqRowsSupplierForSP {
                     startDate, endDate);
                 return DSL.table(functionCall);
             }
-            case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
+            case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" ,"get_missing_techbydesigndisposition_details"  -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
                 Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);
                 String tenantId = paramsMap.get("tenant_id").toLowerCase();
+                LocalDate startDate = dateMap.get("start_date");
+                LocalDate endDate = dateMap.get("end_date");
+                 if (storedProcName.equals("get_fhir_needs_attention_details")) {
+                     return new GetFhirNeedsAttentionDetails()
+                                .call(tenantId, startDate, endDate);
 
-                if (storedProcName.equals("get_fhir_needs_attention_details")) {
-                    return new GetFhirNeedsAttentionDetails().call(tenantId, dateMap.get("start_date"),
-                            dateMap.get("end_date"));
-                } else {
-                    return new GetMissingDatalakeSubmissionDetails().call(tenantId, dateMap.get("start_date"),
-                            dateMap.get("end_date"));
-                }
-            }
+                    } else if (storedProcName.equals("get_missing_datalake_submission_details")) {
+                        return new GetMissingDatalakeSubmissionDetails()
+                                .call(tenantId, startDate, endDate);
+
+                    } else {
+                        return new GetMissingTechbydesigndispositionDetails()
+                                .call(tenantId, startDate, endDate);
+                    }
+                            }
             default ->
                 throw new IllegalArgumentException("Invalid stored procedure name: " + storedProcName);
         }
