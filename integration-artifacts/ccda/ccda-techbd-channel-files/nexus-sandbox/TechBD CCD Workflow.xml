@@ -2,9 +2,9 @@
   <id>1ca854d7-cebf-4897-a9ac-2a01e10ba533</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.5.6
-Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
-  <revision>18</revision>
+  <description>Version: 0.5.7
+Updated one fix of  Lookup Manager code to store actual configuration values instead of secret keys.</description>
+  <revision>27</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -988,14 +988,15 @@ var missingEnvVars = [];
 //}
 
 // 1️⃣ Get the AWS secret name from Lookup Manager
-var fhirSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
-
-if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL secret name not set in Lookup Manager&quot;);
-} else {
+var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours).trim();
+&#xd;//TODO remove lines below regarding the lookup manager change&#xd;
+//if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
+//    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL secret name not set in Lookup Manager&quot;);
+//} 
+//else {
 
     // 2️⃣ Fetch the REAL URL from AWS Secrets Manager
-    var fhirBundleSubmissionApiUrl = fetchSecret(fhirSecretName).trim();
+//    var fhirBundleSubmissionApiUrl = fetchSecret(fhirSecretName).trim();
 
     if (!fhirBundleSubmissionApiUrl || fhirBundleSubmissionApiUrl.trim() === &quot;&quot;) {
         missingEnvVars.push(&quot;AWS Secret for MC_FHIR_BUNDLE_SUBMISSION_API_URL returned empty value&quot;);
@@ -1004,7 +1005,7 @@ if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
         globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
         logger.info(&quot;FHIR Bundle Submission API URL (from AWS): &quot; + fhirBundleSubmissionApiUrl);
     }
-}
+//}
 
 
 /////////////////////////////////////
@@ -3108,7 +3109,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768554685840</time>
+        <time>1768815372454</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3119,14 +3120,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>d70d4d6b-56c6-4b1a-8e87-cc52f1ca3c9d</id>
-        <name>0_5_6</name>
+        <id>07bcd1a8-a85e-436b-be53-62a92e37ac42</id>
+        <name>0_5_7</name>
         <channelIds>
           <string>1ca854d7-cebf-4897-a9ac-2a01e10ba533</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
@@ -3157,6 +3158,7 @@ return;</undeployScript>
           <string>b5ce54b4-54a4-4173-9258-fcce5d81a231</string>
           <string>a2fdd3b6-8a2e-43cb-834b-f770f4b57d06</string>
           <string>b3aed8a2-8417-4575-93fb-3d6bfca955b5</string>
+          <string>86f9889a-dea0-42fa-b8ac-1db391cf7b27</string>
           <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
           <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>
           <string>fe70827b-3f88-4a81-bd75-fe95792e5de6</string>
