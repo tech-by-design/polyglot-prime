@@ -43,9 +43,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/ingest/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/hold").permitAll()
                         .requestMatchers("/ws").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/features/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/features/*/enable").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/features/*/disable").permitAll()
+                        
+                        // Feature toggle endpoints - FIXED: Use ** instead of *
+                        .requestMatchers(HttpMethod.GET, "/api/features/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/features/**").permitAll()
 
                         // Deny access to all other endpoints
                         .requestMatchers("/actuator/health").denyAll()

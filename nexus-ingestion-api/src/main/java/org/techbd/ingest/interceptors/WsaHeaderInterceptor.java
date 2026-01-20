@@ -15,6 +15,7 @@ import org.springframework.ws.transport.http.HttpServletConnection;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
+import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
@@ -211,6 +212,19 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
 
     @Override
     public boolean understands(SoapHeaderElement header) {
+        if (FeatureEnum.isEnabled(FeatureEnum.IGNORE_MUST_UNDERSTAND_HEADERS)) {
+            String headerNamespace = header.getName().getNamespaceURI();
+            String headerName = header.getName().getLocalPart();
+            boolean ignoreMustUnderstand = true;
+
+            LOG.warn(
+                    "Claiming to understand header because ignoreMustUnderstand={} (mustUnderstand ignored): {}:{} from namespace: {}",
+                    ignoreMustUnderstand,
+                    header.getName().getPrefix(),
+                    headerName,
+                    headerNamespace);
+            return true;
+        }
         String namespaces = appConfig.getSoap().getWsa().getUnderstoodNamespaces();
         if (namespaces == null || namespaces.isEmpty()) {
             return false;
