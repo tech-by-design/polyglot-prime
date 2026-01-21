@@ -122,4 +122,33 @@ public class GitHubUsersService {
 
     return new AuthorizedUsers(List.of());
   }
+    
+  /**
+   * Creates a dummy authorized user for sandbox environments.
+   * This allows testing without requiring users to be in the authorized users
+   * list.
+   * 
+   * @param gitHubId The GitHub user ID
+   * @param name     The user's display name
+   * @param tenantId The tenant ID for the user
+   * @return An AuthorizedUser instance with basic USER role
+   */
+  public AuthorizedUser createDummyAuthorizedUser(String gitHubId, String name, String tenantId) {
+    // Create resources map with sudomain1.techbd.org having USER role
+    Map<String, Resource> resources = Map.of(
+        "sudomain1.techbd.org", new Resource(List.of("USER")));
+
+    // Note: Not adding actuator resource, so sandbox users won't have actuator
+    // access
+
+    return new AuthorizedUser(
+        name, // name
+        gitHubId + "@github.local", // emailPrimary (dummy email)
+        null, // profilePicUrl (can be null for sandbox)
+        gitHubId, // gitHubId
+        tenantId, // tenantId
+        resources // resources map
+    );
+  }
+
 }
