@@ -1,15 +1,18 @@
 <channel version="4.6.0">
-  <id>8c7e0b65-c57d-478d-a67d-46caed412de7</id>
+  <id>5b4016f7-00e6-468c-bc31-4864227d4eae</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.12
-Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
-  <revision>10</revision>
+  <description>Version: 0.1.13
+Added support for Data Ledger functionality.</description>
+  <revision>16</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ Updated the Lookup Manager code to store actual configuration values instead of 
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -691,7 +691,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
 function sendDataLedgerSync(payload) {
     logger.info(logPrefix + &quot;sendDataLedgerSync: &quot; + payload);
     
-    var apiUrl = globalMap.get(&quot;datalakeApiUrl&quot;);
+    var apiUrl = globalMap.get(&quot;DATA_LEDGER_API_URL&quot;);
     var dataLedgerApiKey = globalMap.get(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
 
     logger.info(logPrefix + &quot;API URL: &quot; + apiUrl);
@@ -2313,6 +2313,23 @@ try {
     logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
 }
 
+/////////////
+/********************************************
+    8️⃣ FETCH DATA LEDGER API URL (Plain text)
+********************************************/
+
+try {
+    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+   
+     globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, ledgerUrl);
+
+    logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + ledgerUrl);
+
+} catch (e) {
+    logger.error(&quot;❌ Error processing DataLedger API URL  secret: &quot; + e.message);
+}
+////////////////
+
 /********************************************
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
@@ -2759,7 +2776,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768554671745</time>
+        <time>1768989501166</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2770,13 +2787,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>4e509340-c1e4-4baa-b6f7-3751d92c7d00</id>
-        <name>0_1_12</name>
+        <id>6ec8edae-a2ae-4b09-ac1b-725ab4578c07</id>
+        <name>0_1_13</name>
         <channelIds>
-          <string>8c7e0b65-c57d-478d-a67d-46caed412de7</string>
+          <string>5b4016f7-00e6-468c-bc31-4864227d4eae</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
