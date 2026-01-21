@@ -60,7 +60,26 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                     && !"anonymousUser".equals(authentication.getPrincipal().toString())) {
                 final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
                 final var gitHubLoginId = Optional.ofNullable(gitHubPrincipal.getAttribute("login")).orElseThrow();
-                final var gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
+                
+                // Check for sandbox profile - bypass GitHub repo fetch completely
+                String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+                Optional<GitHubUsersService.AuthorizedUser> gitHubAuthnUser = Optional.empty();
+                boolean useDummyUser = Boolean.parseBoolean(System.getenv("SANDBOX_USE_DUMMY_USER"));
+                if (useDummyUser && "sandbox".equals(activeProfile)) {
+                    // In sandbox mode, create dummy user without calling GitHub API
+                    String sandboxGitHubId = System.getenv("SANDBOX_GITHUB_ID");
+                    String sandboxUserName = System.getenv("SANDBOX_USER_NAME");
+                    String sandboxTenantId = System.getenv("SANDBOX_TENANT_ID");
+                    gitHubAuthnUser = Optional.of(
+                            gitHubUsers.createDummyAuthorizedUser(
+                                    sandboxGitHubId,
+                                    sandboxUserName != null ? sandboxUserName : gitHubLoginId.toString(),
+                                    sandboxTenantId != null ? sandboxTenantId : "Netspective"));
+                } else {
+                    // Production mode - use normal authorization (reads from GitHub repo)
+                    gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
+                }
+                
                 if (!gitHubAuthnUser.isPresent()) {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("text/html");
