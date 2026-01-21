@@ -1,18 +1,15 @@
 <channel version="4.6.0">
-  <id>eb7b9426-2620-4037-aeec-eb45106175b2</id>
+  <id>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.3
-Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
-  <revision>42</revision>
+  <description>Version: 0.8.4
+update FHIR submission source handling.</description>
+  <revision>16</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Updated the Lookup Manager code to store actual configuration values instead of 
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -915,7 +915,7 @@ var Duration = Packages.java.time.Duration;
 
 
 
-
+var source = channelMap.get(&quot;source&quot;);
 var interactionId = channelMap.get(&quot;interactionId&quot;);
 var validationSeverityLevel = channelMap.get(&quot;validationSeverityLevel&quot;);
 var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
@@ -1323,7 +1323,7 @@ if (extractedPayload) {
 			   tenantId,&#xd;
 			   requestUri , //sourceMap.get(&apos;contextPath&apos;),&#xd;
 			   JSON.stringify(updatedPayload),&#xd;
-			   operation&#xd;
+			   operation,source&#xd;
 			);
 			var end = Instant.now();
 			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
@@ -1677,7 +1677,7 @@ var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);&#xd;
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
 
 
-var source =  sourceMap.get(&apos;contextPath&apos;);&#xd;
+var source = channelMap.get(&quot;source&quot;);&#xd;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  source: ---&quot; + source);
 		
 	    var responseDataLakeStatus = destinationDataLakeResponse.getStatus();  // HTTP status code
@@ -1772,7 +1772,7 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 			   tenantId,&#xd;
 			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
 			   responseDataLakeData , // JSON.stringify(responseDataLakeData),&#xd;
-			   operation&#xd;
+			   operation,source&#xd;
 			);&#xd;
 			var end = Instant.now();&#xd;
 			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
@@ -1804,7 +1804,7 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 			   tenantId,&#xd;
 			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
 			   responseDataLakeData , //JSON.stringify(responseDataLakeData),&#xd;
-			   operation&#xd;
+			   operation,source&#xd;
 			);&#xd;
 			var end = Instant.now();&#xd;
 			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
@@ -1872,7 +1872,7 @@ function toJsonb(value) {&#xd;
     return jsonbObj;&#xd;
 }
 
-function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation) {&#xd;
+function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation,source) {&#xd;
 	&#xd;
 	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:tenantId: &quot; + tenantId);&#xd;
 	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:requestUri: &quot; + requestUri);&#xd;
@@ -2034,7 +2034,8 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(22, java.sql.Types.VARCHAR);
 		
 		// 23. p_source_type
-		stmt.setNull(23, java.sql.Types.VARCHAR);
+		//stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setString(23, source);
 		
 		// 24. p_group_hub_interaction_id
 		stmt.setNull(24, java.sql.Types.VARCHAR);
@@ -2208,7 +2209,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768554703865</time>
+        <time>1768974518958</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2219,12 +2220,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>7b392d39-c6af-4558-86f3-a98f5238e670</id>
-        <name>0_8_3</name>
+        <id>bd25c131-0dc1-47a4-b01c-27ee5d23b8f2</id>
+        <name>0_8_4</name>
         <channelIds>
-          <string>5fada73c-ebce-4c9c-a309-bdd047912dcd</string>
-          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
-          <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
+          <string>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
@@ -2238,12 +2237,14 @@ return;</undeployScript>
         <name>ActiveFHIR</name>
         <channelIds>
           <string>7acb6a40-87fa-4f3c-a158-cb6b60179ebd</string>
+          <string>1d8b9bc4-f07f-40c5-b0b3-0b9dc4bc1d75</string>
           <string>4930eaf5-3c79-40e9-8426-1d41feac01e7</string>
           <string>5fada73c-ebce-4c9c-a309-bdd047912dcd</string>
           <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
           <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
           <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
           <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
+          <string>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</string>
         </channelIds>
         <backgroundColor>
           <red>204</red>
