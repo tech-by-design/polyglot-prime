@@ -337,7 +337,25 @@
                 ],
                 masterDetail: true,
                 detailCellRendererParams: (params) => {
+                     if (!params.data || !params.data.buttonPressed) {
+                            return null;
+                        }
+                    const headerText = getDrilldownHeaderText(params.data.buttonPressed);
 
+                    const detailTemplate = `
+                            <div style="padding: 10px 15px;">
+                                <div style="
+                                    font-weight: bold;
+                                    font-size: 16px;
+                                    margin-bottom: 10px;
+                                    color: #333;">
+                                    ${headerText}
+                                </div>
+
+                                <!-- THIS DIV IS REQUIRED -->
+                                <div data-ref="eDetailGrid" class="ag-theme-alpine" style="height: 250px;"></div>
+                            </div>
+                        `;
                     const startDate = $('#start-date').datepicker('getDate');
                     const endDate = $('#end-date').datepicker('getDate');
 
@@ -371,6 +389,7 @@
                         const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${datalakeSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`);
 
                         return {
+                            template: detailTemplate,
                             detailGridOptions: detailGridOptions2,
                             getDetailRowData: function (params) {
                                 fetch(url, {
@@ -414,6 +433,7 @@
                                 );
 
                                 return {
+                                    template: detailTemplate,
                                     detailGridOptions: detailGridOptions2,
                                     getDetailRowData: function (params) {
                                         fetch(url, {
@@ -452,6 +472,7 @@
                                 );
 
                                 return {
+                                    template: detailTemplate,
                                     detailGridOptions: detailGridOptions2,
                                     getDetailRowData: function (params) {
                                         fetch(url, {
@@ -613,6 +634,19 @@
                 agGridInstance.init('serverDataGrid');
 
             }
+                function getDrilldownHeaderText(buttonPressed) {
+                    switch (buttonPressed) {
+                        case 'techbd_processed':
+                            return 'Bundles That Failed Processing in TechBD';
+                        case 'valid_bundles':
+                            return 'Bundles Processed by TechBD but Failed Validation';
+                        case 'shinny_datalake_submissions':
+                            return 'SHIN-NY Data Lake Failed Submissions';
+                        default:
+                            return 'Details';
+                    }
+                }
+
         });
 
     </script>
@@ -625,15 +659,31 @@
             <div id="date-range">
                 <!-- The date range will be injected here -->
             </div>
-            <h1 class="assemtion">Assumptions</h1>
+           <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
-                <li>The file count from QE to Tech by Design should match.</li>
-                <li>The file count from Tech by Design to SHIN-NY Data Lake should match.</li>
-                <li>If any of the numbers in one column do not match the corresponding numbers in another column, it
-                    indicates an error, and the mismatched numbers are highlighted in red.</li>
-                <li>If there are errors or issues, clicking on the red arrow before the count text allows for a
-                    drill-down to see the detailed numbers.</li>
-                <li>When viewing the numbers, clicking on them will open a popup containing the interaction details.
+                <li>
+                    The <b>QE to Tech by Design File Count</b> represents the total number of submissions received from each QE.
+                </li>
+                <li>
+                    The <b>Tech by Design Processed Count</b> represents the number of submissions successfully processed by Tech by Design.
+                </li>
+                <li>
+                    The <b>Valid Bundles Count</b> represents the number of processed submissions that passed FHIR validation.
+                </li>
+                <li>
+                    The <b>SHIN-NY Data Lake Count</b> represents the number of valid bundles successfully submitted to the SHIN-NY Data Lake.
+                </li>
+                <li>
+                    Each stage in the pipeline is expected to have the same count as the previous stage. Any mismatch between stages indicates a
+                     potential processing or validation issue.
+                </li>
+                <li>
+                    When a mismatch occurs with the previous stage, the successful bundle count is displayed in red, and a drill-down arrow is 
+                    enabled to view interaction records that were missed or not processed at that stage.
+                </li>
+                <li>
+                   Clicking an interaction ID in the drill-down view opens a detailed popup displaying the full request and error 
+                   information to assist with troubleshooting.
                 </li>
             </ul>
 
