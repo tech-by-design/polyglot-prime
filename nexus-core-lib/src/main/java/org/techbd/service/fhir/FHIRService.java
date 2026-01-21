@@ -1903,7 +1903,7 @@ public class FHIRService {
 		final Span span = tracer.spanBuilder("FhirService.registerStateFailure").startSpan();
 		try {
 			LOG.error(
-					"{} : Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+					" NYEC_API_CALL_FAILED  {} : Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
 					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
 					dataLakeApiBaseURL, bundleAsyncInteractionId, error);
 			final var jooqCfg = primaryDSLContext.configuration();
