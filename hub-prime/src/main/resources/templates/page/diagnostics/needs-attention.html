@@ -296,7 +296,7 @@
                         headerTooltip: "FHIR File count from QE to Tech by Design"
                     }, 
                     {
-                        headerName: "TechBD Processed",
+                        headerName: "Tech by Design Processed",
                         field: "techbd_processed",
                         filter: "agNumberColumnFilter",
                         cellRenderer: cellRenderer2,
@@ -637,9 +637,9 @@
                 function getDrilldownHeaderText(buttonPressed) {
                     switch (buttonPressed) {
                         case 'techbd_processed':
-                            return 'Bundles That Failed Processing in TechBD';
+                            return 'Bundles That Failed Processing in Tech by Design';
                         case 'valid_bundles':
-                            return 'Bundles Processed by TechBD but Failed Validation';
+                            return 'Bundles Processed by Tech by Design but Failed Validation';
                         case 'shinny_datalake_submissions':
                             return 'SHIN-NY Data Lake Failed Submissions';
                         default:
@@ -668,7 +668,7 @@
                     The <b>Tech by Design Processed Count</b> represents the number of submissions successfully processed by Tech by Design.
                 </li>
                 <li>
-                    The <b>Valid Bundles Count</b> represents the number of processed submissions that passed FHIR validation.
+                    The <b>Valid Bundles Count</b> represents the number of processed submissions that passed validation.
                 </li>
                 <li>
                     The <b>SHIN-NY Data Lake Count</b> represents the number of valid bundles successfully submitted to the SHIN-NY Data Lake.
