@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>5b4016f7-00e6-468c-bc31-4864227d4eae</id>
+  <id>706509cc-8c59-4b5e-a96a-73cbb31aa53f</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.13
-Added support for Data Ledger functionality.</description>
-  <revision>16</revision>
+  <description>Version: 0.1.14
+Fix incorrect error message when Content-Type header is missing or invalid.</description>
+  <revision>13</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -132,7 +132,17 @@ function setErrorResponse(statusCode, errorMessage) {
 //var interactionId = UuidCreator.getTimeOrdered().toString();
 var interactionId = java.util.UUID.randomUUID().toString();
 globalMap.put(&apos;interactionId&apos;, interactionId);
-var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;&#xd;
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;
+
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+logger.info(logPrefix + &quot;Content-Type: &quot; + contentType);
+
+if (!contentType || !contentType.toLowerCase().startsWith(&quot;multipart/form-data&quot;)) {
+    var errorMessage = &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details.&quot;;
+    setErrorResponse(400, errorMessage); 
+    throw errorMessage;
+}
+&#xd;
 var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 
 	var rawData = connectorMessage.getRawData();
@@ -2176,7 +2186,13 @@ return value;
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>var index = message.indexOf(&quot;MSH|&quot;);
+  <preprocessingScript>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+var index = message.indexOf(&quot;MSH|&quot;);
 if (index !== -1) {
     message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
 }
@@ -2776,7 +2792,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768989501166</time>
+        <time>1769073182147</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2787,10 +2803,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>6ec8edae-a2ae-4b09-ac1b-725ab4578c07</id>
-        <name>0_1_13</name>
+        <id>68fcad73-4420-4082-beb6-6f7a47bd1ac4</id>
+        <name>0_1_14</name>
         <channelIds>
-          <string>5b4016f7-00e6-468c-bc31-4864227d4eae</string>
+          <string>706509cc-8c59-4b5e-a96a-73cbb31aa53f</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
