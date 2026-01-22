@@ -2,17 +2,16 @@
   <id>3049d500-ca1f-42b5-af04-6aa7cd549054</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.1
-Updated the Lookup Manager code to store actual configuration values instead of secret keys.</description>
-  <revision>6</revision>
+  <description>Version: 0.9.2
+Load valid Base FHIR URLs from Lookup Manager and validate X-TechBD-Base-FHIR-URL header
+Updates channel response status handling
+</description>
+  <revision>66</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +33,9 @@ Updated the Lookup Manager code to store actual configuration values instead of 
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -121,7 +123,7 @@ function setErrorResponse(statusCode, errorMessage) {
           <name>lookup_manager</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
-          <script>logger.info(&quot;HTTP request validation started.&quot;);
+          <script>logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  AWS Secrets Manager Loader starts &apos;);
 ///////////////////////////////////////////////////////////////////////////////////////////
 /*******************************
     AWS Secrets Manager Loader
@@ -200,6 +202,22 @@ try {
 }
 
 
+try {
+// MC_VALID_FHIR_URLS (comma-separated list)
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
+        throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
+    }
+    channelMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
+ 
+    logger.info(&quot;✔ Valid FHIR URLs loaded from Lookup Manager&quot;);
+} catch (e) {
+    logger.error(&quot;❌ Error fetching valid FHIR URLs: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load valid FHIR URLs&quot;);
+    throw e;
+}
+
+logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  AWS Secrets Manager Loader end &apos;);
 
 /********************************************
     DONE
@@ -228,6 +246,66 @@ if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
+
+
+// Read Base FHIR URL header
+var baseFhirHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+
+// Read valid FHIR URLs from Lookup Manager (comma-separated)
+var validFhirUrls = channelMap.get(&apos;MC_VALID_FHIR_URLS&apos;); 
+// Example: &quot;http://test.shinny.org/...Profile,http://shinny.org/...Profile&quot;
+
+// Only validate if header is present
+if (baseFhirHeader != null &amp;&amp; baseFhirHeader.trim() !== &apos;&apos;) {
+
+    // Safety check: configuration must exist
+    if (validFhirUrls == null || validFhirUrls.trim() === &apos;&apos;) {
+        var errorMessage =
+            &quot;Server Configuration Error: MC_VALID_FHIR_URLS is not configured&quot;;
+
+        logger.error(errorMessage);
+        setErrorResponse(500, errorMessage);
+        throw errorMessage;
+    }
+
+    var inputUrls = baseFhirHeader.split(&apos;,&apos;);
+    var allowedUrls = validFhirUrls.split(&apos;,&apos;);
+    var invalidUrls = [];
+
+    // Compare each provided URL with allowed list
+    for each (var inputUrl in inputUrls) {
+        var trimmedInput = inputUrl.trim();
+        var matchFound = false;
+
+        for each (var allowedUrl in allowedUrls) {
+            if (trimmedInput.equalsIgnoreCase(allowedUrl.trim())) {
+                matchFound = true;
+                break;
+            }
+        }
+
+        if (!matchFound) {
+            invalidUrls.push(trimmedInput);
+        }
+    }
+
+    // If any invalid URLs found → return error
+    if (invalidUrls.length &gt; 0) {
+
+        var errorMessage =
+            &quot;Validation Error: Invalid Base FHIR profile URL provided : &quot; +
+            baseFhirHeader +
+            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos; . Supported  SHIN-NY IG URLs: &quot; +
+            validFhirUrls;
+
+        logger.error(errorMessage);
+        
+        setErrorResponse(400, errorMessage);
+
+        throw errorMessage;
+    }
+}
+
 
 
 //Check the file type, only .xml and .txt allowed
@@ -679,8 +757,8 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768554779493</time>
-        <timezone>Asia/Calcutta</timezone>
+        <time>1769090608764</time>
+        <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
@@ -690,30 +768,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>c2fbeaf1-4c06-42d8-a5c5-7bfdd5431cf9</id>
-        <name>0_9_1</name>
+        <id>670b4deb-d579-419d-9921-9c8959af2ee4</id>
+        <name>0_9_2</name>
         <channelIds>
-          <string>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</string>
           <string>3049d500-ca1f-42b5-af04-6aa7cd549054</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
-          <blue>0</blue>
-          <alpha>255</alpha>
-        </backgroundColor>
-      </channelTag>
-      <channelTag>
-        <id>52f6893c-6432-4dc0-a476-67b827cb3497</id>
-        <name>ActiveCSV</name>
-        <channelIds>
-          <string>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</string>
-          <string>7639dfc2-dd5d-43b1-94ea-b5758bbff2ac</string>
-          <string>3049d500-ca1f-42b5-af04-6aa7cd549054</string>
-        </channelIds>
-        <backgroundColor>
-          <red>255</red>
-          <green>153</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
