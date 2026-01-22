@@ -4374,70 +4374,9 @@ RETURNS TABLE (
     recently_created_at TIMESTAMPTZ
 ) AS $$
 BEGIN
-    RETURN QUERY
-    /*WITH base_interactions AS (
-        SELECT
-            hub_interaction_id,
-            tenant_id_lower
-        FROM techbd_udi_ingress.sat_interaction_fhir_request
-        WHERE nature = 'Original FHIR Payload'
-        AND created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
-        AND created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
-        AND tenant_id <> 'N/A'
-        AND uri = ANY (ARRAY[
-            '/Bundle', '/Bundle/',
-            '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
-            '/ccda/Bundle', '/ccda/Bundle/',
-            '/hl7v2/Bundle', '/hl7v2/Bundle/'
-        ])
-    ),
-    submission_counts AS (
-        SELECT 
-            sihr.tenant_id_lower AS qe_name,
-            count(
-                CASE
-                    WHEN sihr.nature = 'Original FHIR Payload' THEN 1
-                END) AS qe_total_submissions,
-            COUNT(
-                --CASE
-                --    WHEN sihr.nature = 'Forwarded HTTP Response'
-                --         OR (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status = 'True')
-                --    THEN 1
-                --END
-                CASE
-                    WHEN (sihr.nature = 'Forwarded HTTP Response' OR sihr.nature = 'Forwarded HTTP Response Replay') AND sihr.to_state = 'COMPLETE'
-                    THEN 1 
-                END
-            ) AS shinny_datalake_submissions,
-            COUNT(
-                CASE
-                    WHEN  (sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True' ) 
-                    THEN 1
-                END
-            ) AS shinny_datalake_submissions_failed, 
-            COUNT(
-                CASE
-                    WHEN sihr.nature = 'techByDesignDisposition' AND techbd_disposition_action != 'discard'
-                    THEN 1
-                END
-            ) AS valid_bundles,
-            max(sihr.created_at) AS recently_created_at
-        FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-        JOIN base_interactions bi ON bi.hub_interaction_id = sihr.hub_interaction_id
-        GROUP BY sihr.tenant_id_lower
-    )
-    SELECT 
-        sc.qe_name,
-        sc.qe_total_submissions,
-        sc.shinny_datalake_submissions,
-        sc.shinny_datalake_submissions_failed,
-        sc.valid_bundles,
-        sc.recently_created_at
-    FROM submission_counts sc
-    WHERE sc.qe_total_submissions <> 0   -- ? filter non-zero records
-    ORDER BY sc.recently_created_at DESC;*/
+    RETURN QUERY    
 
-    WITH base_interactions AS (
+	WITH base_interactions AS (
         SELECT
             hub_interaction_id,
             tenant_id_lower
@@ -4445,7 +4384,7 @@ BEGIN
         WHERE nature = 'Original FHIR Payload'
         AND created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
         AND created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
-        AND tenant_id <> 'N/A'
+        AND tenant_id <> 'N/A'        
         AND uri = ANY (ARRAY[
             '/Bundle', '/Bundle/',
             '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
@@ -4480,6 +4419,12 @@ BEGIN
             ) AS valid_bundles_forwarded,
             COUNT(
                 CASE
+                    WHEN sihr.to_state = 'COMPLETE'
+                    THEN 1
+                END
+            ) AS valid_bundles_completed,
+            COUNT(
+                CASE
                     WHEN sihr.nature = 'techByDesignDisposition' AND techbd_disposition_action = 'discard'
                     THEN 1
                 END
@@ -4492,17 +4437,13 @@ BEGIN
     SELECT 
     	sc.qe_name,
         sc.qe_total_submissions, --1
-        --(sc.qe_total_submissions - sc.valid_bundles - sc.invalid_bundles) AS missing_techByDesignDisposition, --2.2
-        (sc.valid_bundles + sc.invalid_bundles) AS techbd_processed, --2
+        sc.invalid_bundles + CASE WHEN sc.valid_bundles_completed > sc.valid_bundles_forwarded THEN sc.valid_bundles_completed ELSE sc.valid_bundles_forwarded END AS techbd_processed, --2
         sc.shinny_datalake_submissions, --Success submissions --4
         (sc.valid_bundles_forwarded - sc.shinny_datalake_submissions) AS shinny_datalake_submissions_failed, --4.1
-        sc.valid_bundles, --3
-        --sc.valid_bundles_forwarded, --3
-        --sc.invalid_bundles, --2.1
-        --(sc.valid_bundles - sc.valid_bundles_forwarded) AS missing_forward_request, --4.2
+        CASE WHEN sc.valid_bundles_completed > sc.valid_bundles_forwarded THEN sc.valid_bundles_completed ELSE sc.valid_bundles_forwarded END AS valid_bundles, --3
         sc.recently_created_at
     FROM submission_counts sc
-    WHERE sc.qe_total_submissions <> 0   -- ? filter non-zero records
+    WHERE sc.qe_total_submissions <> 0
     ORDER BY sc.recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -4642,28 +4583,7 @@ RETURNS TABLE (
     error_message TEXT
 ) AS $$
 BEGIN
-    /*RETURN QUERY EXECUTE format(
-        'SELECT 
-            sihr.hub_interaction_id,
-            sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
-            sihr.tenant_id_lower AS qe_name,
-            sihr.created_at,
-            sihr.error_message
-         FROM 
-            techbd_udi_ingress.sat_interaction_fhir_request sihr
-         WHERE  
-     (sihr.nature = ''Forwarded HTTP Response Error'' 
-     AND  sihr.replay_status IS DISTINCT FROM ''True''  
-     ) 
-            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/''])
-            AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
-	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
-            AND sihr.tenant_id_lower = $3
-         ORDER BY sihr.created_at DESC'
-    )
-    USING start_date, end_date, tenant_id;*/
-
-    RETURN QUERY EXECUTE format(
+	RETURN QUERY EXECUTE format(
         'WITH base_interactions AS (
             SELECT
                 hub_interaction_id
@@ -4674,7 +4594,7 @@ BEGIN
             AND tenant_id_lower = $3
             AND uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/''])
         )
-        -- 1️. Failed Replay Error (highest priority)
+        -- 1. nature = Forwarded HTTP Response Error and to_state = FAIL ===> once got Forwarded HTTP Response Error but no record with to_state as COMPLETE
         SELECT 
             sihr.hub_interaction_id,
             sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
@@ -4684,32 +4604,27 @@ BEGIN
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         JOIN base_interactions bi ON bi.hub_interaction_id = sihr.hub_interaction_id
         WHERE sihr.nature = ''Forwarded HTTP Response Error'' 
-        /*AND EXISTS (
-                SELECT 1
-                FROM techbd_udi_ingress.sat_interaction_fhir_request d
-                WHERE d.hub_interaction_id = bi.hub_interaction_id
-                AND d.nature = ''techByDesignDisposition''
-                AND d.techbd_disposition_action <> ''discard''
-            )*/
-        AND NOT EXISTS (
+		AND NOT EXISTS (
             SELECT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request r
             WHERE r.hub_interaction_id = sihr.hub_interaction_id
                 AND r.to_state = ''COMPLETE''
         )
-
+        
         UNION ALL
 
-        -- 2️ Missing Forward HTTP Request
+        /*2. techByDesignDisposition generated and valid but no response received
+         * 	 techByDesignDisposition <> discard AND 
+			 NOT EXISTS ((natue = Forwarded HTTP Response or Forwarded HTTP Response Replay) and to_state = COMPLETE) AND 
+			 NOT EXISTS (nature = Forwarded HTTP Response Error or Forwarded HTTP Response Replay Error) and to_state = FAIL*/
         SELECT
             ofp.hub_interaction_id,
             ofp.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
             ofp.tenant_id_lower AS qe_name,
             ofp.created_at,
-            ''Forward HTTP Request is missing'' AS error_message
+            ''Forwarded HTTP Response is missing'' AS error_message
         FROM base_interactions bi
-        JOIN techbd_udi_ingress.sat_interaction_fhir_request ofp
-        ON ofp.hub_interaction_id = bi.hub_interaction_id
+        JOIN techbd_udi_ingress.sat_interaction_fhir_request ofp ON ofp.hub_interaction_id = bi.hub_interaction_id
         WHERE ofp.nature = ''Original FHIR Payload''
             -- disposition exists and is valid
             AND EXISTS (
@@ -4719,15 +4634,61 @@ BEGIN
                 AND d.nature = ''techByDesignDisposition''
                 AND d.techbd_disposition_action <> ''discard''
             )
-            -- forward request missing
             AND NOT EXISTS (
                 SELECT 1
                 FROM techbd_udi_ingress.sat_interaction_fhir_request r
                 WHERE r.hub_interaction_id = bi.hub_interaction_id
-                AND (r.nature = ''Forward HTTP Request'')
+                AND (r.to_state = ''COMPLETE'')
             )
-            
-        ORDER BY created_at DESC'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request r
+                WHERE r.hub_interaction_id = bi.hub_interaction_id
+                AND (r.to_state = ''FAIL'')
+            )
+
+        UNION ALL
+
+        /* 3. 
+         *   NOT EXISTS techByDesignDisposition AND 
+			 EXISTS Forward HTTP Request AND 
+			 NOT EXISTS ((natue = Forwarded HTTP Response or Forwarded HTTP Response Replay) and to_state = COMPLETE) AND 
+			 NOT EXISTS (nature = Forwarded HTTP Response Error or Forwarded HTTP Response Replay Error) and to_state = FAIL
+         */
+        SELECT
+            ofp.hub_interaction_id,
+            ofp.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+            ofp.tenant_id_lower AS qe_name,
+            ofp.created_at,
+            ''Forwarded HTTP Response is missing'' AS error_message
+        FROM base_interactions bi
+        JOIN techbd_udi_ingress.sat_interaction_fhir_request ofp  ON ofp.hub_interaction_id = bi.hub_interaction_id
+        WHERE ofp.nature = ''Original FHIR Payload''
+            AND NOT EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request d
+                WHERE d.hub_interaction_id = bi.hub_interaction_id
+                AND d.nature = ''techByDesignDisposition''
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request d
+                WHERE d.hub_interaction_id = bi.hub_interaction_id
+                AND d.nature = ''Forward HTTP Request''
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request r
+                WHERE r.hub_interaction_id = bi.hub_interaction_id
+                AND (r.to_state = ''COMPLETE'')
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request r
+                WHERE r.hub_interaction_id = bi.hub_interaction_id
+                AND (r.to_state = ''FAIL'')
+            )            
+        ORDER BY 4 DESC'
     )
     USING start_date, end_date, tenant_id;
 END;
@@ -4820,7 +4781,8 @@ BEGIN
           AND d.nature = 'techByDesignDisposition'
     )*/
 
-    ORDER BY 4 DESC;
+    --ORDER BY 4 DESC;
+    ORDER BY sihr1.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -4872,8 +4834,14 @@ BEGIN
         SELECT 1
         FROM techbd_udi_ingress.sat_interaction_fhir_request AS d
         WHERE d.hub_interaction_id = bi.hub_interaction_id
-          AND d.nature = 'techByDesignDisposition'
+          AND d.nature IN ('techByDesignDisposition', 'Forward HTTP Request')
     )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM techbd_udi_ingress.sat_interaction_fhir_request AS d
+        WHERE d.hub_interaction_id = bi.hub_interaction_id
+          AND d.to_state IN ('COMPLETE', 'FAIL')
+    )	
     ORDER BY 4 DESC;
 END;
 $function$;
