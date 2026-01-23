@@ -7,7 +7,7 @@
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
     "createdDate" : "2026-01-14T10:28:06.079+00:00",
-    "updatedDate" : "2026-01-14T10:28:36.297+00:00"
+    "updatedDate" : "2026-01-16T12:08:04.037+00:00"
   },
   "values" : {
     "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
@@ -36,8 +36,8 @@
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle",
-    "TECHBD_NYEC_DATALAKE_API_KEY" : "techbd-nyec-api-key",
+    "TECHBD_NYEC_DATALAKE_API_KEY" : "gUfvF8wF763axBSGDYGjK8puTwFdYlcH2IMLxbqE",
     "TECHBD_NYEC_DATALEDGER_API_KEY" : "v8sWlAsm5ZXG7GcuvMlB5uvLKWldCkn4ncZMVd30"
   },
-  "exportDate" : "2026-01-16T09:14:49.226+00:00"
+  "exportDate" : "2026-01-23T10:54:00.277+00:00"
 }
