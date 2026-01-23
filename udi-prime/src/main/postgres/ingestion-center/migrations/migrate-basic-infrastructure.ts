@@ -802,11 +802,7 @@ function formatDateToCustomString(date: Date): string {
 
 export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
 
-// Get readonly user from environment variable with profile prefix
-const profile = Deno.env.get("SPRING_PROFILES_ACTIVE");
-const readonlyUser = Deno.env.get(`${profile}_TECHBD_UDI_DS_READER_JDBC_USERNAME`);
-console.log("------- SPRING_PROFILES_ACTIVE: " + profile);
-console.log(`------- ${profile}_TECHBD_UDI_DS_READER_JDBC_USERNAME: ` + readonlyUser);
+
 
 const migrateSP = pgSQLa.storedProcedure(
   prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
