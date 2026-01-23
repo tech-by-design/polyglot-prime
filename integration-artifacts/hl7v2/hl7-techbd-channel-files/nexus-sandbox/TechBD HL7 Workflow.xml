@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>706509cc-8c59-4b5e-a96a-73cbb31aa53f</id>
+  <id>98e135fb-c052-449b-baa3-ecc775f10d9d</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.14
-Fix incorrect error message when Content-Type header is missing or invalid.</description>
-  <revision>13</revision>
+  <description>Version: 0.1.15
+Fix Response status.</description>
+  <revision>17</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -60,7 +60,7 @@ Fix incorrect error message when Content-Type header is missing or invalid.</des
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>text/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -2792,7 +2792,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769073182147</time>
+        <time>1769143600613</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2803,14 +2803,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>68fcad73-4420-4082-beb6-6f7a47bd1ac4</id>
-        <name>0_1_14</name>
+        <id>885cff16-2f59-483b-897d-3b6f577e4663</id>
+        <name>0_1_15</name>
         <channelIds>
-          <string>706509cc-8c59-4b5e-a96a-73cbb31aa53f</string>
+          <string>98e135fb-c052-449b-baa3-ecc775f10d9d</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
