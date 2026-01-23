@@ -1,12 +1,11 @@
 <channel version="4.6.0">
-  <id>3049d500-ca1f-42b5-af04-6aa7cd549054</id>
+  <id>3e6e07d5-8363-4234-99ca-96a568cc3143</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.2
-Load valid Base FHIR URLs from Lookup Manager and validate X-TechBD-Base-FHIR-URL header
-Updates channel response status handling
+  <description>Version: 0.9.3
+Change error message while sending wrong X-TechBD-Base-FHIR-URL
 </description>
-  <revision>66</revision>
+  <revision>6</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -293,10 +292,9 @@ if (baseFhirHeader != null &amp;&amp; baseFhirHeader.trim() !== &apos;&apos;) {
     if (invalidUrls.length &gt; 0) {
 
         var errorMessage =
-            &quot;Validation Error: Invalid Base FHIR profile URL provided : &quot; +
+            &quot;Validation Error: Invalid Base FHIR profile URL provided: &quot; +
             baseFhirHeader +
-            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos; . Supported  SHIN-NY IG URLs: &quot; +
-            validFhirUrls;
+            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos;.Supported SHIN-NY IG URLs: http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile, http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile&quot; ;
 
         logger.error(errorMessage);
         
@@ -757,8 +755,8 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769090608764</time>
-        <timezone>Asia/Kolkata</timezone>
+        <time>1769169124222</time>
+        <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
@@ -768,10 +766,11 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>670b4deb-d579-419d-9921-9c8959af2ee4</id>
-        <name>0_9_2</name>
+        <id>c7e6b0ed-b666-457c-b4f3-a46ea2101ec3</id>
+        <name>0_9_3</name>
         <channelIds>
           <string>3049d500-ca1f-42b5-af04-6aa7cd549054</string>
+          <string>3e6e07d5-8363-4234-99ca-96a568cc3143</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
