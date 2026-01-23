@@ -1,15 +1,18 @@
 <channel version="4.6.0">
-  <id>1d94df63-2912-4892-9f83-a1b1b8744328</id>
+  <id>7f2680c1-1174-42c2-a616-79f11161bf50</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.8
-Added support for Data Ledger functionality.</description>
+  <description>Version 0.5.9
+Added Response Status Code.</description>
   <revision>5</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ Added support for Data Ledger functionality.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -60,7 +60,7 @@ Added support for Data Ledger functionality.</description>
       <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
       <responseContentType>application/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -3124,7 +3124,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768989678238</time>
+        <time>1769152947272</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3135,70 +3135,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a906bce0-96ff-4e69-afb0-593affb2d306</id>
-        <name>0_5_8</name>
+        <id>1cf8321e-6596-41f2-afc6-71731540676e</id>
+        <name>0_5_9</name>
         <channelIds>
-          <string>1d94df63-2912-4892-9f83-a1b1b8744328</string>
+          <string>7f2680c1-1174-42c2-a616-79f11161bf50</string>
+          <string>64fb06a1-59d1-42d0-b391-fd8ea41f2a8d</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
-          <blue>0</blue>
-          <alpha>255</alpha>
-        </backgroundColor>
-      </channelTag>
-      <channelTag>
-        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
-        <name>Active</name>
-        <channelIds>
-          <string>1ca854d7-cebf-4897-a9ac-2a01e10ba533</string>
-          <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
-          <string>6387f0ca-5310-4994-b9f6-e2e1dc233245</string>
-          <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
-          <string>07de8921-59c3-4539-8d69-b3c241b33d3d</string>
-          <string>3f305643-cfeb-439c-80a3-4dc0ed906590</string>
-          <string>54c19da2-1198-4eb8-b932-f8489e419e9d</string>
-          <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
-          <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
-          <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
-          <string>55f361ad-e06d-4609-b243-9ad789d20e8c</string>
-          <string>0eeefcf4-f397-4ef9-a9f7-777c9a46e980</string>
-          <string>54c325b7-9b9f-4a42-a84e-3cff7ce362ca</string>
-          <string>467f826d-1a1b-4e15-84b6-6c4c71968059</string>
-          <string>957444f7-b1ca-40a4-9b3d-34b56aec2d36</string>
-          <string>8cc141e3-9dda-4c1b-a463-50fb4392157c</string>
-          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
-          <string>95a4b010-c209-4904-8500-433538921ae5</string>
-          <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
-          <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
-          <string>b5ce54b4-54a4-4173-9258-fcce5d81a231</string>
-          <string>a2fdd3b6-8a2e-43cb-834b-f770f4b57d06</string>
-          <string>b3aed8a2-8417-4575-93fb-3d6bfca955b5</string>
-          <string>86f9889a-dea0-42fa-b8ac-1db391cf7b27</string>
-          <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
-          <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>
-          <string>1d94df63-2912-4892-9f83-a1b1b8744328</string>
-          <string>fe70827b-3f88-4a81-bd75-fe95792e5de6</string>
-          <string>8f7b1a24-eb1e-436b-b147-4885b9c8a8ad</string>
-          <string>cb060b55-d21f-428f-9708-bb2962687ae2</string>
-          <string>b34b0f78-a2c3-4ae4-aa27-ca89a69d7132</string>
-          <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
-          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
-          <string>873588e2-8903-4e9c-b8f3-c44889f22392</string>
-          <string>56c509d8-fc3a-42e5-a1b5-d04ea4d4ef61</string>
-          <string>5c9585e6-ae4e-41ec-ae7e-ba61a84758a0</string>
-          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
-          <string>7105631a-cbe3-481c-a36a-7bd2b80706fa</string>
-          <string>1bc85cd3-7c82-4ae1-b493-d8cf401072bf</string>
-          <string>785baac8-14b8-4964-8992-572a90d357dc</string>
-          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
-          <string>5a3de04c-8bb9-4aa6-9342-d39231de25e2</string>
-          <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
-          <string>2d04773b-df86-4429-a80d-9fbd07d179a0</string>
-        </channelIds>
-        <backgroundColor>
-          <red>0</red>
-          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
