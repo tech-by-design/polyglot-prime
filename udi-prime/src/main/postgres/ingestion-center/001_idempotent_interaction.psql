@@ -4392,59 +4392,70 @@ BEGIN
             '/hl7v2/Bundle', '/hl7v2/Bundle/'
         ])
     ),
-    submission_counts AS (
-        SELECT
-        	sihr.tenant_id_lower AS qe_name,
-            COUNT(
-                CASE
-                    WHEN sihr.nature = 'Original FHIR Payload' THEN 1
-                END) AS qe_total_submissions,
-            COUNT(
-                CASE
-                    WHEN /*(sihr.nature = 'Forwarded HTTP Response' OR sihr.nature = 'Forwarded HTTP Response Replay') AND*/ sihr.to_state = 'COMPLETE'
-                    THEN 1 
-                END
-            ) AS shinny_datalake_submissions,
-            COUNT(
-                CASE
-                    WHEN sihr.nature = 'techByDesignDisposition' AND techbd_disposition_action != 'discard'
-                    THEN 1
-                END
-            ) AS valid_bundles,
-            COUNT(
-                CASE
-                    WHEN sihr.nature = 'Forward HTTP Request'
-                    THEN 1
-                END
-            ) AS valid_bundles_forwarded,
-            COUNT(
-                CASE
-                    WHEN sihr.to_state = 'COMPLETE'
-                    THEN 1
-                END
-            ) AS valid_bundles_completed,
-            COUNT(
-                CASE
-                    WHEN sihr.nature = 'techByDesignDisposition' AND techbd_disposition_action = 'discard'
-                    THEN 1
-                END
-            ) AS invalid_bundles,
-            max(sihr.created_at) AS recently_created_at
-        FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-        JOIN base_interactions bi ON bi.hub_interaction_id = sihr.hub_interaction_id
-        GROUP BY sihr.tenant_id_lower
-    )
-    SELECT 
-    	sc.qe_name,
-        sc.qe_total_submissions, --1
-        sc.invalid_bundles + CASE WHEN sc.valid_bundles_completed > sc.valid_bundles_forwarded THEN sc.valid_bundles_completed ELSE sc.valid_bundles_forwarded END AS techbd_processed, --2
-        sc.shinny_datalake_submissions, --Success submissions --4
-        (sc.valid_bundles_forwarded - sc.shinny_datalake_submissions) AS shinny_datalake_submissions_failed, --4.1
-        CASE WHEN sc.valid_bundles_completed > sc.valid_bundles_forwarded THEN sc.valid_bundles_completed ELSE sc.valid_bundles_forwarded END AS valid_bundles, --3
-        sc.recently_created_at
-    FROM submission_counts sc
-    WHERE sc.qe_total_submissions <> 0
-    ORDER BY sc.recently_created_at DESC;
+
+	-- ONE ROW PER hub_interaction_id (interaction-level facts)
+	per_interaction AS (
+		SELECT
+			bi.hub_interaction_id,
+			bi.tenant_id_lower,
+
+			-- all 4 missing → 1 else 0 
+			CASE
+				WHEN NOT EXISTS (
+					SELECT 1
+					FROM techbd_udi_ingress.sat_interaction_fhir_request d
+					WHERE d.hub_interaction_id = bi.hub_interaction_id
+					  AND d.nature IN (
+						  'techByDesignDisposition',
+						  'Forward HTTP Request',
+						  'Forwarded HTTP Response',
+						  'Forwarded HTTP Response Error'
+					  )
+				)
+				THEN 1 ELSE 0
+			END AS missing_step_flag
+		FROM base_interactions bi
+	),
+	
+	-- AGGREGATE interaction-level metrics FIRST 
+	interaction_agg AS (
+		SELECT
+			tenant_id_lower AS qe_name,
+			COUNT(*) AS qe_total_submissions,
+			SUM(missing_step_flag) AS missing_steps_total
+		FROM per_interaction
+		GROUP BY tenant_id_lower
+	),
+
+	-- ROW-level metrics (safe to aggregate after join)
+	row_level_agg AS (
+		SELECT
+			pi.tenant_id_lower AS qe_name,
+			COUNT(*) FILTER (WHERE sihr.to_state = 'COMPLETE') AS shinny_datalake_submissions,
+			COUNT(*) FILTER (WHERE sihr.nature = 'Forward HTTP Request') AS valid_bundles_forwarded,
+			COUNT(*) FILTER (WHERE sihr.to_state = 'COMPLETE') AS valid_bundles_completed,
+			COUNT(*) FILTER (WHERE sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True') AS valid_bundles_with_fail_response,
+			COUNT(*) FILTER (WHERE sihr.nature = 'techByDesignDisposition' AND sihr.techbd_disposition_action = 'discard') AS invalid_bundles,
+			MAX(sihr.created_at) AS recently_created_at
+		FROM per_interaction pi
+		JOIN techbd_udi_ingress.sat_interaction_fhir_request sihr ON sihr.hub_interaction_id = pi.hub_interaction_id
+		GROUP BY pi.tenant_id_lower
+	)
+
+	-- FINAL RESULT
+	SELECT
+		ia.qe_name,
+		ia.qe_total_submissions,
+		(ia.qe_total_submissions - ia.missing_steps_total) AS techbd_processed,
+		rl.shinny_datalake_submissions,
+		(rl.valid_bundles_forwarded - rl.shinny_datalake_submissions) AS shinny_datalake_submissions_failed,
+		(ia.qe_total_submissions - ia.missing_steps_total - rl.invalid_bundles) AS valid_bundles,
+		rl.recently_created_at    
+	FROM interaction_agg ia
+	JOIN row_level_agg rl
+	  ON rl.qe_name = ia.qe_name
+	WHERE ia.qe_total_submissions > 0
+	ORDER BY rl.recently_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
 
