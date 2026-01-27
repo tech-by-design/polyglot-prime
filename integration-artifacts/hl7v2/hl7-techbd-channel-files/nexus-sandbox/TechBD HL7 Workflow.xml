@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>98e135fb-c052-449b-baa3-ecc775f10d9d</id>
+  <id>5acff12e-ce82-41d5-bba9-f908c7097afe</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.15
-Fix Response status.</description>
-  <revision>17</revision>
+  <description>Version: 0.1.16
+updated preprocessor scripts with data ledger tracking enabled.</description>
+  <revision>9</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2345,7 +2345,30 @@ try {
     logger.error(&quot;❌ Error processing DataLedger API URL  secret: &quot; + e.message);
 }
 ////////////////
+try {
+    var ttlHours = 24 * 20;
 
+    // DATA_LEDGER_TRACKING (true / false)
+    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    if (!trackingEnabled || trackingEnabled.trim() === &quot;&quot;) {
+        throw &quot;DATA_LEDGER_TRACKING is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, trackingEnabled.trim());
+
+    // MC_VALID_FHIR_URLS (comma-separated list)
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
+        throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
+    }
+    globalMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
+
+    logger.info(&quot;✔ Tracking flag and valid FHIR URLs loaded from Lookup Manager&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Failed to load tracking / valid URLs config: &quot; + e);
+    throw e;
+}
+///////////////////////////////////////////////
 /********************************************
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
@@ -2612,29 +2635,29 @@ try {
 }
 
 //////////////////////////////////////////////////////////////////////////
-try {
-    var ttlHours = 24 * 20;
-
-    // DATA_LEDGER_TRACKING (true / false)
-    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
-    if (!trackingEnabled || trackingEnabled.trim() === &quot;&quot;) {
-        throw &quot;DATA_LEDGER_TRACKING is not configured in Lookup Manager&quot;;
-    }
-    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, trackingEnabled.trim());
-
-    // MC_VALID_FHIR_URLS (comma-separated list)
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
-    if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
-        throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
-    }
-    globalMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
-
-    logger.info(&quot;✔ Tracking flag and valid FHIR URLs loaded from Lookup Manager&quot;);
-
-} catch (e) {
-    logger.error(&quot;❌ Failed to load tracking / valid URLs config: &quot; + e);
-    throw e;
-}
+//try {
+//    var ttlHours = 24 * 20;
+//
+//    // DATA_LEDGER_TRACKING (true / false)
+//    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+//    if (!trackingEnabled || trackingEnabled.trim() === &quot;&quot;) {
+//        throw &quot;DATA_LEDGER_TRACKING is not configured in Lookup Manager&quot;;
+//    }
+//    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, trackingEnabled.trim());
+//
+//    // MC_VALID_FHIR_URLS (comma-separated list)
+//    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+//    if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
+//        throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
+//    }
+//    globalMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
+//
+//    logger.info(&quot;✔ Tracking flag and valid FHIR URLs loaded from Lookup Manager&quot;);
+//
+//} catch (e) {
+//    logger.error(&quot;❌ Failed to load tracking / valid URLs config: &quot; + e);
+//    throw e;
+//}
 /********************************************
     DONE
 ********************************************/
@@ -2792,7 +2815,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769143600613</time>
+        <time>1769488050660</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2803,14 +2826,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>885cff16-2f59-483b-897d-3b6f577e4663</id>
-        <name>0_1_15</name>
+        <id>70ff31b3-8614-41c3-8076-a096d13daa48</id>
+        <name>0_1_16</name>
         <channelIds>
-          <string>98e135fb-c052-449b-baa3-ecc775f10d9d</string>
+          <string>5acff12e-ce82-41d5-bba9-f908c7097afe</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
