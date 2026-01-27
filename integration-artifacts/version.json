@@ -31,9 +31,9 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.3",
+      "version": "0.9.4",
       "editedby": "Arjun161201",
-      "date": "2026-01-16"
+      "date": "2026-01-27"
     },
     {
       "type": "FLAT FILE",

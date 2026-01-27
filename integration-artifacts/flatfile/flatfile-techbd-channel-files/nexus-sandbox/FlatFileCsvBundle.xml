@@ -1,11 +1,11 @@
 <channel version="4.6.0">
-  <id>3e6e07d5-8363-4234-99ca-96a568cc3143</id>
+  <id>bfd490ba-c15a-4495-b35c-a386b175b76a</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.3
-Change error message while sending wrong X-TechBD-Base-FHIR-URL
+  <description>Version: 0.9.4
+Update error message while sending wrong X-TechBD-Base-FHIR-URL
 </description>
-  <revision>6</revision>
+  <revision>4</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -294,7 +294,7 @@ if (baseFhirHeader != null &amp;&amp; baseFhirHeader.trim() !== &apos;&apos;) {
         var errorMessage =
             &quot;Validation Error: Invalid Base FHIR profile URL provided: &quot; +
             baseFhirHeader +
-            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos;.Supported SHIN-NY IG URLs: http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile, http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile&quot; ;
+            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos;. Supported SHIN-NY IG URLs: http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile, http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile&quot; ;
 
         logger.error(errorMessage);
         
@@ -755,7 +755,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769169124222</time>
+        <time>1769494784998</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -766,11 +766,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>c7e6b0ed-b666-457c-b4f3-a46ea2101ec3</id>
-        <name>0_9_3</name>
+        <id>89dae82d-ca27-440b-b486-a8377045553f</id>
+        <name>0_9_4</name>
         <channelIds>
-          <string>3049d500-ca1f-42b5-af04-6aa7cd549054</string>
-          <string>3e6e07d5-8363-4234-99ca-96a568cc3143</string>
+          <string>bfd490ba-c15a-4495-b35c-a386b175b76a</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
