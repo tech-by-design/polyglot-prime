@@ -675,7 +675,7 @@
                     <xsl:if test="string($locationResourceId)"> 
                       "reference": "Location/<xsl:value-of select="$locationResourceId"/>",
                     </xsl:if>
-                    "display": "<xsl:value-of select="ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name"/>"
+                    "display": "<xsl:value-of select="normalize-space(ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name)"/>"
                 }
             }
         ]
@@ -790,10 +790,11 @@
         "active": true,
         <xsl:if test="$organizationNPI or $organizationTIN">
           "identifier": [
-            <xsl:choose>
+            <!-- <xsl:choose> -->
 
               <!-- NPI -->
-              <xsl:when test="$organizationNPI">
+              <!-- <xsl:when test="$organizationNPI"> -->
+              <xsl:if test="$organizationNPI">
                 {
                   "use": "official",
                   "type": {
@@ -808,10 +809,14 @@
                   "system": "http://hl7.org/fhir/sid/us-npi",
                   "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
-              </xsl:when>
+              </xsl:if>
+              <!-- </xsl:when> -->
+              
+              <xsl:if test="$organizationNPI and $organizationTIN">,</xsl:if> <!-- Comma only if both exist -->
 
               <!-- TAX -->
-              <xsl:when test="$organizationTIN">
+              <!-- <xsl:when test="$organizationTIN"> -->
+              <xsl:if test="$organizationTIN">
                 {
                   "use": "official",
                   "type": {
@@ -826,8 +831,9 @@
                   "system": "http://www.irs.gov/",
                   "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
-              </xsl:when>
-            </xsl:choose>
+              </xsl:if>
+              <!-- </xsl:when> -->
+            <!-- </xsl:choose> -->
           ],
         </xsl:if>
         "name" : "<xsl:choose>
