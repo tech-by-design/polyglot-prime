@@ -1,15 +1,18 @@
 <channel version="4.6.0">
-  <id>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</id>
+  <id>5e85da13-c6ed-45d7-b7f5-d925d703e0ff</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.4
-update FHIR submission source handling.</description>
-  <revision>16</revision>
+  <description>Version: 0.8.5
+Add validation for Request body.</description>
+  <revision>23</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ update FHIR submission source handling.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -60,7 +60,7 @@ update FHIR submission source handling.</description>
       <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
       <responseContentType>application/fhir+json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode>200</responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -1494,7 +1494,14 @@ if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }&#xd;
 
+// ---- REQUEST BODY VALIDATION ----
 
+if (message == null || String(message).trim() === &quot;&quot;) {
+    var errorMessage = &quot;Validation Error: Required request body is missing&quot;;
+    logger.error(errorMessage);
+    setErrorResponsePre(400, errorMessage);
+    throw errorMessage;
+}
 
 channelMap.put(&apos;channelName&apos;,channelName);
 
@@ -2209,7 +2216,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1768974518958</time>
+        <time>1769507872539</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2220,36 +2227,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>bd25c131-0dc1-47a4-b01c-27ee5d23b8f2</id>
-        <name>0_8_4</name>
+        <id>d1f1c4df-2994-423b-b494-5fc6353da59d</id>
+        <name>0_8_5</name>
         <channelIds>
-          <string>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</string>
+          <string>5e85da13-c6ed-45d7-b7f5-d925d703e0ff</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
-          <alpha>255</alpha>
-        </backgroundColor>
-      </channelTag>
-      <channelTag>
-        <id>21a1ccfb-1032-4cc8-892b-a24eb24cca62</id>
-        <name>ActiveFHIR</name>
-        <channelIds>
-          <string>7acb6a40-87fa-4f3c-a158-cb6b60179ebd</string>
-          <string>1d8b9bc4-f07f-40c5-b0b3-0b9dc4bc1d75</string>
-          <string>4930eaf5-3c79-40e9-8426-1d41feac01e7</string>
-          <string>5fada73c-ebce-4c9c-a309-bdd047912dcd</string>
-          <string>6dc7ebdc-f4cd-43b9-8613-b87bb1e8a786</string>
-          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
-          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
-          <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
-          <string>9f8cf468-6042-43ed-ae89-1ff2c312a4e1</string>
-        </channelIds>
-        <backgroundColor>
-          <red>204</red>
-          <green>0</green>
-          <blue>204</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
