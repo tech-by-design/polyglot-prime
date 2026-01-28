@@ -366,3 +366,171 @@ BEGIN
 END;
 $function$
 ;
+
+
+/*****************************************************************************************************************
+-- Fetch latest OperationOutcome data by interactionId, bundleId, or tenantId
+--          with validation and tenant consistency checks
+******************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_operation_outcome_send_to_nyec(text, text, text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_operation_outcome_send_to_nyec(
+    p_interaction_id text,
+    p_bundle_id text,
+    p_tenant_id text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_exists boolean;
+    v_result jsonb;
+begin
+    IF ((p_tenant_id IS NULL OR p_tenant_id = '') 
+          AND (p_bundle_id IS NULL OR p_bundle_id = '')
+             AND (p_interaction_id IS NULL OR p_interaction_id = ''))
+    THEN
+        RAISE EXCEPTION USING
+        ERRCODE = 'P0001',
+        MESSAGE = jsonb_build_object(
+            'error', jsonb_build_object(
+                'message', 'At least one parameter must be provided: interactionId, bundleId, or tenantId.',
+                'interactionId', NULL,
+                'bundleId', NULL,
+                'tenantId', NULL
+            )
+        )::text;
+    END IF;
+        
+    ------------------------------------------------------------------
+    -- 1️ Tenant existence validation
+    ------------------------------------------------------------------
+    IF p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+        SELECT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id = p_tenant_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'Invalid tenantId. No tenant found with the provided tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', NULL,
+                        'interactionId', NULL
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- 2️ Tenant + Bundle mismatch
+    ------------------------------------------------------------------
+    IF p_bundle_id IS NOT NULL AND p_bundle_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+
+        SELECT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id = p_tenant_id
+              AND bundle_id = p_bundle_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. The provided bundleId does not belong to the specified tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', p_bundle_id,
+                        'interactionId', NULL
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- 3️ Tenant + Interaction mismatch
+    ------------------------------------------------------------------
+    IF p_interaction_id IS NOT NULL AND p_interaction_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+
+        SELECT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id = p_tenant_id
+              AND hub_interaction_id = p_interaction_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. The provided interactionId does not belong to the specified tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', NULL,
+                        'interactionId', p_interaction_id
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- Build JSON response (NO nested aggregates)
+    ------------------------------------------------------------------
+    SELECT
+    COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'bundleId', bundle_id,
+                'interactionId', hub_interaction_id,
+                'tenantId', tenant_id,
+                'bundleSubmissionDate', created_at,
+                'operationOutcome', operation_outcome
+            )
+        ),
+        '[]'::jsonb
+    )
+    INTO v_result
+    FROM (
+    SELECT
+        r.bundle_id,
+        r.hub_interaction_id,
+        r.tenant_id,
+        r.created_at,
+        COALESCE(
+            jsonb_agg(oo) FILTER (WHERE oo IS NOT NULL),
+            '[]'::jsonb
+        ) AS operation_outcome,
+        ROW_NUMBER() OVER (
+            PARTITION BY r.bundle_id
+            ORDER BY r.created_at DESC
+        ) AS rn
+    FROM techbd_udi_ingress.sat_interaction_fhir_request r
+    LEFT JOIN LATERAL jsonb_path_query(
+        r.payload,
+        '$.entry[*].resource ? (@.resourceType == "OperationOutcome")'
+    ) AS oo ON TRUE
+    WHERE r.nature = 'Forward HTTP Request'
+      AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
+      AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
+      AND (p_tenant_id IS NULL OR r.tenant_id = p_tenant_id)
+    GROUP BY
+        r.bundle_id,
+        r.hub_interaction_id,
+        r.tenant_id,
+        r.created_at
+) t
+WHERE t.rn = 1;
+
+    RETURN v_result;
+END;
+$function$;
