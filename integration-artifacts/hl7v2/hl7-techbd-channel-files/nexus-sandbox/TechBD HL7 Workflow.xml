@@ -1,18 +1,15 @@
 <channel version="4.6.0">
-  <id>5acff12e-ce82-41d5-bba9-f908c7097afe</id>
+  <id>32f45bb4-d1ac-41b2-8603-904c9397438a</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.16
-updated preprocessor scripts with data ledger tracking enabled.</description>
-  <revision>9</revision>
+  <description>Version: 0.1.17
+JDBC attributes reverted from Secrets Manager configuration.</description>
+  <revision>20</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ updated preprocessor scripts with data ledger tracking enabled.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -2196,42 +2196,41 @@ var index = message.indexOf(&quot;MSH|&quot;);
 if (index !== -1) {
     message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*********************************
-    AWS SECRETS MANAGER HELPER
-*********************************/
-function fetchSecret(secretName) {
-    var region = &quot;us-east-1&quot;;
-
-    var Region = Packages.software.amazon.awssdk.regions.Region;
-    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-
-    try {
-        var client = SecretsManagerClient.builder()
-            .region(Region.of(region))
-            .build();
-
-        var request = GetSecretValueRequest.builder()
-            .secretId(secretName)
-            .build();
-
-        var response = client.getSecretValue(request);
-        client.close();
-
-        return response.secretString();
-
-    } catch (e) {
-        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | &quot; + e);
-        throw e;
-    }
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///*********************************
+//    AWS SECRETS MANAGER HELPER
+//*********************************/
+//function fetchSecret(secretName) {
+//    var region = &quot;us-east-1&quot;;
+//
+//    var Region = Packages.software.amazon.awssdk.regions.Region;
+//    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+//    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+//
+//    try {
+//        var client = SecretsManagerClient.builder()
+//            .region(Region.of(region))
+//            .build();
+//
+//        var request = GetSecretValueRequest.builder()
+//            .secretId(secretName)
+//            .build();
+//
+//        var response = client.getSecretValue(request);
+//        client.close();
+//
+//        return response.secretString();
+//
+//    } catch (e) {
+//        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | &quot; + e);
+//        throw e;
+//    }
+//}
 
 /****************************************************************************************
  //** CHANGES MADE FOR IMPLEMENTING LOOKUP MANAGER CONFIG:
- //** JDBC URL is fetched as a plain-text AWS Secret
- //** JDBC Username &amp; Password are fetched from AWS Secrets Manager (JSON secret)
- //** Lookup Manager stores ONLY the secret names
+ //** JDBC URL is fetched as a plain-text Lookup Manager configuration
+ //** JDBC Username &amp; Password are fetched from Lookup Manager configuration
  //** Replaced System.getenv() based configuration
 ****************************************************************************************/
 
@@ -2239,41 +2238,45 @@ try {
     var ttlHours = 24 * 20;
 
     /*************** JDBC URL (PLAIN TEXT) ****************/
-    var jdbcUrlSecretName = LookupHelper.get(&quot;Config&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
 
-    if (!jdbcUrlSecretName || jdbcUrlSecretName.trim() === &quot;&quot;) {
-        throw &quot;MC_JDBC_URL not configured in Lookup Manager&quot;;
-    }
-
-    var jdbcUrl = fetchSecret(jdbcUrlSecretName).trim();
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
 
     if (!jdbcUrl) {
-        throw &quot;Empty JDBC URL returned from AWS Secrets Manager&quot;;
+        throw &quot;Empty JDBC URL returned from Lookup Manager (Config-sensitive group)&quot;;
     }
 
-    /*************** JDBC CREDENTIALS (JSON SECRET) ****************/
-    var rdsSecretName = LookupHelper.get(&quot;Config&quot;, &quot;SM_KEY_RDS_SECRETS&quot;, ttlHours);
+// Step 2: Get ACTUAL USERNAME directly from Lookup Manager
+    var jdbcUsername = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
 
-    if (!rdsSecretName || rdsSecretName.trim() === &quot;&quot;) {
-        throw &quot;SM_KEY_RDS_SECRETS not configured in Lookup Manager&quot;;
+    if (!jdbcUsername || jdbcUsername.trim() === &quot;&quot;) {
+        throw &quot;MC_JDBC_USERNAME not configured in Lookup Manager (Config-sensitive group)&quot;;
     }
 
-    var rdsSecret = JSON.parse(fetchSecret(rdsSecretName));
+    jdbcUsername = jdbcUsername.trim();
 
-    if (!rdsSecret.username || !rdsSecret.password) {
-        throw &quot;Incomplete JDBC credentials in AWS Secrets Manager&quot;;
+    // Step 3: Get ACTUAL PASSWORD directly from Lookup Manager
+    var jdbcPassword = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;, ttlHours);
+
+    if (!jdbcPassword || jdbcPassword.trim() === &quot;&quot;) {
+        throw &quot;MC_JDBC_PASSWORD not configured in Lookup Manager (Config-sensitive group)&quot;;
     }
 
-    /*************** STORE VALUES ****************/
-//    channelMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
-//    channelMap.put(&quot;jdbcUsername&quot;, rdsSecret.username);
-//    channelMap.put(&quot;jdbcPassword&quot;, rdsSecret.password);
+    jdbcPassword = jdbcPassword.trim();
+
+   /*************** STORE VALUES ****************/
 
     globalMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
-    globalMap.put(&quot;jdbcUsername&quot;, rdsSecret.username);
-    globalMap.put(&quot;jdbcPassword&quot;, rdsSecret.password);
+    globalMap.put(&quot;jdbcUsername&quot;, jdbcUsername);
+    globalMap.put(&quot;jdbcPassword&quot;, jdbcPassword);
 
-    logger.info(&quot;✔ HL7 JDBC configuration loaded (CCDA aligned)&quot;);
+    logger.info(&quot;✔ HL7 JDBC configuration loaded directly from Lookup Manager (Config-sensitive group)&quot;);
+/////////////////////////////
+// 🔍 TEMPORARY DEBUG - Remove after fixing
+logger.info(&quot;🔍 DEBUG jdbcUrl: &quot; + jdbcUrl);
+logger.info(&quot;🔍 DEBUG jdbcUsername: &quot; + jdbcUsername);
+logger.info(&quot;🔍 DEBUG jdbcPassword first 3 chars: &quot; + jdbcPassword.substring(0, 3)); // Just first 3 chars
+
+logger.info(&quot;✔ HL7 JDBC configuration loaded directly from Lookup Manager (Config-sensitive group)&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ HL7 JDBC initialization failed during channel deploy: &quot; + e);
@@ -2286,22 +2289,14 @@ try {
 try {
     var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
 
-    //TODO remove lines
-
-//    if (!fhirSecretName || fhirSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value MC_FHIR_BUNDLE_SUBMISSION_API_URL does not contain a secret name.&quot;;
-//    }
-//
-//    var fhirApiUrl = fetchSecret(fhirSecretName);
-
     fhirApiUrl = fhirApiUrl.trim(); 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
-        throw &quot;AWS Secret for FHIR API URL returned empty.&quot;;
+        throw &quot;Lookup Manager configuration for FHIR API URL returned an empty value.&quot;;
     }
 
     //channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
     globalMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
-    logger.info(&quot;✔ FHIR API URL loaded from AWS Secret Manager&quot;);
+    logger.info(&quot;✔ FHIR API URL loaded from Lookup Manager (Config group)&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
@@ -2315,18 +2310,14 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerKey = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
-    //&quot;techbd-nyec-dataledger-api-key&quot;;
-
-//TODO remove lines
-//    var dataLedgerKey = fetchSecret(ledgerSecretName);
-
+    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    
     globalMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
-    logger.info(&quot;✔ DataLedger API Key loaded into globalMap&quot;);
+    logger.info(&quot;✔ DataLedger API Key loaded into globalMap from Lookup Manager (Config-sensitive group)&quot;);
 
 } catch (e) {
-    logger.error(&quot;❌ Error processing DataLedger API Key secret: &quot; + e.message);
+    logger.error(&quot;❌ Error processing DataLedger API Key from Lookup Manager (Config-sensitive group): &quot; + e.message);
 }
 
 /////////////
@@ -2342,7 +2333,7 @@ try {
     logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + ledgerUrl);
 
 } catch (e) {
-    logger.error(&quot;❌ Error processing DataLedger API URL  secret: &quot; + e.message);
+    logger.error(&quot;❌ Error processing DataLedger API URL from Lookup Manager (Config-sensitive group): &quot; + e.message);
 }
 ////////////////
 try {
@@ -2375,21 +2366,13 @@ try {
 try {
     var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
 
-
-//TODO remove lines
-//    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
-//    }
-//
-//    var csvServiceUrl = fetchSecret(csvSecretName);
-
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
-        throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
+        throw &quot;Lookup Manager configuration for CSV Service URL returned empty.&quot;;
     }
 
     //channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
     globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
-    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot;);
+    logger.info(&quot;✔ CSV Service API URL loaded from Lookup Manager configuration&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
@@ -2397,35 +2380,25 @@ try {
     throw e;
 }
 
-
 /********************************************
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
     var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
 
-//TODO remove lines
-
-//    if (!datalakeSecretName || datalakeSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value TECHBD_DEFAULT_DATALAKE_API_URL does not contain a secret name.&quot;;
-//    }
-//
-//    var datalakeApiUrl = fetchSecret(datalakeSecretName);
-
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
-        throw &quot;AWS Secret for DataLake API URL returned empty.&quot;;
+        throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
     }
 
     //channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
     globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
-    logger.info(&quot;✔ Datalake API URL loaded from AWS Secret Manager&quot;);
+    logger.info(&quot;✔ Datalake API URL loaded from Lookup Manager configuration&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
     setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
     throw e;
 }
-/////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 /********************************************
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
@@ -2438,9 +2411,9 @@ try {
     if (headerDataLakeApiUrl &amp;&amp; String(headerDataLakeApiUrl).trim() !== &quot;&quot;) {
         // Header provided - use it as override
         headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
-       // channelMap.put(&quot;DATALAKE_API_URL&quot;, headerDataLakeApiUrl);
+      
         globalMap.put(&quot;datalakeApiUrl&quot;, headerDataLakeApiUrl);
-        logger.info(&quot;✔ ******************************DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
+        logger.info(&quot;✔ DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
     } 
 
 
@@ -2451,24 +2424,15 @@ try {
 try {
     var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
  
-//TODO remove lines&#xd;
-
-//    if (!hubUiSecretName || hubUiSecretName.trim() === &quot;&quot;) {//        throw &quot;Lookup value HUB_UI_URL does not contain a secret name.&quot;;
-//    }
-// 
-//    // Fetch actual HUB UI URL from AWS Secrets Manager
-//    var hubUiUrl = fetchSecret(hubUiSecretName);
- 
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
-        throw &quot;AWS Secret for HUB_UI_URL returned empty.&quot;;
+        throw &quot;Lookup Manager configuration for HUB_UI_URL returned empty.&quot;;
     }
  
     hubUiUrl = hubUiUrl.trim();
  
-   
-    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
+   globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
  
-    logger.info(&quot;✔ HUB UI URL loaded from AWS Secrets Manager: &quot;);
+    logger.info(&quot;✔ HUB UI URL loaded from Lookup Manager configuration: &quot;);
  
 } catch (e) {
     logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
@@ -2815,7 +2779,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769488050660</time>
+        <time>1769573842081</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2826,14 +2790,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>70ff31b3-8614-41c3-8076-a096d13daa48</id>
-        <name>0_1_16</name>
+        <id>92d58912-4ae5-4525-8dff-fa8f01f57578</id>
+        <name>0_1_17</name>
         <channelIds>
-          <string>5acff12e-ce82-41d5-bba9-f908c7097afe</string>
+          <string>32f45bb4-d1ac-41b2-8603-904c9397438a</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

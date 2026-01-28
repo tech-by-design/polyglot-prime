@@ -7,7 +7,7 @@
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
     "createdDate" : "2026-01-14T10:28:06.079+00:00",
-    "updatedDate" : "2026-01-16T12:08:04.037+00:00"
+    "updatedDate" : "2026-01-23T11:38:54.051+00:00"
   },
   "values" : {
     "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
@@ -18,9 +18,6 @@
     "HUB_UI_URL" : "https://hub.sandbox.dev.techbd.org",
     "MC_CCDA_SCHEMA_FOLDER" : "/opt/bridgelink/ccda-techbd-schema-files/",
     "MC_FHIR_BUNDLE_SUBMISSION_API_URL" : "https://bl.sbx.nexus.techbd.org:6000/Bundle",
-    "MC_JDBC_PASSWORD" : "techbd-rds-secrets",
-    "MC_JDBC_URL" : "mc-jdbc-url",
-    "MC_JDBC_USERNAME" : "techbd-rds-secrets",
     "MC_VALID_FHIR_URLS" : "http://shinny.org/us/ny/hrsn,http://test.shinny.org/us/ny/hrsn",
     "PROFILE_URL_BUNDLE" : "/StructureDefinition/SHINNYBundleProfile",
     "PROFILE_URL_CONSENT" : "/StructureDefinition/shinny-Consent",
@@ -35,9 +32,7 @@
     "PROFILE_URL_SEXUAL_ORIENTATION" : "/StructureDefinition/shinny-observation-sexual-orientation",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
-    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle",
-    "TECHBD_NYEC_DATALAKE_API_KEY" : "gUfvF8wF763axBSGDYGjK8puTwFdYlcH2IMLxbqE",
-    "TECHBD_NYEC_DATALEDGER_API_KEY" : "v8sWlAsm5ZXG7GcuvMlB5uvLKWldCkn4ncZMVd30"
+    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle"
   },
-  "exportDate" : "2026-01-23T10:54:00.277+00:00"
+  "exportDate" : "2026-01-28T07:14:02.620+00:00"
 }
