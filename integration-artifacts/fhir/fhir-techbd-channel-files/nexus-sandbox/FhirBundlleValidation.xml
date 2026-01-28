@@ -1,18 +1,15 @@
 <channel version="4.6.0">
-  <id>ca7a435f-dc52-4170-a100-73cdede86f0b</id>
+  <id>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.3
-Updated JDBC credentials to retrieve values directly from the Lookup Manager instead of the Secrets Manager.</description>
-  <revision>77</revision>
+  <description>Version: 0.8.4
+Added Request body validation and set Response Status Code for FhirBundleValidation Channel.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Updated JDBC credentials to retrieve values directly from the Lookup Manager ins
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.0">
         <host>0.0.0.0</host>
@@ -60,7 +60,7 @@ Updated JDBC credentials to retrieve values directly from the Lookup Manager ins
       <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
       <responseContentType>application/fhir+json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode>200</responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -714,6 +714,16 @@ if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }
 
+
+// ---- REQUEST BODY VALIDATION ----
+
+if (message == null || String(message).trim() === &quot;&quot;) {
+    var errorMessage = &quot;Validation Error: Required request body is missing&quot;;
+    logger.error(errorMessage);
+    setErrorResponsePre(400, errorMessage);
+    throw errorMessage;
+}
+
 channelMap.put(&apos;channelName&apos;,channelName);
 
 var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
@@ -937,7 +947,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769582566940</time>
+        <time>1769594070423</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -948,11 +958,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>7b392d39-c6af-4558-86f3-a98f5238e670</id>
-        <name>0_8_3</name>
+        <id>bd25c131-0dc1-47a4-b01c-27ee5d23b8f2</id>
+        <name>0_8_4</name>
         <channelIds>
-          <string>ca7a435f-dc52-4170-a100-73cdede86f0b</string>
-          <string>1e6176eb-1111-4d77-bd01-793bf7a3f984</string>
+          <string>d97bd741-575a-4933-b6cb-4a4075689895</string>
+          <string>15ac7d8c-f134-4593-8fcd-8c5929c8ac88</string>
+          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
@@ -972,18 +984,17 @@ return;</undeployScript>
           <string>07de8921-59c3-4539-8d69-b3c241b33d3d</string>
           <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
           <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
+          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
           <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
           <string>ca7a435f-dc52-4170-a100-73cdede86f0b</string>
           <string>467f826d-1a1b-4e15-84b6-6c4c71968059</string>
           <string>957444f7-b1ca-40a4-9b3d-34b56aec2d36</string>
-          <string>268d9113-99fe-4c9d-8c6a-b852229a8f99</string>
           <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
           <string>95a4b010-c209-4904-8500-433538921ae5</string>
           <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
           <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
           <string>b5ce54b4-54a4-4173-9258-fcce5d81a231</string>
           <string>a2fdd3b6-8a2e-43cb-834b-f770f4b57d06</string>
-          <string>d40277fe-43c0-457c-9238-5e00cdff4854</string>
           <string>b3aed8a2-8417-4575-93fb-3d6bfca955b5</string>
           <string>2b544207-bac7-4e49-a67d-bfe55e676c61</string>
           <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
