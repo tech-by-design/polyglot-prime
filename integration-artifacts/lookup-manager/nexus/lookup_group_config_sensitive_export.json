@@ -1,0 +1,20 @@
+{
+  "group" : {
+    "id" : 5,
+    "name" : "Config-Sensitive",
+    "description" : "Placeholder Template for Configuration-Sensitive Group",
+    "version" : "1",
+    "cacheSize" : 1000,
+    "cachePolicy" : "LRU",
+    "createdDate" : "2026-01-28T07:01:30.116+00:00",
+    "updatedDate" : "2026-01-28T07:12:48.790+00:00"
+  },
+  "values" : {
+    "MC_JDBC_PASSWORD" : "mc_jdbc_password",
+    "MC_JDBC_URL" : "mc_jdbc_url",
+    "MC_JDBC_USERNAME" : "mc_jdbc_username",
+    "TECHBD_NYEC_DATALAKE_API_KEY" : "techbd_nyec_datalake_api_key",
+    "TECHBD_NYEC_DATALEDGER_API_KEY" : "techbd_nyec_dataledger_api_key"
+  },
+  "exportDate" : "2026-01-28T07:14:15.930+00:00"
+}
