@@ -324,7 +324,7 @@
 		<dependency>
   			<groupId>io.github.linuxforhealth</groupId>
   			<artifactId>hl7v2-fhir-converter</artifactId>
-  			<version>1.0.10</version>
+  			<version>v1.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
