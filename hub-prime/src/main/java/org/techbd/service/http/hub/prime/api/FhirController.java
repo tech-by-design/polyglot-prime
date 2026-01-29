@@ -525,5 +525,41 @@ public class FhirController {
                 cookie.setPath("/"); // Set the same path as the original cookie
                 response.addCookie(cookie); // Add it to the response to delete
         }
+     
+        @GetMapping(value = { "/Bundles/status/operation-outcome", "/Bundles/status/operation-outcome/" })
+        @Operation(summary = "Retrieve OperationOutcome(s) for a Bundle or Interaction", description = """
+                        Fetches OperationOutcome resources for a given Bundle ID or Interaction ID.
+                        Exactly ONE of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved OperationOutcome(s)."),
+                        @ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getOperationOutcomes(
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        @RequestHeader(value = "X-TechBD-Bundle-ID", required = false) String bundleId,
+                        @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+                if (bundleId != null && interactionId != null) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. Provide either bundleId or interactionId, not both.");
+                }
+                if (bundleId == null && interactionId == null) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. Either bundleId or interactionId must be provided.");
+                }
+                LOG.info(
+                                "Fetching OperationOutcome(s) for requestId={} | tenantId={} | bundleId={} | interactionId={}",
+                                requestId,
+                                tenantId != null ? tenantId : "ALL",
+                                bundleId,
+                                interactionId);
+                return fhirService.getOperationOutcomeSendToNyec(interactionId, bundleId, tenantId);
+        }
 
 }
+
