@@ -386,6 +386,9 @@ DECLARE
     v_exists boolean;
     v_result jsonb;
 begin
+    ------------------------------------------------------------------
+    -- 1️ Atleast one parameter mandatory checking
+    ------------------------------------------------------------------
     IF ((p_tenant_id IS NULL OR p_tenant_id = '') 
           AND (p_bundle_id IS NULL OR p_bundle_id = '')
              AND (p_interaction_id IS NULL OR p_interaction_id = ''))
@@ -403,7 +406,7 @@ begin
     END IF;
         
     ------------------------------------------------------------------
-    -- 1️ Tenant existence validation
+    -- 2 Tenant existence validation
     ------------------------------------------------------------------
     IF p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
         SELECT EXISTS (
@@ -428,7 +431,7 @@ begin
     END IF;
 
     ------------------------------------------------------------------
-    -- 2️ Tenant + Bundle mismatch
+    -- 3 Tenant + Bundle mismatch
     ------------------------------------------------------------------
     IF p_bundle_id IS NOT NULL AND p_bundle_id <> ''
        AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
@@ -456,7 +459,7 @@ begin
     END IF;
 
     ------------------------------------------------------------------
-    -- 3️ Tenant + Interaction mismatch
+    -- 4 Tenant + Interaction mismatch
     ------------------------------------------------------------------
     IF p_interaction_id IS NOT NULL AND p_interaction_id <> ''
        AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
@@ -482,22 +485,14 @@ begin
                 )::text;
         END IF;
     END IF;
-
-    ------------------------------------------------------------------
-    -- Build JSON response (NO nested aggregates)
-    ------------------------------------------------------------------
+    
     SELECT
-    COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'bundleId', bundle_id,
-                'interactionId', hub_interaction_id,
-                'tenantId', tenant_id,
-                'bundleSubmissionDate', created_at,
-                'operationOutcome', operation_outcome
-            )
-        ),
-        '[]'::jsonb
+    jsonb_build_object(
+        'bundleId', bundle_id,
+        'interactionId', hub_interaction_id,
+        'tenantId', tenant_id,
+        'bundleSubmissionDate', created_at,
+        'operationOutcome', operation_outcome
     )
     INTO v_result
     FROM (
@@ -531,6 +526,6 @@ begin
 ) t
 WHERE t.rn = 1;
 
-    RETURN v_result;
+RETURN v_result;
 END;
 $function$;
