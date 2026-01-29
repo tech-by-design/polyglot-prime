@@ -538,20 +538,21 @@ public class FhirController {
         })
         @ResponseBody
         public Object getOperationOutcomes(
-                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = true) String tenantId,
                         @RequestHeader(value = "X-TechBD-Bundle-ID", required = false) String bundleId,
                         @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,
                         HttpServletRequest request) {
 
                 UUID requestId = UUID.randomUUID();
-                if (bundleId != null && interactionId != null) {
+                if (tenantId == null || tenantId.isBlank()) {
                         throw new IllegalArgumentException(
-                                        "Invalid request. Provide either bundleId or interactionId, not both.");
+                                        "Invalid request. TenantId is required.");
                 }
                 if (bundleId == null && interactionId == null) {
                         throw new IllegalArgumentException(
-                                        "Invalid request. Either bundleId or interactionId must be provided.");
+                                        "Invalid request. Either bundleId or interactionId is required.");
                 }
+
                 LOG.info(
                                 "Fetching OperationOutcome(s) for requestId={} | tenantId={} | bundleId={} | interactionId={}",
                                 requestId,
