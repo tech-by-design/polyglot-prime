@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.5 -->
+<!-- Version : 0.1.6 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -727,7 +727,7 @@
                     <xsl:if test="string($locationResourceId)"> 
                       "reference": "Location/<xsl:value-of select="$locationResourceId"/>",
                     </xsl:if>
-                    "display": "<xsl:value-of select="ccda:location/ccda:healthCareFacility/ccda:location/ccda:name"/>"
+                    "display": "<xsl:value-of select="normalize-space(ccda:location/ccda:healthCareFacility/ccda:location/ccda:name)"/>"
                 }
             }
         ]
@@ -842,10 +842,9 @@
         "active": true,
         <xsl:if test="$organizationNPI or $organizationTIN">
           "identifier": [
-            <xsl:choose>
-
+            
               <!-- NPI -->
-              <xsl:when test="$organizationNPI">
+              <xsl:if test="$organizationNPI">
                 {
                   "use": "official",
                   "type": {
@@ -860,10 +859,12 @@
                   "system": "http://hl7.org/fhir/sid/us-npi",
                   "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
-              </xsl:when>
+              </xsl:if>
+              
+              <xsl:if test="$organizationNPI and $organizationTIN">,</xsl:if> <!-- Comma only if both exist -->
 
               <!-- TAX -->
-              <xsl:when test="$organizationTIN">
+              <xsl:if test="$organizationTIN">
                 {
                   "use": "official",
                   "type": {
@@ -878,8 +879,7 @@
                   "system": "http://www.irs.gov/",
                   "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
-              </xsl:when>
-            </xsl:choose>
+              </xsl:if>
           ],
         </xsl:if>
         "name" : "<xsl:choose>
@@ -1131,13 +1131,35 @@
 
         <xsl:if test="string($categoryCode)">
 
-          <xsl:variable name="resourceUUID">
+          <xsl:variable name="encounterEffectiveTime">
+              <xsl:choose>
+                  <xsl:when test="ccda:effectiveTime/@value">
+                      <xsl:call-template name="formatDateTime">
+                          <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
+                      </xsl:call-template>
+                  </xsl:when>
+                  <xsl:when test="$encounterEffectiveTimeValue">
+                      <xsl:value-of select="$encounterEffectiveTimeValue"/>
+                  </xsl:when>
+                  <xsl:otherwise>
+                      <xsl:value-of select="$currentTimestamp"/>
+                  </xsl:otherwise>
+              </xsl:choose>
+          </xsl:variable>
+
+          <xsl:variable name="encounterEffectiveTimeDigits" select="translate($encounterEffectiveTime, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
+
+          <xsl:variable name="observationIdSource">
             <xsl:choose>
-              <xsl:when test="normalize-space(ccda:id/@extension)">
-                <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+              <!-- Use extension if present and not empty -->
+              <xsl:when test="ccda:id/@extension and normalize-space(ccda:id/@extension) != ''">
+                <xsl:value-of select="concat($questionCode, '-', ccda:id/@extension)"/>
               </xsl:when>
+
+              <!-- Fallback: questionCode + encounterEffectiveTime -->
               <xsl:otherwise>
-                <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+                <xsl:value-of
+                  select="concat($questionCode, '-', $encounterEffectiveTimeDigits)"/>
               </xsl:otherwise>
             </xsl:choose>
           </xsl:variable>
@@ -1145,7 +1167,7 @@
           <xsl:variable name="observationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
               <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-              <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+              <xsl:with-param name="sha256ResourceId" select="$observationIdSource"/>
             </xsl:call-template>
           </xsl:variable>
           ,{
@@ -1297,24 +1319,47 @@
                   <xsl:if test="exsl:node-set($derivedObservations)/ccda:observation">
                     "derivedFrom": [
                       <xsl:for-each select="exsl:node-set($derivedObservations)/ccda:observation">
-                        <xsl:variable name="resourceUUID">
+                        <xsl:variable name="encounterEffectiveTimeDF">
+                            <xsl:choose>
+                                <xsl:when test="ccda:effectiveTime/@value">
+                                    <xsl:call-template name="formatDateTime">
+                                        <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
+                                    </xsl:call-template>
+                                </xsl:when>
+                                <xsl:when test="$encounterEffectiveTimeValue">
+                                    <xsl:value-of select="$encounterEffectiveTimeValue"/>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="$currentTimestamp"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+
+                        <xsl:variable name="encounterEffectiveTimeDigitsDF" select="translate($encounterEffectiveTimeDF, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
+                        <xsl:variable name="questionCodeDF" select="ccda:code/@code"/>
+
+                        <xsl:variable name="observationIdSourceDF">
                           <xsl:choose>
-                            <xsl:when test="normalize-space(ccda:id/@extension)">
-                              <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+                            <!-- Use extension if present and not empty -->
+                            <xsl:when test="ccda:id/@extension and normalize-space(ccda:id/@extension) != ''">
+                              <xsl:value-of select="concat($questionCodeDF, '-', ccda:id/@extension)"/>
                             </xsl:when>
+
+                            <!-- Fallback: questionCode + encounterEffectiveTime -->
                             <xsl:otherwise>
-                              <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+                              <xsl:value-of
+                                select="concat($questionCodeDF, '-', $encounterEffectiveTimeDigitsDF)"/>
                             </xsl:otherwise>
                           </xsl:choose>
                         </xsl:variable>
-                
-                        <xsl:variable name="observationResourceId">
+
+                        <xsl:variable name="observationResourceIdDF">
                           <xsl:call-template name="generateFixedLengthResourceId">
                             <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                            <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+                            <xsl:with-param name="sha256ResourceId" select="$observationIdSourceDF"/>
                           </xsl:call-template>
-                        </xsl:variable>
-                        { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
+                        </xsl:variable>                
+                        { "reference": "Observation/<xsl:value-of select='$observationResourceIdDF'/>" }<xsl:if test="position() != last()">,</xsl:if>
                       </xsl:for-each>
                     ],
                   </xsl:if>
@@ -1349,23 +1394,7 @@
                   "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
                 }
               </xsl:if>
-
-              <!-- effectiveDateTime block -->
-              <xsl:if test="ccda:effectiveTime/@value or $encounterEffectiveTimeValue or $currentTimestamp">
-                , "effectiveDateTime": "<xsl:choose>
-                                          <xsl:when test="ccda:effectiveTime/@value">
-                                              <xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
-                                              </xsl:call-template>
-                                          </xsl:when>
-                                          <xsl:when test="$encounterEffectiveTimeValue">
-                                              <xsl:value-of select="$encounterEffectiveTimeValue"/>
-                                          </xsl:when>
-                                          <xsl:otherwise>
-                                              <xsl:value-of select="$currentTimestamp"/>
-                                          </xsl:otherwise>
-                                        </xsl:choose>"
-              </xsl:if>
+              , "effectiveDateTime": "<xsl:value-of select='$encounterEffectiveTime'/>"
 
               <xsl:if test="string($organizationResourceId)">
               , "performer": [{
@@ -1738,50 +1767,102 @@
     {
         <xsl:if test="string($selectedName/ccda:given)">
             "extension": [{
-              "url": "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/middle-name",
-              "valueString" : "<xsl:value-of select="$selectedName/ccda:given"/>"
+                "url": "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/middle-name",
+                "valueString": "<xsl:value-of select="$selectedName/ccda:given"/>"
             }]
         </xsl:if>
+
+        <!-- use -->
         <xsl:if test="$selectedName/@use">
             <xsl:if test="string($selectedName/ccda:given)">, </xsl:if>
             "use": "<xsl:choose>
-                <xsl:when test="$selectedName/@use='L'">official</xsl:when>
-                <xsl:when test="$selectedName/@use='P'">usual</xsl:when>
-                <xsl:otherwise><xsl:value-of select="$selectedName/@use"/></xsl:otherwise>
-            </xsl:choose>"
-        </xsl:if>                        
-        <xsl:if test="string($selectedName/ccda:prefix)"> 
-            <xsl:if test="string($selectedName/ccda:given) or string($selectedName/ccda:prefix)">, </xsl:if>
+                        <xsl:when test="$selectedName/@use='L'">official</xsl:when>
+                        <xsl:when test="$selectedName/@use='P'">usual</xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="$selectedName/@use"/>
+                        </xsl:otherwise>
+                    </xsl:choose>"
+        </xsl:if>
+
+        <!-- prefix -->
+        <xsl:if test="string($selectedName/ccda:prefix)">
+            <xsl:if test="string($selectedName/ccda:given) or $selectedName/@use">, </xsl:if>
             "prefix": ["<xsl:value-of select='$selectedName/ccda:prefix'/>"]
         </xsl:if>
-        <xsl:if test="string($selectedName/ccda:given)"> 
-            <xsl:if test="string($selectedName/ccda:given) or string($selectedName/ccda:prefix) or string($selectedName/ccda:prefix)">, </xsl:if>
+
+        <!-- given -->
+        <xsl:if test="string($selectedName/ccda:given)">
+            <xsl:if test="$selectedName/@use or string($selectedName/ccda:prefix)">, </xsl:if>
             "given": ["<xsl:value-of select='$selectedName/ccda:given'/>"]
         </xsl:if>
-        <xsl:if test="string($selectedName/ccda:family)"> 
-            <xsl:if test="string($selectedName/ccda:given) or string($selectedName/ccda:prefix) or string($selectedName/ccda:prefix) or string($selectedName/ccda:given)">, </xsl:if>
+
+        <!-- family -->
+        <xsl:if test="string($selectedName/ccda:family)">
+            <xsl:if test="
+                $selectedName/@use or
+                string($selectedName/ccda:prefix) or
+                string($selectedName/ccda:given)
+            ">, </xsl:if>
             "family": "<xsl:value-of select='$selectedName/ccda:family'/>"
         </xsl:if>
+
+        <!-- suffix -->
         <xsl:if test="string($selectedName/ccda:suffix)">
-            <xsl:if test="string($selectedName/ccda:given) or string($selectedName/ccda:prefix) or string($selectedName/ccda:prefix) or string($selectedName/ccda:given) or string($selectedName/ccda:family)">, </xsl:if>
+            <xsl:if test="
+                $selectedName/@use or
+                string($selectedName/ccda:prefix) or
+                string($selectedName/ccda:given) or
+                string($selectedName/ccda:family)
+            ">, </xsl:if>
             "suffix": ["<xsl:value-of select='$selectedName/ccda:suffix'/>"]
         </xsl:if>
-        <xsl:if test="($selectedName/ccda:validTime/ccda:low and not($selectedName/ccda:validTime/ccda:low/@nullFlavor = 'UNK' or $selectedName/ccda:validTime/ccda:low/@nullFlavor = 'NA')) or 
-                  ($selectedName/ccda:validTime/ccda:high and not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA'))">
-          <xsl:if test="string($selectedName/ccda:given) or string($selectedName/ccda:prefix) or string($selectedName/ccda:family) or string($selectedName/ccda:suffix)">, </xsl:if>
-          "period": {
-              <xsl:if test="$selectedName/ccda:validTime/ccda:low and not($selectedName/ccda:validTime/ccda:low/@nullFlavor = 'UNK' or $selectedName/ccda:validTime/ccda:low/@nullFlavor = 'NA')">
-                  "start": "<xsl:call-template name="formatDateTime">
-                                <xsl:with-param name="dateTime" select="$selectedName/ccda:validTime/ccda:low/@value"/>
+
+        <!-- period -->
+        <xsl:if test="
+            ($selectedName/ccda:validTime/ccda:low and
+            not($selectedName/ccda:validTime/ccda:low/@nullFlavor = 'UNK' or
+                $selectedName/ccda:validTime/ccda:low/@nullFlavor = 'NA'))
+            or
+            ($selectedName/ccda:validTime/ccda:high and
+            not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or
+                $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA'))
+        ">
+            <xsl:if test="
+                string($selectedName/ccda:given) or
+                string($selectedName/ccda:prefix) or
+                string($selectedName/ccda:family) or
+                string($selectedName/ccda:suffix) or
+                $selectedName/@use
+            ">, </xsl:if>
+
+            "period": {
+                <xsl:if test="
+                    $selectedName/ccda:validTime/ccda:low and
+                    not($selectedName/ccda:validTime/ccda:low/@nullFlavor = 'UNK' or
+                        $selectedName/ccda:validTime/ccda:low/@nullFlavor = 'NA')
+                ">
+                    "start": "<xsl:call-template name="formatDateTime">
+                                  <xsl:with-param name="dateTime"
+                                      select="$selectedName/ccda:validTime/ccda:low/@value"/>
+                              </xsl:call-template>"
+                    <xsl:if test="
+                        $selectedName/ccda:validTime/ccda:high and
+                        not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or
+                            $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA')
+                    ">,</xsl:if>
+                </xsl:if>
+
+                <xsl:if test="
+                    $selectedName/ccda:validTime/ccda:high and
+                    not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or
+                        $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA')
+                ">
+                    "end": "<xsl:call-template name="formatDateTime">
+                                <xsl:with-param name="dateTime"
+                                    select="$selectedName/ccda:validTime/ccda:high/@value"/>
                             </xsl:call-template>"
-                  <xsl:if test="$selectedName/ccda:validTime/ccda:high and not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA')">,</xsl:if>
-              </xsl:if>
-              <xsl:if test="$selectedName/ccda:validTime/ccda:high and not($selectedName/ccda:validTime/ccda:high/@nullFlavor = 'UNK' or $selectedName/ccda:validTime/ccda:high/@nullFlavor = 'NA')">
-                  "end": "<xsl:call-template name="formatDateTime">
-                              <xsl:with-param name="dateTime" select="$selectedName/ccda:validTime/ccda:high/@value"/>
-                          </xsl:call-template>"
-              </xsl:if>
-          }
+                </xsl:if>
+            }
         </xsl:if>
     }
 </xsl:template>
@@ -1936,13 +2017,37 @@
 
               <!-- Output JSON from filtered set -->
               <xsl:for-each select="exsl:node-set($filteredObservations)/ccda:observation">
-                <xsl:variable name="resourceUUID">
+                <xsl:variable name="questionCode" select="ccda:code/@code"/>
+
+                <xsl:variable name="encounterEffectiveTime">
+                    <xsl:choose>
+                        <xsl:when test="ccda:effectiveTime/@value">
+                            <xsl:call-template name="formatDateTime">
+                                <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
+                            </xsl:call-template>
+                        </xsl:when>
+                        <xsl:when test="$encounterEffectiveTimeValue">
+                            <xsl:value-of select="$encounterEffectiveTimeValue"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:value-of select="$currentTimestamp"/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>
+
+                <xsl:variable name="encounterEffectiveTimeDigits" select="translate($encounterEffectiveTime, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
+
+                <xsl:variable name="observationIdSource">
                   <xsl:choose>
-                    <xsl:when test="normalize-space(ccda:id/@extension)">
-                      <xsl:value-of select="normalize-space(ccda:id/@extension)"/>
+                    <!-- Use extension if present and not empty -->
+                    <xsl:when test="ccda:id/@extension and normalize-space(ccda:id/@extension) != ''">
+                      <xsl:value-of select="concat($questionCode, '-', ccda:id/@extension)"/>
                     </xsl:when>
+
+                    <!-- Fallback: questionCode + encounterEffectiveTime -->
                     <xsl:otherwise>
-                      <xsl:value-of select="normalize-space(ccda:id/@root)"/>
+                      <xsl:value-of
+                        select="concat($questionCode, '-', $encounterEffectiveTimeDigits)"/>
                     </xsl:otherwise>
                   </xsl:choose>
                 </xsl:variable>
@@ -1950,7 +2055,7 @@
                 <xsl:variable name="observationResourceId">
                   <xsl:call-template name="generateFixedLengthResourceId">
                     <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                    <xsl:with-param name="sha256ResourceId" select="$resourceUUID"/>
+                    <xsl:with-param name="sha256ResourceId" select="$observationIdSource"/>
                   </xsl:call-template>
                 </xsl:variable>
                 { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
