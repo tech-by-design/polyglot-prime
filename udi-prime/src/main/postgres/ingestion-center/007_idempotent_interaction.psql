@@ -412,7 +412,7 @@ begin
         SELECT EXISTS (
             SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
-            WHERE tenant_id = p_tenant_id
+            WHERE tenant_id_lower  = lower(p_tenant_id)
         )
         INTO v_exists;
 
@@ -439,7 +439,7 @@ begin
         SELECT EXISTS (
             SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
-            WHERE tenant_id = p_tenant_id
+            WHERE tenant_id_lower  = lower(p_tenant_id)
               AND bundle_id = p_bundle_id
         )
         INTO v_exists;
@@ -467,7 +467,7 @@ begin
         SELECT EXISTS (
             SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
-            WHERE tenant_id = p_tenant_id
+            WHERE tenant_id_lower  = lower(p_tenant_id)
               AND hub_interaction_id = p_interaction_id
         )
         INTO v_exists;
@@ -480,6 +480,37 @@ begin
                         'message', 'No OperationOutcome found. The provided interactionId does not belong to the specified tenantId.',
                         'tenantId', p_tenant_id,
                         'bundleId', NULL,
+                        'interactionId', p_interaction_id
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+
+   ------------------------------------------------------------------
+    -- 5 Tenant + Interaction + bundle_id mismatch
+    ------------------------------------------------------------------
+    IF (p_interaction_id IS NOT NULL AND p_interaction_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> ''
+          AND p_bundle_id IS NOT NULL AND p_bundle_id <> '') THEN
+
+        SELECT EXISTS (
+            SELECT DISTINCT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id_lower  = lower(p_tenant_id)
+              AND hub_interaction_id = p_interaction_id
+              AND bundle_id = p_bundle_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. No records were found for the given interaction and bundle ID in this tenant.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', p_bundle_id,
                         'interactionId', p_interaction_id
                     )
                 )::text;
@@ -500,7 +531,7 @@ begin
     SELECT
     r.bundle_id,
     r.hub_interaction_id,
-    r.tenant_id,
+    r.tenant_id_lower AS tenant_id,
 
     -- From Forward HTTP Request only
     MAX(r.created_at)
@@ -522,26 +553,26 @@ begin
         FILTER (WHERE r.nature = 'Forwarded HTTP Response Error')
         AS replay_on
 
-    FROM techbd_udi_ingress.sat_interaction_fhir_request r
-    LEFT JOIN LATERAL jsonb_path_query(
-        r.payload,
-        '$.entry[*].resource ? (@.resourceType == "OperationOutcome")'
-        ) AS oo ON TRUE
-    WHERE r.nature IN (
-        'Forward HTTP Request',
-        'Forwarded HTTP Response Error'
-    )
-        AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
-        AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
-        AND (p_tenant_id IS NULL OR r.tenant_id = p_tenant_id)
-    GROUP BY
-        r.bundle_id,
-        r.hub_interaction_id,
-        r.tenant_id
-    ) t
-    ORDER BY t.created_at DESC NULLS LAST
-    LIMIT 1;
+FROM techbd_udi_ingress.sat_interaction_fhir_request r
+LEFT JOIN LATERAL jsonb_path_query(
+    r.payload,
+    '$.entry[*].resource ? (@.resourceType == "OperationOutcome")'
+) AS oo ON TRUE
+WHERE r.nature IN (
+    'Forward HTTP Request',
+    'Forwarded HTTP Response Error'
+)
+AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
+AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
+AND (p_tenant_id IS NULL OR r.tenant_id_lower = lower(p_tenant_id))
+GROUP BY
+    r.bundle_id,
+    r.hub_interaction_id,
+    r.tenant_id_lower
+) t
+ORDER BY t.created_at DESC NULLS LAST
+LIMIT 1;
 
-    RETURN v_result;
-    END;
-    $function$;
+RETURN v_result;
+END;
+$function$;
