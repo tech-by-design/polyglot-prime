@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{layout/prime}">
 
-<head> 
+<head>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <style>
         .grid-description {
@@ -69,6 +69,48 @@
             font-size: 16px;
         }
 
+        .detail-wrapper {
+            padding: 10px 15px;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .detail-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .primary-action-btn {
+            background-color: #1976d2;
+            color: #ffffff;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 10px;
+            line-height: 1.2;
+        }
+
+        .primary-action-btn:hover {
+            background-color: #1565c0;
+        }
+
+        .primary-action-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.35);
+        }
+
+
+        .detail-grid {
+            height: 250px;
+        }
     </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
@@ -118,97 +160,97 @@
                 return container;
             }
 
-                    function cellRenderer2(params) {
+            function cellRenderer2(params) {
 
-                         const field = params.colDef.field;
-                            let showDrilldown = false;
+                const field = params.colDef.field;
+                let showDrilldown = false;
 
-                            if (field === 'techbd_processed') {
-                                showDrilldown = params.data.qe_total_submissions !== params.data.techbd_processed;
-                            } else if (field === 'valid_bundles') {
-                                showDrilldown = params.data.techbd_processed !== params.data.valid_bundles;
-                            } else if (field === 'shinny_datalake_submissions') {
-                                showDrilldown = params.data.valid_bundles !== params.data.shinny_datalake_submissions;
-                            }
+                if (field === 'techbd_processed') {
+                    showDrilldown = params.data.qe_total_submissions !== params.data.techbd_processed;
+                } else if (field === 'valid_bundles') {
+                    showDrilldown = params.data.techbd_processed !== params.data.valid_bundles;
+                } else if (field === 'shinny_datalake_submissions') {
+                    showDrilldown = params.data.valid_bundles !== params.data.shinny_datalake_submissions;
+                }
 
-                            if (!showDrilldown) {
-                                return params.value ?? 0;
-                            }
-                        const container = document.createElement('div');
-                        const arrow = document.createElement('span');
-                        const button = document.createElement('button');
+                if (!showDrilldown) {
+                    return params.value ?? 0;
+                }
+                const container = document.createElement('div');
+                const arrow = document.createElement('span');
+                const button = document.createElement('button');
 
-                        function updateArrow() {
-                            arrow.innerText =
-                                params.node.expanded &&
-                                params.node.data.activeDrilldown === params.colDef.field
-                                    ? '▼'
-                                    : '▶';
-                        }
+                function updateArrow() {
+                    arrow.innerText =
+                        params.node.expanded &&
+                            params.node.data.activeDrilldown === params.colDef.field
+                            ? '▼'
+                            : '▶';
+                }
 
-                        arrow.style.cursor = 'pointer';
-                        arrow.style.marginRight = '5px';
+                arrow.style.cursor = 'pointer';
+                arrow.style.marginRight = '5px';
 
-                        button.innerText = params.value ?? 0;
-                        button.style.marginLeft = '5px';
+                button.innerText = params.value ?? 0;
+                button.style.marginLeft = '5px';
 
-                        container.appendChild(arrow);
-                        container.appendChild(button);
+                container.appendChild(arrow);
+                container.appendChild(button);
 
-                        updateArrow();
+                updateArrow();
 
-                        container.addEventListener('click', () => {
-                        const node = params.node;
-                        const clickedField = params.colDef.field;
+                container.addEventListener('click', () => {
+                    const node = params.node;
+                    const clickedField = params.colDef.field;
 
-                        let buttonPressed;
-                        if (clickedField === 'shinny_datalake_submissions') {
-                            buttonPressed = 'shinny_datalake_submissions';
-                        } else if (clickedField === 'shinny_datalake_submissions_failed') {
-                            buttonPressed = 'qc_test_submissions';
-                        }else if (clickedField === 'valid_bundles') {
-                            buttonPressed = 'valid_bundles';
-                        }else if (clickedField === 'techbd_processed') {
-                            buttonPressed = 'techbd_processed';
-                        }
+                    let buttonPressed;
+                    if (clickedField === 'shinny_datalake_submissions') {
+                        buttonPressed = 'shinny_datalake_submissions';
+                    } else if (clickedField === 'shinny_datalake_submissions_failed') {
+                        buttonPressed = 'qc_test_submissions';
+                    } else if (clickedField === 'valid_bundles') {
+                        buttonPressed = 'valid_bundles';
+                    } else if (clickedField === 'techbd_processed') {
+                        buttonPressed = 'techbd_processed';
+                    }
 
 
-                        const isSameDrilldown =
-                            node.expanded && node.data.activeDrilldown === clickedField;
+                    const isSameDrilldown =
+                        node.expanded && node.data.activeDrilldown === clickedField;
 
-                        //  CASE 1: Same arrow clicked → CLOSE
-                        if (isSameDrilldown) {
-                            node.setExpanded(false);
-                            node.data.activeDrilldown = null;
-                            node.data.buttonPressed = null;
+                    //  CASE 1: Same arrow clicked → CLOSE
+                    if (isSameDrilldown) {
+                        node.setExpanded(false);
+                        node.data.activeDrilldown = null;
+                        node.data.buttonPressed = null;
 
-                            params.api.refreshCells({
-                                rowNodes: [node],
-                                force: true
-                            });
-                            return;
-                        }
+                        params.api.refreshCells({
+                            rowNodes: [node],
+                            force: true
+                        });
+                        return;
+                    }
 
-                        //  CASE 2: Switching drilldowns → close first
-                        if (node.expanded) {
-                            node.setExpanded(false);
-                        }
+                    //  CASE 2: Switching drilldowns → close first
+                    if (node.expanded) {
+                        node.setExpanded(false);
+                    }
 
-                        //  CASE 3: Open new drilldown
-                        node.data.activeDrilldown = clickedField;
-                        node.data.buttonPressed = buttonPressed;
+                    //  CASE 3: Open new drilldown
+                    node.data.activeDrilldown = clickedField;
+                    node.data.buttonPressed = buttonPressed;
 
-                        setTimeout(() => {
-                            node.setExpanded(true);
-                            params.api.refreshCells({
-                                rowNodes: [node],
-                                force: true
-                            });
-                        }, 0);
-                    });
+                    setTimeout(() => {
+                        node.setExpanded(true);
+                        params.api.refreshCells({
+                            rowNodes: [node],
+                            force: true
+                        });
+                    }, 0);
+                });
 
-                 return container;         
-                
+                return container;
+
             }
 
             function qeNameCellRenderer(params) {
@@ -223,54 +265,54 @@
                 return `${qeName}`;
             }
 
-           const detailGridOptions2 = {
-                            columnDefs: [
-                                {
-                                    headerName: "TechBD Interaction Id",
-                                    field: "hub_interaction_id",
-                                    filter: "agTextColumnFilter",
-                                    headerTooltip: "Unique Id For Identify The Record",
-                                    minWidth: 250,
-                                    flex: 1,
-                                    cellRenderer: params => {
-                                        const hub_interaction_id = params.value;
-                                        const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+            const detailGridOptions2 = {
+                columnDefs: [
+                    {
+                        headerName: "TechBD Interaction Id",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Unique Id For Identify The Record",
+                        minWidth: 250,
+                        flex: 1,
+                        cellRenderer: params => {
+                            const hub_interaction_id = params.value;
+                            const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
 
-                                        const button = document.createElement('button');
-                                        button.innerText = hub_interaction_id;
-                                        button.style.textDecoration = 'underline';
+                            const button = document.createElement('button');
+                            button.innerText = hub_interaction_id;
+                            button.style.textDecoration = 'underline';
 
-                                        button.addEventListener('click', () => {
-                                            modalAide.viewFetchedJsonValue(
-                                                window.shell.serverSideUrl(
-                                                    `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`
-                                                )
-                                            );
-                                        });
+                            button.addEventListener('click', () => {
+                                modalAide.viewFetchedJsonValue(
+                                    window.shell.serverSideUrl(
+                                        `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`
+                                    )
+                                );
+                            });
 
-                                        return button;
-                                    }
-                                },
-                                {
-                                    headerName: "Submission Date",
-                                    field: "created_at",
-                                    filter: "agDateColumnFilter",
-                                    minWidth: 200,
-                                    flex: 1
-                                },
-                                {
-                                    headerName: "Error Description",
-                                    field: "error_message",
-                                    filter: "agTextColumnFilter",
-                                    minWidth: 300,
-                                    flex: 2
-                                }
-                            ],
-                            detailRowHeight: 280,
-                            defaultColDef: {
-                                resizable: true
-                            }
-                        };
+                            return button;
+                        }
+                    },
+                    {
+                        headerName: "Submission Date",
+                        field: "created_at",
+                        filter: "agDateColumnFilter",
+                        minWidth: 200,
+                        flex: 1
+                    },
+                    {
+                        headerName: "Error Description",
+                        field: "error_message",
+                        filter: "agTextColumnFilter",
+                        minWidth: 300,
+                        flex: 2
+                    }
+                ],
+                detailRowHeight: 280,
+                defaultColDef: {
+                    resizable: true
+                }
+            };
 
             const gridOptions = {
                 columnDefs: [
@@ -294,7 +336,7 @@
                         // },
                         filter: "agNumberColumnFilter",
                         headerTooltip: "FHIR File count from QE to Tech by Design"
-                    }, 
+                    },
                     {
                         headerName: "Tech by Design Processed",
                         field: "techbd_processed",
@@ -337,30 +379,52 @@
                 ],
                 masterDetail: true,
                 detailCellRendererParams: (params) => {
-                     if (!params.data || !params.data.buttonPressed) {
-                            return null;
-                        }
+                    if (!params.data || !params.data.buttonPressed) {
+                        return null;
+                    }
                     const headerText = getDrilldownHeaderText(params.data.buttonPressed);
 
-                    const detailTemplate = `
-                            <div style="padding: 10px 15px;">
-                                <div style="
-                                    font-weight: bold;
-                                    font-size: 16px;
-                                    margin-bottom: 10px;
-                                    color: #333;">
-                                    ${headerText}
-                                </div>
-
-                                <!-- THIS DIV IS REQUIRED -->
-                                <div data-ref="eDetailGrid" class="ag-theme-alpine" style="height: 250px;"></div>
-                            </div>
-                        `;
                     const startDate = $('#start-date').datepicker('getDate');
                     const endDate = $('#end-date').datepicker('getDate');
 
                     const formattedStartDate = formatDate(startDate);   //use formated date and avoid format unnessary date 
                     const formattedEndDate = formatDate(endDate);
+
+                    // Determine the correct link based on the field
+                    let link = '';
+                    switch (params.data.buttonPressed) {
+                        case 'techbd_processed':
+                            link = `/needs-attention/techbd-processing-failures?qeName=${encodeURIComponent(params.data.qe_name)}&fromDate=${formattedStartDate}&toDate=${formattedEndDate}`;
+                            break;
+                        case 'valid_bundles':
+                            link = `/needs-attention/techbd-validation-failures?qeName=${encodeURIComponent(params.data.qe_name)}&fromDate=${formattedStartDate}&toDate=${formattedEndDate}`;
+                            break;
+                        case 'shinny_datalake_submissions':
+                            link = `/needs-attention/shinny-datalake-failed-submissions?qeName=${encodeURIComponent(params.data.qe_name)}&fromDate=${formattedStartDate}&toDate=${formattedEndDate}`;
+                            break;
+                        default:
+                            link = `/needs-attention/shinny-datalake-failed-submissions?qeName=${encodeURIComponent(params.data.qe_name)}&fromDate=${formattedStartDate}&toDate=${formattedEndDate}`;
+                    }
+                    const detailTemplate = `
+                                        <div class="detail-wrapper">
+                                            <div class="detail-header">
+                                                <span class="detail-title">${headerText}</span>
+
+                                                <button type="button"
+                                                class="primary-action-btn"
+                                                onclick="window.open('${link}', '_blank')"
+                                                title="View all related records">
+                                                View All
+                                            </button>
+                                            </div>
+
+                                            <!-- THIS DIV IS REQUIRED -->
+                                            <div data-ref="eDetailGrid"
+                                                class="ag-theme-alpine detail-grid">
+                                            </div>
+                                        </div>
+                                    `;
+
 
                     // const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
 
@@ -372,7 +436,7 @@
 
                     const gridRequestBody = {
                         "startRow": 0,
-                        "endRow": 500,
+                        "endRow": 100,
                         "rowGroupCols": [],
                         "valueCols": [],
                         "pivotCols": [],
@@ -428,82 +492,82 @@
                     }
                     else if (params.data.buttonPressed === 'techbd_processed') {
 
-                                const url = window.shell.serverSideUrl(
-                                    `/api/ux/tabular/jooq/sp/${schemaName}/${missingTechByDesignDispositionDetails}.json?storedProcparams=${paramsJson}`
-                                );
+                        const url = window.shell.serverSideUrl(
+                            `/api/ux/tabular/jooq/sp/${schemaName}/${missingTechByDesignDispositionDetails}.json?storedProcparams=${paramsJson}`
+                        );
 
-                                return {
-                                    template: detailTemplate,
-                                    detailGridOptions: detailGridOptions2,
-                                    getDetailRowData: function (params) {
-                                        fetch(url, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(gridRequestBody)
-                                        })
-                                            .then(response => {
-                                                if (!response.ok) {
-                                                    console.error('Error fetching data:', response.status, response.statusText);
-                                                    return null;
-                                                }
-                                                if (response.url.includes('/?timeout=true')) {
-                                                    window.location.href = '/?timeout=true';
-                                                    return null;
-                                                }
-                                                return response.json();
-                                            })
-                                            .then(responseData => {
-                                                const data = responseData.data;
-                                                params.successCallback(data || []);
-                                            });
+                        return {
+                            template: detailTemplate,
+                            detailGridOptions: detailGridOptions2,
+                            getDetailRowData: function (params) {
+                                fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
                                     },
-                                    defaultColDef: {
-                                        flex: 1,
-                                        filter: true
-                                    }
-                                };
+                                    body: JSON.stringify(gridRequestBody)
+                                })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.error('Error fetching data:', response.status, response.statusText);
+                                            return null;
+                                        }
+                                        if (response.url.includes('/?timeout=true')) {
+                                            window.location.href = '/?timeout=true';
+                                            return null;
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(responseData => {
+                                        const data = responseData.data;
+                                        params.successCallback(data || []);
+                                    });
+                            },
+                            defaultColDef: {
+                                flex: 1,
+                                filter: true
                             }
-                             else if (params.data.buttonPressed === 'valid_bundles') {
+                        };
+                    }
+                    else if (params.data.buttonPressed === 'valid_bundles') {
 
-                                const url = window.shell.serverSideUrl(
-                                    `/api/ux/tabular/jooq/sp/${schemaName}/${missingSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`
-                                );
+                        const url = window.shell.serverSideUrl(
+                            `/api/ux/tabular/jooq/sp/${schemaName}/${missingSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`
+                        );
 
-                                return {
-                                    template: detailTemplate,
-                                    detailGridOptions: detailGridOptions2,
-                                    getDetailRowData: function (params) {
-                                        fetch(url, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(gridRequestBody)
-                                        })
-                                            .then(response => {
-                                                if (!response.ok) {
-                                                    console.error('Error fetching data:', response.status, response.statusText);
-                                                    return null;
-                                                }
-                                                if (response.url.includes('/?timeout=true')) {
-                                                    window.location.href = '/?timeout=true';
-                                                    return null;
-                                                }
-                                                return response.json();
-                                            })
-                                            .then(responseData => {
-                                                const data = responseData.data;
-                                                params.successCallback(data || []);
-                                            });
+                        return {
+                            template: detailTemplate,
+                            detailGridOptions: detailGridOptions2,
+                            getDetailRowData: function (params) {
+                                fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
                                     },
-                                    defaultColDef: {
-                                        flex: 1,
-                                        filter: true
-                                    }
-                                };
+                                    body: JSON.stringify(gridRequestBody)
+                                })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.error('Error fetching data:', response.status, response.statusText);
+                                            return null;
+                                        }
+                                        if (response.url.includes('/?timeout=true')) {
+                                            window.location.href = '/?timeout=true';
+                                            return null;
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(responseData => {
+                                        const data = responseData.data;
+                                        params.successCallback(data || []);
+                                    });
+                            },
+                            defaultColDef: {
+                                flex: 1,
+                                filter: true
                             }
+                        };
+                    }
                     else if (params.data.buttonPressed === 'qe_total_submissions') {
 
                         const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${missingSubmissionDetailsSP}/qe_name/${value}.json?storedProcparams=${paramsJson}`);
@@ -595,8 +659,8 @@
                 updateGridWithDates(startDate, endDate);
             });
 
-            $('#clearButton').click(function() {
-               location.reload();
+            $('#clearButton').click(function () {
+                location.reload();
             });
 
             function updateGridWithDates(startDate, endDate) {
@@ -634,18 +698,18 @@
                 agGridInstance.init('serverDataGrid');
 
             }
-                function getDrilldownHeaderText(buttonPressed) {
-                    switch (buttonPressed) {
-                        case 'techbd_processed':
-                            return 'Bundles That Failed Processing in Tech by Design';
-                        case 'valid_bundles':
-                            return 'Bundles Processed by Tech by Design but Failed Validation';
-                        case 'shinny_datalake_submissions':
-                            return 'SHIN-NY Data Lake Failed Submissions';
-                        default:
-                            return 'Details';
-                    }
+            function getDrilldownHeaderText(buttonPressed) {
+                switch (buttonPressed) {
+                    case 'techbd_processed':
+                        return 'Bundles That Failed Processing in Tech by Design';
+                    case 'valid_bundles':
+                        return 'Bundles Processed by Tech by Design but Failed Validation';
+                    case 'shinny_datalake_submissions':
+                        return 'SHIN-NY Data Lake Failed Submissions';
+                    default:
+                        return 'Details';
                 }
+            }
 
         });
 
@@ -659,31 +723,38 @@
             <div id="date-range">
                 <!-- The date range will be injected here -->
             </div>
-           <h1 class="assemtion">Assumptions</h1>
+            <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
                 <li>
-                    The <b>QE to Tech by Design File Count</b> represents the total number of submissions received from each QE.
+                    The <b>QE to Tech by Design File Count</b> represents the total number of submissions received from
+                    each QE.
                 </li>
                 <li>
-                    The <b>Tech by Design Processed Count</b> represents the number of submissions successfully processed by Tech by Design.
+                    The <b>Tech by Design Processed Count</b> represents the number of submissions successfully
+                    processed by Tech by Design.
                 </li>
                 <li>
-                    The <b>Valid Bundles Count</b> represents the number of processed submissions that passed validation.
+                    The <b>Valid Bundles Count</b> represents the number of processed submissions that passed
+                    validation.
                 </li>
                 <li>
-                    The <b>SHIN-NY Data Lake Count</b> represents the number of valid bundles successfully submitted to the SHIN-NY Data Lake.
+                    The <b>SHIN-NY Data Lake Count</b> represents the number of valid bundles successfully submitted to
+                    the SHIN-NY Data Lake.
                 </li>
                 <li>
-                    Each stage in the pipeline is expected to have the same count as the previous stage. Any mismatch between stages indicates a
-                     potential processing or validation issue.
+                    Each stage in the pipeline is expected to have the same count as the previous stage. Any mismatch
+                    between stages indicates a
+                    potential processing or validation issue.
                 </li>
                 <li>
-                    When a mismatch occurs with the previous stage, the successful bundle count is displayed in red, and a drill-down arrow is 
+                    When a mismatch occurs with the previous stage, the successful bundle count is displayed in red, and
+                    a drill-down arrow is
                     enabled to view interaction records that were missed or not processed at that stage.
                 </li>
                 <li>
-                   Clicking an interaction ID in the drill-down view opens a detailed popup displaying the full request and error 
-                   information to assist with troubleshooting.
+                    Clicking an interaction ID in the drill-down view opens a detailed popup displaying the full request
+                    and error
+                    information to assist with troubleshooting.
                 </li>
             </ul>
 
