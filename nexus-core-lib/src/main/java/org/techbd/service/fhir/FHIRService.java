@@ -59,6 +59,7 @@ import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.fhir.engine.OrchestrationEngine.Device;
+import org.techbd.udi.auto.jooq.ingress.routines.GetOperationOutcomeSendToNyec;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionFhirRequest;
 import org.techbd.util.AWSUtil;
 import org.techbd.util.AppLogger;
@@ -2019,6 +2020,85 @@ public class FHIRService {
 		}
 	}
 
+	public Object getOperationOutcomeSendToNyec(
+			final String interactionId,
+			final String bundleId,
+			final String tenantId) {
+
+		LOG.info("Fetching operation outcome send to NYEC | interactionId={} | bundleId={} | tenantId={}",
+				interactionId, bundleId, tenantId);
+
+		try {
+			final var jooqCfg = primaryDSLContext.configuration();
+			final var getOperationOutcomeSendToNyec = new GetOperationOutcomeSendToNyec();
+
+			getOperationOutcomeSendToNyec.setPInteractionId(interactionId);
+			getOperationOutcomeSendToNyec.setPBundleId(bundleId);
+			getOperationOutcomeSendToNyec.setPTenantId(tenantId);
+
+			int executeResult = getOperationOutcomeSendToNyec.execute(jooqCfg);
+			final var responseJson = (JsonNode) getOperationOutcomeSendToNyec.getReturnValue();
+
+			if (responseJson == null || responseJson.isEmpty()) {
+				LOG.warn("No operation outcome found | interactionId={} | bundleId={} | tenantId={}",
+						interactionId, bundleId, tenantId);
+				return Map.of(
+						"message", "No operation outcome found for the specified parameters.");
+			}
+
+			// Check if response is an array or object
+			if (responseJson.isArray()) {
+				final List<Map<String, Object>> response = Configuration.objectMapper.convertValue(
+						responseJson,
+						new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+						});
+				LOG.info("Successfully retrieved operation outcome array | interactionId={} | bundleId={} | count={}",
+						interactionId, bundleId, response.size());
+				return response;
+			} else {
+				final Map<String, Object> response = Configuration.objectMapper.convertValue(responseJson, Map.class);
+				LOG.info("Successfully retrieved operation outcome | interactionId={} | bundleId={}",
+						interactionId, bundleId);
+				return response;
+			}
+		} catch (org.jooq.exception.DataAccessException e) {
+			LOG.error("Database error fetching operation outcome | interactionId={} | bundleId={} | tenantId={} : {}",
+					interactionId, bundleId, tenantId, e.getMessage(), e);
+
+			// Check if the cause is a PSQLException
+			if (e.getCause() instanceof org.postgresql.util.PSQLException) {
+				final var psqlException = (org.postgresql.util.PSQLException) e.getCause();
+				final String errorMessage = psqlException.getMessage();
+
+				if (errorMessage != null && errorMessage.contains("{")) {
+					try {
+						final String jsonPart = errorMessage.substring(errorMessage.indexOf("{"));
+						final JsonNode errorJson = Configuration.objectMapper.readTree(jsonPart);
+						return Configuration.objectMapper.convertValue(errorJson, Map.class);
+					} catch (Exception jsonEx) {
+						LOG.warn("Failed to parse JSON from PostgreSQL error message", jsonEx);
+					}
+				}
+			}
+
+			return Map.of(
+					"error", Map.of(
+							"message", e.getMessage() != null ? e.getMessage() : "Database access error occurred",
+							"interactionId", interactionId != null ? interactionId : "",
+							"bundleId", bundleId != null ? bundleId : "",
+							"tenantId", tenantId != null ? tenantId : ""));
+		} catch (Exception e) {
+			LOG.error("Error fetching operation outcome | interactionId={} | bundleId={} | tenantId={} : {}",
+					interactionId, bundleId, tenantId, e.getMessage(), e);
+
+			return Map.of(
+					"error", Map.of(
+							"message", e.getMessage() != null ? e.getMessage() : "Unknown error occurred",
+							"interactionId", interactionId != null ? interactionId : "",
+							"bundleId", bundleId != null ? bundleId : "",
+							"tenantId", tenantId != null ? tenantId : ""));
+		}
+	}
 	private String getBaseUrl(final HttpServletRequest request) {
 		return Helpers.getBaseUrl(request);
 	}
