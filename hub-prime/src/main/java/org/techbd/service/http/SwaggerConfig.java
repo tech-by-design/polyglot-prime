@@ -130,6 +130,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("FHIR API")
                 .pathsToMatch("/metadata", "/Bundles/status/nyec-submission-failed",
+                "/Bundles/status/operation-outcome",
                         "/Bundle", "/Bundle/**",
                         "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
                         "/api/expect/fhir/**")
