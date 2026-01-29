@@ -133,7 +133,7 @@
                     "end_date": formattedEndDate
                 };
 
-                helpers.injectDateRangeText('date-range', 'This widget displays detailed user interaction performance data for the selected date range ( <b>{startDate}</b> to <b>{endDate}</b>). It includes the interaction ID, accessed URI, start and finish timestamps, total duration in milliseconds, and the related HTTP request ID. The duration is calculated using the request and response header timestamps to measure how long each interaction took. Records are sorted by the longest duration first, helping you quickly identify slow or high-latency interactions and analyze overall system performance.');                
+                helpers.injectDateRangeText('date-range', 'This widget displays detailed user interaction performance data for the selected date range ( <b>{startDate}</b> to <b>{endDate}</b>). It includes the interaction ID, accessed URI, start and finish timestamps, total duration in milliseconds. The duration is calculated using the request and response header timestamps to measure how long each interaction took. Records are sorted by the longest duration first, helping you quickly identify slow or high-latency interactions and analyze overall system performance.');                
 
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
