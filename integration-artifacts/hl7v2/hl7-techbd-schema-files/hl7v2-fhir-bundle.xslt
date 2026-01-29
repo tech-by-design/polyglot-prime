@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.2 -->
+<!-- Version : 0.2.3 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -964,10 +964,9 @@
         
         <xsl:if test="$organizationNPI or $organizationTIN">
           "identifier": [
-            <xsl:choose>
 
               <!-- NPI -->
-              <xsl:when test="$organizationNPI">
+              <xsl:if test="$organizationNPI">
                 {
                   "use": "official",
                   "type": {
@@ -982,10 +981,12 @@
                   "system": "http://hl7.org/fhir/sid/us-npi",
                   "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
-              </xsl:when>
+              </xsl:if>
+
+              <xsl:if test="$organizationNPI and $organizationTIN">,</xsl:if> <!-- Comma only if both exist -->
 
               <!-- TAX -->
-              <xsl:when test="$organizationTIN">
+              <xsl:if test="$organizationTIN">
                 {
                   "use": "official",
                   "type": {
@@ -1000,8 +1001,7 @@
                   "system": "http://www.irs.gov/",
                   "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
-              </xsl:when>
-            </xsl:choose>
+              </xsl:if>
           ],
         </xsl:if>
 		
