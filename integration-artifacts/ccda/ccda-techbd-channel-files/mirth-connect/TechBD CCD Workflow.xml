@@ -4,7 +4,7 @@
   <name>TechBD CCD Workflow</name>
   <description>Version: 0.4.39
 Incorporated CCDA data validation.</description>
-  <revision>23</revision>
+  <revision>24</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1640,7 +1640,7 @@ function validateMandatoryFields() {
     	// --------------------------------------------------------------------------------------------------------------------
     	// II. Encounter Resource
     	// -----------------------------
-    	try {
+    	/*try {
 	     var encompassingEncounter = ccdaXml.*::componentOf.*::encompassingEncounter[0];
 		if (encompassingEncounter) {
 		    // 1. Encounter class
@@ -1670,7 +1670,7 @@ function validateMandatoryFields() {
 		}
 	} catch (e) {
 	    logger.error(&quot;Error accessing encounter: &quot; + e);
-	}
+	}*/
 
 	// --------------------------------------------------------------------------------------------------------------------
     	// III. Organization (Location / Author Organization)
@@ -2464,7 +2464,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769676818350</time>
+        <time>1769689164583</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
