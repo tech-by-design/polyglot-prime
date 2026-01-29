@@ -410,7 +410,7 @@ begin
     ------------------------------------------------------------------
     IF p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
         SELECT EXISTS (
-            SELECT 1
+            SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
             WHERE tenant_id = p_tenant_id
         )
@@ -433,11 +433,11 @@ begin
     ------------------------------------------------------------------
     -- 3 Tenant + Bundle mismatch
     ------------------------------------------------------------------
-    IF p_bundle_id IS NOT NULL AND p_bundle_id <> ''
-       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+    IF (p_bundle_id IS NOT NULL AND p_bundle_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '') THEN
 
         SELECT EXISTS (
-            SELECT 1
+            SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
             WHERE tenant_id = p_tenant_id
               AND bundle_id = p_bundle_id
@@ -461,11 +461,11 @@ begin
     ------------------------------------------------------------------
     -- 4 Tenant + Interaction mismatch
     ------------------------------------------------------------------
-    IF p_interaction_id IS NOT NULL AND p_interaction_id <> ''
-       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+    IF (p_interaction_id IS NOT NULL AND p_interaction_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '') THEN
 
         SELECT EXISTS (
-            SELECT 1
+            SELECT DISTINCT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request
             WHERE tenant_id = p_tenant_id
               AND hub_interaction_id = p_interaction_id
@@ -491,41 +491,57 @@ begin
         'bundleId', bundle_id,
         'interactionId', hub_interaction_id,
         'tenantId', tenant_id,
-        'bundleSubmissionDate', created_at,
+        'bundleSubmittedToNyecAt', COALESCE(replay_on, created_at),
+        'replayStatus', replay_status,
         'operationOutcome', operation_outcome
     )
     INTO v_result
     FROM (
     SELECT
-        r.bundle_id,
-        r.hub_interaction_id,
-        r.tenant_id,
-        r.created_at,
-        COALESCE(
-            jsonb_agg(oo) FILTER (WHERE oo IS NOT NULL),
-            '[]'::jsonb
-        ) AS operation_outcome,
-        ROW_NUMBER() OVER (
-            PARTITION BY r.bundle_id
-            ORDER BY r.created_at DESC
-        ) AS rn
+    r.bundle_id,
+    r.hub_interaction_id,
+    r.tenant_id,
+
+    -- From Forward HTTP Request only
+    MAX(r.created_at)
+        FILTER (WHERE r.nature = 'Forward HTTP Request')
+        AS created_at,
+
+    COALESCE(
+        jsonb_agg(oo)
+            FILTER (WHERE r.nature = 'Forward HTTP Request' AND oo IS NOT NULL),
+        '[]'::jsonb
+    ) AS operation_outcome,
+
+    -- From Forwarded HTTP Response Error only
+    MAX(r.replay_status)
+        FILTER (WHERE r.nature = 'Forwarded HTTP Response Error')
+        AS replay_status,
+
+    MAX(r.replay_on)
+        FILTER (WHERE r.nature = 'Forwarded HTTP Response Error')
+        AS replay_on
+
     FROM techbd_udi_ingress.sat_interaction_fhir_request r
     LEFT JOIN LATERAL jsonb_path_query(
         r.payload,
         '$.entry[*].resource ? (@.resourceType == "OperationOutcome")'
-    ) AS oo ON TRUE
-    WHERE r.nature = 'Forward HTTP Request'
-      AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
-      AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
-      AND (p_tenant_id IS NULL OR r.tenant_id = p_tenant_id)
+        ) AS oo ON TRUE
+    WHERE r.nature IN (
+        'Forward HTTP Request',
+        'Forwarded HTTP Response Error'
+    )
+        AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
+        AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
+        AND (p_tenant_id IS NULL OR r.tenant_id = p_tenant_id)
     GROUP BY
         r.bundle_id,
         r.hub_interaction_id,
-        r.tenant_id,
-        r.created_at
-) t
-WHERE t.rn = 1;
+        r.tenant_id
+    ) t
+    ORDER BY t.created_at DESC NULLS LAST
+    LIMIT 1;
 
-RETURN v_result;
-END;
-$function$;
+    RETURN v_result;
+    END;
+    $function$;
