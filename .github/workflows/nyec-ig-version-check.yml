@@ -96,7 +96,7 @@ jobs:
 
     - name: Send email for PROD update
       if: env.PROD_UPDATED == 'true'
-      uses: dawidd6/action-send-mail@v3
+      uses: dawidd6/action-send-mail@v8
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
@@ -112,7 +112,7 @@ jobs:
 
     - name: Send email for QA update
       if: env.QA_UPDATED == 'true'
-      uses: dawidd6/action-send-mail@v3
+      uses: dawidd6/action-send-mail@v8
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
@@ -150,7 +150,7 @@ jobs:
 
     - name: Handle errors
       if: failure()
-      uses: dawidd6/action-send-mail@v3
+      uses: dawidd6/action-send-mail@v8
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
