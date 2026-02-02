@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.9</description>
-  <revision>36</revision>
+  <description>Version: 0.1.10</description>
+  <revision>39</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -75,8 +75,136 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>FileName validation</name>
+          <name>Validate Request and Headers</name>
           <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>logger.info(&quot;HTTP request validation started.&quot;);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+        globalMap.put(mapKey || headerName, value);
+    }
+
+    return value;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+// Mandatory: X-TechBD-Tenant-ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(&quot;User-Agent: &quot; + userAgent);
+
+var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
+channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
+logger.info(&quot;OrganizationName: &quot; + OrganizationName);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
+if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+	//1.CIN
+	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+	
+	//2.NPI
+	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+	logger.info(&quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
+	
+	//3.TIN
+	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+	logger.info(&quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
+	
+	// Check if both are missing — only then it&apos;s an error
+	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+	} else {
+	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+	    }
+	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+	    }
+	}
+	
+	//4. Facility Code
+	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+
+	//5. Encounter Type
+	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+
+//////////////////////////////////////////////////////
+// Read environment variables and set to global map //
+//////////////////////////////////////////////////////
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
+if(fhirBundleSubmissionApiUrl != null) {
+    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+} else {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+logger.info(&quot;HTTP request validation ended.&quot;);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>FileName validation</name>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
 function getOutcome(text, severity, code, interactionId) {
@@ -712,136 +840,8 @@ function sendDataLedgerSync(payload) {
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-            <name>Validate HTTP Request and collect headers</name>
-            <sequenceNumber>2</sequenceNumber>
-            <enabled>true</enabled>
-            <script>logger.info(&quot;HTTP request validation started.&quot;);
-
-var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-logger.info(&quot;Request URL: &quot; + requestedPath);
-
-if (requestedPath == &quot;/&quot;) {
-	return;
-}
-
-// Initialize missing headers array
-var missingHeaders = [];
-
-// Helper to check and store missing header
-function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
-    var value = $(&apos;headers&apos;).getHeader(headerName);
-    logger.info(headerName + &quot;: &quot; + value);
-
-    if (value == null || String(value).trim() === &quot;&quot;) {
-        missingHeaders.push(&quot;Missing required header &quot; + displayName);
-    } else if (storeInMap) {
-        channelMap.put(mapKey || headerName, value);
-        globalMap.put(mapKey || headerName, value);
-    }
-
-    return value;
-}
-
-///////////////////////////////////////////////////////////////////////////
-// Access the required header values using getHeader method
-// Mandatory: X-TechBD-Tenant-ID
-checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
-
-// Retrieve the Content-Type header
-var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
-// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
-if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
-    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
-}
-
-// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
-var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
-channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(&quot;User-Agent: &quot; + userAgent);
-
-var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
-channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
-logger.info(&quot;OrganizationName: &quot; + OrganizationName);
-
-var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
-channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
-logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
-
-channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
-channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
-
-//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
-if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
-	//1.CIN
-	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
-	
-	//2.NPI
-	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-	logger.info(&quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
-	
-	//3.TIN
-	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
-	logger.info(&quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
-	
-	// Check if both are missing — only then it&apos;s an error
-	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
-	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
-	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
-	} else {
-	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
-	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
-	    }
-	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
-	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
-	    }
-	}
-	
-	//4. Facility Code
-	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
-
-	//5. Encounter Type
-	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
-}
-
-// If any missing headers were found, throw a single error
-if (missingHeaders.length &gt; 0) {
-    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
-    logger.error(errorMessage);
-    setErrorResponse(400, errorMessage);
-    throw errorMessage;
-}
-
-
-
-//////////////////////////////////////////////////////
-// Read environment variables and set to global map //
-//////////////////////////////////////////////////////
-
-// Initialize missing environment variables array
-var missingEnvVars = [];
-
-// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
-var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
-if(fhirBundleSubmissionApiUrl != null) {
-    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
-    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
-} else {
-    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
-}
-
-// If any env vars are missing, throw a single error
-if (missingEnvVars.length &gt; 0) {
-    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Internal Server Error
-    throw errorMessage;
-}
-
-logger.info(&quot;HTTP request validation ended.&quot;);</script>
-          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
             <name>step_validate_profile_urls_env_variables</name>
-            <sequenceNumber>3</sequenceNumber>
+            <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
             <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
@@ -1272,7 +1272,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
             <name>API endpoint processing</name>
-            <sequenceNumber>4</sequenceNumber>
+            <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
             <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 logger.info(&quot;Request URL: &quot; + requestedPath);
@@ -2142,7 +2142,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1765881420461</time>
+        <time>1770036621838</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2151,5 +2151,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
