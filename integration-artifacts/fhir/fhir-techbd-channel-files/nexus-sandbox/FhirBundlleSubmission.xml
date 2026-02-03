@@ -1,10 +1,10 @@
 <channel version="4.6.0">
-  <id>c542b23b-6830-4b01-a1e3-65f0d3f8b787</id>
+  <id>57e84262-b0a0-4079-a149-072110a5a725</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.6
-Updated JDBC credentials to retrieve values directly from the Lookup Manager instead of the Secrets Manager.</description>
-  <revision>22</revision>
+  <description>Version: 0.8.7
+Fix the CSV drill-down issue by correcting masterInteractionId and groupInteractionId handling.</description>
+  <revision>27</revision>
   <sourceConnector version="4.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1467,7 +1467,8 @@ if (incomingMasterId != null &amp;&amp; incomingMasterId.trim() !== &apos;&apos;
 
 channelMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
 channelMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
-
+globalMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
+globalMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
 
 
 
@@ -1818,8 +1819,10 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	var DriverManager = java.sql.DriverManager;&#xd;
 	var conn = null;&#xd;
 	var stmt = null;
-&#xd;
-	&#xd;
+  var groupInteractionId = globalMap.get(&quot;groupInteractionId&quot;);
+  var masterInteractionId = globalMap.get(&quot;masterInteractionId&quot;);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: groupInteractionId: &quot; + groupInteractionId);
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: masterInteractionId: &quot; + masterInteractionId);&#xd;
 	try {&#xd;
 	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Inside DB Try&quot;);&#xd;
 &#xd;
@@ -1964,7 +1967,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
 		
 		// 21. p_source_hub_interaction_id
-		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setString(21, masterInteractionId);
 		
 		// 22. p_origin
 		stmt.setNull(22, java.sql.Types.VARCHAR);
@@ -1974,7 +1977,13 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setString(23, source);
 		
 		// 24. p_group_hub_interaction_id
+		var normalizedSource = source ? String(source).trim().toUpperCase() : null;
+		if (normalizedSource === &apos;CSV&apos;){
+			stmt.setString(24, groupInteractionId);
+			}
+		else{
 		stmt.setNull(24, java.sql.Types.VARCHAR);
+		}
 		
 		// 25. p_request_source
 		stmt.setNull(25, java.sql.Types.VARCHAR);
@@ -2145,7 +2154,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769582617071</time>
+        <time>1770125011854</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2156,14 +2165,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>b3d4d843-a0d5-4df4-a950-af5d46450a53</id>
-        <name>0_8_6</name>
+        <id>feb6c75a-7a59-4f02-810e-e64266e2003e</id>
+        <name>0_8_7</name>
         <channelIds>
-          <string>c542b23b-6830-4b01-a1e3-65f0d3f8b787</string>
+          <string>57e84262-b0a0-4079-a149-072110a5a725</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>255</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
