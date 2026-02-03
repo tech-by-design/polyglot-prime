@@ -1517,6 +1517,132 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('4a962119-f278-4d6b-ba59-7b7cf392e129','potential_need_indicated','WR','Weakly reactive','http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('414edf76-ee9a-4bd7-807a-3ecb00d4de2e','sexual_orientation','asked-declined','Asked But Declined','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.5.2','2025-07-17 13:23:06.459442+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
 
+/**  changes in 02-02-2026  **/
+
+DELETE FROM techbd_udi_ingress.ref_code_lookup
+WHERE ctid IN (
+    SELECT ctid
+    FROM techbd_udi_ingress.ref_code_lookup
+    WHERE code_type = 'language'
+      AND code IN ('ASL','acf','ase','crp','crs','gcr','gcf','ht','kmv','rcf','scf','sq','yue')
+    ORDER BY code
+    FOR UPDATE
+);
+
+DELETE FROM techbd_udi_ingress.ref_code_lookup
+WHERE ctid IN (
+    SELECT ctid
+    FROM techbd_udi_ingress.ref_code_lookup
+    WHERE code_type = 'ethnicity'
+      AND code IN ('2133-7','asked-declined','ASKU','OTH','UNK')
+    ORDER BY code
+    FOR UPDATE
+);
+
+
+DELETE FROM techbd_udi_ingress.ref_code_lookup
+WHERE ctid IN (
+    SELECT ctid
+    FROM techbd_udi_ingress.ref_code_lookup
+    WHERE code_type = 'observation_category_sdoh'
+      AND code IN (
+        'digital-access',
+        'digital-literacy',
+        'educational-attainment',
+        'elder-abuse',
+        'financial-insecurity',
+        'health-insurance-coverage-status',
+        'intimate-partner-violence',
+        'material-hardship',
+        'medical-cost-burden',
+        'personal-health-literacy',
+        'social-connection',
+        'stress',
+        'veteran-status'
+      )
+    ORDER BY code
+    FOR UPDATE
+);
+
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('b02b8dcb-9666-46e8-9b16-ec3bc43b9e53','language','acf','Saint Lucian Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('f5937a0f-470f-4ed5-bfb6-8d13fdd3a5b7','language','ar','Arabic','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('b42242e7-7f3f-4aa3-aaf5-2796d31824a6','language','ase','American Sign Language','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('e6c4661b-11da-492a-8718-730cfe9d00ed','language','bn','Bengali','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('cc3d998a-d03f-40b2-a115-b41e0dea6698','language','crp','Creoles and pidgins','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('1e7d2453-35ca-478b-8dc5-e549117c9865','language','crs','Seselwa Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('c2a3665a-da12-414f-a2dc-edca05175932','language','cs','Czech','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('17c97939-1921-4f0b-8ef0-2593ed14e57a','language','da','Danish','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('0df091ad-25cf-4525-9800-f2c5536ce403','language','de','German','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('67945f23-f9dd-49e7-a7cc-6a8262d5483b','language','de-AT','German (Austria)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('f5d720e9-6df5-48b3-9261-d538ada585bd','language','de-CH','German (Switzerland)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('39adca68-9c21-450f-8e87-d1ad62366d2c','language','de-DE','German (Germany)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('04a48c91-1f19-4afe-a719-20ed15289f6c','language','el','Greek','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('f9a00dce-409e-44b8-95ec-53cbca2971be','language','en','English','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('26221b8b-6015-47e2-abd7-d45afc2d1730','language','en-AU','English (Australia)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('232b8491-ee4c-4aea-a161-735b8dc7aa53','language','en-CA','English (Canada)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('d79e921a-7c44-400a-ac02-58d41fbfcead','language','en-GB','English (Great Britain)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('e2b2e02d-2fcd-4a1b-b70e-124ff9b14cd3','language','en-IN','English (India)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('07c9c91e-0a62-4020-986a-16dcc1cc4155','language','en-NZ','English (New Zealand)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('d0e85a5d-9340-4e48-ac1f-22e977069bce','language','en-SG','English (Singapore)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('48c77a0c-f01c-45ea-9a09-0279ac8f026a','language','en-US','English (United States)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('cababd12-b93a-41b0-b0cf-a6ab8dcaf4e2','language','es','Spanish','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('45b6fc5e-d3f9-4a0c-b31e-ef1bd4e1c869','language','es-AR','Spanish (Argentina)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('113628a2-f0ae-42e3-8510-547a5e94b175','language','es-ES','Spanish (Spain)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('57ac7f80-6c99-4df4-95cd-556f0c92fff1','language','es-UY','Spanish (Uruguay)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('4babea75-4048-4f37-8592-dd1fc37e11ee','language','fi','Finnish','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('1d3e335f-178a-478e-9f2c-459fe0c29205','language','fr','French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('9f8854e3-c513-4a41-b805-05ac57bcdb52','language','fr-BE','French (Belgium)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('0748ab0a-999c-48d7-94ee-be0e7d35444b','language','fr-CH','French (Switzerland)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('e1b1e5ba-1efe-4e1d-bd2a-f811ab5df7fa','language','fr-FR','French (France)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('ed8dc006-2b5c-46b0-9e73-c9a080c2c856','language','fy','Frysian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('edf80136-7bc2-48f1-9828-6d03b18d081f','language','fy-NL','Frysian (Netherlands)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('f2997dcc-f236-481f-b21f-a7cd10e35c66','language','gcr','Guadeloupean Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('646224c4-2219-490c-8fb3-9fba0720ae45','language','gcf','Guianese Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('05c34820-06a5-4f9c-8f1e-3c9796440d0a','language','hi','Hindi','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('50261e3d-a06e-4f01-b38e-05792337e480','language','ht','Haitian Creole','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('4360c3ca-b7f4-4456-ad19-7dce769f428c','language','hr','Croatian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('29497c57-f163-4d26-ad4c-ee93583405d8','language','id','Indonesian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('b0b3e0de-4b54-4696-b596-cbbd3ddc2f2d','language','it','Italian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('deb05287-7252-432a-b62b-eb325d887018','language','it-CH','Italian (Switzerland)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('cd7642a9-a959-43a0-99a1-ec4106392837','language','it-IT','Italian (Italy)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('5129444d-8172-4716-aabc-86ba4d360250','language','ja','Japanese','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('d4e60637-15df-4f0b-8cc7-a8807f2ca1ec','language','kmv','Karipúna Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('3088bc76-3701-4c88-8e6d-a0eb89404d50','language','ko','Korean','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('863167a7-c0b9-4661-be02-5499e4a42c55','language','nl','Dutch','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('fd969c48-7941-4bda-be35-820d10b5bdb4','language','nl-BE','Dutch (Belgium)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('7ddb657a-854a-48d0-a02b-bf0171f7db2b','language','nl-NL','Dutch (Netherlands)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('b6223b16-e505-4d60-9950-623244723272','language','no','Norwegian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('8cea035a-9686-47c0-bd3d-e57d58183e6e','language','no-NO','Norwegian (Norway)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('8a6b29e8-a41f-41cc-9335-8e393f017e4e','language','pa','Punjabi','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('086a1a6a-f1c9-4834-93e9-5340265582be','language','pl','Polish','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('cadd1b88-04cd-4047-b121-7221c3408064','language','pt','Portuguese','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('bfacae68-80bc-49d3-932d-752c3c01417f','language','pt-BR','Portuguese (Brazil)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('718f8563-d1eb-4511-8c5f-d42d444fc4b9','language','rcf','Réunion Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('ff4387c0-7f4d-49e1-875a-0a3eec03b152','language','ru','Russian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('67a6a256-ad02-4b89-a31c-fe42f4f3123f','language','ru-RU','Russian (Russia)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('54aaa05d-d1e3-4e7c-a73d-131cb33d6122','language','scf','San Miguel Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('2ccfaea1-850f-4c9e-a5b3-644059c7071e','language','sr','Serbian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('adf0d454-64b7-4df0-a73a-3b1394834478','language','sr-RS','Serbian (Serbia)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('ff00f203-e41d-480e-958d-2046c6a6f503','language','so','Somali','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('8588341f-bd10-4061-a574-a83fb1774dd0','language','sq','Albanian','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('5517739a-269b-49c0-8304-47aff26f5439','language','sv','Swedish','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('95cdfe28-97c4-456b-b595-543f29490e71','language','sv-SE','Swedish (Sweden)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('93d61449-7181-441f-874e-07b8496fbc3b','language','te','Telugu','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('0d8a2127-6ae0-4279-b768-8f7dd8af2f66','language','yue','Cantonese','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('275eae5a-0a56-4021-97f2-02541107951b','language','zh','Chinese','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('31c4497c-3bb0-4762-90a1-c99d5bacec77','language','zh-CN','Chinese (China)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('8e9310c4-64f9-412f-a5fa-10af9cd3be2f','language','zh-HK','Chinese (Hong Kong)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('f0538e84-507f-46ad-9d42-112635577a2b','language','zh-SG','Chinese (Singapore)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
+	 ('b8eb7afe-e99e-4c01-970b-960df654487c','language','zh-TW','Chinese (Taiwan)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
 
 /*

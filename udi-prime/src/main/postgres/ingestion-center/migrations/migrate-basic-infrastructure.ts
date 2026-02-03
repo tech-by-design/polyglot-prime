@@ -1590,14 +1590,30 @@ const migrateSP = pgSQLa.storedProcedure(
                       ON techbd_udi_ingress.ref_code_lookup USING btree (code_type)';
           END IF;
 
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_constraint
-              WHERE conname = 'ref_code_lookup_code_type_code_c_key'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.ref_code_lookup
-              ADD CONSTRAINT ref_code_lookup_code_type_code_c_key UNIQUE (code, code_type);
-          END IF;
+    -- Drop old UNIQUE constraint if it exists
+    IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ref_code_lookup_code_type_code_c_key'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.ref_code_lookup
+        DROP CONSTRAINT ref_code_lookup_code_type_code_c_key;
+    END IF;
+
+    -- Create NULL-safe UNIQUE index if it does not exist
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND indexname = 'ref_code_lookup_unique_code_type_system_value_idx'
+    ) THEN
+        CREATE UNIQUE INDEX ref_code_lookup_unique_code_type_system_value_idx
+        ON techbd_udi_ingress.ref_code_lookup (
+            code,
+            code_type,
+            COALESCE(system_value, '__NULL__')
+        );
+    END IF;
       PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
 
       ${nexusInteractionHub}
