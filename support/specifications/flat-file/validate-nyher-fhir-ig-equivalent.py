@@ -2,12 +2,120 @@ import csv
 import sys
 import json
 import os
-from frictionless import Package, transform, steps, extract, Check, errors, Checklist
+from frictionless import Package, transform, steps, extract, Check, errors, Checklist, Resource, Pipeline
 from datetime import datetime, date
 import re  # Import required for regular expression handling
+import calendar  # Import for leap year checking
 
 
-# Custom Check Class
+class OptionalYesNoFlagsCheck(Check):
+    """Custom check for optional Yes/No flag fields"""
+    code = "optional-yes-no-flags"
+    Errors = [errors.RowError]  # ✅ Fixed: Use proper error class
+
+    def __init__(self, fields):
+        super().__init__()  # ✅ Fixed: Add super() call
+        self.fields = fields
+
+    def validate_row(self, row):
+        for field in self.fields:
+            # Column missing → OK
+            if field not in row:
+                continue
+
+            value = row[field]
+
+            # Empty value → OK (optional)
+            if value in (None, ""):
+                continue
+
+            # Invalid value → ERROR
+            if value not in ("Yes", "No", "yes", "no"):
+                note = f"Field '{field}' must be Yes or No when present, got: '{value}'"
+                yield errors.RowError.from_row(row, note=note)  # ✅ Fixed: Use proper error creation
+
+
+# Custom Check Class for Date/Time Leap Year Validation
+class ValidateLeapYearDates(Check):
+    code = "validate_leap_year_dates"
+    Errors = [errors.RowError]
+
+    # Define date/time fields that need leap year validation
+    DATETIME_FIELDS = [
+        "FACILITY_LAST_UPDATED",
+        "SCREENING_LAST_UPDATED",
+        "CONSENT_LAST_UPDATED",
+        "ENCOUNTER_LAST_UPDATED",
+        "PATIENT_LAST_UPDATED",
+        "SEXUAL_ORIENTATION_LAST_UPDATED",
+        "ENCOUNTER_START_DATETIME",
+        "ENCOUNTER_END_DATETIME",
+        "CONSENT_DATE_TIME",
+        "SCREENING_START_DATETIME",
+        "SCREENING_END_DATETIME"
+    ]
+
+    DATE_FIELDS = [
+        "PATIENT_BIRTH_DATE"
+    ]
+
+    def validate_row(self, row):
+        # Check datetime fields (ISO 8601 format with timezone)
+        for field_name in self.DATETIME_FIELDS:
+            field_value = row.get(field_name)
+            if field_value and not self._is_valid_datetime(field_value):
+                note = f"Invalid date in '{field_name}': '{field_value}'. Date does not exist (check leap year, month days)."
+                yield errors.RowError.from_row(row, note=note)
+
+        # Check date fields (YYYY-MM-DD format) already checked in frictionless patten
+        # for field_name in self.DATE_FIELDS:
+        #     field_value = row.get(field_name)
+        #     if field_value and not self._is_valid_date(field_value):
+        #         note = f"Invalid date in '{field_name}': '{field_value}'. Date does not exist (check leap year, month days)."
+        #         yield errors.RowError.from_row(row, note=note)
+
+    def _is_valid_datetime(self, datetime_str):
+        """Validate ISO 8601 datetime string with proper leap year checking"""
+        try:
+            # Extract date part from datetime string (before 'T')
+            if 'T' not in datetime_str:
+                return False
+            date_part = datetime_str.split('T')[0]
+            return self._is_valid_date(date_part)
+        except Exception:
+            return False
+
+    def _is_valid_date(self, date_str):
+        """Validate date string (YYYY-MM-DD) with proper leap year checking"""
+        try:
+            # Parse the date string
+            year, month, day = map(int, date_str.split('-'))
+
+            # Check basic ranges
+            if year < 1900 or year > 2100:  # Reasonable year range
+                return False
+            if month < 1 or month > 12:
+                return False
+            if day < 1:
+                return False
+
+            # Check days in month with leap year consideration
+            if month in [1, 3, 5, 7, 8, 10, 12]:  # 31-day months
+                return day <= 31
+            elif month in [4, 6, 9, 11]:  # 30-day months
+                return day <= 30
+            elif month == 2:  # February
+                if calendar.isleap(year):
+                    return day <= 29  # Leap year
+                else:
+                    return day <= 28  # Non-leap year
+
+            return False
+        except (ValueError, IndexError):
+            return False
+
+
+# Custom Check Class for Answer Code Validation
 class ValidateAnswerCode(Check):
     code = "validate_answer_code"
     Errors = [errors.RowError]
@@ -131,6 +239,49 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
 
         # Load the package with Frictionless
         package = Package(package_descriptor)
+        
+        ###########################
+
+        # Detect which flag fields are actually present in CSV files and sync schema
+        potential_flag_fields = ["VISIT_PART_2_FLAG", "VISIT_OMH_FLAG", "VISIT_OPWDD_FLAG"]
+        detected_flag_fields = []
+
+        for i, resource in enumerate(package.resources):
+            if resource.name == "qe_admin_data":
+                # print(f"\n🔍 Checking flag fields in {resource.name}")
+                try:
+                    # Read the CSV header to see what fields are actually present
+                    with open(resource.path, 'r') as f:
+                        header_line = f.readline().strip()
+                        actual_headers = [h.strip() for h in header_line.split(',')]
+
+                    # print(f"📊 CSV has {len(actual_headers)} columns")
+
+                    # Find which flag fields are present in CSV
+                    present_flags = [field for field in potential_flag_fields if field in actual_headers]
+                    missing_flags = [field for field in potential_flag_fields if field not in actual_headers]
+
+                    if present_flags:
+                        # print(f"✅ Found flag fields in CSV: {present_flags}")
+                        detected_flag_fields.extend(present_flags)
+
+                    if missing_flags:
+                        # print(f"🗑️  Flag fields missing from CSV: {missing_flags}")
+
+                        # Remove missing flag fields from schema to avoid validation errors
+                        current_fields = resource.schema.fields
+                        filtered_fields = [field for field in current_fields
+                                         if field.name not in missing_flags]
+
+                        if len(filtered_fields) != len(current_fields):
+                            # print(f"🔧 Removing {len(current_fields) - len(filtered_fields)} flag fields from schema")
+                            resource.schema.fields = filtered_fields
+                            # print(f"📊 Schema now has {len(filtered_fields)} fields")
+
+                except Exception as e:
+                    print(f"⚠️  Could not read CSV headers: {e}")
+                break
+            ##########################
 
         # Transform and validate
         common_transform_steps = [ 
@@ -208,10 +359,21 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                         "message": user_friendly_message,
                         "type": "data-processing-errors"
                     })
+       
 
-        checklist = Checklist(checks=[ValidateAnswerCode()])
-        # Validate the package
-        report = package.validate(checklist=checklist)  
+        # Create checklist with only detected flag fields
+        checks = [ValidateAnswerCode()]
+
+        # Only add flag validation if flag fields were detected
+        if detected_flag_fields:
+            # print(f"🔍 Adding flag validation for: {detected_flag_fields}")
+            checks.insert(0, OptionalYesNoFlagsCheck(detected_flag_fields))
+        # else:
+        #     print("ℹ️  No flag fields detected - skipping flag validation")
+
+        checklist = Checklist(checks=checks)
+        # Validate the package - frictionless will handle optional fields marked with required: false
+        report = package.validate(checklist=checklist)
          
 
         # Add the validation report to results
