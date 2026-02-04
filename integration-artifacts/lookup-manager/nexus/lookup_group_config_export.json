@@ -22,6 +22,7 @@
     "PROFILE_URL_BUNDLE" : "/StructureDefinition/SHINNYBundleProfile",
     "PROFILE_URL_CONSENT" : "/StructureDefinition/shinny-Consent",
     "PROFILE_URL_ENCOUNTER" : "/StructureDefinition/shinny-encounter",
+    "PROFILE_URL_LOCATION" : "http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location",
     "PROFILE_URL_OBSERVATION" : "/StructureDefinition/shinny-observation-screening-response",
     "PROFILE_URL_ORGANIZATION" : "/StructureDefinition/shin-ny-organization",
     "PROFILE_URL_PATIENT" : "/StructureDefinition/shinny-patient",
@@ -34,5 +35,5 @@
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle"
   },
-  "exportDate" : "2026-01-28T07:14:02.620+00:00"
+  "exportDate" : "2026-02-04T10:36:31.003+00:00"
 }
