@@ -139,24 +139,32 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                         observation.addCategory(category2);
                                 } else {
-                                        String[] rawCodes = data.getObservationCategorySdohCode().split(";");
-                                        String sdohText = data.getObservationCategorySdohText();
+                                    String[] rawCodes = data.getObservationCategorySdohCode().split(";");
+                                    String sdohText = data.getObservationCategorySdohText();
 
-                                        for (String rawCode : rawCodes) {
-                                                String trimmedCode = rawCode.trim();
-                                                if (!trimmedCode.isEmpty()) {
-                                                        String code = fetchCode(trimmedCode,
-                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                                                        interactionId);
-                                                        String text = fetchDisplay(trimmedCode, sdohText,
-                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                                                        interactionId);
+                                    for (String rawCode : rawCodes) {
+                                        String trimmedCode = rawCode.trim();
+                                        if (!trimmedCode.isEmpty()) {
+                                            String codeExists = fetchCodeIfPresent(
+                                                    trimmedCode,
+                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                    interactionId);
 
-                                                        observation.addCategory(createCategory(
-                                                                        "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                                        code, text));
-                                                }
+                                            if (codeExists == null || codeExists.isBlank()) {
+                                                continue;
+                                            }
+                                            String code = fetchCode(trimmedCode,
+                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                    interactionId);
+                                            String text = fetchDisplay(trimmedCode, sdohText,
+                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                    interactionId);
+
+                                            observation.addCategory(createCategory(
+                                                    "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                                                    code, text));
                                         }
+                                    }
                                 }
 
                                 Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
