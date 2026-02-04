@@ -1518,7 +1518,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('414edf76-ee9a-4bd7-807a-3ecb00d4de2e','sexual_orientation','asked-declined','Asked But Declined','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.5.2','2025-07-17 13:23:06.459442+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
 
 /**  changes in 02-02-2026  **/
-
+/*
 DELETE FROM techbd_udi_ingress.ref_code_lookup
 WHERE ctid IN (
     SELECT ctid
@@ -1528,6 +1528,7 @@ WHERE ctid IN (
     ORDER BY code
     FOR UPDATE
 );
+*/
 
 DELETE FROM techbd_udi_ingress.ref_code_lookup
 WHERE ctid IN (
@@ -1564,6 +1565,7 @@ WHERE ctid IN (
     FOR UPDATE
 );
 
+/*
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('b02b8dcb-9666-46e8-9b16-ec3bc43b9e53','language','acf','Saint Lucian Creole French','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
 	 ('f5937a0f-470f-4ed5-bfb6-8d13fdd3a5b7','language','ar','Arabic','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
@@ -1642,6 +1644,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('8e9310c4-64f9-412f-a5fa-10af9cd3be2f','language','zh-HK','Chinese (Hong Kong)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
 	 ('f0538e84-507f-46ad-9d42-112635577a2b','language','zh-SG','Chinese (Singapore)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
 	 ('b8eb7afe-e99e-4c01-970b-960df654487c','language','zh-TW','Chinese (Taiwan)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+*/
 
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
 
