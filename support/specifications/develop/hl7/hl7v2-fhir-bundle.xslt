@@ -1739,7 +1739,7 @@
 		  <!-- Declare allowed LOINC codes -->
 		  
 		  <!-- Loop through OBX siblings under the current OBR and filter -->
-		  <xsl:for-each select="following-sibling::OBX[
+		  <!-- <xsl:for-each select="following-sibling::OBX[
 								  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
 								  and (normalize-space(OBX.3/OBX.3.1) != '105511-0' and translate(
                       normalize-space(OBX.3/OBX.3.2),
@@ -1751,7 +1751,41 @@
 									  normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
 									  and generate-id(preceding-sibling::OBR[1]) = generate-id(current()/preceding-sibling::OBR[1])
 								  ])
-								]">
+								]"> -->
+      <xsl:for-each select="
+            following-sibling::OBX[
+              generate-id(preceding-sibling::OBR[1]) = generate-id(current())
+
+              and string(OBX.5/OBX.5.1)
+              and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+
+              and string(OBX.3/OBX.3.1)
+              and normalize-space(OBX.3/OBX.3.1) != 'UNK'
+
+              and (
+                normalize-space(OBX.3/OBX.3.1) != '105511-0'
+                and translate(
+                  normalize-space(OBX.3/OBX.3.2),
+                  'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                  'abcdefghijklmnopqrstuvwxyz'
+                ) != 'ahc-hrsn patient consent'
+              )
+
+              and contains(
+                $allowedCodes,
+                concat('|', normalize-space(OBX.3/OBX.3.1), '|')
+              )
+
+              and not(
+                preceding-sibling::OBX[
+                  normalize-space(OBX.3/OBX.3.1)
+                    = normalize-space(current()/OBX.3/OBX.3.1)
+                  and generate-id(preceding-sibling::OBR[1])
+                    = generate-id(current()/preceding-sibling::OBR[1])
+                ]
+              )
+            ]
+          ">
 			<xsl:variable name="questionCode" select="normalize-space(OBX.3/OBX.3.1)"/>
 			<xsl:variable name="observationResourceId">
 			  <xsl:call-template name="generateFixedLengthResourceId">
