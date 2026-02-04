@@ -43,6 +43,20 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
     }
 
+    public String fetchCodeIfPresent(String valueFromCsv, String category, String interactionId) {
+        if (valueFromCsv == null || category == null) {
+            return null;
+        }
+        if (CODE_LOOKUP == null) {
+            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(primaryDslContext, interactionId);
+        }
+        Map<String, String> innerMap = CODE_LOOKUP.get(category);
+        if (innerMap == null) {
+            return null;
+        }        
+        return innerMap.get(valueFromCsv.toLowerCase());
+    }
+
     public String fetchSystem(String code, String valueFromCsv, String category, String interactionId) {
         if (SYSTEM_LOOKUP == null) {
             BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(primaryDslContext, interactionId);
