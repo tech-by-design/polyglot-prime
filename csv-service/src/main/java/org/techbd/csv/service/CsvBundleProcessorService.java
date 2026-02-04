@@ -603,7 +603,7 @@ private List<Object> processScreening(final String groupKey,
         List<Map<String, Object>> errors = new ArrayList<>();
     
         for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
-            String[] keyParts = entry.getKey().split("\\|", 2);
+            String[] keyParts = entry.getKey().split("\\|", 3);
             String subType = keyParts[0];
             String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
             String errorDetail = (keyParts.length > 2 && keyParts[2] != null) ? keyParts[2] : "";
