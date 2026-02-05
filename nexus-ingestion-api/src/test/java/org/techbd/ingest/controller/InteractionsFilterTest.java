@@ -2,7 +2,7 @@ package org.techbd.ingest.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,8 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.techbd.ingest.config.PortConfig;
+import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.SoapFaultUtil;
@@ -66,6 +69,7 @@ class InteractionsFilterTest {
     private PortResolverService portResolverService;
 
     private InteractionsFilter interactionsFilter;
+    private MockedStatic<FeatureEnum> featureEnumMock;
 
     // Sample certificate content for testing
     private static final String SAMPLE_CERT_PEM = 
@@ -82,7 +86,19 @@ class InteractionsFilterTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(any(Class.class))).thenReturn(templateLogger);
-        interactionsFilter = new InteractionsFilter(appLogger, portConfig,portResolverService, s3Client, soapFaultUtil);
+        
+        // Mock FeatureEnum.isEnabled() to return false by default
+        featureEnumMock = mockStatic(FeatureEnum.class);
+        featureEnumMock.when(() -> FeatureEnum.isEnabled(any(FeatureEnum.class))).thenReturn(false);
+        
+        interactionsFilter = new InteractionsFilter(appLogger, portConfig, portResolverService, s3Client, soapFaultUtil);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (featureEnumMock != null) {
+            featureEnumMock.close();
+        }
     }
 
     @Nested
@@ -197,9 +213,12 @@ class InteractionsFilterTest {
             // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
             
-            // Then: Should continue processing (may fail at cert validation, but URL decoding works)
-            // Note: Full cert validation would require valid certs and S3 setup
-            verify(templateLogger, atLeastOnce()).info(contains("decoded client cert header as URL-encoded"));
+            // Then: Should have decoded the certificate and logged it
+            // Verify the specific log message about URL decoding (with 2 arguments: message pattern and length)
+            verify(templateLogger).info(
+                "InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}",
+                443
+            );
         }
 
         @Test
@@ -214,7 +233,10 @@ class InteractionsFilterTest {
             
             // Then: Should proceed without mTLS processing
             verify(filterChain).doFilter(request, response);
-            verify(templateLogger).info(contains("mtls NOT configured for port 8080"));
+            verify(templateLogger).info(
+                "InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
+                8080
+            );
         }
     }
 
@@ -236,6 +258,12 @@ class InteractionsFilterTest {
         
         // Mock other headers that might be checked
         when(request.getHeader("X-Forwarded-Port")).thenReturn(String.valueOf(port));
+        
+        // Mock port resolver to return a PortEntry
+        PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
+        portEntry.port = port;
+        portEntry.mtls = null; // No mTLS by default
+        when(portResolverService.resolve(any())).thenReturn(java.util.Optional.of(portEntry));
     }
 
     private void setupPortConfigMock(int port, String mtlsName) {
@@ -245,6 +273,7 @@ class InteractionsFilterTest {
         
         when(portConfig.isLoaded()).thenReturn(true);
         when(portConfig.getPortConfigurationList()).thenReturn(java.util.Arrays.asList(portEntry));
+        when(portResolverService.resolve(any())).thenReturn(java.util.Optional.of(portEntry));
     }
 
     @Test
