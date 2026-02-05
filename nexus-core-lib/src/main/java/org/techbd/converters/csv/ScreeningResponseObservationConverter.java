@@ -486,30 +486,38 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 record CategoryCodeText(String code, String text) {}
 
                 groupData.stream()
-                .flatMap(data -> {
-                        String[] rawCodeArr = (data.getObservationCategorySdohCode() != null)
-                                ? data.getObservationCategorySdohCode().split(";")
-                                : new String[0];
+                        .flatMap(data -> {
+                            String[] rawCodeArr = (data.getObservationCategorySdohCode() != null)
+                                    ? data.getObservationCategorySdohCode().split(";")
+                                    : new String[0];
 
-                        List<CategoryCodeText> codeTextList = new ArrayList<>();
+                            List<CategoryCodeText> codeTextList = new ArrayList<>();
 
-                        for (String rawCode : rawCodeArr) {
-                        String trimmedCode = rawCode.trim();
-                        if (!trimmedCode.isEmpty()) {
-                                String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
-                                if (code != null && !code.isEmpty()) {
-                                String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
-                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
-                                codeTextList.add(new CategoryCodeText(code, text));
+                            for (String rawCode : rawCodeArr) {
+                                String trimmedCode = rawCode.trim();
+                                if (!trimmedCode.isEmpty()) {
+                                    String codeExists = fetchCodeIfPresent(
+                                            trimmedCode,
+                                            CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                            interactionId);
+
+                                    if (codeExists == null || codeExists.isBlank()) {
+                                        continue;
+                                    }
+                                    String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                    if (code != null && !code.isEmpty()) {
+                                        String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
+                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                        codeTextList.add(new CategoryCodeText(code, text));
+                                    }
                                 }
-                        }
-                        }
+                            }
 
-                        return codeTextList.stream();
-                })
-                .distinct()
-                .forEach(ct -> groupObservation.addCategory(
-                        createCategory(SDOH_CATEGORY_URL, ct.code(), ct.text())));
+                            return codeTextList.stream();
+                        })
+                        .distinct()
+                        .forEach(ct -> groupObservation.addCategory(
+                                createCategory(SDOH_CATEGORY_URL, ct.code(), ct.text())));
 
                 // Set code from groupData (take from first available)
                 ScreeningObservationData firstData = groupData.stream().findFirst().orElse(null);
