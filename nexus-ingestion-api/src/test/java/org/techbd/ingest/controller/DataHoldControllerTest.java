@@ -5,6 +5,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,12 +89,14 @@ class DataHoldControllerTest {
 
         PortConfig.PortEntry entry = new PortConfig.PortEntry();
         entry.port = 6060;
-        entry.dataDir = "/hold/per/port/dir/";
+        entry.dataDir = "/test/dir/";
         when(portConfig.isLoaded()).thenReturn(true);
         when(portConfig.getPortConfigurationList()).thenReturn(java.util.List.of(entry));
 
-        String bucket = controller.getDataBucketName();
-        assertThat(bucket).isEqualTo("hold-bucket/hold/per/port/dir");
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.REQ_X_FORWARDED_PORT, "6060");
+        String bucket = controller.getDataBucketName() + "/" + controller.getDataKey(null, headers, null, null);
+        assertThat(bucket).contains("hold-bucket/test/dir");
     }
 
     @Test
