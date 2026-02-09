@@ -34,6 +34,38 @@ class OptionalYesNoFlagsCheck(Check):
                 note = f"Field '{field}' must be Yes or No when present, got: '{value}'"
                 yield errors.RowError.from_row(row, note=note)  # ✅ Fixed: Use proper error creation
 
+class ValidatePotentialNeedIndicated(Check):
+    """Custom check for POTENTIAL_NEED_INDICATED based on ANSWER_CODE values"""
+    code = "validate-potential-need-indicated"
+    Errors = [errors.RowError]
+
+    def __init__(self):
+        super().__init__()
+        # Define the ANSWER_CODE values that require POTENTIAL_NEED_INDICATED to be "pos"
+        self.positive_answer_codes = {
+            "la31994-9", "la31995-6", "la31996-4", "la28580-1", "la31997-2",
+            "la31998-0", "la31993-1", "la32000-4", "la32001-2", "la33-6",
+            "la32002-0", "la28397-0", "la6729-3", "la31981-6", "la31982-4"
+        }
+
+    def validate_row(self, row):
+        # Check if both fields exist in the row
+        if "ANSWER_CODE" not in row or "POTENTIAL_NEED_INDICATED" not in row:
+            return
+        
+        answer_code = row["ANSWER_CODE"]
+        potential_need = row["POTENTIAL_NEED_INDICATED"]
+               
+        # Skip validation if either field is empty
+        if not answer_code or not potential_need:
+            return
+
+        # Check if ANSWER_CODE is in the list that requires "pos"
+        if answer_code in self.positive_answer_codes:
+            # POTENTIAL_NEED_INDICATED should be "pos" (can be "pos" alone or part of a pattern like "pos;neg")
+            if not ("pos" in potential_need):
+                note = f"When ANSWER_CODE is '{answer_code}', POTENTIAL_NEED_INDICATED must contain 'pos', got: '{potential_need}'"
+                yield errors.RowError.from_row(row, note=note)
 
 # Custom Check Class for Date/Time Leap Year Validation
 class ValidateLeapYearDates(Check):
@@ -365,7 +397,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
        
 
         # Create checklist with only detected flag fields
-        checks = [ValidateAnswerCode()]
+        checks = [ValidateAnswerCode(), ValidatePotentialNeedIndicated()]
 
         # Only add flag validation if flag fields were detected
         if detected_flag_fields:
