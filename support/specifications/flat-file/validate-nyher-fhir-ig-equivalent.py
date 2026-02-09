@@ -44,7 +44,7 @@ class ValidatePotentialNeedIndicated(Check):
         # Define the ANSWER_CODE values that require POTENTIAL_NEED_INDICATED to be "pos"
         self.positive_answer_codes = {
             "la31994-9", "la31995-6", "la31996-4", "la28580-1", "la31997-2",
-            "la31998-0", "la31993-1", "la32000-4", "la32001-2", "la33-6",
+            "la31998-0", "la31999-8", "la32000-4", "la32001-2", "la33-6",
             "la32002-0", "la28397-0", "la6729-3", "la31981-6", "la31982-4"
         }
 
