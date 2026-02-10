@@ -17,6 +17,7 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
@@ -116,7 +117,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 // max date
                                 // available in all
                                 // screening records
-                                observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
+                                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
+                                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                observation.setLanguage("en");
+
+                                if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
+                                    Extension languageExtension = new Extension(
+                                            "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-language");
+                                    CodeableConcept valueConcept = new CodeableConcept();
+                                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                                    languageExtension.setValue(valueConcept);
+                                    observation.addExtension(languageExtension);
+                                }
                                 observation
                                                 .setStatus(Observation.ObservationStatus
                                                                 .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
@@ -465,7 +477,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         meta.setLastUpdated(new Date());
                 }
                 groupObservation.setMeta(meta);
-                groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
+                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
+                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                groupObservation.setLanguage("en");
+
+                if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
+                    Extension languageExtension = new Extension(
+                            "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-language");
+                    CodeableConcept valueConcept = new CodeableConcept();
+                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                    languageExtension.setValue(valueConcept);
+                    groupObservation.addExtension(languageExtension);
+                }
 
                 // Set status from screening profile
                 String screeningStatusCode = screeningProfileData.getScreeningStatusCode();
