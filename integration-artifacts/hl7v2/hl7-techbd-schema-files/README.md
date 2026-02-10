@@ -14,6 +14,8 @@ HL7v2 schemas and XSLT files are essential for:
 | File Name                | Description (if known)                |
 |--------------------------|---------------------------------------|
 | hl7v2-fhir-bundle.xslt   | XSLT for transforming HL7v2 to FHIR   |
+| hl7v2-validation-schema  | XSLT for validating the HL7 file      |
+| TechBD HL7 Workflow.xml  | TechBD HL7 workflow definition        |
 
 ## 🔗 Related Documentation
 
