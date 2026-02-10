@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>36a74bff-d07f-422d-ad1d-65f4746ca322</id>
+  <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
-  <name>TechBD CCD Workflow With DB</name>
-  <description>Version: 0.4.38</description>
-  <revision>84</revision>
+  <name>TechBD CCD Workflow</name>
+  <description>Version: 0.4.40</description>
+  <revision>25</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -254,7 +254,8 @@ function setErrorResponse(statusCode, errorMessage) {
 /*
 * Util function to generate json error message
 */
-function getJsonInvalidOperationOutcome(errorMsg, code) {
+function getJsonInvalidOperationOutcome(errorMsg, code, severity) {
+	if (!severity) { severity = &quot;error&quot;;}
 	return { &quot;OperationOutcome&quot;: {
                     &quot;validationResults&quot;: [
                         {
@@ -263,7 +264,7 @@ function getJsonInvalidOperationOutcome(errorMsg, code) {
                                 &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
                                 &quot;issue&quot;: [
                                     {
-                                        &quot;severity&quot;: &quot;error&quot;,
+                                        &quot;severity&quot;: severity,
                                         &quot;code&quot;: code,
                                         &quot;details&quot;: {
                                             &quot;text&quot;: errorMsg
@@ -336,6 +337,38 @@ function sendDataLedgerSync(payload) {
     }
 }
 
+function saveDataLedgerSync(interactionId) {
+	//*********** DATA LEDGER ***************
+     var  currentTimestamEnd = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+		// Add 3 more random digits to simulate microseconds
+		var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+		return &apos;.&apos; + micros + &apos;Z&apos;;
+	});
+	var payload = JSON.stringify({
+        executedAt: currentTimestamEnd,
+        actor: &quot;TechBD&quot;,
+        action: &quot;sent&quot;, 
+        destination: &quot;Invalid - CCD Conversion Failed&quot;,
+        dataId: interactionId,
+        payloadType: &quot;hrsnBundle&quot;
+  	});		
+		
+	// Check if tracking is enabled
+	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
+	   logger.info(&quot;data ledger api call -BEGIN sent&quot;);
+	   try {
+        	sendDataLedgerSync(payload);
+	   } catch (e) {
+	        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+	   }
+	   logger.info(&quot;data ledger api call -END sent&quot;);
+	} else {
+	   logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
+	}
+	//*********** DATA LEDGER ***************
+}			
+
 // Function to validate addr dates
 function validateAddrDates(addr, contextTag) {
 	try {
@@ -355,13 +388,15 @@ function validateAddrDates(addr, contextTag) {
 			     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
 			     responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMessage, &quot;invalid&quot;)));
 			     //throw errorMessage; // Stop further processing by throwing an exception
-			     throw new Error(errorMessage);
+			     ////////throw new Error(errorMessage);
+			     return;
 		      }
 		  }
 		}
      } catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        throw new Error(&quot;Validation Error: &quot; + error.message);
+        ///////throw new Error(&quot;Validation Error: &quot; + error.message);
+        return;
      }
 }
     
@@ -393,106 +428,202 @@ function validateLowHighDates(xmlData) {
      }
 }
 
+/**
+ * Extract ClinicalDocument XML safely from raw input
+ * @param rawXml - raw request body
+ * @return extracted ClinicalDocument XML string OR null
+ */
+function extractClinicalDocumentFromRawXML(rawXml) {
+
+    if (!rawXml) {
+        return null;
+    }
+
+    try {
+        // Normalize input
+        rawXml = String(rawXml).replace(/^\uFEFF/, &apos;&apos;).trim();  //Remove BOM and leading/trailing whitespace
+
+        var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
+        var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
+
+        var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
+        var start = rawXml.indexOf(startTag);
+        var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+
+        if (start === -1 || end === -1) {
+            return null;
+        }
+
+        end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
+        var extractedXml = rawXml.substring(start, end);
+
+        // Add XML declaration if missing
+        if (!hasXmlDeclaration) {
+            extractedXml = xmlDeclaration + extractedXml;
+        }
+
+        return extractedXml;
+
+    } catch (e) {
+        logger.error(&quot;extractClinicalDocumentFromRawXML failed: &quot; + e.message);
+        return null;
+    }
+}
+
 function extractClinicalDocument(rawXml) {
 	try {
-		//var rawXml = message.toString();  // Or sourceXml.toString(), if defined
-		logger.info(&quot;rawXml: &quot; + rawXml);		
-		rawXml = String(rawXml).replace(/^\uFEFF/, &apos;&apos;).trim();  // remove BOM and leading/trailing whitespace
-		var extractedXml = &quot;&quot;;
-		var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
-		
-		var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
-		var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
-		var start = rawXml.indexOf(startTag);
-		var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+		// Save Original Payload
+	     saveCcdaPayload(
+	        interactionId,
+	        tenantId,
+	        requestedPath,
+	        rawXml,
+	        &quot;saveOgCCDAPayload&quot;
+	     );     
 
-		
-		if (start !== -1 &amp;&amp; end !== -1) {
-		    end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
-		    extractedXml = rawXml.substring(start, end);
-		
-		    // If no XML declaration, add it manually
-		    if (!hasXmlDeclaration) {
-		        extractedXml = xmlDeclaration + extractedXml;
-		    }
-		
-		    //logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
-		    channelMap.put(&apos;fileContent&apos;, extractedXml);
-		    msg = channelMap.get(&apos;fileContent&apos;);
+	     var extractedXml = extractClinicalDocumentFromRawXML(rawXml);
 
-		    try{
-				//DB Save Original Payload
-			     var result = saveCcdaPayload(
-				    interactionId,
-				   tenantId,
-				   requestedPath,
-				   msg,
-				   &quot;saveOgCCDAPayload&quot;
-				);
-			} catch (e) {
-				var errorMsg;
-		            if (e instanceof JavaException) {
-		                errorMsg = &quot;CCDA Original Payload save: &quot; + e.toString();
-		            } else {
-		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-		            }
-		            throw new Error(&quot;Unexpected error during saving&quot;);
-			}
+		if (!extractedXml || extractedXml.trim().length == 0 || extractedXml.trim() == &apos;&apos;) {
+		    var errorMsg = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
+		    var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
 		
-		} else {
-			try{
-				//DB Save Original Payload
-			     var result = saveCcdaPayload(
-				    interactionId,
-				   tenantId,
-				   requestedPath,
-				   rawXml,
-				   &quot;saveOgCCDAPayload&quot;
-				);
-			} catch (e) {
-				var errorMsg;
-		            if (e instanceof JavaException) {
-		                errorMsg = &quot;CCDA Original Payload save: &quot; + e.toString();
-		            } else {
-		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-		            }
-		            throw new Error(&quot;Unexpected error during saving&quot;);
-			}
-			
-		    logger.error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
-		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;)));
-		    var errorResponse = getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
-		    var operation = &quot;saveValidationFailed&quot;;
-		    saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-		    throw new Error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    saveCcdaPayload(
+		        interactionId,
+		        tenantId,
+		        requestedPath,
+		        errorResponse,
+		        &quot;saveValidationFailed&quot;
+		    );
+		
+		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(errorResponse));		    
+		    return;
 		}
-	} catch (error) {
-		try{
-				//DB Save Original Payload
-			     var result = saveCcdaPayload(
-				    interactionId,
-				   tenantId,
-				   requestedPath,
-				   rawXml,
-				   &quot;saveOgCCDAPayload&quot;
-				);
-			} catch (e) {
-				var errorMsg;
-		            if (e instanceof JavaException) {
-		                errorMsg = &quot;CCDA Og Payload save: &quot; + e.toString();
-		            } else {
-		                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-		            }
-		            throw new Error(&quot;Unexpected error during saving&quot;);
-			}
 		
-        logger.error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
-        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message)));
-	   var errorResponse = getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
-	   var operation = &quot;saveValidationFailed&quot;;
-	   saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-	   throw new Error(&quot;Error while extracting ClinicalDocument from XML: &quot; + error.message);
-     }
+		channelMap.put(&apos;fileContent&apos;, extractedXml);		
+	    	return extractedXml;
+		    
+	} catch (e) {
+        logger.error(&quot;extractClinicalDocument failed: &quot; + e.message);
+        return null;
+    }
+}
+
+function failAndExit(errorMsg, code, severity, interactionId, tenantId, requestedPath) {
+    var outcome = getJsonInvalidOperationOutcome(errorMsg, code, severity);
+    try {
+		saveCcdaPayload(interactionId, tenantId, requestedPath, outcome, &quot;saveValidationFailed&quot;);
+		logger.info(&quot;Successfully saved validation failure information&quot;);
+    } catch (e) {
+        	logger.error(&quot;Failed to save validation failure: &quot; + e.message);
+    }
+
+    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(outcome));
+    channelMap.put(&apos;jsonResult&apos;, JSON.stringify(outcome));
+    logger.error(&quot;STOPPING PROCESSING: &quot; + errorMsg);
+
+    throw new Error(&quot;STOP_PROCESSING&quot;);
+}
+
+function applyPhiFilter(xmlString) {
+    var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+    var transformer = javax.xml.transform.TransformerFactory
+        .newInstance()
+        .newTransformer(
+            new javax.xml.transform.stream.StreamSource(
+                new java.io.File(xsltPath)
+            )
+        );
+
+    var writer = new java.io.StringWriter();
+    transformer.transform(
+        new javax.xml.transform.stream.StreamSource(new java.io.StringReader(xmlString)),
+        new javax.xml.transform.stream.StreamResult(writer)
+    );
+    return writer.toString();
+}
+
+function validateAgainstXsd(xmlString) {
+    var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+    var schema = javax.xml.validation.SchemaFactory
+        .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
+        .newSchema(new javax.xml.transform.stream.StreamSource(new java.io.File(xsdFilePath)));
+
+    var validator = schema.newValidator();
+    validator.validate(
+        new javax.xml.transform.stream.StreamSource(
+            new java.io.StringReader(xmlString)
+        )
+    );
+}
+
+function convertCcdaToFhirBundle(phiFilteredXml) {
+
+    // -----------------------------------
+    // Load the XSLT template
+    // -----------------------------------
+    var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
+    var xsltFile = new java.io.File(xsltPath);
+    var xsltStream = new java.io.FileInputStream(xsltFile);
+
+    var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+    var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+    var transformer = transformerFactory.newTransformer(xsltSource);
+
+    // -----------------------------------
+    // Timestamp parameter
+    // -----------------------------------
+    // Set the current timestamp parameter in ISO 8601 format
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
+
+    transformer = set_fhir_resource_profile_urls(transformer); // Pass all the profile urls as parameters to XSLT
+
+    // -----------------------------------
+    // Base FHIR URL handling
+    // -----------------------------------
+    var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);  // Retrieve the X-TechBD-Base-FHIR-URL header
+    logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+    
+    var validUrlsEnv = Packages.java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;); // Retrieve the VALID_URLS environment variable (comma-separated list)
+    logger.info(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
+	
+    // Convert VALID_URLS to an array for validation
+    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+	
+    // Check if the header value is valid
+    if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+	    if (validUrls.includes(customBaseFhirUrl)) {
+	        // Store valid value in channelMap
+	        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+		   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+	    } else {
+	        // Throw a Bad Request error if the URL is not in the valid list
+			var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
+			logger.error(errorMessage);
+	    }
+    }
+
+    // -----------------------------------
+    // Transform CCDA → FHIR Bundle
+    // -----------------------------------
+    var writer = new java.io.StringWriter();
+    transformer.transform(
+        new javax.xml.transform.stream.StreamSource(
+            new java.io.StringReader(phiFilteredXml)
+        ),
+        new javax.xml.transform.stream.StreamResult(writer)
+    );
+
+    // -----------------------------------
+    // Clean JSON
+    // -----------------------------------
+    var rawJson = writer.toString();
+    var jsonObject = JSON.parse(rawJson);
+    var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
+
+    logger.info(&quot;Cleaned FHIR Bundle JSON : &quot; + cleanedJsonString);	
+    channelMap.put(&apos;ccd_fhir_bundle&apos;, cleanedJsonString);
+    return cleanedJsonString;
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -612,47 +743,6 @@ if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
 var boundary = rawData.split(&quot;\r\n&quot;)[0];
 var parts = rawData.split(boundary);
 
-// Initialize variables to store file content
-//var fileContent = null;
-////------------------------------------------------------------------------------------
-//// Loop through parts to find the file part
-//var i = 0;
-//for each (var part in parts) {
-//    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
-//        logger.info(&quot;Part count &quot; + ++i);
-//        // Extract the file content (skip headers)
-//        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
-//        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
-//        break;
-//    }
-//}
-//
-//// Validate the file content
-//if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length == 0) {
-//    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-//    // Set the HTTP response status to 400 (Bad Request)
-//    setErrorResponse(400, errorMessage);
-//    throw errorMessage;
-//} else {
-//    logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
-//    logger.info(&quot;File content: (input validation) - &quot; + fileContent);
-//}
-//------------------------------------------------------------------------------------
-//var xml = new XML(rawData);
-//var CCDAMessage = xml.Content.Part.Content.toString();
-//logger.info(&quot;CCDAMessage : &quot; + CCDAMessage);
-//
-//var CCDAMessage = String(rawData[&apos;Content&apos;][&apos;Part&apos;][&apos;Content&apos;]);
-//logger.info(&quot;CCDA DATA : &quot; + CCDAMessage);
-//
-// Safety check
-//if (CCDAMessage == null || CCDAMessage.trim() === &quot;&quot;) {
-//	logger.warn(&quot;No CCDA content found in uploaded file.&quot;);
-//    var errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-//    	setErrorResponse(400, errorMessage);
-//    	throw errorMessage;
-//}
-//------------------------------------------------------------------------------------
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -679,7 +769,12 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     throw errorMessage;
 }
 
-extractClinicalDocument(rawData);
+var xmlExtracted = extractClinicalDocument(rawData);
+if (!xmlExtracted || xmlExtracted.trim().length == 0 || xmlExtracted.trim() == &apos;&apos;) {
+    errorMessage = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
+    //setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
 
 //////////////////////////////////////////////////////
 // Read environment variables and set to global map //
@@ -732,16 +827,32 @@ function getManufacturerModelName(xmlData) {
 			var cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
 			
 			var manufacturerModelName = &apos;&apos;;
+			var softwareName = &apos;&apos;;
 			var ehrVendor = &apos;&apos;;
 			var lowerName = &apos;&apos;;
 			var modelNode = &apos;&apos;;
 			
-			manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::manufacturerModelName.toString();
-			if (manufacturerModelName != undefined &amp;&amp; manufacturerModelName.toString().length &gt; 0) {
-				logger.info(&quot;Extracted Manufacturer Model Name: &quot; + manufacturerModelName);
-				lowerName = manufacturerModelName.toLowerCase();
+			//manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::manufacturerModelName.toString();
+			//manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::softwareName.toString();
+			
+			// To get the ehrVendor name check both manufacturerModelName as well as softwareName -- update done for Greenway
+			var device = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice[0];
+		     if (device) {
+		        var modelEl = device.*::manufacturerModelName[0];
+		        if (modelEl) {manufacturerModelName = modelEl.toString().trim();}
+		
+		        var softwareEl = device.*::softwareName[0];
+		        if (softwareEl) {softwareName = softwareEl.toString().trim();}
+		     }
+		     logger.info(&quot;Manufacturer Model Name: &quot; + manufacturerModelName);
+			logger.info(&quot;Software Name: &quot; + softwareName);
+
+			combinedVendorText = (manufacturerModelName + &quot; &quot; + softwareName).trim();
+			if (combinedVendorText.length &gt; 0) {
+			    lowerName = combinedVendorText.toLowerCase();
 			} else {
-			     logger.warn(&quot;manufacturerModelName is empty&quot;);
+			    logger.warn(&quot;Both manufacturerModelName and softwareName are empty&quot;);
+			    lowerName = &quot;&quot;;
 			}
 			                    
 			if (lowerName.indexOf(&quot;epic&quot;) !== -1) {
@@ -851,13 +962,22 @@ function getPatientMRN(patientRoles) {
     var extensionAttr = &apos;&apos;;
     var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
 
-    function isSSNFormat(ext) {
+    /*function isSSNFormat(ext) {
     	    return (
 	        ext &amp;&amp; 
 	        String.fromCharCode(ext.charCodeAt(3)) == &apos;-&apos; &amp;&amp;
 	        String.fromCharCode(ext.charCodeAt(6)) == &apos;-&apos; &amp;&amp;
 	        /^\d{3}-\d{2}-\d{4}$/.test(ext)
 	    );
+    }*/
+    function isSSNFormat(ext) {
+        return (
+            ext &amp;&amp;
+            ext.length === 11 &amp;&amp;
+            ext.charAt(3) === &apos;-&apos; &amp;&amp;
+            ext.charAt(6) === &apos;-&apos; &amp;&amp;
+            /^\d{3}-\d{2}-\d{4}$/.test(ext)
+        );
     }
 
 	if (patientRoles != undefined) {
@@ -868,9 +988,13 @@ function getPatientMRN(patientRoles) {
         if (ehrVendor == &apos;Medent&apos;) {
              for each (var idNode in idNodes) {
                 var root = idNode.@root.toString();
-                var ext = idNode.@extension.toString();
+                var ext  = idNode.@extension.toString().trim();
 
-                if (root !== &quot;2.16.840.1.113883.4.1&quot; &amp;&amp; !isSSNFormat(ext)) {
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                  // extension exists
+                    root !== &quot;2.16.840.1.113883.4.1&quot; &amp;&amp;            // not SSN root
+                    !isSSNFormat(ext)
+                ) {
                     extensionAttr = ext;
                     logger.info(&quot;Patient MRN (Medent): &quot; + extensionAttr);
                     break;
@@ -880,31 +1004,46 @@ function getPatientMRN(patientRoles) {
 	   // Step 2: Athenahealth MRN (from first ID, after &quot;P-&quot;)
         else if (ehrVendor == &apos;Athenahealth&apos;) {
             for each (var idNode in idNodes) {
-                var ext = idNode.@extension.toString();
+                var ext = idNode.@extension.toString().trim();
 
                 // Only process if &quot;P-&quot; exists
-                if (ext.indexOf(&quot;P-&quot;) &gt; -1) {
+                if (ext !== &quot;&quot; &amp;&amp; ext.indexOf(&quot;P-&quot;) &gt; -1) {
                     var mrnPart = ext.split(&quot;P-&quot;)[1]; // part after &quot;P-&quot;
                     // Check if the extracted part is not SSN
-                    if (!isSSNFormat(mrnPart)) {
-                        extensionAttr = mrnPart;
+                    if (mrnPart &amp;&amp; mrnPart.trim() !== &quot;&quot; &amp;&amp; !isSSNFormat(mrnPart)) {
+                        extensionAttr = mrnPart.trim();
                         logger.info(&quot;Patient MRN (Athenahealth): &quot; + extensionAttr);
                         break; // Only first valid occurrence
                     }
                 }
             }
         }
-	   else {	
-        // Step 3: If Epic not found, fallback to Epic logic
+	   else if (ehrVendor == &apos;Epic&apos;){	
+        // Step 3: If Epic
             for each (var idNode in idNodes) {
-                var root = idNode.@root.toString();
-                var ext = idNode.@extension.toString();
-                var assigningAuthorityName = idNode.@assigningAuthorityName.toString();
+                var root  = idNode.@root.toString();
+                var ext   = idNode.@extension.toString().trim();
+                var auth  = idNode.@assigningAuthorityName.toString().trim();
 
-                if (assigningAuthorityName === &quot;EPI&quot; &amp;&amp;
-                    (root === &quot;1.2.840.114350.1.13.570.2.7.5.737384.14&quot; || root !== &quot;1.2.840.114350.1.1&quot;) &amp;&amp;
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                 // extension exists
+                    auth === &quot;EPI&quot; &amp;&amp;
+                    (root === &quot;1.2.840.114350.1.13.570.2.7.5.737384.14&quot; ||
+                     root !== &quot;1.2.840.114350.1.1&quot;) &amp;&amp;
                     !isSSNFormat(ext)
                 ) {
+                    extensionAttr = ext;
+                    logger.info(&quot;Patient MRN (Epic): &quot; + extensionAttr);
+                    break;
+                }
+            }
+	   }
+	   else {
+	   	//fallback to id.extension
+	   	for each (var idNode in idNodes) {
+                var ext = idNode.@extension.toString().trim();
+                
+                if (ext !== &quot;&quot; &amp;&amp; !isSSNFormat(ext)) {
                     extensionAttr = ext;
                     logger.info(&quot;Patient MRN (Epic): &quot; + extensionAttr);
                     break;
@@ -915,7 +1054,7 @@ function getPatientMRN(patientRoles) {
         logger.error(&quot;PatientRole not found in the XML.&quot;);
     }
 
-    if (!extensionAttr) {
+    if (!extensionAttr || extensionAttr.trim() === &quot;&quot;) {
        logger.warn(&quot;No matching MRN found.&quot;);
     }
 
@@ -1168,7 +1307,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
 // Define Namespace Resolver
 function setResourceIdParameters(transformer) {
     	// Parse XML
-	var sourceXml = $(&apos;phi_filtered_ccd&apos;);
+	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
 	var xmlDoc = new XML(sourceXml);
 	default xml namespace = &quot;urn:hl7-org:v3&quot;;
 	
@@ -1184,7 +1323,7 @@ function setResourceIdParameters(transformer) {
 	
 	// Extract `patientRole`
 	var patientRoles = xmlDoc.*::recordTarget.*::patientRole[0];
-	getPatientMRN(patientRoles);
+	//getPatientMRN(patientRoles); //This call moved to the step &apos;Validate Mandatory Fields&apos;
 	transformer = generateSHA256Id(patientRoles, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
 	
 	// Extract `consent`
@@ -1203,6 +1342,7 @@ function setResourceIdParameters(transformer) {
                               .*::section.(@ID != &apos;sexualOrientation&apos;)
                               .*::entry;
 	transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
 	
 	// Extract `observations`
 	try {
@@ -1411,18 +1551,23 @@ function getConsentResourceStatus(sourceXml) {
 		var consentInfo = {};
 	    	consentInfo.code = &apos;Consent-Status&apos;;
 	    	consentInfo.status = &quot;TechBD-Generated&quot;;
-		var ehrVendor = (channelMap.get(&apos;ehrVendor&apos;) || &apos;&apos;).toLowerCase();
-	    var ccdaConsentCode = ehrVendor == &apos;athenahealth&apos; ? &apos;29762-2&apos; : &apos;47519-4&apos;;
+	    	var ehrVendor = (channelMap.get(&apos;ehrVendor&apos;) || &apos;&apos;).toLowerCase();
+	    	var ccdaConsentCode = ehrVendor == &apos;athenahealth&apos; ? &apos;29762-2&apos; : &apos;47519-4&apos;;
 		
 		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
 		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
 	
-		var consentCode = xmlDoc.*::authorization.*::consent.*::code.@code.toString();
-		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
-		    logger.info(&quot;Consent Code: &quot; + consentCode);
-		    if (consentCode == &quot;59284-0&quot;) {
-		        consentInfo.status = &quot;provided&quot;;
-		    }
+//		var consentCode = xmlDoc.*::authorization.*::consent.*::code.@code.toString();
+//		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
+//		    logger.info(&quot;Consent Code: &quot; + consentCode);
+//		    if (consentCode == &quot;59284-0&quot;) {
+//		        consentInfo.status = &quot;provided&quot;;
+//		    }
+//		}
+		// If consent section is there, the consentInfo.status should be &quot;provided&quot;.
+		var consentSection = xmlDoc.*::authorization.*::consent;
+		if (consentSection != null &amp;&amp; consentSection.length() &gt; 0) {
+			consentInfo.status = &quot;provided&quot;;
 		}
 		else {
 			// Iterate through all &lt;section&gt; elements
@@ -1468,8 +1613,163 @@ function getConsentResourceStatus(sourceXml) {
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>API endpoint processing</name>
+          <name>Validate Mandatory Fields</name>
           <sequenceNumber>4</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+ * Validate mandatory fields for CCDA → FHIR conversion
+ * @return null OR OperationOutcome JSON
+ */
+function validateMandatoryFields() {
+    	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
+	var ccdaXml = new XML(sourceXml);
+	default xml namespace = &quot;urn:hl7-org:v3&quot;;
+	var errors = [];
+
+	var patientRole = ccdaXml.*::recordTarget.*::patientRole[0];
+	getPatientMRN(patientRole);
+	
+    	// --------------------------------------------------------------------------------------------------------------------
+    	// I. Patient Resource
+    	// -----------------------------
+    	// 1. PatientRole existence
+    	try {	   
+    		if (!patientRole || patientRole.length() === 0) {
+	        errors.push(&quot;PatientRole is missing. FHIR Patient resource cannot be created.&quot;);
+	    	} else {
+	        var patient = patientRole.*::patient[0];
+	        // 2. Patient Name
+	        var name = patient ? patient.*::name[0] : null;
+	        var givenName = name ? name.*::given.toString() : &quot;&quot;;
+	        var familyName = name ? name.*::family.toString() : &quot;&quot;;
+	        //if (!givenName &amp;&amp; !familyName) { errors.push(&quot;Patient name (given or family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.given or family.&quot;); }
+	        if (!givenName) { errors.push(&quot;Patient name (given) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.given.&quot;); }
+		   if (!familyName) { errors.push(&quot;Patient name (family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.family.&quot;); }
+
+	        // 3. Gender
+	        var genderValue = &quot;&quot;;
+		   if (patient) {
+			    var genderEl = patient.*::administrativeGenderCode[0];
+			
+			    if (genderEl) {
+			        // Prefer code
+			        if (genderEl.@code &amp;&amp; genderEl.@code.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@code.toString().trim();
+			        }
+			        // Fallback to displayName
+			        else if (genderEl.@displayName &amp;&amp; genderEl.@displayName.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@displayName.toString().trim();
+			        }
+			    }
+		   }			
+		   if (genderValue === &quot;&quot;) {
+			    errors.push(
+			        &quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;
+			    );
+		   }	        
+			/*var genderCode = &quot;&quot;;
+			if (patient) {
+			    var genderEl = patient.*::administrativeGenderCode[0];
+			    if (genderEl &amp;&amp; genderEl.@code) {
+			        genderCode = genderEl.@code.toString();
+			    }
+			}			
+			if (genderCode === &quot;&quot;) {
+			    errors.push(&quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;);
+			}*/
+
+	        // 4. Birth Date
+	        //var birthDate = patient ? patient.*::birthTime[0].@value.toString() : &quot;&quot;;
+	        //if (!birthDate) { errors.push(&quot;Patient birthDate is mandatory as per FHIR.&quot;); }
+	        var birthDate = &quot;&quot;;
+		   if (patient) {
+			    var birthEl = patient.*::birthTime[0];
+			    if (birthEl &amp;&amp; birthEl.@value) {
+			        birthDate = birthEl.@value.toString();
+			    }
+		   }			
+		   if (birthDate === &quot;&quot;) {
+			    errors.push(&quot;Patient birthDate -&gt; ClinicalDocument.recordTarget.patientRole.patient.birthTime.&quot;);
+		   }
+	
+		   // 5. Patient MRN
+	        //if (!channelMap.get(&apos;Patient-MRN&apos;)) { errors.push(&quot;Patient MRN is mandatory as per FHIR.&quot;); }
+		   var patientMrn = channelMap.get(&apos;Patient-MRN&apos;);
+		   if (patientMrn === null || String(patientMrn).trim() === &quot;&quot;) {
+		   		errors.push(&quot;Patient MRN -&gt; ClinicalDocument.recordTarget.patientRole.id.extension.&quot;);
+		   }
+	    	}
+    	} catch (e) {
+	    logger.error(&quot;Error accessing patientRole: &quot; + e);
+	}
+ 	
+
+	// --------------------------------------------------------------------------------------------------------------------
+    	// III. Organization (Location / Author Organization)
+	// -----------------------------
+	var organizationName = &quot;&quot;;
+	var organizationNameXPath = &quot;&quot;;
+	
+	// 1.️ Try Encounter → Location → Organization name
+	try {
+	    var orgFromEncounter =
+	        ccdaXml.*::component
+	               .*::structuredBody
+	               .*::component
+	               .*::section.(@ID == &quot;encounters&quot;)
+	               .*::entry[0]
+	               .*::encounter
+	               .*::participant.(@typeCode == &quot;LOC&quot;)
+	               .*::participantRole.(@classCode == &quot;SDLOC&quot;)
+	               .*::playingEntity
+	               .*::name[0];
+	
+	    if (orgFromEncounter) {
+	        organizationName = orgFromEncounter.toString().trim();	      
+	    }
+	} catch (e) {
+	    logger.warn(&quot;Encounter organization name not found.&quot;);
+	}
+	
+	// 2.️ Fallback → assignedAuthor → representedOrganization → name
+	if (organizationName === &quot;&quot;) {
+	    try {
+	        var orgFromAuthor =
+	            ccdaXml.*::author[0]
+	                   .*::assignedAuthor
+	                   .*::representedOrganization
+	                   .*::name[0];
+	
+	        if (orgFromAuthor) {
+	            organizationName = orgFromAuthor.toString().trim();
+	        }
+	    } catch (e) {
+	        logger.warn(&quot;Author organization name not found.&quot;);
+	    }
+	}
+		
+	// 3.️ Mandatory validation
+	organizationNameXPath = &quot;ClinicalDocument.component.structuredBody.component.section[code.code=&apos;46240-8&apos;].entry[0].encounter.participant.participantRole.playingEntity.name. OR ClinicalDocument.author.assignedAuthor.representedOrganization.name.&quot;;
+	if (organizationName === &quot;&quot;) {
+	    errors.push(&quot;Organization name -&gt; &quot; + organizationNameXPath);
+	}
+	
+	logger.info(&quot;Organization Name resolved as: &quot; + organizationName);
+
+    // -----------------------------
+    // Return OperationOutcome if errors exist
+    // -----------------------------
+    if (errors.length &gt; 0) {
+    	   logger.info(errors.toString());			
+        return errors;
+    }
+
+    return null; // validation passed
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>API endpoint processing</name>
+          <sequenceNumber>5</sequenceNumber>
           <enabled>true</enabled>
           <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 logger.info(&quot;Request URL: &quot; + requestedPath);
@@ -1488,205 +1788,124 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     // Forward to the channel or logic for $validate
     channelMap.put(&quot;endpoint&quot;, &quot;validate&quot;);
 
-    try {
-		// Parse the XML content into an XML object
-		var interactionId = channelMap.get(&apos;interactionId&apos;);
-		try {
-			var ccda_msg = new XML(msg);
-			var sourceXml = ccda_msg.toXMLString();
+    var interactionId = channelMap.get(&apos;interactionId&apos;);
+    var tenantId = channelMap.get(&apos;tenantId&apos;);
+    logger.info(&quot;InteractionId: &quot; + interactionId);
 
-			if (!sourceXml || sourceXml.length === 0) {
-	              logger.error(&quot;No XML data received in the request.&quot;);
-	              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
-	              throw new Error(&quot;No XML data received in the request.&quot;);
-	          }
-	
-	    		//logger.info(&quot;Source XML Content: &quot; + sourceXml);
-    		
-		} catch (e) {
-			var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;XML Structure validation failed: &quot; + e.toString();
-				   var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
-			        var operation = &quot;saveValidationFailed&quot;;
-			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-				   logger.info(&quot;Successfully saved validation failure information&quot;);
-				   
-				   logger.error(&quot;XML Structure validation failed.&quot;);
-		              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;XML Structure validation failed.&quot;)));
-		              throw new Error(&quot;XML Structure validation failed.&quot;);	 
-	            } else {
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-	            }
-	            
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	            logger.error(errorMsg);
-	            throw new Error(errorMsg);
-		} 		
+    // -----------------------------------
+    // 1. Parse XML safely
+    // -----------------------------------
+    var ccdaXml;
+    var sourceXml;
 
-		//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
-		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;);
-		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
-		
-		validateLowHighDates(sourceXml); //Check the low and high dates in address
-		
-		/*Phi filter ccda file before validation*/
-		getManufacturerModelName(sourceXml); // Load the XSLT template
-		
-		// Load the XSLT template
-		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
-		logger.info(&quot;xsltPath: &quot; + xsltPath);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
-		
-		// Create the transformer
-		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
-		var transformer = transformerFactory.newTransformer(xsltSource);
-		
-		// Prepare input and output streams
-		var xmlInputStream = new java.io.StringReader(sourceXml);
-		var xmlOutputStream = new java.io.StringWriter();
-		var originalCcdFile = new javax.xml.transform.stream.StreamSource(xmlInputStream);
-		var phiFilterOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
-		
-		// Perform the transformation
-		try {
-			transformer.transform(originalCcdFile, phiFilterOutput);
-		
-			// Store the transformed XML in the channel map
-			var phiFilteredXml = xmlOutputStream.toString();
-			channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
-			logger.info(&quot;PHI Filtered CCD: &quot; + phiFilteredXml);
-		} catch (e) {
-	            var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML phi filtering failed: &quot; + e.toString();
-	            } else {
-	                errorMsg = &quot;Unexpected error during phi filtering: &quot; + e.message;
-	            }
-	
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	            logger.error(errorMsg);
-	            throw new Error(errorMsg);
-	     }
-		/*End of phi filter*/
-		
-        // Validate CCD
-        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-        //logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
-
-        // Load the XSD schema
-        var xsdFile = new java.io.File(xsdFilePath);
-        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-        var schema = javax.xml.validation.SchemaFactory
-            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-            .newSchema(schemaInputStream);
-
-        // Set up the validator
-        var validator = schema.newValidator();
-
-        // Set up the input source for the XML
-        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml));
-
-        // Perform the validation
-        try {
-        	  validator.validate(xmlSource);
-            
-            // Success: Return a structured OperationOutcome JSON response
-            var successResponse = {
-                &quot;OperationOutcome&quot;: {
-                    &quot;validationResults&quot;: [
-                        {
-                            &quot;operationOutcome&quot;: {
-                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
-                                &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
-                                &quot;issue&quot;: [
-                                    {
-                                        &quot;severity&quot;: &quot;information&quot;,
-                                        &quot;code&quot;: &quot;informational&quot;,
-                                        &quot;details&quot;: {
-                                            &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            };
-            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
-            logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
-
-			// SAVE VALIDATION RESULT
-			//logger.info(&quot;DB Validation Save inside Validate&quot;);
-		     var tenantId = channelMap.get(&apos;tenantId&apos;);
-		     logger.info(&quot;tenant Id: &quot; + tenantId);
-		     //logger.info(&quot;successResponse: &quot; + successResponse);
-		     var operation = &quot;saveValidationSuccess&quot;;
-		     var result = saveCcdaPayload(
-			    interactionId,
-			   tenantId,
-			   requestedPath,
-			   successResponse,
-			   operation
-			);
-            
-            return &apos;dest_bundle_validate&apos;; // Channel Writer 
-        } catch (e) {
-            var errorMsg;
-            if (e instanceof JavaException) {
-                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();  
-            } else {
-                errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
-            }
-
-            var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
-				// Save Validation Failed
-	            try {
-			        var operation = &quot;saveValidationFailed&quot;;
-			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-				   logger.info(&quot;Successfully saved validation failure information&quot;);
-	            } catch (saveError) {
-	                logger.error(&quot;Failed to save validation failure information: &quot; + saveError.message);
-	            }
-
-            // Failure: Return an OperationOutcome JSON response with validation errors
-            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-
-            throw new Error(errorMsg);
-        }
-    } catch (e) {
-        var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
-
-        var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
-        var operation = &quot;saveValidationFailed&quot;;
-        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-	   logger.info(&quot;Successfully saved validation failure information&quot;);
-
-        // Failure: Return an OperationOutcome JSON response for general errors
-        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
-        logger.error(errorMsg);
-        throw e;
-    }
-} else if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+    //try {
 	try {
+        ccdaXml = new XML(msg);
+        sourceXml = ccdaXml.toXMLString();
+        if (!sourceXml || sourceXml.length === 0) {
+            failAndExit(
+                &quot;No XML data received in the request.&quot;,
+                &quot;invalid&quot;, &quot;error&quot;,
+                interactionId, tenantId, requestedPath
+            );
+            //logger.error(&quot;No XML data received in the request.&quot;);
+        }
+    	} catch (e) {
+        failAndExit(
+            &quot;XML structure validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+        //logger.error(&quot;XML structure validation failed. &quot; + e.message);
+    	}
+
+	// -----------------------------------
+    	// 2. Pre-processing
+    	// -----------------------------------
+	//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
+	sourceXml = sourceXml
+        .replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;)
+        .replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
+
+	validateLowHighDates(sourceXml); //Check the low and high dates in address
+	getManufacturerModelName(sourceXml); //Check Manufacturer Model Name and set Vender
 	
-	    //*********** DATA LEDGER ***************
+	// -----------------------------------
+    	// 3. PHI Filter
+    	// -----------------------------------
+    	var phiFilteredXml;
+    	try {
+        phiFilteredXml = applyPhiFilter(sourceXml);
+        channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+        logger.info(&quot;PHI Filtered CCD: &quot; + phiFilteredXml);
+    	} catch (e) {
+        failAndExit(
+            &quot;CCD XML PHI filtering failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    	}
+
+    	// -----------------------------------
+    	// 4. XSD Validation
+    	// -----------------------------------
+    	try {
+		//var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml));
+		//validator.validate(xmlSource); 
+        validateAgainstXsd(phiFilteredXml);
+        logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+    	} catch (e) {
+        failAndExit(
+            &quot;CCD XML validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    	}
+
+    	// -----------------------------------
+    	// 5. Mandatory fields Validation
+    	// -----------------------------------
+    	var mandatoryErrors = validateMandatoryFields(phiFilteredXml);
+     if (mandatoryErrors &amp;&amp; mandatoryErrors.length &gt; 0) {
+        //failAndExit(mandatoryErrors.join(&quot;\n&quot;),
+        failAndExit(&quot;The following fields are mandatory as per FHIR. \n\n- &quot; + mandatoryErrors.join(&quot;\n- &quot;),
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+     }
+
+	// -----------------------------------
+    	// 6. SUCCESS
+    	// -----------------------------------
+    	var successResponse = getJsonInvalidOperationOutcome(
+        &quot;The CCDA XML passed structural (XSD) validation, and all mandatory field validations were successful.&quot;,
+        &quot;informational&quot;,
+        &quot;information&quot;
+    	);
+
+    	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
+    	saveCcdaPayload(interactionId, tenantId, requestedPath, successResponse, &quot;saveValidationSuccess&quot;);
+
+    	return &apos;dest_bundle_validate&apos;;
+
+} else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/ccda/Bundle/&quot;) {
+
+	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+
+    	var interactionId = channelMap.get(&apos;interactionId&apos;);
+    	var tenantId = channelMap.get(&apos;tenantId&apos;);
+    	logger.info(&quot;InteractionId: &quot; + interactionId);
+
+	//*********** DATA LEDGER ***************
 	    var randomSuffix = Math.floor(Math.random() * 10000);
 	    channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 	    // Generate current timestamp in ISO format with microsecond precision
-	   var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
-	    // Add 3 more random digits to simulate microseconds
-	    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
-	    return &apos;.&apos; + micros + &apos;Z&apos;;
-	   });
+	    var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+		    // Add 3 more random digits to simulate microseconds
+		    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+		    return &apos;.&apos; + micros + &apos;Z&apos;;
+	    });	
 	
-	
-	    var interactionId = channelMap.get(&apos;interactionId&apos;);
-	    logger.info(&quot;InteractionId: &quot; + interactionId);
 	    var payload = JSON.stringify({
 	        executedAt: currentTimestampBegin,
 	        actor: &quot;TechBD&quot;,
@@ -1695,8 +1914,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	        dataId: interactionId,
 	        payloadType: &quot;hrsnBundle&quot;
 	    });
-	
-	
+		
 		// Check if tracking is enabled
 		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
@@ -1710,200 +1928,89 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 		} else {
 		    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
 		}
-		//*********** DATA LEDGER ***************
-			
-		channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+	//*********** DATA LEDGER ***************
 
-		try {
-			var ccda_msg = new XML(msg);
-			var sourceXml = ccda_msg.toXMLString();    		
-		
-		     if (!sourceXml || sourceXml.length === 0) {
-		         logger.error(&quot;No XML data received in the request.&quot;);
-		         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
-		         throw new Error(&quot;No XML data received in the request.&quot;);
-		     }
-		
-			//logger.info(&quot;Source XML Content: &quot; + sourceXml); 
-		} catch (e) {
-	            var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;XML Structure validation failed: &quot; + e.toString();
-				   var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
-			        var operation = &quot;saveValidationFailed&quot;;
-			        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-				   logger.info(&quot;Successfully saved validation failure information&quot;);
-				   
-				   logger.error(&quot;XML Structure validation failed.&quot;);
-		              responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;XML Structure validation failed.&quot;)));
-		              throw new Error(&quot;XML Structure validation failed.&quot;);	 
-	            } else {
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
-	            }
-	
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	            logger.error(errorMsg);
-	            throw new Error(errorMsg);
-	     }
-	     
-		//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
-		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;);
-		sourceXml = sourceXml.replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
 
-		validateLowHighDates(sourceXml); //Check the low and high dates in address
-	        
-		/*Phi filter ccda file before validation*/
-	     getManufacturerModelName(sourceXml); // Load the XSLT template
-	     getConsentResourceStatus(sourceXml); // Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
-	     
-		// Load the XSLT template
-		var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
-		var xsltFile = new java.io.File(xsltPath);
-		var xsltStream = new java.io.FileInputStream(xsltFile);
-		
-		// Create the transformer
-		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-		var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
-		var transformer = transformerFactory.newTransformer(xsltSource);
-		
-		// Prepare input and output streams
-		var xmlInputStream = new java.io.StringReader(sourceXml);
-		var xmlOutputStream = new java.io.StringWriter();
-		var originalCcdFile = new javax.xml.transform.stream.StreamSource(xmlInputStream);
-		var phiFilterOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
-		
-		// Perform the transformation
-		try {
-			transformer.transform(originalCcdFile, phiFilterOutput);
-		
-			// Store the transformed XML in the channel map
-			var phiFilteredXml = xmlOutputStream.toString();
-			channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
-			logger.info(&quot;PHI Filtered CCD: &quot; + phiFilteredXml);
-		} catch (e) {
-	            var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML phi filtering failed: &quot; + e.toString();
-	            } else {
-	                errorMsg = &quot;Unexpected error during phi filtering: &quot; + e.message;
-	            }
-	
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	            logger.error(errorMsg);
-	            throw new Error(errorMsg);
-	     }
-		/*End of phi filter*/
-	
-	//**/////////CCDA Validation Begin///////////////**///
-		   // Validate CCD
-	        var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-	        //logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);    
-	
-	        // Load the XSD schema
-	        var xsdFile = new java.io.File(xsdFilePath);
-	        var schemaInputStream = new javax.xml.transform.stream.StreamSource(xsdFile);
-	        var schema = javax.xml.validation.SchemaFactory
-	            .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
-	            .newSchema(schemaInputStream);
-	        
-	        var validator = schema.newValidator(); // Set up the validator       
-	        var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml)); // Set up the input source for the XML
+    /* -------------------------------------------------
+     * 1. Parse XML safely
+     * ------------------------------------------------- */
+    var ccdaXml, sourceXml;
+    try {
+        ccdaXml = new XML(msg);
+        sourceXml = ccdaXml.toXMLString();
 
-			// Success: Return a structured OperationOutcome JSON response
-            var successResponse = {
-                &quot;OperationOutcome&quot;: {
-                    &quot;validationResults&quot;: [
-                        {
-                            &quot;operationOutcome&quot;: {
-                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
-                                &quot;issue&quot;: [
-                                    {
-                                        &quot;severity&quot;: &quot;information&quot;,
-                                        &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
-                                        &quot;code&quot;: &quot;informational&quot;,
-                                        &quot;details&quot;: {
-                                            &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            };
-	
-	        // Perform the validation
-	        try {
-	        	validator.validate(xmlSource);
-	          logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+        if (!sourceXml || sourceXml.length === 0) {
+            failAndExit(
+                &quot;No XML data received in the request.&quot;,
+                &quot;invalid&quot;, &quot;error&quot;,
+                interactionId, tenantId, requestedPath
+            );
+            //logger.error(&quot;No XML data received in the request.&quot;);
+        }
+    } catch (e) {
+        failAndExit(
+            &quot;XML structure validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+        //logger.error(&quot;XML structure validation failed. &quot; + e.message);
+    }
 
-			// SAVE VALIDATION RESULT
-			logger.info(&quot;DB Validation Save inside Bundle&quot;);
-		     var tenantId = channelMap.get(&apos;tenantId&apos;);
-		     logger.info(&quot;tenant Id: &quot; + tenantId);
-		     var operation = &quot;saveValidationSuccess&quot;;
-		     var result = saveCcdaPayload(
-			    interactionId,
-			   tenantId,
-			   requestedPath,
-			   successResponse,
-			   operation
-			);
-	                      
-	        } catch (e) {
-	            var errorMsg;
-	            if (e instanceof JavaException) {
-	                errorMsg = &quot;CCD XML validation failed: &quot; + e.toString();
-	            } else {
-	                errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
-	            }
+    /* -------------------------------------------------
+     * 2. Pre-processing
+     * ------------------------------------------------- */
+    sourceXml = sourceXml
+        .replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;)
+        .replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
 
-	            var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+    validateLowHighDates(sourceXml);
+    getManufacturerModelName(sourceXml); // Get the ehrVendor from manufacturerModelName/softwareName
+    getConsentResourceStatus(sourceXml); // Check the existence of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
 
-//	            if (sourceXml &amp;&amp; sourceXml.length &gt; 0) {
-//		            try {
-//		            	var operation = &quot;saveOgCCDAPayload&quot;;
-//		                saveCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, operation);
-//		                logger.info(&quot;Successfully saved original CCDA payload for failed validation&quot;);
-//		            } catch (saveError) {
-//		                logger.error(&quot;Failed to save original CCDA payload: &quot; + saveError.message);
-//		            }
-//		        } else {
-//		            logger.warn(&quot;No source XML available to save for interactionId: &quot; + interactionId);
-//		        }
-	
-				// Save Validation Failed
-		        try {
-		        	  var operation = &quot;saveValidationFailed&quot;;
-		            saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-		            logger.info(&quot;Successfully saved validation failure information&quot;);
-		        } catch (saveError) {
-		            logger.error(&quot;Failed to save validation failure: &quot; + saveError.message);
-		        }
-	
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	
-			
-	
-			//*********** DATA LEDGER ***************
-	          var  currentTimestamEnd = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
-			// Add 3 more random digits to simulate microseconds
-			var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
-			return &apos;.&apos; + micros + &apos;Z&apos;;
+    /* -------------------------------------------------
+     * 3. PHI Filter
+     * ------------------------------------------------- */
+    var phiFilteredXml;
+    try {
+        phiFilteredXml = applyPhiFilter(sourceXml);
+        channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+        logger.info(&quot;PHI Filtered CCD: &quot; + phiFilteredXml);
+    } catch (e) {
+        failAndExit(
+            &quot;CCD XML PHI filtering failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    }
+
+    /* -------------------------------------------------
+     * 4. XSD Validation
+     * ------------------------------------------------- */
+    try {
+        validateAgainstXsd(phiFilteredXml);
+        logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+    } catch (e) {
+        failAndExit(
+            &quot;CCD XML validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+
+        		//*********** DATA LEDGER ***************
+        		saveDataLedgerSync(interactionId);
+	          /*var  currentTimestamEnd = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+				// Add 3 more random digits to simulate microseconds
+				var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+				return &apos;.&apos; + micros + &apos;Z&apos;;
 			});
-			  var payload = JSON.stringify({
+			var payload = JSON.stringify({
 		        executedAt: currentTimestamEnd,
 		        actor: &quot;TechBD&quot;,
 		        action: &quot;sent&quot;, 
 		        destination: &quot;Invalid - CCD Conversion Failed&quot;,
 		        dataId: interactionId,
 		        payloadType: &quot;hrsnBundle&quot;
-		  	  });
-		
-		
+		  	});		
 				
 			if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
 			    logger.info(&quot;data ledger api call -BEGIN sent&quot;);
@@ -1915,134 +2022,61 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			    logger.info(&quot;data ledger api call -END sent&quot;);
 			} else {
 			    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
-			}
+			}*/
 			//*********** DATA LEDGER ***************
-	
-	            // Failure: Return an OperationOutcome JSON response with validation errors
-	            //responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
-	            logger.error(errorMsg);
-	            throw new Error(errorMsg);
-	        }
-	//**/////////CCDA Validation End////////////////**///
-	
-		// Perform the transformation
-		try {
-		    
-			/////////  Step 2  //////////
-			// Load the XSLT template
-			var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
-			var xsltFile = new java.io.File(xsltPath);
-			var xsltStream = new java.io.FileInputStream(xsltFile);
-			
-			// Create the transformer
-			var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
-			var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
-			var transformer = transformerFactory.newTransformer(xsltSource);
-	
-			// Set the current timestamp parameter in ISO 8601 format
-			var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
-			transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp); // Pass the parameter to XSLT
-			transformer = set_fhir_resource_profile_urls(transformer); // Pass all the profile urls as parameters to XSLT
-	
-			// Retrieve the X-TechBD-Base-FHIR-URL header
-			var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-			logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
-			
-			// Retrieve the VALID_URLS environment variable (comma-separated list)
-			var validUrlsEnv = Packages.java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
-			logger.info(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
-			
-			// Convert VALID_URLS to an array for validation
-			var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
-			
-			// Check if the header value is valid
-			if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
-			    if (validUrls.includes(customBaseFhirUrl)) {
-			        // Store valid value in channelMap
-			        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
-				   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
-			    } else {
-			        // Throw a Bad Request error if the URL is not in the valid list
-					var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
-					logger.error(errorMessage);
-			    }
-			}
-	
-			//logger.info(&quot;Current Timestamp: &quot; + currentTimestamp); // Log the timestamp
-	
-			// Prepare input and output streams
-			var xmlInputStream = new java.io.StringReader(phiFilteredXml);
-			var xmlOutputStream = new java.io.StringWriter();
-			var phiFilteredCcdFile = new javax.xml.transform.stream.StreamSource(xmlInputStream);
-			var bundleOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
-			
-			// Perform the transformation
-			try {
-				transformer.transform(phiFilteredCcdFile, bundleOutput);
-			
-				// Store the transformed XML in the channel map
-				var ccdFhirBundle = xmlOutputStream.toString();
-				channelMap.put(&apos;ccd_fhir_bundle&apos;, ccdFhirBundle);
-				//logger.info(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle);
-	
-				var jsonObject = JSON.parse(ccdFhirBundle); // Parse the string into an object
-				var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
-				
-				logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+    }
 
-				//Save Converted FHIR
-				logger.info(&quot;FHIR Conversion Save inside Bundle&quot;);
-			     var tenantId = channelMap.get(&apos;tenantId&apos;);
-			     logger.info(&quot;tenant Id: &quot; + tenantId);
-			     var operation = &quot;saveConversionSuccess&quot;;
-			     var result = saveCcdaPayload(
-				    interactionId,
-				   tenantId,
-				   requestedPath,
-				   cleanedJsonString,
-				   operation
-				);
-				
-			} catch (e) {
-				var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
-	        		// Failure: Return an OperationOutcome JSON response for general errors
-			    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
-				        
-			    logger.error(&quot;Error during CCD FHIR bundle transformation: &quot; + e);
-			    throw e;
-			}
-	
-	
-			// Convert the XML document to JSON
-			const jsonResult = cleanedJsonString;
-			channelMap.put(&apos;jsonResult&apos;, jsonResult);
-			responseMap.put(&apos;finalResponse&apos;, JSON.stringify(jsonResult));
-			
-		    return &apos;dest_bundle&apos;; // HTTP Sender
-	    
-		} catch (e) {
-			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
-	         // Failure: Return an OperationOutcome JSON response for general errors
-	         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
-	         
-		    logger.error(&quot;Error during transformation: &quot; + e);
-		    throw e;
-		}
-	} catch (e) {
-	        var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
+    /* -------------------------------------------------
+     * 5. Mandatory Field Validation (FHIR / SHIN-NY)
+     * ------------------------------------------------- */
+    var mandatoryErrors = validateMandatoryFields(phiFilteredXml);
+    if (mandatoryErrors &amp;&amp; mandatoryErrors.length &gt; 0) {
+        //failAndExit(mandatoryErrors.join(&quot;\n&quot;),
+        failAndExit(&quot;The following fields are mandatory as per FHIR. \n\n- &quot; + mandatoryErrors.join(&quot;\n- &quot;),
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
 
-	        var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
-	        var operation = &quot;saveValidationFailed&quot;;
-	        saveCcdaPayload(interactionId, tenantId, requestedPath, errorResponse, operation);
-		   logger.info(&quot;Successfully saved validation failure information&quot;);
-	
-	        // Failure: Return an OperationOutcome JSON response for general errors
-	        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
-	        logger.error(errorMsg);
-	        throw e;
-	}
-//////////////////////////////////////////////
-} else {
+        //*********** DATA LEDGER ***************
+        saveDataLedgerSync(interactionId);
+        //*********** DATA LEDGER ***************
+    }
+
+    /* -------------------------------------------------
+     * 6. Save Validation Result
+     * ------------------------------------------------- */
+    var successResponse = getJsonInvalidOperationOutcome(
+        &quot;The CCDA XML passed structural (XSD) validation, and all mandatory field validations were successful.&quot;,
+        &quot;informational&quot;,
+        &quot;information&quot;
+    );
+    saveCcdaPayload(interactionId, tenantId, requestedPath, successResponse, &quot;saveValidationSuccess&quot;);
+
+    /* -------------------------------------------------
+     * 7. CCDA → FHIR Bundle Conversion
+     * ------------------------------------------------- */
+    var cleanedJsonString;
+    try {
+        cleanedJsonString = convertCcdaToFhirBundle(phiFilteredXml);
+    } catch (e) {
+        failAndExit(
+            &quot;CCD to FHIR conversion failed. &quot; + e.message,
+            &quot;exception&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    }
+
+    /* -------------------------------------------------
+     * 8. Save Fhir bundle + Respond
+     * ------------------------------------------------- */
+    saveCcdaPayload(interactionId, tenantId, requestedPath,
+        cleanedJsonString, &quot;saveConversionSuccess&quot;);
+        
+	channelMap.put(&apos;jsonResult&apos;, cleanedJsonString);
+	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(cleanedJsonString));
+     return &apos;dest_bundle&apos;;
+}
+else {
     // Handle invalid paths  
     var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
     // Failure: Return an OperationOutcome JSON response for general errors
@@ -2469,7 +2503,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1766400410582</time>
+        <time>1770296272035</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
