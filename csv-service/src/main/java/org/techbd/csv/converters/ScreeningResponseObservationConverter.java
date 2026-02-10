@@ -145,14 +145,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     for (String rawCode : rawCodes) {
                                         String trimmedCode = rawCode.trim();
                                         if (!trimmedCode.isEmpty()) {
-                                            String codeExists = fetchCodeIfPresent(
-                                                    trimmedCode,
-                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                                    interactionId);
+                                            // String codeExists = fetchCodeIfPresent(
+                                            //         trimmedCode,
+                                            //         CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                            //         interactionId);
 
-                                            if (codeExists == null || codeExists.isBlank()) {
-                                                continue;
-                                            }
+                                            // if (codeExists == null || codeExists.isBlank()) {
+                                            //     continue;
+                                            // }
                                             String code = fetchCode(trimmedCode,
                                                     CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
                                                     interactionId);
@@ -496,14 +496,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                             for (String rawCode : rawCodeArr) {
                                 String trimmedCode = rawCode.trim();
                                 if (!trimmedCode.isEmpty()) {
-                                    String codeExists = fetchCodeIfPresent(
-                                            trimmedCode,
-                                            CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                            interactionId);
+                                    // String codeExists = fetchCodeIfPresent(
+                                    //         trimmedCode,
+                                    //         CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                    //         interactionId);
 
-                                    if (codeExists == null || codeExists.isBlank()) {
-                                        continue;
-                                    }
+                                    // if (codeExists == null || codeExists.isBlank()) {
+                                    //     continue;
+                                    // }
                                     String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
                                     if (code != null && !code.isEmpty()) {
                                         String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
