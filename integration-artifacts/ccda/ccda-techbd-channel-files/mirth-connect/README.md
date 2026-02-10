@@ -18,6 +18,8 @@ This repository contains Mirth Connect channel for processing and validating CCD
   - `X-TechBD-Facility-ID` (mandatory)
   - `X-TechBD-Encounter-Type` (mandatory)
   - `X-TechBD-Screening-Code` (optional, if not specified then for Epic files, '100698-0' will be considered as the grouper screening code.)
+  - `X-TechBD-Base-FHIR-URL`  (optional, when need to specify the Base-FHIR-URL)
+  - `X-TechBD-Validation-Severity-Level`  (optional, to set the Severity-Level for validation errors to be handled)
 - **Validation**:
   - Ensures the file is .xml or .txt files and parses correctly.
   - Validates environment variables for XSLT and profile URLs.
