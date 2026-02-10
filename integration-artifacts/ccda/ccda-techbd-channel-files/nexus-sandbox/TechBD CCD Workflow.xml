@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>d8b61826-87ca-47e4-8389-58fd7f0f85c8</id>
+  <id>043593d9-1283-4636-93e9-f3c33fc5f295</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.12
-Handled exception while adding zip extension.</description>
-  <revision>6</revision>
+  <description>Version 0.5.13
+Correct URI display for CCDA.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2267,6 +2267,8 @@ function validateMandatoryFields() {
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 logger.info(&quot;Request URL: &quot; + requestedPath);
 
+channelMap.put(&quot;requestUri&quot;, requestedPath);
+
 if (requestedPath == &quot;/&quot;) {
 	return;
 }
@@ -3547,7 +3549,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770715931231</time>
+        <time>1770719315430</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3558,11 +3560,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>50cc9cc6-32fb-46cf-954e-c0362677884a</id>
-        <name>0_5_12</name>
+        <id>8d41df54-843c-45a5-9428-b3230e1ba51c</id>
+        <name>0_5_13</name>
         <channelIds>
-          <string>d8b61826-87ca-47e4-8389-58fd7f0f85c8</string>
-          <string>d20f527a-037c-494e-b41c-803a34442203</string>
+          <string>043593d9-1283-4636-93e9-f3c33fc5f295</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
