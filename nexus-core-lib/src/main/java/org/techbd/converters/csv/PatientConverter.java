@@ -152,9 +152,10 @@ public class PatientConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(demographicData.getEthnicityCode())) {
             String[] rawCodes = demographicData.getEthnicityCode().split(";");
             List<String> validCodes = Arrays.stream(rawCodes)
-                .map(String::trim)
-                .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)))
-                .collect(Collectors.toList());
+                    .map(String::trim)
+                    .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)
+                            || "asked-declined".equalsIgnoreCase(code)))
+                    .collect(Collectors.toList());
 
             if (!validCodes.isEmpty()) {
                 Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
