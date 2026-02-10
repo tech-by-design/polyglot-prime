@@ -53,6 +53,7 @@ public class AppConfig {
             private String namespace;
             private String prefix;
             private String action;
+            private String pnrAction;
             private String to;
             private String understoodNamespaces;
         }

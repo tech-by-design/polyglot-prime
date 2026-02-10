@@ -93,6 +93,7 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             // Set sourceId and msgType in context if available
             context.setSourceId(sourceId);
             context.setMsgType(msgType);
+            context.setPixRequest(true);
             
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
@@ -154,7 +155,7 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             // Set sourceId and msgType in context if available
             context.setSourceId(sourceId);
             context.setMsgType(msgType);
-            
+            context.setPixRequest(true);
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
                     context.getSourceIp() + ":" + context.getDestinationPort(),
@@ -215,7 +216,7 @@ public class PixEndpoint extends AbstractMessageSourceProvider {
             // Set sourceId and msgType in context if available
             context.setSourceId(sourceId);
             context.setMsgType(msgType);
-            
+            context.setPixRequest(true);
             MCCIIN000002UV01 response = ackService.createPixAcknowledgement(
                     request.getId(), request.getSender().getDevice(),
                     context.getSourceIp() + ":" + context.getDestinationPort(),
