@@ -8222,9 +8222,19 @@ BEGIN
 							COALESCE(error_payload.value ->> 'title',
 									errors_summary.value ->> 'type') AS error_type,
 							NULL,
-							COALESCE(error_payload.value ->> 'message',
-									errors_summary.value ->> 'message') AS error,
-							error_payload.value ->> 'description' AS description,
+							/*COALESCE(error_payload.value ->> 'message',
+									errors_summary.value ->> 'message') AS error,*/
+                            CASE WHEN COALESCE(error_payload.value ->> 'type', errors_summary.value ->> 'type') = 'row-error' THEN
+								COALESCE(error_payload.value ->> 'note', errors_summary.value ->> 'note', error_payload.value ->> 'message', errors_summary.value ->> 'message') 
+							ELSE
+								COALESCE(error_payload.value ->> 'message', errors_summary.value ->> 'message') 
+							END AS error,
+							/*error_payload.value ->> 'description' AS description,*/
+                            CASE WHEN COALESCE(error_payload.value ->> 'type', errors_summary.value ->> 'type') = 'row-error' THEN
+								COALESCE(error_payload.value ->> 'note', errors_summary.value ->> 'note', error_payload.value ->> 'description') 
+							ELSE
+								error_payload.value ->> 'description' 
+							END AS description,
 							(error_payload.value ->> 'rowNumber')::integer AS row_number,
 							(error_payload.value ->> 'fieldNumber')::integer AS field_number,
 							zip.csv_zip_file_name,
