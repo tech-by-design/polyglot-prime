@@ -222,7 +222,11 @@ public class SoapForwarderService {
                     connection.addRequestHeader(Constants.HEADER_INTERACTION_ID, interactionId);
                     LOG.debug("SoapForwarderService:: Added header {}={}", Constants.HEADER_INTERACTION_ID, interactionId);
                 }
-                
+                String ackContentType = (String) request.getAttribute(Constants.ACK_CONTENT_TYPE);
+                if (ackContentType != null) {
+                    connection.addRequestHeader(Constants.ACK_CONTENT_TYPE, ackContentType.toString());
+                    LOG.debug("SoapForwarderService:: Forwarded ACK_CONTENT_TYPE={}", ackContentType);
+                }
                 // Copy important headers from original request
                 copyRelevantHeaders(request, connection);
             }

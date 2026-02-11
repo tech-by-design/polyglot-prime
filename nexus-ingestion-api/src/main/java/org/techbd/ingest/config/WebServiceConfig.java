@@ -58,9 +58,14 @@ public class WebServiceConfig extends WsConfigurationSupport {
         interceptors.add(new WsaHeaderInterceptor(soapResponseUtil, messageProcessorService, appConfig,LOG));
     }
    
+    /**
+     * WebServiceTemplate now uses a separate, simpler message factory
+     * that can handle responses without requiring HTTP context.
+     * Uses DYNAMIC protocol to auto-detect SOAP 1.1 vs 1.2 in responses.
+     */
     @Bean
     public WebServiceTemplate webServiceTemplate() {
-        SaajSoapMessageFactory messageFactory = new SaajSoapMessageFactory();
+        SmartSoapMessageFactory messageFactory = new SmartSoapMessageFactory();
         messageFactory.afterPropertiesSet();
 
         WebServiceTemplate template = new WebServiceTemplate();
@@ -114,10 +119,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
             new ClassPathResource("ITI/schema/IHE/XDS.b_DocumentRepository.xsd")
         );
     }
-    /**
-     * Custom message factory that dynamically supports SOAP 1.1 and SOAP 1.2 based
-     * on Content-Type.
-     */
+  
     @Bean
     public SoapMessageFactory messageFactory() {
         return new SmartSoapMessageFactory();
@@ -125,17 +127,11 @@ public class WebServiceConfig extends WsConfigurationSupport {
 
     static class SmartSoapMessageFactory extends SaajSoapMessageFactory {
 
-       @Override
+
+        @Override
         public SaajSoapMessage createWebServiceMessage(InputStream inputStream) throws IOException {
             try {
-                // Get HTTP request to check Content-Type
-                var transportContext = TransportContextHolder.getTransportContext();
-                String httpContentType = null;
-                if (transportContext != null) {
-                    var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext.getConnection();
-                    httpContentType = connection.getHttpServletRequest().getContentType();
-                }
-                
+                // Read the stream into bytes so we can inspect it
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 inputStream.transferTo(baos);
                 byte[] bytes = baos.toByteArray();
@@ -145,26 +141,42 @@ public class WebServiceConfig extends WsConfigurationSupport {
                     throw new IOException("Empty request body - no SOAP message provided");
                 }
 
-                // Check if it's MTOM multipart content from HTTP header
+                // Try to get HTTP context - it may or may not be available
+                var transportContext = TransportContextHolder.getTransportContext();
+                String httpContentType = null;
+                
+                // SERVER SCENARIO: HTTP context available (receiving requests at /ws)
+                if (transportContext != null) {
+                    try {
+                        var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext.getConnection();
+                        httpContentType = connection.getHttpServletRequest().getContentType();
+                    } catch (Exception e) {
+                        // CLIENT SCENARIO: HTTP context not available or different type
+                        // This happens when WebServiceTemplate is parsing responses
+                        httpContentType = null;
+                    }
+                }
+
+                // Handle MTOM multipart content (detected from HTTP header or content)
                 if (httpContentType != null && httpContentType.contains("multipart/related")) {
-                    // Handle MTOM - create MIME headers from HTTP request
                     MimeHeaders mimeHeaders = new MimeHeaders();
                     mimeHeaders.addHeader("Content-Type", httpContentType);
                     MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                     SOAPMessage soapMessage = msgFactory.createMessage(mimeHeaders, bis);
                     return new SaajSoapMessage(soapMessage);
-                } else {
-                    // Regular SOAP handling
-                    MimeHeaders headers = extractHeaders(bytes);
-                    MessageFactory msgFactory =
-                    MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
-                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    SOAPMessage soapMessage = msgFactory.createMessage(headers, bis);
-                    return new SaajSoapMessage(soapMessage);
                 }
+                
+                // Regular SOAP handling - use DYNAMIC protocol to auto-detect version
+                // This works whether HTTP context is available or not
+                MimeHeaders headers = extractHeaders(bytes, httpContentType);
+                MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.DYNAMIC_SOAP_PROTOCOL);
+                ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                SOAPMessage soapMessage = msgFactory.createMessage(headers, bis);
+                return new SaajSoapMessage(soapMessage);
+                
             } catch (Exception e) {
-                throw new IOException("Unable to create SOAP message", e);
+                throw new IOException("Unable to create SOAP message: " + e.getMessage(), e);
             }
         }
  
@@ -174,16 +186,19 @@ public class WebServiceConfig extends WsConfigurationSupport {
                 // Default to SOAP 1.1
                 MessageFactory msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
 
-                // Check if HTTP request is available
+                // Check if HTTP request is available (server scenario)
                 var transportContext = TransportContextHolder.getTransportContext();
                 if (transportContext != null) {
-                    var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext
-                            .getConnection();
-                    String contentType = connection.getHttpServletRequest().getContentType();
+                    try {
+                        var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext.getConnection();
+                        String contentType = connection.getHttpServletRequest().getContentType();
 
-                    if (contentType != null && contentType.contains("application/soap+xml")) {
-                        // SOAP 1.2 request
-                        msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+                        if (contentType != null && contentType.contains("application/soap+xml")) {
+                            // SOAP 1.2 request
+                            msgFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+                        }
+                    } catch (Exception e) {
+                         // Expected in client mode - just use default
                     }
                 }
 
@@ -199,22 +214,26 @@ public class WebServiceConfig extends WsConfigurationSupport {
          * Try to extract Content-Type from the SOAP envelope for protocol detection.
          * If not found, fallback to SOAP 1.1 (text/xml).
          */
-        private MimeHeaders extractHeaders(byte[] bodyBytes) {
+        private MimeHeaders extractHeaders(byte[] bodyBytes, String httpContentType) {
             MimeHeaders headers = new MimeHeaders();
+            
+            // If we have HTTP Content-Type, use it
+            if (httpContentType != null && !httpContentType.isEmpty()) {
+                headers.addHeader("Content-Type", httpContentType);
+                return headers;
+            }
+            
+            // Otherwise, detect from message content (CLIENT scenario)
             String body = new String(bodyBytes, StandardCharsets.UTF_8);
             if (body.contains("http://www.w3.org/2003/05/soap-envelope")) {
-                headers.addHeader("Content-Type", "application/soap+xml");
+                headers.addHeader("Content-Type", "application/soap+xml; charset=utf-8");
             } else {
-                headers.addHeader("Content-Type", "text/xml");
+                headers.addHeader("Content-Type", "text/xml; charset=utf-8");
             }
             return headers;
         }
-        private String getContentType(MimeHeaders headers) {
-            String[] header = headers.getHeader("Content-Type");
-            return header != null && header.length > 0 ? header[0] : null;
-        }
     }
-    static class CustomMessageDispatcherServlet extends MessageDispatcherServlet {
+     static class CustomMessageDispatcherServlet extends MessageDispatcherServlet {
         @Override
         protected void doService(HttpServletRequest request, HttpServletResponse response)
                 throws Exception {
@@ -228,5 +247,4 @@ public class WebServiceConfig extends WsConfigurationSupport {
             }
         }
     }
-
 }
