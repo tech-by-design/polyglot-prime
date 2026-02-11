@@ -244,7 +244,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.code
   - `type` string
   - `constraints`:
-    - `enum` ['acf', 'ar', 'ase', 'bn', 'crp', 'crs', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'gcr', 'gcf', 'hi', 'ht', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'kmv', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'rcf', 'ru', 'ru-ru', 'scf', 'sr', 'sr-rs', 'sq', 'sv', 'sv-se', 'te', 'yue', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw']
+    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'hi', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'ru', 'ru-ru', 'sr', 'sr-rs', 'sv', 'sv-se', 'te', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw', 'acf', 'ase', 'crp', 'crs', 'gcr', 'gcf', 'ht', 'id', 'kmv', 'rcf', 'scf', 'so', 'sq', 'yue']
 ### `SCREENING_LANGUAGE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.display
   - `type` string
@@ -382,6 +382,7 @@
   - `type` string
   - `constraints`:
     - `required` True
+    - `pattern` `^(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity)(;\s*(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity))*$`
 ### `OBSERVATION_CATEGORY_SDOH_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text
   - `type` string
