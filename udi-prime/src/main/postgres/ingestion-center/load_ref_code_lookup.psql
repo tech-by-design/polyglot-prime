@@ -82,8 +82,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('9bed20c0-2dba-41f7-8fd0-cddd31f7a006','ethnicity','2173-3','Uruguayan','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('5ea8efa8-ed69-414f-9284-67852febdfbd','ethnicity','2174-1','Venezuelan','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('8bc8cd17-f402-4d3c-acb9-a19462553314','ethnicity','2175-8','South American Indian','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('8bda7bd5-637c-4aee-b9e7-90f4ec0bee09','ethnicity','2176-6','Criollo','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('efa34087-4daa-40b4-9d14-fb3491a92de0','ethnicity','2133-7','Ethnicity','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
+	 ('8bda7bd5-637c-4aee-b9e7-90f4ec0bee09','ethnicity','2176-6','Criollo','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),	 
 	 ('1e50413c-2c9d-4451-8724-1d066b2fb4a6','consent_status','permit',NULL,NULL,NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('b9c8af13-fb27-4178-a173-0fe83ca981cd','consent_status','deny',NULL,NULL,NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('29177622-a882-4333-97a3-acd9d4c31569','encounter_type','23918007','History taking, self-administered, by computer terminal','http://snomed.info/sct',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
@@ -118,8 +117,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('3c074cca-701f-40c9-ad58-9730310afeba','language','es-ES','Spanish (Spain)','urn:ietf:bcp:47',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('f333286b-ca7d-4418-9f36-62d5d6829f4c','language','es-UY','Spanish (Uruguay)','urn:ietf:bcp:47',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('9084f2a6-1923-48c7-b866-bed54d47cc9e','language','fi','Finnish','urn:ietf:bcp:47',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('5d733c26-e504-4694-8522-7f87e9247ce1','language','fr','French','urn:ietf:bcp:47',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('b9844e35-1d95-4e0e-960d-3906257f5480','ethnicity','OTH','other','2.16.840.1.113883.5.1008',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
+	 ('5d733c26-e504-4694-8522-7f87e9247ce1','language','fr','French','urn:ietf:bcp:47',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('81436ddd-3704-41c2-bc61-5518ff8f6d7b','sexual_orientation','ASKU','Asked but no answer','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('c8a600dd-e38c-45d5-bc8d-cc7db8616212','sexual_orientation','UNK','Unknown','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
@@ -1446,11 +1444,8 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('23815db2-face-4909-8af5-287d861b0e5d','organization_type','edu','Educational Institute','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('7ac7cd75-b2e8-46f5-81be-a0fad7f14cf2','organization_type','reli','Religious Institution','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('564efe94-ad68-4772-beec-a133ca15ffa8','organization_type','crs','Clinical Research Sponsor','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('55deeae7-b58e-4930-bb63-33ed5a14264e','organization_type','bus','Non-Healthcare Business or Corporation','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('cf02e440-d4a1-43c4-b5b6-68cd2a148773','ethnicity','ASKU','asked but unknown','2.16.840.1.113883.5.1008','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('436620a5-2dc5-47eb-93c8-6d60167f0a61','ethnicity','UNK','unknown','2.16.840.1.113883.5.1008','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('29ab8222-046d-4186-ba3b-6cd4059f4340','race','2131-1','Other Race','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-06-12 11:07:31.971336+05:30','postgres','TechBD'),
-	 ('3cd0cad8-6d23-40f3-99c4-2e3623741ae7','ethnicity','asked-declined','asked but declined','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.5.2','2025-06-26 12:20:24.06638+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
+	 ('55deeae7-b58e-4930-bb63-33ed5a14264e','organization_type','bus','Non-Healthcare Business or Corporation','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),	 
+	 ('29ab8222-046d-4186-ba3b-6cd4059f4340','race','2131-1','Other Race','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-06-12 11:07:31.971336+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('976dc99b-e9ef-4814-8534-b54d84763851','potential_need_indicated','_GeneticObservationInterpretation','GeneticObservationInterpretation','http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('a6ae6e21-694b-4da1-9fa4-bc351bba8ece','potential_need_indicated','CAR','Carrier','http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
@@ -1512,7 +1507,7 @@ WHERE ctid IN (
     SELECT ctid
     FROM techbd_udi_ingress.ref_code_lookup
     WHERE code_type = 'language'
-      AND code IN ('ASL','acf','ase','crp','crs','gcr','gcf','ht','kmv','rcf','scf','sq','yue')
+      AND code IN ('acf','ase','crp','crs','gcr','gcf','ht','kmv','rcf','scf','sq','yue')
     ORDER BY code
     FOR UPDATE
 );
@@ -1528,30 +1523,7 @@ WHERE ctid IN (
     FOR UPDATE
 );
 
-
-DELETE FROM techbd_udi_ingress.ref_code_lookup
-WHERE ctid IN (
-    SELECT ctid
-    FROM techbd_udi_ingress.ref_code_lookup
-    WHERE code_type = 'observation_category_sdoh'
-      AND code IN (
-        'digital-access',
-        'digital-literacy',
-        'educational-attainment',
-        'elder-abuse',
-        'financial-insecurity',
-        'health-insurance-coverage-status',
-        'intimate-partner-violence',
-        'material-hardship',
-        'medical-cost-burden',
-        'personal-health-literacy',
-        'social-connection',
-        'stress',
-        'veteran-status'
-      )
-    ORDER BY code
-    FOR UPDATE
-);
+ 
 
  
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
