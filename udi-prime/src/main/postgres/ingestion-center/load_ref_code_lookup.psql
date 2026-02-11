@@ -1713,3 +1713,174 @@ SELECT COUNT(*) AS inserted_rows FROM techbd_udi_ingress.ref_code_lookup
 WHERE created_at = CURRENT_DATE;
 
  */
+
+ INSERT INTO techbd_udi_ingress.json_action_rule(
+    action_rule_id,
+    "namespace",
+    json_path,
+    "action",
+    "condition",
+    reject_json,
+    modify_json,
+    priority,
+    updated_at,
+    updated_by,
+    last_applied_at,
+    created_at,
+    created_by,
+    provenance
+    )
+    VALUES(
+    '36eb7e17-107a-44ad-834e-9699b435708f',
+    'NYeC Rule',
+    '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*Meta.lastUpdated: minimum required = 1" && @.location[*] like_regex ".*Bundle.meta" && @.severity like_regex ".*error")',
+    'reject',
+    NULL,
+    NULL,
+    NULL,
+    1,
+    current_timestamp,
+    current_user,
+    current_timestamp ,
+    current_timestamp,
+    current_user,
+    '{"Key" : "value"}'
+    ) ON CONFLICT (action_rule_id) DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.json_action_rule(
+    action_rule_id,
+    "namespace",
+    json_path,
+    "action",
+    "condition",
+    reject_json,
+    modify_json,
+    priority,
+    updated_at,
+    updated_by,
+    last_applied_at,
+    created_at,
+    created_by,
+    provenance
+    )
+    VALUES(
+    '189b6342-3797-459f-9a4a-b8a71015f082',
+    'NYeC Rule',
+    '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*lastUpdated.*" && @.severity like_regex ".*fatal.*")',
+    'reject',
+    NULL,
+    NULL,
+    NULL,
+    1,
+    current_timestamp,
+    current_user,
+    current_timestamp,
+    current_timestamp,
+    current_user,
+    '{"Key" : "value"}'
+    ) ON CONFLICT (action_rule_id) DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.json_action_rule (
+    action_rule_id,
+    "namespace",
+    json_path,
+    "action",
+    "condition",
+    reject_json,
+    modify_json,
+    priority,
+    updated_at,
+    updated_by,
+    last_applied_at,
+    created_at,
+    created_by,
+    provenance
+    )
+    VALUES (
+    'eeeb6342-3797-459f-9a4a-b8a71015f082',
+    'NYeC Rule',
+    '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1000: Invalid or Partial JSON.*")',
+    'discard',
+    NULL,
+    NULL,
+    NULL,
+    5000,
+    current_timestamp,
+    current_user,
+    current_timestamp,
+    current_timestamp,
+    current_user,
+    '{"Key" : "value"}'
+    )
+    ON CONFLICT (action_rule_id) DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.json_action_rule (
+    action_rule_id,
+    "namespace",
+    json_path,
+    "action",
+    "condition",
+    reject_json,
+    modify_json,
+    priority,
+    updated_at,
+    updated_by,
+    last_applied_at,
+    created_at,
+    created_by,
+    provenance
+    )
+    VALUES (
+    'ffeb6342-3797-459f-9a4a-b8a71015f082',
+    'NYeC Rule',
+    '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1001*")',
+    'discard',
+    NULL,
+    NULL,
+    NULL,
+    5000,
+    current_timestamp,
+    current_user,
+    current_timestamp,
+    current_timestamp,
+    current_user,
+    '{"Key" : "value"}'
+    )
+    ON CONFLICT (action_rule_id) DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.json_action_rule (
+    action_rule_id,
+    "namespace",
+    json_path,
+    "action",
+    "condition",
+    reject_json,
+    modify_json,
+    priority,
+    updated_at,
+    updated_by,
+    last_applied_at,
+    created_at,
+    created_by,
+    provenance
+    )
+    VALUES (
+    'ggeb6342-3797-459f-9a4a-b8a71015f082',
+    'NYeC Rule',
+    '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1002*")',
+    'discard',
+    NULL,
+    NULL,
+    NULL,
+    5000,
+    current_timestamp,
+    current_user,
+    current_timestamp,
+    current_timestamp,
+    current_user,
+    '{"Key" : "value"}'
+    )
+    ON CONFLICT (action_rule_id) DO NOTHING;
+UPDATE techbd_udi_ingress.json_action_rule
+SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
+WHERE json_path LIKE '$.response.responseBody%';
