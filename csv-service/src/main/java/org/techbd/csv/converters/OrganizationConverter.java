@@ -78,7 +78,11 @@ public class OrganizationConverter extends BaseConverter {
         setMeta(organization,baseFHIRUrl);
         organization.setId(CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
         idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Organization/" + organization.getId();
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String fullUrl = baseUrl + "/Organization/" + organization.getId();
         Meta meta = organization.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
         populateOrganizationName(organization, qeAdminData);
@@ -89,7 +93,7 @@ public class OrganizationConverter extends BaseConverter {
          
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
-        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId()));
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl(baseUrl + "/Organization/" + organization.getId()));
         bundleEntryComponent.setResource(organization);
         return List.of(bundleEntryComponent);
     }
