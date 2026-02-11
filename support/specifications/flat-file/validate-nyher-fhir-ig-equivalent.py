@@ -41,30 +41,50 @@ class ValidatePotentialNeedIndicated(Check):
 
     def __init__(self):
         super().__init__()
-        # Define the ANSWER_CODE values that require POTENTIAL_NEED_INDICATED to be "pos"
+
+        # ANSWER_CODE values that require POTENTIAL_NEED_INDICATED = "pos"
         self.positive_answer_codes = {
             "la31994-9", "la31995-6", "la31996-4", "la28580-1", "la31997-2",
             "la31998-0", "la31999-8", "la32000-4", "la32001-2", "la33-6",
             "la32002-0", "la28397-0", "la6729-3", "la31981-6", "la31982-4"
         }
 
+        # ANSWER_CODE values that require POTENTIAL_NEED_INDICATED = "neg"
+        self.negative_answer_codes = {
+            "la32-8", "la6270-8", "la10066-1", "la10082-8", "la16644-9",
+            "la6482-9", "la31993-1", "la9-3", "la28398-8", "la31983-2"
+        }
+
     def validate_row(self, row):
-        # Check if both fields exist in the row
+        # Check if required fields exist
         if "ANSWER_CODE" not in row or "POTENTIAL_NEED_INDICATED" not in row:
             return
-        
+
         answer_code = row["ANSWER_CODE"]
         potential_need = row["POTENTIAL_NEED_INDICATED"]
-               
+
         # Skip validation if either field is empty
         if not answer_code or not potential_need:
             return
 
-        # Check if ANSWER_CODE is in the list that requires "pos"
+        # POSITIVE validation
         if answer_code in self.positive_answer_codes:
-            # POTENTIAL_NEED_INDICATED should be "pos" (can be "pos" alone or part of a pattern like "pos;neg")
-            if not ("pos" in potential_need):
-                note = f"When ANSWER_CODE is '{answer_code}', POTENTIAL_NEED_INDICATED must contain 'pos', got: '{potential_need}'"
+            if "pos" not in potential_need:
+                note = (
+                    f"When ANSWER_CODE is '{answer_code}', "
+                    f"POTENTIAL_NEED_INDICATED must contain 'pos', "
+                    f"got: '{potential_need}'"
+                )
+                yield errors.RowError.from_row(row, note=note)
+
+        # NEGATIVE validation
+        if answer_code in self.negative_answer_codes:
+            if "neg" not in potential_need:
+                note = (
+                    f"When ANSWER_CODE is '{answer_code}', "
+                    f"POTENTIAL_NEED_INDICATED must contain 'neg', "
+                    f"got: '{potential_need}'"
+                )
                 yield errors.RowError.from_row(row, note=note)
 
 # Custom Check Class for Date/Time Leap Year Validation

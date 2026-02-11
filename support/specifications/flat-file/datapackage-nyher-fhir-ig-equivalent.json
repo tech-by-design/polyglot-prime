@@ -219,7 +219,7 @@
               "description": "Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.code",
               "constraints": {
                 "required": true,
-                "pattern": "^(housing-instability|homelessness|inadequate-housing|utility-insecurity|food-insecurity|transportation-insecurity|employment-status|sdoh-category-unspecified)(;\\s*(housing-instability|homelessness|inadequate-housing|utility-insecurity|food-insecurity|transportation-insecurity|employment-status|sdoh-category-unspecified))*$"                
+                "pattern": "^(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity)(;\\s*(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity))*$"
               }
             },
             {
