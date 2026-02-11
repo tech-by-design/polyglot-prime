@@ -442,7 +442,12 @@ public class PatientConverter extends BaseConverter {
                 .ifPresent(languageCode -> {
                     String langCode = fetchCode(languageCode, CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId);
                     Coding coding = new Coding();
-                    coding.setSystem(fetchSystem(langCode, data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
+                    //coding.setSystem(fetchSystem(langCode, data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
+                    // Temporary fix (#2571):
+                    // Hardcoding system to "urn:ietf:bcp:47" to avoid ambiguity caused by multiple
+                    // system mappings for the same language code (e.g., 'en') in DB.
+                    // This will be reverted once the SHINNY language system structure is finalized.
+                    coding.setSystem("urn:ietf:bcp:47");
                     coding.setCode(langCode);
                     coding.setDisplay(fetchDisplay(langCode, data.getPreferredLanguageCodeDescription(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
                     CodeableConcept language = new CodeableConcept();
