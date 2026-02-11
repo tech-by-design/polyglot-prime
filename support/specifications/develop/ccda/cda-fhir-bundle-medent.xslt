@@ -324,6 +324,12 @@
                             "system": "<xsl:choose>
                                     <xsl:when test="contains(@value, 'tel:')">phone</xsl:when>
                                     <xsl:when test="contains(@value, 'mailto:')">email</xsl:when>
+                                    <xsl:when test="contains(@value, 'fax:')">fax</xsl:when>
+                                    <xsl:when test="contains(@value, 'pager:')">pager</xsl:when>
+                                    <xsl:when test="contains(@value, 'sms:')">sms</xsl:when>
+                                    <xsl:when test="contains(@value, 'http://') 
+                                                 or contains(@value, 'https://') 
+                                                 or contains(@value, 'www.')">url</xsl:when>
                                     <xsl:otherwise>other</xsl:otherwise>
                                 </xsl:choose>",
                         </xsl:if>
@@ -337,7 +343,9 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        "value": "<xsl:value-of select="@value"/>"
+                        "value": "<xsl:call-template name="clean-telecom-value">
+                                    <xsl:with-param name="value" select="@value"/>
+                                  </xsl:call-template>"
                     }
                     <xsl:if test="position() != last()">,</xsl:if>
                 </xsl:for-each>
@@ -892,6 +900,12 @@
                             "system": "<xsl:choose>
                                     <xsl:when test="contains(@value, 'tel:')">phone</xsl:when>
                                     <xsl:when test="contains(@value, 'mailto:')">email</xsl:when>
+                                    <xsl:when test="contains(@value, 'fax:')">fax</xsl:when>
+                                    <xsl:when test="contains(@value, 'pager:')">pager</xsl:when>
+                                    <xsl:when test="contains(@value, 'sms:')">sms</xsl:when>
+                                    <xsl:when test="contains(@value, 'http://') 
+                                                 or contains(@value, 'https://') 
+                                                 or contains(@value, 'www.')">url</xsl:when>
                                     <xsl:otherwise>other</xsl:otherwise>
                                 </xsl:choose>",
                         </xsl:if>
@@ -905,7 +919,9 @@
                                 <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
-                        "value": "<xsl:value-of select="@value"/>"
+                        "value": "<xsl:call-template name="clean-telecom-value">
+                                    <xsl:with-param name="value" select="@value"/>
+                                  </xsl:call-template>"
                     }
                     <xsl:if test="position() != last()">,</xsl:if>
                 </xsl:for-each>
@@ -2379,4 +2395,63 @@
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template name="clean-telecom-value">
+    <xsl:param name="value"/>
+
+    <!-- Step 1: Trim first -->
+    <xsl:variable name="trimmed">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="$value"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <!-- Step 2: Lowercase copy for prefix checking -->
+    <xsl:variable name="lower"
+      select="translate($trimmed,
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        'abcdefghijklmnopqrstuvwxyz')" />
+
+    <!-- Step 3: Remove known prefixes -->
+    <xsl:choose>
+
+      <!-- tel: -->
+      <xsl:when test="starts-with($lower, 'tel:')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($trimmed, 5)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- fax: -->
+      <xsl:when test="starts-with($lower, 'fax:')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($trimmed, 5)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- mailto: -->
+      <xsl:when test="starts-with($lower, 'mailto:')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($trimmed, 8)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- pager: -->
+      <xsl:when test="starts-with($lower, 'pager:')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($trimmed, 7)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- sms: -->
+      <xsl:when test="starts-with($lower, 'sms:')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($trimmed, 5)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- no prefix -->
+      <xsl:otherwise> <xsl:value-of select="$trimmed"/> </xsl:otherwise>
+
+    </xsl:choose>
+  </xsl:template>
 </xsl:stylesheet>
