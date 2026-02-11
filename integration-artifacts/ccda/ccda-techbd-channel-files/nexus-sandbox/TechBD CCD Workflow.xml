@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>043593d9-1283-4636-93e9-f3c33fc5f295</id>
+  <id>0a09378a-5189-44b7-9ce2-009029f3865d</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.13
-Correct URI display for CCDA.</description>
-  <revision>4</revision>
+  <description>Version 0.5.14
+Correct the response and status code when bad gateway occur for CCDA.</description>
+  <revision>9</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -3488,6 +3488,7 @@ if(endpoint == &apos;bundle&apos;) {
 	// Get the response from the HTTP Writer destination
 	var destinationName = &quot;dest_bundle&quot;;
 	var destinationResponse = responseMap.get(destinationName);
+	logger.info(&quot;destinationResponse &quot; + destinationResponse + &quot;:&quot;);
 	
 	// Check if the response exists
 	if (destinationResponse) {
@@ -3499,12 +3500,28 @@ if(endpoint == &apos;bundle&apos;) {
 	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
 	    logger.info(&quot;Status Code: &quot; + responseStatus);
 	    logger.info(&quot;Response Data: &quot; + responseData);
+	    if (responseStatus==&quot;ERROR&quot;) {
+		    var errorMessage = &quot;Bad gateway&quot;;
+		    setErrorResponse(502, errorMessage);
+		    throw errorMessage;
+		}
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
 }
 
-return;</postprocessingScript>
+return;
+
+
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}</postprocessingScript>
   <deployScript>
 return;
 </deployScript>
@@ -3549,7 +3566,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770719315430</time>
+        <time>1770790440407</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3560,10 +3577,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>8d41df54-843c-45a5-9428-b3230e1ba51c</id>
-        <name>0_5_13</name>
+        <id>0f67c367-c045-47f9-a48d-26d73433a444</id>
+        <name>0_5_14</name>
         <channelIds>
-          <string>043593d9-1283-4636-93e9-f3c33fc5f295</string>
+          <string>0a09378a-5189-44b7-9ce2-009029f3865d</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
