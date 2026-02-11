@@ -94,7 +94,7 @@ public class ProcedureConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(screeningProfileData.getProcedureCode())) {
             Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
             populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated, interactionId);
-            BundleEntryComponent entry = createBundleEntry(procedure);
+            BundleEntryComponent entry = createBundleEntry(procedure, baseFHIRUrl);
             return List.of(entry);
         } else {
             LOG.info(
@@ -124,8 +124,13 @@ public class ProcedureConverter extends BaseConverter {
         return encounterId + "_" + facilityId + "_" + procedureCode;
     }
 
-    private BundleEntryComponent createBundleEntry(Procedure procedure) {
-        String fullUrl = PROCEDURE_BASE_URL + procedure.getId();
+    private BundleEntryComponent createBundleEntry(Procedure procedure, String baseFHIRUrl) {
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        //String fullUrl = PROCEDURE_BASE_URL + procedure.getId();
+        String fullUrl = baseUrl + "/Procedure/" + procedure.getId();
 
         return new BundleEntryComponent()
                 .setFullUrl(fullUrl)

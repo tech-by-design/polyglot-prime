@@ -81,7 +81,11 @@ public class EncounterConverter extends BaseConverter {
         
         idsGenerated.put(CsvConstants.ENCOUNTER_ID, encounter.getId());
 
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String fullUrl = baseUrl + "/Encounter/" + encounter.getId();
 
         Meta meta = encounter.getMeta();
 
@@ -113,7 +117,7 @@ public class EncounterConverter extends BaseConverter {
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                .setUrl("http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId()));
+                .setUrl(baseUrl + "/Encounter/" + encounter.getId()));
         bundleEntryComponent.setResource(encounter);
 
         return List.of(bundleEntryComponent);

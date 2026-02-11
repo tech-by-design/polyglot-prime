@@ -63,7 +63,11 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()
                     + screeningProfileData.getEncounterId()));
             Meta meta = observation.getMeta();
-            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
+            String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+            String fullUrl = baseUrl + "/Observation/" + observation.getId();
             
             if (StringUtils.isNotEmpty(demographicData.getSexualOrientationLastUpdated())) {
                 meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
@@ -103,7 +107,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                    .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observation.getId()));
+                    .setUrl(baseUrl + "/Observation/" + observation.getId()));
             entry.setResource(observation);
             LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
             return List.of(entry);

@@ -105,7 +105,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 //                                 data.getQuestionCode() + data.getEncounterId());
                                 observation.setId(observationIdHashed);
                                 data.setObservationId(observationId);
-                                String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed;
+                                String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl
+                                        : "http://shinny.org/us/ny/hrsn";
+                                if (baseUrl.endsWith("/")) {
+                                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                                }
+                                String fullUrl = baseUrl + "/Observation/" + observationIdHashed;
                                 setMeta(observation,baseFHIRUrl);
                                 Meta meta = observation.getMeta();
                                 if (StringUtils.isNotEmpty(screeningProfileData.getScreeningLastUpdated())) {
@@ -123,7 +128,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                 if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
                                     Extension languageExtension = new Extension(
-                                            "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-language");
+                                        baseUrl + "/StructureDefinition/shinny-observation-language");
                                     CodeableConcept valueConcept = new CodeableConcept();
                                     valueConcept.addCoding(new Coding().setCode(screeningLangCode));
                                     languageExtension.setValue(valueConcept);
@@ -387,7 +392,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 BundleEntryComponent entry = new BundleEntryComponent();
                                 entry.setFullUrl(fullUrl);
                                 entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                                                .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed));
+                                                .setUrl(baseUrl + "/Observation/" + observationIdHashed));
                                 entry.setResource(observation);
                                 bundleEntryComponents.add(entry);
                         }
@@ -480,10 +485,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                 groupObservation.setLanguage("en");
+                String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : "http://shinny.org/us/ny/hrsn";
+                if (baseUrl.endsWith("/")) {
+                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                }
 
                 if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
                     Extension languageExtension = new Extension(
-                            "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-language");
+                        baseUrl + "/StructureDefinition/shinny-observation-language");
                     CodeableConcept valueConcept = new CodeableConcept();
                     valueConcept.addCoding(new Coding().setCode(screeningLangCode));
                     languageExtension.setValue(valueConcept);
@@ -623,7 +632,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setHasMember(hasMemberReferences);
 
                 // Create bundle entry
-                String fullUrl = OBSERVATION_URL_BASE + observationId;
+                //String fullUrl = OBSERVATION_URL_BASE + observationId;
+                String fullUrl = baseUrl + "/Observation/" + observationId;
                 BundleEntryComponent groupEntry = new BundleEntryComponent();
                 groupEntry.setFullUrl(fullUrl);
                 groupEntry.setResource(groupObservation);
