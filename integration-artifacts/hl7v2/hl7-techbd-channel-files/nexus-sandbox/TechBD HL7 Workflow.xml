@@ -2,9 +2,9 @@
   <id>42c12cfa-3058-4362-ba17-0ba4df9a6252</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.18
-Add ZIP Upload Rejection and Missing File Validation in HL7 Channel</description>
-  <revision>64</revision>
+  <description>Version: 0.1.19
+Add 502 Gateway Error Response </description>
+  <revision>6</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -13,27 +13,6 @@ Add ZIP Upload Rejection and Missing File Validation in HL7 Channel</description
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-  <sslEnabled>false</sslEnabled>
-          <mutualTlsEnabled>false</mutualTlsEnabled>
-          <verifyHostname>false</verifyHostname>
-          <keystorePath/>
-          <keystorePassword/>
-          <certAlias/>
-          <certPassword/>
-          <truststorePath/>
-          <truststorePassword/>
-          <tls13>true</tls13>
-          <tls12>true</tls12>
-          <tls11>true</tls11>
-          <keystoreType/>
-          <truststoreType/>
-          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-          <keystoreUid/>
-          <myCertificateAlias/>
-          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-          <truststoreUid/>
-        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -1922,29 +1901,7 @@ return value;
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
-        <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-  <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>false</mutualTlsEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>true</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
+        <pluginProperties/>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -2497,11 +2454,26 @@ if(endpoint == &apos;bundle&apos;) {
 	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
 	    logger.info(&quot;Status Code: &quot; + responseStatus);
 	    logger.info(&quot;Response Data: &quot; + responseData);
+
+	    if (responseStatus==&quot;ERROR&quot;)
+	    {
+	    	  var errorMessage = &quot;Bad gateway.&quot;;
+		  setErrorResponse(502, errorMessage);
+		  throw errorMessage;
+	    }
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
 }
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
 
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
 return;</postprocessingScript>
   <deployScript>//// This script executes once when the channel is deployed
 //// You only have access to the globalMap and globalChannelMap here to persist data
@@ -2813,24 +2785,24 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770724969265</time>
+        <time>1770791129583</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>11</userId>
+      <userId>1</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>5a73058d-b93a-46dd-b157-9fbc440fc625</id>
-        <name>0_1_18</name>
+        <id>ad16a832-dd4a-40b4-bbab-76a35d3f804d</id>
+        <name>0_1_19</name>
         <channelIds>
           <string>42c12cfa-3058-4362-ba17-0ba4df9a6252</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
