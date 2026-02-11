@@ -170,6 +170,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 // header
                 String mtlsName = portEntry.mtls;
                 String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
+                origRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
                 LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
 
                 String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);

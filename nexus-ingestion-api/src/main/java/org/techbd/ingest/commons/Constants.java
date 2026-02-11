@@ -47,4 +47,5 @@ public class Constants {
     public static final String HEADER_MSG_TYPE = "X-Message-Type";
     public static final String HEADER_INTERACTION_ID = "X-Interaction-ID";
     public static final String ERROR_TRACE_ID = "errorTraceId";
+    public static final String ACK_CONTENT_TYPE = "ackContentType";
 }
