@@ -10,7 +10,8 @@
         "protocol": "TCP",
         "route": "/hold",
         "dataDir": "/outbound",
-        "metadataDir": "/outbound"
+        "metadataDir": "/outbound",
+        "ackContentType": "application/soap+xml"
     },
        {
         "port": 5555,
@@ -28,7 +29,8 @@
         "route": "/",
         "queue": "txd-sbx-util-queue.fifo",
         "dataDir": "/outbound",
-        "metadataDir": "/outbound"
+        "metadataDir": "/outbound",
+         "ackContentType": "application/soap+xml"
     },
     {
         "port": 3575,

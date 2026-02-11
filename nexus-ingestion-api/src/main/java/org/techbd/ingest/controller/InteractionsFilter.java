@@ -139,7 +139,12 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 } else {
                     LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {} interactionId: {}", requestUri, interactionId);
                 }
-
+                if (sourceId == null) {
+                    sourceId = origRequest.getHeader(Constants.HEADER_SOURCE_ID);
+                }
+                if(msgType == null) {
+                    msgType = origRequest.getHeader(Constants.HEADER_MSG_TYPE);
+                }
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
 
                 // 4) Use PortResolverService to find the matching port entry

@@ -187,7 +187,24 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
 
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
         String status = (ex == null) ? "SUCCESS" : "FAILURE";
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest httpRequest = connection.getHttpServletRequest();
+        String ackContentType = (String) httpRequest.getAttribute(Constants.ACK_CONTENT_TYPE);
+        // Override content type if configured in port configuration
+        if (ackContentType != null && !ackContentType.isBlank()) {
+            try {
+                var httpResponse = connection.getHttpServletResponse();
+                        httpResponse.setHeader("Content-Type", ackContentType);
 
+                httpResponse.setContentType(ackContentType);
+                LOG.info("handleResponse: Overriding response content type to: {} for interactionId={}", 
+                        ackContentType, interactionId);
+            } catch (Exception e) {
+                LOG.warn("handleResponse: Failed to override response content type for interactionId={}, error={}", 
+                        interactionId, e.getMessage());
+            }
+        }
         if (ex != null) {
             // Generate error trace ID for exceptions in afterCompletion
             String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
