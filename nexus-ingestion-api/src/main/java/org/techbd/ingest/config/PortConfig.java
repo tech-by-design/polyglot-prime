@@ -66,6 +66,7 @@ public class PortConfig implements InitializingBean {
         public String metadataDir;
         public String sourceId;
         public String msgType;
+        public String ackContentType;
 
         public boolean isMtlsEnabled() {
             return mtlsEnabled || (mtls != null && !mtls.isBlank());

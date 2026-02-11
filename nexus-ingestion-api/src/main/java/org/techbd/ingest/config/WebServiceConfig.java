@@ -25,11 +25,14 @@ import org.springframework.ws.transport.http.MessageDispatcherServlet;
 import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
 import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.interceptors.WsaHeaderInterceptor;
 import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.SoapResponseUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.MimeHeaders;
 import jakarta.xml.soap.SOAPConstants;
@@ -67,7 +70,7 @@ public class WebServiceConfig extends WsConfigurationSupport {
 
     @Bean
     public ServletRegistrationBean<MessageDispatcherServlet> messageDispatcherServlet(ApplicationContext context) {
-        var servlet = new MessageDispatcherServlet();
+        var servlet = new CustomMessageDispatcherServlet();
         servlet.setApplicationContext(context);
         servlet.setTransformWsdlLocations(true);
         return new ServletRegistrationBean<>(servlet, "/ws/*");
@@ -209,6 +212,20 @@ public class WebServiceConfig extends WsConfigurationSupport {
         private String getContentType(MimeHeaders headers) {
             String[] header = headers.getHeader("Content-Type");
             return header != null && header.length > 0 ? header[0] : null;
+        }
+    }
+    static class CustomMessageDispatcherServlet extends MessageDispatcherServlet {
+        @Override
+        protected void doService(HttpServletRequest request, HttpServletResponse response)
+                throws Exception {
+            super.doService(request, response);
+
+            // Override content type AFTER processing
+            String ackContentType = (String) request.getAttribute(Constants.ACK_CONTENT_TYPE);
+            if (ackContentType != null && !ackContentType.isBlank()) {
+                response.setContentType(ackContentType);
+                response.setHeader("Content-Type", ackContentType);
+            }
         }
     }
 
