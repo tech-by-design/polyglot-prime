@@ -115,8 +115,8 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-           This data grid provides a high-level summary of all CSV processing failures, grouped by ZIP File Interaction ID. Each row represents a single ZIP submission and displays the earliest error timestamp, tenant, uri and file name. <br>
-            This summary view helps users quickly identify problematic ZIP submissions and understand the overall error categories associated with each interaction. Clicking on the TechBD Zip File Interaction ID navigates to the All CSV Errors page, automatically applying the correct TechBD Zip File Interaction ID filter to display the detailed errors for that specific interaction.
+           This data grid provides a high-level summary of all CSV processing failures, grouped by TechBD ZIP File Interaction ID. Each row represents a single ZIP submission and displays the timestamp of the first error encountered, along with the tenant, URI, and file name. 
+           This summary view helps users quickly identify problematic ZIP submissions and understand the overall error categories associated with each interaction. Clicking the TechBD ZIP File Interaction ID navigates to the All CSV Errors page, where the corresponding Interaction ID filter is automatically applied to display the detailed errors for that specific submission.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
