@@ -18,6 +18,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(final HttpServletRequest origRequest, final HttpServletResponse origResponse,
             final FilterChain chain) throws IOException, ServletException {
         boolean isSoapEndpoint = origRequest.getRequestURI().startsWith("/ws");
-        String interactionId = null;
+        String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);;
         
         try {
             if (!origRequest.getRequestURI().equals("/")
@@ -90,28 +91,33 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
                         origRequest.getRequestURI());
 
-               if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-                try {
-                    Enumeration<String> headerNames = origRequest.getHeaderNames();
-                    if (headerNames != null) {
-                        while (headerNames.hasMoreElements()) {
-                            String name = headerNames.nextElement();
-                            List<String> values = new ArrayList<>();
-                            Enumeration<String> vals = origRequest.getHeaders(name);
-                            while (vals.hasMoreElements()) {
-                                values.add(vals.nextElement());
-                            }
-                            LOG.info("InteractionsFilter: Request Header - {} = {}", name, String.join(", ", values));
-                        }
-                    }
-                } catch (Exception e) {
-                    LOG.warn("InteractionsFilter: failed to enumerate request headers", e);
-                }
-            }
-                
-                
-              interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
+                if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+                    try {
+                        Enumeration<String> headerNames = origRequest.getHeaderNames();
 
+                        if (headerNames != null && headerNames.hasMoreElements()) {
+
+                            String allHeaders = Collections.list(headerNames).stream()
+                                    .map(name -> {
+                                        List<String> values = Collections.list(origRequest.getHeaders(name));
+                                        return name + " = " + String.join(", ", values);
+                                    })
+                                    .collect(Collectors.joining(" | "));
+
+                            LOG.info("InteractionsFilter: interactionId={} | Request Headers - {}",
+                                    interactionId,
+                                    allHeaders);
+                        } else {
+                            LOG.info("InteractionsFilter: interactionId={} | Request Headers - none",
+                                    interactionId);
+                        }
+
+                    } catch (Exception e) {
+                        LOG.warn("InteractionsFilter: interactionId={} | failed to enumerate request headers",
+                                interactionId, e);
+                    }
+                }                          
+              
                 if (StringUtils.isEmpty(interactionId)) {
                     interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
                 }
