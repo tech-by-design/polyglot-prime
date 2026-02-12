@@ -2,9 +2,9 @@
   <id>0a09378a-5189-44b7-9ce2-009029f3865d</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.14
-Correct the response and status code when bad gateway occur for CCDA.</description>
-  <revision>9</revision>
+  <description>Version 0.5.15
+Revert the changes in bad gateway occur for CCDA.</description>
+  <revision>7</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -3500,11 +3500,6 @@ if(endpoint == &apos;bundle&apos;) {
 	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
 	    logger.info(&quot;Status Code: &quot; + responseStatus);
 	    logger.info(&quot;Response Data: &quot; + responseData);
-	    if (responseStatus==&quot;ERROR&quot;) {
-		    var errorMessage = &quot;Bad gateway&quot;;
-		    setErrorResponse(502, errorMessage);
-		    throw errorMessage;
-		}
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
@@ -3566,7 +3561,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770790440407</time>
+        <time>1770869090479</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3577,13 +3572,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0f67c367-c045-47f9-a48d-26d73433a444</id>
-        <name>0_5_14</name>
+        <id>c3d4a03d-caef-4d7b-aa16-f7fc7021f5d2</id>
+        <name>0_5_15</name>
         <channelIds>
           <string>0a09378a-5189-44b7-9ce2-009029f3865d</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
