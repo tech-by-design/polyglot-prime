@@ -6,6 +6,8 @@ from fastapi import FastAPI, File, UploadFile,APIRouter,HTTPException
 import sys
 import logging
 import shutil
+import re
+import tempfile
 
 
 logger = logging.getLogger("uvicorn")
@@ -13,10 +15,11 @@ logging.basicConfig(level=logging.DEBUG)
 path_log = os.environ.get("PATH_LOG")
 FORMAT = "%(filename)s - line:%(lineno)s - %(funcName)2s() -%(levelname)s %(asctime)-15s %(message)s"
 logger = logging.getLogger(__name__)
-fh = logging.FileHandler(path_log)
-f = logging.Formatter(FORMAT)
-fh.setFormatter(f)
-logger.addHandler(fh)
+if path_log:
+    fh = logging.FileHandler(path_log)
+    f = logging.Formatter(FORMAT)
+    fh.setFormatter(f)
+    logger.addHandler(fh)
 logger.setLevel(logging.DEBUG)
 
 spec_path = os.getenv("SPEC_PATH")
@@ -28,6 +31,18 @@ def custom_json_encoder(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+def _sanitize_upload_filename(expected_prefix: str, filename: str) -> str:
+    if not filename:
+        raise HTTPException(status_code=400, detail="Missing filename")
+    base = os.path.basename(filename)
+    if base != filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not base.startswith(expected_prefix):
+        raise HTTPException(status_code=400, detail=f"Invalid file name. Must start with {expected_prefix}")
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]+", base):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return base
 
 def validate_package(spec_path, file1, file2, file3, file4):
     results = {
@@ -145,38 +160,38 @@ async def validate(
         if not is_valid:
             logger.error(f"Invalid file name for {file_key}. Must start with {file_key.replace('_FILE', '')}_")
             return {"detail": f"Invalid file name for {file_key}. Must start with {file_key.replace('_FILE', '')}_", "status_code":400}
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_dir = "nyher-fhir-ig-example" + timestamp
-    os.makedirs(file_dir, exist_ok=True)
-    temp_files = []
-    files = [QE_ADMIN_DATA_FILE, SCREENING_PROFILE_DATA_FILE, SCREENING_OBSERVATION_DATA_FILE, DEMOGRAPHIC_DATA_FILE]
-    for file in files:
-        temp_file_path = os.path.join(file_dir, file.filename)
-        logger.debug(f"Saving file {file.filename} to {temp_file_path}")
+
+    files = [
+        (QE_ADMIN_DATA_FILE, "QE_ADMIN_DATA_"),
+        (SCREENING_PROFILE_DATA_FILE, "SCREENING_PROFILE_DATA_"),
+        (SCREENING_OBSERVATION_DATA_FILE, "SCREENING_OBSERVATION_DATA_"),
+        (DEMOGRAPHIC_DATA_FILE, "DEMOGRAPHIC_DATA_"),
+    ]
+
+    with tempfile.TemporaryDirectory(prefix="nyher-fhir-ig-example-") as file_dir:
+        temp_files = []
+        for file, expected_prefix in files:
+            safe_name = _sanitize_upload_filename(expected_prefix, file.filename)
+            temp_file_path = os.path.join(file_dir, safe_name)
+            logger.debug(f"Saving file {safe_name} to {temp_file_path}")
+            try:
+                with open(temp_file_path, "wb") as temp_file:
+                    temp_file.write(await file.read())
+                temp_files.append(temp_file_path)
+                logger.debug(f"File {safe_name} saved successfully to {temp_file_path}")
+            except Exception as e:
+                logger.error(f"Failed to save file {safe_name}: {e}")
+                raise HTTPException(status_code=500, detail=f"Failed to save {safe_name}")
+
+        adjusted_temp_files = [os.path.join(file_dir, os.path.basename(path)) for path in temp_files]
+        logger.debug(f"Adjusted file paths: {adjusted_temp_files}")
         try:
-            with open(temp_file_path, "wb") as temp_file:
-                temp_file.write(await file.read())
-            temp_files.append(temp_file_path)
-            logger.debug(f"File {file.filename} saved successfully to {temp_file_path}")
+            logger.debug("Calling validate_package with spec file and temp files.")
+            results = validate_package(spec_path, *adjusted_temp_files)
+            logger.debug("Validation completed successfully.")
         except Exception as e:
-            logger.error(f"Failed to save file {file.filename}: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to save {file.filename}")
-    adjusted_temp_files = [f"{file_dir}/{os.path.basename(path)}" for path in temp_files]
-    logger.debug(f"Adjusted file paths: {adjusted_temp_files}")
-    try:
-        logger.debug("Calling validate_package with spec file and temp files.")
-        results = validate_package(spec_path, *adjusted_temp_files)
-        logger.debug("Validation completed successfully.")
-    except Exception as e:
-        logger.error(f"Validation failed: {e}")
-        results = {"error": "Validation process failed."}
-    try:
-        for path in temp_files:
-            os.remove(path)
-            logger.debug(f"Removed file: {path}")
-        shutil.rmtree(file_dir)
-        logger.debug(f"Removed folder: {file_dir}")
-    except Exception as e:
-        logger.error(f"Failed to clean up: {e}")
-    return results
+            logger.error(f"Validation failed: {e}")
+            results = {"error": "Validation process failed."}
+
+        return results
 

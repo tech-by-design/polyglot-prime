@@ -508,85 +508,84 @@ public class NettyTcpServer implements MessageSourceProvider {
             int startIndex = in.readerIndex();
             byte firstByte = in.getByte(startIndex);
 
-            // MODIFIED: Check for MLLP delimiters first (for HL7 messages)
+            // Check for MLLP delimiters first (for HL7 messages)
             if (firstByte == MLLP_START) {
                 logger.info("MLLP_START_DETECTED [interactionId={}] searching for MLLP end markers in {} bytes",
                         interactionId, in.readableBytes());
-                
+
                 // Look for MLLP end markers: <FS><CR>
                 int endIndex = -1;
                 for (int i = startIndex + 1; i < in.writerIndex() - 1; i++) {
                     if (in.getByte(i) == MLLP_END_1 && in.getByte(i + 1) == MLLP_END_2) {
                         endIndex = i + 2; // Include both end markers
-                        logger.debug("MLLP_END_MARKERS_FOUND [interactionId={}] at position={}", 
+                        logger.debug("MLLP_END_MARKERS_FOUND [interactionId={}] at position={}",
                                 interactionId, i);
                         break;
                     }
                 }
 
                 if (endIndex == -1) {
-                    // End markers not found yet
                     if (in.readableBytes() > maxFrameLength) {
                         logger.warn("MLLP_MESSAGE_SIZE_LIMIT_EXCEEDED [interactionId={}] size={} bytes exceeds max={} bytes",
                                 interactionId, in.readableBytes(), maxFrameLength);
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex=startIndex + 1;
+                        ByteBuf oversizedFrame = in.readRetainedSlice(in.readableBytes());
+                        out.add(oversizedFrame);
+                        return;
                     }
                     logger.info("MLLP_END_NOT_FOUND [interactionId={}] buffered={} bytes, waiting for more data",
                             interactionId, in.readableBytes());
-                    return; // Wait for more data
+                    return;
                 }
 
-                // Complete MLLP message found
                 int frameLength = endIndex - startIndex;
                 ByteBuf frame = in.readRetainedSlice(frameLength);
                 out.add(frame);
-                
-                logger.info("MLLP_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
-                        interactionId, frameLength, currentFragment, currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
 
-            } 
-            // NEW: Check for TCP delimiters (for non-HL7 messages)
-            else if (firstByte == tcpStartDelimiter) {
-                logger.debug("TCP_DELIMITER_START_DETECTED [interactionId={}] searching for TCP end markers (0x{}, 0x{}) in {} bytes",
-                        interactionId, String.format("%02X", tcpEndDelimiter1), String.format("%02X", tcpEndDelimiter2), in.readableBytes());
-                
-                // Look for TCP end markers
+                logger.info(
+                        "MLLP_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
+                        interactionId, frameLength, currentFragment,
+                        currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
+
+            } else if (firstByte == tcpStartDelimiter) {
+                logger.debug(
+                        "TCP_DELIMITER_START_DETECTED [interactionId={}] searching for TCP end markers (0x{}, 0x{}) in {} bytes",
+                        interactionId, String.format("%02X", tcpEndDelimiter1),
+                        String.format("%02X", tcpEndDelimiter2), in.readableBytes());
+
                 int endIndex = -1;
                 for (int i = startIndex + 1; i < in.writerIndex() - 1; i++) {
                     if (in.getByte(i) == tcpEndDelimiter1 && in.getByte(i + 1) == tcpEndDelimiter2) {
-                        endIndex = i + 2; // Include both end markers
-                        logger.info("TCP_END_MARKERS_FOUND [interactionId={}] at position={}", 
-                                interactionId, i);
+                        endIndex = i + 2;
+                        logger.info("TCP_END_MARKERS_FOUND [interactionId={}] at position={}", interactionId, i);
                         break;
                     }
                 }
 
                 if (endIndex == -1) {
-                    // End markers not found yet
                     if (in.readableBytes() > maxFrameLength) {
                         logger.warn("TCP_DELIMITED_MESSAGE_SIZE_LIMIT_EXCEEDED [interactionId={}] size={} bytes exceeds max={} bytes",
                                 interactionId, in.readableBytes(), maxFrameLength);
-                        
-                        // Set flag but continue buffering to capture complete message
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex=startIndex + 1;
+                        ByteBuf oversizedFrame = in.readRetainedSlice(in.readableBytes());
+                        out.add(oversizedFrame);
+                        return;
                     }
                     logger.debug("TCP_END_NOT_FOUND [interactionId={}] buffered={} bytes, waiting for more data",
                             interactionId, in.readableBytes());
-                    return; // Wait for more data
+                    return;
                 }
 
-                // Complete TCP delimited message found
                 int frameLength = endIndex - startIndex;
                 ByteBuf frame = in.readRetainedSlice(frameLength);
                 out.add(frame);
-                
-                logger.info("TCP_DELIMITED_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
-                        interactionId, frameLength, currentFragment, currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
 
-            } 
-            else {
+                logger.info(
+                        "TCP_DELIMITED_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
+                        interactionId, frameLength, currentFragment,
+                        currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
+
+            } else {
                 throw new IllegalStateException("Non-delimited message received, unable to process");
             }
         }
@@ -594,18 +593,13 @@ public class NettyTcpServer implements MessageSourceProvider {
         @Override
         protected void decodeLast(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
             UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
-            
-            // Handle any remaining data when channel closes
             if (in.isReadable()) {
-                int frameLength = in.readableBytes();
-                ByteBuf frame = in.readRetainedSlice(frameLength);
-                out.add(frame);
-                
                 AtomicInteger fragmentCount = ctx.channel().attr(FRAGMENT_COUNT_KEY).get();
-                int currentFragment = fragmentCount.get();
-                
-                logger.info("FINAL_FRAME_ON_CLOSE [interactionId={}] length={} bytes, totalFragments={}",
-                        interactionId, frameLength, currentFragment);
+                int currentFragment = fragmentCount != null ? fragmentCount.get() : 0;
+
+                logger.warn("TRAILING_UNDELIMITED_BYTES_DROPPED_ON_CLOSE [interactionId={}] length={} bytes, totalFragments={}",
+                        interactionId, in.readableBytes(), currentFragment);
+                in.skipBytes(in.readableBytes());
             } else {
                 logger.info("CHANNEL_CLOSED_NO_REMAINING_DATA [interactionId={}]", interactionId);
             }
@@ -614,8 +608,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
-            logger.error("DECODER_EXCEPTION [interactionId={}]: {}", 
-                    interactionId, cause.getMessage(), cause);
+            logger.error("DECODER_EXCEPTION [interactionId={}]: {}", interactionId, cause.getMessage(), cause);
             super.exceptionCaught(ctx, cause);
         }
     }
@@ -641,7 +634,7 @@ public class NettyTcpServer implements MessageSourceProvider {
      */
     private void handleProxyHeader(ChannelHandlerContext ctx, HAProxyMessage proxyMsg, UUID interactionId) {
         if (proxyMsg.command() == HAProxyCommand.PROXY) {
-            logger.info("PROXY_HEADER [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
+            logger.info("PROXY_HEADER [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={} ",
                     interactionId,
                     proxyMsg.sourceAddress(),
                     proxyMsg.sourcePort(),
@@ -668,7 +661,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         String dummyDestinationIp = "127.0.0.1";
         int dummyDestinationPort = 5555;
 
-        logger.info("SANDBOX_PROXY [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
+        logger.info("SANDBOX_PROXY [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={} ",
                 interactionId, dummyClientIp, dummyClientPort, dummyDestinationIp, dummyDestinationPort);
 
         ctx.channel().attr(CLIENT_IP_KEY).set(dummyClientIp);
@@ -883,7 +876,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     clientIP,
                     destinationIP,
                     String.valueOf(destinationPort),
-                    MessageSourceType.MLLP);
+                    genericNackExpected ? MessageSourceType.TCP : MessageSourceType.MLLP);
             
             requestContext.setIngestionFailed(true);
             

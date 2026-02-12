@@ -64,7 +64,8 @@ public class MessageProcessorService {
                 "MessageProcessorService:: processMessage called with MultipartFile. interactionId={}, filename={}, filesize={} from source : {}",
                 interactionId,
                 file != null ? file.getOriginalFilename() : "null",
-                file != null ? file.getSize() : 0, context.getMessageSourceType().name());
+                file != null ? file.getSize() : 0,
+                context != null && context.getMessageSourceType() != null ? context.getMessageSourceType().name() : "unknown");
         portConfigApplierService.applyPortConfigOverrides(context);        
         for (MessageProcessingStep step : processingSteps) {
             if (step.isEnabledFor(context)) {
@@ -77,7 +78,8 @@ public class MessageProcessorService {
             }
         }
         LOG.info("MessageProcessorService:: All processing steps completed for interactionId={}", interactionId);
-        return createSuccessResponse(context.getMessageId(), context);
+        String messageId = context != null ? context.getMessageId() : null;
+        return createSuccessResponse(messageId, context);
     }
 
     /**
@@ -105,7 +107,7 @@ public class MessageProcessorService {
     public Map<String, String> processMessage(RequestContext context, String content, String ackMessage) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={} from source {}",
-                interactionId, context.getMessageSourceType().name());
+                interactionId, context != null && context.getMessageSourceType() != null ? context.getMessageSourceType().name() : "unknown");
         portConfigApplierService.applyPortConfigOverrides(context); 
         for (MessageProcessingStep step : processingSteps) {
             if (step.isEnabledFor(context)) {
@@ -118,7 +120,8 @@ public class MessageProcessorService {
             }
         }
         LOG.info("MessageProcessorService:: All processing steps completed for interactionId={}", interactionId);
-        return createSuccessResponse(context.getMessageId(), context);
+        String messageId = context != null ? context.getMessageId() : null;
+        return createSuccessResponse(messageId, context);
     }
 
     /**
@@ -134,14 +137,15 @@ public class MessageProcessorService {
         try {
             LOG.info("MessageProcessorService:: Creating success response for interactionId={}", interactionId);
             Map<String, String> response = new HashMap<>();
-            response.put("messageId", messageId != null ? messageId : context.getInteractionId());
-            response.put("interactionId", context.getInteractionId());
+            response.put("messageId", messageId != null ? messageId : interactionId);
+            response.put("interactionId", interactionId);
             response.put("ingestionApiVersion", appConfig.getVersion());
-            response.put("fullS3Path", context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set");
+            response.put("fullS3Path",
+                    context != null && context.getFullS3DataPath() != null ? context.getFullS3DataPath() : "not-set");
             response.put("fullS3MetaDataPath",
-                    context.getFullS3MetadataPath() != null ? context.getFullS3MetadataPath() : "not-set");
-            response.put("timestamp", context.getTimestamp());
-            if (context.getFullS3AckMessagePath() != null) {
+                    context != null && context.getFullS3MetadataPath() != null ? context.getFullS3MetadataPath() : "not-set");
+            response.put("timestamp", context != null ? context.getTimestamp() : null);
+            if (context != null && context.getFullS3AckMessagePath() != null) {
                 response.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
             }
 
