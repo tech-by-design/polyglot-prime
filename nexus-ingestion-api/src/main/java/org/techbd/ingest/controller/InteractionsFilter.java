@@ -57,6 +57,7 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
@@ -84,6 +85,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
             final FilterChain chain) throws IOException, ServletException {
         boolean isSoapEndpoint = origRequest.getRequestURI().startsWith("/ws");
         String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);;
+        HttpServletResponse wrappedResponse = origResponse;
+
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
         }
@@ -181,7 +184,14 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
                 origRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
                 LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
+               
+                // CRITICAL: Wrap response EARLY in filter chain to force Content-Type override
+                // This must happen BEFORE MessageDispatcherServlet writes the response
+                if (portEntry.ackContentType != null && !portEntry.ackContentType.isBlank()) {
+                     wrappedResponse = new ContentTypeOverrideResponseWrapper(origResponse, portEntry.ackContentType);
+                    LOG.info("InteractionsFilter: Early wrapping response with forceContentType={}", portEntry.ackContentType);
 
+                }
                 String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
                 // Accept header value as URL-encoded (always expected to be URL-encoded).
                 String clientCertPem = null;
@@ -205,13 +215,13 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         String msg = String.format("Missing required header '%s' for mTLS on port %d",
                                 Constants.REQ_HEADER_MTLS_CLIENT_CERT, requestPort);
                         LOG.warn("InteractionsFilter: {}", msg);
-                        origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-                        origResponse.setContentType("application/json;charset=UTF-8");
+                        wrappedResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+                        wrappedResponse.setContentType("application/json;charset=UTF-8");
                         String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
                         try {
-                            origResponse.getWriter()
+                            wrappedResponse.getWriter()
                                     .write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
-                            origResponse.getWriter().flush();
+                            wrappedResponse.getWriter().flush();
                         } catch (IOException ioe) {
                             LOG.error(
                                     "InteractionsFilter: failed to write Bad Request response for missing mTLS header",
@@ -236,7 +246,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (mtlsName == null || mtlsName.isBlank()) {
                     LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
                             requestPort);
-                    chain.doFilter(origRequest, origResponse);
+                    chain.doFilter(origRequest, wrappedResponse);
                     return;
                 }
 
@@ -284,29 +294,29 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 } catch (ExecutionException ee) {
                     LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
                     // return 500 with a small JSON body (similar handling as IOException)
-                    origResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-                    origResponse.setContentType("application/json;charset=UTF-8");
+                    wrappedResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                    wrappedResponse.setContentType("application/json;charset=UTF-8");
                     String msg = "Failed to load CA bundle from cache/S3";
                     String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
                     try {
-                        origResponse.getWriter().write(
+                        wrappedResponse.getWriter().write(
                                 String.format("{\"error\":\"Internal Server Error\",\"description\":\"%s\"}", safe));
-                        origResponse.getWriter().flush();
+                        wrappedResponse.getWriter().flush();
                     } catch (IOException ioe2) {
                         LOG.error("InteractionsFilter: failed to write Internal Server Error response", ioe2);
                     }
                     return;
                 } catch (IOException ioe) {
                     LOG.error("InteractionsFilter: IO error during mTLS processing", ioe);
-                    origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                             "mTLS processing error: " + ioe.getMessage());
                     return;
                 } catch (CertificateException ce) {
                     // Log full details (stack trace and cause) and return a JSON body with a
                     // descriptive message.
                     LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:", requestPort, ce);
-                    origResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    origResponse.setContentType("application/json;charset=UTF-8");
+                    wrappedResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    wrappedResponse.setContentType("application/json;charset=UTF-8");
                     String description = ce.getMessage() != null ? ce.getMessage() : "mTLS verification failed";
                     // escape backslashes, quotes and newlines for safe JSON embedding
                     description = description.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
@@ -314,8 +324,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     String json = String.format("{\"error\":\"mTLS verification failed\",\"description\":\"%s\"}",
                             description);
                     try {
-                        origResponse.getWriter().write(json);
-                        origResponse.getWriter().flush();
+                        wrappedResponse.getWriter().write(json);
+                        wrappedResponse.getWriter().flush();
                     } catch (IOException ioe) {
                         LOG.error("InteractionsFilter: failed to write error response", ioe);
                     }
@@ -327,7 +337,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     while (t != null) {
                         if (t instanceof software.amazon.awssdk.services.s3.model.NoSuchKeyException) {
                             LOG.warn("InteractionsFilter: CA bundle not found in S3: {}", t.getMessage());
-                            origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                            wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                                     "mTLS CA bundle not found: " + t.getMessage());
                             return;
                         }
@@ -335,25 +345,25 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             software.amazon.awssdk.services.s3.model.S3Exception s3e = (software.amazon.awssdk.services.s3.model.S3Exception) t;
                             if (s3e.statusCode() == 404) {
                                 LOG.warn("InteractionsFilter: S3 reported 404 for CA bundle: {}", s3e.getMessage());
-                                origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                                         "mTLS CA bundle not found: " + s3e.getMessage());
                                 return;
                             }
                         }
                         if (t instanceof IOException) {
-                            origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                            wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                                     "mTLS processing error: " + t.getMessage());
                             return;
                         }
                         if (t instanceof CertificateException) {
-                            origResponse.sendError(HttpStatus.UNAUTHORIZED.value(),
+                            wrappedResponse.sendError(HttpStatus.UNAUTHORIZED.value(),
                                     "mTLS verification failed: " + t.getMessage());
                             return;
                         }
                         t = t.getCause();
                     }
                     // fallback generic error
-                    origResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error");
+                    wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "mTLS processing error");
                     return;
                 }
 
@@ -366,10 +376,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             headerName, headerValue, interactionId);
                 }
 
-                chain.doFilter(origRequest, origResponse);
+                chain.doFilter(origRequest, wrappedResponse);
                 return;
             }
-            chain.doFilter(origRequest, origResponse);
+            chain.doFilter(origRequest, wrappedResponse);
             
         } catch (Exception e) {
             // NEW: Handle SOAP-specific errors
@@ -378,7 +388,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (interactionId == null) {
                     interactionId = "unknown";
                 }
-                handleSoapError(origRequest, origResponse, e, interactionId);
+                handleSoapError(origRequest, wrappedResponse, e, interactionId);
             } else {
                 // Re-throw non-SOAP errors
                 throw e;
@@ -567,4 +577,46 @@ public class InteractionsFilter extends OncePerRequestFilter {
             throw new CertificateException("Certificate chain validation failed: " + details.toString(), e);
         }
     }
+        /**
+     * Response wrapper that force-overrides Content-Type header to ACK_CONTENT_TYPE
+     * on all setContentType() and setHeader() calls, ensuring frameworks cannot override it.
+     * Applied early in the filter chain to prevent issues with response buffering/flushing.
+     */
+    static class ContentTypeOverrideResponseWrapper extends HttpServletResponseWrapper {
+        private final String forceContentType;
+        public ContentTypeOverrideResponseWrapper(HttpServletResponse response, String forceContentType) {
+            super(response);
+            this.forceContentType = forceContentType;
+        }
+
+        @Override
+        public void setContentType(String type) {
+            super.setContentType(forceContentType);
+        }
+
+        @Override
+        public void setHeader(String name, String value) {
+            if ("Content-Type".equalsIgnoreCase(name)) {
+                super.setHeader(name, forceContentType);
+            } else {
+                super.setHeader(name, value);
+            }
+        }
+
+        @Override
+        public void addHeader(String name, String value) {
+            if ("Content-Type".equalsIgnoreCase(name)) {
+                super.setHeader(name, forceContentType);
+            } else {
+                super.addHeader(name, value);
+            }
+        }
+
+        @Override
+        public String getContentType() {
+            String actual = super.getContentType();
+            return actual;
+        }
+    }
+
 }
