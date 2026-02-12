@@ -4,7 +4,7 @@
   <name>TechBD CCD Workflow</name>
   <description>Version 0.5.15
 Revert the changes in bad gateway occur for CCDA.</description>
-  <revision>7</revision>
+  <revision>8</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -3505,18 +3505,7 @@ if(endpoint == &apos;bundle&apos;) {
 	}
 }
 
-return;
-
-
-function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
-    responseMap.put(&apos;message&apos;, errorMessage);
-    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
-}
-
-function createJsonResponse(status, message) {
-    return JSON.stringify({ status: status, message: message });
-}</postprocessingScript>
+return;</postprocessingScript>
   <deployScript>
 return;
 </deployScript>
@@ -3561,7 +3550,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770869090479</time>
+        <time>1770870276083</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
