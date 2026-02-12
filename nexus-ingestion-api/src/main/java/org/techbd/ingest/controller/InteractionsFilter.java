@@ -84,7 +84,12 @@ public class InteractionsFilter extends OncePerRequestFilter {
             final FilterChain chain) throws IOException, ServletException {
         boolean isSoapEndpoint = origRequest.getRequestURI().startsWith("/ws");
         String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);;
-        
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
+        }
+        if (StringUtils.isEmpty(interactionId)) {
+            interactionId = UUID.randomUUID().toString();
+        }
         try {
             if (!origRequest.getRequestURI().equals("/")
                     && !origRequest.getRequestURI().startsWith("/actuator/health")) {
@@ -116,14 +121,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         LOG.warn("InteractionsFilter: interactionId={} | failed to enumerate request headers",
                                 interactionId, e);
                     }
-                }                          
-              
-                if (StringUtils.isEmpty(interactionId)) {
-                    interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
-                }
-                if (StringUtils.isEmpty(interactionId)) {
-                    interactionId = UUID.randomUUID().toString();
-                }
+                } 
         
                 origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
                 LOG.info("Incoming Request - interactionId={}", interactionId);
