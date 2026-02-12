@@ -1,45 +1,23 @@
-<channel version="4.6.0">
+<channel version="4.6.1">
   <id>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.4
-Added Request body validation and set Response Status Code for FhirBundleValidation Channel.</description>
-  <revision>4</revision>
-  <sourceConnector version="4.6.0">
+  <description>Version: 0.8.5 increased request time out to 30000</description>
+  <revision>17</revision>
+  <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.0">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
-  <sslEnabled>false</sslEnabled>
-          <mutualTlsEnabled>false</mutualTlsEnabled>
-          <verifyHostname>false</verifyHostname>
-          <keystorePath/>
-          <keystorePassword/>
-          <certAlias/>
-          <certPassword/>
-          <truststorePath/>
-          <truststorePassword/>
-          <tls13>true</tls13>
-          <tls12>true</tls12>
-          <tls11>true</tls11>
-          <keystoreType/>
-          <truststoreType/>
-          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-          <keystoreUid/>
-          <myCertificateAlias/>
-          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-          <truststoreUid/>
-        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.0">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.6.0">
+      <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
         <port>9001</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.6.0">
+      <sourceConnectorProperties version="4.6.1">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -91,12 +69,12 @@ Added Request body validation and set Response Status Code for FhirBundleValidat
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
-      <timeout>10000</timeout>
+      <timeout>30000</timeout>
       <staticResources/>
     </properties>
-    <transformer version="4.6.0">
+    <transformer version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>lookup_manager</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -353,7 +331,7 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>FHIR Validation</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -414,22 +392,22 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.6.0">
+    <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/$validate/&apos; or &apos;/Bundle/$validate&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -440,7 +418,7 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
             <string>&apos;/Bundle/$validate&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.0">
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
           <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -459,34 +437,12 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.6.0">
+    <connector version="4.6.1">
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.0">
-        <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.0">
-  <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>false</mutualTlsEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>true</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
-        <destinationConnectorProperties version="4.6.0">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -632,43 +588,43 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
         <charset>UTF-8</charset>
         <socketTimeout>30000</socketTimeout>
       </properties>
-      <transformer version="4.6.0">
+      <transformer version="4.6.1">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.0">
+      <responseTransformer version="4.6.1">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.0">
+      <filter version="4.6.1">
         <elements/>
       </filter>
       <transportName>HTTP Sender</transportName>
@@ -909,7 +865,7 @@ return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.6.0">
+  <properties version="4.6.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -932,7 +888,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.6.0">
+    <attachmentProperties version="4.6.1">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -947,7 +903,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769594070423</time>
+        <time>1770889915638</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -958,64 +914,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>bd25c131-0dc1-47a4-b01c-27ee5d23b8f2</id>
-        <name>0_8_4</name>
+        <id>d1f1c4df-2994-423b-b494-5fc6353da59d</id>
+        <name>0_8_5</name>
         <channelIds>
-          <string>d97bd741-575a-4933-b6cb-4a4075689895</string>
-          <string>15ac7d8c-f134-4593-8fcd-8c5929c8ac88</string>
           <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-          <string>eb7b9426-2620-4037-aeec-eb45106175b2</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
-          <blue>0</blue>
-          <alpha>255</alpha>
-        </backgroundColor>
-      </channelTag>
-      <channelTag>
-        <id>9ec6ef81-2762-421a-93b5-8f5b57c7ea6a</id>
-        <name>Active</name>
-        <channelIds>
-          <string>1ca854d7-cebf-4897-a9ac-2a01e10ba533</string>
-          <string>ec9c3233-54f3-4995-b808-7592e512037b</string>
-          <string>6387f0ca-5310-4994-b9f6-e2e1dc233245</string>
-          <string>228791e0-c8ac-4d16-ba51-263252f4e6b2</string>
-          <string>07de8921-59c3-4539-8d69-b3c241b33d3d</string>
-          <string>ca5d292a-45ee-476b-b0ee-a46df2320417</string>
-          <string>ca53db04-3ca7-4d35-8418-a9f2c92ae6bf</string>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-          <string>3393ac1b-6c87-4c48-a765-240c13a09dc6</string>
-          <string>ca7a435f-dc52-4170-a100-73cdede86f0b</string>
-          <string>467f826d-1a1b-4e15-84b6-6c4c71968059</string>
-          <string>957444f7-b1ca-40a4-9b3d-34b56aec2d36</string>
-          <string>8ac69fa1-9441-43b7-9ad9-cef544c9384e</string>
-          <string>95a4b010-c209-4904-8500-433538921ae5</string>
-          <string>0ab3d3e9-f19d-46d5-9614-46106b435cb3</string>
-          <string>af1a4679-daa3-4f5b-bc4a-dc17e633188b</string>
-          <string>b5ce54b4-54a4-4173-9258-fcce5d81a231</string>
-          <string>a2fdd3b6-8a2e-43cb-834b-f770f4b57d06</string>
-          <string>b3aed8a2-8417-4575-93fb-3d6bfca955b5</string>
-          <string>2b544207-bac7-4e49-a67d-bfe55e676c61</string>
-          <string>49b0d71c-1ca9-4ac3-ac4e-dc945370f184</string>
-          <string>5b642c6d-9ce3-4cc6-8f09-fc4914437ec9</string>
-          <string>fe70827b-3f88-4a81-bd75-fe95792e5de6</string>
-          <string>8f7b1a24-eb1e-436b-b147-4885b9c8a8ad</string>
-          <string>cb060b55-d21f-428f-9708-bb2962687ae2</string>
-          <string>a9adff1e-d18b-408d-a6b8-dab8fad509ff</string>
-          <string>595f2397-f04b-483b-84e3-2a7bc8a52384</string>
-          <string>873588e2-8903-4e9c-b8f3-c44889f22392</string>
-          <string>56c509d8-fc3a-42e5-a1b5-d04ea4d4ef61</string>
-          <string>9e22ec82-73ee-4565-8c5e-60a51e941cca</string>
-          <string>1bc85cd3-7c82-4ae1-b493-d8cf401072bf</string>
-          <string>785baac8-14b8-4964-8992-572a90d357dc</string>
-          <string>6f63073f-c59d-4a40-87cd-7b4fc317d3f5</string>
-          <string>5a3de04c-8bb9-4aa6-9342-d39231de25e2</string>
-          <string>9408e60f-8bb1-440e-9d69-1bbba9d59212</string>
-          <string>2d04773b-df86-4429-a80d-9fbd07d179a0</string>
-        </channelIds>
-        <backgroundColor>
-          <red>0</red>
           <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>

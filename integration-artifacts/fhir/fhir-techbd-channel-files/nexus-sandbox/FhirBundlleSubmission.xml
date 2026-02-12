@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>899c4121-0165-4e69-87b3-c3da5a5f15c5</id>
+  <id>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.8
-Fix the DataLake-API-URL validation issue.</description>
-  <revision>7</revision>
+  <description>Version: 0.8.9
+increase request time out to 30000</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -70,7 +70,7 @@ Fix the DataLake-API-URL validation issue.</description>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
-      <timeout>10000</timeout>
+      <timeout>30000</timeout>
       <staticResources/>
     </properties>
     <transformer version="4.6.1">
@@ -2099,7 +2099,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770364187627</time>
+        <time>1770889735520</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2110,10 +2110,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>1dc99cdc-7b7b-4373-ae55-ce3496060dc9</id>
-        <name>0_8_8</name>
+        <id>e8ac8112-03cb-4910-9227-a080b4fd581c</id>
+        <name>0_8_9</name>
         <channelIds>
-          <string>899c4121-0165-4e69-87b3-c3da5a5f15c5</string>
+          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
