@@ -2,9 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.39
-Incorporated CCDA data validation.</description>
-  <revision>24</revision>
+  <description>Version: 0.4.40</description>
+  <revision>27</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -951,13 +950,22 @@ function getPatientMRN(patientRoles) {
     var extensionAttr = &apos;&apos;;
     var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
 
-    function isSSNFormat(ext) {
+    /*function isSSNFormat(ext) {
     	    return (
 	        ext &amp;&amp; 
 	        String.fromCharCode(ext.charCodeAt(3)) == &apos;-&apos; &amp;&amp;
 	        String.fromCharCode(ext.charCodeAt(6)) == &apos;-&apos; &amp;&amp;
 	        /^\d{3}-\d{2}-\d{4}$/.test(ext)
 	    );
+    }*/
+    function isSSNFormat(ext) {
+        return (
+            ext &amp;&amp;
+            ext.length === 11 &amp;&amp;
+            ext.charAt(3) === &apos;-&apos; &amp;&amp;
+            ext.charAt(6) === &apos;-&apos; &amp;&amp;
+            /^\d{3}-\d{2}-\d{4}$/.test(ext)
+        );
     }
 
 	if (patientRoles != undefined) {
@@ -968,9 +976,13 @@ function getPatientMRN(patientRoles) {
         if (ehrVendor == &apos;Medent&apos;) {
              for each (var idNode in idNodes) {
                 var root = idNode.@root.toString();
-                var ext = idNode.@extension.toString();
+                var ext  = idNode.@extension.toString().trim();
 
-                if (root !== &quot;2.16.840.1.113883.4.1&quot; &amp;&amp; !isSSNFormat(ext)) {
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                  // extension exists
+                    root !== &quot;2.16.840.1.113883.4.1&quot; &amp;&amp;            // not SSN root
+                    !isSSNFormat(ext)
+                ) {
                     extensionAttr = ext;
                     logger.info(&quot;Patient MRN (Medent): &quot; + extensionAttr);
                     break;
@@ -980,14 +992,14 @@ function getPatientMRN(patientRoles) {
 	   // Step 2: Athenahealth MRN (from first ID, after &quot;P-&quot;)
         else if (ehrVendor == &apos;Athenahealth&apos;) {
             for each (var idNode in idNodes) {
-                var ext = idNode.@extension.toString();
+                var ext = idNode.@extension.toString().trim();
 
                 // Only process if &quot;P-&quot; exists
-                if (ext.indexOf(&quot;P-&quot;) &gt; -1) {
+                if (ext !== &quot;&quot; &amp;&amp; ext.indexOf(&quot;P-&quot;) &gt; -1) {
                     var mrnPart = ext.split(&quot;P-&quot;)[1]; // part after &quot;P-&quot;
                     // Check if the extracted part is not SSN
-                    if (!isSSNFormat(mrnPart)) {
-                        extensionAttr = mrnPart;
+                    if (mrnPart &amp;&amp; mrnPart.trim() !== &quot;&quot; &amp;&amp; !isSSNFormat(mrnPart)) {
+                        extensionAttr = mrnPart.trim();
                         logger.info(&quot;Patient MRN (Athenahealth): &quot; + extensionAttr);
                         break; // Only first valid occurrence
                     }
@@ -997,12 +1009,15 @@ function getPatientMRN(patientRoles) {
 	   else if (ehrVendor == &apos;Epic&apos;){	
         // Step 3: If Epic
             for each (var idNode in idNodes) {
-                var root = idNode.@root.toString();
-                var ext = idNode.@extension.toString();
-                var assigningAuthorityName = idNode.@assigningAuthorityName.toString();
+                var root  = idNode.@root.toString();
+                var ext   = idNode.@extension.toString().trim();
+                var auth  = idNode.@assigningAuthorityName.toString().trim();
 
-                if (assigningAuthorityName === &quot;EPI&quot; &amp;&amp;
-                    (root === &quot;1.2.840.114350.1.13.570.2.7.5.737384.14&quot; || root !== &quot;1.2.840.114350.1.1&quot;) &amp;&amp;
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                 // extension exists
+                    auth === &quot;EPI&quot; &amp;&amp;
+                    (root === &quot;1.2.840.114350.1.13.570.2.7.5.737384.14&quot; ||
+                     root !== &quot;1.2.840.114350.1.1&quot;) &amp;&amp;
                     !isSSNFormat(ext)
                 ) {
                     extensionAttr = ext;
@@ -1014,8 +1029,9 @@ function getPatientMRN(patientRoles) {
 	   else {
 	   	//fallback to id.extension
 	   	for each (var idNode in idNodes) {
-                var ext = idNode.@extension.toString();
-                if (!isSSNFormat(ext)) {
+                var ext = idNode.@extension.toString().trim();
+                
+                if (ext !== &quot;&quot; &amp;&amp; !isSSNFormat(ext)) {
                     extensionAttr = ext;
                     logger.info(&quot;Patient MRN (Epic): &quot; + extensionAttr);
                     break;
@@ -1026,7 +1042,7 @@ function getPatientMRN(patientRoles) {
         logger.error(&quot;PatientRole not found in the XML.&quot;);
     }
 
-    if (!extensionAttr) {
+    if (!extensionAttr || extensionAttr.trim() === &quot;&quot;) {
        logger.warn(&quot;No matching MRN found.&quot;);
     }
 
@@ -1309,6 +1325,7 @@ function setResourceIdParameters(transformer) {
                               .*::section.(@ID != &apos;sexualOrientation&apos;)
                               .*::entry;
 	transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
 	
 	// Extract `observations`
 	try {
@@ -1604,17 +1621,27 @@ function validateMandatoryFields() {
 		   if (!familyName) { errors.push(&quot;Patient name (family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.family.&quot;); }
 
 	        // 3. Gender
-	        var genderCode = &quot;&quot;;
-			if (patient) {
+	        var genderValue = &quot;&quot;;
+		   if (patient) {
 			    var genderEl = patient.*::administrativeGenderCode[0];
-			    if (genderEl &amp;&amp; genderEl.@code) {
-			        genderCode = genderEl.@code.toString();
+			
+			    if (genderEl) {
+			        // Prefer code
+			        if (genderEl.@code &amp;&amp; genderEl.@code.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@code.toString().trim();
+			        }
+			        // Fallback to displayName
+			        else if (genderEl.@displayName &amp;&amp; genderEl.@displayName.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@displayName.toString().trim();
+			        }
 			    }
-			}			
-			if (genderCode === &quot;&quot;) {
-			    errors.push(&quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;);
-			}
-
+		   }			
+		   if (genderValue === &quot;&quot;) {
+			    errors.push(
+			        &quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;
+			    );
+		   }	        
+			
 	        // 4. Birth Date
 	        var birthDate = &quot;&quot;;
 		   if (patient) {
@@ -1636,41 +1663,6 @@ function validateMandatoryFields() {
     	} catch (e) {
 	    logger.error(&quot;Error accessing patientRole: &quot; + e);
 	}
-
-    	// --------------------------------------------------------------------------------------------------------------------
-    	// II. Encounter Resource
-    	// -----------------------------
-    	/*try {
-	     var encompassingEncounter = ccdaXml.*::componentOf.*::encompassingEncounter[0];
-		if (encompassingEncounter) {
-		    // 1. Encounter class
-		    var encounterClass = encompassingEncounter.*::code.@code.toString();
-		    if (!encounterClass) {
-		        errors.push(&quot;Encounter class -&gt; ClinicalDocument.componentOf.encompassingEncounter.code.code.&quot;);
-		    }		
-		} else {
-			logger.info(&quot;encompassingEncounter not found&quot;);
-
-		    // Try fallback to `encounter`
-		    var encounters = ccdaXml.*::component
-	                     .*::structuredBody
-	                     .*::component
-	                     .*::section.(@ID == &apos;encounters&apos;)
-	                     .*::entry[0]
-	                     .*::encounter;
-		    if (encounters) {
-			    // 1. Encounter class
-			    var encounterClass = encounters.*::code.@code.toString();
-			    if (!encounterClass) {
-			        errors.push(&quot;Encounter class -&gt; ClinicalDocument.component.structuredBody.component.section[code.code=&apos;46240-8&apos;].entry[0].encounter.code.code.&quot;);
-			    }			        
-		    } else {
-		        logger.error(&quot;Encounter Entry not found in the XML.&quot;);
-		    }
-		}
-	} catch (e) {
-	    logger.error(&quot;Error accessing encounter: &quot; + e);
-	}*/
 
 	// --------------------------------------------------------------------------------------------------------------------
     	// III. Organization (Location / Author Organization)
@@ -2464,7 +2456,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1769689164583</time>
+        <time>1770881311565</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
