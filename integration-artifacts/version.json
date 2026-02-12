@@ -125,23 +125,23 @@
       {
         "name": "cda-fhir-bundle-epic.xslt",
         "type": "CCDA",
-        "version": "0.1.6",
+        "version": "0.1.7",
         "editedby": "cibijacob",
-        "date": "2026-01-29"
+        "date": "2026-02-12"
       },
       {
         "name": "cda-fhir-bundle-medent.xslt",
         "type": "CCDA",
-        "version": "0.1.6",
+        "version": "0.1.7",
         "editedby": "cibijacob",
-        "date": "2026-01-29"
+        "date": "2026-02-12"
       },
       {
         "name": "cda-fhir-bundle-athenahealth.xslt",
         "type": "CCDA",
-        "version": "0.1.6",
+        "version": "0.1.7",
         "editedby": "cibijacob",
-        "date": "2026-01-29"
+        "date": "2026-02-12"
       },      
       {
         "name": "cda-phi-filter-athenahealth.xslt",
