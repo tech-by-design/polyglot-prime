@@ -107,7 +107,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                    .setUrl(baseUrl + "Observation/" + observation.getId()));
+                    .setUrl(baseUrl + "/Observation/" + observation.getId()));
             entry.setResource(observation);
             LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
             return List.of(entry);
