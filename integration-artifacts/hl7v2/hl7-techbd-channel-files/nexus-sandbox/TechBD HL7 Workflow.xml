@@ -2,9 +2,9 @@
   <id>42c12cfa-3058-4362-ba17-0ba4df9a6252</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.19
-Add 502 Gateway Error Response </description>
-  <revision>6</revision>
+  <description>Version: 0.1.20
+Revert 502 Gateway Error Response handling.</description>
+  <revision>2</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2455,24 +2455,10 @@ if(endpoint == &apos;bundle&apos;) {
 	    logger.info(&quot;Status Code: &quot; + responseStatus);
 	    logger.info(&quot;Response Data: &quot; + responseData);
 
-	    if (responseStatus==&quot;ERROR&quot;)
-	    {
-	    	  var errorMessage = &quot;Bad gateway.&quot;;
-		  setErrorResponse(502, errorMessage);
-		  throw errorMessage;
-	    }
+	   
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
-}
-function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
-    responseMap.put(&apos;message&apos;, errorMessage);
-    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
-}
-
-function createJsonResponse(status, message) {
-    return JSON.stringify({ status: status, message: message });
 }
 return;</postprocessingScript>
   <deployScript>//// This script executes once when the channel is deployed
@@ -2785,7 +2771,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770791129583</time>
+        <time>1770871200197</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2796,8 +2782,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ad16a832-dd4a-40b4-bbab-76a35d3f804d</id>
-        <name>0_1_19</name>
+        <id>4016e77b-9f11-4a0b-b90d-37211534f4d0</id>
+        <name>0_1_20</name>
         <channelIds>
           <string>42c12cfa-3058-4362-ba17-0ba4df9a6252</string>
         </channelIds>
