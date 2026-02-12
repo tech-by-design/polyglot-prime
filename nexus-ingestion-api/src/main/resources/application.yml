@@ -1,6 +1,6 @@
 server:
   port: ${SERVER_PORT:8080}
-  max-http-request-size: ${MAX_HTTP_REQUEST_SIZE:50MB}
+  max-http-request-header-size: 16KB
   tomcat:
     max-swallow-size: ${MAX_SWALLOW_SIZE:50MB}
     max-http-form-post-size: ${MAX_HTTP_FORM_POST_SIZE:50MB}
