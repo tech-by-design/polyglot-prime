@@ -293,45 +293,45 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
         
         ###########################
 
-        # Detect which flag fields are actually present in CSV files and sync schema
-        potential_flag_fields = ["VISIT_PART_2_FLAG", "VISIT_OMH_FLAG", "VISIT_OPWDD_FLAG"]
-        detected_flag_fields = []
+        # # Detect which flag fields are actually present in CSV files and sync schema
+        # potential_flag_fields = ["VISIT_PART_2_FLAG", "VISIT_OMH_FLAG", "VISIT_OPWDD_FLAG"]
+        # detected_flag_fields = []
 
-        for i, resource in enumerate(package.resources):
-            if resource.name == "qe_admin_data":
-                # print(f"\n🔍 Checking flag fields in {resource.name}")
-                try:
-                    # Read the CSV header to see what fields are actually present
-                    with open(resource.path, 'r') as f:
-                        header_line = f.readline().strip()
-                        actual_headers = [h.strip() for h in header_line.split(',')]
+        # for i, resource in enumerate(package.resources):
+        #     if resource.name == "qe_admin_data":
+        #         # print(f"\n🔍 Checking flag fields in {resource.name}")
+        #         try:
+        #             # Read the CSV header to see what fields are actually present
+        #             with open(resource.path, 'r') as f:
+        #                 header_line = f.readline().strip()
+        #                 actual_headers = [h.strip() for h in header_line.split(',')]
 
-                    # print(f"📊 CSV has {len(actual_headers)} columns")
+        #             # print(f"📊 CSV has {len(actual_headers)} columns")
 
-                    # Find which flag fields are present in CSV
-                    present_flags = [field for field in potential_flag_fields if field in actual_headers]
-                    missing_flags = [field for field in potential_flag_fields if field not in actual_headers]
+        #             # Find which flag fields are present in CSV
+        #             present_flags = [field for field in potential_flag_fields if field in actual_headers]
+        #             missing_flags = [field for field in potential_flag_fields if field not in actual_headers]
 
-                    if present_flags:
-                        # print(f"✅ Found flag fields in CSV: {present_flags}")
-                        detected_flag_fields.extend(present_flags)
+        #             if present_flags:
+        #                 # print(f"✅ Found flag fields in CSV: {present_flags}")
+        #                 detected_flag_fields.extend(present_flags)
 
-                    if missing_flags:
-                        # print(f"🗑️  Flag fields missing from CSV: {missing_flags}")
+        #             if missing_flags:
+        #                 # print(f"🗑️  Flag fields missing from CSV: {missing_flags}")
 
-                        # Remove missing flag fields from schema to avoid validation errors
-                        current_fields = resource.schema.fields
-                        filtered_fields = [field for field in current_fields
-                                         if field.name not in missing_flags]
+        #                 # Remove missing flag fields from schema to avoid validation errors
+        #                 current_fields = resource.schema.fields
+        #                 filtered_fields = [field for field in current_fields
+        #                                  if field.name not in missing_flags]
 
-                        if len(filtered_fields) != len(current_fields):
-                            # print(f"🔧 Removing {len(current_fields) - len(filtered_fields)} flag fields from schema")
-                            resource.schema.fields = filtered_fields
-                            # print(f"📊 Schema now has {len(filtered_fields)} fields")
+        #                 if len(filtered_fields) != len(current_fields):
+        #                     # print(f"🔧 Removing {len(current_fields) - len(filtered_fields)} flag fields from schema")
+        #                     resource.schema.fields = filtered_fields
+        #                     # print(f"📊 Schema now has {len(filtered_fields)} fields")
 
-                except Exception as e:
-                    print(f"⚠️  Could not read CSV headers: {e}")
-                break
+        #         except Exception as e:
+        #             print(f"⚠️  Could not read CSV headers: {e}")
+        #         break
             ##########################
 
         # Transform and validate
@@ -416,12 +416,12 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
        
 
         # Create checklist with only detected flag fields
-        checks = [ValidateAnswerCode(), ValidatePotentialNeedIndicated()]
+        checks = [ValidateAnswerCode()]
 
         # Only add flag validation if flag fields were detected
-        if detected_flag_fields:
-            # print(f"🔍 Adding flag validation for: {detected_flag_fields}")
-            checks.insert(0, OptionalYesNoFlagsCheck(detected_flag_fields))
+        # if detected_flag_fields:
+        #     # print(f"🔍 Adding flag validation for: {detected_flag_fields}")
+        #     checks.insert(0, OptionalYesNoFlagsCheck(detected_flag_fields))
         # else:
         #     print("ℹ️  No flag fields detected - skipping flag validation")
 
