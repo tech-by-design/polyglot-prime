@@ -1536,6 +1536,7 @@ FROM cte;
  *******************************************************************************************************************************/
 
 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, text, text, text, text, jsonb, timestamptz, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text, jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(hub_interaction_id text, hub_interaction_key text, nature text, payload jsonb, user_id text, user_name text, user_session text, user_role text, tenant_id text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, p_additional_details jsonb DEFAULT NULL::jsonb)
@@ -4025,6 +4026,7 @@ GROUP BY
     organization_id,
     organization_name;  
 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb, text, text, text, text, text, jsonb);
