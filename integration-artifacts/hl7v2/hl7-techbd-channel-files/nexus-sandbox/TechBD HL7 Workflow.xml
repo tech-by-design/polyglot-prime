@@ -2,9 +2,9 @@
   <id>42c12cfa-3058-4362-ba17-0ba4df9a6252</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.20
-Revert 502 Gateway Error Response handling.</description>
-  <revision>2</revision>
+  <description>Version: 0.1.21
+Update ZIP upload file extension validation message</description>
+  <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2174,9 +2174,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     // Reject ZIP uploads
     if (extension === &quot;zip&quot;) {
 
-        var errorMessage =
-            &quot;ZIP uploads are not supported. Please upload a plain .hl7 or .txt file.&quot;;
-
+        var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .hl7 and .txt are allowed.&quot;;
         responseMap.put(&quot;status&quot;, &quot;400&quot;);
         responseMap.put(&quot;message&quot;, errorMessage);
         responseMap.put(
@@ -2771,7 +2769,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770871200197</time>
+        <time>1770958181911</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2782,8 +2780,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>4016e77b-9f11-4a0b-b90d-37211534f4d0</id>
-        <name>0_1_20</name>
+        <id>f4b0e56a-0573-44b4-a097-70d92b306a08</id>
+        <name>0_1_21</name>
         <channelIds>
           <string>42c12cfa-3058-4362-ba17-0ba4df9a6252</string>
         </channelIds>
