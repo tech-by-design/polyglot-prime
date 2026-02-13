@@ -45,6 +45,7 @@ const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
 export const dvts = dvp.dataVaultTemplateState<EmitContext>({
   defaultNS: ingressSchema,
 });
+
 const {
   text,
   jsonbNullable,
@@ -54,10 +55,9 @@ const {
   dateTime,
   dateTimeNullable,
   integer,
-  blobTextNullable
+   blobTextNullable
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
-
 
 const interactionHub = dvts.hubTable("interaction", {
   hub_interaction_id: primaryKey(),
@@ -78,6 +78,9 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
     to_state: textNullable(),
     state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
+    nature_denorm: textNullable(),
+    tenant_id_denorm : textNullable(),
+    payload_text : textNullable(),
     request_source: textNullable(),
     techbd_version_number: textNullable(),
     tenant_id: textNullable(),
@@ -157,6 +160,7 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
     elaboration: jsonbNullable(),
     user_session_hash: textNullable(),
     techbd_version_number: textNullable(),
+    ig_version: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -234,6 +238,7 @@ const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
     patient_ssn: textNullable(),
     org_id: textNullable(),
     elaboration: jsonbNullable(),
+    primary_org_id: textNullable(), 
     tenant_id: textNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -331,7 +336,7 @@ const interactionZipRequestSat = interactionHub.satelliteTable(
     csv_zip_file_name: textNullable(),
     client_ip_address: textNullable(),
     user_agent: textNullable(),
-    elaboration: jsonbNullable(),
+    elaboration: jsonbNullable(),    
     origin: textNullable(),
     validation_result_payload: jsonbNullable(),
     sftp_session_id: textNullable(),
@@ -486,6 +491,7 @@ const jsonActionRule = SQLa.tableDefinition("json_action_rule", {
   updated_at: dateTime(),
   updated_by: textNullable(),
   last_applied_at: dateTimeNullable(),
+  description : textNullable(),
   ...dvts.housekeeping.columns
 }, {
   isIdempotent: true,
@@ -575,7 +581,6 @@ const nexusInteractionIngestionSat = nexusInteractionHub.satelliteTable(
     tenant_id: text(),
     request_uri: text(),
     request_url: text(),
-    // payload bytea NOT NULL,
     nature: text(),
     content_type: textNullable(),
     payload_hash: textNullable(),
@@ -587,7 +592,7 @@ const nexusInteractionIngestionSat = nexusInteractionHub.satelliteTable(
     client_ip_address: textNullable(),
     additional_details: jsonbNullable(),
     general_errors: jsonbNullable(),
-    elaboration: jsonbNullable(),
+    elaboration: jsonbNullable(),    
     techbd_version_number: textNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -736,7 +741,7 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
 
 // List of dependencies and test dependencies
 const dependencies = [
-  "../migrate_missing_columns_with_lock.psql",
+  //"../migrate_missing_columns_with_lock.psql",
   "../000_idempotent_universal.psql",
   "../001_idempotent_interaction.psql",
   "../002_idempotent_diagnostics.psql",
@@ -841,29 +846,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionHttpRequestSat}
 
-      ${interactionFhirRequestSat}
-
-      -- Check and add 'replay_status' column if it does not exist
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                    WHERE table_schema = 'techbd_udi_ingress'
-                    AND table_name='sat_interaction_fhir_request' 
-                    AND column_name='replay_status') THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
-          ADD COLUMN replay_status TEXT DEFAULT NULL;
-      END IF;
-
-      -- Check and add 'replay_on' column if it does not exist
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                    WHERE table_schema = 'techbd_udi_ingress'
-                    AND table_name='sat_interaction_fhir_request' 
-                    AND column_name='replay_on') THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
-          ADD COLUMN replay_on timestamptz DEFAULT null;
-      END IF;
-
-      ${diagnosticDataledgerSat}
-
-      -- Check and drop NOT NULL for 'passed' column
+      ${interactionFhirRequestSat}   
       IF EXISTS (
           SELECT 1
           FROM information_schema.columns
@@ -873,20 +856,20 @@ const migrateSP = pgSQLa.storedProcedure(
             AND is_nullable = 'NO'
       ) THEN
           EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL';
-      END IF;
-
-      -- Check and drop NOT NULL for 'user_agent' column
+      END IF;      
+  
       IF EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_request'
-            AND column_name = 'user_agent'
-            AND is_nullable = 'NO'
-      ) THEN
-          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL';
-      END IF;
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema='techbd_udi_ingress'
+          AND table_name='sat_interaction_fhir_request'
+          AND column_name='is_bundle_valid'
+          AND is_nullable = 'NO'
+    ) THEN
+        EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN is_bundle_valid DROP NOT NULL';
+    END IF;   
 
+      ${diagnosticDataledgerSat}
+      
       PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -1014,7 +997,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionUserRequestSat}
 
       ${interactionFhirSessionDiagnosticSat}
-
+      
       ${interactionFhirScreeningInfoSat}
 
       ${interactionFhirScreeningPatientSat}
@@ -1027,47 +1010,22 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionZipRequestSat}
 
+       -- Add csv_zip_file_content column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'sat_interaction_zip_file_request'
+              AND column_name = 'csv_zip_file_content'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN csv_zip_file_content Bytea NULL;
+      END IF; 
+
       ${fileExchangeProtocol}
       
       ${interactionHl7RequestSat}    
       
-      ${interactionCcdaRequestSat}    
-
-      -- Drop NOT NULL on user_agent in sat_interaction_fhir_request
-      IF EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_request'
-            AND column_name = 'user_agent'
-            AND is_nullable = 'NO'
-      ) THEN
-          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL';
-      END IF;
-
-      -- Drop NOT NULL on user_agent in sat_interaction_flat_file_csv_request
-      IF EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_flat_file_csv_request'
-            AND column_name = 'user_agent'
-            AND is_nullable = 'NO'
-      ) THEN
-          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ALTER COLUMN user_agent DROP NOT NULL';
-      END IF;
-
-      -- Drop NOT NULL on user_agent in sat_interaction_zip_file_request
-      IF EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_zip_file_request'
-            AND column_name = 'user_agent'
-            AND is_nullable = 'NO'
-      ) THEN
-          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ALTER COLUMN user_agent DROP NOT NULL';
-      END IF;
+      ${interactionCcdaRequestSat}          
       
       PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
           -- HL7 indexes         
@@ -1079,21 +1037,7 @@ const migrateSP = pgSQLa.storedProcedure(
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_hub_inter_id_idx') THEN
               EXECUTE 'CREATE INDEX sat_inter_hl7_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id)';
           END IF;          
-
-          -- Drop obsolete index if exists
-          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_issue_idx_date_issue') THEN
-              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_issue_idx_date_issue';
-          END IF;
           
-          -- Drop obsolete index if exists
-          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_idx_date_time') THEN
-              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_idx_date_time';
-          END IF;
-
-          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_created_at') THEN
-              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_session_diagnostic_created_at';
-          END IF;          
-
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_severity_lower') THEN
               EXECUTE 'CREATE INDEX sat_interaction_fhir_session_diagnostic_severity_lower ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity))';
           END IF;
@@ -1138,83 +1082,14 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${pgTapFixturesJSON}
 
-      ${pgTapTestResult}
-
-        -- Check and add 'nature_denorm' column if it does not exist
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name='sat_interaction_http_request' 
-                      AND column_name='nature_denorm') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-            ADD COLUMN nature_denorm TEXT DEFAULT null;
-        END IF;
-
-        -- Check and add 'tenant_id_denorm' column if it does not exist
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name='sat_interaction_http_request' 
-                      AND column_name='tenant_id_denorm') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-            ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
-        END IF;
-
-        -- Add payload_text column if it does not exist
-        IF NOT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'techbd_udi_ingress'
-              AND table_name = 'sat_interaction_http_request'
-              AND column_name = 'payload_text'
-        ) THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN payload_text text;
-        END IF;
-
-        
-        -- Check and add 'nature_denorm' column if it does not exist
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name='sat_interaction_user' 
-                      AND column_name='interaction_start_time') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_user
-            ADD COLUMN interaction_start_time TIMESTAMPTZ DEFAULT null;
-        END IF;
-
-        -- Check and add 'nature_denorm' column if it does not exist
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name='sat_interaction_user' 
-                      AND column_name='interaction_end_time') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_user
-            ADD COLUMN interaction_end_time TIMESTAMPTZ DEFAULT null;
-        END IF;
-
-
-        -- Check and add 'primary_org_id' column if it does not exist
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name='sat_interaction_fhir_screening_patient' 
-                      AND column_name='primary_org_id') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
-            ADD COLUMN primary_org_id TEXT  NULL;
-        END IF;
-
-         -- Check and add 'primary_org_id' column if it does not exist and drop it if it exists
-          IF EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_fhir_screening_organization'
-                AND column_name = 'primary_org_id'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
-              DROP COLUMN primary_org_id;
-          END IF;
+      ${pgTapTestResult}        
         
       PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
           IF NOT EXISTS (
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
                 AND indexname = 'sat_interaction_http_request_hub_interaction_id_idx'
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_hub_interaction_id_idx 
@@ -1225,6 +1100,7 @@ const migrateSP = pgSQLa.storedProcedure(
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
                 AND indexname = 'sat_interaction_http_request_from_state_idx'
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_from_state_idx 
@@ -1235,6 +1111,7 @@ const migrateSP = pgSQLa.storedProcedure(
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
                 AND indexname = 'sat_interaction_http_request_to_state_idx'
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_to_state_idx 
@@ -1245,6 +1122,7 @@ const migrateSP = pgSQLa.storedProcedure(
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
                 AND indexname = 'sat_interaction_http_request_provenance_idx'
           ) THEN
               EXECUTE 'CREATE INDEX sat_interaction_http_request_provenance_idx 
@@ -1287,17 +1165,7 @@ const migrateSP = pgSQLa.storedProcedure(
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       ${jsonActionRule}
-      -- Add description column if it does not exist
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'json_action_rule'
-            AND column_name = 'description'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.json_action_rule ADD COLUMN description TEXT;
-      END IF;
-      
+            
       -- Create action_check constraint
       IF NOT EXISTS (
           SELECT 1
@@ -1318,251 +1186,9 @@ const migrateSP = pgSQLa.storedProcedure(
             AND constraint_name = 'json_action_rule_action_rule_id_pkey'
       ) THEN
           ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_rule_id_pkey PRIMARY KEY (action_rule_id);
-      END IF;
-
-      -- Add techbd_disposition_action column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_request'
-            AND column_name = 'techbd_disposition_action'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN techbd_disposition_action TEXT NULL; 
-      END IF;
-
-      -- Add techbd_version_number column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_request'
-            AND column_name = 'techbd_version_number'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
-      END IF;
-
-      -- Add severity column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_validation_issue'
-            AND column_name = 'severity'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN severity TEXT NULL;   
-      END IF;  
-
-      -- Add profile_url_domain column if not exists
-      PERFORM pg_advisory_lock(hashtext('profile_url_domain_column_creation'));
-        IF NOT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'techbd_udi_ingress'
-              AND table_name = 'sat_interaction_fhir_validation_issue'
-              AND column_name = 'profile_url_domain'
-        ) THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN profile_url_domain TEXT NULL;   
-        END IF;
-      PERFORM pg_advisory_unlock(hashtext('profile_url_domain_column_creation'));
-
-      -- Add ccda_authoring_device column if not exists
-      PERFORM pg_advisory_lock(hashtext('ccda_authoring_device_column_creation'));
-        IF NOT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'techbd_udi_ingress'
-              AND table_name = 'sat_interaction_ccda_request'
-              AND column_name = 'ccda_authoring_device'
-        ) THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request ADD COLUMN ccda_authoring_device TEXT NULL;   
-        END IF;
-      PERFORM pg_advisory_unlock(hashtext('ccda_authoring_device_column_creation'));
-            
-      -- Add csv_zip_file_content column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_zip_file_request'
-            AND column_name = 'csv_zip_file_content'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN csv_zip_file_content Bytea NULL;
-      END IF;
+      END IF;        
       
-      TRUNCATE TABLE techbd_udi_ingress.json_action_rule;
-
-      INSERT INTO techbd_udi_ingress.json_action_rule(
-        action_rule_id,
-        "namespace",
-        json_path,
-        "action",
-        "condition",
-        reject_json,
-        modify_json,
-        priority,
-        updated_at,
-        updated_by,
-        last_applied_at,
-        created_at,
-        created_by,
-        provenance
-      )
-      VALUES(
-        '36eb7e17-107a-44ad-834e-9699b435708f',
-        'NYeC Rule',
-        '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*Meta.lastUpdated: minimum required = 1" && @.location[*] like_regex ".*Bundle.meta" && @.severity like_regex ".*error")',
-        'reject',
-        NULL,
-        NULL,
-        NULL,
-        1,
-        current_timestamp,
-        current_user,
-        current_timestamp ,
-        current_timestamp,
-        current_user,
-        '{"Key" : "value"}'
-      ) ON CONFLICT (action_rule_id) DO NOTHING;
-
-      INSERT INTO techbd_udi_ingress.json_action_rule(
-        action_rule_id,
-        "namespace",
-        json_path,
-        "action",
-        "condition",
-        reject_json,
-        modify_json,
-        priority,
-        updated_at,
-        updated_by,
-        last_applied_at,
-        created_at,
-        created_by,
-        provenance
-      )
-      VALUES(
-        '189b6342-3797-459f-9a4a-b8a71015f082',
-        'NYeC Rule',
-        '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*lastUpdated.*" && @.severity like_regex ".*fatal.*")',
-        'reject',
-        NULL,
-        NULL,
-        NULL,
-        1,
-        current_timestamp,
-        current_user,
-        current_timestamp,
-        current_timestamp,
-        current_user,
-        '{"Key" : "value"}'
-      ) ON CONFLICT (action_rule_id) DO NOTHING;
-
-      INSERT INTO techbd_udi_ingress.json_action_rule (
-        action_rule_id,
-        "namespace",
-        json_path,
-        "action",
-        "condition",
-        reject_json,
-        modify_json,
-        priority,
-        updated_at,
-        updated_by,
-        last_applied_at,
-        created_at,
-        created_by,
-        provenance
-      )
-      VALUES (
-        'eeeb6342-3797-459f-9a4a-b8a71015f082',
-        'NYeC Rule',
-        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1000: Invalid or Partial JSON.*")',
-        'discard',
-        NULL,
-        NULL,
-        NULL,
-        5000,
-        current_timestamp,
-        current_user,
-        current_timestamp,
-        current_timestamp,
-        current_user,
-        '{"Key" : "value"}'
-      )
-      ON CONFLICT (action_rule_id) DO NOTHING;
-
-      INSERT INTO techbd_udi_ingress.json_action_rule (
-        action_rule_id,
-        "namespace",
-        json_path,
-        "action",
-        "condition",
-        reject_json,
-        modify_json,
-        priority,
-        updated_at,
-        updated_by,
-        last_applied_at,
-        created_at,
-        created_by,
-        provenance
-      )
-      VALUES (
-        'ffeb6342-3797-459f-9a4a-b8a71015f082',
-        'NYeC Rule',
-        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1001*")',
-        'discard',
-        NULL,
-        NULL,
-        NULL,
-        5000,
-        current_timestamp,
-        current_user,
-        current_timestamp,
-        current_timestamp,
-        current_user,
-        '{"Key" : "value"}'
-      )
-      ON CONFLICT (action_rule_id) DO NOTHING;
-
-      INSERT INTO techbd_udi_ingress.json_action_rule (
-        action_rule_id,
-        "namespace",
-        json_path,
-        "action",
-        "condition",
-        reject_json,
-        modify_json,
-        priority,
-        updated_at,
-        updated_by,
-        last_applied_at,
-        created_at,
-        created_by,
-        provenance
-      )
-      VALUES (
-        'ggeb6342-3797-459f-9a4a-b8a71015f082',
-        'NYeC Rule',
-        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1002*")',
-        'discard',
-        NULL,
-        NULL,
-        NULL,
-        5000,
-        current_timestamp,
-        current_user,
-        current_timestamp,
-        current_timestamp,
-        current_user,
-        '{"Key" : "value"}'
-      )
-      ON CONFLICT (action_rule_id) DO NOTHING;
-
-      UPDATE techbd_udi_ingress.json_action_rule
-      SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
-      WHERE json_path LIKE '$.response.responseBody%';
+     --- TRUNCATE TABLE techbd_udi_ingress.json_action_rule;       
 
       PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));          
 
@@ -1589,17 +1215,7 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'CREATE INDEX ref_code_lookup_code_type_idx 
                       ON techbd_udi_ingress.ref_code_lookup USING btree (code_type)';
           END IF;
-
-    -- Drop old UNIQUE constraint if it exists
-    IF EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'ref_code_lookup_code_type_code_c_key'
-    ) THEN
-        ALTER TABLE techbd_udi_ingress.ref_code_lookup
-        DROP CONSTRAINT ref_code_lookup_code_type_code_c_key;
-    END IF;
-
+    
     -- Create NULL-safe UNIQUE index if it does not exist
     IF NOT EXISTS (
         SELECT 1
@@ -1614,86 +1230,39 @@ const migrateSP = pgSQLa.storedProcedure(
             COALESCE(system_value, '__NULL__')
         );
     END IF;
-      PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
 
       ${nexusInteractionHub}
       ${nexusInteractionIngestionSat}
       
-      -- Add payload column if it does not exist
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
             AND table_name = 'sat_nexus_interaction_ingestion'
             AND column_name = 'payload'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
-      END IF;
+     ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
+     END IF; 
 
-      PERFORM pg_advisory_lock(hashtext('islm_migration_nexus_index_creation'));          
-
-          -- 2. Regular index: sat_inter_nexus_req_hub_nexus_inter_id_idx
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND indexname = 'sat_inter_nexus_req_hub_nexus_inter_id_idx'
-          ) THEN
-              EXECUTE 'CREATE INDEX sat_inter_nexus_req_hub_nexus_inter_id_idx 
-                      ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
-          END IF;
-      PERFORM pg_advisory_unlock(hashtext('islm_migration_nexus_index_creation'));
-
-      -- Add request_source column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_http_request'
-            AND column_name = 'request_source'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
-      END IF;
-      
-      -- Add additional_details column if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_fhir_request'
-            AND column_name = 'additional_details'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN additional_details JSONB DEFAULT NULL;
-      END IF;
-      
-      -- Add techbd_version_number to sat_interaction_http_request if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_interaction_http_request'
-            AND column_name = 'techbd_version_number'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN techbd_version_number TEXT NULL;
-      END IF;
-      
-      -- Add techbd_version_number to sat_nexus_interaction_ingestion if not exists
-      IF NOT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_schema = 'techbd_udi_ingress'
-            AND table_name = 'sat_nexus_interaction_ingestion'
-            AND column_name = 'techbd_version_number'
-      ) THEN
-          ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN techbd_version_number TEXT NULL;
-      END IF;
-
+      -- 2. Regular index: sat_inter_nexus_req_hub_nexus_inter_id_idx
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'sat_nexus_interaction_ingestion'
+          AND indexname = 'sat_inter_nexus_req_hub_nexus_inter_id_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_inter_nexus_req_hub_nexus_inter_id_idx 
+                ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
+    END IF;
       ${csvFhirProcessingErrors}
       PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
           IF NOT EXISTS (
               SELECT 1
               FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_csv_fhir_processing_errors'
                 AND indexname = 'idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id'
           ) THEN
               EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
@@ -1761,39 +1330,10 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.fhir_replay_details
               ADD CONSTRAINT fhir_replay_details_unique_combo_key
               UNIQUE (bundle_id, hub_interaction_id, replay_master_id);
-      END IF;
-
-      -- Check and add 'nyec_error_message' column if it does not exist
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                    WHERE table_schema = 'techbd_udi_ingress'
-                    AND table_name='fhir_replay_details' 
-                    AND column_name='nyec_error_message') THEN
-          ALTER TABLE techbd_udi_ingress.fhir_replay_details
-          ADD COLUMN nyec_error_message TEXT DEFAULT NULL;
-      END IF;
+      END IF;      
       
-      ${ccdaValidationErrorsSat}     
-
-      IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_ccda_validation_errors'
-                AND column_name = 'ig_version'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors ADD COLUMN ig_version text Null;
-          END IF;
-
-      ${hl7ValidationErrorsSat}      
-
-      IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns 
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_hl7_validation_errors'
-                AND column_name = 'ig_version'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors ADD COLUMN ig_version text Null;
-          END IF;
-
+      ${ccdaValidationErrorsSat}    
+      ${hl7ValidationErrorsSat}        
       ${linkNexusInteraction}
       IF NOT EXISTS (
           SELECT 1
@@ -1807,15 +1347,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${ccdaReplayDetails}
       PERFORM pg_advisory_lock(hashtext('ccda_replay_details'));
-          ALTER TABLE techbd_udi_ingress.ccda_replay_details ADD COLUMN IF NOT EXISTS reply_id TEXT NOT NULL DEFAULT gen_random_uuid()::text;
-          IF NOT EXISTS (
-              SELECT 1 FROM pg_indexes
-              WHERE schemaname = 'techbd_udi_ingress'
-                AND tablename = 'ccda_replay_details'
-                AND indexname = 'ccda_replay_details_bundle_id_idx'
-          ) THEN
-              CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
-          END IF;          
+          ALTER TABLE techbd_udi_ingress.ccda_replay_details ADD COLUMN IF NOT EXISTS reply_id TEXT NOT NULL DEFAULT gen_random_uuid()::text;              
       PERFORM pg_advisory_unlock(hashtext('ccda_replay_details'));
 
       IF NOT EXISTS (
@@ -1844,58 +1376,6 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
         ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD CONSTRAINT sat_interaction_zip_file_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
       END IF;
-
-      PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_new_column'));
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_flat_file_csv_request'
-                AND column_name = 'screening_observation_data_payload_text'
-          ) THEN
-              EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ADD COLUMN screening_observation_data_payload_text text NULL';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_flat_file_csv_request'
-                AND column_name = 'screening_profile_data_payload_text'
-          ) THEN
-              EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ADD COLUMN screening_profile_data_payload_text text NULL';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_flat_file_csv_request'
-                AND column_name = 'screening_observation_data_file_name'
-          ) THEN
-              EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ADD COLUMN screening_observation_data_file_name text NULL';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_flat_file_csv_request'
-                AND column_name = 'screening_profile_data_file_name'
-          ) THEN
-              EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ADD COLUMN screening_profile_data_file_name text NULL';
-          END IF;
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_schema = 'techbd_udi_ingress'
-                AND table_name = 'sat_interaction_flat_file_csv_request'
-                AND column_name = 'zip_file_hub_interaction_id'
-          ) THEN
-              EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ADD COLUMN zip_file_hub_interaction_id text NULL';
-          END IF;
-      PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_new_column'));
 
       IF EXISTS (
           SELECT 1

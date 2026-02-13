@@ -34,3 +34,56 @@ ON
     AND r.migrated_at = lv.latest_migrated_at
 ORDER BY r.migrated_at;
 
+IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_fhir_validation_issue'
+        AND indexname = 'idx_fhir_val_issue_date_cover'
+) THEN            
+    CREATE INDEX idx_fhir_val_issue_date_cover
+    ON techbd_udi_ingress.sat_interaction_fhir_validation_issue
+    (
+        date_time DESC
+    )
+    INCLUDE (
+        issue,
+        severity,
+        validation_engine,
+        profile_url_domain,
+        ig_version
+    )
+    WHERE
+    severity IS NOT NULL
+    AND severity <> '';
+END IF;
+
+IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_fhir_session_diagnostic'
+        AND indexname = 'idx_sat_diag_fn_fast'
+) THEN           
+    CREATE INDEX idx_sat_diag_fn_fast
+    ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+    (
+        hub_interaction_id,
+        created_at DESC
+    )
+    INCLUDE (
+        tenant_id,
+        bundle_id,
+        uri,
+        ig_version,
+        techbd_version_number,
+        validation_engine
+    )
+    WHERE (
+        severity IN ('warning','error','fatal')
+        AND message IS DISTINCT FROM ''
+    );
+END IF;
+
+   
+
+       
+
