@@ -31,16 +31,16 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.4",
-      "editedby": "Arjun161201",
-      "date": "2026-01-27"
+      "version": "0.9.5",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-02-13"
     },
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundleValidate.xml",
-      "version": "0.8.0",
-      "editedby": "jewelbonnie",
-      "date": "2025-09-24"
+      "version": "0.9.0",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-02-13"
     },
     {
       "type": "HL7v2",
