@@ -488,8 +488,17 @@ PERFORM pg_advisory_lock(hashtext('perfomance_index'));
         ) THEN
             DROP INDEX techbd_udi_ingress.idx_sat_hl7_validation_errors_hub_interaction_id;
         END IF;
-        
-        IF EXISTS (
+
+        IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'ccda_replay_details'
+                AND indexname = 'ccda_replay_details_bundle_id_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS ccda_replay_details_bundle_id_idx ON techbd_udi_ingress.ccda_replay_details USING btree (bundle_id);
+          END IF; 
+
+          IF EXISTS (
             SELECT 1 FROM pg_indexes
             WHERE schemaname = 'techbd_udi_ingress'
                 AND tablename = 'ccda_replay_details'
@@ -527,8 +536,33 @@ PERFORM pg_advisory_lock(hashtext('perfomance_index'));
           ) THEN
               CREATE INDEX idx_sat_interaction_fhir_request_start_time
                   ON techbd_udi_ingress.sat_interaction_fhir_request (interaction_start_time);
-          END IF;               
-        
+          END IF;
+
+          -- Drop obsolete index if exists
+          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_issue_idx_date_issue') THEN
+              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_issue_idx_date_issue';
+          END IF;
+
+          -- Drop obsolete index if exists
+          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_validation_idx_date_time') THEN
+              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_validation_idx_date_time';
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_created_at') THEN
+              EXECUTE 'DROP INDEX techbd_udi_ingress.sat_interaction_fhir_session_diagnostic_created_at';
+          END IF; 
+
+          -- Drop old UNIQUE constraint if it exists
+         IF EXISTS (
+             SELECT 1
+             FROM pg_constraint
+             WHERE conname = 'ref_code_lookup_code_type_code_c_key'
+         ) THEN
+             ALTER TABLE techbd_udi_ingress.ref_code_lookup
+             DROP CONSTRAINT ref_code_lookup_code_type_code_c_key;
+         END IF;
+         
+       
         RAISE NOTICE 'Cleanup complete: All unused indexes were handled successfully.';
             EXCEPTION
                 WHEN OTHERS THEN
