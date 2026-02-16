@@ -2,9 +2,8 @@
   <id>e16273f4-2ea3-459a-b792-dea1fab43c99</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.8.1
-
-Fix the issue related to content type, empty file, required errors</description>
+  <description>Version: 0.8.2
+Correct the error message of missing headers.</description>
   <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
@@ -112,7 +111,7 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] X-TechBD-Tenant-ID: &qu
 // Check if the header is null or empty
 if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
     // Log the error for debugging
-    var errorMessage = &apos;[CHANNEL: FLAT FILE CSV BUNDLE VALIDATE] Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+    var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
     logger.error(errorMessage);
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage; // Stop further processing by throwing an exception
@@ -128,7 +127,7 @@ function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
     logger.info(headerName + &quot;: &quot; + value);
 
     if (value == null || String(value).trim() === &quot;&quot;) {
-        missingHeaders.push(&quot;[CHANNEL: &quot;+ channelName +&quot;] Missing required header &quot; + displayName);
+        missingHeaders.push(&quot; Missing required header &quot; + displayName);
     } else if (storeInMap) {
         channelMap.put(mapKey || headerName, value);
     }
@@ -140,7 +139,7 @@ function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
 var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
 // Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
 if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
-    missingHeaders.push(&quot;[CHANNEL: &quot;+ channelName +&quot;] Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
 }
 
 // Check if there are any missing headers and stop processing
@@ -157,7 +156,7 @@ var rawData = connectorMessage.getRawData();
 
 // Check if rawData is empty
 if (!rawData || rawData.trim().length === 0) {
-    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] No file provided in the request.&quot;;
+    errorMessage = &quot;No file provided in the request.&quot;;
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage;
 }
@@ -185,7 +184,7 @@ for each (var part in parts) {
 
 // Validate the file content
 if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
-    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] Uploaded file is empty or missing.&quot;;
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
     // Set the HTTP response status to 400 (Bad Request)
     setErrorResponse(400, errorMessage);
     throw errorMessage;
@@ -565,7 +564,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770960420765</time>
+        <time>1771216292128</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -576,13 +575,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ea05c512-48d4-4e2c-a1b1-657b51dc0a63</id>
-        <name>0_8_1</name>
+        <id>989bb0ca-99be-40f9-a116-a6da9257c181</id>
+        <name>0_8_2</name>
         <channelIds>
           <string>e16273f4-2ea3-459a-b792-dea1fab43c99</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

@@ -2,9 +2,9 @@
   <id>2c91216f-12dc-434d-ad65-2c4a96d64746</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.5
-Fix the issue while content type is empty/invalid value</description>
-  <revision>8</revision>
+  <description>Version: 0.9.6
+correct the error messgae while content type is empty/invalid value</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -222,13 +222,13 @@ var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
 if (contentType == null || String(contentType).trim() === &apos;&apos; ||
     contentType.toLowerCase().indexOf(&apos;multipart/form-data&apos;) === -1) {
 
-    var errorResponse = &quot;Validation Error: Unsupported media type&quot;;
+    var errorResponse = &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;;
 
     logger.error(&quot;[CHANNEL: &quot; + channelName + &quot;] Missing or invalid Content-Type header: &quot; + contentType);
 
     setErrorResponse(400, errorResponse);
 
-    throw &quot;Unsupported media type&quot;;
+    throw &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;;
 }
 
 // Check if rawData is empty
@@ -748,7 +748,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770960476396</time>
+        <time>1771216551260</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -759,13 +759,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>6f64bb3d-af63-47b2-a5c6-1a583a8db8a7</id>
-        <name>0_9_5</name>
+        <id>888e826f-fb47-4911-9019-dec88a141724</id>
+        <name>0_9_6</name>
         <channelIds>
           <string>2c91216f-12dc-434d-ad65-2c4a96d64746</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
