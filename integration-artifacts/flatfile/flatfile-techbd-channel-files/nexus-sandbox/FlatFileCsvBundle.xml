@@ -2,9 +2,9 @@
   <id>2c91216f-12dc-434d-ad65-2c4a96d64746</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.6
-correct the error messgae while content type is empty/invalid value</description>
-  <revision>4</revision>
+  <description>Version: 0.9.7
+correct the error messgae while tenant id is invalid</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -333,7 +333,7 @@ channelMap.put(&apos;baseFhirURL&apos;, baseFhirURL);
 // Check if the header is null or empty
 if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
     // Log the error for debugging
-    var errorMessage = &apos;[CHANNEL: &apos;+ channelName +&apos;] Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+    var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
     logger.error(errorMessage);
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage; // Stop further processing by throwing an exception
@@ -345,7 +345,7 @@ var rawData = connectorMessage.getRawData();
 
 // Check if rawData is empty
 if (!rawData || rawData.trim().length === 0) {
-    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] No file provided in the request.&quot;;
+    errorMessage = &quot;No file provided in the request.&quot;;
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage;
 }
@@ -371,7 +371,7 @@ for each (var part in parts) {
 
 // Validate the file content
 if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
-    errorMessage = &quot;[CHANNEL: &quot;+ channelName +&quot;] Uploaded file is empty or missing.&quot;;
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
     // Set the HTTP response status to 400 (Bad Request)
     setErrorResponse(400, errorMessage);
     throw errorMessage;
@@ -748,7 +748,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771216551260</time>
+        <time>1771236660677</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -759,14 +759,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>888e826f-fb47-4911-9019-dec88a141724</id>
-        <name>0_9_6</name>
+        <id>58240bf1-ac3a-47fb-bb23-148e2b9bd749</id>
+        <name>0_9_7</name>
         <channelIds>
           <string>2c91216f-12dc-434d-ad65-2c4a96d64746</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

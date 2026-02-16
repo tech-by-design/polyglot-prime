@@ -31,14 +31,14 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.6",
+      "version": "0.9.7",
       "editedby": "abhiramisanthosh90",
       "date": "2026-02-16"
     },
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundleValidate.xml",
-      "version": "0.8.2",
+      "version": "0.8.3",
       "editedby": "abhiramisanthosh90",
       "date": "2026-02-16"
     },

@@ -2,9 +2,9 @@
   <id>e16273f4-2ea3-459a-b792-dea1fab43c99</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.8.2
-Correct the error message of missing headers.</description>
-  <revision>3</revision>
+  <description>Version: 0.8.3
+Correct the blank response of incorrect file is selected.</description>
+  <revision>7</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -158,6 +158,33 @@ var rawData = connectorMessage.getRawData();
 if (!rawData || rawData.trim().length === 0) {
     errorMessage = &quot;No file provided in the request.&quot;;
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage;
+}
+
+
+//Check the file type, only .xml and .txt allowed
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+
+if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
+    filename = filenameMatch[1];
+    logger.info(&quot;Filename: &quot; + filename);
+    channelMap.put(&apos;filename&apos;, filename);
+
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
+    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
+    logger.info(&quot;File extension: &quot; + extension);
+
+    if (extension !== &quot;zip&quot;) {
+       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only zip files are allowed.&quot;;
+       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    	  throw errorMessage; // Stop further processing by throwing an exception
+    }
+} else {
+    logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
 
@@ -564,7 +591,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771216292128</time>
+        <time>1771243644224</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -575,13 +602,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>989bb0ca-99be-40f9-a116-a6da9257c181</id>
-        <name>0_8_2</name>
+        <id>7b392d39-c6af-4558-86f3-a98f5238e670</id>
+        <name>0_8_3</name>
         <channelIds>
           <string>e16273f4-2ea3-459a-b792-dea1fab43c99</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
