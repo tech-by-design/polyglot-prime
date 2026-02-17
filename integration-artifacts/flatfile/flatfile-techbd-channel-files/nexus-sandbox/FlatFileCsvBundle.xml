@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>2c91216f-12dc-434d-ad65-2c4a96d64746</id>
+  <id>6b62bc56-32a9-4c5e-990d-358a74befe4d</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.7
-correct the error messgae while tenant id is invalid</description>
-  <revision>5</revision>
+  <description>Version: 0.9.8
+Fixed blank response while empty zip file is selected.</description>
+  <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -373,6 +373,66 @@ for each (var part in parts) {
 if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
     errorMessage = &quot;Uploaded file is empty or missing.&quot;;
     // Set the HTTP response status to 400 (Bad Request)
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+///////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////
+// Validate ZIP content - must contain at least one CSV file
+
+var ByteArrayInputStream = Packages.java.io.ByteArrayInputStream;
+var ZipInputStream = Packages.java.util.zip.ZipInputStream;
+var StandardCharsets = Packages.java.nio.charset.StandardCharsets;
+
+var zipBytes;
+var hasCsvFile = false;
+var hasAnyFile = false;
+
+try {
+
+    zipBytes = fileContent.getBytes(StandardCharsets.ISO_8859_1);
+    var byteStream = new ByteArrayInputStream(zipBytes);
+    var zipStream = new ZipInputStream(byteStream);
+
+    var entry;
+
+    while ((entry = zipStream.getNextEntry()) != null) {
+
+        logger.info(&quot;[CHANNEL: &quot; + channelName + &quot;] ZIP entry found: &quot; + entry.getName());
+
+        if (!entry.isDirectory()) {
+            hasAnyFile = true;
+
+            if (entry.getName().toLowerCase().endsWith(&quot;.csv&quot;)) {
+                hasCsvFile = true;
+            }
+        }
+    }
+
+    zipStream.close();
+
+} catch (e) {
+    
+    var errorMessage = &quot;Invalid ZIP file or corrupted content.&quot;;
+    logger.error(errorMessage + &quot; &quot; + e);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+
+if (!hasAnyFile) {
+    var errorMessage = &quot;Bad Request: ZIP file contains no files (empty folders are not allowed).&quot;;
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+if (!hasCsvFile) {
+    var errorMessage = &quot;Bad Request: ZIP file must contain at least one CSV file.&quot;;
+    logger.error(errorMessage);
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
@@ -748,7 +808,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771236660677</time>
+        <time>1771317106913</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -759,14 +819,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>58240bf1-ac3a-47fb-bb23-148e2b9bd749</id>
-        <name>0_9_7</name>
+        <id>96b8c7db-fae3-4cb7-b506-77daf177606e</id>
+        <name>0_9_8</name>
         <channelIds>
-          <string>2c91216f-12dc-434d-ad65-2c4a96d64746</string>
+          <string>6b62bc56-32a9-4c5e-990d-358a74befe4d</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
