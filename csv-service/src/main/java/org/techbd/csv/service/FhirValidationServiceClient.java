@@ -140,7 +140,7 @@ public class FhirValidationServiceClient {
         getStringParam(params, "overrideRequestUri").ifPresent(builder::overrideRequestUri);
         getStringParam(params, "provenance").ifPresent(builder::provenance);
         getStringParam(params, "healthCheck").ifPresent(builder::healthCheck);
-        getStringParam(params, "customDataLakeApi").ifPresent(builder::customDataLakeApi);
+        getStringParam(params, "X-TechBD-DataLake-API-URL").ifPresent(builder::customDataLakeApi);
         getStringParam(params, "dataLakeApiContentType").ifPresent(builder::dataLakeApiContentType);
         getStringParam(params, "mtlsStrategy").ifPresent(builder::mtlsStrategy);
         getStringParam(params, "elaboration").ifPresent(builder::elaboration);

@@ -122,6 +122,7 @@ public class CsvController {
       requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
+    requestDetailsMap.put(Constants.DATALAKE_API_URL, customDataLakeApi);
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
     List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);

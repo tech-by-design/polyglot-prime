@@ -108,7 +108,7 @@ public class CsvController {
     validateTenantId(tenantId);
     // FHIRUtil.validateBaseFHIRProfileUrl(appConfig.getIgPackages(), baseFHIRURL); //TODO CHECK IF VALID IG PACKAGE
     Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);
-    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
         null,
         null, validationSeverityLevel, null, null,
         null,null);    
@@ -121,6 +121,7 @@ public class CsvController {
       requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
+    requestDetailsMap.put(Constants.DATALAKE_API_URL, customDataLakeApi);
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
     List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
