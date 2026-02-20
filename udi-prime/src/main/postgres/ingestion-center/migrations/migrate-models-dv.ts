@@ -166,6 +166,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ${searchPathAssurance}
       DECLARE
         tap_op TEXT := '';
+        tap_op_failed TEXT := '';
         test_result BOOLEAN;
         line TEXT;
       BEGIN
@@ -178,6 +179,7 @@ const migrateSP = pgSQLa.storedProcedure(
               tap_op := tap_op || line || E'\n';
 
               IF line LIKE 'not ok%' THEN
+                  tap_op_failed := tap_op_failed || line || E'\n';
                   test_result := FALSE;
               END IF;
           END LOOP;
@@ -189,7 +191,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
           -- Check if the test passed
           IF NOT test_result THEN
-              RAISE EXCEPTION 'Test failed: %', 'test_register_interaction_requests';
+              RAISE EXCEPTION 'Test failed: test_register_interaction_requests %', tap_op_failed;
           END IF;
       EXCEPTION
           -- Handle the specific error
