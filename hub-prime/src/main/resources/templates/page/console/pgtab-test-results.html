@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/sundry-single-level}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+        <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_assurance';
+        const viewName = 'v_pgtap_test_result';
+        document.addEventListener('DOMContentLoaded', function () {
+
+            function downloadCellRenderer(params) {
+
+                const tap_output = params.data.tap_output;
+                const sat_pgtap_test_result_id = params.data.sat_pgtap_test_result_id;
+                const test_name = params.data.test_name;
+                const file_name = test_name + '_' + sat_pgtap_test_result_id + '.txt';
+
+                // Create the URL for the API call                
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/tap_output/sat_pgtap_test_result_id/sat_pgtap_test_result_id/${sat_pgtap_test_result_id}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="${apiUrl}" title="${file_name}" return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }
+
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Migration Version",
+                        field: "migration_version",
+                        sortable: true,
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Migration version associated with the pgTAP test run"
+                    },
+                    {
+                        headerName: "Test Name",
+                        field: "test_name",
+                        sortable: true,
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Name of the executed pgTAP test"
+                    },
+                    {
+                        headerName: "Success",
+                        field: "success",
+                        sortable: true,
+                        filter: "agSetColumnFilter",
+                        headerTooltip: "Indicates whether the test passed (true) or failed (false)"
+                    },
+                    {
+                        headerName: "Created At",
+                        field: "created_at",
+                        sortable: true,
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "Timestamp when the test result was recorded"
+                    },
+                    {
+                        headerName: "TechBD Version",
+                        field: "techbd_version_number",
+                        filter: "agTextColumnFilter",
+                        sortable: true,
+                        headerTooltip: "TechBD Version Number"
+                    },
+                    {
+                        headerName: "Not OK Results",
+                        field: "notok_results",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The test results that did not pass",
+                        sortable: true
+                    },                    
+                    // {
+                    //     headerName: "TAP Output",
+                    //     field: "tap_output",
+                    //     sortable: false,
+                    //     filter: "agTextColumnFilter",
+                    //     headerTooltip: "Detailed TAP output message from the test execution",
+                    //     cellClass: "flex justify-center items-center",
+                    //     cellRenderer: downloadCellRenderer,
+                    //     filter: false, suppressFilter: true, sortable: false
+                    // }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+            This widget displays pgTAP test execution results for database migrations. It includes Migration Version, Test Name, Success Status, Not OK Results, TechBD Version, and Created Date. Users can quickly identify failed test cases, review failures.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

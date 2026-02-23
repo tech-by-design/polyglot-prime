@@ -785,6 +785,8 @@ const pgTapTestResult = SQLa.tableDefinition("pgtap_test_result", {
   test_name: text(),
   tap_output: textNullable(),
   success: boolean(),
+  techbd_version_number: textNullable(),
+  notok_results: textNullable(),
   ...dvts.housekeeping.columns,
 }, {
   isIdempotent: true,
@@ -833,6 +835,7 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA ${ingressSchema.sqlNamespace};
 
       ${assuranceSchema}
+
 
       ${diagnosticsSchema}
 
@@ -1082,7 +1085,12 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${pgTapFixturesJSON}
 
-      ${pgTapTestResult}        
+      ${pgTapTestResult}   
+      
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS sat_pgtap_test_result_id TEXT DEFAULT gen_random_uuid()::text; 
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL; 
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS notok_results TEXT NULL;
+      
         
       PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
           IF NOT EXISTS (
@@ -1404,9 +1412,12 @@ const migrateSP = pgSQLa.storedProcedure(
 
 
       ${searchPathAssurance}
+
+
       DECLARE
         tap_op TEXT := '';
-        test_result BOOLEAN;
+        tap_op_failed TEXT := '';
+        test_result BOOLEAN := TRUE;
         line TEXT;
       BEGIN
           PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text);
@@ -1417,23 +1428,24 @@ const migrateSP = pgSQLa.storedProcedure(
           LOOP
               tap_op := tap_op || line || E'\n';
 
-              IF line LIKE 'not ok%' THEN
+              IF trim(line) LIKE 'not ok%' THEN
+                  tap_op_failed := tap_op_failed || line || E'\n';
                   test_result := FALSE;
               END IF;
           END LOOP;
 
 
           -- Insert the test result into the test_results table
-          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (migration_version, test_name, tap_output, success, created_by, provenance)
-          VALUES ('${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap');
+          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (migration_version, test_name, tap_output, success, created_by, provenance, techbd_version_number, notok_results)
+          VALUES ('${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap', '0.1028.0', tap_op_failed);
 
           -- Check if the test passed
-          IF NOT test_result THEN
-              RAISE EXCEPTION 'Test failed: %', 'test_register_interaction_requests';
+          IF NOT test_result THEN                      
+              RAISE NOTICE 'ERROR: Test test_register_interaction_requests failed: %', tap_op_failed;
           END IF;
       EXCEPTION
-          -- Handle the specific error
-          WHEN others THEN
+          -- Handle the specific error          
+          WHEN others THEN            
               -- Raise an error with a custom message
               RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
       END;

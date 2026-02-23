@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.4 -->
+<!-- Version : 0.2.5 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -18,32 +18,66 @@
   <xsl:param name="facilityID"/>
   <xsl:param name="OrganizationName"/>
   
+  <!-- <xsl:if test="string-length(string(//PID[1]/PID.5/PID.5.1)) &gt; 0">     -->
+    <xsl:variable name="givenName5">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.5/PID.5.2)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="middleName5">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.5/PID.5.3)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="familyName5">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.5/PID.5.1)"/>
+      </xsl:call-template>
+    </xsl:variable>
+  <!-- </xsl:if> -->
+
+  <!-- <xsl:if test="string-length(string(//PID[1]/PID.9/PID.9.1)) &gt; 0"> -->
+    <xsl:variable name="givenName9">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.9/PID.9.2)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="middleName9">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.9/PID.9.3)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="familyName9">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string(//PID[1]/PID.9/PID.9.1)"/>
+      </xsl:call-template>
+    </xsl:variable>
+  <!-- </xsl:if> -->
+
   <xsl:variable name="patientResourceName">
     <xsl:choose>
       <!-- Prefer Legal Name (PID-5) -->
-      <xsl:when test="normalize-space(//PID[1]/PID.5/PID.5.1)">
-        <xsl:value-of select="normalize-space(
-          concat(
-            //PID[1]/PID.5/PID.5.2, ' ',
-            //PID[1]/PID.5/PID.5.3, ' ',
-            //PID[1]/PID.5/PID.5.1
-          )
-        )"/>
+      <xsl:when test="string-length(string(//PID[1]/PID.5/PID.5.1)) &gt; 0">        
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text"
+            select="concat($givenName5, ' ', $middleName5, ' ', $familyName5)"/>
+        </xsl:call-template>
       </xsl:when>
 
       <!-- Fallback to Alias (PID-9) -->
-      <xsl:when test="normalize-space(//PID[1]/PID.9/PID.9.1)">
-        <xsl:value-of select="normalize-space(
-          concat(
-            //PID[1]/PID.9/PID.9.2, ' ',
-            //PID[1]/PID.9/PID.9.3, ' ',
-            //PID[1]/PID.9/PID.9.1
-          )
-        )"/>
+      <xsl:when test="string-length(string(//PID[1]/PID.9/PID.9.1)) &gt; 0">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text"
+            select="concat($givenName9, ' ', $middleName9, ' ', $familyName9)"/>
+        </xsl:call-template> 
       </xsl:when>
 
       <!-- Absolute fallback -->
-      <xsl:otherwise>Unknown Patient</xsl:otherwise>
+      <xsl:otherwise><xsl:text>Unknown Patient</xsl:text></xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
 
@@ -61,7 +95,8 @@
   <xsl:param name="procedureResourceSha256Id"/>
   <xsl:param name="grouperObservationResourceSha256Id"/>
   <xsl:param name="categoryXml"/>
-  <xsl:param name="componentAnswersXml"/>  
+  <xsl:param name="componentAnswersXml"/>
+  <xsl:param name="X-TechBD-Part2"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -98,6 +133,15 @@
     "profile": [
       "<xsl:value-of select='$bundleMetaProfileUrlFull'/>"
     ]
+    <xsl:if test="$X-TechBD-Part2 = 'true'">
+        ,"security": [
+            {
+                "code": "ETH",
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                "display": "Substance abuse information sensitivity"
+            }
+        ]
+    </xsl:if>
   },
   "type": "transaction",
   <xsl:if test="$bundleTimestamp">
@@ -211,10 +255,16 @@
           ]
         </xsl:if>
 
+        <xsl:variable name="genderCodeNorm"
+            select="translate(
+                normalize-space(//PID.8),
+                'abcdefghijklmnopqrstuvwxyz',
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            )"/>
         , "gender": "<xsl:choose>
-                <xsl:when test="normalize-space(//PID.8) = 'M'">male</xsl:when>
-                <xsl:when test="normalize-space(//PID.8) = 'F'">female</xsl:when>
-                <xsl:when test="normalize-space(//PID.8) = 'O'">other</xsl:when>
+                <xsl:when test="$genderCodeNorm = 'M'">male</xsl:when>
+                <xsl:when test="$genderCodeNorm = 'F'">female</xsl:when>
+                <xsl:when test="$genderCodeNorm = 'O'">other</xsl:when>
                 <xsl:otherwise>unknown</xsl:otherwise>
               </xsl:choose>"
 
@@ -235,80 +285,23 @@
           </xsl:choose>"
         </xsl:if>
 
-        <!-- ================= ADDRESS ================= -->
-        <xsl:variable name="addressList">
-          <xsl:for-each select="//PID.11[
-              normalize-space(PID.11.1)
-          or normalize-space(PID.11.2)
-          or normalize-space(PID.11.3)
-          or normalize-space(PID.11.4)
-          or normalize-space(PID.11.5)
-          or normalize-space(PID.11.6)
-          or normalize-space(PID.11.9)
-          ]">
-
-            <a>
-              {
-                <xsl:variable name="addrProps">
-
-                  <!-- text -->
-                  <xsl:if test="
-                      normalize-space(PID.11.1)
-                  or normalize-space(PID.11.2)
-                  or normalize-space(PID.11.3)
-                  or normalize-space(PID.11.4)
-                  or normalize-space(PID.11.5)
-                  or normalize-space(PID.11.6)
-                  ">
-                    <p>
-                      "text": "<xsl:value-of select="normalize-space(concat(PID.11.1, ' ', PID.11.2, ' ', PID.11.3, ' ', PID.11.4, ' ', PID.11.5, ' ', PID.11.6))"/>"
-                    </p>
-                  </xsl:if>
-
-                  <!-- line -->
-                  <xsl:if test="normalize-space(PID.11.1) or normalize-space(PID.11.2)">
-                    <p>
-                      "line": ["<xsl:value-of select="normalize-space(concat(PID.11.1,' ',PID.11.2))"/>"]
-                    </p>
-                  </xsl:if>
-
-                  <!-- city -->
-                  <xsl:if test="normalize-space(PID.11.3)">
-                    <p>"city": "<xsl:value-of select="normalize-space(PID.11.3)"/>"</p>
-                  </xsl:if>
-
-                  <!-- district -->
-                  <xsl:if test="normalize-space(PID.11.9)">
-                    <p>"district": "<xsl:value-of select="normalize-space(PID.11.9)"/>"</p>
-                  </xsl:if>
-
-                  <!-- state -->
-                  <xsl:if test="normalize-space(PID.11.4)">
-                    <p>"state": "<xsl:value-of select="normalize-space(PID.11.4)"/>"</p>
-                  </xsl:if>
-
-                  <!-- postalCode -->
-                  <xsl:if test="normalize-space(PID.11.5)">
-                    <p>"postalCode": "<xsl:value-of select="normalize-space(PID.11.5)"/>"</p>
-                  </xsl:if>
-
-                </xsl:variable>
-
-                <!-- emit address object safely -->
-                <xsl:for-each select="exsl:node-set($addrProps)/p">
-                  <xsl:value-of select="."/>
-                  <xsl:if test="position()!=last()">,</xsl:if>
-                </xsl:for-each>
-              }
-            </a>
-
-          </xsl:for-each>
-        </xsl:variable>
-
-        <xsl:if test="count(exsl:node-set($addressList)/a) &gt; 0">
-          , "address": [
-            <xsl:for-each select="exsl:node-set($addressList)/a">
-              <xsl:value-of select="."/>
+        <!-- ================= ADDRESS ================= -->        
+        <xsl:variable name="validAddresses"
+            select="//PID.11[
+                normalize-space(PID.11.1) or
+                normalize-space(PID.11.2) or
+                normalize-space(PID.11.3) or
+                normalize-space(PID.11.4) or
+                normalize-space(PID.11.5) or
+                normalize-space(PID.11.6) or
+                normalize-space(PID.11.9)
+            ]"/>
+        <xsl:if test="count($validAddresses) &gt; 0">
+          , "address":[
+            <xsl:for-each select="$validAddresses">
+              <xsl:call-template name="buildFhirAddressObject">
+                <xsl:with-param name="addrNode" select="."/>
+              </xsl:call-template>
               <xsl:if test="position()!=last()">,</xsl:if>
             </xsl:for-each>
           ]
@@ -329,19 +322,26 @@
             <!-- use -->
             <xsl:if test="normalize-space(*[2])">
               "use": "<xsl:choose>
-                <xsl:when test="*[2]='WPN' or *[2]='WP'">work</xsl:when>
-                <xsl:when test="*[2]='PRN' or *[2]='H'">home</xsl:when>
-                <xsl:when test="*[2]='NET' or *[2]='MC'">mobile</xsl:when>
-                <xsl:when test="*[2]='TMP'">temp</xsl:when>
-                <xsl:when test="*[2]='BAD'">old</xsl:when>
+                <xsl:when test="normalize-space(*[2])='WPN' or normalize-space(*[2])='WP'">work</xsl:when>
+                <xsl:when test="normalize-space(*[2])='PRN' or normalize-space(*[2])='H'">home</xsl:when>
+                <xsl:when test="normalize-space(*[2])='NET' or normalize-space(*[2])='MC'">mobile</xsl:when>
+                <xsl:when test="normalize-space(*[2])='TMP'">temp</xsl:when>
+                <xsl:when test="normalize-space(*[2])='BAD'">old</xsl:when>
                 <xsl:otherwise>
-                  <xsl:value-of select="*[2]"/>
+                  <xsl:value-of select="normalize-space(*[2])"/>
                 </xsl:otherwise>
               </xsl:choose>",
             </xsl:if>
 
             <!-- value -->
-            "value": "<xsl:value-of select="normalize-space(*[1])"/>"
+            <!-- "value": "<xsl:value-of select="normalize-space(*[1])"/>" -->
+            <xsl:variable name="trimmedValue">
+              <xsl:call-template name="string-trim">
+                <xsl:with-param name="text" select="string(*[1])"/>
+              </xsl:call-template>
+            </xsl:variable>
+            "value": "<xsl:value-of select="$trimmedValue"/>"
+
             }<xsl:if test="position() != last()">,</xsl:if>
           </xsl:for-each>
           ]
@@ -374,7 +374,20 @@
                                   <cp>"system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"</cp>
                                 </xsl:when>
                                 <xsl:when test="normalize-space(PID.10.3)">
-                                  <cp>"system": "urn:oid:<xsl:value-of select='PID.10.3'/>"</cp>
+                                  <!-- <cp>"system": "urn:oid:<xsl:value-of select='PID.10.3'/>"</cp> -->
+                                  <cp>
+                                    "system": "<xsl:choose>
+                                      <!-- Already contains urn:oid: -->
+                                      <xsl:when test="contains(normalize-space(PID.10.3), 'urn:oid:')">
+                                        <xsl:value-of select="normalize-space(PID.10.3)"/>
+                                      </xsl:when>
+                                      <!-- Does NOT contain urn:oid: -->
+                                      <xsl:otherwise>
+                                        <xsl:text>urn:oid:</xsl:text>
+                                        <xsl:value-of select="normalize-space(PID.10.3)"/>
+                                      </xsl:otherwise>
+                                    </xsl:choose>"
+                                  </cp>
                                 </xsl:when>
                               </xsl:choose>
                               <cp>"code": "<xsl:value-of select='PID.10.1'/>"</cp>
@@ -394,18 +407,12 @@
                       <r>
                         {
                           "url": "text",
-                          "valueString": "<xsl:choose>
-                            <!-- At least one PID.10.2 exists -->
-                            <xsl:when test="count($raceTextNodes) &gt; 0">
-                              <xsl:for-each select="$raceTextNodes">
-                                <xsl:value-of select="PID.10.2"/>
-                                <xsl:if test="position()!=last()">, </xsl:if>
-                              </xsl:for-each>
-                            </xsl:when>
-
-                            <!-- All PID.10.2 missing or empty -->
-                            <xsl:otherwise>unknown</xsl:otherwise>
-                          </xsl:choose>"
+                          "valueString": "<xsl:for-each select='//PID.10'>
+                                          <xsl:value-of select='PID.10.2'/>
+                                          <xsl:if test='position() != last()'>
+                                          <xsl:text>, </xsl:text>
+                                          </xsl:if>
+                                        </xsl:for-each>"
                         }
                       </r>
                     </xsl:variable>
@@ -436,7 +443,20 @@
                           "valueCoding": {
                             <xsl:variable name="codingProps">
                               <xsl:if test="normalize-space(PID.22.3)">
-                                <cp>"system": "urn:oid:<xsl:value-of select='PID.22.3'/>"</cp>
+                                <!-- <cp>"system": "urn:oid:<xsl:value-of select='PID.22.3'/>"</cp> -->
+                                <cp>
+                                  "system": "<xsl:choose>
+                                    <!-- Already contains urn:oid: -->
+                                    <xsl:when test="contains(normalize-space(PID.22.3), 'urn:oid:')">
+                                      <xsl:value-of select="normalize-space(PID.22.3)"/>
+                                    </xsl:when>
+                                    <!-- Does NOT contain urn:oid: -->
+                                    <xsl:otherwise>
+                                      <xsl:text>urn:oid:</xsl:text>
+                                      <xsl:value-of select="normalize-space(PID.22.3)"/>
+                                    </xsl:otherwise>
+                                  </xsl:choose>"
+                                </cp>
                               </xsl:if>
                               <cp>"code": "<xsl:value-of select='PID.22.1'/>"</cp>
                               <cp>"display": "<xsl:value-of select='PID.22.2'/>"</cp>
@@ -455,18 +475,12 @@
                     <r>
                       {
                         "url": "text",
-                        "valueString": "<xsl:choose>
-                          <!-- At least one PID.22.2 exists -->
-                          <xsl:when test="count($ethnicityTextNodes) &gt; 0">
-                            <xsl:for-each select="$ethnicityTextNodes">
-                              <xsl:value-of select="PID.22.2"/>
-                              <xsl:if test="position()!=last()">, </xsl:if>
-                            </xsl:for-each>
-                          </xsl:when>
-
-                          <!-- All PID.22.2 missing or empty -->
-                          <xsl:otherwise>unknown</xsl:otherwise>
-                        </xsl:choose>"
+                        "valueString": "<xsl:for-each select='//PID.22'>
+                                          <xsl:value-of select='PID.22.2'/>
+                                          <xsl:if test='position() != last()'>
+                                          <xsl:text>, </xsl:text>
+                                          </xsl:if>
+                                        </xsl:for-each>"
                       }
                     </r>
                   </xsl:variable>
@@ -505,7 +519,12 @@
 
       <xsl:variable name="cinId" select="$patientCIN"/>
 		  <xsl:variable name="ssnId" select="normalize-space(//PID/PID.19/PID.19.1)"/>		
-		  <xsl:variable name="mrnId" select="//PID.3/PID.3.1"/>
+		  <!-- <xsl:variable name="mrnId" select="//PID.3/PID.3.1"/> -->
+      <xsl:variable name="mrnId">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="//PID.3/PID.3.1"/>
+        </xsl:call-template>
+      </xsl:variable>
 
       <xsl:if test="$cinId or $ssnId or $mrnId">
       , "identifier": [
@@ -691,33 +710,19 @@
 
               <!-- ================= Address ================= -->
               <xsl:if test="
-                  normalize-space(NK1.4/NK1.4.1)
-              or normalize-space(NK1.4/NK1.4.3)
-              or normalize-space(NK1.4/NK1.4.4)
-              or normalize-space(NK1.4/NK1.4.5)
-              ">
+                   normalize-space(NK1.4/NK1.4.1)
+                or normalize-space(NK1.4/NK1.4.2)
+                or normalize-space(NK1.4/NK1.4.3)
+                or normalize-space(NK1.4/NK1.4.4)
+                or normalize-space(NK1.4/NK1.4.5)
+                or normalize-space(NK1.4/NK1.4.6)
+                or normalize-space(NK1.4/NK1.4.9)
+                ">
                 <p>
-                  "address": {
-                    <xsl:variable name="addrProps">
-                      <xsl:if test="normalize-space(NK1.4/NK1.4.1)">
-                        <ap>"line": ["<xsl:value-of select="normalize-space(NK1.4/NK1.4.1)"/>"]</ap>
-                      </xsl:if>
-                      <xsl:if test="normalize-space(NK1.4/NK1.4.3)">
-                        <ap>"city": "<xsl:value-of select="normalize-space(NK1.4/NK1.4.3)"/>"</ap>
-                      </xsl:if>
-                      <xsl:if test="normalize-space(NK1.4/NK1.4.4)">
-                        <ap>"state": "<xsl:value-of select="normalize-space(NK1.4/NK1.4.4)"/>"</ap>
-                      </xsl:if>
-                      <xsl:if test="normalize-space(NK1.4/NK1.4.5)">
-                        <ap>"postalCode": "<xsl:value-of select="normalize-space(NK1.4/NK1.4.5)"/>"</ap>
-                      </xsl:if>
-                    </xsl:variable>
-
-                    <xsl:for-each select="exsl:node-set($addrProps)/ap">
-                      <xsl:value-of select="."/>
-                      <xsl:if test="position()!=last()">,</xsl:if>
-                    </xsl:for-each>
-                  }
+                  "address":
+                    <xsl:call-template name="buildFhirAddressObject">
+                      <xsl:with-param name="addrNode" select="NK1.4"/>
+                    </xsl:call-template>
                 </p>
               </xsl:if>
 
@@ -1169,10 +1174,16 @@
 		
         "name": "<xsl:choose>
            <xsl:when test='normalize-space($OrganizationName)'>
-             <xsl:value-of select='$OrganizationName'/>
+             <!-- <xsl:value-of select='$OrganizationName'/> -->
+              <xsl:call-template name="string-trim">
+                <xsl:with-param name="text" select="$OrganizationName"/>
+              </xsl:call-template>
            </xsl:when>
            <xsl:otherwise>
-             <xsl:value-of select='//MSH/MSH.6'/>
+             <!-- <xsl:value-of select='//MSH/MSH.6'/> -->
+             <xsl:call-template name="string-trim">
+                <xsl:with-param name="text" select="//MSH/MSH.6"/>
+              </xsl:call-template>
            </xsl:otherwise>
          </xsl:choose>"
 
@@ -1186,16 +1197,25 @@
                                     or normalize-space(ORC.23.3)
                                   ]">
               {
-                <xsl:if test="normalize-space(ORC.23.1)">
+                <!-- <xsl:if test="normalize-space(ORC.23.1)">
                   "value": "<xsl:value-of select='ORC.23.1'/>"
+                </xsl:if> -->
+                <xsl:if test="normalize-space(ORC.23.1)">                  
+                  <xsl:variable name="trimmedValue">
+                    <xsl:call-template name="string-trim">
+                      <xsl:with-param name="text" select="ORC.23.1"/>
+                    </xsl:call-template>
+                  </xsl:variable>
+                  "value": "<xsl:value-of select="$trimmedValue"/>"
+
                 </xsl:if>
 
                 <xsl:if test="normalize-space(ORC.23.3)">
                   <xsl:if test="normalize-space(ORC.23.1)">, </xsl:if>
                   "system": "<xsl:choose>
-                    <xsl:when test="ORC.23.3 = 'PH'">phone</xsl:when>
-                    <xsl:when test="ORC.23.3 = 'FX'">fax</xsl:when>
-                    <xsl:when test="ORC.23.3 = 'Internet'">email</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.3) = 'PH'">phone</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.3) = 'FX'">fax</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.3) = 'Internet'">email</xsl:when>
                     <xsl:otherwise>other</xsl:otherwise>
                   </xsl:choose>"
                 </xsl:if>
@@ -1204,12 +1224,12 @@
                   <xsl:if test="normalize-space(ORC.23.1) 
                                 or normalize-space(ORC.23.3)">, </xsl:if>
                   "use": "<xsl:choose>
-                    <xsl:when test="ORC.23.2 = 'WP'">work</xsl:when>
-                    <xsl:when test="ORC.23.2 = 'H'">home</xsl:when>
-                    <xsl:when test="ORC.23.2 = 'TMP'">temp</xsl:when>
-                    <xsl:when test="ORC.23.2 = 'MC' or ORC.23.2 = 'PG'">mobile</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.2) = 'WP'">work</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.2) = 'H'">home</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.2) = 'TMP'">temp</xsl:when>
+                    <xsl:when test="normalize-space(ORC.23.2) = 'MC' or normalize-space(ORC.23.2) = 'PG'">mobile</xsl:when>
                     <xsl:otherwise>
-                      <xsl:value-of select="ORC.23.2"/>
+                      <xsl:value-of select="normalize-space(ORC.23.2)"/>
                     </xsl:otherwise>
                   </xsl:choose>"
                 </xsl:if>
@@ -1218,113 +1238,22 @@
           ]
         </xsl:if>
         
-        <xsl:variable name="orcAddressList">
-          <xsl:for-each select="//ORC.22[
-              normalize-space(ORC.22.1)
-          or normalize-space(ORC.22.2)
-          or normalize-space(ORC.22.3)
-          or normalize-space(ORC.22.4)
-          or normalize-space(ORC.22.5)
-          or normalize-space(ORC.22.6)
-          or normalize-space(ORC.22.7)
-          or normalize-space(ORC.22.9)
-          ]">
-
-            <a>
-              {
-                <xsl:variable name="addrProps">
-
-                  <!-- use -->
-                  <xsl:if test="normalize-space(ORC.22.7)">
-                    <p>
-                      "use": "<xsl:choose>
-                        <xsl:when test="ORC.22.7 = 'H' or ORC.22.7 = 'HP'">home</xsl:when>
-                        <xsl:when test="ORC.22.7 = 'WP'">work</xsl:when>
-                        <xsl:when test="ORC.22.7 = 'TMP'">temp</xsl:when>
-                        <xsl:when test="ORC.22.7 = 'OLD' or ORC.22.7 = 'BAD'">old</xsl:when>
-                        <xsl:otherwise><xsl:value-of select="ORC.22.7"/></xsl:otherwise>
-                      </xsl:choose>"
-                    </p>
-                  </xsl:if>
-
-                  <!-- text (only if something real exists) -->
-                  <xsl:if test="
-                      normalize-space(ORC.22.1)
-                  or normalize-space(ORC.22.2)
-                  or normalize-space(ORC.22.3)
-                  or normalize-space(ORC.22.4)
-                  or normalize-space(ORC.22.5)
-                  or normalize-space(ORC.22.6)
-                  ">
-                    <p>
-                      "text": "<xsl:value-of select="
-                        normalize-space(concat(
-                          normalize-space(ORC.22.1),' ',
-                          normalize-space(ORC.22.2),' ',
-                          normalize-space(ORC.22.3),' ',
-                          normalize-space(ORC.22.4),' ',
-                          normalize-space(ORC.22.5),' ',
-                          normalize-space(ORC.22.6)
-                        ))"/>"
-                    </p>
-                  </xsl:if>
-
-                  <!-- line -->
-                  <xsl:if test="normalize-space(ORC.22.1) or normalize-space(ORC.22.2)">
-                    <p>
-                      "line": [
-                        <xsl:if test="normalize-space(ORC.22.1)">
-                          "<xsl:value-of select="normalize-space(ORC.22.1)"/>"
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ORC.22.2)">
-                          <xsl:if test="normalize-space(ORC.22.1)">,</xsl:if>
-                          "<xsl:value-of select="normalize-space(ORC.22.2)"/>"
-                        </xsl:if>
-                      ]
-                    </p>
-                  </xsl:if>
-
-                  <!-- city -->
-                  <xsl:if test="normalize-space(ORC.22.3)">
-                    <p>"city": "<xsl:value-of select="normalize-space(ORC.22.3)"/>"</p>
-                  </xsl:if>
-
-                  <!-- district -->
-                  <xsl:if test="normalize-space(ORC.22.9)">
-                    <p>"district": "<xsl:value-of select="normalize-space(ORC.22.9)"/>"</p>
-                  </xsl:if>
-
-                  <!-- state -->
-                  <xsl:if test="normalize-space(ORC.22.4)">
-                    <p>"state": "<xsl:value-of select="normalize-space(ORC.22.4)"/>"</p>
-                  </xsl:if>
-
-                  <!-- postalCode -->
-                  <xsl:if test="normalize-space(ORC.22.5)">
-                    <p>"postalCode": "<xsl:value-of select="normalize-space(ORC.22.5)"/>"</p>
-                  </xsl:if>
-
-                  <!-- country -->
-                  <xsl:if test="normalize-space(ORC.22.6)">
-                    <p>"country": "<xsl:value-of select="normalize-space(ORC.22.6)"/>"</p>
-                  </xsl:if>
-
-                </xsl:variable>
-
-                <xsl:for-each select="exsl:node-set($addrProps)/p">
-                  <xsl:value-of select="."/>
-                  <xsl:if test="position()!=last()">,</xsl:if>
-                </xsl:for-each>
-              }
-            </a>
-
-          </xsl:for-each>
-        </xsl:variable>
-
-        <xsl:if test="count(exsl:node-set($orcAddressList)/a) &gt; 0">
-          , "address": [
-            <xsl:for-each select="exsl:node-set($orcAddressList)/a">
-              <xsl:value-of select="."/>
+        <xsl:variable name="validAddresses"
+            select="//ORC.22[
+                normalize-space(ORC.22.1) or
+                normalize-space(ORC.22.2) or
+                normalize-space(ORC.22.3) or
+                normalize-space(ORC.22.4) or
+                normalize-space(ORC.22.5) or
+                normalize-space(ORC.22.6) or
+                normalize-space(ORC.22.9)
+            ]"/>
+        <xsl:if test="count($validAddresses) &gt; 0">
+          , "address":[
+            <xsl:for-each select="$validAddresses">
+              <xsl:call-template name="buildFhirAddressObject">
+                <xsl:with-param name="addrNode" select="."/>
+              </xsl:call-template>
               <xsl:if test="position()!=last()">,</xsl:if>
             </xsl:for-each>
           ]
@@ -1492,23 +1421,37 @@
           }
         ]
       </xsl:if>
+      
+      <!-- Trim required PV1 components first -->
+      <xsl:variable name="pv1_3_1_trimmed">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="string(//PV1[1]/PV1.3/PV1.3.1)"/>
+        </xsl:call-template>
+      </xsl:variable>
 
-      <xsl:if test="normalize-space(//PV1[1]/PV1.3/PV1.3.1)">
+      <xsl:variable name="pv1_3_4_trimmed">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="string(//PV1[1]/PV1.3/PV1.3.4)"/>
+        </xsl:call-template>
+      </xsl:variable>
+
+      <xsl:variable name="pv1_3_7_trimmed">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="string(//PV1[1]/PV1.3/PV1.3.7)"/>
+        </xsl:call-template>
+      </xsl:variable>
+
+      <!-- Only emit location if PV1.3.1 exists -->
+      <xsl:if test="string($pv1_3_1_trimmed)">
         <xsl:text>,</xsl:text>
         "location": [
           {
             "location": {
               "display": "<xsl:choose>
-                <xsl:when test="normalize-space(//PV1[1]/PV1.3/PV1.3.4)">
-                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.4)"/>
-                </xsl:when>
-                <xsl:when test="normalize-space(//PV1[1]/PV1.3/PV1.3.7)">
-                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.7)"/>
-                </xsl:when>
-                <xsl:otherwise>
-                  <xsl:value-of select="normalize-space(//PV1[1]/PV1.3/PV1.3.1)"/>
-                </xsl:otherwise>
-              </xsl:choose>"
+                            <xsl:when test="string($pv1_3_4_trimmed)"><xsl:value-of select="$pv1_3_4_trimmed"/></xsl:when>
+                            <xsl:when test="string($pv1_3_7_trimmed)"><xsl:value-of select="$pv1_3_7_trimmed"/></xsl:when>
+                            <xsl:otherwise><xsl:value-of select="$pv1_3_1_trimmed"/></xsl:otherwise>
+                          </xsl:choose>"
             }
           }
         ]
@@ -1916,61 +1859,114 @@
 <xsl:template name="generateNameJson">
   <xsl:param name="nameNode"/>
 
-  <!-- Collect name properties safely -->
+  <!-- ========================= -->
+  <!-- Trim All Components First -->
+  <!-- ========================= -->
+  <xsl:variable name="family_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[1])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="given_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[2])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="middle_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[3])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="suffix_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[4])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="prefix_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[5])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <xsl:variable name="use_trimmed">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text" select="string($nameNode/*[7])"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <!-- Combine Given + Middle safely -->
+  <xsl:variable name="combined_given">
+    <xsl:call-template name="string-trim">
+      <xsl:with-param name="text"
+        select="concat($given_trimmed, ' ', $middle_trimmed)"/>
+    </xsl:call-template>
+  </xsl:variable>
+
+  <!-- ========================= -->
+  <!-- Collect JSON Properties   -->
+  <!-- ========================= -->
   <xsl:variable name="props">
 
-    <!-- extension -->
-    <xsl:if test="string($nameNode/*[2]) or string($nameNode/*[3])">
+    <!-- extension (middle name) -->
+    <xsl:if test="string($middle_trimmed)">
       <p>
         "extension": [{
           "url": "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/middle-name",
-          "valueString": "<xsl:value-of select="normalize-space(concat($nameNode/*[2], ' ', $nameNode/*[3]))"/>"
+          "valueString": "<xsl:value-of select="$middle_trimmed"/>"
         }]
       </p>
     </xsl:if>
 
     <!-- use -->
-    <xsl:if test="string($nameNode/*[7])">
+    <xsl:if test="string($use_trimmed)">
       <p>
         "use": "<xsl:choose>
-          <xsl:when test="$nameNode/*[7] = 'L'">official</xsl:when>
-          <xsl:when test="$nameNode/*[7] = 'P'">usual</xsl:when>
-          <xsl:otherwise> <xsl:value-of select="$nameNode/*[7]"/> </xsl:otherwise>
+          <xsl:when test="$use_trimmed = 'L'">official</xsl:when>
+          <xsl:when test="$use_trimmed = 'P'">usual</xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="$use_trimmed"/>
+          </xsl:otherwise>
         </xsl:choose>"
       </p>
     </xsl:if>
 
     <!-- prefix -->
-    <xsl:if test="string($nameNode/*[5])">
+    <xsl:if test="string($prefix_trimmed)">
       <p>
-        "prefix": ["<xsl:value-of select="$nameNode/*[5]"/>"]
+        "prefix": ["<xsl:value-of select="$prefix_trimmed"/>"]
       </p>
     </xsl:if>
 
     <!-- given -->
-    <xsl:if test="string($nameNode/*[2]) or string($nameNode/*[3])">
+    <xsl:if test="string($combined_given)">
       <p>
-        "given": ["<xsl:value-of select="normalize-space(concat($nameNode/*[2], ' ', $nameNode/*[3]))"/>"]
+        "given": ["<xsl:value-of select="$combined_given"/>"]
       </p>
     </xsl:if>
 
     <!-- family -->
-    <xsl:if test="string($nameNode/*[1])">
+    <xsl:if test="string($family_trimmed)">
       <p>
-        "family": "<xsl:value-of select="$nameNode/*[1]"/>"
+        "family": "<xsl:value-of select="$family_trimmed"/>"
       </p>
     </xsl:if>
 
     <!-- suffix -->
-    <xsl:if test="string($nameNode/*[4])">
+    <xsl:if test="string($suffix_trimmed)">
       <p>
-        "suffix": ["<xsl:value-of select="$nameNode/*[4]"/>"]
+        "suffix": ["<xsl:value-of select="$suffix_trimmed"/>"]
       </p>
     </xsl:if>
 
   </xsl:variable>
 
-  <!-- Emit JSON object safely -->
+  <!-- ========================= -->
+  <!-- Emit JSON Safely          -->
+  <!-- ========================= -->
   {
     <xsl:for-each select="exsl:node-set($props)/p">
       <xsl:value-of select="."/>
@@ -2068,5 +2064,135 @@
     <xsl:otherwise/>
   </xsl:choose>
 </xsl:template>
+
+<!-- "Function" to trim leading and trailing spaces -->  
+  <xsl:template name="string-trim">
+    <xsl:param name="text"/>
+
+    <!-- trim leading spaces -->
+    <xsl:choose>
+      <xsl:when test="starts-with($text, ' ')">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text" select="substring($text, 2)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- trim trailing spaces -->
+      <xsl:when test="substring($text, string-length($text)) = ' '">
+        <xsl:call-template name="string-trim">
+          <xsl:with-param name="text"
+            select="substring($text, 1, string-length($text) - 1)"/>
+        </xsl:call-template>
+      </xsl:when>
+
+      <!-- Return result -->
+      <xsl:otherwise>
+        <xsl:value-of select="$text"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <!-- Reusable Address Template -->
+  <xsl:template name="buildFhirAddressObject">
+    <xsl:param name="addrNode"/>
+
+    <!-- Trim components -->
+
+    <xsl:variable name="line1">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[1])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="line2">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[2])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="city">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[3])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="state">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[4])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="postal">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[5])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="country">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[6])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="district">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="string($addrNode/*[9])"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <!-- Combined values -->
+    <xsl:variable name="combinedLine">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text" select="concat($line1,' ',$line2)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="combinedText">
+      <xsl:call-template name="string-trim">
+        <xsl:with-param name="text"
+          select="concat($line1,' ',$line2,' ',$city,' ',$state,' ',$postal,' ',$country)"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    {
+      <xsl:variable name="props">
+
+        <xsl:if test="string($combinedText)">
+          <p>"text": "<xsl:value-of select="$combinedText"/>"</p>
+        </xsl:if>
+
+        <xsl:if test="string($combinedLine)">
+          <p>"line": ["<xsl:value-of select="$combinedLine"/>"]</p>
+        </xsl:if>
+
+        <xsl:if test="string($city)">
+          <p>"city": "<xsl:value-of select="$city"/>"</p>
+        </xsl:if>
+
+        <xsl:if test="string($district)">
+          <p>"district": "<xsl:value-of select="$district"/>"</p>
+        </xsl:if>
+
+        <xsl:if test="string($state)">
+          <p>"state": "<xsl:value-of select="$state"/>"</p>
+        </xsl:if>
+
+        <xsl:if test="string($postal)">
+          <p>"postalCode": "<xsl:value-of select="$postal"/>"</p>
+        </xsl:if>
+
+        <xsl:if test="string($country)">
+          <p>"country": "<xsl:value-of select="$country"/>"</p>
+        </xsl:if>
+
+      </xsl:variable>
+
+      <xsl:for-each select="exsl:node-set($props)/p">
+        <xsl:value-of select="."/>
+        <xsl:if test="position()!=last()">,</xsl:if>
+      </xsl:for-each>
+    }
+
+  </xsl:template>
 
 </xsl:stylesheet>

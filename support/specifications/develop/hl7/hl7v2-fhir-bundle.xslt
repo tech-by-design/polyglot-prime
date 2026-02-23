@@ -95,7 +95,8 @@
   <xsl:param name="procedureResourceSha256Id"/>
   <xsl:param name="grouperObservationResourceSha256Id"/>
   <xsl:param name="categoryXml"/>
-  <xsl:param name="componentAnswersXml"/>  
+  <xsl:param name="componentAnswersXml"/>
+  <xsl:param name="X-TechBD-Part2"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -132,6 +133,15 @@
     "profile": [
       "<xsl:value-of select='$bundleMetaProfileUrlFull'/>"
     ]
+    <xsl:if test="$X-TechBD-Part2 = 'true'">
+        ,"security": [
+            {
+                "code": "ETH",
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                "display": "Substance abuse information sensitivity"
+            }
+        ]
+    </xsl:if>
   },
   "type": "transaction",
   <xsl:if test="$bundleTimestamp">
@@ -397,18 +407,12 @@
                       <r>
                         {
                           "url": "text",
-                          "valueString": "<xsl:choose>
-                            <!-- At least one PID.10.2 exists -->
-                            <xsl:when test="count($raceTextNodes) &gt; 0">
-                              <xsl:for-each select="$raceTextNodes">
-                                <xsl:value-of select="PID.10.2"/>
-                                <xsl:if test="position()!=last()">, </xsl:if>
-                              </xsl:for-each>
-                            </xsl:when>
-
-                            <!-- All PID.10.2 missing or empty -->
-                            <xsl:otherwise>unknown</xsl:otherwise>
-                          </xsl:choose>"
+                          "valueString": "<xsl:for-each select='//PID.10'>
+                                          <xsl:value-of select='PID.10.2'/>
+                                          <xsl:if test='position() != last()'>
+                                          <xsl:text>, </xsl:text>
+                                          </xsl:if>
+                                        </xsl:for-each>"
                         }
                       </r>
                     </xsl:variable>
@@ -471,18 +475,12 @@
                     <r>
                       {
                         "url": "text",
-                        "valueString": "<xsl:choose>
-                          <!-- At least one PID.22.2 exists -->
-                          <xsl:when test="count($ethnicityTextNodes) &gt; 0">
-                            <xsl:for-each select="$ethnicityTextNodes">
-                              <xsl:value-of select="PID.22.2"/>
-                              <xsl:if test="position()!=last()">, </xsl:if>
-                            </xsl:for-each>
-                          </xsl:when>
-
-                          <!-- All PID.22.2 missing or empty -->
-                          <xsl:otherwise>unknown</xsl:otherwise>
-                        </xsl:choose>"
+                        "valueString": "<xsl:for-each select='//PID.22'>
+                                          <xsl:value-of select='PID.22.2'/>
+                                          <xsl:if test='position() != last()'>
+                                          <xsl:text>, </xsl:text>
+                                          </xsl:if>
+                                        </xsl:for-each>"
                       }
                     </r>
                   </xsl:variable>

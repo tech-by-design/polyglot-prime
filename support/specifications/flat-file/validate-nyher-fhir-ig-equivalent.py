@@ -35,7 +35,7 @@ class OptionalYesNoFlagsCheck(Check):
                 continue
 
             # Invalid value → ERROR
-            if value not in ("Yes", "No", "yes", "no"):
+            if value not in ("Yes", "No", "yes", "no", "YES", "NO"):
                 note = f"Field '{field}' must be Yes or No when present, got: '{value}'"
                 yield errors.RowError.from_row(row, note=note)  # ✅ Fixed: Use proper error creation
 
@@ -229,15 +229,6 @@ def clean_results(results):
         del cleaned_results["errorsSummary"]
     return cleaned_results
 
-def extract_csv_headers(file_path):
-    """Extract CSV headers without loading entire file into memory"""
-    try:
-        with open(file_path, 'r') as f:
-            header_line = f.readline().strip()
-            return [h.strip() for h in header_line.split(',') if h.strip()]
-    except Exception:
-        return []
-
 def validate_package(spec_path, file1, file2, file3, file4, output_path):
     
     results = {
@@ -282,8 +273,8 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 try:
                     rows = []
                     with open(file_path, 'r', encoding='utf-8', errors='replace') as csvfile:
-                        # reader = csv.reader(csvfile)
-                        for i, row in enumerate(csvfile):
+                        reader = csv.reader(csvfile)
+                        for i, row in enumerate(reader):
                             if i < ROW_LIMIT:  # Limit to first ROW_LIMIT rows
                                 rows.append(row)
                             else:
@@ -417,57 +408,28 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 ]
                 resource = transform(resource, steps=transform_steps)
             except Exception as e:
-                file_in_error_path = getattr(resource, "path", None)
+                file_in_error_path = getattr(resource, "path", None)  # or resource.name, depending on your library
                 file_in_error = os.path.basename(file_in_error_path) if file_in_error_path else None
                 error_message = str(e)
-                # Extract missing field name
+                # Extract missing field name as before
                 match = re.search(r"'(.*?)'", error_message)
                 missing_field = match.group(1) if match else "Unknown field"
 
-                # Create a unique key for this error to avoid duplicates (include file to differentiate)
-                error_key = (missing_field, file_in_error)
+                # Create a unique key for this error to avoid duplicates
+                error_key = (missing_field)
 
                 if error_key not in seen_errors:
                     seen_errors.add(error_key)
-
-                    # Try to read actual CSV headers without loading entire file
-                    actual_headers = extract_csv_headers(file_in_error_path) if file_in_error_path else []
-
-                    # Try to find a matching header from the CSV (case-insensitive exact or fuzzy match)
-                    matched_header = None
-                    if actual_headers:
-                        # Exact case-insensitive match
-                        for h in actual_headers:
-                            if h.casefold() == missing_field.casefold():
-                                matched_header = h
-                                break
-
-                        # Fallback to fuzzy matching if no exact match
-                        if matched_header is None:
-                            close = difflib.get_close_matches(missing_field, actual_headers, n=1, cutoff=0.6)
-                            if close:
-                                matched_header = close[0]
-
-                    headers_display = ", ".join(actual_headers) if actual_headers else "Unavailable"
-
-                    # Report CSV field name when found, otherwise fall back to schema field name
-                    reported_field = matched_header if matched_header else missing_field
-
+                    file_info = f" in file '{file_in_error}'" if file_in_error else ""
                     user_friendly_message = (
-                        f"The field '{reported_field}' (expected schema field '{missing_field}') is missing or incorrectly named in file '{file_in_error}'. "
-                        f"Available CSV headers: {headers_display}. Please check if the field exists or is spelled differently."
+                        f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
+                        f"Please check if it exists in the CSV file and matches the expected schema."
                     )
-
                     results["errorsSummary"].append({
-                        "fieldName": reported_field,
-                        "expectedField": missing_field,
+                        "fieldName": missing_field,
                         "message": user_friendly_message,
-                        "type": "data-processing-errors",
-                        "csvFields": actual_headers
+                        "type": "data-processing-errors"
                     })
-        
-        # Force garbage collection to free memory
-        gc.collect()
        
 
         # Create checklist with only detected flag fields
@@ -486,8 +448,8 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
          
 
         # Add the validation report to results
-        #results["report"] = report.to_dict()
-        results["report"] = report
+        results["report"] = report.to_dict()
+        # results["report"] = report
         
 
     except FileNotFoundError as e:

@@ -60,6 +60,12 @@ public class ConsoleController {
         return presentation.populateModel("page/console/islm", model, request);
     }
 
+    @RouteMapping(label = "pgTAP Test Results", title = "pgTAP Test Results", siblingOrder = 70)
+    @GetMapping("/console/pgtab-test-results")
+    public String pgtabTestResults(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/pgtab-test-results", model, request);
+    }    
+
     @RouteMapping(label = "Diagnostics", title = "Diagnostics", siblingOrder = 70)
     @GetMapping("/console/diagnostics")
     public String diagnostic() {

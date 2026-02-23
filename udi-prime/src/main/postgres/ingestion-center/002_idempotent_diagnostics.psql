@@ -186,3 +186,29 @@ SELECT
     sat_diagnostic_exception_id
 FROM
     techbd_udi_ingress.sat_diagnostic_exception;      
+
+/* -------------------------------------------------------------
+-- View: v_pgtap_test_result
+-- This view provides a summary of pgTAP test execution results.
+-- It includes migration version, test name, TAP output details,
+-- success status, and the timestamp of execution.
+-- Results are ordered by the most recent execution first.
+-- Useful for tracking migration-level test outcomes,
+-- auditing test runs, and monitoring validation status over time.
+-- -------------------------------------------------------------
+*/
+
+DROP VIEW IF EXISTS techbd_udi_assurance.v_pgtap_test_result CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_assurance.v_pgtap_test_result AS
+SELECT
+    migration_version,
+    test_name,
+    tap_output,
+    success,
+    created_at,
+    notok_results,
+    techbd_version_number,
+    sat_pgtap_test_result_id
+FROM techbd_udi_assurance.pgtap_test_result
+WHERE sat_pgtap_test_result_id != '' AND sat_pgtap_test_result_id IS NOT NULL
+ORDER BY created_at DESC;    

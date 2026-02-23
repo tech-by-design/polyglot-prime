@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.10</description>
-  <revision>39</revision>
+  <description>Version: 0.1.12</description>
+  <revision>42</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -164,6 +164,13 @@ if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2
 
 	//5. Encounter Type
 	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+
+	//6. Part 2 Data Flagging 
+	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);	
+	logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
+	}
 }
 
 // If any missing headers were found, throw a single error
@@ -727,6 +734,90 @@ function validateOneOfGroups(groups, hl7Text) {
         }
     }
     return violations;
+}
+
+function validateOBXSpecialRule(hl7Text) {
+
+    var violations = [];
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+        if (line.startsWith(&quot;OBX|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+            // Ensure OBX-3 exists
+            if (fields.length &lt; 4) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: &quot;OBX&quot;,
+                    fieldName: &quot;OBX-3.1&quot;,
+                    description: &quot;OBX-3 missing entirely&quot;,
+                    lineContent: line
+                });
+                continue;
+            }
+
+            var obx3 = fields[3] || &quot;&quot;;
+            var components = obx3.split(&quot;^&quot;);
+
+            var obx3_1 = components.length &gt;= 1 ? components[0].trim() : &quot;&quot;;
+            var obx3_2 = components.length &gt;= 2 ? components[1].trim().toLowerCase() : &quot;&quot;;
+            logger.info(&quot;obx3_2: &quot; + obx3_2);
+
+            // Skip rule ONLY if OBX-3.2 matches special phrase
+            if (obx3_2 === &quot;ahc-hrsn patient consent&quot;) {
+                continue;
+            }
+
+            // Otherwise OBX-3.1 must exist
+            if (!obx3_1) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: &quot;OBX&quot;,
+                    fieldName: &quot;OBX-3.1&quot;,
+                    description: &quot;OBX-3.1 required unless OBX-3.2 is &apos;ahc-hrsn patient consent&apos;&quot;,
+                    lineContent: line
+                });
+            }
+        }
+    }
+    return violations;
+}
+
+function validateOrganizationName(hl7Text) {
+    var violations = [];
+
+    // Check header first
+    var orgNameHeader = channelMap.get(&quot;OrganizationName&quot;);
+    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim().length &gt; 0) {
+        return violations;
+    }
+
+    // Check MSH-6
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+        if (line.startsWith(&quot;MSH|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+            if (fields.length &gt;= 6) {
+                var msh6 = fields[5] ? fields[5].trim() : &quot;&quot;;
+                if (msh6.length &gt; 0) {
+                    return violations;
+                }
+            }
+            break;
+        }
+    }
+
+    // If both empty → error
+    violations.push({
+        segment: &quot;MSH&quot;,
+        fieldName: &quot;Organization Name&quot;,
+        description: &quot;Organization Name must be provided either in header &apos;X-TechBD-Organization-Name&apos; or in MSH-6&quot;,
+        lineNumber: &quot;-&quot;,
+        lineContent: &quot;&quot;
+    });
+    return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
@@ -1014,6 +1105,13 @@ function set_fhir_resource_profile_urls(transformer) {
 		transformer.setParameter(&quot;OrganizationName&quot;, channelMap.get(&apos;OrganizationName&apos;)); // Pass the parameter to XSLT
 	}
 
+	// Set part2 flag
+     var part2DataFlag = channelMap.get(&apos;X-TechBD-Part2&apos;);
+	var flagValue = &quot;false&quot;;
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).toLowerCase() === &quot;true&quot;) {
+	    flagValue = &quot;true&quot;;
+	}	
+	transformer.setParameter(&apos;X-TechBD-Part2&apos;, flagValue);
 
 	return transformer;
 }
@@ -1343,6 +1441,14 @@ try {
 	    allViolations = allViolations.concat(violations);
 	}
 
+	// Custom OBX conditional validation - updated for Consent OBX exception
+	var obxViolations = validateOBXSpecialRule(hl7Body);
+	allViolations = allViolations.concat(obxViolations);
+
+	// Organization Name validation
+     var orgViolations = validateOrganizationName(hl7Body);
+     allViolations = allViolations.concat(orgViolations);
+
 	// Validate OneOfGroup rules
 	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
 	allViolations = allViolations.concat(groupViolations);
@@ -1528,6 +1634,14 @@ try {
 	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
 	    allViolations = allViolations.concat(violations);
 	}
+
+	// Custom OBX conditional validation - updated for Consent OBX exception
+	var obxViolations = validateOBXSpecialRule(hl7Body);
+	allViolations = allViolations.concat(obxViolations);
+
+	// Organization Name validation
+     var orgViolations = validateOrganizationName(hl7Body);
+     allViolations = allViolations.concat(orgViolations);
 
 	// Validate OneOfGroup rules
 	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
@@ -2142,7 +2256,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770036621838</time>
+        <time>1771571620873</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

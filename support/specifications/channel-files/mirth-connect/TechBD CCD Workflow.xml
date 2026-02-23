@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.40</description>
-  <revision>25</revision>
+  <description>Version: 0.4.42</description>
+  <revision>41</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -441,8 +441,11 @@ function extractClinicalDocumentFromRawXML(rawXml) {
 
     try {
         // Normalize input
-        rawXml = String(rawXml).replace(/^\uFEFF/, &apos;&apos;).trim();  //Remove BOM and leading/trailing whitespace
-
+        rawXml = String(rawXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();
+		
         var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
         var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
 
@@ -456,6 +459,7 @@ function extractClinicalDocumentFromRawXML(rawXml) {
 
         end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
         var extractedXml = rawXml.substring(start, end);
+        extractedXml = extractedXml.trim();  //Trim extra spaces
 
         // Add XML declaration if missing
         if (!hasXmlDeclaration) {
@@ -470,19 +474,61 @@ function extractClinicalDocumentFromRawXML(rawXml) {
     }
 }
 
+function extractBoundaries(rawCcdaXml) {
+	try {
+		logger.info(&quot;rawCcdaXml 1: &quot; + rawCcdaXml);
+		// Remove boundary
+		var rawXml = String(rawCcdaXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();		
+		logger.info(&quot;rawXml 2: &quot; + rawXml);
+		if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {			
+	        // Extract everything after first blank line
+	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
+	        if (match &amp;&amp; match[1]) {
+			    rawXml = match[1];
+			    logger.info(&quot;rawXml 3: &quot; + rawXml);
+		   }
+		   
+	        // Remove trailing boundary (last line starting with --)
+	        rawXml = rawXml.replace(/\r?\n--.*--\r?\n?$/, &apos;&apos;);
+	        rawXml = rawXml.replace(/\r?\n--.*$/, &apos;&apos;);
+	        logger.info(&quot;rawXml 4: &quot; + rawXml);
+	    }
+	    rawXml = String(rawXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();
+
+	    return rawXml;
+	} catch (e) {
+        logger.error(&quot;extractBoundaries failed: &quot; + e.message);
+        return null;
+    }
+}
+
 function extractClinicalDocument(rawXml) {
 	try {
+		var rawCcdaXml = rawXml;
+		var extractedXml = extractClinicalDocumentFromRawXML(rawXml);
+		
+		if (!extractedXml || extractedXml.trim().length == 0 || extractedXml.trim() == &apos;&apos;) {
+			rawCcdaXml = extractBoundaries(rawXml);
+		} else {
+			rawCcdaXml = extractedXml;
+		}
+	    logger.info(&quot;Original file content: &quot; + rawCcdaXml);
+
 		// Save Original Payload
 	     saveCcdaPayload(
 	        interactionId,
 	        tenantId,
 	        requestedPath,
-	        rawXml,
+	        rawCcdaXml,
 	        &quot;saveOgCCDAPayload&quot;
-	     );     
-
-	     var extractedXml = extractClinicalDocumentFromRawXML(rawXml);
-
+	     ); 
+		
 		if (!extractedXml || extractedXml.trim().length == 0 || extractedXml.trim() == &apos;&apos;) {
 		    var errorMsg = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
 		    var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
@@ -499,8 +545,8 @@ function extractClinicalDocument(rawXml) {
 		    return;
 		}
 		
-		channelMap.put(&apos;fileContent&apos;, extractedXml);		
-	    	return extractedXml;
+		channelMap.put(&apos;fileContent&apos;, extractedXml);
+		return extractedXml;
 		    
 	} catch (e) {
         logger.error(&quot;extractClinicalDocument failed: &quot; + e.message);
@@ -717,6 +763,13 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	logger.info(&quot;X-TechBD-Screening-Code: &quot; + screeningCode);
 	if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
+	}
+
+	//Part 2 Data Flagging 
+	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);	
+	logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
 	}
 }
 
@@ -1421,6 +1474,14 @@ function setResourceIdParameters(transformer) {
      transformer.setParameter(&apos;grouperScreeningCode&apos;, String(grouperScreeningCode));
      logger.info(&apos;grouperScreeningCode&apos; + &quot; : &quot; + grouperScreeningCode);
 
+     // Set part2 flag
+     var part2DataFlag = channelMap.get(&apos;X-TechBD-Part2&apos;);
+	var flagValue = &quot;false&quot;;
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).toLowerCase() === &quot;true&quot;) {
+	    flagValue = &quot;true&quot;;
+	}	
+	transformer.setParameter(&apos;X-TechBD-Part2&apos;, flagValue);
+
 	// Extract `location`
      try {
 	    var location;
@@ -1642,7 +1703,6 @@ function validateMandatoryFields() {
 	        var name = patient ? patient.*::name[0] : null;
 	        var givenName = name ? name.*::given.toString() : &quot;&quot;;
 	        var familyName = name ? name.*::family.toString() : &quot;&quot;;
-	        //if (!givenName &amp;&amp; !familyName) { errors.push(&quot;Patient name (given or family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.given or family.&quot;); }
 	        if (!givenName) { errors.push(&quot;Patient name (given) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.given.&quot;); }
 		   if (!familyName) { errors.push(&quot;Patient name (family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.family.&quot;); }
 
@@ -1667,20 +1727,8 @@ function validateMandatoryFields() {
 			        &quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;
 			    );
 		   }	        
-			/*var genderCode = &quot;&quot;;
-			if (patient) {
-			    var genderEl = patient.*::administrativeGenderCode[0];
-			    if (genderEl &amp;&amp; genderEl.@code) {
-			        genderCode = genderEl.@code.toString();
-			    }
-			}			
-			if (genderCode === &quot;&quot;) {
-			    errors.push(&quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;);
-			}*/
-
+			
 	        // 4. Birth Date
-	        //var birthDate = patient ? patient.*::birthTime[0].@value.toString() : &quot;&quot;;
-	        //if (!birthDate) { errors.push(&quot;Patient birthDate is mandatory as per FHIR.&quot;); }
 	        var birthDate = &quot;&quot;;
 		   if (patient) {
 			    var birthEl = patient.*::birthTime[0];
@@ -1702,7 +1750,6 @@ function validateMandatoryFields() {
     	} catch (e) {
 	    logger.error(&quot;Error accessing patientRole: &quot; + e);
 	}
- 	
 
 	// --------------------------------------------------------------------------------------------------------------------
     	// III. Organization (Location / Author Organization)
@@ -2503,7 +2550,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770296272035</time>
+        <time>1771571148530</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

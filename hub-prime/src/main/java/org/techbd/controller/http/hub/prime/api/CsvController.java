@@ -68,6 +68,7 @@ public class CsvController {
       @Parameter(description = "Tenant ID, a mandatory parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID) String tenantId,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
+      @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
@@ -83,6 +84,7 @@ public class CsvController {
         null, null, null, null, request.getRequestURI());
     requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     Map<String, Object> responseParameters = new HashMap<>();
     requestDetailsMap.putAll(headerParameters);
     final var result  = csvService.validateCsvFile(file, requestDetailsMap, responseParameters);

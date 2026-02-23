@@ -2,7 +2,7 @@ name: CI/CD Workflow for Qualityfolio
 on:
   push:
     paths:
-      - 'hub-prime/src/qualityfolio/TechbyDesignHub/**'
+      - 'support/qualityfolio/TechbyDesignHub/**'
   workflow_dispatch:
 
 jobs:
@@ -22,12 +22,12 @@ jobs:
       - name: Ingest Files with Surveilr
         run: |
           surveilr ingest files -r TechbyDesignHub
-        working-directory: hub-prime/src/qualityfolio
+        working-directory: support/qualityfolio
 
       - name: Generate SQL files
         run: |
           surveilr shell https://www.surveilr.com/lib/service/qualityfolio/package.sql
-        working-directory: hub-prime/src/qualityfolio
+        working-directory: support/qualityfolio
 
       - name: Deploy to production server
         run: |
