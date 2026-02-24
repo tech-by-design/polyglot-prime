@@ -2,9 +2,9 @@
   <id>c48e397f-769f-4e14-961f-e34ac1a2df46</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.6 
-The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
-  <revision>5</revision>
+  <description>Version: 0.8.7 
+Fixed psql error while zip file is seleted.</description>
+  <revision>2</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -962,7 +962,7 @@ return;</deployScript>
 return;</undeployScript>
   <properties version="4.6.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
     <encryptAttachments>false</encryptAttachments>
     <encryptCustomMetaData>false</encryptCustomMetaData>
@@ -970,7 +970,7 @@ return;</undeployScript>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
     <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
     <initialState>STARTED</initialState>
-    <storeAttachments>true</storeAttachments>
+    <storeAttachments>false</storeAttachments>
     <metaDataColumns>
       <metaDataColumn>
         <name>SOURCE</name>
@@ -998,7 +998,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771904174631</time>
+        <time>1771931369064</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1009,14 +1009,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>b3d4d843-a0d5-4df4-a950-af5d46450a53</id>
-        <name>0_8_6</name>
+        <id>feb6c75a-7a59-4f02-810e-e64266e2003e</id>
+        <name>0_8_7</name>
         <channelIds>
           <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>255</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

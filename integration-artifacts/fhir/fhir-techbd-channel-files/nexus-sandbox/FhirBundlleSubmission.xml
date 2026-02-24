@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>7e873a64-c085-4459-9631-5988deb097d8</id>
+  <id>91b21328-6513-4b64-829b-ced812d9f184</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.11
-The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
-  <revision>5</revision>
+  <description>Version: 0.8.12
+Fixed psql issue while zip file is selected.</description>
+  <revision>7</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2157,7 +2157,7 @@ return;</deployScript>
 return;</undeployScript>
   <properties version="4.6.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
     <encryptAttachments>false</encryptAttachments>
     <encryptCustomMetaData>false</encryptCustomMetaData>
@@ -2165,7 +2165,7 @@ return;</undeployScript>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
     <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
     <initialState>STARTED</initialState>
-    <storeAttachments>true</storeAttachments>
+    <storeAttachments>false</storeAttachments>
     <metaDataColumns>
       <metaDataColumn>
         <name>SOURCE</name>
@@ -2193,7 +2193,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771903977602</time>
+        <time>1771931458892</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2204,14 +2204,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a7d5ea54-ac91-4ea8-b759-7efdb1acb94d</id>
-        <name>0_8_11</name>
+        <id>04e46c20-43c4-435b-8205-f053cf9c9db3</id>
+        <name>0_8_12</name>
         <channelIds>
-          <string>7e873a64-c085-4459-9631-5988deb097d8</string>
+          <string>91b21328-6513-4b64-829b-ced812d9f184</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
