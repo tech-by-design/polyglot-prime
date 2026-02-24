@@ -1,36 +1,15 @@
 <channel version="4.6.1">
-  <id>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</id>
+  <id>7e873a64-c085-4459-9631-5988deb097d8</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.10
-channel map usage fix for mc jdbc url</description>
-  <revision>4</revision>
+  <description>Version: 0.8.11
+The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-  <sslEnabled>false</sslEnabled>
-          <mutualTlsEnabled>false</mutualTlsEnabled>
-          <verifyHostname>false</verifyHostname>
-          <keystorePath/>
-          <keystorePassword/>
-          <certAlias/>
-          <certPassword/>
-          <truststorePath/>
-          <truststorePassword/>
-          <tls13>true</tls13>
-          <tls12>true</tls12>
-          <tls11>true</tls11>
-          <keystoreType/>
-          <truststoreType/>
-          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-          <keystoreUid/>
-          <myCertificateAlias/>
-          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-          <truststoreUid/>
-        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -486,28 +465,122 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
     </transformer>
     <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/&apos; or &apos;/Bundle&apos;</name>
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="4.6.1">
+          <name>Http url and method validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <field>sourceMap.get(&apos;contextPath&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;/Bundle/&apos;</string>
-            <string>&apos;/Bundle&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
-          <sequenceNumber>1</sequenceNumber>
-          <enabled>true</enabled>
-          <operator>AND</operator>
-          <field>sourceMap.get(&apos;method&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;POST&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+          <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
+var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
+logger.info(&quot;HTTP Method: &quot; + httpMethod);
+logger.info(&quot;Context Path: &quot; + contextPath);
+
+/**
+ * Util function to generate JSON string
+ */
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+ * Util function to set error response
+ */
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode));
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/* =====================================
+   1️⃣ ROOT ENDPOINT
+===================================== */
+if (contextPath === &apos;&apos;) {
+
+   if (httpMethod === &apos;GET&apos;) {
+
+    responseMap.put(&apos;responseStatusCode&apos;, 200);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+        status: 200,
+        message: &quot;OK&quot;
+    }));
+
+   return false;
+}
+
+    // Method not allowed for /
+    return methodNotAllowed();
+}
+
+/* =====================================
+   2️⃣ HEALTHCHECK
+   
+===================================== */
+if (contextPath === &apos;/healthcheck&apos;) {
+
+    if (httpMethod === &apos;GET&apos;) {
+         responseMap.put(&apos;responseStatusCode&apos;, 200);
+	    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+	    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+	        status: 200,
+	        message: &quot;OK&quot;
+	    }));
+	
+	   return false;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   3️ BUNDLE
+===================================== */
+if (contextPath === &apos;/Bundle/&apos; || contextPath === &apos;/Bundle&apos;) {
+
+    if (httpMethod === &apos;POST&apos; || httpMethod === &apos;OPTIONS&apos;) {
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   ❌ INVALID PATH → 404
+===================================== */
+return notFound();
+
+
+
+
+/* =====================================
+   Helper Functions
+===================================== */
+
+function methodNotAllowed() {
+
+    var errorResponse = &quot;Method Not Allowed.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 405);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(405, errorResponse);
+
+    throw &quot;Invalid method&quot;;
+}
+
+function notFound() {
+
+    var errorResponse = &quot;Not Found: Invalid endpoint.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 404);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(404, errorResponse);
+
+    throw &quot;Invalid endpoint&quot;;
+}</script>
+        </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
       </elements>
     </filter>
     <transportName>HTTP Listener</transportName>
@@ -520,29 +593,7 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
-        <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-  <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>false</mutualTlsEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>true</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
+        <pluginProperties/>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -749,29 +800,7 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <metaDataId>3</metaDataId>
       <name>dest_datalake</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
-        <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-  <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>false</mutualTlsEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>true</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
+        <pluginProperties/>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -2164,21 +2193,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771401791715</time>
+        <time>1771903977602</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>1</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0bf67a4f-277c-4977-b4bc-f9ec6ab1468c</id>
-        <name>0_8_10</name>
+        <id>a7d5ea54-ac91-4ea8-b759-7efdb1acb94d</id>
+        <name>0_8_11</name>
         <channelIds>
-          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
+          <string>7e873a64-c085-4459-9631-5988deb097d8</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>

@@ -1,6 +1,6 @@
 /*pgTap function to test register_interaction_http_request function*/
 
-DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
+--DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_requests(text);
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_requests(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text

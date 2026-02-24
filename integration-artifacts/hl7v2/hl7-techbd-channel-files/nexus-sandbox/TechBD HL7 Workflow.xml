@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c79799dd-a972-4d99-beba-1331ed5e49a2</id>
+  <id>6b2fceea-9536-4a1c-914a-12d58f01a1aa</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.22
-The issue with the Grouper ID format for HL7 has been fixed.</description>
-  <revision>10</revision>
+  <description>Version: 0.1.23
+The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -302,30 +302,123 @@ for (var i = 0; i &lt; lines.length; i++) {
     </transformer>
     <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos; or &apos;/hl7v2/Bundle/$validate/&apos;</name>
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="4.6.1">
+          <name>http method and url validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <field>sourceMap.get(&apos;contextPath&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;/hl7v2/Bundle&apos;</string>
-            <string>&apos;/hl7v2/Bundle/&apos;</string>
-            <string>&apos;/hl7v2/Bundle/$validate&apos;</string>
-            <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
-          <sequenceNumber>1</sequenceNumber>
-          <enabled>true</enabled>
-          <operator>AND</operator>
-          <field>sourceMap.get(&apos;method&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;POST&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+          <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
+var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
+logger.info(&quot;HTTP Method: &quot; + httpMethod);
+logger.info(&quot;Context Path: &quot; + contextPath);
+
+/**
+ * Util function to generate JSON string
+ */
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+ * Util function to set error response
+ */
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode));
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/* =====================================
+   1️⃣ ROOT ENDPOINT
+===================================== */
+if (contextPath === &apos;&apos;) {
+
+   if (httpMethod === &apos;GET&apos;) {
+
+    responseMap.put(&apos;responseStatusCode&apos;, 200);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+        status: 200,
+        message: &quot;OK&quot;
+    }));
+
+   return false;
+}
+
+    // Method not allowed for /
+    return methodNotAllowed();
+}
+
+/* =====================================
+   2️⃣ HEALTHCHECK
+   
+===================================== */
+if (contextPath === &apos;/healthcheck&apos;) {
+
+    if (httpMethod === &apos;GET&apos;) {
+         responseMap.put(&apos;responseStatusCode&apos;, 200);
+	    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+	    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+	        status: 200,
+	        message: &quot;OK&quot;
+	    }));
+	
+	   return false;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   3️ BUNDLE
+===================================== */
+if (contextPath === &apos;/hl7v2/Bundle/$validate&apos; || contextPath === &apos;/hl7v2/Bundle/$validate/&apos;
+|| contextPath === &apos;/hl7v2/Bundle&apos; || contextPath === &apos;/hl7v2/Bundle/&apos;) {
+
+    if (httpMethod === &apos;POST&apos; || httpMethod === &apos;OPTIONS&apos;) {
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   ❌ INVALID PATH → 404
+===================================== */
+return notFound();
+
+
+
+
+/* =====================================
+   Helper Functions
+===================================== */
+
+function methodNotAllowed() {
+
+    var errorResponse = &quot;Method Not Allowed.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 405);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(405, errorResponse);
+
+    throw &quot;Invalid method&quot;;
+}
+
+function notFound() {
+
+    var errorResponse = &quot;Not Found: Invalid endpoint.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 404);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(404, errorResponse);
+
+    throw &quot;Invalid endpoint&quot;;
+}</script>
+        </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
       </elements>
     </filter>
     <transportName>HTTP Listener</transportName>
@@ -2769,7 +2862,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771245398551</time>
+        <time>1771903531430</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2780,13 +2873,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>bf438288-8c86-4b4a-8339-26bc00378152</id>
-        <name>0_1_22</name>
+        <id>30b79018-7f7f-434a-887b-cfbebb0ea3ef</id>
+        <name>0_1_23</name>
         <channelIds>
-          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
+          <string>6b2fceea-9536-4a1c-914a-12d58f01a1aa</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

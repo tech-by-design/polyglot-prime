@@ -1,9 +1,10 @@
 <channel version="4.6.1">
-  <id>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</id>
+  <id>c48e397f-769f-4e14-961f-e34ac1a2df46</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.5 increased request time out to 30000</description>
-  <revision>17</revision>
+  <description>Version: 0.8.6 
+The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -407,28 +408,122 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
     </transformer>
     <filter version="4.6.1">
       <elements>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/$validate/&apos; or &apos;/Bundle/$validate&apos;</name>
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="4.6.1">
+          <name>Htpp url and method validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <field>sourceMap.get(&apos;contextPath&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;/Bundle/$validate/&apos;</string>
-            <string>&apos;/Bundle/$validate&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.6.1">
-          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
-          <sequenceNumber>1</sequenceNumber>
-          <enabled>true</enabled>
-          <operator>AND</operator>
-          <field>sourceMap.get(&apos;method&apos;)</field>
-          <condition>EQUALS</condition>
-          <values>
-            <string>&apos;POST&apos;</string>
-          </values>
-        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+          <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
+var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
+logger.info(&quot;HTTP Method: &quot; + httpMethod);
+logger.info(&quot;Context Path: &quot; + contextPath);
+
+/**
+ * Util function to generate JSON string
+ */
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+ * Util function to set error response
+ */
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode));
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/* =====================================
+   1️⃣ ROOT ENDPOINT
+===================================== */
+if (contextPath === &apos;&apos;) {
+
+   if (httpMethod === &apos;GET&apos;) {
+
+    responseMap.put(&apos;responseStatusCode&apos;, 200);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+        status: 200,
+        message: &quot;OK&quot;
+    }));
+
+   return false;
+}
+
+    // Method not allowed for /
+    return methodNotAllowed();
+}
+
+/* =====================================
+   2️⃣ HEALTHCHECK
+   
+===================================== */
+if (contextPath === &apos;/healthcheck&apos;) {
+
+    if (httpMethod === &apos;GET&apos;) {
+         responseMap.put(&apos;responseStatusCode&apos;, 200);
+	    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+	    responseMap.put(&apos;responseBody&apos;, JSON.stringify({
+	        status: 200,
+	        message: &quot;OK&quot;
+	    }));
+	
+	   return false;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   3️ BUNDLE
+===================================== */
+if (contextPath === &apos;/Bundle/$validate&apos; || contextPath === &apos;/Bundle/$validate/&apos;) {
+
+    if (httpMethod === &apos;POST&apos; || httpMethod === &apos;OPTIONS&apos;) {
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+/* =====================================
+   ❌ INVALID PATH → 404
+===================================== */
+return notFound();
+
+
+
+
+/* =====================================
+   Helper Functions
+===================================== */
+
+function methodNotAllowed() {
+
+    var errorResponse = &quot;Method Not Allowed.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 405);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(405, errorResponse);
+
+    throw &quot;Invalid method&quot;;
+}
+
+function notFound() {
+
+    var errorResponse = &quot;Not Found: Invalid endpoint.&quot;;
+
+    responseMap.put(&apos;responseStatusCode&apos;, 404);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);
+    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));
+
+    setErrorResponse(404, errorResponse);
+
+    throw &quot;Invalid endpoint&quot;;
+}</script>
+        </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
       </elements>
     </filter>
     <transportName>HTTP Listener</transportName>
@@ -903,7 +998,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1770889915638</time>
+        <time>1771904174631</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -914,13 +1009,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>d1f1c4df-2994-423b-b494-5fc6353da59d</id>
-        <name>0_8_5</name>
+        <id>b3d4d843-a0d5-4df4-a950-af5d46450a53</id>
+        <name>0_8_6</name>
         <channelIds>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+          <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>0</red>
           <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>

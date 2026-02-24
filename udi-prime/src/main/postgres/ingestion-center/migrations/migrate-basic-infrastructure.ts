@@ -781,6 +781,7 @@ const searchPathAssurance = pgSQLa.pgSearchPath<
 );
 
 const pgTapTestResult = SQLa.tableDefinition("pgtap_test_result", {
+  sat_pgtap_test_result_id: textNullable(),
   migration_version: text(),
   test_name: text(),
   tap_output: textNullable(),
@@ -1087,7 +1088,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${pgTapTestResult}   
       
-      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS sat_pgtap_test_result_id TEXT DEFAULT gen_random_uuid()::text; 
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS sat_pgtap_test_result_id TEXT NULL; 
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL; 
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS notok_results TEXT NULL;
       
@@ -1436,8 +1437,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
 
           -- Insert the test result into the test_results table
-          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (migration_version, test_name, tap_output, success, created_by, provenance, techbd_version_number, notok_results)
-          VALUES ('${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap', '0.1028.0', tap_op_failed);
+          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (sat_pgtap_test_result_id, migration_version, test_name, tap_output, success, created_by, provenance, techbd_version_number, notok_results)
+          VALUES (gen_random_uuid()::text, '${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap', '0.1028.0', tap_op_failed);
 
           -- Check if the test passed
           IF NOT test_result THEN                      

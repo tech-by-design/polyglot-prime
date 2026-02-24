@@ -87,7 +87,7 @@
                         headerTooltip: "TechBD Version Number"
                     },
                     {
-                        headerName: "Not OK Results",
+                        headerName: "Execution Log",
                         field: "notok_results",
                         filter: "agTextColumnFilter",
                         headerTooltip: "The test results that did not pass",
@@ -125,7 +125,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This widget displays pgTAP test execution results for database migrations. It includes Migration Version, Test Name, Success Status, Not OK Results, TechBD Version, and Created Date. Users can quickly identify failed test cases, review failures.
+            This widget displays pgTAP test execution results for database migrations. It includes Migration Version, Test Name, Success Status, Execution Log, TechBD Version, and Created Date. Users can quickly identify failed test cases, review failures.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
