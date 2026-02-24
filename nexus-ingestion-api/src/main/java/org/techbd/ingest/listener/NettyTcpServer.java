@@ -1005,7 +1005,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     MessageSourceType.MLLP);
 
             // Extract ZNT always if MLLP responseType. If missing, immediately send a NACK.
-            if (detectMllp(portEntryOpt)) {
+            if (detectMllpZNT(portEntryOpt)) {
                 boolean zntPresent = true;
                 if (hl7Message != null) {
                     zntPresent = extractZntSegment(hl7Message, requestContext, interactionId.toString());
@@ -1484,9 +1484,15 @@ public class NettyTcpServer implements MessageSourceProvider {
                         .orElse(false);
     }
 
+     private boolean detectMllpZNT(Optional<PortConfig.PortEntry> portEntryOpt) {
+        return portEntryOpt.isPresent()
+                && Optional.ofNullable(portEntryOpt.get().responseType)
+                        .map(rt -> rt.equalsIgnoreCase("outbound"))
+                        .orElse(false);
+    }
+
     /**
-     * Extract ZNT segment from HL7 message using HAPI parser
-     */
+     * Extract ZNT segment from HL7 message using HAPI parser     */
     private boolean extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
         try {
             Terser terser = new Terser(hapiMsg);

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/sundry-single-level}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+
+        /* allow cell text to wrap and limit width for long text columns */
+        .cell-wrap-text {
+            white-space: pre-line !important;
+            /* This makes \n work */
+            line-height: 1.4rem;
+        }
+    </style>
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_assurance';
+        const viewName = 'v_pgtap_test_result';
+        document.addEventListener('DOMContentLoaded', function () {
+
+            function getPgTapTestResultGridData(params) {
+                const sat_pgtap_test_result_id = params.data.sat_pgtap_test_result_id;
+                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_pgtap_test_result_id/${sat_pgtap_test_result_id}.json`))
+                    .then(response => {
+                        if (response.url.includes('/?timeout=true')) {
+                            window.location.href = '/?timeout=true'; // Redirect to login page
+                            return null; // Prevent further processing of the response
+                        }
+                        return response.json();
+                    })
+                    .then(response => {
+                        params.successCallback(response);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching details data' + error);
+                    });
+            }
+
+            function downloadCellRenderer(params) {
+
+                const tap_output = params.data.tap_output;
+                const sat_pgtap_test_result_id = params.data.sat_pgtap_test_result_id;
+                const test_name = params.data.test_name;
+                const file_name = test_name + '_' + sat_pgtap_test_result_id + '.txt';
+
+                // Create the URL for the API call                
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/pgtap_test_result/tap_output/sat_pgtap_test_result_id/${sat_pgtap_test_result_id}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="${apiUrl}" title="${file_name}" return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }
+
+            const pgtapresultsColumnDefs = [
+                {
+                    headerName: "Execution Log",
+                    field: "notok_results",
+                    filter: "agTextColumnFilter",
+                    headerTooltip: "The test results that did not pass",
+                    sortable: true,
+                    cellClass: 'cell-wrap-text',
+                    wrapText: true,
+                    autoHeight: true,
+                    flex: 1
+                },
+            ];
+
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Created At",
+                        field: "created_at",
+                        sortable: true,
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "Timestamp when the test result was recorded",
+                        flex: 1,
+                        minWidth: 230
+                    },
+                    {
+                        headerName: "Test Name",
+                        field: "test_name",
+                        sortable: true,
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Name of the executed pgTAP test",
+                        flex: 1,
+                        minWidth: 230
+                    },
+                    {
+                        headerName: "Success",
+                        field: "success",
+                        sortable: true,
+                        filter: "agSetColumnFilter",
+                        cellRenderer: 'agGroupCellRenderer',
+                        headerTooltip: "Indicates whether the test passed (true) or failed (false)",
+                        flex: 3,
+                        minWidth: 230,
+                        cellClass: params =>
+                            params.value === false ? ' font-semibold' : '',
+                        cellRendererSelector: params => {
+                            if (params.data && params.data.success === false) {
+                                return {
+                                    component: 'agGroupCellRenderer'
+                                };
+                            }
+                            return {
+                                component: undefined   // No drill-down for true
+                            };
+                        }
+                    },
+                    {
+                         headerName: "pgTAP Output",
+                         field: "tap_output",
+                         sortable: false,
+                         filter: "agTextColumnFilter",
+                         headerTooltip: "Detailed TAP output message from the test execution",
+                         cellClass: "flex justify-center items-center",
+                         cellRenderer: downloadCellRenderer,
+                         filter: false, suppressFilter: true, sortable: false
+                    }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: pgtapresultsColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getPgTapTestResultGridData(params);
+                    }
+                })
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+        This widget displays pgTAP test execution results for database migrations. It includes columns for Created Date, Test Name, Success Status and pgTAP Output download.</br>
+        Users can click on the Success Status (when the test has failed) to view the detailed Execution Log. This allows users to quickly identify failed test cases and review the corresponding failure details.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

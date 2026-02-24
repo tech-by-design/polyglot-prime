@@ -61,9 +61,9 @@ public class ConsoleController {
     }
 
     @RouteMapping(label = "pgTAP Test Results", title = "pgTAP Test Results", siblingOrder = 70)
-    @GetMapping("/console/pgtab-test-results")
+    @GetMapping("/console/pgtap-test-results")
     public String pgtabTestResults(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/console/pgtab-test-results", model, request);
+        return presentation.populateModel("page/console/pgtap-test-results", model, request);
     }    
 
     @RouteMapping(label = "Diagnostics", title = "Diagnostics", siblingOrder = 70)

@@ -743,7 +743,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     public byte[] downloadFileContentById(Object id, String idColumn, String fileDataColumn) {
         try {
             Field<Object> idField = typableTable.column(idColumn);
+            //Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            // Try strongly-typed field resolution first, fall back to cast for non-strongly-typed
             Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            if (binaryField == null) {
+                binaryField = typableTable.column(fileDataColumn).cast(byte[].class);
+            }
             Record record = dsl.select(binaryField)
                     .from(typableTable.table)
                     .where(idField.eq(id))
@@ -775,7 +780,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         try {
             Field<Object> idField = typableTable.column(idColumn);
             Field<Object> natureField = typableTable.column(natureColumn);
+            //Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            // Try strongly-typed field resolution first, fall back to cast for non-strongly-typed
             Field<byte[]> binaryField = typableTable.table.field(fileDataColumn, byte[].class);
+            if (binaryField == null) {
+                binaryField = typableTable.column(fileDataColumn).cast(byte[].class);
+            }
             Record record = dsl.select(binaryField)
                     .from(typableTable.table)
                     .where(idField.eq(id).and(natureField.eq(natureValue)))

@@ -220,6 +220,12 @@ public class DocsController {
     @RouteMapping(label = "Announcements", title = "Announcements", siblingOrder = 30)
     @GetMapping("/docs/announcements")
     public String announcements(final Model model, final HttpServletRequest request) {
+
+        
+        String isOneuptimeUrl = String.valueOf(System.getenv("ONEUPTIME_ANNOUNCEMENT_URL"));        
+
+        model.addAttribute("iframeUrl", isOneuptimeUrl);
+
         return presentation.populateModel("page/docs/announcements", model, request);
     }
 
