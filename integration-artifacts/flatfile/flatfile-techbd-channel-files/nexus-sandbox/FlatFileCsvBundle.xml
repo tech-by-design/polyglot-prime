@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>87d008ec-f78d-4f2f-b986-cb1a4d926540</id>
+  <id>01902a32-6e71-43ba-9027-b2ca9f4d2126</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.9
-Fixed 200 response while invalid port/url/method is called</description>
-  <revision>9</revision>
+  <description>Version: 0.9.10
+Fixed X-TechBD-Base-FHIR-URL header working. </description>
+  <revision>18</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -241,64 +241,25 @@ if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
 
 
 // Read Base FHIR URL header
-var baseFhirHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-
-// Read valid FHIR URLs from Lookup Manager (comma-separated)
-var validFhirUrls = channelMap.get(&apos;MC_VALID_FHIR_URLS&apos;); 
-// Example: &quot;http://test.shinny.org/...Profile,http://shinny.org/...Profile&quot;
-
-// Only validate if header is present
-if (baseFhirHeader != null &amp;&amp; baseFhirHeader.trim() !== &apos;&apos;) {
-
-    // Safety check: configuration must exist
-    if (validFhirUrls == null || validFhirUrls.trim() === &apos;&apos;) {
-        var errorMessage =
-            &quot;Server Configuration Error: MC_VALID_FHIR_URLS is not configured&quot;;
-
-        logger.error(errorMessage);
-        setErrorResponse(500, errorMessage);
-        throw errorMessage;
-    }
-
-    var inputUrls = baseFhirHeader.split(&apos;,&apos;);
-    var allowedUrls = validFhirUrls.split(&apos;,&apos;);
-    var invalidUrls = [];
-
-    // Compare each provided URL with allowed list
-    for each (var inputUrl in inputUrls) {
-        var trimmedInput = inputUrl.trim();
-        var matchFound = false;
-
-        for each (var allowedUrl in allowedUrls) {
-            if (trimmedInput.equalsIgnoreCase(allowedUrl.trim())) {
-                matchFound = true;
-                break;
-            }
-        }
-
-        if (!matchFound) {
-            invalidUrls.push(trimmedInput);
-        }
-    }
-
-    // If any invalid URLs found → return error
-    if (invalidUrls.length &gt; 0) {
-
-        var errorMessage =
-            &quot;Validation Error: Invalid Base FHIR profile URL provided: &quot; +
-            baseFhirHeader +
-            &quot; in header &apos;X-TechBD-Base-FHIR-URL&apos;. Supported SHIN-NY IG URLs: http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile, http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile&quot; ;
-
-        logger.error(errorMessage);
-        
-        setErrorResponse(400, errorMessage);
-
-        throw errorMessage;
-    }
-}
-
-
-
+var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+    logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    logger.info(&quot;MC_VALID_FHIR_URLS from LookupHelper: &quot; + validUrlsEnv);
+    // Convert VALID_URLS to an array for validation
+    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+    // Check if the header value is valid
+    if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+ 
+    if (validUrls.includes(customBaseFhirUrl)) {
+      
+    channelMap.put(&apos;TechBdBaseFhirurl&apos;,customBaseFhirUrl);&#xd;    channelMap.put(&apos;baseFhirurl&apos;, customBaseFhirUrl);&#xd;  
+   } else {&#xd;   		logger.info(&quot;ERROR&quot;);
+			var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
+			logger.error(errorMessage);
+   }
+    }&#xd;
+&#xd;
+&#xd;    
 //Check the file type, only .xml and .txt allowed
 var filename = null;
 var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
@@ -327,8 +288,8 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 }
 
 
-var baseFhirURL =  $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-channelMap.put(&apos;baseFhirURL&apos;, baseFhirURL);
+//var baseFhirURL =  $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+//channelMap.put(&apos;baseFhirURL&apos;, baseFhirURL);
 
 // Check if the header is null or empty
 if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
@@ -708,7 +669,10 @@ var filename = channelMap.get(&apos;multipartFileName&apos;) || &apos;uploaded-f
 var tenantId = channelMap.get(&apos;tenantId&apos;) || &apos;defaultTenant&apos;;
 var userAgent = channelMap.get(&apos;userAgent&apos;) || &apos;MirthConnector/1.0&apos;;
 var sourceParam = &apos;CSV&apos;;
-var baseFhirURL =  channelMap.get(&apos;baseFhirURL&apos;); 
+
+
+var baseFhirurl =  channelMap.get(&apos;baseFhirurl&apos;); &#xd;logger.info(&quot;baseFhirurl&quot; +baseFhirurl);&#xd;&#xd;&#xd;var techBdBaseFhirUrl =  channelMap.get(&apos;TechBdBaseFhirurl&apos;); &#xd;logger.info(&quot;techBdBaseFhirUrl&quot; +techBdBaseFhirUrl);&#xd;
+
 
 // Read &apos;immediate&apos; parameter from request (like how headers are fetched)
 var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim();
@@ -773,7 +737,7 @@ post.setHeader(new BasicHeader(&quot;X-TechBD-Override-Request-URI&quot;, uri));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Request-URI&quot;, uri));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Validation-Severity-Level&quot;, severityLevel));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Source-Type&quot;, sourceParam));
-post.setHeader(new BasicHeader(&quot;X-TechBD-Base-FHIR-URL&quot;, baseFhirURL));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Base-FHIR-URL&quot;, techBdBaseFhirUrl));
 post.setHeader(new BasicHeader(&quot;X-TechBD-DataLake-API-URL&quot;, dataLakeApiUrl));
 
 
@@ -902,7 +866,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771494129944</time>
+        <time>1771930582083</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -913,10 +877,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>b0fd4a65-7fc7-4dc8-82a9-eb26f204c713</id>
-        <name>0_9_9</name>
+        <id>86647372-cffb-4aa9-9c2d-83d3bade6f05</id>
+        <name>0_9_10</name>
         <channelIds>
-          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
+          <string>01902a32-6e71-43ba-9027-b2ca9f4d2126</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
