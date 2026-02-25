@@ -13,7 +13,7 @@
     "extra" : null
   },
   "values" : {
-    "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
+    "BASE_FHIR_URL" : "http://shinny.org/us/ny/hrsn",
     "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "https://nexus.fhir.sandbox.techbd.org",
     "DATA_LEDGER_API_URL" : "https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger",
     "DATA_LEDGER_TRACKING" : "false",
