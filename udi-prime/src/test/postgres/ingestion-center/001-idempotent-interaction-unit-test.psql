@@ -462,8 +462,6 @@ BEGIN
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_http_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_http_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'sat_interaction_user_id', 'The column sat_interaction_user_id in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'uri', 'The column uri in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'nature', 'The column nature in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_user', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_user should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');

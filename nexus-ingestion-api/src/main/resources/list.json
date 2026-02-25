@@ -15,7 +15,7 @@
     },
        {
         "port": 5555,
-        "responseType": "mllp",
+        "responseType": "",
         "protocol": "TCP",
         "route": "/hold",
         "dataDir": "/outbound",

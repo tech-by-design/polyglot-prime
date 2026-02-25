@@ -94,11 +94,18 @@ jobs:
           GRANT USAGE ON SCHEMA info_schema_lifecycle TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
           GRANT SELECT ON ALL TABLES IN SCHEMA info_schema_lifecycle TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
 
+          GRANT USAGE ON SCHEMA techbd_udi_assurance TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
+          GRANT SELECT ON ALL TABLES IN SCHEMA techbd_udi_assurance TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
+
           ALTER DEFAULT PRIVILEGES IN SCHEMA techbd_udi_ingress
           GRANT SELECT ON TABLES TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
 
           ALTER DEFAULT PRIVILEGES IN SCHEMA info_schema_lifecycle
           GRANT SELECT ON TABLES TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
+
+          ALTER DEFAULT PRIVILEGES IN SCHEMA techbd_udi_assurance
+          GRANT SELECT ON TABLES TO ${{secrets.PHI_PRD_TECHBD_UDI_DS_READER_JDBC_USERNAME}};
+          
           SQL
 
       - name: Display UDI Test log
