@@ -146,8 +146,8 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
     sat_interaction_user_id: primaryKey(),
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
-    uri: text(),
-    nature: text(),
+    uri: textNullable(),
+    nature: textNullable(),
     tenant_id: textNullable(),
     user_id: textNullable(),
     user_name: textNullable(),
