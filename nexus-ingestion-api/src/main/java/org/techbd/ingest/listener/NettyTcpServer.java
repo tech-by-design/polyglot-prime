@@ -52,6 +52,9 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
@@ -103,6 +106,8 @@ public class NettyTcpServer implements MessageSourceProvider {
     private static final AttributeKey<AtomicLong> TOTAL_BYTES_KEY = AttributeKey.valueOf("TOTAL_BYTES");
     private static final AttributeKey<Boolean> MESSAGE_SIZE_EXCEEDED_KEY = AttributeKey.valueOf("MESSAGE_SIZE_EXCEEDED");
     private static final AttributeKey<Boolean> ERROR_NACK_SENT_KEY = AttributeKey.valueOf("ERROR_NACK_SENT");
+    // Stores the resolved keepAliveTimeout (seconds) for this channel; null means use default ReadTimeoutHandler behaviour
+    private static final AttributeKey<Integer> KEEP_ALIVE_TIMEOUT_KEY = AttributeKey.valueOf("KEEP_ALIVE_TIMEOUT");
 
     public NettyTcpServer(MessageProcessorService messageProcessorService,
             AppConfig appConfig,
@@ -136,9 +141,12 @@ public class NettyTcpServer implements MessageSourceProvider {
                                 ch.attr(TOTAL_BYTES_KEY).set(new AtomicLong(0));
                                 ch.attr(MESSAGE_SIZE_EXCEEDED_KEY).set(false);
                                 ch.attr(ERROR_NACK_SENT_KEY).set(false);
-                                
-                                // Add read timeout handler
-                                ch.pipeline().addLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS));
+
+                                // Default read-timeout; replaced with IdleStateHandler after port
+                                // resolution if keepAliveTimeout is configured for the port.
+                                ch.pipeline().addLast("defaultReadTimeout",
+                                        new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS));
+
                                 String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
 
                                 // HAProxy protocol support
@@ -297,6 +305,98 @@ public class NettyTcpServer implements MessageSourceProvider {
                                     }
                                 });
                                 ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
+                                    @Override
+                                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                                        if (evt instanceof IdleStateEvent idleEvt && idleEvt.state() == IdleState.READER_IDLE) {
+                                            UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
+                                            if (interactionId == null) {
+                                                interactionId = UUID.randomUUID();
+                                                ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
+                                            }
+
+                                            Boolean nackAlreadySent = ctx.channel().attr(ERROR_NACK_SENT_KEY).get();
+                                            if (nackAlreadySent != null && nackAlreadySent) {
+                                                logger.debug("NACK_ALREADY_SENT_ON_IDLE [interactionId={}] - closing", interactionId);
+                                                ctx.close();
+                                                return;
+                                            }
+                                            ctx.channel().attr(ERROR_NACK_SENT_KEY).set(true);
+
+                                            Integer kat = ctx.channel().attr(KEEP_ALIVE_TIMEOUT_KEY).get();
+                                            int effectiveTimeout = kat != null ? kat : readTimeoutSeconds;
+                                            String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+
+                                            logger.warn("IDLE_TIMEOUT_EXCEEDED [interactionId={}] [errorTraceId={}] idleTimeout={}s - closing connection",
+                                                    interactionId, errorTraceId, effectiveTimeout);
+
+                                            try {
+                                                LogUtil.logDetailedError(
+                                                        408,
+                                                        String.format("Idle timeout exceeded after %d seconds", effectiveTimeout),
+                                                        interactionId.toString(),
+                                                        errorTraceId,
+                                                        new Exception("IdleStateHandler reader idle"));
+                                            } catch (Exception logException) {
+                                                logger.warn("Failed to log idle timeout error [interactionId={}]: {}",
+                                                        interactionId, logException.getMessage());
+                                            }
+
+                                            if (ctx.channel().isActive()) {
+                                                try {
+                                                    String timeoutError = String.format(
+                                                            "Read idle timeout: No data received within %d seconds", effectiveTimeout);
+
+                                                    String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                            + Instant.now() + "||ACK|" +
+                                                            UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                            "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
+                                                            "NTE|1||InteractionID: " + interactionId +
+                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+
+                                                    String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
+                                                            + (char) MLLP_END_1 + (char) MLLP_END_2;
+
+                                                    ByteBuf responseBuf = ctx.alloc().buffer();
+                                                    responseBuf.writeBytes(wrappedNack.getBytes(StandardCharsets.UTF_8));
+
+                                                    logger.info("SENDING_NACK_ON_IDLE [interactionId={}] [errorTraceId={}]",
+                                                            interactionId, errorTraceId);
+
+                                                    final UUID finalInteractionId = interactionId;
+                                                    final String finalErrorTraceId = errorTraceId;
+
+                                                    ctx.writeAndFlush(responseBuf).addListener(future -> {
+                                                        if (future.isSuccess()) {
+                                                            logger.info("NACK_SENT_ON_IDLE [interactionId={}] [errorTraceId={}]",
+                                                                    finalInteractionId, finalErrorTraceId);
+                                                        } else {
+                                                            logger.error("NACK_SEND_FAILED_ON_IDLE [interactionId={}] [errorTraceId={}]: {}",
+                                                                    finalInteractionId, finalErrorTraceId,
+                                                                    future.cause() != null ? future.cause().getMessage() : "unknown");
+                                                        }
+                                                        logger.info("CLOSING_CONNECTION_AFTER_IDLE [interactionId={}]", finalInteractionId);
+                                                        clearChannelAttributes(ctx);
+                                                        ctx.close();
+                                                    });
+                                                } catch (Exception e) {
+                                                    logger.error("FAILED_TO_SEND_NACK_ON_IDLE [interactionId={}] [errorTraceId={}]: {}",
+                                                            interactionId, errorTraceId, e.getMessage(), e);
+                                                    clearChannelAttributes(ctx);
+                                                    ctx.close();
+                                                }
+                                            } else {
+                                                logger.warn("CHANNEL_ALREADY_INACTIVE_ON_IDLE [interactionId={}] [errorTraceId={}]",
+                                                        interactionId, errorTraceId);
+                                                clearChannelAttributes(ctx);
+                                            }
+                                        } else {
+                                            super.userEventTriggered(ctx, evt);
+                                        }
+                                    }
+
                                     @Override
                                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                                             throws Exception {
@@ -630,6 +730,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         ctx.channel().attr(TOTAL_BYTES_KEY).set(null);
         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(null);
         ctx.channel().attr(ERROR_NACK_SENT_KEY).set(null);
+        ctx.channel().attr(KEEP_ALIVE_TIMEOUT_KEY).set(null);
         ctx.channel().attr(CLIENT_IP_KEY).set(null);
         ctx.channel().attr(CLIENT_PORT_KEY).set(null);
         ctx.channel().attr(DESTINATION_IP_KEY).set(null);
@@ -678,8 +779,9 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * Main message handler - routes to HL7 or generic handler based on MLLP detection
-     * Added size limit check and error trace ID generation
+     * Main message handler - routes to HL7 or generic handler based on MLLP detection.
+     * Also installs IdleStateHandler in place of the default ReadTimeoutHandler when
+     * the resolved PortEntry carries a keepAliveTimeout value.
      */
     private void handleMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId) {
         String clientIP = ctx.channel().attr(CLIENT_IP_KEY).get();
@@ -738,33 +840,9 @@ public class NettyTcpServer implements MessageSourceProvider {
                         interactionId.toString(),
                         errorTraceId);
                 
-                // try {
-                //     // Store the complete oversized message
-                //     logger.info("STORING_COMPLETE_OVERSIZED_MESSAGE [interactionId={}] [errorTraceId={}] size={} bytes",
-                //             interactionId, errorTraceId, rawMessage.length());
-                //     messageProcessorService.processMessage(requestContext, rawMessage, nackMessage);
-                //     logger.info("OVERSIZED_MESSAGE_STORED_SUCCESSFULLY [interactionId={}] [errorTraceId={}]",
-                //             interactionId, errorTraceId);
-                // } catch (Exception e) {
-                //     logger.error("FAILED_TO_STORE_OVERSIZED_MESSAGE [interactionId={}] [errorTraceId={}]: {}", 
-                //             interactionId, errorTraceId, e.getMessage(), e);
-                // }
-                
                 sendResponseAndClose(ctx, wrapMllp(nackMessage), interactionId, "HL7_NACK_SIZE_EXCEEDED");
             } else {
                 nackMessage = generateSimpleNack(interactionId.toString(), errorMessage, errorTraceId);
-                
-                // try {
-                //     // Store the complete oversized message
-                //     logger.info("STORING_COMPLETE_OVERSIZED_MESSAGE [interactionId={}] [errorTraceId={}] size={} bytes",
-                //             interactionId, errorTraceId, rawMessage.length());
-                //     messageProcessorService.processMessage(requestContext, rawMessage, nackMessage);
-                //     logger.info("OVERSIZED_MESSAGE_STORED_SUCCESSFULLY [interactionId={}] [errorTraceId={}]",
-                //             interactionId, errorTraceId);
-                // } catch (Exception e) {
-                //     logger.error("FAILED_TO_STORE_OVERSIZED_MESSAGE [interactionId={}] [errorTraceId={}]: {}", 
-                //             interactionId, errorTraceId, e.getMessage(), e);
-                // }
                 
                 sendResponseAndClose(ctx, nackMessage + "\n", interactionId, "TCP_NACK_SIZE_EXCEEDED");
             }
@@ -779,7 +857,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 interactionId, clientIP, clientPort, rawMessage.length(), 
                 isMllpWrapped ? "YES" : "NO", isTcpDelimited ? "YES" : "NO");
 
-         RequestContext initialContext = buildRequestContext(
+        RequestContext initialContext = buildRequestContext(
                 rawMessage.trim(),
                 interactionId.toString(),
                 Optional.empty(), // No port entry yet
@@ -791,7 +869,49 @@ public class NettyTcpServer implements MessageSourceProvider {
 
         // Resolve port entry using the new service
         Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(initialContext);
-        
+
+        // --- keepAliveTimeout override ---
+        // Re-evaluated on every message because the resolved PortEntry can differ
+        // per request (different source ports / routes can map to different entries).
+        // Three cases:
+        //   1. Port entry has keepAliveTimeout > 0  → install/update IdleStateHandler
+        //   2. Port entry has keepAliveTimeout == 0 → restore default ReadTimeoutHandler
+        //   3. No port entry                        → restore default ReadTimeoutHandler
+        int resolvedKat = portEntryOpt
+                .map(pe -> pe.getKeepAliveTimeout())
+                .orElse(0);
+
+        if (resolvedKat > 0) {
+            // Store the current value on the channel so sendResponseAndClose can branch
+            ctx.channel().attr(KEEP_ALIVE_TIMEOUT_KEY).set(resolvedKat);
+
+            // Replace whatever timeout handler is currently in the pipeline.
+            // Use the handler name generically so both the initial "defaultReadTimeout"
+            // and a previously installed "idleStateHandler" are handled correctly.
+            if (ctx.pipeline().get("idleStateHandler") != null) {
+                // Already an IdleStateHandler — replace it in case the timeout changed
+                ctx.pipeline().replace("idleStateHandler", "idleStateHandler",
+                        new IdleStateHandler(resolvedKat, 0, 0, TimeUnit.SECONDS));
+            } else if (ctx.pipeline().get("defaultReadTimeout") != null) {
+                ctx.pipeline().replace("defaultReadTimeout", "idleStateHandler",
+                        new IdleStateHandler(resolvedKat, 0, 0, TimeUnit.SECONDS));
+            }
+            logger.info("TIMEOUT_OVERRIDE [interactionId={}] keepAliveTimeout={}s - IdleStateHandler active",
+                    interactionId, resolvedKat);
+        } else {
+            // No keepAliveTimeout for this request — ensure ReadTimeoutHandler is active
+            ctx.channel().attr(KEEP_ALIVE_TIMEOUT_KEY).set(null);
+
+            if (ctx.pipeline().get("idleStateHandler") != null) {
+                ctx.pipeline().replace("idleStateHandler", "defaultReadTimeout",
+                        new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS));
+                logger.info("TIMEOUT_RESTORE [interactionId={}] no keepAliveTimeout - restored ReadTimeoutHandler ({}s)",
+                        interactionId, readTimeoutSeconds);
+            }
+            // If "defaultReadTimeout" is already present, nothing to do
+        }
+        // --- end keepAliveTimeout override ---
+
         if (detectMllp(portEntryOpt)) {
             if (isTcpDelimited) {
                  handleConflictingWrapper(
@@ -944,6 +1064,7 @@ public class NettyTcpServer implements MessageSourceProvider {
             sendResponseAndClose(ctx, genericNack, interactionId, "NACK_PROCESSING_ERROR");
         }
     }
+
     private boolean detectTcpDelimiterWrapper(String message) {
         if (message == null || message.length() < 3) {
             return false;
@@ -1216,6 +1337,20 @@ public class NettyTcpServer implements MessageSourceProvider {
         }
     }
 
+    /**
+     * Send response and conditionally close the channel.
+     * <p>
+     * When {@code keepAliveTimeout} is set for this channel (i.e. the port entry
+     * carries a positive {@code keepAliveTimeout} value), the connection is kept
+     * open after flushing the response so the client can send subsequent messages.
+     * {@link IdleStateHandler} (installed during port resolution in
+     * {@link #handleMessage}) will fire a {@link IdleStateEvent} and close the
+     * connection if no further data arrives within the configured window.
+     * <p>
+     * When {@code keepAliveTimeout} is <em>not</em> set the original behaviour is
+     * preserved: the channel is closed ~50 ms after the response is flushed so
+     * the client receives a clean FIN/RST.
+     */
     private void sendResponseAndClose(ChannelHandlerContext ctx, String response,
             UUID interactionId, String responseType) {
         if (!ctx.channel().isActive()) {
@@ -1224,31 +1359,61 @@ public class NettyTcpServer implements MessageSourceProvider {
             return;
         }
 
-        logger.info("SENDING_RESPONSE [interactionId={}] type={} size={} bytes", 
+        logger.info("SENDING_RESPONSE [interactionId={}] type={} size={} bytes",
                 interactionId, responseType, response.length());
+
+        // If keepAliveTimeout is configured for this channel, do not close after
+        // sending — IdleStateHandler manages the connection lifecycle instead.
+        boolean keepAlive = ctx.channel().attr(KEEP_ALIVE_TIMEOUT_KEY).get() != null;
 
         ByteBuf responseBuf = ctx.alloc().buffer();
         responseBuf.writeBytes(response.getBytes(StandardCharsets.UTF_8));
 
-        // Schedule close after flush to ensure response is sent
-        ctx.writeAndFlush(responseBuf).addListener(future -> {
-            if (future.isSuccess()) {
-                logger.info("RESPONSE_SENT_SUCCESS [interactionId={}] type={}, scheduling connection close",
-                        interactionId, responseType);
-                
-                // Schedule close to allow network flush
-                ctx.executor().schedule(() -> {
-                    logger.info("CLOSING_CONNECTION [interactionId={}]", interactionId);
+        if (keepAlive) {
+            // Persistent connection: flush the response and leave the channel open.
+            // Reset per-message tracking attributes so the next inbound message on
+            // this channel starts with a fresh interaction ID and counters.
+            ctx.writeAndFlush(responseBuf).addListener(future -> {
+                if (future.isSuccess()) {
+                    logger.info("RESPONSE_SENT_KEEP_ALIVE [interactionId={}] type={} - connection kept open for next message",
+                            interactionId, responseType);
+                } else {
+                    logger.error("RESPONSE_SEND_FAILED_KEEP_ALIVE [interactionId={}] type={}: {}",
+                            interactionId, responseType,
+                            future.cause() != null ? future.cause().getMessage() : "unknown");
+                    // On send failure, close so the client receives a FIN/RST signal
+                    clearChannelAttributes(ctx);
                     ctx.close();
-                }, 50, TimeUnit.MILLISECONDS);
-            } else {
-                logger.error("RESPONSE_SEND_FAILED [interactionId={}] type={}: {}",
-                        interactionId, responseType, 
-                        future.cause() != null ? future.cause().getMessage() : "unknown");
-                // Close immediately on failure
-                ctx.close();
-            }
-        });
+                    return;
+                }
+                // Reset per-message state for the next inbound message
+                ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(null);
+                ctx.channel().attr(MESSAGE_START_TIME_KEY).set(System.currentTimeMillis());
+                ctx.channel().attr(FRAGMENT_COUNT_KEY).set(new AtomicInteger(0));
+                ctx.channel().attr(TOTAL_BYTES_KEY).set(new AtomicLong(0));
+                ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(false);
+                ctx.channel().attr(ERROR_NACK_SENT_KEY).set(false);
+            });
+        } else {
+            // Default: close connection after flush (original behaviour)
+            ctx.writeAndFlush(responseBuf).addListener(future -> {
+                if (future.isSuccess()) {
+                    logger.info("RESPONSE_SENT_SUCCESS [interactionId={}] type={}, scheduling connection close",
+                            interactionId, responseType);
+                    // Schedule close to allow network flush
+                    ctx.executor().schedule(() -> {
+                        logger.info("CLOSING_CONNECTION [interactionId={}]", interactionId);
+                        ctx.close();
+                    }, 50, TimeUnit.MILLISECONDS);
+                } else {
+                    logger.error("RESPONSE_SEND_FAILED [interactionId={}] type={}: {}",
+                            interactionId, responseType,
+                            future.cause() != null ? future.cause().getMessage() : "unknown");
+                    // Close immediately on failure
+                    ctx.close();
+                }
+            });
+        }
     }
 
     /**
@@ -1492,7 +1657,8 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * Extract ZNT segment from HL7 message using HAPI parser     */
+     * Extract ZNT segment from HL7 message using HAPI parser
+     */
     private boolean extractZntSegment(Message hapiMsg, RequestContext requestContext, String interactionId) {
         try {
             Terser terser = new Terser(hapiMsg);
