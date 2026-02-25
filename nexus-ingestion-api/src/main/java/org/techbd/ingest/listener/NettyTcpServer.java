@@ -687,7 +687,8 @@ public class NettyTcpServer implements MessageSourceProvider {
 
             } 
             else {
-                throw new IllegalStateException("Non-delimited message received, unable to process");
+                logger.warn("NO_DELIMITER_DETECTED [interactionId={}] firstByte=0x{}, readableBytes={}, remoteAddress={}", interactionId, String.format("%02X", firstByte), in.readableBytes(), ctx.channel().remoteAddress());
+                // throw new IllegalStateException("Non-delimited message received, unable to process");
             }
         }
 
