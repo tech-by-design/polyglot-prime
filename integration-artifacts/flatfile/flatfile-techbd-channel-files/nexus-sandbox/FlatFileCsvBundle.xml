@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>01902a32-6e71-43ba-9027-b2ca9f4d2126</id>
+  <id>01e37e06-9f21-489b-b10d-61aa52e64352</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.10
-Fixed X-TechBD-Base-FHIR-URL header working. </description>
-  <revision>18</revision>
+  <description>Version: 0.9.11
+Added support for resolving BridgeLink base URL dynamically from X-TechBD-BL-BaseURL header </description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -148,7 +148,18 @@ if (incomingDataLakeApiUrl != null &amp;&amp; incomingDataLakeApiUrl.trim() !== 
  logger.info(&quot;dataLakeApiUrl in CSV: &quot; + dataLakeApiUrl);
 channelMap.put(&quot;dataLakeApiUrl&quot;, dataLakeApiUrl);
 
+/********************************************
+    2️⃣ FETCH TECHBD_BL_BASEURL from header
+********************************************/
+// Capture TECHBD_BL_BASEURL from header if present
+var techbdBlBaseUrl = &quot;&quot;;
+var incomingTechbdBlBaseUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-BL-BaseURL&apos;);
 
+if (incomingTechbdBlBaseUrl != null &amp;&amp; incomingTechbdBlBaseUrl.trim() !== &apos;&apos;) {
+    techbdBlBaseUrl = incomingTechbdBlBaseUrl.trim();
+}
+logger.info(&quot;TECHBD_BL_BASEURL from header: &quot; + techbdBlBaseUrl);
+channelMap.put(&quot;techbdBlBaseUrl&quot;, techbdBlBaseUrl);
 
 /********************************************
     2️⃣ FETCH CSV SERVICE API URL (Plain text)
@@ -723,6 +734,8 @@ logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 
 var dataLakeApiUrl = channelMap.get(&apos;dataLakeApiUrl&apos;);
+var techbdBlBaseUrl = channelMap.get(&apos;techbdBlBaseUrl&apos;);
+//logger.info(&quot;**************************techbdBlBaseUrl from channelMap: &quot; + techbdBlBaseUrl);
 
 // --- Set required headers ---
 post.setHeader(new BasicHeader(&quot;Accept&quot;, &quot;application/fhir+json&quot;));
@@ -739,8 +752,9 @@ post.setHeader(new BasicHeader(&quot;X-TechBD-Validation-Severity-Level&quot;, s
 post.setHeader(new BasicHeader(&quot;X-TechBD-Source-Type&quot;, sourceParam));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Base-FHIR-URL&quot;, techBdBaseFhirUrl));
 post.setHeader(new BasicHeader(&quot;X-TechBD-DataLake-API-URL&quot;, dataLakeApiUrl));
-
-
+if (techbdBlBaseUrl != null &amp;&amp; techbdBlBaseUrl !== &apos;&apos;) {
+    post.setHeader(new BasicHeader(&quot;X-TechBD-BL-BaseURL&quot;, techbdBlBaseUrl));
+}
 
 // --- Include additional headers from channelMap if any ---
 var headerParameters = channelMap.get(&quot;headerParameters&quot;);
@@ -866,7 +880,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771930582083</time>
+        <time>1771950072287</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -877,10 +891,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>86647372-cffb-4aa9-9c2d-83d3bade6f05</id>
-        <name>0_9_10</name>
+        <id>0c920cec-8d2b-480d-b31e-aa4a505746a7</id>
+        <name>0_9_11</name>
         <channelIds>
-          <string>01902a32-6e71-43ba-9027-b2ca9f4d2126</string>
+          <string>01e37e06-9f21-489b-b10d-61aa52e64352</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>

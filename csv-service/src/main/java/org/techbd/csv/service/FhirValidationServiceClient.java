@@ -38,8 +38,8 @@ public class FhirValidationServiceClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirValidationServiceClient.class);
 
-    private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final String defaultBaseUrl;
     
     // Configuration properties with defaults
     @Value("${FHIR_CLIENT_MAX_BUFFER_SIZE:10485760}") // 10MB default
@@ -65,16 +65,15 @@ public class FhirValidationServiceClient {
             @Value("${FHIR_CLIENT_WRITE_TIMEOUT_SECONDS:60}") int writeTimeoutSeconds,
             @Value("${FHIR_CLIENT_BLOCK_TIMEOUT_SECONDS:90}") int blockTimeoutSeconds) {
         
+        this.defaultBaseUrl = baseUrl;
         this.maxBufferSize = maxBufferSize;
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutSeconds = readTimeoutSeconds;
         this.writeTimeoutSeconds = writeTimeoutSeconds;
         this.blockTimeout = blockTimeoutSeconds;
-        
-        this.webClient = createConfiguredWebClient(baseUrl);
         this.objectMapper = new ObjectMapper();
         
-        LOG.info("FhirValidationServiceClient initialized - baseUrl: {}, maxBufferSize: {}MB, " +
+        LOG.info("FhirValidationServiceClient initialized - defaultBaseUrl: {}, maxBufferSize: {}MB, " +
                  "connectTimeout: {}ms, readTimeout: {}s, writeTimeout: {}s, blockTimeout: {}s", 
                  baseUrl, maxBufferSize / (1024 * 1024), connectTimeoutMs, 
                  readTimeoutSeconds, writeTimeoutSeconds, blockTimeoutSeconds);
@@ -84,14 +83,12 @@ public class FhirValidationServiceClient {
      * Creates a WebClient with optimized configuration for handling large responses
      */
     private WebClient createConfiguredWebClient(String baseUrl) {
-        // Configure HTTP client with timeouts
         HttpClient httpClient = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
             .doOnConnected(conn -> conn
                 .addHandlerLast(new ReadTimeoutHandler(readTimeoutSeconds, TimeUnit.SECONDS))
                 .addHandlerLast(new WriteTimeoutHandler(writeTimeoutSeconds, TimeUnit.SECONDS)));
 
-        // Configure exchange strategies with larger buffer
         ExchangeStrategies strategies = ExchangeStrategies.builder()
             .codecs(configurer -> configurer
                 .defaultCodecs()
@@ -103,6 +100,23 @@ public class FhirValidationServiceClient {
             .clientConnector(new ReactorClientHttpConnector(httpClient))
             .exchangeStrategies(strategies)
             .build();
+    }
+
+    /**
+     * Determines the base URL to use: header value if present, otherwise default
+     * from environment
+     */
+    private String resolveBaseUrl(ValidationRequest request) {
+        LOG.info("techbdBlBaseUrl in ValidationRequest: {}", request.techbdBlBaseUrl);
+        String headerBaseUrl = request.techbdBlBaseUrl;
+        if (headerBaseUrl != null && !headerBaseUrl.trim().isEmpty()) {
+            LOG.info("Using TECHBD_BL_BASEURL from header: {}", headerBaseUrl);
+            // Header came from Mirth → use it
+            return headerBaseUrl.trim();
+        }
+        LOG.info(" Falling back to default: {}", defaultBaseUrl);
+        // Header not present → use Docker env TECHBD_BL_BASEURL
+        return defaultBaseUrl;
     }
 
     /**
@@ -146,6 +160,7 @@ public class FhirValidationServiceClient {
         getStringParam(params, "elaboration").ifPresent(builder::elaboration);
         getStringParam(params, "shinNyIgVersion").ifPresent(builder::shinNyIgVersion);
         getStringParam(params, "validationSeverityLevel").ifPresent(builder::validationSeverityLevel);
+        getStringParam(params, "X-TechBD-BL-BaseURL").ifPresent(builder::techbdBlBaseUrl);
     }
 
     /**
@@ -184,6 +199,9 @@ public class FhirValidationServiceClient {
                  request.interactionId, request.tenantId);
 
         validateRequest(request);
+        
+        String baseUrl = resolveBaseUrl(request);
+        WebClient webClient = createConfiguredWebClient(baseUrl);
 
         try {
             String response = webClient.post()
@@ -269,7 +287,8 @@ public class FhirValidationServiceClient {
         addOptionalHeader(headers, "X-TechBD-Elaboration", request.elaboration);
         addOptionalHeader(headers, "X-TechBD-SHIN-NY-IG-Version", request.shinNyIgVersion);
         addOptionalHeader(headers, "X-TechBD-Validation-Severity-Level", request.validationSeverityLevel);
-        
+        addOptionalHeader(headers, "X-TechBD-BL-BaseURL", request.techbdBlBaseUrl);
+       
         LOG.debug("Added {} headers to FHIR validation request", headers.size());
     }
 
@@ -328,6 +347,7 @@ public class FhirValidationServiceClient {
         private final String elaboration;
         private final String shinNyIgVersion;
         private final String validationSeverityLevel;
+        private final String techbdBlBaseUrl;
 
         private ValidationRequest(Builder builder) {
             this.bundle = builder.bundle;
@@ -351,6 +371,7 @@ public class FhirValidationServiceClient {
             this.elaboration = builder.elaboration;
             this.shinNyIgVersion = builder.shinNyIgVersion;
             this.validationSeverityLevel = builder.validationSeverityLevel;
+            this.techbdBlBaseUrl = builder.techbdBlBaseUrl;
         }
 
         public static Builder builder() {
@@ -379,6 +400,7 @@ public class FhirValidationServiceClient {
             private String elaboration;
             private String shinNyIgVersion;
             private String validationSeverityLevel;
+            private String techbdBlBaseUrl;
 
             public Builder bundle(String bundle) {
                 this.bundle = bundle;
@@ -482,6 +504,11 @@ public class FhirValidationServiceClient {
 
             public Builder validationSeverityLevel(String validationSeverityLevel) {
                 this.validationSeverityLevel = validationSeverityLevel;
+                return this;
+            }
+
+            public Builder techbdBlBaseUrl(String techbdBlBaseUrl) {
+                this.techbdBlBaseUrl = techbdBlBaseUrl;
                 return this;
             }
 

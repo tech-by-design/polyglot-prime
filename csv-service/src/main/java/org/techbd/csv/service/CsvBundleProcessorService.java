@@ -494,7 +494,7 @@ private List<Object> processScreening(final String groupKey,
                             results.add(validationError);
 
                         }
-                        LOG.error(
+                        LOG.info(
                                 "Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId, groupInteractionId);
                     } else {

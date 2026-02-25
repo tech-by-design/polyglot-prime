@@ -97,6 +97,7 @@ public class CsvController {
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
       @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = Constants.DATALAKE_API_URL, required = false) String customDataLakeApi,
       @Parameter(description = "Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.", required = false) @RequestHeader(value = "X-TechBD-Base-FHIR-URL", required = false) String baseFHIRURL,
+      @Parameter(description = "Optional header to override TECHBD_BL_BASEURL. If not provided, uses environment variable.", required = false) @RequestHeader(value = Constants.TECHBD_BL_BASEURL, required = false) String techbdBlBaseUrl,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
@@ -120,8 +121,15 @@ public class CsvController {
     if (validationSeverityLevel != null) {
       requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
+    
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
     requestDetailsMap.put(Constants.DATALAKE_API_URL, customDataLakeApi);
+    if (techbdBlBaseUrl != null && !techbdBlBaseUrl.trim().isEmpty()) {
+      requestDetailsMap.put(Constants.TECHBD_BL_BASEURL, techbdBlBaseUrl);
+    }
+    
+log.info("TECHBD_BL_BASEURL in requestDetailsMap before putAll: {}", 
+    requestDetailsMap.get(Constants.TECHBD_BL_BASEURL));
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
     List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);

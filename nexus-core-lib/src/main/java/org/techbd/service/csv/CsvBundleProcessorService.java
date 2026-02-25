@@ -448,10 +448,11 @@ private List<Object> processScreening(final String groupKey,
                                 null,
                                 null,
                                 null,
-                                (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL), // Cast to String, // Pass severity level
+                                (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL),
                                 null,
                                 null,
                                 updatedProvenance, null);
+                        
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
                             false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,(String) requestParameters.get(Constants.REQUEST_URI));
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
@@ -462,7 +463,7 @@ private List<Object> processScreening(final String groupKey,
                         requestParameters.putAll(headers);
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,responseParameters));
-                        LOG.error("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
+                        LOG.info("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);        
                     } else {
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
