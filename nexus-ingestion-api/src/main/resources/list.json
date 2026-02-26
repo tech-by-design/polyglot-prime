@@ -15,12 +15,13 @@
     },
        {
         "port": 5555,
-        "responseType": "",
+        "responseType": "mllp",
         "protocol": "TCP",
         "route": "/hold",
         "dataDir": "/outbound",
         "metadataDir": "/outbound",
-        "queue": "test.fifo"
+        "queue": "test.fifo",
+         "keepAliveTimeout": 20
     },
     {
         "sourceId":"netspective",

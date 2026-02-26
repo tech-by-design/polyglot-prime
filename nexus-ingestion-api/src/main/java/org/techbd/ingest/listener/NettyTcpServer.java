@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.techbd.ingest.MessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
@@ -76,12 +77,12 @@ public class NettyTcpServer implements MessageSourceProvider {
     @Value("${TCP_MAX_MESSAGE_SIZE_BYTES:52428800}") // 50MB default
     private int maxMessageSizeBytes;
 
-    // MLLP protocol markers (unchanged)
+    // MLLP protocol markers
     private static final byte MLLP_START = 0x0B; // <VT> Vertical Tab
     private static final byte MLLP_END_1 = 0x1C; // <FS> File Separator
     private static final byte MLLP_END_2 = 0x0D; // <CR> Carriage Return
 
-    // NEW: TCP delimiter configuration from environment variables
+    // TCP delimiter configuration from environment variables
     @Value("${TCP_MESSAGE_START_DELIMITER:0x02}") // STX - Start of Text
     private String tcpStartDelimiterHex;
     
@@ -108,6 +109,13 @@ public class NettyTcpServer implements MessageSourceProvider {
     private static final AttributeKey<Boolean> ERROR_NACK_SENT_KEY = AttributeKey.valueOf("ERROR_NACK_SENT");
     // Stores the resolved keepAliveTimeout (seconds) for this channel; null means use default ReadTimeoutHandler behaviour
     private static final AttributeKey<Integer> KEEP_ALIVE_TIMEOUT_KEY = AttributeKey.valueOf("KEEP_ALIVE_TIMEOUT");
+    // Flag: set when no recognized delimiter was found in the incoming frame
+    private static final AttributeKey<Boolean> NO_DELIMITER_DETECTED_KEY = AttributeKey.valueOf("NO_DELIMITER_DETECTED");
+    // Accumulator for raw bytes received when no delimiter is present (for diagnostic logging)
+    private static final AttributeKey<StringBuilder> RAW_ACCUMULATOR_KEY = AttributeKey.valueOf("RAW_ACCUMULATOR");
+    // Persists the formatted HAProxy header string for the lifetime of the channel so it
+    // can be re-logged on every message, idle event, and timeout — not just on first receipt.
+    private static final AttributeKey<String> HAPROXY_DETAILS_KEY = AttributeKey.valueOf("HAPROXY_DETAILS");
 
     public NettyTcpServer(MessageProcessorService messageProcessorService,
             AppConfig appConfig,
@@ -121,7 +129,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     @PostConstruct
     public void startServer() {
-        // NEW: Parse TCP delimiters from hex strings
+        // Parse TCP delimiters from hex strings
         parseTcpDelimiters();
         
         new Thread(() -> {
@@ -141,6 +149,9 @@ public class NettyTcpServer implements MessageSourceProvider {
                                 ch.attr(TOTAL_BYTES_KEY).set(new AtomicLong(0));
                                 ch.attr(MESSAGE_SIZE_EXCEEDED_KEY).set(false);
                                 ch.attr(ERROR_NACK_SENT_KEY).set(false);
+                                ch.attr(NO_DELIMITER_DETECTED_KEY).set(false);
+                                ch.attr(RAW_ACCUMULATOR_KEY).set(new StringBuilder());
+                                ch.attr(HAPROXY_DETAILS_KEY).set(null);
 
                                 // Default read-timeout; replaced with IdleStateHandler after port
                                 // resolution if keepAliveTimeout is configured for the port.
@@ -154,7 +165,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                     ch.pipeline().addLast(new HAProxyMessageDecoder());
                                 }
 
-                                // RENAMED: Delimiter-based frame decoder for both MLLP and TCP
+                                // Delimiter-based frame decoder for both MLLP and TCP
                                 ch.pipeline().addLast(new DelimiterBasedFrameDecoder(maxMessageSizeBytes));
 
                                 // Main message handler - handles both HAProxyMessage and ByteBuf
@@ -180,10 +191,19 @@ public class NettyTcpServer implements MessageSourceProvider {
 
                                         // Handle actual message content
                                         if (msg instanceof ByteBuf byteBuf) {
-                                            // Convert ByteBuf to String
                                             String messageContent = byteBuf.toString(StandardCharsets.UTF_8);
-                                            
-                                            // Log complete message reception with timing
+
+                                            // Always log HAProxy details for every inbound frame so
+                                            // keep-alive messages and probes are traceable.
+                                            logProxyDetails(ctx, interactionId);
+
+                                            // If no-delimiter flag was set by the decoder, accumulate and log only
+                                            Boolean noDelimiter = ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).get();
+                                            if (Boolean.TRUE.equals(noDelimiter)) {
+                                                handleNoDelimiterMessage(ctx, messageContent, interactionId);
+                                                return;
+                                            }
+
                                             long startTime = ctx.channel().attr(MESSAGE_START_TIME_KEY).get();
                                             long receiveTime = System.currentTimeMillis() - startTime;
                                             int fragmentCount = ctx.channel().attr(FRAGMENT_COUNT_KEY).get().get();
@@ -203,13 +223,11 @@ public class NettyTcpServer implements MessageSourceProvider {
                                         if (interactionId == null) {
                                             interactionId = UUID.randomUUID();
                                             ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
-                                            logger.warn("NULL_INTERACTION_ID_DETECTED - generated new UUID: {}", interactionId);
                                         }
                                         
                                         // Check if we've already sent a NACK for this channel
                                         Boolean nackAlreadySent = ctx.channel().attr(ERROR_NACK_SENT_KEY).get();
                                         if (nackAlreadySent != null && nackAlreadySent) {
-                                            logger.debug("NACK_ALREADY_SENT [interactionId={}] - skipping duplicate NACK", interactionId);
                                             return;
                                         }
                                         
@@ -271,7 +289,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                                 finalInteractionId, errorTraceId);
                                                         // Delay close to ensure NACK is transmitted
                                                         ctx.executor().schedule(() -> {
-                                                            logger.info("CLOSING_CONNECTION_AFTER_EXCEPTION [interactionId={}]", finalInteractionId);
+                                                            logger.debug("CLOSING_CONNECTION_AFTER_EXCEPTION [interactionId={}]", finalInteractionId);
                                                             clearChannelAttributes(ctx);
                                                             ctx.close();
                                                         }, 100, TimeUnit.MILLISECONDS);
@@ -290,8 +308,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                 ctx.close();
                                             }
                                         } else {
-                                            logger.warn("CHANNEL_ALREADY_INACTIVE [interactionId={}] [errorTraceId={}] - cannot send NACK", 
-                                                    interactionId, errorTraceId);
                                             clearChannelAttributes(ctx);
                                         }
                                     }
@@ -317,7 +333,6 @@ public class NettyTcpServer implements MessageSourceProvider {
 
                                             Boolean nackAlreadySent = ctx.channel().attr(ERROR_NACK_SENT_KEY).get();
                                             if (nackAlreadySent != null && nackAlreadySent) {
-                                                logger.debug("NACK_ALREADY_SENT_ON_IDLE [interactionId={}] - closing", interactionId);
                                                 ctx.close();
                                                 return;
                                             }
@@ -327,6 +342,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             int effectiveTimeout = kat != null ? kat : readTimeoutSeconds;
                                             String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
 
+                                            logProxyDetails(ctx, interactionId);
                                             logger.warn("IDLE_TIMEOUT_EXCEEDED [interactionId={}] [errorTraceId={}] idleTimeout={}s - closing connection",
                                                     interactionId, errorTraceId, effectiveTimeout);
 
@@ -388,8 +404,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                     ctx.close();
                                                 }
                                             } else {
-                                                logger.warn("CHANNEL_ALREADY_INACTIVE_ON_IDLE [interactionId={}] [errorTraceId={}]",
-                                                        interactionId, errorTraceId);
                                                 clearChannelAttributes(ctx);
                                             }
                                         } else {
@@ -410,9 +424,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             // Check if we've already sent a NACK for this channel
                                             Boolean nackAlreadySent = ctx.channel().attr(ERROR_NACK_SENT_KEY).get();
                                             if (nackAlreadySent != null && nackAlreadySent) {
-                                                logger.debug(
-                                                        "NACK_ALREADY_SENT_ON_TIMEOUT [interactionId={}] - skipping duplicate",
-                                                        interactionId);
                                                 ctx.close();
                                                 return;
                                             }
@@ -422,6 +433,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
                                             String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
 
+                                            logProxyDetails(ctx, interactionId);
                                             logger.error(
                                                     "READ_TIMEOUT_EXCEEDED [interactionId={}] [errorTraceId={}] timeout={}s - sending NACK",
                                                     interactionId, errorTraceId, readTimeoutSeconds);
@@ -497,9 +509,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                     ctx.close();
                                                 }
                                             } else {
-                                                logger.warn(
-                                                        "CHANNEL_ALREADY_INACTIVE_ON_TIMEOUT [interactionId={}] [errorTraceId={}]",
-                                                        interactionId, errorTraceId);
                                                 clearChannelAttributes(ctx);
                                             }
                                         } else {
@@ -528,7 +537,7 @@ public class NettyTcpServer implements MessageSourceProvider {
     }
 
     /**
-     * NEW: Parse TCP delimiter hex strings to byte values
+     * Parse TCP delimiter hex strings to byte values
      */
     private void parseTcpDelimiters() {
         try {
@@ -546,6 +555,40 @@ public class NettyTcpServer implements MessageSourceProvider {
             tcpEndDelimiter1 = MLLP_END_1;
             tcpEndDelimiter2 = MLLP_END_2;
         }
+    }
+
+    /**
+     * Handle messages received with no recognized delimiter.
+     * <p>
+     * Accumulates the raw content on the channel accumulator attribute, logs the
+     * full payload when {@link FeatureEnum#LOG_INCOMING_MESSAGE} is enabled, and
+     * drops the message — i.e., {@code processMessage} / S3 upload is intentionally
+     * skipped so no partial or malformed data enters the pipeline.
+     */
+    private void handleNoDelimiterMessage(ChannelHandlerContext ctx, String content, UUID interactionId) {
+        // Append to the channel-level accumulator so fragmented no-delimiter frames
+        // are stitched together before logging.
+        StringBuilder accumulator = ctx.channel().attr(RAW_ACCUMULATOR_KEY).get();
+        if (accumulator == null) {
+            accumulator = new StringBuilder();
+            ctx.channel().attr(RAW_ACCUMULATOR_KEY).set(accumulator);
+        }
+        accumulator.append(content);
+
+        String remoteAddress = ctx.channel().remoteAddress() != null
+                ? ctx.channel().remoteAddress().toString()
+                : "unknown";
+
+        logger.warn("FULL_MESSAGE_LOGGING [interactionId={}] NO_DELIMITER_DETECTED - message will NOT be processed or uploaded. "
+                + "remoteAddress={}, accumulatedSize={} bytes",
+                interactionId, remoteAddress, accumulator.length());
+
+        if (FeatureEnum.isEnabled(FeatureEnum.LOG_INCOMING_MESSAGE)) {
+            logger.warn("FULL_MESSAGE_LOGGING [interactionId={}] rawContent=[{}]",
+                    interactionId, accumulator.toString());
+        }
+
+        // Do NOT call processMessage or upload to S3 — drop silently after logging.
     }
 
     /**
@@ -600,15 +643,13 @@ public class NettyTcpServer implements MessageSourceProvider {
 
             // Check if we have minimum bytes for delimiter detection
             if (in.readableBytes() < 3) {
-                logger.info("BUFFER_TOO_SMALL [interactionId={}] readable={} bytes, waiting for more data", 
-                        interactionId, in.readableBytes());
-                return; // Wait for more data
+                return;
             }
 
             int startIndex = in.readerIndex();
             byte firstByte = in.getByte(startIndex);
 
-            // MODIFIED: Check for MLLP delimiters first (for HL7 messages)
+            // Check for MLLP delimiters first (for HL7 messages)
             if (firstByte == MLLP_START) {
                 logger.info("MLLP_START_DETECTED [interactionId={}] searching for MLLP end markers in {} bytes",
                         interactionId, in.readableBytes());
@@ -630,14 +671,12 @@ public class NettyTcpServer implements MessageSourceProvider {
                         logger.warn("MLLP_MESSAGE_SIZE_LIMIT_EXCEEDED [interactionId={}] size={} bytes exceeds max={} bytes",
                                 interactionId, in.readableBytes(), maxFrameLength);
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex=startIndex + 1;
+                        endIndex = startIndex + 1;
+                    } else {
+                        return; // Wait for more data
                     }
-                    logger.info("MLLP_END_NOT_FOUND [interactionId={}] buffered={} bytes, waiting for more data",
-                            interactionId, in.readableBytes());
-                    return; // Wait for more data
                 }
 
-                // Complete MLLP message found
                 int frameLength = endIndex - startIndex;
                 ByteBuf frame = in.readRetainedSlice(frameLength);
                 out.add(frame);
@@ -645,8 +684,8 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.info("MLLP_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
                         interactionId, frameLength, currentFragment, currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
 
-            } 
-            // NEW: Check for TCP delimiters (for non-HL7 messages)
+            }
+            // Check for TCP delimiters (for non-HL7 messages)
             else if (firstByte == tcpStartDelimiter) {
                 logger.debug("TCP_DELIMITER_START_DETECTED [interactionId={}] searching for TCP end markers (0x{}, 0x{}) in {} bytes",
                         interactionId, String.format("%02X", tcpEndDelimiter1), String.format("%02X", tcpEndDelimiter2), in.readableBytes());
@@ -670,11 +709,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                         
                         // Set flag but continue buffering to capture complete message
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex=startIndex + 1;
+                        endIndex = startIndex + 1;
+                    } else {
+                        return; // Wait for more data
                     }
-                    logger.debug("TCP_END_NOT_FOUND [interactionId={}] buffered={} bytes, waiting for more data",
-                            interactionId, in.readableBytes());
-                    return; // Wait for more data
                 }
 
                 // Complete TCP delimited message found
@@ -685,10 +723,23 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.info("TCP_DELIMITED_FRAME_COMPLETE [interactionId={}] totalLength={} bytes, assembled from {} fragments, avgFragmentSize={} bytes",
                         interactionId, frameLength, currentFragment, currentFragment > 0 ? (frameLength / currentFragment) : frameLength);
 
-            } 
+            }
             else {
-                logger.warn("NO_DELIMITER_DETECTED [interactionId={}] firstByte=0x{}, readableBytes={}, remoteAddress={}", interactionId, String.format("%02X", firstByte), in.readableBytes(), ctx.channel().remoteAddress());
-                // throw new IllegalStateException("Non-delimited message received, unable to process");
+                // No recognized delimiter — set flag and pass the raw bytes through so
+                // the upstream handler can accumulate and log them.
+                logger.warn("NO_DELIMITER_DETECTED [interactionId={}] firstByte=0x{}, readableBytes={}, remoteAddress={}",
+                        interactionId,
+                        String.format("%02X", firstByte),
+                        in.readableBytes(),
+                        ctx.channel().remoteAddress());
+
+                ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).set(true);
+
+                // Pass the raw content upstream for accumulation and diagnostic logging.
+                // We drain the buffer so Netty does not stall waiting for more data.
+                int remaining = in.readableBytes();
+                ByteBuf raw = in.readRetainedSlice(remaining);
+                out.add(raw);
             }
         }
 
@@ -736,24 +787,58 @@ public class NettyTcpServer implements MessageSourceProvider {
         ctx.channel().attr(CLIENT_PORT_KEY).set(null);
         ctx.channel().attr(DESTINATION_IP_KEY).set(null);
         ctx.channel().attr(DESTINATION_PORT_KEY).set(null);
+        ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).set(null);
+        ctx.channel().attr(RAW_ACCUMULATOR_KEY).set(null);
+        ctx.channel().attr(HAPROXY_DETAILS_KEY).set(null);
     }
 
     /**
-     * Handle HAProxy protocol header to extract real client IP/port
+     * Logs the HAProxy details stored on the channel for the current interaction.
+     * Called on every inbound message, idle event, and timeout so that keep-alive
+     * probes and error scenarios always include the originating client/destination
+     * coordinates in the log output.
+     * <p>
+     * If no HAProxy header was received (direct TCP connection, no load-balancer),
+     * the channel's remote address is logged instead so the line is never empty.
+     */
+    private void logProxyDetails(ChannelHandlerContext ctx, UUID interactionId) {
+        String details = ctx.channel().attr(HAPROXY_DETAILS_KEY).get();
+        if (details != null) {
+            logger.info("HAPROXY_DETAILS [interactionId={}] {}", interactionId, details);
+        } else {
+            // No HAProxy header on this connection — log the raw TCP remote address so
+            // there is always a client-origin entry in the logs.
+            logger.info("HAPROXY_DETAILS [interactionId={}] noProxyHeader, remoteAddress={}",
+                    interactionId,
+                    ctx.channel().remoteAddress() != null ? ctx.channel().remoteAddress().toString() : "unknown");
+        }
+    }
+
+    /**
+     * Handle HAProxy protocol header to extract real client IP/port.
+     * The formatted details are also stored in {@link #HAPROXY_DETAILS_KEY} so that
+     * every subsequent event on this channel (messages, timeouts, idle probes) can
+     * re-log them without needing the original {@link HAProxyMessage} object.
      */
     private void handleProxyHeader(ChannelHandlerContext ctx, HAProxyMessage proxyMsg, UUID interactionId) {
         if (proxyMsg.command() == HAProxyCommand.PROXY) {
-            logger.info("PROXY_HEADER [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
-                    interactionId,
-                    proxyMsg.sourceAddress(),
-                    proxyMsg.sourcePort(),
-                    proxyMsg.destinationAddress(),
-                    proxyMsg.destinationPort());
+            String sourceAddress   = proxyMsg.sourceAddress();
+            int    sourcePort      = proxyMsg.sourcePort();
+            String destAddress     = proxyMsg.destinationAddress();
+            int    destPort        = proxyMsg.destinationPort();
 
-            ctx.channel().attr(CLIENT_IP_KEY).set(proxyMsg.sourceAddress());
-            ctx.channel().attr(CLIENT_PORT_KEY).set(proxyMsg.sourcePort());
-            ctx.channel().attr(DESTINATION_IP_KEY).set(proxyMsg.destinationAddress());
-            ctx.channel().attr(DESTINATION_PORT_KEY).set(proxyMsg.destinationPort());
+            logger.info("PROXY_HEADER [interactionId={}] sourceAddress={}, sourcePort={}, destAddress={}, destPort={}",
+                    interactionId, sourceAddress, sourcePort, destAddress, destPort);
+
+            ctx.channel().attr(CLIENT_IP_KEY).set(sourceAddress);
+            ctx.channel().attr(CLIENT_PORT_KEY).set(sourcePort);
+            ctx.channel().attr(DESTINATION_IP_KEY).set(destAddress);
+            ctx.channel().attr(DESTINATION_PORT_KEY).set(destPort);
+
+            // Persist a formatted summary so it can be re-logged cheaply on every event.
+            String details = String.format("sourceAddress=%s, sourcePort=%d, destAddress=%s, destPort=%d",
+                    sourceAddress, sourcePort, destAddress, destPort);
+            ctx.channel().attr(HAPROXY_DETAILS_KEY).set(details);
         }
     }
 
@@ -1077,7 +1162,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     /**
      * Handle HL7 messages with MLLP protocol
-     * MODIFIED: Added error trace ID generation for all NACK scenarios
+     * Added error trace ID generation for all NACK scenarios
      */
     private void handleHL7Message(
             ChannelHandlerContext ctx,
@@ -1242,7 +1327,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     /**
      * Handle non-MLLP messages with simple acknowledgment
-     * MODIFIED: Added error trace ID generation for NACK scenarios
+     * Added error trace ID generation for NACK scenarios
      */
     private void handleGenericMessage(ChannelHandlerContext ctx, String rawMessage, UUID interactionId,
             String clientIP, Integer clientPort, String destinationIP, Integer destinationPort, 
@@ -1394,6 +1479,8 @@ public class NettyTcpServer implements MessageSourceProvider {
                 ctx.channel().attr(TOTAL_BYTES_KEY).set(new AtomicLong(0));
                 ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(false);
                 ctx.channel().attr(ERROR_NACK_SENT_KEY).set(false);
+                ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).set(false);
+                ctx.channel().attr(RAW_ACCUMULATOR_KEY).set(new StringBuilder());
             });
         } else {
             // Default: close connection after flush (original behaviour)
@@ -1403,7 +1490,6 @@ public class NettyTcpServer implements MessageSourceProvider {
                             interactionId, responseType);
                     // Schedule close to allow network flush
                     ctx.executor().schedule(() -> {
-                        logger.info("CLOSING_CONNECTION [interactionId={}]", interactionId);
                         ctx.close();
                     }, 50, TimeUnit.MILLISECONDS);
                 } else {
@@ -1520,7 +1606,7 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     /**
      * Create HL7 ACK/NACK from MSH segment
-     * MODIFIED: Added errorTraceId parameter and included in NTE segment
+     * Added errorTraceId parameter and included in NTE segment
      */
     private String createHL7AckFromMsh(String originalMessage, String ackCode, String errorText, 
             String interactionId, String errorTraceId) {
