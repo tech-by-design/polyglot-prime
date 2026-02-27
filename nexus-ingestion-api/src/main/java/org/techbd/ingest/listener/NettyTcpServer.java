@@ -719,23 +719,10 @@ public class NettyTcpServer implements MessageSourceProvider {
     // -------------------------------------------------------------------------
 
     /**
-     * A simple handler that fires an all-idle event at a configurable interval and
-     * logs a "session still active" heartbeat.  This is useful for long-lived /
-     * keep-alive TCP sessions where no data flows for extended periods — the log
-     * entry confirms the connection is still open and shows how long it has been
-     * alive and how many messages it has processed so far.
-     *
-     * <p><b>Note on TCP keep-alive probes:</b> OS-level TCP keepalive probes (sent
-     * by the kernel when {@code SO_KEEPALIVE} is enabled) are transparent to the
-     * Netty application pipeline; they generate no {@code channelRead} or handler
-     * events.  The RST sent in response to a probe that times out will eventually
-     * cause {@code channelInactive} to fire, which is already logged with full
-     * session context.  There is no Netty API to intercept the raw keepalive probe
-     * or ACK itself short of native JNI or a packet-capture tool.
-     *
-     * <p>If you need to detect keep-alive at the application layer, use the
-     * {@code keepAliveTimeout} / {@link IdleStateHandler} mechanism already in
-     * place — it accomplishes the same objective at the application layer.</p>
+     * Logs a periodic "session still active" message at a configurable interval.
+     * Useful for long-lived TCP connections where no data is exchanged for a while.
+     * The log confirms the connection is still open and shows how long it has been
+     * active and how many messages were processed.
      */
     private class SessionActivityLogHandler extends IdleStateHandler {
 
