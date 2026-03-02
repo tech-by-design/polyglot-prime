@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>6b2fceea-9536-4a1c-914a-12d58f01a1aa</id>
+  <id>f5506019-247f-49cd-af7c-6d275c3a11dd</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.23
-The issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
-  <revision>6</revision>
+  <description>Version: 0.1.24
+Resolved HL7 validation failure caused by missing OBX-3.1 (Question Code) in OBX segment</description>
+  <revision>29</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -76,8 +76,147 @@ The issue with the blank 200 OK response when an invalid URL, port, or method wa
     <transformer version="4.6.1">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-          <name>FileName validation</name>
+          <name>Validate HTTP Request and collect headers</name>
           <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var interactionId = globalMap.get(&apos;interactionId&apos;);
+var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+
+logger.info(logPrefix + &quot;HTTP request validation started.&quot;);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(logPrefix + &quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(logPrefix + headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+        globalMap.put(mapKey || headerName, value);
+    }
+    return value;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+// Mandatory: X-TechBD-Tenant-ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+channelMap.put(&apos;X-TechBD-Tenant-ID&apos;, tenantId);
+logger.info(logPrefix + &quot;X-TechBD-Tenant-ID: &quot; + tenantId);
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(logPrefix + &quot;User-Agent: &quot; + userAgent);
+
+var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
+channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
+logger.info(logPrefix + &quot;OrganizationName: &quot; + OrganizationName);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+logger.info(logPrefix + &quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
+if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+	//1.CIN
+	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+	
+	//2.NPI
+	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+	logger.info(logPrefix + &quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
+	
+	//3.TIN
+	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+	logger.info(logPrefix + &quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
+	
+	// Check if both are missing — only then it&apos;s an error
+	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+	} else {
+	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+	    }
+	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+	    }
+	}
+	
+	//4. Facility Code
+	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+
+	//5. Encounter Type
+	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+
+	//6. Part 2 Data Flagging 
+	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);	
+	logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
+	}
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+    logger.error(logPrefix + errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+
+//////////////////////////////////////////////////////
+// Read environment variables and set to global map //
+//////////////////////////////////////////////////////
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+var fhirBundleSubmissionApiUrl = globalMap.get(&quot;fhirBundleSubmissionApiUrl&quot;);
+if(fhirBundleSubmissionApiUrl != null) {
+    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+} else {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+logger.info(&quot;HTTP request validation ended.&quot;);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <name>FileName validation</name>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>//Check the file type, only .hl7 and .txt allowed
 function getOutcome(text, severity, code, interactionId) {
@@ -722,6 +861,90 @@ function validateOneOfGroups(groups, hl7Text) {
         }
     }
     return violations;
+}
+
+function validateOBXSpecialRule(hl7Text) {
+
+    var violations = [];
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+        if (line.startsWith(&quot;OBX|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+            // Ensure OBX-3 exists
+            if (fields.length &lt; 4) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: &quot;OBX&quot;,
+                    fieldName: &quot;OBX-3.1&quot;,
+                    description: &quot;OBX-3 missing entirely&quot;,
+                    lineContent: line
+                });
+                continue;
+            }
+
+            var obx3 = fields[3] || &quot;&quot;;
+            var components = obx3.split(&quot;^&quot;);
+
+            var obx3_1 = components.length &gt;= 1 ? components[0].trim() : &quot;&quot;;
+            var obx3_2 = components.length &gt;= 2 ? components[1].trim().toLowerCase() : &quot;&quot;;
+            logger.info(&quot;obx3_2: &quot; + obx3_2);
+
+            // Skip rule ONLY if OBX-3.2 matches special phrase
+            if (obx3_2 === &quot;ahc-hrsn patient consent&quot;) {
+                continue;
+            }
+
+            // Otherwise OBX-3.1 must exist
+            if (!obx3_1) {
+                violations.push({
+                    lineNumber: i + 1,
+                    segment: &quot;OBX&quot;,
+                    fieldName: &quot;OBX-3.1&quot;,
+                    description: &quot;OBX-3.1 required unless OBX-3.2 is &apos;ahc-hrsn patient consent&apos;&quot;,
+                    lineContent: line
+                });
+            }
+        }
+    }
+    return violations;
+}
+
+function validateOrganizationName(hl7Text) {
+    var violations = [];
+
+    // Check header first
+    var orgNameHeader = channelMap.get(&quot;OrganizationName&quot;);
+    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim().length &gt; 0) {
+        return violations;
+    }
+
+    // Check MSH-6
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i];
+        if (line.startsWith(&quot;MSH|&quot;)) {
+            var fields = line.split(&quot;|&quot;);
+            if (fields.length &gt;= 6) {
+                var msh6 = fields[5] ? fields[5].trim() : &quot;&quot;;
+                if (msh6.length &gt; 0) {
+                    return violations;
+                }
+            }
+            break;
+        }
+    }
+
+    // If both empty → error
+    violations.push({
+        segment: &quot;MSH&quot;,
+        fieldName: &quot;Organization Name&quot;,
+        description: &quot;Organization Name must be provided either in header &apos;X-TechBD-Organization-Name&apos; or in MSH-6&quot;,
+        lineNumber: &quot;-&quot;,
+        lineContent: &quot;&quot;
+    });
+    return violations;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
@@ -836,140 +1059,8 @@ function sendDataLedgerSync(payload) {
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-            <name>Validate HTTP Request and collect headers</name>
-            <sequenceNumber>2</sequenceNumber>
-            <enabled>true</enabled>
-            <script>var interactionId = globalMap.get(&apos;interactionId&apos;);
-var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
-
-logger.info(logPrefix + &quot;HTTP request validation started.&quot;);
-
-var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-logger.info(logPrefix + &quot;Request URL: &quot; + requestedPath);
-
-if (requestedPath == &quot;/&quot;) {
-	return;
-}
-
-// Initialize missing headers array
-var missingHeaders = [];
-
-// Helper to check and store missing header
-function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
-    var value = $(&apos;headers&apos;).getHeader(headerName);
-    logger.info(logPrefix + headerName + &quot;: &quot; + value);
-
-    if (value == null || String(value).trim() === &quot;&quot;) {
-        missingHeaders.push(&quot;Missing required header &quot; + displayName);
-    } else if (storeInMap) {
-        channelMap.put(mapKey || headerName, value);
-        globalMap.put(mapKey || headerName, value);
-    }
-    return value;
-}
-
-///////////////////////////////////////////////////////////////////////////
-// Access the required header values using getHeader method
-// Mandatory: X-TechBD-Tenant-ID
-checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
-channelMap.put(&apos;X-TechBD-Tenant-ID&apos;, tenantId);
-logger.info(logPrefix + &quot;X-TechBD-Tenant-ID: &quot; + tenantId);
-// Retrieve the Content-Type header
-var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
-
-// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
-if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
-    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
-}
-
-// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
-var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
-channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(logPrefix + &quot;User-Agent: &quot; + userAgent);
-
-var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
-channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
-logger.info(logPrefix + &quot;OrganizationName: &quot; + OrganizationName);
-
-var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
-channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
-logger.info(logPrefix + &quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
-
-channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
-channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
-
-//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
-if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
-	//1.CIN
-	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
-	
-	//2.NPI
-	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-	logger.info(logPrefix + &quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
-	
-	//3.TIN
-	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
-	logger.info(logPrefix + &quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
-	
-	// Check if both are missing — only then it&apos;s an error
-	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
-	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
-	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
-	} else {
-	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
-	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
-	    }
-	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
-	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
-	    }
-	}
-	
-	//4. Facility Code
-	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
-
-	//5. Encounter Type
-	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
-}
-
-// If any missing headers were found, throw a single error
-if (missingHeaders.length &gt; 0) {
-    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
-    logger.error(logPrefix + errorMessage);
-    setErrorResponse(400, errorMessage);
-    throw errorMessage;
-}
-
-
-
-//////////////////////////////////////////////////////
-// Read environment variables and set to global map //
-//////////////////////////////////////////////////////
-
-// Initialize missing environment variables array
-var missingEnvVars = [];
-
-// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
-var fhirBundleSubmissionApiUrl = globalMap.get(&quot;fhirBundleSubmissionApiUrl&quot;);
-if(fhirBundleSubmissionApiUrl != null) {
-    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
-    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
-} else {
-    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
-}
-
-// If any env vars are missing, throw a single error
-if (missingEnvVars.length &gt; 0) {
-    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Internal Server Error
-    throw errorMessage;
-}
-
-logger.info(&quot;HTTP request validation ended.&quot;);</script>
-          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>step_validate_profile_urls_env_variables</name>
-            <sequenceNumber>3</sequenceNumber>
+            <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
             <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
@@ -1143,7 +1234,16 @@ function set_fhir_resource_profile_urls(transformer) {
 	if (channelMap.get(&apos;OrganizationName&apos;)) {
 		transformer.setParameter(&quot;OrganizationName&quot;, channelMap.get(&apos;OrganizationName&apos;)); // Pass the parameter to XSLT
 	}
+///////////////////////////////////////////////////////////////////
+// Set part2 flag
+     var part2DataFlag = channelMap.get(&apos;X-TechBD-Part2&apos;);
+	var flagValue = &quot;false&quot;;
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).toLowerCase() === &quot;true&quot;) {
+	    flagValue = &quot;true&quot;;
+	}	
+	transformer.setParameter(&apos;X-TechBD-Part2&apos;, flagValue);
 
+//////////////////////////////////////////////////////////////////
 
 	return transformer;
 }
@@ -1159,13 +1259,18 @@ function getConsentResourceStatus(sourceXml) {
 		var consentCode = &quot;&quot;;
 		for each (var obx in xmlDoc..OBX) {
 		    var obx32 = &quot;&quot;;
+		    //////////////////////////////////////////
+		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {
+		        obx31 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();
+		    }
+		    /////////////////////////////////////////
 		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
 		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();
 		    }
 		
-		    if (obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
-		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;] != null) {
-		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString();
+		    if (obx31 == &quot;105511-0&quot; || obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
+		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;] != null) {
+		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.2&quot;].toString();
 		        }
 		        break;
 		    }
@@ -1279,7 +1384,7 @@ function getObservationCategoryCodes(transformer, observations) {
 	        }
 	
 	        // Filter like in XSLT logic
-	        if (questionCode === &apos;&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
+	        if (questionCode === &apos;&apos; || questionCode === &apos;105511-0&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
 	            continue;
 	        }
 	
@@ -1398,7 +1503,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
             <name>API endpoint processing</name>
-            <sequenceNumber>4</sequenceNumber>
+            <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
             <script>var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;
 &#xd;var requestedPath = sourceMap.get(&apos;contextPath&apos;);
@@ -1480,7 +1585,17 @@ try {
 	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
 	    allViolations = allViolations.concat(violations);
 	}
+////////////////////////
+// Custom OBX conditional validation - updated for Consent OBX exception
+	var obxViolations = validateOBXSpecialRule(hl7Body);
+	allViolations = allViolations.concat(obxViolations);
 
+	// Organization Name validation
+     var orgViolations = validateOrganizationName(hl7Body);
+     allViolations = allViolations.concat(orgViolations);
+
+//////////////////////////
+	
 	// Validate OneOfGroup rules
 	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
 	allViolations = allViolations.concat(groupViolations);
@@ -1670,7 +1785,20 @@ try {
 	    var violations = validateFieldsInAllSegments(check.segment, check.fieldIndex, check.componentIndex, hl7Body, check.fieldName, check.description);
 	    allViolations = allViolations.concat(violations);
 	}
+///////////////////////////////////
+// Custom OBX conditional validation - updated for Consent OBX exception
+	var obxViolations = validateOBXSpecialRule(hl7Body);
+	allViolations = allViolations.concat(obxViolations);
 
+	// Organization Name validation
+     var orgViolations = validateOrganizationName(hl7Body);
+     allViolations = allViolations.concat(orgViolations);
+
+
+////////////////////////////////////
+
+	
+	
 	// Validate OneOfGroup rules
 	var groupViolations = validateOneOfGroups(profile.oneOfGroups, hl7Body);
 	allViolations = allViolations.concat(groupViolations);
@@ -2862,7 +2990,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771903531430</time>
+        <time>1772453965864</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2873,13 +3001,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>30b79018-7f7f-434a-887b-cfbebb0ea3ef</id>
-        <name>0_1_23</name>
+        <id>4b3f4c6e-127e-4657-8df6-e270581ab1a8</id>
+        <name>0_1_24</name>
         <channelIds>
-          <string>6b2fceea-9536-4a1c-914a-12d58f01a1aa</string>
+          <string>f5506019-247f-49cd-af7c-6d275c3a11dd</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
