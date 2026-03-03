@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>91b21328-6513-4b64-829b-ced812d9f184</id>
+  <id>56dc84a8-a6be-4eb5-9aa6-fb13898bd6f2</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.12
-Fixed psql issue while zip file is selected.</description>
-  <revision>7</revision>
+  <description>Version: 0.8.13
+Fixed validation message when invalid  X-TechBD-Validation-Severity-Level is passed</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -471,8 +471,6 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
           <enabled>true</enabled>
           <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
 var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-logger.info(&quot;HTTP Method: &quot; + httpMethod);
-logger.info(&quot;Context Path: &quot; + contextPath);
 
 /**
  * Util function to generate JSON string
@@ -998,8 +996,12 @@ function extractIssueAndDisposition(operationOutcomePayload, validationSeverityL
     }
   
     if (filteredIssues.length === 0) {
+    	var validSeverities = new Set([&apos;fatal&apos;,&apos;error&apos;,&apos;warning&apos;,&apos;information&apos;]);
+    	var displaySeverity = validSeverities.has(sev)
+      ? sev
+      : &apos;error&apos;;
         var infoIssue = { severity: &apos;information&apos;,
-                          diagnostics: &apos;Validation successful. No issues found at or above severity level: &apos; + sev,
+                          diagnostics: &apos;Validation successful. No issues found at or above severity level: &apos; + displaySeverity,
                           code: &apos;informational&apos; };
         filteredIssues.push(infoIssue);
     }
@@ -2193,7 +2195,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771931458892</time>
+        <time>1772530720553</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2204,10 +2206,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>04e46c20-43c4-435b-8205-f053cf9c9db3</id>
-        <name>0_8_12</name>
+        <id>a6b715d0-f4a1-47fc-a66a-851bac05afce</id>
+        <name>0_8_13</name>
         <channelIds>
-          <string>91b21328-6513-4b64-829b-ced812d9f184</string>
+          <string>56dc84a8-a6be-4eb5-9aa6-fb13898bd6f2</string>
         </channelIds>
         <backgroundColor>
           <red>128</red>
