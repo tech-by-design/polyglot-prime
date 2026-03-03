@@ -174,7 +174,7 @@ const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     uri: text(),
-    session_id: text(),
+    session_id: textNullable(),
     severity: textNullable(),
     message: textNullable(),
     line: textNullable(),
@@ -222,7 +222,7 @@ const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
     qe_name : text(),
-    patient_mrn: text(),
+    patient_mrn: textNullable(),
     patient_id: textNullable(),
     patient_type: textNullable(),
     patient_full_name: textNullable(),
@@ -273,7 +273,7 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
     sat_interaction_fhir_validation_issue_id: primaryKey(),
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
-    issue : text(),
+    issue : textNullable(),
     date_time: dateTimeNullable(),
     validation_engine: textNullable(),
     ig_version: textNullable(),
@@ -1403,6 +1403,39 @@ const migrateSP = pgSQLa.storedProcedure(
           last_updated_by TEXT DEFAULT CURRENT_USER,
           CONSTRAINT uq_dashboard_widget_tenant UNIQUE (widget_name, tenant_id)
       );
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_screening_patient'
+            AND column_name = 'patient_mrn'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ALTER COLUMN patient_mrn DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_session_diagnostic'
+            AND column_name = 'session_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ALTER COLUMN session_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_validation_issue'
+            AND column_name = 'issue'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ALTER COLUMN issue DROP NOT NULL;
+      END IF;
 
       ${dependenciesSQL}
 

@@ -1,0 +1,127 @@
+DO $$
+DECLARE
+    rows_updated integer;
+    rec RECORD;
+    has_null BOOLEAN;
+    start_time timestamp;
+    end_time timestamp;
+BEGIN
+	start_time := clock_timestamp();
+
+	-- ----------- Update Existing NULL Values with Defaults in 'uri' and 'nature' fields ----------- 
+	-- sat_interaction_ccda_request
+	UPDATE techbd_udi_ingress.sat_interaction_ccda_request SET uri = '/ccda/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_ccda_request.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_ccda_request SET nature = 'Original CCDA Payload' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_ccda_request.nature rows updated: %', rows_updated;
+	
+	-- sat_interaction_fhir_request
+	UPDATE techbd_udi_ingress.sat_interaction_fhir_request SET uri = '/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_fhir_request.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_fhir_request SET nature = 'Original FHIR Payload' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_fhir_request.nature rows updated: %', rows_updated;
+	
+	-- sat_interaction_flat_file_csv_request
+	UPDATE techbd_udi_ingress.sat_interaction_flat_file_csv_request SET uri = '/flatfile/csv/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_flat_file_csv_request.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_flat_file_csv_request SET nature = 'Original Flat File CSV' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_flat_file_csv_request.nature rows updated: %', rows_updated;
+	
+	-- sat_interaction_hl7_request
+	UPDATE techbd_udi_ingress.sat_interaction_hl7_request SET uri = '/hl7v2/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_hl7_request.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_hl7_request SET nature = 'Original HL7 Payload' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_hl7_request.nature rows updated: %', rows_updated;
+	
+	-- sat_interaction_zip_file_request
+	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request SET uri = '/flatfile/csv/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_zip_file_request.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request SET nature = 'Original CSV Zip Archive' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_zip_file_request.nature rows updated: %', rows_updated;
+	
+	-- sat_interaction_user
+	UPDATE techbd_udi_ingress.sat_interaction_user SET uri = '/home' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_user.uri rows updated: %', rows_updated;
+	
+	UPDATE techbd_udi_ingress.sat_interaction_user SET nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_user.nature rows updated: %', rows_updated;
+	
+	-- sat_csv_fhir_processing_errors
+	UPDATE techbd_udi_ingress.sat_csv_fhir_processing_errors SET uri = '/flatfile/csv/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_csv_fhir_processing_errors.uri rows updated: %', rows_updated;
+	
+	-- sat_interaction_ccda_validation_errors
+	UPDATE techbd_udi_ingress.sat_interaction_ccda_validation_errors SET uri = '/ccda/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_ccda_validation_errors.uri rows updated: %', rows_updated;
+	
+	-- sat_interaction_hl7_validation_errors
+	UPDATE techbd_udi_ingress.sat_interaction_hl7_validation_errors SET uri = '/hl7v2/Bundle/$validate' WHERE uri IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_hl7_validation_errors.uri rows updated: %', rows_updated;
+	
+	-- sat_interaction_http_request
+	UPDATE techbd_udi_ingress.sat_interaction_http_request SET nature = '{"nature": "Original FHIR Payload", "tenant_id": "N/A"}' WHERE nature IS NULL;
+	GET DIAGNOSTICS rows_updated = ROW_COUNT;
+	RAISE NOTICE 'sat_interaction_http_request.nature rows updated: %', rows_updated;
+
+
+
+-- ----------- Add NOT NULL constraints to the 'uri' and 'nature' fields ----------- 
+
+    FOR rec IN
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name IN (
+            'sat_csv_fhir_processing_errors',
+            'sat_interaction_ccda_request',
+            'sat_interaction_ccda_validation_errors',
+            'sat_interaction_fhir_request',
+            'sat_interaction_flat_file_csv_request',
+            'sat_interaction_hl7_request',
+            'sat_interaction_hl7_validation_errors',
+            'sat_interaction_http_request',
+            'sat_interaction_zip_file_request'
+        )
+        AND column_name IN ('uri','nature')
+        AND is_nullable = 'YES'
+    LOOP
+
+        RAISE NOTICE
+            'Altering %.% column % to NOT NULL',
+            'techbd_udi_ingress',
+            rec.table_name,
+            rec.column_name;
+
+        EXECUTE format(
+            'ALTER TABLE techbd_udi_ingress.%I
+             ALTER COLUMN %I SET NOT NULL',
+            rec.table_name,
+            rec.column_name
+        );
+
+    END LOOP;
+
+	end_time := clock_timestamp();
+	RAISE NOTICE 'Total execution time: %', end_time - start_time;
+
+END $$;

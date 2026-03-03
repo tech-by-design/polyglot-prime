@@ -6524,8 +6524,8 @@ DECLARE
 	v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);
 	v_provenance 		TEXT 		:= COALESCE(p_provenance, 'FHIR');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
-   	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';   
+   	v_nature_denorm   	TEXT 		:= trim(COALESCE(p_nature->>'nature', ''));
+   	v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
 	
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -6558,8 +6558,17 @@ BEGIN
 	*/
 
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_fhir_request function');
-    
-	IF v_nature_denorm NOT IN(
+    IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_interaction_id cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+
+	IF NOT v_return_status AND v_nature_denorm NOT IN(
 			'Original FHIR Payload', 
 			'techByDesignDisposition', 
 			'Forward HTTP Request', 
@@ -6571,6 +6580,28 @@ BEGIN
 	) THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid FHIR nature',
+								  'payload', p_payload,
+								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+								  'interaction_id', p_interaction_id);
+	END IF;
+
+	IF NOT v_return_status AND v_tenant_id_denorm = '' THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'tenant_id cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;
+
+	IF NOT v_return_status AND (p_interaction_key IS NULL OR trim(p_interaction_key) = '' OR trim(p_interaction_key) 
+			NOT IN('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/',
+					'/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/',
+					'/hl7v2/Bundle', '/hl7v2/Bundle/', '/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/',
+					'/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/')) THEN
+		v_return_status := true;
+		v_return := jsonb_build_object('error', 'Not a valid FHIR interaction_key',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 								  'interaction_id', p_interaction_id);
@@ -6833,7 +6864,7 @@ DECLARE
     v_provenance      TEXT        	:= COALESCE(p_provenance, 'CCDA');
     v_exception_id    TEXT        	:= gen_random_uuid()::text;
     v_nature_denorm   TEXT 		  	:= trim(COALESCE(p_nature->>'nature', ''));
-    v_tenant_id_denorm TEXT 	  	:= p_nature->>'tenant_id';
+    v_tenant_id_denorm TEXT 	  	:= trim(COALESCE(p_nature->>'tenant_id', ''));
     v_ccda_source     TEXT 		  	:= p_ccda_authoring_device;
 
     v_return          JSONB 	  	:= NULL;
@@ -6867,8 +6898,17 @@ BEGIN
 	 - source_type: fhir/hl7/csv/ccda
 	*/
 
-    v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_ccda_request function');
-    IF v_nature_denorm NOT IN ('Original CCDA Payload', 'CCDA Validation Result', 'Converted to FHIR') THEN
+    IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_interaction_id cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+
+	IF NOT v_return_status AND v_nature_denorm NOT IN ('Original CCDA Payload', 'CCDA Validation Result', 'Converted to FHIR') THEN
         v_return_status := true;
         v_return := jsonb_build_object(
             'error', 'Not a valid CCDA nature',
@@ -6878,8 +6918,18 @@ BEGIN
         );
     END IF;
 
-    IF NOT v_return_status
-       AND p_interaction_key NOT IN ('/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/')
+	IF NOT v_return_status AND v_tenant_id_denorm = '' THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'tenant_id cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;
+
+    IF NOT v_return_status AND (p_interaction_key IS NULL OR trim(p_interaction_key) = '' OR 
+			trim(p_interaction_key) NOT IN ('/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/'))
     THEN
         v_return_status := true;
         v_return := jsonb_build_object(
@@ -6891,8 +6941,7 @@ BEGIN
     END IF;
 
     -- Check hub_nexus_interaction exists when provided
-    IF NOT v_return_status
-       AND p_hub_nexus_interaction_id IS NOT NULL
+    IF NOT v_return_status AND p_hub_nexus_interaction_id IS NOT NULL
        AND NOT EXISTS (
            SELECT 1 FROM techbd_udi_ingress.hub_nexus_interaction
            WHERE hub_nexus_interaction_id = p_hub_nexus_interaction_id
@@ -6906,6 +6955,26 @@ BEGIN
             'interaction_id', p_interaction_id
         );
     END IF;
+
+	IF NOT v_return_status AND (p_from_state IS NULL OR trim(p_from_state) = '') THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_from_state cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+	
+	IF NOT v_return_status AND (p_to_state IS NULL OR trim(p_to_state) = '') THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_to_state cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
 
     IF NOT v_return_status THEN
         -- Insert hub_interaction
@@ -7232,8 +7301,8 @@ DECLARE
 	v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'CSV');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
-   	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';
+	v_nature_denorm   	TEXT 		:= trim(COALESCE(p_nature->>'nature', ''));
+   	v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -7273,15 +7342,35 @@ BEGIN
 	*/
 
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_csv_request function');
+	IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_interaction_id cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
 
-	IF v_nature_denorm NOT IN('Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
+	IF NOT v_return_status AND v_nature_denorm NOT IN('Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid CSV nature',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 								  'interaction_id', p_interaction_id);
 	END IF;
-	IF NOT v_return_status AND p_interaction_key NOT IN('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/') THEN
+
+	IF NOT v_return_status AND v_tenant_id_denorm = '' THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'tenant_id cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;
+
+	IF NOT v_return_status AND (p_interaction_key IS NULL OR trim(p_interaction_key) = '' OR trim(p_interaction_key) NOT IN('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/')) THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid CSV interaction_key',
 								  'payload', p_payload,
@@ -7556,8 +7645,8 @@ DECLARE
     v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'USER');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
-   	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';  
+	v_nature_denorm   	TEXT 		:= trim(COALESCE(p_nature->>'nature', ''));
+   	v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -7595,8 +7684,46 @@ BEGIN
 	
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_user_interaction function');  
 	
+	IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_interaction_id cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+
+	IF NOT v_return_status AND (p_interaction_key IS NULL OR trim(p_interaction_key) = '') THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'p_interaction_key cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;	
+
+	IF NOT v_return_status AND v_nature_denorm = '' THEN
+		v_return_status := true;
+		v_return := jsonb_build_object('error', 'Nature cannot be NULL or empty',
+								  'payload', p_payload,
+								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+								  'interaction_id', p_interaction_id);
+	END IF;
+
+	IF NOT v_return_status AND v_tenant_id_denorm = '' THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'tenant_id cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;
+
 	-- Check hub_nexus_interaction exists
-    IF p_hub_nexus_interaction_id IS NOT NULL AND NOT EXISTS (
+    IF NOT v_return_status AND p_hub_nexus_interaction_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM techbd_udi_ingress.hub_nexus_interaction
         WHERE hub_nexus_interaction_id = p_hub_nexus_interaction_id
     ) THEN
@@ -7693,6 +7820,11 @@ BEGIN
 					
 					v_return := jsonb_build_object('hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 											 'interaction_id', p_interaction_id);
+				ELSE
+					v_return := jsonb_build_object(
+											'info', 'Not a user interaction, p_interaction_key and nature are not valid.', 
+											'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+											'interaction_id', p_interaction_id);
 			    END IF;
 		    EXCEPTION
 		        WHEN OTHERS THEN
@@ -7768,8 +7900,8 @@ DECLARE
     v_created_by 		TEXT 		:= COALESCE(p_created_by, CURRENT_USER);  -- Default created_by to the current user if not provided
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'HL7');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
-   	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';
+   	v_nature_denorm   	TEXT 		:= trim(COALESCE(p_nature->>'nature', ''));
+   	v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -7810,14 +7942,56 @@ BEGIN
 	
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_interaction_hl7_request function');
 
-	IF v_nature_denorm NOT IN('Original HL7 Payload', 'HL7 Validation Result', 'Converted to FHIR') THEN
+	IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_interaction_id cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;		
+
+	IF NOT v_return_status AND v_nature_denorm NOT IN ('Original HL7 Payload', 'HL7 Validation Result', 'Converted to FHIR') THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid HL7 nature',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 								  'interaction_id', p_interaction_id);
 	END IF;
-	IF NOT v_return_status AND p_interaction_key NOT IN('/hl7v2/Bundle', '/hl7v2/Bundle/', '/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/') THEN
+
+	IF NOT v_return_status AND v_tenant_id_denorm = '' THEN
+        v_return_status := true;
+        v_return := jsonb_build_object(
+            'error', 'tenant_id cannot be NULL or empty',
+            'payload', p_payload,
+            'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+            'interaction_id', p_interaction_id
+        );
+    END IF;
+	
+	IF NOT v_return_status AND (p_from_state IS NULL OR trim(p_from_state) = '') THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_from_state cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+	
+	IF NOT v_return_status AND (p_to_state IS NULL OR trim(p_to_state) = '') THEN
+	    v_return_status := true;
+	    v_return := jsonb_build_object(
+	        'error', 'p_to_state cannot be NULL or empty',
+	        'payload', p_payload,
+	        'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
+	        'interaction_id', p_interaction_id
+	    );
+	END IF;
+		
+	IF NOT v_return_status AND (p_interaction_key IS NULL OR trim(p_interaction_key) = '' OR 
+			trim(p_interaction_key) NOT IN ('/hl7v2/Bundle', '/hl7v2/Bundle/', '/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/')) THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid HL7 interaction_key',
 								  'payload', p_payload,
