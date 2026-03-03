@@ -1561,7 +1561,8 @@ public class FHIRService {
                             : null;
 
                     final String headerSeverityLevelValue = (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL);
-                    String validationSeverityLevel = coreAppConfig.getValidationSeverityLevel();
+                    String configSeverity = coreAppConfig.getValidationSeverityLevel();
+					String validationSeverityLevel = configSeverity;
                     if (headerSeverityLevelValue != null && !headerSeverityLevelValue.isEmpty()) {
                         validationSeverityLevel = headerSeverityLevelValue;
                     }
@@ -1589,9 +1590,19 @@ public class FHIRService {
                     if (filteredIssues.isEmpty()) {
                         final Map<String, Object> infoIssue = new HashMap<>();
                         infoIssue.put("severity", "information");
+                        final Set<String> validSeverities =
+                             Set.of("fatal", "error", "warning", "information");
+                        final String displaySeverity =
+                                validSeverities.contains(
+                                        validationSeverityLevel != null
+                                                ? validationSeverityLevel.toLowerCase()
+                                                : "")
+                                ? validationSeverityLevel
+                                : configSeverity;
+ 
                         infoIssue.put("diagnostics",
                                 "Validation successful. No issues found at or above severity level: "
-                                        + validationSeverityLevel);
+                                        + displaySeverity);
                         infoIssue.put("code", "informational");
                         filteredIssues.add(infoIssue);
                     }
