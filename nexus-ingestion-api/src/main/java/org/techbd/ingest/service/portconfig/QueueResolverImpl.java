@@ -2,6 +2,7 @@ package org.techbd.ingest.service.portconfig;
 
 import java.util.Map;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig.PortEntry;
@@ -23,6 +24,7 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
  * </ol>
  */
 @Component
+@Order(1)
 public class QueueResolverImpl implements PortConfigAttributeResolver {
 
     private final AppConfig appConfig;

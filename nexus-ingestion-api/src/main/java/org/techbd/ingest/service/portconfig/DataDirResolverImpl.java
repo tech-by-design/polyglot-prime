@@ -2,6 +2,7 @@ package org.techbd.ingest.service.portconfig;
 
 import java.time.ZonedDateTime;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig.PortEntry;
@@ -45,6 +46,7 @@ import org.techbd.ingest.util.TemplateLogger;
  * </pre>
  */
 @Component
+@Order(3)
 class DataDirResolverImpl implements PortConfigAttributeResolver {
     private final TemplateLogger LOG;
 
@@ -99,21 +101,21 @@ class DataDirResolverImpl implements PortConfigAttributeResolver {
         if (context.getObjectKey() != null && context.getDataBucketName() != null) {
             String fullS3DataPath = Constants.S3_PREFIX + context.getDataBucketName() + "/" + context.getObjectKey();
             context.setFullS3DataPath(fullS3DataPath);
-            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Data Path: {} interactionId={}", fullS3DataPath, interactionId);
+            LOG.info("[DATA_DIR_RESOLVER] Updated Full S3 Data Path: {} interactionId={}", fullS3DataPath, interactionId);
         }
 
         // Update full S3 metadata path
         if (context.getMetadataKey() != null && context.getMetaDataBucketName() != null) {
             String fullS3MetadataPath = Constants.S3_PREFIX + context.getMetaDataBucketName() + "/" + context.getMetadataKey();
             context.setFullS3MetadataPath(fullS3MetadataPath);
-            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Metadata Path: {} interactionId={}", fullS3MetadataPath, interactionId);
+            LOG.info("[DATA_DIR_RESOLVER] Updated Full S3 Metadata Path: {} interactionId={}", fullS3MetadataPath, interactionId);
         }
 
         // Update full S3 acknowledgement path
         if (context.getAckObjectKey() != null && context.getDataBucketName() != null) {
             String fullS3AckPath = Constants.S3_PREFIX + context.getDataBucketName() + "/" + context.getAckObjectKey();
             context.setFullS3AckMessagePath(fullS3AckPath);
-            LOG.debug("[DATA_DIR_RESOLVER] Updated Full S3 Ack Path: {} interactionId={}", fullS3AckPath, interactionId);
+            LOG.info("[DATA_DIR_RESOLVER] Updated Full S3 Ack Path: {} interactionId={}", fullS3AckPath, interactionId);
         }
     }
 

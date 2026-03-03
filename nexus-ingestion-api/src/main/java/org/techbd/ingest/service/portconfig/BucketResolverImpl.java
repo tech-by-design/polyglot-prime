@@ -1,5 +1,6 @@
 package org.techbd.ingest.service.portconfig;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig.PortEntry;
@@ -18,6 +19,7 @@ import org.techbd.ingest.util.TemplateLogger;
  * configuration.
  */
 @Component
+@Order(2)
 class BucketResolverImpl implements PortConfigAttributeResolver {
 
     private final AppConfig appConfig;
