@@ -47,72 +47,191 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 
 ```
 .
-├── hub-prime
-│   ├── lib
-│   ├── src
-│   │   ├── main
-│   │   │   ├── java
-│   │   │   │   └── org
-│   │   │   │       └── Tech by Design
-│   │   │   │           ├── conf
-│   │   │   │           ├── orchestrate
-│   │   │   │           │   ├── fhir
-│   │   │   │           │   └── sftp
-│   │   │   │           ├── service
-│   │   │   │           │   └── http
-│   │   │   │           │       ├── filter
-│   │   │   │           │       └── hub
-│   │   │   │           ├── udi
-│   │   │   │           └── util
-│   │   │   └── resources
-│   │   │       ├── META-INF
-│   │   │       ├── public
-│   │   │       └── templates
-│   │   │           ├── fragments
-│   │   │           ├── layout
-│   │   │           ├── login
-│   │   │           ├── mock
-│   │   │           │   └── shinny-data-lake
-│   │   │           │       └── 1115-validate
-│   │   │           └── page
-│   │   │               └── interactions
-│   │   ├── site
-│   │   │   └── markdown
-│   │   └── test
-│   │       └── java
-│   │           └── org
-│   │               └── Tech by Design
-│   │                   ├── orchestrate
-│   │                   │   └── fhir
-│   │                   ├── service
-│   │                   │   └── http
-│   │                   │       └── hub
-│   │                   └── util
-│   └── target
-|
-└── udi-prime
-    ├── lib
-    ├── src
-    │   ├── main
-    │   │   └── postgres
-    │   │       └── ingestion-center
-    │   └── test
-    │       └── postgres
-    │           └── ingestion-center
-    ├── support
-    │   └── jooq
-    │       └── lib
-    └── target
+├── api-automation/                   # TypeScript/Playwright API test automation and validation
+│   ├── sections/                     # Request and validation sections
+│   │   └── request_validate_data.ts
+│   ├── testdata/                     # Test data and fixtures
+│   │   ├── expectedValidationIssues.ts
+│   │   └── FHIR-Data/
+│   ├── tests/                        # Test cases
+│   │   ├── FHIR-BundleNegative.test.ts
+│   │   └── FHIR-BundlePositive.test.ts
+│   └── utils/                        # Testing utilities
+│       └── logger-util.ts
+│
+├── core-lib/                         # Shared Java core library for common utilities and components
+│   ├── src/
+│   │   ├── main/
+│   │   │   └── java/
+│   │   └── test/
+│   │       └── java/
+│   └── lib/                          # External dependencies
+│
+├── csv-service/                      # Java service for CSV file processing and transformation
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── org/techbd/
+│   │   │   └── resources/
+│   │   └── test/
+│   │       └── java/
+│   └── lib/                          # External dependencies
+│
+├── fhir-validation-service/          # Java service for FHIR compliance validation
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── org/techbd/
+│   │   │   └── resources/
+│   │   └── test/
+│   │       └── java/
+│   └── lib/                          # External dependencies
+│
+├── hub-prime/                        # Primary Spring Boot FHIR API hub and UI application
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── org/techbd/
+│   │   │   │       ├── conf/        # Configuration classes
+│   │   │   │       ├── controller/  # REST controllers
+│   │   │   │       ├── orchestrate/ # FHIR and SFTP orchestration
+│   │   │   │       │   ├── fhir/
+│   │   │   │       │   └── sftp/
+│   │   │   │       ├── service/     # Business logic services
+│   │   │   │       │   ├── http/
+│   │   │   │       │   │   ├── filter/     # Security and request filters
+│   │   │   │       │   │   ├── hub/        # Hub-specific logic
+│   │   │   │       │   │   └── *.java      # Config, constants, security
+│   │   │   │       │   └── *.java
+│   │   │   │       └── util/        # Utility helpers
+│   │   │   └── resources/
+│   │   │       ├── META-INF/
+│   │   │       ├── public/          # Static web assets
+│   │   │       └── templates/       # Thymeleaf templates
+│   │   │           ├── fragments/
+│   │   │           ├── layout/
+│   │   │           ├── login/
+│   │   │           ├── mock/        # Mock data templates
+│   │   │           └── page/        # Page templates
+│   │   ├── site/
+│   │   │   └── markdown/
+│   │   └── test/
+│   │       └── java/
+│   │           └── org/techbd/
+│   │               ├── orchestrate/ # Tests for orchestration
+│   │               ├── service/     # Tests for services
+│   │               └── util/        # Tests for utilities
+│   └── lib/                         # External dependencies
+│
+├── integration-artifacts/            # Integration configurations, scripts, and templates for various data formats
+│   ├── aws-queue-listener/          # AWS SQS integration
+│   ├── ccda/                        # CCDA format templates
+│   ├── custom-lib/                  # Custom libraries
+│   ├── fhir/                        # FHIR-specific artifacts
+│   ├── flatfile/                    # Flat file processing templates
+│   ├── global-scripts/              # Shared integration scripts
+│   ├── hl7v2/                       # HL7v2 format templates
+│   └── lookup-manager/              # Lookup table management
+│
+├── nexus-core-lib/                   # Nexus-specific core library shared across nexus services
+│   ├── src/
+│   │   ├── main/
+│   │   │   └── java/
+│   │   └── test/
+│   │       └── java/
+│   └── lib/
+│
+├── nexus-ingestion-api/              # Nexus ingestion API service
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── org/techbd/
+│   │   │   └── resources/
+│   │   └── test/
+│   │       └── java/
+│   └── lib/
+│
+├── support/                          # Supporting tools, documentation, and non-production work products
+│   ├── bin/                         # Utility scripts and binaries
+│   ├── containers/                  # Docker and container configs
+│   ├── nyec-ig-version/             # NYEC IG versioning tools
+│   ├── qualityfolio/                # Quality metrics and dashboards
+│   ├── release-notes/               # Release documentation
+│   ├── service/                     # Service-level tools
+│   ├── specifications/              # Technical specifications
+│   └── testcases/                   # Manual test cases
+│
+├── test-automation/                  # Test automation scripts for smoke testing and QA
+│   ├── FHIR-Bundle-SmokeTest-Devl/
+│   ├── FHIR-Bundle-SmokeTest-PHI-QA/
+│   ├── FHIR-Bundle-SmokeTest-Stage/
+│   ├── CCDA-Bundle-SmokeTest-PHI-QA/
+│   ├── CCDA-Bundle-SmokeTest-Stage/
+│   ├── CSV-Bundle-SmokeTest-PHI-QA/
+│   ├── CSV-Bundle-SmokeTest-Stage/
+│   ├── HL7-Bundle-SmokeTest-PHI-QA/
+│   └── HL7-Bundle-SmokeTest-Stage/
+│
+└── udi-prime/                        # UDI ingestion center with PostgreSQL database and jOOQ code generation
+    ├── src/
+    │   ├── main/
+    │   │   └── postgres/            # PostgreSQL DDL scripts
+    │   │       └── ingestion-center/
+    │   └── test/
+    │       └── postgres/
+    │           └── ingestion-center/
+    ├── support/
+    │   └── jooq/                    # jOOQ code generation
+    │       └── lib/
+    └── lib/                         # External dependencies
 ```
 
-### Project: Tech by Design Primary Hub
+### Core Projects
 
-The `hub-prime` project is a Java Spring Boot application which serves FHIR API
-endpoints.
+#### hub-prime
+Primary Spring Boot 3.3+ FHIR API hub application with Thymeleaf UI and HTMX interactions. Handles FHIR bundle ingestion, validation, and API endpoints.
 
-#### Project Setup
+#### udi-prime
+UDI (Unified Data Intake) ingestion center with PostgreSQL backend. Uses jOOQ for type-safe SQL operations and includes database migrations and code generation.
 
-To set up the `Tech by Design Hub` project, follow these steps:
+#### nexus-ingestion-api
+Nexus-specific ingestion API service for data integration and processing.
+
+### Supporting Services
+
+#### csv-service
+Java-based service for CSV file processing, validation, and transformation to standard formats.
+
+#### fhir-validation-service
+Dedicated FHIR compliance validation service that validates data against FHIR specifications.
+
+### Shared Libraries
+
+#### core-lib
+Shared Java library containing common utilities, models, and components used across multiple services.
+
+#### nexus-core-lib
+Nexus-specific core library with shared functionality for nexus-related services.
+
+### Testing & Automation
+
+#### api-automation
+TypeScript/Playwright-based API automation framework for testing REST endpoints and validating responses.
+
+#### test-automation
+Smoke test automation suites for different environments (Development, QA, Stage, Production) across FHIR, HL7, CCDA, and CSV bundles.
+
+### Integration & Scripts
+
+#### integration-artifacts
+Contains integration configurations, global scripts, and templates for various data formats (FHIR, HL7v2, CCDA, Flatfile, etc.)
+
+#### support
+Supporting work products including documentation, specifications, release notes, testing tools, and non-production utilities.
+
+## Project Setup
+
+To set up the **Tech by Design Polyglot Prime** monorepo, follow these steps:
 
 1. **Clone the Repository**:
    ```bash
@@ -121,39 +240,28 @@ To set up the `Tech by Design Hub` project, follow these steps:
    direnv allow               # apply the env vars
    cp .envrc.example .envrc   # assume the use of direnv
    vi .envrc                  # make sure to store secrets in ENV or Vault, not in Git
-   cd hub-prime
    ```
 
-2. **Build the Project**:
+2. **Build `hub-prime` with all dependenvy modules**:
    ```bash
    mvn clean install
    ```
 
-3. **Run the Application**:
+3. **Run the Primary Hub Application**:
    ```bash
+   cd hub-prime
    mvn spring-boot:run
    ```
 
 4. **Access the Application**: Open your browser and navigate to
    `http://localhost:8080`.
 
-### Shared Libraries
+## Development Workflow
 
-- `lib`: Contains reusable utility functions and classes that can be used across
-  different projects.
+Each top-level directory is a separate Maven module or project. Here's the recommended workflow:
 
-### Supporting Work Products
+1. Make changes to your specific project
+2. Run tests: `mvn test` in the project directory
+3. Build the project: `mvn clean install`
+4. For integration changes, rebuild the entire monorepo: `mvn clean install` from root
 
-- `support` contains all work products that _support_ the above but do not make
-  their way into production
-
-
-<!-- Security scan triggered at 2025-09-01 23:56:56 -->
-
-<!-- Security scan triggered at 2025-09-02 00:52:44 -->
-
-<!-- Security scan triggered at 2025-09-02 02:22:57 -->
-
-<!-- Security scan triggered at 2025-09-02 15:47:44 -->
-
-<!-- Security scan triggered at 2025-09-02 15:51:26 -->

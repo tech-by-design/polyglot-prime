@@ -15,12 +15,12 @@ HL7v2 schemas and XSLT files are essential for:
 |--------------------------|---------------------------------------|
 | hl7v2-fhir-bundle.xslt   | XSLT for transforming HL7v2 to FHIR   |
 | hl7v2-validation-schema  | XSLT for validating the HL7 file      |
-| TechBD HL7 Workflow.xml  | TechBD HL7 workflow definition        |
 
 ## 🔗 Related Documentation
 
 - [HL7v2 Channel Files](../hl7-techbd-channel-files/mirth-connect/README.md)
-- [HL7v2 Nexus Channels](../hl7-techbd-channel-files/nexus/README.md)
+- [HL7v2 Nexus Channels](../hl7-techbd-channel-files/nexus-sandbox/README.md)
+- [HL7v2 Nexus Channels (Old implementation)](../hl7-techbd-channel-files/nexus/README.md)
 - [Integration Artifacts Index](../../README.md)
 
 ---
