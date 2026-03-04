@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public enum SourceType {
     FHIR,
     CSV,
-    HL7,
+    HL7V2,
     CCDA;
 
     public static List<SourceType> getAllSourceTypes() {
