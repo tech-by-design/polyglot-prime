@@ -13,26 +13,28 @@ CCDA schemas define the structure and constraints for clinical documents exchang
 
 All schema files in this folder are referenced by integration channels and validation tools. Please do not modify these files unless you are updating to a new CCDA specification or patching a known issue.
 
-## � File List
+## 📋 File List
 
-| File Name                         | Description (if known)                |
-|---------------------------------- |---------------------------------------|
-| CDA.xsd                           | Core CCDA schema                      |
-| CDA.xsl                           | XSL stylesheet for CCDA               |
-| NarrativeBlock.xsd                | Narrative block schema                |
-| POCD_MT000040.xsd                 | Main CCDA document schema             |
-| cda-fhir-bundle-epic.xslt         | XSLT for FHIR bundle (Epic)           |
-| cda-fhir-bundle-medent.xslt       | XSLT for FHIR bundle (Medent)         |
-| cda-fhir-bundle-athenahealth.xslt | XSLT for FHIR bundle (AthenaHealth)   |
-| cda-fhir-bundle.xslt              | XSLT for FHIR bundle                  |
-| cda-phi-filter-epic.xslt          | XSLT for PHI filtering (Epic)         |
-| cda-phi-filter-medent.xslt        | XSLT for PHI filtering (Medent)       |
-| cda-phi-filter-athenahealth.xslt  | XSLT for PHI filtering (AthenaHealth) |
-| cda-phi-filter.xslt               | XSLT for PHI filtering                |
-| datatypes-base.xsd                | Datatypes base schema                 |
-| datatypes.xsd                     | Datatypes schema                      |
-| sdtc.xsd                          | SDTC schema extension                 |
-| voc.xsd                           | Vocabulary schema                     |
+**Total Files**: 16 schema/transformation files
+
+| File Name                         | Description                                                      |
+|-----------------------------------|------------------------------------------------------------------|
+| CDA.xsd                           | Core CCDA schema defining the root ClinicalDocument structure   |
+| CDA.xsl                           | XSL stylesheet for CCDA document rendering                       |
+| NarrativeBlock.xsd                | Schema for human-readable narrative sections                     |
+| POCD_MT000040.xsd                 | Main CCDA document schema with message type definitions          |
+| cda-fhir-bundle.xslt              | Default XSLT template for CCDA to FHIR Bundle conversion         |
+| cda-fhir-bundle-athenahealth.xslt | AthenaHealth-specific XSLT for FHIR Bundle conversion            |
+| cda-fhir-bundle-epic.xslt         | Epic-specific XSLT for FHIR Bundle conversion                    |
+| cda-fhir-bundle-medent.xslt       | Medent-specific XSLT for FHIR Bundle conversion                  |
+| cda-phi-filter.xslt               | Default XSLT template for PHI filtering                          |
+| cda-phi-filter-athenahealth.xslt  | AthenaHealth-specific XSLT for PHI filtering                     |
+| cda-phi-filter-epic.xslt          | Epic-specific XSLT for PHI filtering                             |
+| cda-phi-filter-medent.xslt        | Medent-specific XSLT for PHI filtering                           |
+| datatypes-base.xsd                | Base datatypes schema for CCDA elements                          |
+| datatypes.xsd                     | Extended datatypes schema with clinical data types               |
+| sdtc.xsd                          | Structured Data Capture (SDTC) schema extension                  |
+| voc.xsd                           | Vocabulary and code system schema definitions                    |
 
 
 ## �🔗 Related Documentation
