@@ -142,7 +142,7 @@ public class FHIRService {
 				final String bundleId = FHIRUtil.extractBundleId(payload, tenantId);
 			if (!SourceType.CSV.name().equalsIgnoreCase(source)
 					&& !SourceType.CCDA.name().equalsIgnoreCase(source)
-					&& !SourceType.HL7.name().equalsIgnoreCase(source)) {
+					&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
 					dataLedgerPayload = DataLedgerPayload.create(DataLedgerApiClient.Actor.TECHBD.getValue(),
