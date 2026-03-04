@@ -2,9 +2,9 @@
   <id>1a3e2129-62fc-4fac-95ec-181bf03616ad</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.18
-Added support for the X-TechBD-Part2 header to enable Part 2 request handling.</description>
-  <revision>18</revision>
+  <description>Version 0.5.19
+Resolved the DL issue for CCDA.</description>
+  <revision>27</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2321,7 +2321,8 @@ else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/cc
 	    });
 		
 		// Check if tracking is enabled
-		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+		var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
 		    logger.info(&quot;data ledger api call -BEGIN received&quot;);
 		    try {
@@ -3030,7 +3031,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772527039672</time>
+        <time>1772603140853</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3041,15 +3042,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>83ea81fc-26f9-434c-a8c3-849860803ad1</id>
-        <name>0_5_18</name>
+        <id>3a1218e4-dc26-4f12-9c3c-edd3ee8ac286</id>
+        <name>0_5_19</name>
         <channelIds>
-          <string>45323440-0d40-433d-a655-d65b28f795d9</string>
           <string>1a3e2129-62fc-4fac-95ec-181bf03616ad</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>128</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
