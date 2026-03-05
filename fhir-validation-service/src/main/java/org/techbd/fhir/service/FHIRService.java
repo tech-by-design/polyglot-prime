@@ -42,6 +42,8 @@ import org.techbd.fhir.feature.FeatureEnum;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
 import org.techbd.fhir.service.engine.OrchestrationEngine.Device;
 import org.techbd.fhir.util.FHIRUtil;
+import org.techbd.udi.auto.jooq.ingress.routines.GetNyecSubmissionFailedBundles;
+import org.techbd.udi.auto.jooq.ingress.routines.GetOperationOutcomeSendToNyec;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionFhirRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -1034,4 +1036,134 @@ public class FHIRService {
 			return action;
 		}
 	}
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getFailedNyecSubmissionBundles(
+            final OffsetDateTime startDate,
+            final OffsetDateTime endDate,final String tenantId,boolean includeDetails) {
+
+        LOG.info("Fetching failed NYEC submission bundles | startDate={} | endDate={}",
+                startDate, endDate);
+
+        try {
+            final var jooqCfg = primaDslContext.configuration();
+            final var getNyecSubmissionFailedBundles = new GetNyecSubmissionFailedBundles();
+            getNyecSubmissionFailedBundles.setPStartTime(startDate);
+            getNyecSubmissionFailedBundles.setPEndTime(endDate);
+            getNyecSubmissionFailedBundles.setPTenantId(tenantId);
+            getNyecSubmissionFailedBundles.setPIncludedetails(Boolean.valueOf(includeDetails));
+            int executeResult = getNyecSubmissionFailedBundles.execute(jooqCfg);
+            LOG.info("Executed stored procedure GetNyecSubmissionFailedBundles | startDate={} | endDate={} | executeResult={}",
+                    startDate, endDate, executeResult);
+            final var responseJson = (JsonNode) getNyecSubmissionFailedBundles.getReturnValue();
+            if (responseJson == null || responseJson.isEmpty()) {
+                LOG.warn("No failed NYeC submission bundles found | startDate={} | endDate={}",
+                        startDate, endDate);
+                return Map.of(
+                        "bundle_count", 0,
+                        "bundles", "\"No failed NYeC submission bundles found in the specified date range.\"");
+            }
+            final Map<String, Object> response = Configuration.objectMapper.convertValue(responseJson, Map.class);
+            LOG.info("FHIR-REPLAY Found {} failed NYeC submission bundles",
+                    response.getOrDefault("bundle_count", 0));
+           
+            if (response.getOrDefault("bundle_count", 0).equals(0)) {
+                LOG.warn("No failed NYeC submission bundles found | startDate={} | endDate={}",
+                        startDate, endDate);
+                return Map.of(
+                        "bundle_count", 0,
+                        "bundles", "No failed NYeC submission bundles found in the specified date range.\"");
+            }        
+            return response;
+        } catch (Exception e) {
+            LOG.error("Error fetching failed NYeC submission bundles | startDate={} | endDate={} : {}",
+                    startDate, endDate, e.getMessage(), e);
+            throw new RuntimeException("Failed to fetch failed NYEC submission bundles", e);
+        }
+    }
+
+
+    @SuppressWarnings("unchecked")
+    public Object getOperationOutcomeSendToNyec(
+            final String interactionId,
+            final String bundleId,
+            final String tenantId) {
+
+        LOG.info("Fetching operation outcome send to NYEC | interactionId={} | bundleId={} | tenantId={}",
+                interactionId, bundleId, tenantId);
+
+        try {
+            final var jooqCfg = primaDslContext.configuration();
+            final var getOperationOutcomeSendToNyec = new GetOperationOutcomeSendToNyec();
+
+            getOperationOutcomeSendToNyec.setPInteractionId(interactionId);
+            getOperationOutcomeSendToNyec.setPBundleId(bundleId);
+            getOperationOutcomeSendToNyec.setPTenantId(tenantId);
+
+            int executeResult = getOperationOutcomeSendToNyec.execute(jooqCfg);
+            LOG.info("Executed stored procedure GetOperationOutcomeSendToNyec | interactionId={} | bundleId={} | tenantId={} | executeResult={}",
+                    interactionId, bundleId, tenantId, executeResult);
+            final var responseJson = (JsonNode) getOperationOutcomeSendToNyec.getReturnValue();
+
+            if (responseJson == null || responseJson.isEmpty()) {
+                LOG.warn("No operation outcome found | interactionId={} | bundleId={} | tenantId={}",
+                        interactionId, bundleId, tenantId);
+                return Map.of(
+                        "message", "No operation outcome found for the specified parameters.");
+            }
+
+            // Check if response is an array or object
+            if (responseJson.isArray()) {
+                final List<Map<String, Object>> response = Configuration.objectMapper.convertValue(
+                        responseJson,
+                        new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+                        });
+                LOG.info("Successfully retrieved operation outcome array | interactionId={} | bundleId={} | count={}",
+                        interactionId, bundleId, response.size());
+                return response;
+            } else {
+                final Map<String, Object> response = Configuration.objectMapper.convertValue(responseJson, Map.class);
+                LOG.info("Successfully retrieved operation outcome | interactionId={} | bundleId={}",
+                        interactionId, bundleId);
+                return response;
+            }
+        } catch (org.jooq.exception.DataAccessException e) {
+            LOG.error("Database error fetching operation outcome | interactionId={} | bundleId={} | tenantId={} : {}",
+                    interactionId, bundleId, tenantId, e.getMessage(), e);
+
+            // Check if the cause is a PSQLException
+            if (e.getCause() instanceof org.postgresql.util.PSQLException) {
+                final var psqlException = (org.postgresql.util.PSQLException) e.getCause();
+                final String errorMessage = psqlException.getMessage();
+
+                if (errorMessage != null && errorMessage.contains("{")) {
+                    try {
+                        final String jsonPart = errorMessage.substring(errorMessage.indexOf("{"));
+                        final JsonNode errorJson = Configuration.objectMapper.readTree(jsonPart);
+                        return Configuration.objectMapper.convertValue(errorJson, Map.class);
+                    } catch (Exception jsonEx) {
+                        LOG.warn("Failed to parse JSON from PostgreSQL error message", jsonEx);
+                    }
+                }
+            }
+
+            return Map.of(
+                    "error", Map.of(
+                            "message", e.getMessage() != null ? e.getMessage() : "Database access error occurred",
+                            "interactionId", interactionId != null ? interactionId : "",
+                            "bundleId", bundleId != null ? bundleId : "",
+                            "tenantId", tenantId != null ? tenantId : ""));
+        } catch (Exception e) {
+            LOG.error("Error fetching operation outcome | interactionId={} | bundleId={} | tenantId={} : {}",
+                    interactionId, bundleId, tenantId, e.getMessage(), e);
+
+            return Map.of(
+                    "error", Map.of(
+                            "message", e.getMessage() != null ? e.getMessage() : "Unknown error occurred",
+                            "interactionId", interactionId != null ? interactionId : "",
+                            "bundleId", bundleId != null ? bundleId : "",
+                            "tenantId", tenantId != null ? tenantId : ""));
+        }
+    }
+  
 }

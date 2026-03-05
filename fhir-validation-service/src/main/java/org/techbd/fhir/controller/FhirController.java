@@ -5,7 +5,13 @@ import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,6 +57,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.format.DateTimeParseException;
 
 @Controller
 @Tag(name = "Tech by Design Hub FHIR Endpoints", description = "Tech by Design Hub FHIR Endpoints")
@@ -231,6 +238,142 @@ public class FhirController {
                         Thread.currentThread().interrupt();
                         return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
+        }
+
+        @GetMapping(value = { "/Bundles/status/nyec-submission-failed", "/Bundles/status/nyec-submission-failed/" })
+        @Operation(summary = "Retrieve FHIR Bundles that failed NYEC submission", description = """
+                        Fetches bundles that failed NYEC submission within the specified date/datetime range.
+                        Optionally filter by tenant ID.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved failed bundles."),
+                        @ApiResponse(responseCode = "400", description = "Invalid or missing parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getFailedNyecSubmissions(
+                        @RequestHeader("X-TechBD-StartDate") String startDateStr,
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        @RequestHeader(value = "X-TechBD-IncludeDetails", required = false) boolean includeDetails,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+
+                try {
+                        if (startDateStr.equals(endDateStr)) {
+                                throw new IllegalArgumentException(
+                                                "startDate cannot be same as endDate for requestId: " + requestId);
+                        }
+                        OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
+                        OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
+
+                        // Validate date range
+                        if (endDate.isBefore(startDate)) {
+                                throw new IllegalArgumentException(
+                                                "endDate cannot be before startDate for requestId: " + requestId);
+                        }
+
+                        LOG.info("Fetching failed NYEC submissions from {} to {} for requestId {} | tenantId={}",
+                                        startDate, endDate, requestId, tenantId != null ? tenantId : "ALL");
+                        return fhirService.getFailedNyecSubmissionBundles(
+                                        startDate,
+                                        endDate,tenantId,includeDetails);
+
+                } catch (DateTimeParseException e) {
+                        LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for requestId {}",
+                                        startDateStr, endDateStr, requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message",
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                                        "requestId", requestId.toString());
+                } catch (IllegalArgumentException e) {
+                        LOG.error("Validation error for requestId {}: {}", requestId, e.getMessage());
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", e.getMessage(),
+                                        "requestId", requestId.toString());
+                } catch (Exception e) {
+                        LOG.error("Unexpected error fetching failed NYEC submissions for requestId {}", requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", "An unexpected error occurred while fetching failed submissions",
+                                        "requestId", requestId.toString());
+                }
+        }          
+     
+        @GetMapping(value = { "/Bundles/status/operation-outcome", "/Bundles/status/operation-outcome/" })
+        @Operation(summary = "Retrieve OperationOutcome(s) for a Bundle or Interaction", description = """
+                        Fetches OperationOutcome resources for a given Bundle ID or Interaction ID.
+                        Exactly ONE of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved OperationOutcome(s)."),
+                        @ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getOperationOutcomes(
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = true) String tenantId,
+                        @RequestHeader(value = "X-TechBD-Bundle-ID", required = false) String bundleId,
+                        @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+                if (tenantId == null || tenantId.isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. TenantId is required.");
+                }
+                if (bundleId == null && interactionId == null) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. Either bundleId or interactionId is required.");
+                }
+
+                LOG.info(
+                                "Fetching OperationOutcome(s) for requestId={} | tenantId={} | bundleId={} | interactionId={}",
+                                requestId,
+                                tenantId != null ? tenantId : "ALL",
+                                bundleId,
+                                interactionId);
+                return fhirService.getOperationOutcomeSendToNyec(interactionId, bundleId, tenantId);
+        }
+
+         private OffsetDateTime parseFlexibleDate(String input, boolean isStart) {
+                if (input == null || input.isBlank()) {
+                        throw new IllegalArgumentException("Date value cannot be null or empty");
+                }
+
+                List<DateTimeFormatter> formatters = List.of(
+                                DateTimeFormatter.ISO_OFFSET_DATE_TIME, // 2025-09-09T16:16:42.248+05:30
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS Z"), // 2025-09-09 16:16:42.248
+                                                                                          // +0530
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 2025-09-09 16:16:42
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd") // 2025-09-09
+                );
+
+                for (DateTimeFormatter fmt : formatters) {
+                        try {
+                                TemporalAccessor ta = fmt.parse(input);
+
+                                if (ta.isSupported(ChronoField.OFFSET_SECONDS)) {
+                                        // Input has timezone info
+                                        return OffsetDateTime.from(ta).withOffsetSameInstant(ZoneOffset.UTC);
+                                } else if (ta.isSupported(ChronoField.HOUR_OF_DAY)) {
+                                        // Date + time but no zone: assume UTC
+                                        return OffsetDateTime.parse(input + "Z",
+                                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSS]X"));
+                                } else {
+                                        // Date only: start or end of day in UTC
+                                        return isStart
+                                                        ? OffsetDateTime.parse(input + "T00:00:00Z")
+                                                        : OffsetDateTime.parse(input + "T23:59:59.999999999Z");
+                                }
+                        } catch (DateTimeParseException ignored) {
+                                // try next
+                        }
+                }
+                throw new DateTimeParseException("Unrecognized date format", input, 0);
         }
 
         private void deleteJSessionCookie(HttpServletRequest request, HttpServletResponse response) {
