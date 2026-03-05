@@ -1,4 +1,4 @@
-# BridgeLink Channel: TechBD CCD Workflow
+# Mirth Connect Channel: TechBD CCD Workflow
 
 This folder contains one Mirth Connect channel export: `TechBD CCD Workflow`. The channel handles CCDA ingestion on one listener and routes traffic to either validation-only processing or conversion-and-submission processing.
 
