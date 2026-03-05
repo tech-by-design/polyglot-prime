@@ -1,6 +1,6 @@
 # BridgeLink Channels: FlatFileCsvBundle & FlatFileCsvBundleValidate
 
-This repository contains two BridgeLink/Mirth Connect channels for handling and validating zipped CSV files containing FHIR data. These channels process flat files (CSV format) and convert them into FHIR Bundles.
+This repository contains two BridgeLink channels for handling and validating zipped CSV files containing FHIR data. These channels process flat files (CSV format) and convert them into FHIR Bundles.
 
 ---
 
@@ -84,7 +84,6 @@ This repository contains two BridgeLink/Mirth Connect channels for handling and 
 | **Port** | 9004 | 9005 |
 | **HTTP Method** | POST | POST |
 | **Context Paths** | `/`, `/healthcheck`, `/flatfile/csv/Bundle` | `/`, `/healthcheck`, `/flatfile/csv/Bundle/$validate` |
-| **Mirth Version** | 4.6.1 | 4.6.1 |
 | **Required Headers** | X-TechBD-Tenant-ID, Content-Type | X-TechBD-Tenant-ID, Content-Type |
 | **Optional Headers** | X-TechBD-DataLake-API-URL, X-TechBD-BL-BaseURL, X-TechBD-Base-FHIR-URL, X-TechBD-Validation-Severity-Level | X-TechBD-Validation-Severity-Level |
 | **Zip File Validation** | Must contain ≥1 CSV file | Must contain ≥1 CSV file |
@@ -113,7 +112,7 @@ This repository contains two BridgeLink/Mirth Connect channels for handling and 
 
 ## 🚀 Deployment Notes
 
-- **Mirth Connect Version**: 4.6.1
+- **BridgeLink Version**: 4.6.1
 - **Channels Start State**: Configured to deploy (check channel deployment settings)
 - **Processing Threads**: 1 per channel
 - **Queue Buffer Size**: 1000 messages
@@ -220,9 +219,9 @@ curl -X GET http://localhost:9005/healthcheck
 
 ## Requirements
 
-- **Mirth Connect**: Version 4.6.1 or higher
-- **Java Runtime**: Compatible with Mirth Connect 4.6.1
-- **Dependencies**: Apache HttpClient libraries (included with Mirth)
+- **BridgeLink**: Version 4.6.1 or higher
+- **Java Runtime**: Compatible with BridgeLink 4.6.1
+- **Dependencies**: Apache HttpClient libraries (included with BridgeLink)
 - **Environment**: Nexus Sandbox or compatible environment
 - **Lookup Manager**: Configured with required lookup values (for FlatFileCsvBundle)
 

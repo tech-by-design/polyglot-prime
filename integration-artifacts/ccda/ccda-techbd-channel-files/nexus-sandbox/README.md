@@ -1,9 +1,9 @@
 # TechBD CCD Workflow Channel
 
 **Channel Name**: TechBD CCD Workflow  
-**Mirth Connect Version**: 4.6.1
+**BridgeLink Version**: 4.6.1
 
-This Mirth Connect channel provides a unified workflow for processing and validating CCDA (Consolidated Clinical Document Architecture) documents in the Nexus Sandbox environment. It handles CCDA validation, PHI filtering, FHIR Bundle conversion, and database persistence with comprehensive error handling.
+This BridgeLink channel provides a unified workflow for processing and validating CCDA (Consolidated Clinical Document Architecture) documents in the Nexus Sandbox environment. It handles CCDA validation, PHI filtering, FHIR Bundle conversion, and database persistence with comprehensive error handling.
 
 ---
 
@@ -112,7 +112,7 @@ Connection details are retrieved from Lookup Manager (`Config-sensitive` group):
 
 ## 🔐 Configuration via Lookup Manager
 
-The channel uses Mirth Connect's Lookup Manager for dynamic configuration management. All configurations are cached for 20-24 hours.
+The channel uses BridgeLink's Lookup Manager for dynamic configuration management. All configurations are cached for 20-24 hours.
 
 ### Configuration Groups
 
@@ -280,7 +280,7 @@ All errors are returned as FHIR `OperationOutcome` JSON:
 
 ## 🚀 Deployment Requirements
 
-### Mirth Connect
+### BridgeLink
 - **Version**: 4.6.1 or higher
 - **Required Libraries**:
   - PostgreSQL JDBC driver
@@ -345,6 +345,6 @@ curl -X POST http://localhost:8080/ccda/Bundle \
 
 - CCDA Schema: [HL7 CDA Release 2](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7)
 - FHIR Specification: [HL7 FHIR R4](https://www.hl7.org/fhir/)
-- Mirth Connect Documentation: [NextGen Connect](https://github.com/nextgenhealthcare/connect)
+- BridgeLink Documentation: [Innovar BridgeLink](https://github.com/Innovar-Healthcare/BridgeLink)
 
 ---

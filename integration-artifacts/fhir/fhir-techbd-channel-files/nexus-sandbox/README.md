@@ -1,6 +1,6 @@
 # BridgeLink Channels: FhirBundlleSubmission & FhirBundlleValidation
 
-This repository contains two BridgeLink/Mirth Connect channels used for handling and validating FHIR `Bundle` resources. These channels are implemented using version **4.6.1** of Mirth Connect.
+This repository contains two BridgeLink channels used for handling and validating FHIR `Bundle` resources. These channels require BridgeLink version **4.6.1** or higher, as Lookup Manager is used.
 
 ---
 
@@ -86,7 +86,6 @@ This repository contains two BridgeLink/Mirth Connect channels used for handling
 | **Port** | 9000 | 9001 |
 | **HTTP Method** | POST | POST |
 | **Context Paths** | `/`, `/healthcheck`, `/Bundle` | `/`, `/healthcheck`, `/Bundle/$validate` |
-| **Mirth Version** | 4.6.1 | 4.6.1 |
 | **Required Headers** | X-TechBD-Tenant-ID | X-TechBD-Tenant-ID |
 | **Optional Headers** | X-TechBD-Interaction-ID, X-Correlation-ID, X-TechBD-Group-Interaction-ID, X-TechBD-Master-Interaction-ID, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version, X-TechBD-Elaboration, X-TechBD-DataLake-API-URL | X-TechBD-Interaction-ID, X-Correlation-ID, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version, X-TechBD-Elaboration |
 | **Query Parameters** | source (required) | source (optional) |
@@ -117,7 +116,7 @@ This repository contains two BridgeLink/Mirth Connect channels used for handling
 
 ## 🚀 Deployment Notes
 
-- **Mirth Connect Version**: 4.6.1
+- **BridgeLink Version**: 4.6.1
 - **Channels Start State**: Configured to deploy (check channel deployment settings)
 - **Processing Threads**: 1 per channel
 - **Queue Buffer Size**: 1000 messages
@@ -260,11 +259,11 @@ Both channels perform similar preprocessing:
 
 ## Requirements
 
-- **Mirth Connect**: Version 4.6.1 or higher
-- **Java Runtime**: Compatible with Mirth Connect 4.6.1
+- **BridgeLink**: Version 4.6.1 or higher
+- **Java Runtime**: Compatible with BridgeLink 4.6.1
 - **Database**: PostgreSQL (for FhirBundlleSubmission)
 - **Dependencies**: 
-  - Apache HttpClient libraries (included with Mirth)
+  - Apache HttpClient libraries (included with BridgeLink)
   - PostgreSQL JDBC driver
   - AWS SDK (if using Secrets Manager - currently commented out)
 - **Environment**: Nexus Sandbox or compatible environment

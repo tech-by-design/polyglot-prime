@@ -102,6 +102,54 @@ aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 ls
 aws --endpoint-url=$LOCALSTACK_ENDPOINT sqs list-queues
 ```
 
+### Combined sample commands for local
+
+```bash
+docker compose up -d
+
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+export LOCALSTACK_ENDPOINT=http://localhost:4566
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://pem-bucket
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp ./cert/txd-bundle.pem s3://pem-bucket/
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp s3://pem-bucket/txd-bundle.pem ./txd-bundle-download.pem
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp ./cert/sbx/txd-sbx-bundle.pem s3://pem-bucket/
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp s3://pem-bucket/txd-sbx-bundle.pem ./txd-sbx-bundle.pem-download.pem
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-sbx-nexus-ingestion-s3-bucket
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-sbx-nexus-ingestion-s3-metadata-bucket
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-pdr-txd-sbx-hold
+
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 mb s3://local-pdr-txd-sbx-temp
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp ./list.json s3://local-pdr-txd-sbx-temp/port-config/
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT s3 cp s3://local-pdr-txd-sbx-temp/port-config/list.json ./list-download.json
+
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT sqs create-queue \
+  --queue-name txd-sbx-ccd-queue.fifo \
+  --attributes FifoQueue=true,ContentBasedDeduplication=true
+  
+aws --endpoint-url=$LOCALSTACK_ENDPOINT sqs create-queue \
+  --queue-name txd-sbx-hold-queue.fifo \
+  --attributes FifoQueue=true,ContentBasedDeduplication=true
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT sqs create-queue \
+  --queue-name txd-sbx-main-queue.fifo \
+  --attributes FifoQueue=true,ContentBasedDeduplication=true
+
+
+
+aws --endpoint-url=$LOCALSTACK_ENDPOINT secretsmanager create-secret \
+    --name hub_ui_url \
+    --description "hub_ui_url" \
+    --secret-string "http://localhost:8080"
+```
+
 ---
 ## 🔗 8.  Set up Environment
 

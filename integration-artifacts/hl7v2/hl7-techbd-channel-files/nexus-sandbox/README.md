@@ -1,9 +1,9 @@
 # TechBD HL7 Workflow Channel
 
 **Channel Name**: TechBD HL7 Workflow  
-**Mirth Connect Version**: 4.6.1
+**BridgeLink Version**: 4.6.1
 
-This Mirth Connect channel provides a unified workflow for processing and validating HL7v2 messages in the Nexus Sandbox environment. It handles HL7 validation, FHIR Bundle conversion, database persistence, and comprehensive error handling with Data Ledger tracking support.
+This BridgeLink channel provides a unified workflow for processing and validating HL7v2 messages in the Nexus Sandbox environment. It handles HL7 validation, FHIR Bundle conversion, database persistence, and comprehensive error handling with Data Ledger tracking support.
 
 ---
 
@@ -116,7 +116,7 @@ Connection details are retrieved from Lookup Manager (`Config-sensitive` group):
 
 ## 🔐 Configuration via Lookup Manager
 
-The channel uses Mirth Connect's Lookup Manager for dynamic configuration management. All configurations are cached for 20-24 hours.
+The channel uses BridgeLink's Lookup Manager for dynamic configuration management. All configurations are cached for 20-24 hours.
 
 ### Configuration Groups
 
@@ -277,7 +277,7 @@ All errors are returned as `OperationOutcome` JSON:
 
 ## 🚀 Deployment Requirements
 
-### Mirth Connect
+### BridgeLink
 - **Version**: 4.6.1 or higher
 - **Port**: 9006
 - **Required Libraries**:
@@ -364,7 +364,7 @@ OBX|1|ST|12345-6^Question^LN||Answer Text||||||F
 
 - HL7v2 Specification: [HL7 Version 2](http://www.hl7.org/implement/standards/product_brief.cfm?product_id=185)
 - FHIR Specification: [HL7 FHIR R4](https://www.hl7.org/fhir/)
-- Mirth Connect Documentation: [NextGen Connect](https://github.com/nextgenhealthcare/connect)
+- BridgeLink Documentation: [Innovar BridgeLink](https://github.com/Innovar-Healthcare/BridgeLink)
 - HL7 to FHIR Conversion: [FHIR HL7v2 Implementation Guide](https://build.fhir.org/ig/HL7/v2-to-fhir/)
 
 ---
