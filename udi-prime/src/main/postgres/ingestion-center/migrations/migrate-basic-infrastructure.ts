@@ -96,8 +96,8 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     tenant_id_lower: textNullable(),
-    uri: textNullable(),
-    nature: textNullable(),
+    uri: text(),
+    nature: text(),
     payload: jsonB,
     client_ip_address: textNullable(),
     user_agent: text(),
@@ -296,8 +296,8 @@ const interactionCsvRequestSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     tenant_id_lower: textNullable(),
-    uri: textNullable(),
-    nature: textNullable(),
+    uri: text(),
+    nature: text(),
     group_id: textNullable(),
     status: textNullable(),
     validation_result_payload: jsonbNullable(),
@@ -329,8 +329,8 @@ const interactionZipRequestSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     tenant_id_lower: textNullable(),
-    uri: textNullable(),
-    nature: textNullable(),
+    uri: text(),
+    nature: text(),
     group_id: textNullable(),
     status: textNullable(),
     csv_zip_file_name: textNullable(),
@@ -507,8 +507,8 @@ const interactionHl7RequestSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     tenant_id_lower: textNullable(),
-    uri: textNullable(),
-    nature: textNullable(),
+    uri: text(),
+    nature: text(),
     payload: jsonbNullable(),
     client_ip_address: textNullable(),
     user_agent: textNullable(),
@@ -534,8 +534,8 @@ const interactionCcdaRequestSat = interactionHub.satelliteTable(
       .hub_interaction_id(),
     tenant_id: text(),
     tenant_id_lower: textNullable(),
-    uri: textNullable(),
-    nature: textNullable(),
+    uri: text(),
+    nature: text(),
     payload: jsonbNullable(),
     ccda_payload_text: textNullable(),
     client_ip_address: textNullable(),
@@ -629,7 +629,7 @@ const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_er
   category: text(),
   flat_file_hub_interaction_id: textNullable(),
   tenant_id: textNullable(),
-  uri: textNullable(),
+  uri: text(),
   zip_file_hub_interaction_id: textNullable(),
   group_id: textNullable(),
   section: textNullable(),
@@ -659,7 +659,7 @@ const ccdaValidationErrorsSat = interactionHub.satelliteTable(
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
     tenant_id: text(),
-    uri: textNullable(),
+    uri: text(),
     error_type: textNullable(),
     error: textNullable(),
     file_name: textNullable(),
@@ -679,7 +679,7 @@ const hl7ValidationErrorsSat = interactionHub.satelliteTable(
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
     tenant_id: text(),
-    uri: textNullable(),
+    uri: text(),
     error_type: textNullable(),
     error: textNullable(),
     file_name: textNullable(),
@@ -863,14 +863,27 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;      
   
       IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema='techbd_udi_ingress'
-          AND table_name='sat_interaction_fhir_request'
-          AND column_name='is_bundle_valid'
-          AND is_nullable = 'NO'
-    ) THEN
-        EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN is_bundle_valid DROP NOT NULL';
-    END IF;   
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='techbd_udi_ingress'
+            AND table_name='sat_interaction_fhir_request'
+            AND column_name='is_bundle_valid'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN is_bundle_valid DROP NOT NULL';
+      END IF;   
+
+      /* -- Need to SET NOT NULL for nature column after backfilling the data with default values, which will be done in a separate migration to avoid long-running migration
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_http_request'
+            AND column_name = 'nature'
+            AND is_nullable = 'YES'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+          ALTER COLUMN nature SET NOT NULL;
+      END IF;*/
 
       ${diagnosticDataledgerSat}
       
