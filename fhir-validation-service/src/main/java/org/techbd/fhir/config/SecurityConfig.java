@@ -39,7 +39,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/Bundle/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/metadata").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/Bundle/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/Bundles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/metadata").permitAll()
                         // Feature toggle endpoints - allow all methods
                         .requestMatchers("/api/features/**").permitAll()
                         .requestMatchers("/feature").permitAll()
