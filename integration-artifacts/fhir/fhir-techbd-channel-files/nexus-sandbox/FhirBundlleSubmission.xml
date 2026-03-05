@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>56dc84a8-a6be-4eb5-9aa6-fb13898bd6f2</id>
+  <id>2013f1bd-0335-4d31-8e94-fbb35ee12c21</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.13
-Fixed validation message when invalid  X-TechBD-Validation-Severity-Level is passed</description>
-  <revision>4</revision>
+  <description>Version: 0.8.14
+Sets the correct request provenance in FhirBundlleSubmission channel.</description>
+  <revision>16</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2000,9 +2000,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE); // java.sql.Types.TIMESTAMP_WITH_TIMEZONE
 		
 		// 19. p_provenance
-		stmt.setNull(19, java.sql.Types.VARCHAR); //java.sql.Types.TIMESTAMP_WITH_TIMEZONE
-		//stmt.setTimestamp(18, java.sql.Timestamp.from(startTime));&#xd;
-		//stmt.setTimestamp(19, java.sql.Timestamp.from(endTime));
+		stmt.setString(19, &quot;channel:&quot; + channelName + &quot;, script:deploy&quot;);
 		
 		// 20. p_hub_upsert_behavior boolean
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
@@ -2195,7 +2193,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772530720553</time>
+        <time>1772686139573</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2206,14 +2204,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a6b715d0-f4a1-47fc-a66a-851bac05afce</id>
-        <name>0_8_13</name>
+        <id>fabe9705-9a80-4b70-8a6c-669465bac676</id>
+        <name>0_8_14</name>
         <channelIds>
-          <string>56dc84a8-a6be-4eb5-9aa6-fb13898bd6f2</string>
+          <string>2013f1bd-0335-4d31-8e94-fbb35ee12c21</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
