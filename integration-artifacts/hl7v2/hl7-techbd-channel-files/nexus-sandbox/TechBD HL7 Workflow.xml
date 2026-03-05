@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>f5506019-247f-49cd-af7c-6d275c3a11dd</id>
+  <id>5f59b6da-795d-4cf7-a521-f57eaf78ce8c</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.24
-Resolved HL7 validation failure caused by missing OBX-3.1 (Question Code) in OBX segment</description>
-  <revision>29</revision>
+  <description>Version: 0.1.25
+Correct validation when content type present with no file.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -33,7 +33,7 @@ Resolved HL7 validation failure caused by missing OBX-3.1 (Question Code) in OBX
         <queueBufferSize>1000</queueBufferSize>
       </sourceConnectorProperties>
       <xmlBody>true</xmlBody>
-      <parseMultipart>true</parseMultipart>
+      <parseMultipart>false</parseMultipart>
       <includeMetadata>false</includeMetadata>
       <binaryMimeTypes>text/hl7</binaryMimeTypes>
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
@@ -2990,7 +2990,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772453965864</time>
+        <time>1772712811450</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3001,10 +3001,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>4b3f4c6e-127e-4657-8df6-e270581ab1a8</id>
-        <name>0_1_24</name>
+        <id>d69c9091-46ab-4db1-b649-eb04502c6fa8</id>
+        <name>0_1_25</name>
         <channelIds>
-          <string>f5506019-247f-49cd-af7c-6d275c3a11dd</string>
+          <string>5f59b6da-795d-4cf7-a521-f57eaf78ce8c</string>
         </channelIds>
         <backgroundColor>
           <red>128</red>
