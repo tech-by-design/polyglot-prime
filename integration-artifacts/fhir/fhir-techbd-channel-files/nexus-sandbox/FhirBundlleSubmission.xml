@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>2013f1bd-0335-4d31-8e94-fbb35ee12c21</id>
+  <id>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.14
-Sets the correct request provenance in FhirBundlleSubmission channel.</description>
-  <revision>16</revision>
+  <description>Version: 0.8.15
+Fixed Forwarded HTTP Response Error payload similar to Synthetic.</description>
+  <revision>9</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -797,7 +797,7 @@ function notFound() {
     <connector version="4.6.1">
       <metaDataId>3</metaDataId>
       <name>dest_datalake</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.6.1">
         <pluginProperties/>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
@@ -819,52 +819,99 @@ function notFound() {
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
-        <host>${DATALAKE_API_URL}?processingAgent=${tenantId}</host>
-        <useProxyServer>false</useProxyServer>
-        <proxyAddress></proxyAddress>
-        <proxyPort></proxyPort>
-        <method>post</method>
-        <headers class="linked-hash-map">
-          <entry>
-            <string>X-TechBD-Tenant-ID</string>
-            <list>
-              <string>${tenantId}</string>
-            </list>
-          </entry>
-          <entry>
-            <string>Content-Type</string>
-            <list>
-              <string>application/json</string>
-            </list>
-          </entry>
-          <entry>
-            <string>x-api-key</string>
-            <list>
-              <string>${DATA_LAKE_API_KEY}</string>
-            </list>
-          </entry>
-        </headers>
-        <parameters class="linked-hash-map"/>
-        <useHeadersVariable>false</useHeadersVariable>
-        <headersVariable></headersVariable>
-        <useParametersVariable>false</useParametersVariable>
-        <parametersVariable></parametersVariable>
-        <responseXmlBody>false</responseXmlBody>
-        <responseParseMultipart>true</responseParseMultipart>
-        <responseIncludeMetadata>false</responseIncludeMetadata>
-        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
-        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
-        <multipart>false</multipart>
-        <useAuthentication>false</useAuthentication>
-        <authenticationType>Basic</authenticationType>
-        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
-        <username></username>
-        <password></password>
-        <content>${updatedFhirJson}</content>
-        <contentType>application/fhir+json</contentType>
-        <dataTypeBinary>false</dataTypeBinary>
-        <charset>UTF-8</charset>
-        <socketTimeout>30000</socketTimeout>
+        <script>// ------------------------------------------------------------
+// Apache HttpClient Imports
+// ------------------------------------------------------------
+var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
+var HttpPost = Packages.org.apache.http.client.methods.HttpPost;
+var StringEntity = Packages.org.apache.http.entity.StringEntity;
+var EntityUtils = Packages.org.apache.http.util.EntityUtils;
+
+// ------------------------------------------------------------
+// Get Required Values
+// ------------------------------------------------------------
+var datalakeApiUrl = channelMap.get(&quot;DATALAKE_API_URL&quot;);
+var tenantId = channelMap.get(&apos;tenantId&apos;);
+var apiKey = channelMap.get(&quot;DATA_LAKE_API_KEY&quot;); 
+
+if (!datalakeApiUrl) {
+    throw &quot;DATALAKE_API_URL is missing&quot;;
+}
+
+if (!tenantId) {
+    throw &quot;Tenant ID is missing&quot;;
+}
+
+if (!apiKey) {
+    throw &quot;DATA_LAKE_API_KEY is missing&quot;;
+}
+
+// ------------------------------------------------------------
+// Build Final URL
+// ------------------------------------------------------------
+var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + tenantId;
+logger.info(&quot;Calling DataLake URL: &quot; + finalUrl);
+
+// ------------------------------------------------------------
+// Create HTTP Client
+// ------------------------------------------------------------
+var client = new DefaultHttpClient();
+var post = new HttpPost(finalUrl);
+
+// ------------------------------------------------------------
+// Set Headers
+// ------------------------------------------------------------
+post.setHeader(&quot;X-TechBD-Tenant-ID&quot;, tenantId);
+post.setHeader(&quot;Content-Type&quot;, &quot;application/fhir+json&quot;);
+post.setHeader(&quot;x-api-key&quot;, apiKey);
+
+// ------------------------------------------------------------
+// Set Request Body
+// ------------------------------------------------------------
+var payloadMsg = channelMap.get(&apos;updatedFhirJson&apos;);
+var payload = payloadMsg; 
+post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
+
+// ------------------------------------------------------------
+// Execute Request
+// ------------------------------------------------------------
+var statusCode = 500;
+var statusText = &quot;&quot;;
+var responseBody = &quot;&quot;;
+
+try {
+
+    var response = client.execute(post);
+
+    var statusLine = response.getStatusLine();
+    statusCode = statusLine.getStatusCode();
+    statusText = statusLine.getReasonPhrase();
+
+    if (response.getEntity() != null) {
+        responseBody = EntityUtils.toString(response.getEntity(), &quot;UTF-8&quot;);
+    }
+
+    logger.info(&quot;DataLake Status Code: &quot; + statusCode);
+    logger.info(&quot;DataLake Status Text: &quot; + statusText);
+    logger.info(&quot;DataLake Response Body: &quot; + responseBody);
+
+} catch (e) {
+
+    logger.error(&quot;Error calling DataLake API: &quot; + e);
+
+    statusCode = 500;
+    statusText = &quot;Exception&quot;;
+    responseBody = e.toString();
+}
+
+// ------------------------------------------------------------
+// Store For Postprocessor
+// ------------------------------------------------------------
+channelMap.put(&quot;datalake_status_code&quot;, statusCode);
+channelMap.put(&quot;datalake_status_text&quot;, statusText);
+channelMap.put(&quot;datalake_response_body&quot;, responseBody);
+
+return;</script>
       </properties>
       <transformer version="4.6.1">
         <elements>
@@ -1420,7 +1467,7 @@ function iterableToArrayStr(col) {&#xd;
       <filter version="4.6.1">
         <elements/>
       </filter>
-      <transportName>HTTP Sender</transportName>
+      <transportName>JavaScript Writer</transportName>
       <mode>DESTINATION</mode>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
@@ -1624,8 +1671,9 @@ function createJsonResponsePre(status, message) {
     return JSON.stringify({ status: status, message: message });
 }
 return message;</preprocessingScript>
-  <postprocessingScript>var Instant = Packages.java.time.Instant;&#xd;
+  <postprocessingScript>var Instant = Packages.java.time.Instant;
 var Duration = Packages.java.time.Duration;
+
 var chlName = channelMap.get(&apos;channelName&apos;);
 var interactionId = channelMap.get(&quot;interactionId&quot;);
 var isActionDiscard = channelMap.get(&quot;isActionDiscard&quot;);
@@ -1633,51 +1681,41 @@ var requestUri = channelMap.get(&quot;requestUri&quot;);;
 
 
 var requestedPath = channelMap.get(&apos;requestedPath&apos;);
-if (requestedPath == &quot;/&quot;) {&#xd;
-	return;&#xd;
+if (requestedPath == &quot;/&quot;) {
+	return;
 }
 
 
-
-
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
-&#xd;
-&#xd;
+
+
+// ------------------------------------------------------------------
+// ✅ Get DataLake Response from channelMap (NOT responseMap anymore)
+// ------------------------------------------------------------------
+
+var responseDataLakeStatus = channelMap.get(&quot;datalake_status_code&quot;);
+var responseDataLakeData = channelMap.get(&quot;datalake_response_body&quot;);
+var responseDataLakeStatusText = channelMap.get(&quot;datalake_status_text&quot;);
 var destinationDataLakeName = &quot;dest_datalake&quot;;
-	var destinationDataLakeResponse = responseMap.get(destinationDataLakeName);
+
+logger.info(&quot;DataLake HTTP Status: &quot; + responseDataLakeStatus);
+logger.info(&quot;DataLake HTTP Status Text: &quot; + responseDataLakeStatusText);
+logger.info(&quot;DataLake Response Body: &quot; + responseDataLakeData);
+
 	
 	// Check if the response exists
-	if (destinationDataLakeResponse &amp;&amp; isActionDiscard != &quot;discard&quot;) {
+if (responseDataLakeStatusText &amp;&amp; isActionDiscard != &quot;discard&quot;) {
 
 
-&#xd;
-var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);&#xd;
-var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
 
+var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+var source = channelMap.get(&quot;source&quot;);
 
-var source = channelMap.get(&quot;source&quot;);&#xd;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  source: ---&quot; + source);
+
+var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 		
-	    var responseDataLakeStatus = destinationDataLakeResponse.getStatus();  // HTTP status code
-	    var responseDataLakeData = destinationDataLakeResponse.getMessage();   // Response message body
-		responseMap.put(&apos;dataLakeResponse&apos;, responseDataLakeData);
-		
-	    // Log the response details
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response from DataLake&quot; + destinationDataLakeResponse + &quot;:&quot;);
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Status Code from DataLake: &quot; + responseDataLakeStatus);
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Response Data from DataLake: &quot; + responseDataLakeData);
-	    
-	    
-
-
-
-
-
-		//var dlResponse = JSON.parse(responseDataLakeData);&#xd;
-		&#xd;
-		// Extract status safely&#xd;
-		//var status = (dlResponse.status || &quot;&quot;).toLowerCase();
-		var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);&#xd;		&#xd;
 
 
 		var status = &quot;&quot;;
@@ -1698,7 +1736,7 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 		    else if (!/^https?:\/\//i.test(datalakeApiUrl)) {
 		        responseDataLakeData = JSON.stringify({
 		            status: &quot;failure&quot;,
-		            error: &quot;Invalid DataLake API URL scheme&quot;,
+		            error: &quot;Invalid DataLake API URL scheme. Failed to resolve &quot;+datalakeApiUrl,
 		            message: &quot;DataLake API URL must start with http or https&quot;,
 		            tenantId: tenantId,
 		            rootCause: &quot;Invalid URL scheme&quot;,
@@ -1706,6 +1744,25 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 		            dataLakeApiBaseURL: datalakeApiUrl
 		        });
 		    }
+
+			// --------------------------------------------------------------
+			// 2️⃣ HTTP Error Handling (&gt;=400)
+			// --------------------------------------------------------------
+			else if (responseDataLakeStatus &gt;= 400) {
+
+				responseDataLakeData = JSON.stringify({
+					status: &quot;failure&quot;,
+					dataLakeApiBaseURL: datalakeApiUrl,
+					error: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from &quot; + datalakeApiUrl,
+					message: &quot;DataLake returned HTTP &quot; + responseDataLakeStatus + &quot; &quot; +responseDataLakeStatusText,
+					tenantId: tenantId,
+					statusCode: responseDataLakeStatus,
+					statusText: responseDataLakeStatusText,
+					responseBody: responseDataLakeData,
+					rootCause: null,
+					mostSpecificCause: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from &quot; + datalakeApiUrl
+				});
+			}
 		
 		    // Parse DataLake response if present
 		    if (responseDataLakeData &amp;&amp; responseDataLakeData.trim() !== &quot;&quot;) {
@@ -1714,90 +1771,93 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 		    }
 		
 		} catch (e) {
-		    logger.error(&quot;Invalid JSON from DataLake: &quot; + e);
-		    logger.info(destinationDataLakeResponse);
-		    var destinationDataLakeResponseStr = String(destinationDataLakeResponse);
-		    responseDataLakeData = JSON.stringify({
-		        status: &quot;failure&quot;,
-		        error: e.toString(),
-		        message: &quot;Invalid JSON received from DataLake&quot;, 
-		        tenantId: tenantId,
-		        rootCause:destinationDataLakeResponseStr , // &quot;JSON parsing error&quot; ,
-		        mostSpecificCause: e.message,
-		        dataLakeApiBaseURL: datalakeApiUrl
-		    });
-		
-		    status = &quot;failure&quot;;
+
+			logger.error(&quot;Invalid JSON from DataLake: &quot; + e);
+
+			responseDataLakeData = JSON.stringify({
+				status: &quot;failure&quot;,
+				error: e.toString(),
+				message: &quot;Failed to resolve &quot;+datalakeApiUrl,
+				tenantId: tenantId,
+				statusCode: responseDataLakeStatus,
+				statusText: responseDataLakeStatusText,
+				responseBody: responseDataLakeData,
+				rootCause: &quot;JSON parsing error&quot;,
+				mostSpecificCause: e.message || e.toString(),
+				dataLakeApiBaseURL: datalakeApiUrl
+			});
+
+			status = &quot;failure&quot;;
 		}
 
 
 
 		
-&#xd;
-		&#xd;
-		if (status === &quot;success&quot;) {&#xd;
+
+		
+		if (status === &quot;success&quot;) {
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Sucess&quot;);
-		    var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
-		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRSuccess - FHIR Data Lake Complete Payload save &quot;);&#xd;
-		&#xd;
-		try{&#xd;
-			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; requestUri : &quot; + requestUri);&#xd;
+		    var operation = &quot;saveForwardFHIRSuccess&quot;;
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRSuccess - FHIR Data Lake Complete Payload save &quot;);
+		
+		try{
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; requestUri : &quot; + requestUri);
 			var start = Instant.now();  
-			&#xd;
-		     var operation = &quot;saveForwardFHIRSuccess&quot;;&#xd;
-		     var result = saveFHIRPayload(&#xd;
-			   interactionId,&#xd;
-			   tenantId,&#xd;
-			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
-			   responseDataLakeData , // JSON.stringify(responseDataLakeData),&#xd;
-			   operation,source&#xd;
-			);&#xd;
-			var end = Instant.now();&#xd;
-			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
-			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
-		} catch (e) {&#xd;
-			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
-			var errorMsg;&#xd;
-	            if (e instanceof JavaException) {&#xd;
-	                errorMsg = &quot;ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
-	                throw errorMessage;&#xd;
-	            } else {&#xd;
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
-	                throw errorMessage;&#xd;
-	            }&#xd;
-		}&#xd;
-		} else {&#xd;
+			
+		     var operation = &quot;saveForwardFHIRSuccess&quot;;
+		     var result = saveFHIRPayload(
+			   interactionId,
+			   tenantId,
+			   requestUri, //sourceMap.get(&apos;contextPath&apos;),
+			   responseDataLakeData , // JSON.stringify(responseDataLakeData),
+			   operation,source
+			);
+			var end = Instant.now();
+			var elapsedMillis = Duration.between(start, end).toMillis();
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Complete : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);
+		} catch (e) {
+			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;ERROR:: REGISTER State Complete CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();
+	                throw errorMessage;
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	                throw errorMessage;
+	            }
+		}
+		} else {
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: error - status: &quot; + status);
-		    var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
-		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRFailure - FHIR Data Lake Forward Payload save &quot;);&#xd;
-		&#xd;
-		try{&#xd;
-			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);&#xd;
+		    var operation = &quot;saveForwardFHIRFailure&quot;;
+		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRFailure - FHIR Data Lake Forward Payload save &quot;);
+		
+		try{
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : BEGIN for inteaction id  : &quot;+interactionId + &quot; tenant id : &quot; + tenantId);
 			var start = Instant.now();  
 
-		&#xd;
-		     var operation = &quot;saveForwardFHIRFailure&quot;;&#xd;
-		     var result = saveFHIRPayload(&#xd;
-			   interactionId,&#xd;
-			   tenantId,&#xd;
-			   requestUri, //sourceMap.get(&apos;contextPath&apos;),&#xd;
-			   responseDataLakeData , //JSON.stringify(responseDataLakeData),&#xd;
-			   operation,source&#xd;
-			);&#xd;
-			var end = Instant.now();&#xd;
-			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
-			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);&#xd;
-		} catch (e) {&#xd;
-			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );&#xd;
-			var errorMsg;&#xd;
-	            if (e instanceof JavaException) {&#xd;
-	                errorMsg = &quot;ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();&#xd;
-	                throw errorMessage;&#xd;
-	            } else {&#xd;
-	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;&#xd;
-	                throw errorMessage;&#xd;
-	            }&#xd;
-		}&#xd;
+		
+		     var operation = &quot;saveForwardFHIRFailure&quot;;
+		     var result = saveFHIRPayload(
+			   interactionId,
+			   tenantId,
+			   requestUri, //sourceMap.get(&apos;contextPath&apos;),
+			   responseDataLakeData , //JSON.stringify(responseDataLakeData),
+			   operation,source
+			);
+			var end = Instant.now();
+			var elapsedMillis = Duration.between(start, end).toMillis();
+			logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: REGISTER State Fail : END for interaction id: &quot;+interactionId + &quot; tenant id: &quot; + tenantId + &quot;. Time taken: &quot;+ elapsedMillis);
+		} catch (e) {
+			LOG.error(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId );
+			var errorMsg;
+	            if (e instanceof JavaException) {
+	                errorMsg = &quot;ERROR:: REGISTER State Fail CALL for interaction id : &quot;+interactionId + &quot; tenant id : &quot; + tenantId + &quot; :  &quot; + e.toString();
+	                throw errorMessage;
+	            } else {
+	                errorMsg = &quot;Unexpected error during saving: &quot; + e.message;
+	                throw errorMessage;
+	            }
+		}
 		}
 		
 		
@@ -2193,7 +2253,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772686139573</time>
+        <time>1772696477708</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2204,10 +2264,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fabe9705-9a80-4b70-8a6c-669465bac676</id>
-        <name>0_8_14</name>
+        <id>e71737a3-3ae5-48ad-9868-a5ed18bee490</id>
+        <name>0_8_15</name>
         <channelIds>
-          <string>2013f1bd-0335-4d31-8e94-fbb35ee12c21</string>
+          <string>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
