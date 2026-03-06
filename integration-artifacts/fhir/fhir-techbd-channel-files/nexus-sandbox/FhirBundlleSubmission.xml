@@ -2,8 +2,8 @@
   <id>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.15
-Fixed Forwarded HTTP Response Error payload similar to Synthetic.</description>
+  <description>Version: 0.8.16
+Configured health check endpoint using static resources.</description>
   <revision>9</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
@@ -16,7 +16,7 @@ Fixed Forwarded HTTP Response Error payload similar to Synthetic.</description>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
-        <port>9000</port>
+        <port>9007</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="4.6.1">
         <responseVariable>finalResponse</responseVariable>
@@ -71,7 +71,14 @@ Fixed Forwarded HTTP Response Error payload similar to Synthetic.</description>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -2253,7 +2260,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772696477708</time>
+        <time>1772789211065</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2264,14 +2271,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>e71737a3-3ae5-48ad-9868-a5ed18bee490</id>
-        <name>0_8_15</name>
+        <id>cfdd82c4-e2aa-42d3-9667-37db60fb0ed9</id>
+        <name>0_8_16</name>
         <channelIds>
           <string>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

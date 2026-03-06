@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>1a3e2129-62fc-4fac-95ec-181bf03616ad</id>
+  <id>e0c3a613-7eed-4bc0-8288-4f7b5b2bc313</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.19
-Resolved the DL issue for CCDA.</description>
-  <revision>27</revision>
+  <description>Version 0.5.20
+Configured health check endpoint using static resources.</description>
+  <revision>23</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -71,7 +71,14 @@ Resolved the DL issue for CCDA.</description>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>300000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -3031,7 +3038,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772603140853</time>
+        <time>1772788487211</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3042,14 +3049,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>3a1218e4-dc26-4f12-9c3c-edd3ee8ac286</id>
-        <name>0_5_19</name>
+        <id>a43fa3b6-bd77-4ec7-aa9d-1fe491c5b238</id>
+        <name>0_5_20</name>
         <channelIds>
-          <string>1a3e2129-62fc-4fac-95ec-181bf03616ad</string>
+          <string>e0c3a613-7eed-4bc0-8288-4f7b5b2bc313</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>0</green>
+          <red>255</red>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

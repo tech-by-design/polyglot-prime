@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>fc5e5529-5b3d-429c-87a8-50f844517d26</id>
+  <id>368a5972-44f6-4d51-943e-3fe069c7469e</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.26
-HL7 File validation and fixed multiple file selection issue.</description>
-  <revision>9</revision>
+  <description>Version: 0.1.27
+Configured health check endpoint using static resources.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -71,7 +71,14 @@ HL7 File validation and fixed multiple file selection issue.</description>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -3073,7 +3080,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772786653275</time>
+        <time>1772790185395</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3084,14 +3091,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>47d4d270-ff50-4b91-a30d-36acfb13ccfa</id>
-        <name>0_1_26</name>
+        <id>303385b2-03f1-497e-885c-5ddf8a18ac99</id>
+        <name>0_1_27</name>
         <channelIds>
-          <string>fc5e5529-5b3d-429c-87a8-50f844517d26</string>
+          <string>368a5972-44f6-4d51-943e-3fe069c7469e</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>0</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
