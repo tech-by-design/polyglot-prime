@@ -48,4 +48,4 @@ public class Constants {
     public static final String HEADER_INTERACTION_ID = "X-Interaction-ID";
     public static final String ERROR_TRACE_ID = "errorTraceId";
     public static final String ACK_CONTENT_TYPE = "ackContentType";
-}
+    public static final String ALLOWED_ROUTES = "allowedRoutes";}

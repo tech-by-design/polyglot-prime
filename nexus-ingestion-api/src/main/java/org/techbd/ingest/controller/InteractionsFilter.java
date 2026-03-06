@@ -69,7 +69,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private final Cache<String, X509Certificate[]> caCache;
     private final SoapFaultUtil soapFaultUtil;
     private static final Pattern PATH_PATTERN = Pattern.compile("^/(?:ingest/)?([^/]+)/([^/]+)(?:/.*)?$");
-
+    private static final List<String> ALLOWED_ROUTES_LIST = Optional.ofNullable(System.getenv("ALLOWED_ROUTES")).map(r -> Arrays.stream(r.split(",")).map(String::trim).collect(Collectors.toList())).orElse(Collections.emptyList());
     public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, 
                              PortResolverService portResolverService, S3Client s3Client, SoapFaultUtil soapFaultUtil) {
         this.LOG = appLogger.getLogger(InteractionsFilter.class);
@@ -177,8 +177,12 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 PortConfig.PortEntry portEntry = portEntryOpt.get();
                 LOG.info("InteractionsFilter: resolved PortConfig entry for port {} -> sourceId={}, msgType={}, route={}", 
                         requestPort, portEntry.sourceId, portEntry.msgType, portEntry.route);
-
-                // 3) If this port config requires mtls via mtls field, client must supply
+                        String route = portEntry.route;
+                       if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && !ALLOWED_ROUTES_LIST.contains(route)) {
+                            origRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
+                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true", route);
+                          }
+                    // 3) If this port config requires mtls via mtls field, client must supply
                 // header
                 String mtlsName = portEntry.mtls;
                 String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
