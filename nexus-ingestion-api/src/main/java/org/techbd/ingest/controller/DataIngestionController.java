@@ -109,11 +109,12 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             HttpServletResponse response) throws Exception {
 
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
+        Boolean isAllowedRoute = (Boolean) request.getAttribute(Constants.ALLOWED_ROUTES);
         LOG.info("Received ingest request. interactionId={} sourceId={} msgType={}",
                 interactionId, sourceId, msgType);
 
         // Check if this is a SOAP request
-        boolean isSoapReq = isSoapRequest(msgType);
+        boolean isSoapReq = isSoapRequest(msgType) || Boolean.TRUE.equals(isAllowedRoute);
 
         // Validate that request contains data
         if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {

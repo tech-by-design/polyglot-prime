@@ -16,3 +16,4 @@ export UNDERSTOOD_NAMESPACES="http://www.w3.org/2005/08/addressing"
 export PORT_CONFIG_S3_BUCKET=s3-bucket-name
 export PORT_CONFIG_S3_KEY=full-s3-path-of-portConfig.json
 export AWS_REGION=us-east-1
+export ALLOWED_WS_ROUTES="/xds/XDSbRepositoryWS"

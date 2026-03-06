@@ -24,6 +24,16 @@
          "keepAliveTimeout": 20
     },
     {
+        "port": 5556,
+        "responseType": "pnr",
+        "protocol": "http",
+        "route": "/xds/XDSbRepositoryWS",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound",
+        "queue": "test.fifo",
+         "keepAliveTimeout": 20
+    },
+    {
         "sourceId":"netspective",
         "msgType":"pix",
         "protocol": "TCP",
@@ -94,6 +104,7 @@
         "whitelistIps": [
             "0.0.0.0/0"
         ],
+        
         "execType": "sync",
         "trafficTo": "util"
     },
