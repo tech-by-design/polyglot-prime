@@ -11,7 +11,7 @@ Following `SQLa`'s philosophy, all SQL should be generated into files that can
 be inspected and version-controlled and be executed using `psql` as a separate
 step.
 
-Additionally, for the UDI Prime SQL generation and usage, we utilize ISLM migration, a tool available in SQL Aide. This tool helps manage schema migrations in PostgreSQL. The process also integrates session orchestration tables from the CSV ingestion orchestration process within the techbd_orch_ctl schema.
+Additionally, for the UDI Prime SQL generation and usage, we utilize ISLM migration, a tool available in SQL Aide. This tool helps manage schema migrations in PostgreSQL.
 
 ### Features
 
@@ -33,7 +33,6 @@ Additionally, for the UDI Prime SQL generation and usage, we utilize ISLM migrat
   [pgpass](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/pgpass)
   for password-less authentication.
 - **ISLM Migration**: Ensure the ISLM migration schemas and procedures are installed, which are part of the [SQL Aide package](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/islm), for handling database migrations.  
-- **techbd_orch_ctl Schema**: Ensure we have the `techbd_orch_ctl` schema and the 10 tables `business_rules`, `demographic_data`, `device`, `orch_session`, `orch_session_entry`, `orch_session_exec`, `orch_session_issue`, `orch_session_state`, `qe_admin_data`, `screening` available as a result of CSV ingestion process. 
 
 ## Installation
 
@@ -58,6 +57,9 @@ cd udi-prime
 
 # "freshen" a development database and generate everything all at once
 ./udictl.ts ic omnibus-fresh
+
+# "freshen" a development database and generate everything all at once and deploy the JAR file to the target lib directories
+./udictl.ts ic omnibus-fresh --deploy-jar
 
 # when you want to run specific commands individually
 

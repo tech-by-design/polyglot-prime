@@ -19,7 +19,7 @@ dbname=$(echo $jdbc_url | sed -n 's|jdbc:postgresql://[^/]*/\([^?]*\).*|\1|p')
 
 
 # Run the SchemaSpy command
-java -jar schemaspy-6.2.4.jar -t pgsql11 -db $dbname -u $jdbc_user -p $jdbc_pass -host $dbhost -dp postgresql-42.2.5.jar -schemas techbd_udi_ingress,techbd_orch_ctl,techbd_udi_assurance,techbd_udi_diagnostics -debug -o target/site/schemaSpy
+java -jar schemaspy-6.2.4.jar -t pgsql11 -db $dbname -u $jdbc_user -p $jdbc_pass -host $dbhost -dp postgresql-42.2.5.jar -schemas techbd_udi_ingress,techbd_udi_assurance,techbd_udi_diagnostics -debug -o target/site/schemaSpy
 
 
 # Start the Spring Boot application
