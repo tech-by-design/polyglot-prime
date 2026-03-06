@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>01e37e06-9f21-489b-b10d-61aa52e64352</id>
+  <id>8c85c362-b9b0-494e-bec4-597650c1d512</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.11
-Added support for resolving BridgeLink base URL dynamically from X-TechBD-BL-BaseURL header </description>
-  <revision>5</revision>
+  <description>Version: 0.9.12
+Configured the health check endpoint using static resources.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -71,7 +71,14 @@ Added support for resolving BridgeLink base URL dynamically from X-TechBD-BL-Bas
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -880,7 +887,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771950072287</time>
+        <time>1772792824036</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -891,14 +898,16 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0c920cec-8d2b-480d-b31e-aa4a505746a7</id>
-        <name>0_9_11</name>
+        <id>303385b2-03f1-497e-885c-5ddf8a18ac99</id>
+        <name>0_1_27</name>
         <channelIds>
-          <string>01e37e06-9f21-489b-b10d-61aa52e64352</string>
+          <string>368a5972-44f6-4d51-943e-3fe069c7469e</string>
+          <string>8c85c362-b9b0-494e-bec4-597650c1d512</string>
+          <string>95b0901e-413b-4aca-80b6-6573f91f3554</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>0</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

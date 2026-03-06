@@ -2,9 +2,9 @@
   <id>95b0901e-413b-4aca-80b6-6573f91f3554</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.8.5
-Fixed blank response while empty zip file is selectedThe issue with the blank 200 OK response when an invalid URL, port, or method was given has been fixed.</description>
-  <revision>3</revision>
+  <description>Version: 0.8.6
+Configured the health check endpoint using static resources.</description>
+  <revision>2</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -71,7 +71,14 @@ Fixed blank response while empty zip file is selectedThe issue with the blank 20
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -745,7 +752,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771913855609</time>
+        <time>1772792790125</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -756,15 +763,16 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>d1f1c4df-2994-423b-b494-5fc6353da59d</id>
-        <name>0_8_5</name>
+        <id>303385b2-03f1-497e-885c-5ddf8a18ac99</id>
+        <name>0_1_27</name>
         <channelIds>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+          <string>368a5972-44f6-4d51-943e-3fe069c7469e</string>
+          <string>8c85c362-b9b0-494e-bec4-597650c1d512</string>
           <string>95b0901e-413b-4aca-80b6-6573f91f3554</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>0</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

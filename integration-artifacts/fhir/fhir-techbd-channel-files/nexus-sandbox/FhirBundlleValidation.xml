@@ -2,9 +2,9 @@
   <id>c48e397f-769f-4e14-961f-e34ac1a2df46</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.7 
-Fixed psql error while zip file is seleted.</description>
-  <revision>2</revision>
+  <description>Version: 0.8.8
+Configured health check endpoint using static resources.</description>
+  <revision>7</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -71,7 +71,14 @@ Fixed psql error while zip file is seleted.</description>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
-      <staticResources/>
+      <staticResources>
+        <com.mirth.connect.connectors.http.HttpStaticResource>
+          <contextPath>/healthcheck</contextPath>
+          <resourceType>CUSTOM</resourceType>
+          <value>Ok</value>
+          <contentType>text/plain</contentType>
+        </com.mirth.connect.connectors.http.HttpStaticResource>
+      </staticResources>
     </properties>
     <transformer version="4.6.1">
       <elements>
@@ -998,7 +1005,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771931369064</time>
+        <time>1772789416620</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1009,10 +1016,12 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>feb6c75a-7a59-4f02-810e-e64266e2003e</id>
-        <name>0_8_7</name>
+        <id>1dc99cdc-7b7b-4373-ae55-ce3496060dc9</id>
+        <name>0_8_8</name>
         <channelIds>
           <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
+          <string>7266100a-4e89-488d-b6f0-ba1af10dc0fe</string>
+          <string>116c8c0d-e092-4cdf-b9a9-10853618da18</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
