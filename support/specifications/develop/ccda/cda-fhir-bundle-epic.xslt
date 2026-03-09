@@ -276,69 +276,6 @@
               <xsl:with-param name="addresses" select="ccda:addr[not(@nullFlavor)]"/>
               <xsl:with-param name="resource_name" select="'Patient'"/>
             </xsl:call-template>
-
-            <!-- , "address": [
-                <xsl:for-each select="ccda:addr[not(@nullFlavor)]">
-                    {
-                        <xsl:if test="@use">
-                            "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>"
-                        </xsl:if>
-                        <xsl:variable name="formattedAddress">
-                            <xsl:call-template name="format-address">
-                                <xsl:with-param name="addr" select="../ccda:addr"/>
-                            </xsl:call-template>
-                        </xsl:variable>
-
-                        <xsl:if test="normalize-space($formattedAddress) != ''">
-                            , "text": "<xsl:value-of select="$formattedAddress"/>"
-                        </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                            , "line": [
-                                <xsl:for-each select="ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-                                    "<xsl:value-of select="normalize-space(.)"/>"
-                                    <xsl:if test="position() != last()">, </xsl:if>
-                                </xsl:for-each>
-                            ]
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ccda:city)">
-                            , "city": "<xsl:value-of select="normalize-space(ccda:city)"/>"
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ccda:county)">
-                            , "district": "<xsl:value-of select="normalize-space(ccda:county)"/>"
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ccda:state)">
-                            , "state": "<xsl:value-of select="normalize-space(ccda:state)"/>"
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="normalize-space(ccda:postalCode)"/>"
-                        </xsl:if>
-                        <xsl:if test="normalize-space(ccda:country)">
-                            , "country": "<xsl:value-of select="normalize-space(ccda:country)"/>"
-                        </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
-                            ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
-                                    "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
-                                              </xsl:call-template>"
-                                </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
-                                    "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
-                                            </xsl:call-template>"
-                                </xsl:if>
-                            }
-                        </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ] -->
         </xsl:if>
         <xsl:if test="ccda:telecom[not(@nullFlavor)]">
             , "telecom": [
@@ -359,12 +296,11 @@
                         </xsl:if>
                         <xsl:if test="@use">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
+                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP' or @use='WPN'">work</xsl:when>
                                 <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when>
+                                <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='PRN' or @use='ORN' or @use='PRS'">home</xsl:when>
                                 <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <!-- <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise> -->
                                 <xsl:otherwise>home</xsl:otherwise> <!-- For Patient resource, default to 'home' if no match -->
                             </xsl:choose>",
                         </xsl:if>
@@ -1067,13 +1003,12 @@
                         </xsl:if>
                         <xsl:if test="@use">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
+                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP' or @use='WPN'">work</xsl:when>
                                 <xsl:when test="@use='BAD'">old</xsl:when>
-                                <!-- <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when> -->
+                                <!-- <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='PRN' or @use='ORN' or @use='PRS'">home</xsl:when> -->
                                 <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <!-- <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise> -->
-                                <xsl:otherwise>work</xsl:otherwise>
+                                <xsl:otherwise>work</xsl:otherwise> <!-- For Organization resource, default to 'work' if no match -->
                             </xsl:choose>",
                         </xsl:if>
                         "value": "<xsl:call-template name="clean-telecom-value">
@@ -2725,16 +2660,10 @@
       <!-- use -->
       <xsl:if test="$addr/@use">
         "use": "<xsl:choose>
-          <xsl:when test="$addr/@use='HP' or $addr/@use='H'">
-            <xsl:choose>
-              <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>
-              <xsl:otherwise>home</xsl:otherwise>
-            </xsl:choose>
-          </xsl:when>
-          <xsl:when test="$addr/@use='WP'">work</xsl:when>
+          <xsl:when test="$addr/@use='WP' or $addr/@use='DIR' or $addr/@use='PUB'">work</xsl:when>
+          <xsl:when test="$addr/@use='BA'">billing</xsl:when>
           <xsl:when test="$addr/@use='TMP'">temp</xsl:when>
           <xsl:when test="$addr/@use='OLD' or $addr/@use='BAD'">old</xsl:when>
-          <!-- <xsl:otherwise><xsl:value-of select="$addr/@use"/></xsl:otherwise> -->
           <xsl:otherwise>
             <xsl:choose>
               <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>

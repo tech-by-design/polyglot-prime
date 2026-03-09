@@ -321,12 +321,11 @@
                         </xsl:if>
                         <xsl:if test="@use">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
+                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP' or @use='WPN'">work</xsl:when>
                                 <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when>
+                                <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='PRN' or @use='ORN' or @use='PRS'">home</xsl:when>
                                 <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <!-- <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise> -->
                                 <xsl:otherwise>home</xsl:otherwise> <!-- For Patient resource, default to 'home' if no match -->
                             </xsl:choose>",
                         </xsl:if>
@@ -901,12 +900,11 @@
                         </xsl:if>
                         <xsl:if test="@use">
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
+                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP' or @use='WPN'">work</xsl:when>
                                 <xsl:when test="@use='BAD'">old</xsl:when>
-                                <!-- <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when> -->
+                                <!-- <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='PRN' or @use='ORN' or @use='PRS'">home</xsl:when> -->
                                 <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
                                 <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <!-- <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise> -->
                                 <xsl:otherwise>work</xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
@@ -2358,16 +2356,10 @@
       <!-- use -->
       <xsl:if test="$addr/@use">
         "use": "<xsl:choose>
-          <xsl:when test="$addr/@use='HP' or $addr/@use='H'">
-            <xsl:choose>
-              <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>
-              <xsl:otherwise>home</xsl:otherwise>
-            </xsl:choose>
-          </xsl:when>
-          <xsl:when test="$addr/@use='WP'">work</xsl:when>
+          <xsl:when test="$addr/@use='WP' or $addr/@use='DIR' or $addr/@use='PUB'">work</xsl:when>
+          <xsl:when test="$addr/@use='BA'">billing</xsl:when>
           <xsl:when test="$addr/@use='TMP'">temp</xsl:when>
           <xsl:when test="$addr/@use='OLD' or $addr/@use='BAD'">old</xsl:when>
-          <!-- <xsl:otherwise><xsl:value-of select="$addr/@use"/></xsl:otherwise> -->
           <xsl:otherwise>
             <xsl:choose>
               <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>
