@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</id>
+  <id>757bd47e-10ae-4e5a-a635-8a3c3756c3d4</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.16
-Configured health check endpoint using static resources.</description>
-  <revision>9</revision>
+  <description>Version: 0.8.17
+Need Attension and payload message correction same as synthetic</description>
+  <revision>19</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -885,6 +885,7 @@ post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
 var statusCode = 500;
 var statusText = &quot;&quot;;
 var responseBody = &quot;&quot;;
+dataLakeErrorMessage = &quot;&quot;;
 
 try {
 
@@ -907,8 +908,31 @@ try {
     logger.error(&quot;Error calling DataLake API: &quot; + e);
 
     statusCode = 500;
+
+    var errMsg = &quot;&quot;;
+    if (e.javaException) {
+        errMsg = e.javaException.getMessage();
+    } else if (e.message) {
+        errMsg = e.message;
+    } else {
+        errMsg = e.toString();
+    }
+
+    logger.info(&quot;Error Message: &quot; + errMsg);
+
+    // Detect UnknownHostException
+    if (e.javaException &amp;&amp; e.javaException instanceof java.net.UnknownHostException) {
+        var host = String(datalakeApiUrl).replace(/^https?:\/\//, &apos;&apos;).split(&quot;/&quot;)[0];
+        errMsg = &quot;Failed to resolve &apos;&quot; + host + &quot;&apos;&quot;;
+    }
+
     statusText = &quot;Exception&quot;;
+
+    // keep original body
     responseBody = e.toString();
+
+    // store clean message
+    dataLakeErrorMessage = errMsg;
 }
 
 // ------------------------------------------------------------
@@ -917,6 +941,7 @@ try {
 channelMap.put(&quot;datalake_status_code&quot;, statusCode);
 channelMap.put(&quot;datalake_status_text&quot;, statusText);
 channelMap.put(&quot;datalake_response_body&quot;, responseBody);
+channelMap.put(&quot;datalake_response_message&quot;, dataLakeErrorMessage);
 
 return;</script>
       </properties>
@@ -1703,6 +1728,7 @@ logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION I
 var responseDataLakeStatus = channelMap.get(&quot;datalake_status_code&quot;);
 var responseDataLakeData = channelMap.get(&quot;datalake_response_body&quot;);
 var responseDataLakeStatusText = channelMap.get(&quot;datalake_status_text&quot;);
+var dataLakeErrorMessage = channelMap.get(&quot;datalake_response_message&quot;);
 var destinationDataLakeName = &quot;dest_datalake&quot;;
 
 logger.info(&quot;DataLake HTTP Status: &quot; + responseDataLakeStatus);
@@ -1728,6 +1754,9 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 		var status = &quot;&quot;;
 		
 		try {
+
+			 
+    
 		    // Validate DataLake API URL first
 		    if (!datalakeApiUrl || datalakeApiUrl.trim() === &apos;&apos;) {
 		        responseDataLakeData = JSON.stringify({
@@ -1743,10 +1772,10 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 		    else if (!/^https?:\/\//i.test(datalakeApiUrl)) {
 		        responseDataLakeData = JSON.stringify({
 		            status: &quot;failure&quot;,
-		            error: &quot;Invalid DataLake API URL scheme. Failed to resolve &quot;+datalakeApiUrl,
-		            message: &quot;DataLake API URL must start with http or https&quot;,
+		            error: &quot;Invalid DataLake API URL scheme. Failed to resolve &apos;&quot; + datalakeApiUrl + &quot;&apos;&quot;,
+		            message: &quot;Failed to resolve &apos;&quot; + datalakeApiUrl + &quot;&apos;&quot;,
 		            tenantId: tenantId,
-		            rootCause: &quot;Invalid URL scheme&quot;,
+		            rootCause: &quot;Invalid URL scheme : DataLake API URL must start with http or https&quot;,
 		            mostSpecificCause: &quot;Unsupported protocol in DataLake API URL&quot;,
 		            dataLakeApiBaseURL: datalakeApiUrl
 		        });
@@ -1756,27 +1785,60 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 			// 2️⃣ HTTP Error Handling (&gt;=400)
 			// --------------------------------------------------------------
 			else if (responseDataLakeStatus &gt;= 400) {
+				var httpMessage = responseDataLakeStatus + &quot; &quot; + responseDataLakeStatusText + &quot; from POST &quot; + datalakeApiUrl;
+
+			    var finalMessage = httpMessage;
+			
+			    // Only for server errors
+				if (responseDataLakeStatus &gt;= 500) {
+				
+				    // 1️ First priority: message already extracted earlier
+				    if (dataLakeErrorMessage &amp;&amp; String(dataLakeErrorMessage).trim() !== &quot;&quot;) {
+				
+				        finalMessage = dataLakeErrorMessage;
+				
+				    }
+				
+				    // 2 Second priority: try parsing API response
+				    else if (responseDataLakeData) {
+				
+				        try {
+				            var errObj = JSON.parse(responseDataLakeData);
+				
+				            if (errObj &amp;&amp; errObj.message &amp;&amp; String(errObj.message).trim() !== &quot;&quot;) {
+				                finalMessage = errObj.message;
+				            }
+				
+				        } catch (ignore) {
+				            logger.warn(&quot;Response not JSON, using HTTP message&quot;);
+				        }
+				
+				    }
+				}
+    
 
 				responseDataLakeData = JSON.stringify({
 					status: &quot;failure&quot;,
 					dataLakeApiBaseURL: datalakeApiUrl,
-					error: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from &quot; + datalakeApiUrl,
-					message: &quot;DataLake returned HTTP &quot; + responseDataLakeStatus + &quot; &quot; +responseDataLakeStatusText,
+					error: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from POST &quot; + datalakeApiUrl,
+					message: finalMessage,
 					tenantId: tenantId,
 					statusCode: responseDataLakeStatus,
 					statusText: responseDataLakeStatusText,
 					responseBody: responseDataLakeData,
 					rootCause: null,
-					mostSpecificCause: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from &quot; + datalakeApiUrl
+					mostSpecificCause: responseDataLakeStatus+&quot; &quot;+responseDataLakeStatusText+&quot; from POST &quot; + datalakeApiUrl
 				});
 			}
+
+			 // Parse DataLake response if present
+			    if (responseDataLakeData &amp;&amp; responseDataLakeData.trim() !== &quot;&quot;) {
+			        var dlResponse = JSON.parse(responseDataLakeData);
+			        status = (dlResponse.status || &quot;&quot;).toLowerCase();
+			    }
 		
-		    // Parse DataLake response if present
-		    if (responseDataLakeData &amp;&amp; responseDataLakeData.trim() !== &quot;&quot;) {
-		        var dlResponse = JSON.parse(responseDataLakeData);
-		        status = (dlResponse.status || &quot;&quot;).toLowerCase();
-		    }
-		
+		   
+		    
 		} catch (e) {
 
 			logger.error(&quot;Invalid JSON from DataLake: &quot; + e);
@@ -2260,7 +2322,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772789211065</time>
+        <time>1773046084598</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2271,14 +2333,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>cfdd82c4-e2aa-42d3-9667-37db60fb0ed9</id>
-        <name>0_8_16</name>
+        <id>4e97556e-2403-4463-8afd-18827c180a7d</id>
+        <name>0_8_17</name>
         <channelIds>
-          <string>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</string>
+          <string>757bd47e-10ae-4e5a-a635-8a3c3756c3d4</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
