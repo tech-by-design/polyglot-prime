@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
 
@@ -21,7 +22,7 @@ class RouteParamResolverTest {
                 new RequestContext("interaction-1", 8080, null, "ORU");
 
         Optional<PortConfig.PortEntry> result =
-                resolver.resolve(List.of(mockEntry("SRC", "ORU")), context);
+                resolver.resolve(List.of(mockEntry("SRC", "ORU")), context , Constants.HTTP);
 
         assertThat(result).isEmpty();
     }
@@ -33,7 +34,7 @@ class RouteParamResolverTest {
                 new RequestContext("interaction-2", 8080, "SRC", null);
 
         Optional<PortConfig.PortEntry> result =
-                resolver.resolve(List.of(mockEntry("SRC", "ORU")), context);
+                resolver.resolve(List.of(mockEntry("SRC", "ORU")), context , Constants.HTTP);
 
         assertThat(result).isEmpty();
     }
@@ -48,7 +49,7 @@ class RouteParamResolverTest {
                 new RequestContext("interaction-3", 8080, "LAB1", "ORU");
 
         Optional<PortConfig.PortEntry> result =
-                resolver.resolve(List.of(nonMatching, matching), context);
+                resolver.resolve(List.of(nonMatching, matching), context , Constants.HTTP);
 
         assertThat(result)
                 .isPresent()
@@ -64,7 +65,7 @@ class RouteParamResolverTest {
         Optional<PortConfig.PortEntry> result =
                 resolver.resolve(
                         List.of(mockEntry("SRC", "ORU"), mockEntry("LAB", "ADT")),
-                        context);
+                        context , Constants.HTTP);
 
         assertThat(result).isEmpty();
     }

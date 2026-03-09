@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.model.RequestContext;
 
@@ -22,7 +23,7 @@ class PortResolverTest {
         context.setDestinationPort(null);
 
         Optional<PortConfig.PortEntry> result =
-                resolver.resolve(List.of(mockPortEntry(8080)), context);
+                resolver.resolve(List.of(mockPortEntry(8080)), context , Constants.HTTP);
 
         assertThat(result).isEmpty();
     }
@@ -37,7 +38,7 @@ class PortResolverTest {
                 new RequestContext("interaction-2", 8080, "source", "msgType");
 
         Optional<PortConfig.PortEntry> result =
-                resolver.resolve(List.of(entry9090, entry8080), context);
+                resolver.resolve(List.of(entry9090, entry8080), context , Constants.HTTP);
 
         assertThat(result)
                 .isPresent()
@@ -53,7 +54,7 @@ class PortResolverTest {
         Optional<PortConfig.PortEntry> result =
                 resolver.resolve(
                         List.of(mockPortEntry(8080), mockPortEntry(9090)),
-                        context);
+                        context , Constants.HTTP);
 
         assertThat(result).isEmpty();
     }

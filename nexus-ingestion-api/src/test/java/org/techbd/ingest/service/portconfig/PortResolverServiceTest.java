@@ -2,6 +2,7 @@ package org.techbd.ingest.service.portconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.config.PortConfig.PortEntry;
 import org.techbd.ingest.model.RequestContext;
@@ -59,19 +61,19 @@ class PortResolverServiceTest {
 
         PortEntry entry = mockPortEntry(8080);
 
-        when(resolver1.resolve(portEntries, context))
+        when(resolver1.resolve(portEntries, context , Constants.HTTP))
                 .thenReturn(Optional.of(entry));
-        when(resolver2.resolve(any(), any()))
-                .thenReturn(Optional.empty());
+        when(resolver2.resolve(any(), any(), any())).thenReturn(Optional.empty());
+        
 
-        Optional<PortEntry> result = service.resolve(context);
+        Optional<PortEntry> result = service.resolve(context, Constants.HTTP);
 
         assertThat(result)
                 .isPresent()
                 .contains(entry);
 
-        verify(resolver1).resolve(portEntries, context);
-        verify(resolver2, never()).resolve(any(), any());
+        verify(resolver1).resolve(portEntries, context, Constants.HTTP);
+        verify(resolver2, never()).resolve(any(), any() , any());
     }
 
     @Test
@@ -82,19 +84,19 @@ class PortResolverServiceTest {
 
         PortEntry entry = mockPortEntry(9090);
 
-        when(resolver1.resolve(portEntries, context))
+        when(resolver1.resolve(portEntries, context , Constants.HTTP))
                 .thenReturn(Optional.empty());
-        when(resolver2.resolve(portEntries, context))
+        when(resolver2.resolve(portEntries, context , Constants.HTTP))
                 .thenReturn(Optional.of(entry));
 
-        Optional<PortEntry> result = service.resolve(context);
+        Optional<PortEntry> result = service.resolve(context , Constants.HTTP);
 
         assertThat(result)
                 .isPresent()
                 .contains(entry);
 
-        verify(resolver1).resolve(portEntries, context);
-        verify(resolver2).resolve(portEntries, context);
+        verify(resolver1).resolve(portEntries, context, Constants.HTTP);
+        verify(resolver2).resolve(portEntries, context, Constants.HTTP);
     }
 
     @Test
@@ -103,17 +105,17 @@ class PortResolverServiceTest {
         RequestContext context =
                 new RequestContext("interaction-3", 7070, "SRC", "MSG");
 
-        when(resolver1.resolve(portEntries, context))
+        when(resolver1.resolve(portEntries, context , Constants.HTTP))
                 .thenReturn(Optional.empty());
-        when(resolver2.resolve(portEntries, context))
+        when(resolver2.resolve(portEntries, context , Constants.HTTP))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.resolve(context))
+        assertThatThrownBy(() -> service.resolve(context, Constants.HTTP))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No configuration found for the given port");
 
-        verify(resolver1).resolve(portEntries, context);
-        verify(resolver2).resolve(portEntries, context);
+        verify(resolver1).resolve(portEntries, context, Constants.HTTP);
+        verify(resolver2).resolve(portEntries, context, Constants.HTTP);
     }
 
     private PortEntry mockPortEntry(int port) {

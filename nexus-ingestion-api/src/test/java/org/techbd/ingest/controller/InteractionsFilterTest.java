@@ -263,7 +263,7 @@ class InteractionsFilterTest {
         PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
         portEntry.port = port;
         portEntry.mtls = null; // No mTLS by default
-        when(portResolverService.resolve(any())).thenReturn(java.util.Optional.of(portEntry));
+        when(portResolverService.resolve(any(), any())).thenReturn(java.util.Optional.of(portEntry));
     }
 
     private void setupPortConfigMock(int port, String mtlsName) {
@@ -273,7 +273,7 @@ class InteractionsFilterTest {
         
         when(portConfig.isLoaded()).thenReturn(true);
         when(portConfig.getPortConfigurationList()).thenReturn(java.util.Arrays.asList(portEntry));
-        when(portResolverService.resolve(any())).thenReturn(java.util.Optional.of(portEntry));
+        when(portResolverService.resolve(any(), any())).thenReturn(java.util.Optional.of(portEntry));
     }
 
     @Test
