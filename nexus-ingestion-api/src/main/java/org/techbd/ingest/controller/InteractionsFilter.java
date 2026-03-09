@@ -155,7 +155,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
 
                 // 4) Use PortResolverService to find the matching port entry
-                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context);
+                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context , Constants.HTTP);
 
                 if (portEntryOpt.isEmpty()) {
                     String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s - rejecting request",

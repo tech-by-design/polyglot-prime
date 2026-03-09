@@ -24,6 +24,16 @@
          "keepAliveTimeout": 20
     },
     {
+        "port": 5555,
+        "responseType": "",
+        "protocol": "",
+        "route": "/hold",
+        "dataDir": "/http",
+        "metadataDir": "/outbound",
+        "queue": "test.fifo",
+         "keepAliveTimeout": 20
+    },
+    {
         "port": 5556,
         "responseType": "pnr",
         "protocol": "http",

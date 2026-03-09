@@ -36,16 +36,32 @@ public class PortResolver implements PortConfigResolver {
     @Override
     public Optional<PortConfig.PortEntry> resolve(
             List<PortConfig.PortEntry> portConfigList,
-            RequestContext context) {
+            RequestContext context , String protocol) {
 
         String destPort = context.getDestinationPort();
         if (destPort == null) {
             return Optional.empty();
         }
 
+        Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
+                .filter(Objects::nonNull)
+                .filter(entry -> String.valueOf(entry.getPort()).equals(destPort))
+                .filter(entry -> entry.getProtocol() != null &&
+                        entry.getProtocol().equalsIgnoreCase(protocol))
+                .findFirst();
+
+        if (exactMatch.isPresent()) {
+            return exactMatch;
+        }
+        // Fallback → blank/null protocol for same port
         return portConfigList.stream()
                 .filter(Objects::nonNull)
                 .filter(entry -> String.valueOf(entry.getPort()).equals(destPort))
+                .filter(entry -> entry.getProtocol() == null ||
+                        entry.getProtocol().isBlank())
                 .findFirst();
+    
     }
+
+
 }

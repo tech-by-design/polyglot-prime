@@ -28,6 +28,7 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
+
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
@@ -52,6 +53,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -819,7 +821,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     getDataBucketName(), getMetadataBucketName(),
                     appConfig.getVersion());
 
-            Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(minimalCtx);
+            Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(minimalCtx , Constants.TCP);
             int kat = portEntryOpt.map(pe -> pe.getKeepAliveTimeout()).orElse(0);
 
             if (kat > 0) {
@@ -1282,7 +1284,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 destinationPort,
                 isMllpWrapped ? MessageSourceType.MLLP : MessageSourceType.TCP);
 
-        Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(initialContext);
+        Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(initialContext ,Constants.TCP);
 
         // --- keepAliveTimeout override ---
         int resolvedKat = portEntryOpt
@@ -2073,4 +2075,31 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     @Override
     public String getDestinationPort(Map<String, String> headers) { return headers.get("DestinationPort"); }
+
+   private void logHttpHeaders(io.netty.handler.codec.http.HttpRequest request,
+                            String sessionId,
+                            UUID interactionId) {
+
+        request.headers().forEach(header -> {
+            logger.info("HTTP_HEADER [sessionId={}] [interactionId={}] {}={}",
+                    sessionId,
+                    interactionId,
+                    header.getKey(),
+                    header.getValue());
+        });
+}
+
+    private void logTcpConnectionDetails(ChannelHandlerContext ctx,
+                                        String sessionId,
+                                        UUID interactionId) {
+
+        String remoteIp = ctx.channel().remoteAddress().toString();
+        String localIp = ctx.channel().localAddress().toString();
+
+        logger.info("TCP_CONNECTION_METADATA [sessionId={}] [interactionId={}] remoteAddress={} localAddress={}",
+                sessionId,
+                interactionId,
+                remoteIp,
+                localIp);
+    }
 }

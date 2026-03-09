@@ -73,12 +73,12 @@ public class PortResolverService {
      * @return an {@link Optional} containing the resolved PortEntry, or empty if
      *         none match
      */
-    public Optional<PortEntry> resolve(RequestContext context) {
+    public Optional<PortEntry> resolve(RequestContext context , String protocol) {
         LOG.info("[PORT_RESOLVER] Resolving PortEntry for context: sourceId={}, msgType={}, port={}",
                 context.getSourceId(), context.getMsgType(), context.getDestinationPort());
 
         for (PortConfigResolver resolver : resolvers) {
-            Optional<PortEntry> result = resolver.resolve(portConfig.getPortConfigurationList(), context);
+            Optional<PortEntry> result = resolver.resolve(portConfig.getPortConfigurationList(), context , protocol);
 
             if (result.isPresent()) {
                 PortEntry entry = result.get();

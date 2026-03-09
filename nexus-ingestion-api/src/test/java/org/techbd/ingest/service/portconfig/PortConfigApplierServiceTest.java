@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.PortConfig.PortEntry;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
@@ -57,13 +58,13 @@ class PortConfigApplierServiceTest {
         // given
         RequestContext context = mock(RequestContext.class);
         when(context.getInteractionId()).thenReturn("interaction-123");
-        when(portEntryResolver.resolve(context)).thenReturn(Optional.empty());
+        when(portEntryResolver.resolve(context , Constants.HTTP)).thenReturn(Optional.empty());
 
         // when
         RequestContext result = service.applyPortConfigOverrides(context);
 
         // then
-        verify(portEntryResolver).resolve(context);
+        verify(portEntryResolver).resolve(context, Constants.HTTP);
         verifyNoInteractions(resolver1, resolver2);
 
         verify(templateLogger).debug(
@@ -85,7 +86,7 @@ class PortConfigApplierServiceTest {
         PortEntry entry = mock(PortEntry.class);
         entry.port = 8080;
 
-        when(portEntryResolver.resolve(context))
+        when(portEntryResolver.resolve(context ,Constants.HTTP))
                 .thenReturn(Optional.of(entry));
 
         // when

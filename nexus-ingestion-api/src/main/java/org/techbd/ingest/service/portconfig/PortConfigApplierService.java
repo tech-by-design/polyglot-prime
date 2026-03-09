@@ -8,6 +8,7 @@ import org.techbd.ingest.config.PortConfig.PortEntry;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.commons.Constants;
 
 /**
  * Central orchestrator that applies PortConfig-based overrides to the
@@ -64,7 +65,7 @@ public class PortConfigApplierService {
     public RequestContext applyPortConfigOverrides(RequestContext context) {
         String interactionId = context.getInteractionId();
 
-        Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context);
+        Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context , Constants.HTTP);
         if (!portEntryOpt.isPresent()) {
             LOG.debug(
                     "[PORT_CONFIG_APPLY] No port entry resolved for context. Using default values. interactionId={}",

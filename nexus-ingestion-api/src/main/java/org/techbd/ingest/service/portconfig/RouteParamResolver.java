@@ -52,19 +52,33 @@ public class RouteParamResolver implements PortConfigResolver {
     @Override
     public Optional<PortConfig.PortEntry> resolve(
             List<PortConfig.PortEntry> portConfigList,
-            RequestContext context) {
+            RequestContext context , String protocol) {
 
         String sourceId = context.getSourceId();
         String msgType = context.getMsgType();
 
-        if (sourceId == null || msgType == null) {
-            return Optional.empty();
+        if (sourceId == null || msgType == null ) {
+             return Optional.empty();
         }
 
-        return portConfigList.stream()
-                .filter(Objects::nonNull)
-                .filter(entry -> matches(entry, sourceId, msgType))
-                .findFirst();
+        Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
+            .filter(Objects::nonNull)
+            .filter(entry -> matches(entry, sourceId, msgType))
+            .filter(entry -> entry.getProtocol() != null &&
+                    entry.getProtocol().equalsIgnoreCase(protocol))
+            .findFirst();
+
+    if (exactMatch.isPresent()) {
+        return exactMatch;
+    }
+
+    //  Fallback → blank protocol
+    return portConfigList.stream()
+            .filter(Objects::nonNull)
+            .filter(entry -> matches(entry, sourceId, msgType))
+            .filter(entry -> entry.getProtocol() == null ||
+                    entry.getProtocol().isBlank())
+            .findFirst();
     }
 
     /**

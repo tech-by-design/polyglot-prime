@@ -31,6 +31,6 @@ public interface PortConfigResolver {
      */
     Optional<PortConfig.PortEntry> resolve(
             List<PortConfig.PortEntry> portConfigList,
-            RequestContext context
+            RequestContext context , String protocol
     );
 }
