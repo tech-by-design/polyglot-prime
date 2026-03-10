@@ -3,6 +3,7 @@ package org.techbd.csv.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -43,7 +44,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/features/**").permitAll()
                         .requestMatchers("/feature").permitAll()
                         .requestMatchers("/csv-service/features/**").permitAll()
-                        .anyRequest().denyAll());
+                        .anyRequest().denyAll())
+                        // Replace the default 403 with 404 for unmatched / denied routes
+                        .exceptionHandling(ex -> ex
+                            .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpStatus.NOT_FOUND.value(), "Not Found"))
+                            .accessDeniedHandler((request, response, accessDeniedException) ->
+                                response.sendError(HttpStatus.NOT_FOUND.value(), "Not Found"))
+                        );
         return http.build();
     }
 }
