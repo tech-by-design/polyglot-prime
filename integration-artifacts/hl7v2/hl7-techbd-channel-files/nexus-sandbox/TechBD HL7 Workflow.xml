@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>368a5972-44f6-4d51-943e-3fe069c7469e</id>
+  <id>55073658-befa-437d-8ce7-e91ac6f54961</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.27
-Configured health check endpoint using static resources.</description>
-  <revision>5</revision>
+  <description>Version: 0.1.28
+Reverted hl7 file validation is not exist in synthetic</description>
+  <revision>18</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -253,81 +253,6 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }
 
-/**
-* Util function to validate hl7data.
-* Only basic validations present here remaining are in destination transformer.
-*/
-
-function validateHL7(hl7Data, interactionId, tenantId) {
-
-    var segments = hl7Data.split(/\r?\n|\r/);
-
-    if (segments.length === 0) {
-        throw getOutcome(&quot;HL7 message is empty.&quot;, &quot;error&quot;, &quot;empty-hl7&quot;, interactionId);
-    }
-
-    // Validate first segment
-    if (!segments[0].startsWith(&quot;MSH|&quot;)) {
-        throw getOutcome(&quot;HL7 must start with MSH segment.&quot;, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
-    }
-
-    var validSegments = {
-        &quot;MSH&quot;: true,
-        &quot;PID&quot;: true,
-        &quot;PV1&quot;: true,
-        &quot;ORC&quot;: true,
-        &quot;OBR&quot;: true,
-        &quot;OBX&quot;: true,
-        &quot;NK1&quot;: true,
-        &quot;AL1&quot;: true,
-        &quot;DG1&quot;: true,
-        &quot;PR1&quot;: true
-    };
-
-    var hasPID = false;
-
-    for (var i = 0; i &lt; segments.length; i++) {
-
-        var line = segments[i].trim();
-
-        if (line === &quot;&quot;) {
-            throw getOutcome(&quot;Empty HL7 segment at line &quot; + (i+1), &quot;error&quot;, &quot;empty-line&quot;, interactionId);
-        }
-
-        if (line.length &lt; 3) {
-            throw getOutcome(&quot;Invalid HL7 segment length at line &quot; + (i+1), &quot;error&quot;, &quot;invalid-segment&quot;, interactionId);
-        }
-
-        var segmentType = line.substring(0,3);
-
-        
-        if (line.indexOf(&quot;|&quot;) === -1) {
-            throw getOutcome(&quot;Missing field separator &apos;|&apos; at line &quot; + (i+1), &quot;error&quot;, &quot;missing-separator&quot;, interactionId);
-        }
-
-        if (segmentType === &quot;PID&quot;) {
-            hasPID = true;
-        }
-
-
-		if (!/^[A-Z0-9]{3}$/.test(segmentType)) {
-		    throw getOutcome(&quot;Invalid segment name at line &quot; + (i+1), &quot;error&quot;, &quot;invalid-segment&quot;, interactionId);
-		}
-		
-		if (line.charAt(3) !== &quot;|&quot;) {
-		    throw getOutcome(&quot;Missing &apos;|&apos; after segment &quot; + segmentType + &quot; at line &quot; + (i+1), &quot;error&quot;, &quot;missing-separator&quot;, interactionId);
-		}
-    }
-
-    if (!hasPID) {
-        throw getOutcome(&quot;HL7 message missing required PID segment.&quot;, &quot;error&quot;, &quot;missing-pid&quot;, interactionId);
-    }
-
-    
-
-    return true;
-}
-
 //var UuidCreator = Packages.com.github.f4b6a3.uuid.UuidCreator;
 //var interactionId = UuidCreator.getTimeOrdered().toString();
 var interactionId = java.util.UUID.randomUUID().toString();
@@ -353,17 +278,26 @@ var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 
 	var rawData = connectorMessage.getRawData();
 
-	// Count filenames in multipart body
-	var fileMatches = rawData.match(/filename=&quot;([^&quot;]+)&quot;/g);
-	
-	if (fileMatches &amp;&amp; fileMatches.length &gt; 1) {
-	    var errorMessage = &quot;Multiple files detected in upload. Only one file is allowed per request.&quot;;
-	    logger.error(logPrefix + errorMessage);
-	
-	    setErrorResponse(400, errorMessage);
-	    throw errorMessage;
-	}
-	
+		var partMatches = rawData.match(/Content-Disposition:/g) || [];
+		var fileMatches = rawData.match(/filename=&quot;/g) || [];
+		
+		logger.info(logPrefix + &quot;Parts: &quot; + partMatches.length);
+		logger.info(logPrefix + &quot;Files: &quot; + fileMatches.length);
+		
+		// if more than one multipart input
+		if (partMatches.length &gt; 1) {
+		    var errorMessage = &quot;Invalid request. Only one file input is allowed.&quot;;
+		    setErrorResponse(400, errorMessage);
+		    throw errorMessage;
+		}
+		
+		// if more than one file
+		if (fileMatches.length &gt; 1) {
+		    var errorMessage = &quot;Multiple files detected in upload. Only one file is allowed.&quot;;
+		    setErrorResponse(400, errorMessage);
+		    throw errorMessage;
+		}
+
 	if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
 	    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
 	    setErrorResponse(400, errorMessage);
@@ -443,33 +377,37 @@ if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
 
 // ---------------- HL7 VALIDATION ----------------
 
-try {
-
-    validateHL7(hl7Data, interactionId, tenantId);
-
-} catch (validationError) {
-
-    var outcome = validationError;
-
-    try {
+// Now validate HL7 lines
+var lines = hl7Data.split(/\r?\n/);
+if (!hl7Data.trim().startsWith(&quot;MSH|&quot;)) {
+    var errorMessage = &quot;Not a valid HL7 message. HL7 must start with &apos;MSH|&apos;.&quot;;
+    var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;invalid-msh&quot;, interactionId);
+	try {
         var operation = &quot;saveValidationFailed&quot;;
-
-        saveHL7Payload(
-            interactionId,
-            tenantId,
-            sourceMap.get(&apos;contextPath&apos;),
-            outcome,
-            operation
-        );
-
-        logger.info(logPrefix + &quot;Validation failure saved&quot;);
-
+        saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+        logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
     } catch (saveError) {
-        logger.error(logPrefix + &quot;Failed saving validation error: &quot; + saveError.message);
+        logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
     }
-
     responseMap.put(&apos;finalResponse&apos;, outcome);
     throw outcome;
+}
+
+for (var i = 0; i &lt; lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith(&quot;|&quot;)) {
+        var errorMessage = &quot;Not a valid HL7 data. Line &quot; + (i + 1) + &quot; starts with &apos;|&apos;.&quot;;
+        var outcome = getOutcome(errorMessage, &quot;error&quot;, &quot;line-error&quot;, interactionId);
+	try {
+            var operation = &quot;saveValidationFailed&quot;;
+            saveHL7Payload(interactionId, tenantId, sourceMap.get(&apos;contextPath&apos;), outcome, operation);
+            logger.info(logPrefix + &quot;Successfully saved validation failure information&quot;);
+        } catch (saveError) {
+            logger.error(logPrefix + &quot;Failed to save validation failure: &quot; + saveError.message);
+        }
+        responseMap.put(&apos;finalResponse&apos;, outcome);
+    	 throw outcome;
+    }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
@@ -3080,7 +3018,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772790185395</time>
+        <time>1773127814484</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3091,14 +3029,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>303385b2-03f1-497e-885c-5ddf8a18ac99</id>
-        <name>0_1_27</name>
+        <id>911fc781-fa20-420b-a098-4ea5e570d804</id>
+        <name>0_1_28</name>
         <channelIds>
-          <string>368a5972-44f6-4d51-943e-3fe069c7469e</string>
+          <string>55073658-befa-437d-8ce7-e91ac6f54961</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
