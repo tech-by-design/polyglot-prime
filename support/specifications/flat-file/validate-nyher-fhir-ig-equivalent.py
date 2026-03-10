@@ -28,14 +28,14 @@ class OptionalYesNoFlagsCheck(Check):
             if field not in row:
                 continue
 
-            value = row[field]
+            value = (row[field] or "").strip().lower()
 
             # Empty value → OK (optional)
             if value in (None, ""):
                 continue
 
             # Invalid value → ERROR
-            if value not in ("Yes", "No", "yes", "no", "YES", "NO"):
+            if value not in ( "yes", "no"):
                 note = f"Field '{field}' must be Yes or No when present, got: '{value}'"
                 yield errors.RowError.from_row(row, note=note)  # ✅ Fixed: Use proper error creation
 
@@ -64,9 +64,9 @@ class ValidatePotentialNeedIndicated(Check):
         if "ANSWER_CODE" not in row or "POTENTIAL_NEED_INDICATED" not in row:
             return
 
-        answer_code = row["ANSWER_CODE"]
-        potential_need = row["POTENTIAL_NEED_INDICATED"]
-
+        answer_code = (row["ANSWER_CODE"] or "").strip().lower()
+        potential_need = (row["POTENTIAL_NEED_INDICATED"] or "").strip().lower()
+       
         # Skip validation if either field is empty
         if not answer_code or not potential_need:
             return
@@ -82,6 +82,7 @@ class ValidatePotentialNeedIndicated(Check):
                 yield errors.RowError.from_row(row, note=note)
 
         # NEGATIVE validation
+        # print(f"answer_code: {answer_code}, self.negative_answer_codes: {self.negative_answer_codes}, potential_need: {potential_need}")
         if answer_code in self.negative_answer_codes:
             if "neg" not in potential_need:
                 note = (
@@ -352,93 +353,93 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ##########################
 
         # Transform and validate
-        common_transform_steps = [ 
-            ("ORGANIZATION_TYPE_CODE", "organization_type_code"), 
-            ("ORGANIZATION_TYPE_CODE_SYSTEM", "organization_type_code_system"), 
-            ("FACILITY_STATE", "facility_state"),
-            ("ENCOUNTER_CLASS_CODE", "encounter_class_code"),             
-            ("ENCOUNTER_CLASS_CODE_SYSTEM", "encounter_class_code_system"),
-            ("ENCOUNTER_STATUS_CODE", "encounter_status_code"),            
-            ("ENCOUNTER_STATUS_CODE_SYSTEM", "encounter_status_code_system"),            
-            ("ENCOUNTER_TYPE_CODE_SYSTEM", "encounter_type_code_system"),
-            ("CONSENT_STATUS", "consent_status"),
-            ("SCREENING_STATUS_CODE", "screening_status_code"),            
-            ("SCREENING_STATUS_CODE_SYSTEM", "screening_status_code_system"),
-            ("SCREENING_LANGUAGE_CODE", "screening_language_code"),            
-            ("SCREENING_LANGUAGE_CODE_SYSTEM", "screening_language_code_system"),
-            ("SCREENING_ENTITY_ID_CODE_SYSTEM", "screening_entity_id_code_system"),
-            ("SCREENING_CODE", "screening_code"),            
-            ("SCREENING_CODE_SYSTEM", "screening_code_system"),            
-            ("QUESTION_CODE_SYSTEM", "question_code_system"),
-            ("ANSWER_CODE", "answer_code"),            
-            ("ANSWER_CODE_SYSTEM", "answer_code_system"), 
-            ("OBSERVATION_CATEGORY_SDOH_CODE", "observation_category_sdoh_code"),              
-            ("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),            
-            ("POTENTIAL_NEED_INDICATED", "potential_need_indicated"),
-            ("ADMINISTRATIVE_SEX_CODE", "administrative_sex_code"),             
-            ("ADMINISTRATIVE_SEX_CODE_SYSTEM", "administrative_sex_code_system"),
-            ("SEX_AT_BIRTH_CODE", "sex_at_birth_code"),            
-            ("SEX_AT_BIRTH_CODE_SYSTEM", "sex_at_birth_code_system"),
-            ("STATE", "state"),  
-            ("TELECOM_USE", "telecom_use"), 
-            ("RACE_CODE", "RACE_CODE"),       
-            ("RACE_CODE_SYSTEM", "race_code_system"),  
-            ("ETHNICITY_CODE", "ethnicity_code"),          
-            ("ETHNICITY_CODE_SYSTEM", "ethnicity_code_system"),
-            ("PERSONAL_PRONOUNS_CODE", "personal_pronouns_code"),            
-            ("PERSONAL_PRONOUNS_SYSTEM", "personal_pronouns_system"),
-            ("GENDER_IDENTITY_CODE", "gender_identity_code"),            
-            ("GENDER_IDENTITY_CODE_SYSTEM", "gender_identity_code_system"),
-            ("PREFERRED_LANGUAGE_CODE", "preferred_language_code"),            
-            ("PREFERRED_LANGUAGE_CODE_SYSTEM", "preferred_language_code_system"), 
-            ("SEXUAL_ORIENTATION_CODE", "sexual_orientation_code"),            
-            ("SEXUAL_ORIENTATION_CODE_SYSTEM", "sexual_orientation_code_system")            
-        ]
+        # common_transform_steps = [ 
+            # ("ORGANIZATION_TYPE_CODE", "organization_type_code"), 
+            # ("ORGANIZATION_TYPE_CODE_SYSTEM", "organization_type_code_system"), 
+            # ("FACILITY_STATE", "facility_state"),
+            # ("ENCOUNTER_CLASS_CODE", "encounter_class_code"),             
+            # ("ENCOUNTER_CLASS_CODE_SYSTEM", "encounter_class_code_system"),
+            # ("ENCOUNTER_STATUS_CODE", "encounter_status_code"),            
+            # ("ENCOUNTER_STATUS_CODE_SYSTEM", "encounter_status_code_system"),            
+            # ("ENCOUNTER_TYPE_CODE_SYSTEM", "encounter_type_code_system"),
+            # ("CONSENT_STATUS", "consent_status"),
+            # ("SCREENING_STATUS_CODE", "screening_status_code"),            
+            # ("SCREENING_STATUS_CODE_SYSTEM", "screening_status_code_system"),
+            # ("SCREENING_LANGUAGE_CODE", "screening_language_code"),            
+            # ("SCREENING_LANGUAGE_CODE_SYSTEM", "screening_language_code_system"),
+            # ("SCREENING_ENTITY_ID_CODE_SYSTEM", "screening_entity_id_code_system"),
+            # ("SCREENING_CODE", "screening_code"),            
+            # ("SCREENING_CODE_SYSTEM", "screening_code_system"),            
+            # ("QUESTION_CODE_SYSTEM", "question_code_system"),
+            # ("ANSWER_CODE", "answer_code"),            
+            # ("ANSWER_CODE_SYSTEM", "answer_code_system"), 
+            # ("OBSERVATION_CATEGORY_SDOH_CODE", "observation_category_sdoh_code"),              
+            # ("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),            
+            # ("POTENTIAL_NEED_INDICATED", "potential_need_indicated"),
+            # ("ADMINISTRATIVE_SEX_CODE", "administrative_sex_code"),             
+            # ("ADMINISTRATIVE_SEX_CODE_SYSTEM", "administrative_sex_code_system"),
+            # ("SEX_AT_BIRTH_CODE", "sex_at_birth_code"),            
+            # ("SEX_AT_BIRTH_CODE_SYSTEM", "sex_at_birth_code_system"),
+            # ("STATE", "state"),  
+            # ("TELECOM_USE", "telecom_use"), 
+            # ("RACE_CODE", "RACE_CODE"),       
+            # ("RACE_CODE_SYSTEM", "race_code_system"),  
+            # ("ETHNICITY_CODE", "ethnicity_code"),          
+            # ("ETHNICITY_CODE_SYSTEM", "ethnicity_code_system"),
+            # ("PERSONAL_PRONOUNS_CODE", "personal_pronouns_code"),            
+            # ("PERSONAL_PRONOUNS_SYSTEM", "personal_pronouns_system"),
+            # ("GENDER_IDENTITY_CODE", "gender_identity_code"),            
+            # ("GENDER_IDENTITY_CODE_SYSTEM", "gender_identity_code_system"),
+            # ("PREFERRED_LANGUAGE_CODE", "preferred_language_code"),            
+            # ("PREFERRED_LANGUAGE_CODE_SYSTEM", "preferred_language_code_system"), 
+            # ("SEXUAL_ORIENTATION_CODE", "sexual_orientation_code"),            
+            # ("SEXUAL_ORIENTATION_CODE_SYSTEM", "sexual_orientation_code_system")            
+        # ]
 
         # Track errors to avoid duplicates
-        seen_errors = set()
+        # seen_errors = set()
 
-        for resource in package.resources:
-            try:
-                # Create transform steps only for fields that exist in the current resource
-                transform_steps = [
-                    steps.cell_convert(field_name=field_name, function=lambda value: value.lower())
-                    for field_name, _ in common_transform_steps
-                    if any(field.name == field_name for field in resource.schema.fields)
-                ]
-                resource = transform(resource, steps=transform_steps)
-            except Exception as e:
-                file_in_error_path = getattr(resource, "path", None)  # or resource.name, depending on your library
-                file_in_error = os.path.basename(file_in_error_path) if file_in_error_path else None
-                error_message = str(e)
-                # Extract missing field name as before
-                match = re.search(r"'(.*?)'", error_message)
-                missing_field = match.group(1) if match else "Unknown field"
+        # for resource in package.resources:
+        #     try:
+        #         # Create transform steps only for fields that exist in the current resource
+        #         transform_steps = [
+        #             steps.cell_convert(field_name=field_name, function=lambda value: value.lower())
+        #             for field_name, _ in common_transform_steps
+        #             if any(field.name == field_name for field in resource.schema.fields)
+        #         ]
+        #         resource = transform(resource, steps=transform_steps)
+        #     except Exception as e:
+        #         file_in_error_path = getattr(resource, "path", None)  # or resource.name, depending on your library
+        #         file_in_error = os.path.basename(file_in_error_path) if file_in_error_path else None
+        #         error_message = str(e)
+        #         # Extract missing field name as before
+        #         match = re.search(r"'(.*?)'", error_message)
+        #         missing_field = match.group(1) if match else "Unknown field"
 
-                # Create a unique key for this error to avoid duplicates
-                error_key = (missing_field)
+        #         # Create a unique key for this error to avoid duplicates
+        #         error_key = (missing_field)
 
-                if error_key not in seen_errors:
-                    seen_errors.add(error_key)
-                    file_info = f" in file '{file_in_error}'" if file_in_error else ""
-                    user_friendly_message = (
-                        f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
-                        f"Please check if it exists in the CSV file and matches the expected schema."
-                    )
-                    results["errorsSummary"].append({
-                        "fieldName": missing_field,
-                        "message": user_friendly_message,
-                        "type": "data-processing-errors"
-                    })
+        #         if error_key not in seen_errors:
+        #             seen_errors.add(error_key)
+        #             file_info = f" in file '{file_in_error}'" if file_in_error else ""
+        #             user_friendly_message = (
+        #                 f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
+        #                 f"Please check if it exists in the CSV file and matches the expected schema."
+        #             )
+        #             results["errorsSummary"].append({
+        #                 "fieldName": missing_field,
+        #                 "message": user_friendly_message,
+        #                 "type": "data-processing-errors"
+        #             })
        
 
         # Create checklist with only detected flag fields
         checks = [ValidateAnswerCode(), ValidatePotentialNeedIndicated()]
 
         # Only add flag validation if flag fields were detected
-        if detected_flag_fields:
-            # print(f"🔍 Adding flag validation for: {detected_flag_fields}")
-            checks.insert(0, OptionalYesNoFlagsCheck(detected_flag_fields))
+        # if detected_flag_fields:
+        #     # print(f"🔍 Adding flag validation for: {detected_flag_fields}")
+        #     checks.insert(0, OptionalYesNoFlagsCheck(detected_flag_fields))
         # else:
         #     print("ℹ️  No flag fields detected - skipping flag validation")
 
