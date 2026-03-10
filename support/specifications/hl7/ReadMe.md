@@ -1,8 +1,8 @@
 # HL7v2 to FHIR Conversion Process
 
-This document describes the **step-by-step process** for converting **HL7v2 messages** into **FHIR-compliant bundles** using **Mirth Connect**.  
-It includes schema validation, XML conversion, and transformation based on the **SHINNY Implementation Guide (IG)**.
-
+This document describes the **HL7v2 → FHIR conversion pipeline** implemented using **Mirth Connect** for converting **HL7v2 messages** into **FHIR Bundles** using **Mirth Connect**.  
+The pipeline receives **HL7v2 messages**, performs **XML conversion**, **validation**, and converts them into **FHIR Bundles** compliant with the **SHINNY Implementation Guide (IG)**.
+The entire process is implemented through the **TechBD HL7 Workflow** Mirth Connect channel.
 
 
 ## Overview
@@ -34,6 +34,26 @@ integration-artifacts/
 ### **Step 1: Receive HL7v2 Message**
 - The process begins when an **HL7v2 message** is received through the **TechBD HL7 Workflow** Mirth Connect channel.
 - Mirth triggers the pipeline for transformation and validation.
+
+
+#### Required HTTP Headers
+
+When sending the HL7v2 file to the conversion endpoint, include the following **HTTP headers** in the request.  
+These headers are required for correct routing, validation, and FHIR bundle generation.
+
+| Header Name | Example Value | Description |
+|--------------|----------------|--------------|
+| **X-TechBD-Tenant-ID** | `QE-CR` | Identifies the tenant for which the HL7 message belongs. |
+| **X-TechBD-CIN** | `AB12345C` | Customer identification number. |
+| **X-TechBD-OrgNPI** | `NPI123456` | Organization’s NPI (National Provider Identifier). Either **X-TechBD-OrgNPI** or **X-TechBD-OrgTIN** is required. |
+| **X-TechBD-OrgTIN** | `TIN1231423` | Organization’s Tax Identification Number. Either **X-TechBD-OrgNPI** or **X-TechBD-OrgTIN** is required. |
+| **X-TechBD-Facility-ID** | `FacilityID-123` | The ID of the submitting facility. |
+| **X-TechBD-Encounter-Type** | `405672008` | Encounter type code. |
+| **X-TechBD-Validation-Severity-Level** | `error` | Determines how validation errors are handled. |
+| **X-TechBD-Organization-Name** | `Abc Corporation` | Name of the Organization. |
+| **X-TechBD-Part2** | `True` | Specifies whether to add the 'security' element to Bundle.meta to flag the Part 2 or sensitive data. |
+
+> **Note:** All these headers must be provided in every HL7 submission request. Missing or incorrect headers may cause the transformation to fail or produce incomplete FHIR bundles.
 
 
 
@@ -77,12 +97,14 @@ integration-artifacts/
 
 
 ### **Step 6: Generate FHIR Bundle**
-- The transformation produces a **FHIR Bundle** containing:
+- The transformation produces a **FHIR Bundle** containing the following resources:
   - `Patient`
   - `Encounter`
   - `Consent`
   - `Organization`
   - `Observation`
+  - `Sexual Orientation`
+  - `Grouper Observation`
 
 - The final output is a **FHIR-compliant JSON bundle**, ready for downstream systems.
 
@@ -106,21 +128,3 @@ integration-artifacts/
 - Future versions may include mappings for **HL7v2.4**, **v2.5**, and beyond.
 - Ensure Mirth Connect has read/write access to the `integration-artifacts` directory.
 - Logging and error handling are managed within the Mirth Connect channel.
-
-## Required HTTP Headers
-
-When sending the HL7v2 file to the conversion endpoint, include the following **HTTP headers** in the request.  
-These headers are required for correct routing, validation, and FHIR bundle generation.
-
-| Header Name | Example Value | Description |
-|--------------|----------------|--------------|
-| **X-TechBD-Tenant-ID** | `QE-CR` | Identifies the tenant for which the HL7 message belongs. |
-| **X-TechBD-CIN** | `AB12345C` | Customer identification number. |
-| **X-TechBD-OrgNPI** | `NPI123456` | Organization’s NPI (National Provider Identifier). |
-| **X-TechBD-OrgTIN** | `TIN1231423` | Organization’s Tax Identification Number. |
-| **X-TechBD-Facility-ID** | `FacilityID-123` | The ID of the submitting facility. |
-| **X-TechBD-Encounter-Type** | `405672008` | Encounter type code. |
-| **X-TechBD-Validation-Severity-Level** | `error` | Determines how validation errors are handled. |
-| **X-TechBD-Organization-Name** | `Abc Corporation` | Name of the Organization. |
-
-> **Note:** All these headers must be provided in every HL7 submission request. Missing or incorrect headers may cause the transformation to fail or produce incomplete FHIR bundles.

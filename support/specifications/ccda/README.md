@@ -53,12 +53,13 @@ These headers are required for correct routing, validation, and FHIR bundle gene
 |--------------|----------------|--------------|
 | **X-TechBD-Tenant-ID** | `QE-CR` | Identifies the tenant for which the CCDA message belongs. |
 | **X-TechBD-CIN** | `AB12345C` | Customer identification number. |
-| **X-TechBD-OrgNPI** | `NPI123456` | Organization’s NPI (National Provider Identifier). |
-| **X-TechBD-OrgTIN** | `TIN1231423` | Organization’s Tax Identification Number. |
+| **X-TechBD-OrgNPI** | `NPI123456` | Organization’s NPI (National Provider Identifier). Either **X-TechBD-OrgNPI** or **X-TechBD-OrgTIN** is required. |
+| **X-TechBD-OrgTIN** | `TIN1231423` | Organization’s Tax Identification Number. Either **X-TechBD-OrgNPI** or **X-TechBD-OrgTIN** is required. |
 | **X-TechBD-Facility-ID** | `FacilityID-123` | The ID of the submitting facility. |
 | **X-TechBD-Encounter-Type** | `405672008` | Encounter type code. |
 | **X-TechBD-Validation-Severity-Level** | `error` | Determines how validation errors are handled. |
 | **X-TechBD-Screening-Code** | `100698-0` | Grouper Screening code linked to the Observation resources. |
+| **X-TechBD-Part2** | `True` | Specifies whether to add the 'security' element to Bundle.meta to flag the Part 2 or sensitive data. |
 
 > **Note:** All these headers must be provided in every CCDA submission request. Missing or incorrect headers may cause the transformation to fail or produce incomplete FHIR bundles.
 
@@ -89,7 +90,7 @@ These headers are required for correct routing, validation, and FHIR bundle gene
   ```
 
 ### **Step 5: Mirth Channel Processing**
-- The entire process—PHI exclusion, schema validation, transformation—is performed within the **Mirth Connect channel**:
+- The entire process — PHI exclusion, schema validation, transformation — is performed within the **Mirth Connect channel**:
   ```
   TechBD CCD Workflow
   ```
