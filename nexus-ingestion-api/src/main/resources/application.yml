@@ -58,7 +58,7 @@ togglz:
     IGNORE_MUST_UNDERSTAND_HEADERS:
       enabled: true
     LOG_INCOMING_MESSAGE:
-      enabled: true
+      enabled: false
 logging:
   level:
     root: INFO
