@@ -11,7 +11,9 @@ public enum FeatureEnum implements Feature {
     @Label("Ignore SOAP MustUnderstand Headers")
     IGNORE_MUST_UNDERSTAND_HEADERS,
     @Label("Log Incoming Message")
-    LOG_INCOMING_MESSAGE;
+    LOG_INCOMING_MESSAGE,
+    @Label("Include NTE Segment in HL7 ACK Response")
+    ADD_NTE_SEGMENT_TO_HL7_ACK;
     public static boolean isEnabled(Feature feature) {
         return FeatureContext.getFeatureManager().isActive(feature);
     }

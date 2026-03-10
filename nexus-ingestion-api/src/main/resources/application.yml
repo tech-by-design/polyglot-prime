@@ -59,6 +59,8 @@ togglz:
       enabled: true
     LOG_INCOMING_MESSAGE:
       enabled: false
+    ADD_NTE_SEGMENT_TO_HL7_ACK:
+      enabled: true  
 logging:
   level:
     root: INFO

@@ -1460,7 +1460,9 @@ public class NettyTcpServer implements MessageSourceProvider {
                 GenericParser parser = context.getGenericParser();
                 hl7Message = parser.parse(cleanMsg);
                 Message ack = hl7Message.generateACK();
-                ackMessage = addNteWithInteractionId(ack, interactionId.toString(), appConfig.getVersion());
+              if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                   ackMessage = addNteWithInteractionId(ack, interactionId.toString(), appConfig.getVersion());
+                 }
                 ackMessage = new PipeParser().encode(ack);
                 logger.info("HL7_ACK_GENERATED [sessionId={}] [interactionId={}] [haproxyDetails={}]",
                         sessionId, interactionId, haproxyDetails(ctx));
@@ -2075,31 +2077,4 @@ public class NettyTcpServer implements MessageSourceProvider {
 
     @Override
     public String getDestinationPort(Map<String, String> headers) { return headers.get("DestinationPort"); }
-
-   private void logHttpHeaders(io.netty.handler.codec.http.HttpRequest request,
-                            String sessionId,
-                            UUID interactionId) {
-
-        request.headers().forEach(header -> {
-            logger.info("HTTP_HEADER [sessionId={}] [interactionId={}] {}={}",
-                    sessionId,
-                    interactionId,
-                    header.getKey(),
-                    header.getValue());
-        });
-}
-
-    private void logTcpConnectionDetails(ChannelHandlerContext ctx,
-                                        String sessionId,
-                                        UUID interactionId) {
-
-        String remoteIp = ctx.channel().remoteAddress().toString();
-        String localIp = ctx.channel().localAddress().toString();
-
-        logger.info("TCP_CONNECTION_METADATA [sessionId={}] [interactionId={}] remoteAddress={} localAddress={}",
-                sessionId,
-                interactionId,
-                remoteIp,
-                localIp);
-    }
 }
