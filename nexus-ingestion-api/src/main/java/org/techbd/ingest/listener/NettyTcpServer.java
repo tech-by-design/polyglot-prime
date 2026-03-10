@@ -2039,7 +2039,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 getFullS3DataPath(interactionId, headers, originalFileName, timestamp),
                 userAgent, "",
                 portEntryOpt.map(pe -> pe.route).orElse(""),
-                "TCP", destinationIp, sourceIp, sourceIp, destinationIp, destinationPort,
+                Constants.TCP, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort,
                 getAcknowledgementKey(interactionId, headers, originalFileName, timestamp),
                 getFullS3AcknowledgementPath(interactionId, headers, originalFileName, timestamp),
                 getFullS3MetadataPath(interactionId, headers, originalFileName, timestamp),

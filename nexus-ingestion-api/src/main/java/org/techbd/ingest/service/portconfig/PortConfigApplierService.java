@@ -8,6 +8,9 @@ import org.techbd.ingest.config.PortConfig.PortEntry;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
+
+import io.micrometer.common.util.StringUtils;
+
 import org.techbd.ingest.commons.Constants;
 
 /**
@@ -64,8 +67,8 @@ public class PortConfigApplierService {
      */
     public RequestContext applyPortConfigOverrides(RequestContext context) {
         String interactionId = context.getInteractionId();
-
-        Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context , Constants.HTTP);
+        String protocol = (StringUtils.isEmpty(context.getProtocol()) || context.getProtocol().contains(Constants.HTTP)) ? Constants.HTTP : context.getProtocol();
+        Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context , protocol);
         if (!portEntryOpt.isPresent()) {
             LOG.debug(
                     "[PORT_CONFIG_APPLY] No port entry resolved for context. Using default values. interactionId={}",
