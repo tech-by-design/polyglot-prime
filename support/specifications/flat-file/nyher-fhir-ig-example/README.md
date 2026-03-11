@@ -1,14 +1,6 @@
 # SHIN-NY IG CSV Example Directory 
 
-This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (SHIN-NY IG)](https://shinny.org/us/ny/hrsn/index.html). It includes four CSV files that collectively generate the following FHIR resource types:
-
-- **[Bundle](https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.html)**
-- **[Patient](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-patient.html)**
-- **[Organization](https://shinny.org/us/ny/hrsn/StructureDefinition-shin-ny-organization.html)**
-- **[Consent](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-Consent.html)**
-- **[Encounter](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-encounter.html)**
-- **[Observation](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-observation-screening-response.html)**
-- **[Procedure](http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure)** 
+This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (SHIN-NY IG)](https://shinny.org/us/ny/hrsn/index.html). The CSV files in this directory are used to generate FHIR Bundles that are compliant with the SHIN-NY IG.
 
 ## Included CSV Files
 
@@ -24,7 +16,7 @@ This directory contains a valid example dataset that aligns with the [FHIR Imple
 4. **`SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`**  
    Provides details used for Observation resources in the screening process.
 
-#### CSV example zip files for SFTP testing
+#### CSV example zip files
 
 1. **`CorrectDataSingleSet.zip`**  
 Contains a single set of CSV files with information about one patient.
