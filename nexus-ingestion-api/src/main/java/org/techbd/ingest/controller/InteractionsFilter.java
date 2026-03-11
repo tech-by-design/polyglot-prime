@@ -93,21 +93,30 @@ public class InteractionsFilter extends OncePerRequestFilter {
         if (StringUtils.isEmpty(interactionId)) {
             interactionId = UUID.randomUUID().toString();
         }
+        final CachedBodyHttpServletRequest cachedRequest;
         try {
-            if (!origRequest.getRequestURI().equals("/")
-                    && !origRequest.getRequestURI().startsWith("/actuator/health")) {
-                LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
-                        origRequest.getRequestURI());
+            cachedRequest = new CachedBodyHttpServletRequest(origRequest);
+        } catch (IOException e) {
+            LOG.error("InteractionsFilter: failed to cache request body", e);
+            origResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to read request body");
+            return;
+        }
+        cachedRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
+        try {
+            if (!cachedRequest.getRequestURI().equals("/")
+                    && !cachedRequest.getRequestURI().startsWith("/actuator/health")) {
+                LOG.info("InteractionsFilter: start - method={} uri={}", cachedRequest.getMethod(),
+                        cachedRequest.getRequestURI());
 
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
                     try {
-                        Enumeration<String> headerNames = origRequest.getHeaderNames();
+                        Enumeration<String> headerNames = cachedRequest.getHeaderNames();
 
                         if (headerNames != null && headerNames.hasMoreElements()) {
 
                             String allHeaders = Collections.list(headerNames).stream()
                                     .map(name -> {
-                                        List<String> values = Collections.list(origRequest.getHeaders(name));
+                                        List<String> values = Collections.list(cachedRequest.getHeaders(name));
                                         return name + " = " + String.join(", ", values);
                                     })
                                     .collect(Collectors.joining(" | "));
@@ -126,15 +135,15 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     }
                 } 
         
-                origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
+                cachedRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
                 LOG.info("Incoming Request - interactionId={}", interactionId);
 
                 // 1) determine request port (prefer X-Forwarded-Port header)
-                int requestPort = resolveRequestPort(origRequest);
+                int requestPort = resolveRequestPort(cachedRequest);
                 LOG.info("InteractionsFilter: resolved request port={} interactionId: {}", requestPort, interactionId);
 
                 // 2) Extract sourceId and msgType from URI path
-                String requestUri = origRequest.getRequestURI();
+                String requestUri = cachedRequest.getRequestURI();
                 String sourceId = null;
                 String msgType = null;
                 
@@ -147,10 +156,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {} interactionId: {}", requestUri, interactionId);
                 }
                 if (sourceId == null) {
-                    sourceId = origRequest.getHeader(Constants.HEADER_SOURCE_ID);
+                    sourceId = cachedRequest.getHeader(Constants.HEADER_SOURCE_ID);
                 }
                 if(msgType == null) {
-                    msgType = origRequest.getHeader(Constants.HEADER_MSG_TYPE);
+                    msgType = cachedRequest.getHeader(Constants.HEADER_MSG_TYPE);
                 }
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
 
@@ -179,14 +188,14 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         requestPort, portEntry.sourceId, portEntry.msgType, portEntry.route);
                         String route = portEntry.route;
                        if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && ALLOWED_ROUTES_LIST.contains(route)) {
-                            origRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
+                            cachedRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
                             LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true", route);
                           }
                     // 3) If this port config requires mtls via mtls field, client must supply
                 // header
                 String mtlsName = portEntry.mtls;
                 String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
-                origRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
+                cachedRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
                 LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
                
                 // CRITICAL: Wrap response EARLY in filter chain to force Content-Type override
@@ -196,7 +205,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     LOG.info("InteractionsFilter: Early wrapping response with forceContentType={}", portEntry.ackContentType);
 
                 }
-                String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
+                String clientCertHeader = cachedRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
                 // Accept header value as URL-encoded (always expected to be URL-encoded).
                 String clientCertPem = null;
                 if (clientCertHeader != null) {
@@ -250,7 +259,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (mtlsName == null || mtlsName.isBlank()) {
                     LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
                             requestPort);
-                    chain.doFilter(origRequest, wrappedResponse);
+                    chain.doFilter(cachedRequest, wrappedResponse);
                     return;
                 }
 
@@ -293,7 +302,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     // anchors)
                     verifyCertificateChain(clientChain, caCerts);
                     LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}", requestPort,
-                            origRequest.getRequestURI());
+                            cachedRequest.getRequestURI());
 
                 } catch (ExecutionException ee) {
                     LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
@@ -372,18 +381,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
 
                 // success: proceed
-                Enumeration<String> headerNames = origRequest.getHeaderNames();
+                Enumeration<String> headerNames = cachedRequest.getHeaderNames();
                 while (headerNames.hasMoreElements()) {
                     String headerName = headerNames.nextElement();
-                    String headerValue = origRequest.getHeader(headerName);
+                    String headerValue = cachedRequest.getHeader(headerName);
                     LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,
                             headerName, headerValue, interactionId);
                 }
 
-                chain.doFilter(origRequest, wrappedResponse);
+                chain.doFilter(cachedRequest, wrappedResponse);
                 return;
             }
-            chain.doFilter(origRequest, wrappedResponse);
+            chain.doFilter(cachedRequest, wrappedResponse);
             
         } catch (Exception e) {
             // NEW: Handle SOAP-specific errors
@@ -392,7 +401,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (interactionId == null) {
                     interactionId = "unknown";
                 }
-                handleSoapError(origRequest, wrappedResponse, e, interactionId);
+                handleSoapError(cachedRequest, wrappedResponse, e, interactionId);
             } else {
                 // Re-throw non-SOAP errors
                 throw e;
