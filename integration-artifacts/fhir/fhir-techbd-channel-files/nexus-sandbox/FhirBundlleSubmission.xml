@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>757bd47e-10ae-4e5a-a635-8a3c3756c3d4</id>
+  <id>45d4298d-99cc-4b5c-b051-e4ac1c78c209</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.17
-Need Attension and payload message correction same as synthetic</description>
-  <revision>19</revision>
+  <description>Version: 0.8.18
+Implemented process agent feature in datalake api.</description>
+  <revision>8</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -363,6 +363,53 @@ try {
     setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
     throw e;
 }
+
+
+/*******************************
+    Processing Agent Loader
+********************************/
+
+
+try {
+	//value is either true or false
+    var processingFeatureEnable = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, ttlHours);
+   
+    channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, processingFeatureEnable);
+    globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, processingFeatureEnable);
+
+    logger.info(&quot; Processing feature enable flag loaded into channelMap&quot;+ processingFeatureEnable);
+
+} catch (e) {
+    logger.error(&quot;Error fetching processing feature enable flag from lookup manager: &quot; + e.message);
+}
+
+try {
+	//values will be comma seperated tenant ids eg:abc,xyz,test
+    var processingAgentTenantIds = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, ttlHours);
+   
+    channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, processingAgentTenantIds);
+    globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, processingAgentTenantIds);
+
+    logger.info(&quot; Processing agent tenant ids loaded into channelMap&quot;+ processingAgentTenantIds);
+
+} catch (e) {
+    logger.error(&quot;Error fetching processing agent tenant ids from lookup manager: &quot; + e.message);
+}
+
+try {
+	//value is TXD
+    var processingAgentValue = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, ttlHours);
+   
+    channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, processingAgentValue);
+    globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, processingAgentValue);
+
+    logger.info(&quot; Processing agent value loaded into channelMap&quot;+ processingAgentValue);
+
+} catch (e) {
+    logger.error(&quot;Error fetching processing agent value from lookup manager: &quot; + e.message);
+}
+
+
 
 /********************************************
     DONE
@@ -827,6 +874,51 @@ function notFound() {
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>// ------------------------------------------------------------
+// Resolve Processing Agent (Same logic as Java service)
+// ------------------------------------------------------------
+function resolveProcessingAgent(tenantId) {
+
+    var featureEnabled = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;));
+    var tenantIds = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;));
+    var value = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;));
+    tenantId = String(tenantId);
+
+    logger.info(&quot;Feature Flag: &quot; + featureEnabled);
+    logger.info(&quot;Tenant IDs Config: &quot; + tenantIds);
+    logger.info(&quot;Configured Value: &quot; + value);
+    logger.info(&quot;Incoming TenantId: [&quot; + tenantId + &quot;]&quot;);
+
+    if (!tenantId || featureEnabled !== &quot;true&quot;) {
+        logger.info(&quot;Feature disabled or tenantId missing&quot;);
+        return tenantId;
+    }
+
+    var incomingTenant = tenantId.trim().toLowerCase();
+    var tenantList = tenantIds.split(&quot;,&quot;);
+
+     logger.info(&quot;incomingTenant:&quot;+incomingTenant);
+
+      logger.info(&quot;tenantList:&quot;+tenantList);
+
+    for (var i = 0; i &lt; tenantList.length; i++) {
+
+        var configTenant = String(tenantList[i]).trim().toLowerCase();
+
+         logger.info(&quot;configTenant:&quot;+configTenant);
+
+        logger.info(&quot;Comparing [&quot; + configTenant + &quot;] with [&quot; + incomingTenant + &quot;]&quot;);
+
+        if (configTenant === incomingTenant) {
+            logger.info(&quot;Tenant matched. Returning value: &quot; + value);
+            return value;
+        }
+    }
+
+    return tenantId;
+}
+
+
+// ------------------------------------------------------------
 // Apache HttpClient Imports
 // ------------------------------------------------------------
 var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
@@ -856,7 +948,12 @@ if (!apiKey) {
 // ------------------------------------------------------------
 // Build Final URL
 // ------------------------------------------------------------
-var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + tenantId;
+
+var processingAgent = resolveProcessingAgent(tenantId);
+logger.info(&quot;Tenant ID: &quot; + tenantId);
+logger.info(&quot;Resolved Processing Agent: &quot; + processingAgent);
+var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + processingAgent;
+//var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + tenantId;
 logger.info(&quot;Calling DataLake URL: &quot; + finalUrl);
 
 // ------------------------------------------------------------
@@ -2322,7 +2419,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773046084598</time>
+        <time>1773219831868</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2333,10 +2430,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>4e97556e-2403-4463-8afd-18827c180a7d</id>
-        <name>0_8_17</name>
+        <id>49ceb33e-8f36-4129-a5fc-f076d4c904fd</id>
+        <name>0_8_18</name>
         <channelIds>
-          <string>757bd47e-10ae-4e5a-a635-8a3c3756c3d4</string>
+          <string>45d4298d-99cc-4b5c-b051-e4ac1c78c209</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
