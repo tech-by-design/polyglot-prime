@@ -77,8 +77,6 @@ public class SoapForwarderService {
         return forward(request, bytes, sourceId, msgType, interactionId);
     }
 
-    // ── Raw HTTP forwarding ───────────────────────────────────────────────────
-
     /**
      * Pipes rawBytes directly to targetUrl using HttpURLConnection.
      * No SAAJ parsing — byte stream delivered exactly as received.
@@ -98,12 +96,13 @@ public class SoapForwarderService {
             conn.setConnectTimeout(30_000);
             conn.setReadTimeout(60_000);
 
-            // ── Content-Type: reconstruct BEFORE opening output stream ────────
+            // Content-Type: reconstruct BEFORE opening output stream
             // /ws (Spring-WS/SAAJ) requires multipart/related to parse MTOM.
             // If client sent missing or wrong Content-Type, reconstruct from bytes.
             // ONLY populate if not already present as multipart/related.
             String outboundContentType = contentType;
-            if (contentType == null || !contentType.toLowerCase().contains("multipart/related")) {
+            if (isFromXdsRepository(request) && (contentType == null || !contentType.toLowerCase().contains("multipart/related"))
+                    ) {
                 String reconstructed = buildMultipartContentType(rawBytes);
                 if (reconstructed != null) {
                     outboundContentType = reconstructed;
@@ -157,13 +156,13 @@ public class SoapForwarderService {
                 }
             }
 
-            // ── Write raw bytes 
+            // Write raw bytes 
             conn.setFixedLengthStreamingMode(rawBytes.length);
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(rawBytes);
             }
 
-            // ── Read response 
+            // Read response 
             int status = conn.getResponseCode();
             String respContentType = conn.getContentType();
             LOG.info("SoapForwarderService:: Raw forward response. status={} contentType={} interactionId={}",
@@ -188,6 +187,11 @@ public class SoapForwarderService {
         } finally {
             conn.disconnect();
         }
+    }
+
+    private boolean isFromXdsRepository(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri != null && uri.toLowerCase().endsWith("/xds/xdsbrepositoryws");
     }
 
     /**
