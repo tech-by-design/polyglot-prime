@@ -320,12 +320,13 @@
                                 </xsl:choose>",
                         </xsl:if>
                         <xsl:if test="@use">
+                            <xsl:variable name="use_trimmed" select="normalize-space(@use)"/>
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
-                                <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='EC'">home</xsl:when>
-                                <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
+                                <xsl:when test="$use_trimmed='AS' or $use_trimmed='DIR' or $use_trimmed='PUB' or $use_trimmed='WP'">work</xsl:when>
+                                <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
+                                <xsl:when test="$use_trimmed='H' or $use_trimmed='HP' or $use_trimmed='HV' or $use_trimmed='EC'">home</xsl:when>
+                                <xsl:when test="$use_trimmed='MC' or $use_trimmed='PG'">mobile</xsl:when>
+                                <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
                                 <xsl:otherwise>home</xsl:otherwise> <!-- For Patient resource, default to 'home' if no match -->
                             </xsl:choose>",
                         </xsl:if>
@@ -899,12 +900,13 @@
                                 </xsl:choose>",
                         </xsl:if>
                         <xsl:if test="@use">
+                            <xsl:variable name="use_trimmed" select="normalize-space(@use)"/>
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
-                                <xsl:when test="@use='BAD'">old</xsl:when>
-                                <!-- <xsl:when test="@use='H' or @use='HP' or @use='HV' or @use='EC'">home</xsl:when> -->
-                                <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
+                                <xsl:when test="$use_trimmed='AS' or $use_trimmed='DIR' or $use_trimmed='PUB' or $use_trimmed='WP'">work</xsl:when>
+                                <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
+                                <!-- <xsl:when test="$use_trimmed='H' or $use_trimmed='HP' or $use_trimmed='HV' or $use_trimmed='EC'">home</xsl:when> -->
+                                <xsl:when test="$use_trimmed='MC' or $use_trimmed='PG'">mobile</xsl:when>
+                                <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
                                 <xsl:otherwise>work</xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
@@ -2142,7 +2144,7 @@
   <xsl:template name="mapScreeningCodeSystem">
     <xsl:param name="screeningCode"/>
     <xsl:choose>
-      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'">http://test.shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
       <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0'">http://loinc.org</xsl:when>
       <xsl:otherwise>
         <xsl:text>http://loinc.org</xsl:text>
@@ -2355,11 +2357,12 @@
 
       <!-- use -->
       <xsl:if test="$addr/@use">
+        <xsl:variable name="use_trimmed" select="normalize-space($addr/@use)"/>
         "use": "<xsl:choose>
-          <xsl:when test="$addr/@use='WP' or $addr/@use='DIR' or $addr/@use='PUB'">work</xsl:when>
-          <!-- <xsl:when test="$addr/@use='BA'">billing</xsl:when> -->
-          <xsl:when test="$addr/@use='TMP'">temp</xsl:when>
-          <xsl:when test="$addr/@use='BAD'">old</xsl:when>
+          <xsl:when test="$use_trimmed='WP' or $use_trimmed='DIR' or $use_trimmed='PUB'">work</xsl:when>
+          <!-- <xsl:when test="$use_trimmed='BA'">billing</xsl:when> -->
+          <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
+          <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
           <xsl:otherwise>
             <xsl:choose>
               <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>
