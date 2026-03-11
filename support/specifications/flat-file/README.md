@@ -71,33 +71,33 @@ This section outlines the location of key files and their purpose within the pro
 Before running the validation scripts locally with Frictionless, ensure the following are installed:
 
 
-- **Python 3.x**:
-  Ensure that Python 3 is installed on your system. You can check if Python 3 is already installed by running the following command:
+- **Python 3.9**:
+  Ensure that Python 3.9 is installed on your system. You can check if Python 3.9 is already installed by running the following command:
 
   ```bash
-  python3 --version
+  python3.9 --version
   ```
-  If Python 3 is not installed, follow the instructions below to install it:
+  If Python 3.9 is not installed, follow the instructions below to install it:
     - Ubuntu/Debian-based systems:
       ```bash
       sudo apt update
-      sudo apt install python3
+      sudo apt install python3.9
       ```
     - macOS (using Homebrew):
       ```bash
-      brew install python
+      brew install python@3.9
     - Windows: Download and install the latest version of Python from the official website: https://www.python.org/downloads/
 
 - **pip (Python Package Installer)**: pip is the package manager for Python and is needed to install libraries like Frictionless.
 
   Check if pip is installed by running:
   ```bash
-  python3 -m pip --version
+  python3.9 -m pip --version
   ```
   If pip is not installed, follow these steps:
     - On Ubuntu/Debian-based systems:
       ```bash
-        sudo apt install python3-pip
+        sudo apt install python3.9-pip
       ```
     - On macOS (using Homebrew):
       ```bash
@@ -108,11 +108,11 @@ Before running the validation scripts locally with Frictionless, ensure the foll
   ***Troubleshooting***: 
     If you encounter errors like No module named ensurepip, it's possible that your Python installation is missing the ensurepip module, which is typically used to install pip. In this case, install pip manually using the package manager for your operating system, as described above. Alternatively, you can use the following command to install pip if it's missing:
       ```bash
-        python3 -m ensurepip --upgrade
+        python3.9 -m ensurepip --upgrade
       ```
 
 
-- **Frictionless**: Once Python 3 and pip are set up, you can install the Frictionless library by running the following command:
+- **Frictionless**: Once Python 3.9 and pip are set up, you can install the Frictionless library by running the following command:
   ```bash
   pip install frictionless
   ```
