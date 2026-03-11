@@ -1622,7 +1622,7 @@
     <xsl:if test="$validChildCount &gt; 0">
 
     <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
-    <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/>
+    <!-- <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/> -->
 	  
 	  <xsl:variable name="grouperObservationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
@@ -1660,9 +1660,16 @@
                   </xsl:call-template>",
         "code": {
           "coding": [{
-            "system": "http://loinc.org",
+            <!-- "system": "http://loinc.org", -->
+            "system": "<xsl:choose>
+                          <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+                          <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
+                        </xsl:choose>",
             "code": "<xsl:value-of select='$screeningCode'/>",
-            "display": "<xsl:value-of select='$screeningDisplay'/>"
+            <!-- "display": "<xsl:value-of select='$screeningDisplay'/>" -->
+            "display": "<xsl:call-template name="mapScreeningCodeDisplay">
+                          <xsl:with-param name="screeningCode" select="$screeningCode"/>
+                        </xsl:call-template>"
           }
           <xsl:if test="starts-with($screeningCode, 'NYS')">
             ,{
@@ -2198,25 +2205,23 @@
     </xsl:variable>
 
     <!-- Address use -->
-    <xsl:variable name="addrUseRaw">
-      <xsl:call-template name="string-trim">
-        <xsl:with-param name="text" select="string($addrNode/*[7])"/>
-      </xsl:call-template>
-    </xsl:variable>
+    <xsl:variable name="addrUseRaw" select="normalize-space($addrNode/*[7])"/>
 
     <xsl:variable name="addrUse">
-      <xsl:choose>
-        <xsl:when test="$addrUseRaw='WP'">work</xsl:when>
-        <!-- <xsl:when test="$addrUseRaw='BA'">billing</xsl:when> -->
-        <xsl:when test="$addrUseRaw='TMP'">temp</xsl:when>
-        <xsl:when test="$addrUseRaw='BAD'">old</xsl:when>
-        <xsl:otherwise>
+      <xsl:if test="string($addrUseRaw)">
           <xsl:choose>
-            <xsl:when test="$resource_name='Organization' or $resource_name='Location'">work</xsl:when>
-            <xsl:otherwise>home</xsl:otherwise>
-          </xsl:choose>
-        </xsl:otherwise>
-      </xsl:choose>
+            <xsl:when test="$addrUseRaw='WP' or $addrUseRaw='O'">work</xsl:when>
+            <!-- <xsl:when test="$addrUseRaw='BA'">billing</xsl:when> -->
+            <xsl:when test="$addrUseRaw='TMP' or $addrUseRaw='C'">temp</xsl:when>
+            <xsl:when test="$addrUseRaw='BAD'">old</xsl:when>
+            <xsl:otherwise>
+              <xsl:choose>
+                <xsl:when test="$resource_name='Organization' or $resource_name='Location'">work</xsl:when>
+                <xsl:otherwise>home</xsl:otherwise>
+              </xsl:choose>
+            </xsl:otherwise>
+          </xsl:choose>      
+      </xsl:if>
     </xsl:variable>
 
     <!-- Combined values -->
@@ -2235,7 +2240,9 @@
 
     {
       <xsl:variable name="props">
-        <p>"use": "<xsl:value-of select="$addrUse"/>"</p>
+        <xsl:if test="string($addrUse)">
+          <p>"use": "<xsl:value-of select="$addrUse"/>"</p>
+        </xsl:if>
 
         <xsl:if test="string($combinedText)">
           <p>"text": "<xsl:value-of select="$combinedText"/>"</p>
@@ -2310,4 +2317,18 @@
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template name="mapScreeningCodeDisplay">
+    <xsl:param name="screeningCode"/>
+    <xsl:choose>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool [Alternate]</xsl:when>
+      <xsl:when test="$screeningCode = 'NYS-AHC-HRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
+      <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:otherwise>
+        <xsl:text/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
 </xsl:stylesheet>
