@@ -553,7 +553,7 @@ class DataDirResolverImplTest {
             // Then
             String expectedPath = Constants.S3_PREFIX + DATA_BUCKET + "/" + context.getObjectKey();
             assertEquals(expectedPath, context.getFullS3DataPath());
-            verify(templateLogger).debug(
+            verify(templateLogger).info(
                 eq("[DATA_DIR_RESOLVER] Updated Full S3 Data Path: {} interactionId={}"),
                 eq(expectedPath),
                 eq(INTERACTION_ID)

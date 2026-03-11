@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,50 +30,30 @@ import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 
-/**
- * Unit tests for InteractionsFilter focusing on URL encoding/decoding functionality.
- * Tests verify that client certificate headers are properly URL-decoded.
- */
 @DisplayName("InteractionsFilter URL Encoding Tests")
 class InteractionsFilterTest {
 
-    @Mock
-    private AppLogger appLogger;
-    
-    @Mock
-    private TemplateLogger templateLogger;
-    
-    @Mock
-    private PortConfig portConfig;
-    
-    @Mock
-    private S3Client s3Client;
-    
-    @Mock
-    private HttpServletRequest request;
-    
-    @Mock
-    private HttpServletResponse response;
-    
-    @Mock
-    private FilterChain filterChain;
-
-    @Mock
-    private SoapFaultUtil soapFaultUtil;
-
-    @Mock
-    private PortResolverService portResolverService;
+    @Mock private AppLogger appLogger;
+    @Mock private TemplateLogger templateLogger;
+    @Mock private PortConfig portConfig;
+    @Mock private S3Client s3Client;
+    @Mock private HttpServletRequest request;
+    @Mock private HttpServletResponse response;
+    @Mock private FilterChain filterChain;
+    @Mock private SoapFaultUtil soapFaultUtil;
+    @Mock private PortResolverService portResolverService;
 
     private InteractionsFilter interactionsFilter;
     private MockedStatic<FeatureEnum> featureEnumMock;
 
-    // Sample certificate content for testing
-    private static final String SAMPLE_CERT_PEM = 
+    private static final String SAMPLE_CERT_PEM =
         "-----BEGIN CERTIFICATE-----\n" +
         "MIIDXTCCAkWgAwIBAgIJAOC2W3W7o0o9MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n" +
         "BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX\n" +
@@ -86,20 +67,81 @@ class InteractionsFilterTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(appLogger.getLogger(any(Class.class))).thenReturn(templateLogger);
-        
-        // Mock FeatureEnum.isEnabled() to return false by default
         featureEnumMock = mockStatic(FeatureEnum.class);
         featureEnumMock.when(() -> FeatureEnum.isEnabled(any(FeatureEnum.class))).thenReturn(false);
-        
-        interactionsFilter = new InteractionsFilter(appLogger, portConfig, portResolverService, s3Client, soapFaultUtil);
+        interactionsFilter = new InteractionsFilter(
+                appLogger, portConfig, portResolverService, s3Client, soapFaultUtil);
     }
 
     @AfterEach
     void tearDown() {
-        if (featureEnumMock != null) {
-            featureEnumMock.close();
-        }
+        if (featureEnumMock != null) featureEnumMock.close();
     }
+
+    // ── Shared helper ─────────────────────────────────────────────────────────
+
+    /**
+     * Creates a ServletInputStream backed by an empty byte array.
+     * CachedBodyHttpServletRequest calls getInputStream().readAllBytes() once
+     * during construction — this prevents the NullPointerException.
+     */
+    private ServletInputStream emptyServletInputStream() {
+        return servletInputStreamOf(new byte[0]);
+    }
+
+    private ServletInputStream servletInputStreamOf(byte[] bytes) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        return new ServletInputStream() {
+            @Override public int read() throws IOException { return bais.read(); }
+            @Override public boolean isFinished() { return bais.available() == 0; }
+            @Override public boolean isReady()    { return true; }
+            @Override public void setReadListener(ReadListener rl) {}
+        };
+    }
+
+    // ── Mock setup helpers ────────────────────────────────────────────────────
+
+    private void setupMockRequest(String uri, String certHeader)
+            throws IOException, ServletException {
+        setupMockRequestWithPort(uri, certHeader, 8443);
+    }
+
+    private void setupMockRequestWithPort(String uri, String certHeader, int port)
+            throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn(uri);
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getServerPort()).thenReturn(port);
+        when(request.getHeader("X-Forwarded-Port")).thenReturn(String.valueOf(port));
+        when(request.getHeaderNames()).thenReturn(java.util.Collections.enumeration(
+                java.util.Arrays.asList("X-Amzn-Mtls-Clientcert")));
+        when(request.getHeaders("X-Amzn-Mtls-Clientcert")).thenReturn(
+                java.util.Collections.enumeration(
+                        java.util.Arrays.asList("test-header")));
+        when(request.getHeader("X-Amzn-Mtls-Clientcert")).thenReturn(certHeader);
+
+        // ── KEY FIX: stub getInputStream() so CachedBodyHttpServletRequest
+        //    can call readAllBytes() without a NullPointerException ──────────
+        when(request.getInputStream()).thenReturn(emptyServletInputStream());
+
+        PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
+        portEntry.port = port;
+        portEntry.mtls = null;
+        when(portResolverService.resolve(any(), any()))
+                .thenReturn(java.util.Optional.of(portEntry));
+    }
+
+    private void setupPortConfigMock(int port, String mtlsName) {
+        PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
+        portEntry.port = port;
+        portEntry.mtls = mtlsName;
+        when(portConfig.isLoaded()).thenReturn(true);
+        when(portConfig.getPortConfigurationList())
+                .thenReturn(java.util.Arrays.asList(portEntry));
+        when(portResolverService.resolve(any(), any()))
+                .thenReturn(java.util.Optional.of(portEntry));
+    }
+
+    // ── Tests ─────────────────────────────────────────────────────────────────
 
     @Nested
     @DisplayName("URL Decoding Tests")
@@ -108,44 +150,29 @@ class InteractionsFilterTest {
         @Test
         @DisplayName("Should decode properly URL-encoded certificate")
         void shouldDecodeUrlEncodedCertificate() throws Exception {
-            // Given: A URL-encoded certificate header
             String encodedCert = URLEncoder.encode(SAMPLE_CERT_PEM, StandardCharsets.UTF_8);
             setupMockRequest("/test", encodedCert);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Verify the certificate was processed (filter chain continues)
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
 
         @Test
         @DisplayName("Should handle certificate with URL-encoded special characters")
         void shouldHandleCertWithUrlEncodedSpecialChars() throws Exception {
-            // Given: Certificate with special characters that get URL-encoded
             String certWithSpecialChars = SAMPLE_CERT_PEM + "\nSpecial chars: +=/&?";
             String encodedCert = URLEncoder.encode(certWithSpecialChars, StandardCharsets.UTF_8);
             setupMockRequest("/test", encodedCert);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should continue processing
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
 
         @Test
         @DisplayName("Should handle malformed URL encoding gracefully")
         void shouldHandleMalformedUrlEncodingGracefully() throws Exception {
-            // Given: Malformed URL-encoded content (incomplete percent encoding)
             String malformedEncoded = SAMPLE_CERT_PEM + "%ZZ%invalid";
             setupMockRequest("/test", malformedEncoded);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should continue processing (treating as raw content)
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
 
         @ParameterizedTest
@@ -157,41 +184,26 @@ class InteractionsFilterTest {
         })
         @DisplayName("Should handle various URL-encoded patterns")
         void shouldHandleVariousUrlEncodedPatterns(String content) throws Exception {
-            // Given: Different URL-encoded content patterns
             String encodedContent = URLEncoder.encode(content, StandardCharsets.UTF_8);
             setupMockRequest("/test", encodedContent);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should process all patterns successfully
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
 
         @Test
         @DisplayName("Should handle empty certificate header")
         void shouldHandleEmptyCertificateHeader() throws Exception {
-            // Given: Empty certificate header
             setupMockRequest("/test", "");
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should continue processing
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
 
         @Test
         @DisplayName("Should handle null certificate header")
         void shouldHandleNullCertificateHeader() throws Exception {
-            // Given: No certificate header provided
             setupMockRequest("/test", null);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should continue processing
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
         }
     }
 
@@ -202,19 +214,11 @@ class InteractionsFilterTest {
         @Test
         @DisplayName("Should process complete mTLS flow with URL-encoded certificate")
         void shouldProcessCompleteMtlsFlowWithUrlEncodedCert() throws Exception {
-            // Given: Complete setup with port config and URL-encoded certificate
             setupPortConfigMock(8443, "test-mtls");
             String encodedCert = URLEncoder.encode(SAMPLE_CERT_PEM, StandardCharsets.UTF_8);
             setupMockRequestWithPort("/api/test", encodedCert, 8443);
-            
-            // Mock environment variable
             System.setProperty("MTLS_BUCKET_NAME", "test-bucket");
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should have decoded the certificate and logged it
-            // Verify the specific log message about URL decoding (with 2 arguments: message pattern and length)
             verify(templateLogger).info(
                 "InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}",
                 443
@@ -224,15 +228,10 @@ class InteractionsFilterTest {
         @Test
         @DisplayName("Should handle request without mTLS requirements")
         void shouldHandleRequestWithoutMtlsRequirements() throws Exception {
-            // Given: Port config without mTLS requirements
             setupPortConfigMock(8080, null);
             setupMockRequestWithPort("/api/test", null, 8080);
-            
-            // When: Filter processes the request
             interactionsFilter.doFilterInternal(request, response, filterChain);
-            
-            // Then: Should proceed without mTLS processing
-            verify(filterChain).doFilter(request, response);
+            verify(filterChain).doFilter(any(), any());
             verify(templateLogger).info(
                 "InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
                 8080
@@ -240,67 +239,25 @@ class InteractionsFilterTest {
         }
     }
 
-    // Helper methods for setting up mocks
-
-    private void setupMockRequest(String uri, String certHeader) throws IOException, ServletException {
-        setupMockRequestWithPort(uri, certHeader, 8443);
-    }
-
-    private void setupMockRequestWithPort(String uri, String certHeader, int port) throws IOException, ServletException {
-        when(request.getRequestURI()).thenReturn(uri);
-        when(request.getMethod()).thenReturn("POST");
-        when(request.getServerPort()).thenReturn(port);
-        when(request.getHeaderNames()).thenReturn(java.util.Collections.enumeration(
-            java.util.Arrays.asList("X-Amzn-Mtls-Clientcert")));
-        when(request.getHeaders("X-Amzn-Mtls-Clientcert")).thenReturn(
-            java.util.Collections.enumeration(java.util.Arrays.asList("test-header")));
-        when(request.getHeader("X-Amzn-Mtls-Clientcert")).thenReturn(certHeader);
-        
-        // Mock other headers that might be checked
-        when(request.getHeader("X-Forwarded-Port")).thenReturn(String.valueOf(port));
-        
-        // Mock port resolver to return a PortEntry
-        PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
-        portEntry.port = port;
-        portEntry.mtls = null; // No mTLS by default
-        when(portResolverService.resolve(any(), any())).thenReturn(java.util.Optional.of(portEntry));
-    }
-
-    private void setupPortConfigMock(int port, String mtlsName) {
-        PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
-        portEntry.port = port;
-        portEntry.mtls = mtlsName;
-        
-        when(portConfig.isLoaded()).thenReturn(true);
-        when(portConfig.getPortConfigurationList()).thenReturn(java.util.Arrays.asList(portEntry));
-        when(portResolverService.resolve(any(), any())).thenReturn(java.util.Optional.of(portEntry));
-    }
-
     @Test
     @DisplayName("Should skip processing for health check requests")
     void shouldSkipProcessingForHealthCheckRequests() throws Exception {
-        // Given: Health check request
         when(request.getRequestURI()).thenReturn("/actuator/health/liveness");
-        
-        // When: Filter processes the request
+        // ── FIX: stub getInputStream() even for health-check path ────────────
+        when(request.getInputStream()).thenReturn(emptyServletInputStream());
         interactionsFilter.doFilterInternal(request, response, filterChain);
-        
-        // Then: Should skip all processing and continue chain
-        verify(filterChain).doFilter(request, response);
+        verify(filterChain).doFilter(any(), any());
         verify(templateLogger, never()).info(contains("InteractionsFilter: start"));
     }
 
     @Test
     @DisplayName("Should skip processing for root path requests")
     void shouldSkipProcessingForRootPathRequests() throws Exception {
-        // Given: Root path request
         when(request.getRequestURI()).thenReturn("/");
-        
-        // When: Filter processes the request
+        // ── FIX: stub getInputStream() even for root path ─────────────────────
+        when(request.getInputStream()).thenReturn(emptyServletInputStream());
         interactionsFilter.doFilterInternal(request, response, filterChain);
-        
-        // Then: Should skip all processing and continue chain
-        verify(filterChain).doFilter(request, response);
+        verify(filterChain).doFilter(any(), any());
         verify(templateLogger, never()).info(contains("InteractionsFilter: start"));
     }
 }
