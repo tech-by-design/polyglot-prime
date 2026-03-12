@@ -1,9 +1,9 @@
 <channel version="4.5.3">
-  <id>0dad5b96-492c-4d04-95a0-a19b67601040</id>
+  <id>727b2dbe-9450-42c7-8ea4-14872bb82d88</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FhirBundle</name>
-  <description>Version: 0.6.0</description>
-  <revision>43</revision>
+  <description>Version: 0.7.1</description>
+  <revision>8</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version </string>
           </list>
         </entry>
         <entry>
@@ -340,7 +340,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753767396287</time>
+        <time>1759130482885</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

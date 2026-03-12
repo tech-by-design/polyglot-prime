@@ -19,15 +19,15 @@ public class SystemDiagnosticsLogger {
 
     private static final Logger LOG = LoggerFactory.getLogger(SystemDiagnosticsLogger.class);
 
-    public static void logResourceStats(String interactionId, DataSource dataSource, TaskExecutor taskExecutor,String techBDVersion) {
-        doLogDiagnostics(interactionId != null ? interactionId : "unknown", dataSource, taskExecutor,techBDVersion);
+    public static void logResourceStats(String interactionId, TaskExecutor taskExecutor,String techBDVersion) {
+        doLogDiagnostics(interactionId != null ? interactionId : "unknown", taskExecutor,techBDVersion);
     }
 
     public static void logBasicSystemStats() {
-        doLogDiagnostics("unknown", null, null,null);
+        doLogDiagnostics("unknown", null,null);
     }
 
-    private static void doLogDiagnostics(String interactionId, DataSource dataSource, TaskExecutor taskExecutor,String techBDVersion) {
+    private static void doLogDiagnostics(String interactionId,TaskExecutor taskExecutor,String techBDVersion) {
         try {
             // Thread Stats
             ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
@@ -80,28 +80,6 @@ public class SystemDiagnosticsLogger {
                 LOG.warn("[{}] AsyncExecutor is null. Skipping thread pool diagnostics, TechBD Version : {}", interactionId, techBDVersion);
             } else {
                 LOG.warn("[{}] AsyncExecutor is not a ThreadPoolTaskExecutor. Skipping diagnostics, TechBD Version : {}", interactionId, techBDVersion);
-            }
-
-            // HikariCP Pool Stats
-            if (dataSource instanceof HikariDataSource hikariDataSource) {
-                Object poolProxy = hikariDataSource.getHikariPoolMXBean();
-                if (poolProxy != null) {
-                    try {
-                        int active = (int) poolProxy.getClass().getMethod("getActiveConnections").invoke(poolProxy);
-                        int idle = (int) poolProxy.getClass().getMethod("getIdleConnections").invoke(poolProxy);
-                        int total = (int) poolProxy.getClass().getMethod("getTotalConnections").invoke(poolProxy);
-                        int waiting = (int) poolProxy.getClass().getMethod("getThreadsAwaitingConnection")
-                                .invoke(poolProxy);
-                        LOG.error("[{}] HikariCP Pool - Active: {}, Idle: {}, Total: {}, Waiting: {}, TechBD Version : {}",
-                                interactionId, active, idle, total, waiting, techBDVersion);
-                    } catch (Exception e) {
-                        LOG.warn("[{}] Failed to reflectively access HikariCP pool metrics, TechBD Version : {}", interactionId, techBDVersion, e);
-                    }
-                } else {
-                    LOG.warn("[{}] HikariCP MXBean is null, TechBD Version : {}", interactionId, techBDVersion);
-                }
-            } else if (dataSource != null) {
-                LOG.warn("[{}] DataSource is not a HikariDataSource, TechBD Version : {}", interactionId, techBDVersion);
             }
 
         } catch (Exception ex) {

@@ -17,6 +17,7 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
@@ -24,9 +25,10 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -43,8 +45,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
         private final TemplateLogger LOG;
-        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-                super(codeLookupService,coreUdiPrimeJpaConfig);
+        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,@Qualifier("primaryDslContext") final DSLContext primaryDslContext, AppLogger appLogger) {
+                super(codeLookupService,primaryDslContext);
                 LOG = appLogger.getLogger(ScreeningResponseObservationConverter.class);
         }
 
@@ -94,280 +96,305 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 Map<String, List<Reference>> derivedFromMap = new HashMap<>();
 
                 for (ScreeningObservationData data : screeningObservationDataList) {
-                        Observation observation = new Observation();
-                        String observationId = data.getScreeningIdentifier();
-                        String observationIdHashed = CsvConversionUtil.sha256(observationId);
-                        // CsvConversionUtil
-                        //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
-                        //                                 data.getQuestionCode() + data.getEncounterId());
-                        observation.setId(observationIdHashed);
-                        data.setObservationId(observationId);
-                        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed;
-                        setMeta(observation,baseFHIRUrl);
-                        Meta meta = observation.getMeta();
-                        if (StringUtils.isNotEmpty(screeningProfileData.getScreeningLastUpdated())) {
-                                meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
-                        } else {
-                                meta.setLastUpdated(new Date());
-                        }
-                        populateScreeningIdentifier(observation, data);
-                        // max date
-                        // available in all
-                        // screening records
-                        observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
-                        observation
-                                        .setStatus(Observation.ObservationStatus
-                                                        .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
-
-                        if ("96782-8".equals(data.getQuestionCode())) {
-                                CodeableConcept category1 = new CodeableConcept();
-
-                                category1.addCoding(new Coding()
-                                                .setSystem("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes")
-                                                .setCode("sdoh-category-unspecified")
-                                                .setDisplay("SDOH Category Unspecified"));
-                                observation.addCategory(category1);
-
-                                CodeableConcept category2 = new CodeableConcept();
-
-                                category2.addCoding(new Coding()
-                                                .setSystem("http://snomed.info/sct")
-                                                .setCode("365458002")
-                                                .setDisplay("Education and/or schooling finding"));
-
-                                observation.addCategory(category2);
-                        } else {
-                                String[] rawCodes = data.getObservationCategorySdohCode().split(";");
-                                String sdohText = data.getObservationCategorySdohText();
-
-                                for (String rawCode : rawCodes) {
-                                        String trimmedCode = rawCode.trim();
-                                        if (!trimmedCode.isEmpty()) {
-                                                String code = fetchCode(trimmedCode,
-                                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                                                interactionId);
-                                                String text = fetchDisplay(trimmedCode, sdohText,
-                                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
-                                                                interactionId);
-
-                                                observation.addCategory(createCategory(
-                                                                "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                                code, text));
-                                        }
+                        if(!data.getAnswerCode().isEmpty() || !data.getAnswerCodeDescription().isEmpty() || !data.getDataAbsentReasonCode().isEmpty()){
+                                Observation observation = new Observation();
+                                String observationId = data.getScreeningIdentifier();
+                                String observationIdHashed = CsvConversionUtil.sha256(observationId);
+                                // CsvConversionUtil
+                                //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
+                                //                                 data.getQuestionCode() + data.getEncounterId());
+                                observation.setId(observationIdHashed);
+                                data.setObservationId(observationId);
+                                String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl
+                                        : "http://shinny.org/us/ny/hrsn";
+                                if (baseUrl.endsWith("/")) {
+                                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
                                 }
-                        }
-
-                        Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
-                        if (!excludedQuestionCodes.contains(data.getQuestionCode())) {
-                            if ("96778-6".equals(data.getQuestionCode())) {
-                                if (data.getAnswerCode() != null && !data.getAnswerCode().isEmpty()) {
-                                        String[] rawAnswerCodes = data.getAnswerCode().split(";");
-
-                                        // Create the component (only once)
-                                        Observation.ObservationComponentComponent component = new Observation.ObservationComponentComponent();
-
-                                        // Set the question code
-                                        CodeableConcept componentCode = new CodeableConcept();
-                                        componentCode.addCoding(new Coding(
-                                                fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId),
-                                                data.getQuestionCode(),
-                                                fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)
-                                        ));
-                                        component.setCode(componentCode);
-
-                                        // Prepare the shared valueCodeableConcept with multiple codings
-                                        CodeableConcept value = new CodeableConcept();
-
-                                        for (String rawCode : rawAnswerCodes) {
-                                        String trimmedCode = rawCode.trim();
-                                        if (!trimmedCode.isEmpty()) {
-                                                String answerCode = fetchCode(trimmedCode, CsvConstants.ANSWER_CODE, interactionId);
-                                                String answerSystem = fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId);
-                                                String answerDisplay = fetchDisplay(trimmedCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
-
-                                                value.addCoding(new Coding(answerSystem, answerCode, answerDisplay));
-                                        }
-                                        }
-
-                                        component.setValue(value);
-                                        observation.addComponent(component);
-                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                    CodeableConcept dataAbsentReason = new CodeableConcept();
-                                    String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                    String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                    dataAbsentReason.addCoding(
-                                            new Coding()
-                                                    .setSystem(
-                                                            "http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                    .setCode(dataAbsentReasonCode)
-                                                    .setDisplay(dataAbsentReasonDisplay));
-                                    observation.setDataAbsentReason(dataAbsentReason);
-                                }
+                                String fullUrl = baseUrl + "/Observation/" + observationIdHashed;
+                                setMeta(observation,baseFHIRUrl);
+                                Meta meta = observation.getMeta();
+                                if (StringUtils.isNotEmpty(screeningProfileData.getScreeningLastUpdated())) {
+                                        meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
                                 } else {
-                                if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
-                                    CodeableConcept value = new CodeableConcept();
-                                    String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
-                                    value.addCoding(new Coding(
-                                            fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
-                                                    interactionId),
-                                            answerCode,
-                                            fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
-                                    observation.setValue(value);
-                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                    CodeableConcept dataAbsentReason = new CodeableConcept();
-                                    String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                    String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                    dataAbsentReason.addCoding(
-                                            new Coding()
-                                                    .setSystem(
-                                                            "http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                    .setCode(dataAbsentReasonCode)
-                                                    .setDisplay(dataAbsentReasonDisplay));
-                                    observation.setDataAbsentReason(dataAbsentReason);
+                                        meta.setLastUpdated(new Date());
                                 }
-                            }
-                        }        
-                        observation.addCategory(
-                                        createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
-                                                        "social-history", null));
-                        observation.addCategory(
-                                        createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
-                                                        "survey", null));
-                        CodeableConcept code = new CodeableConcept();
-                        code.addCoding(new Coding(fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
-                                        fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
-                        observation.setCode(code);
-                        observation.setSubject(new Reference("Patient/" +
-                                idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
-                            Period period = new Period();
-                            period.setStartElement(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
-                            period.setEndElement(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDateTime())));
-                            observation.setEffective(period);
-                        } else if (data.getScreeningStartDateTime() != null) {
-                            observation.setEffective(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
-                        }
-                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
-                        String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
-                        if (encounterId != null) {
-                            observation.setEncounter(new Reference("Encounter/" + encounterId));
-                        }
-                        String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
-                        if (organizationId != null) {
-                            observation.addPerformer(new Reference("Organization/" + organizationId));
-                        }
-                        String rawValue = StringUtils.trimToEmpty(data.getPotentialNeedIndicated());
-                        if (!"NULL".equalsIgnoreCase(rawValue)) {
-                                String[] codes = StringUtils.defaultString(rawValue).split(";");
-                                CodeableConcept interpretation = new CodeableConcept();
+                                populateScreeningIdentifier(observation, data);
+                                // max date
+                                // available in all
+                                // screening records
+                                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                observation.setLanguage("en");
 
-                                for (String rawCode : codes) {
-                                        rawCode = rawCode.trim();
-                                        if (StringUtils.isNotEmpty(rawCode) && !"NULL".equalsIgnoreCase(rawCode)) {
-                                        String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
-                                        String display = fetchDisplay(potentialNeedIndicated, "Positive", CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+                                if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
+                                    Extension languageExtension = new Extension(
+                                        baseUrl + "/StructureDefinition/shinny-observation-language");
+                                    CodeableConcept valueConcept = new CodeableConcept();
+                                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                                    languageExtension.setValue(valueConcept);
+                                    observation.addExtension(languageExtension);
+                                }
+                                observation
+                                                .setStatus(Observation.ObservationStatus
+                                                                .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
 
-                                        interpretation.addCoding(
-                                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, display)
-                                        );
+                                if ("96782-8".equals(data.getQuestionCode())) {
+                                        CodeableConcept category1 = new CodeableConcept();
+
+                                        category1.addCoding(new Coding()
+                                                        .setSystem("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes")
+                                                        .setCode("sdoh-category-unspecified")
+                                                        .setDisplay("SDOH Category Unspecified"));
+                                        observation.addCategory(category1);
+
+                                        CodeableConcept category2 = new CodeableConcept();
+
+                                        category2.addCoding(new Coding()
+                                                        .setSystem("http://snomed.info/sct")
+                                                        .setCode("365458002")
+                                                        .setDisplay("Education and/or schooling finding"));
+
+                                        observation.addCategory(category2);
+                                } else {
+                                    String[] rawCodes = data.getObservationCategorySdohCode().split(";");
+                                    String sdohText = data.getObservationCategorySdohText();
+
+                                    for (String rawCode : rawCodes) {
+                                        String trimmedCode = rawCode.trim();
+                                        if (!trimmedCode.isEmpty()) {
+                                            // String codeExists = fetchCodeIfPresent(
+                                            //         trimmedCode,
+                                            //         CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                            //         interactionId);
+
+                                            // if (codeExists == null || codeExists.isBlank()) {
+                                            //     continue;
+                                            // }
+                                            String code = fetchCode(trimmedCode,
+                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                    interactionId);
+                                            String text = fetchDisplay(trimmedCode, sdohText,
+                                                    CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                    interactionId);
+
+                                            observation.addCategory(createCategory(
+                                                    "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                                                    code, text));
                                         }
+                                    }
                                 }
 
-                                if (!interpretation.getCoding().isEmpty()) {
-                                        observation.addInterpretation(interpretation);
-                                }
-                        }
-                        //TO-DO
-                        questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
+                                Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
+                                if (!excludedQuestionCodes.contains(data.getQuestionCode())) {
+                                if ("96778-6".equals(data.getQuestionCode())) {
+                                        if (data.getAnswerCode() != null && !data.getAnswerCode().isEmpty()) {
+                                                String[] rawAnswerCodes = data.getAnswerCode().split(";");
 
-                        switch (data.getQuestionCode()) {
-                                case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
-                                        if (!data.getAnswerCodeDescription().isEmpty()) {
-                                                CodeableConcept coding = new CodeableConcept();
-                                                String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
-                                                coding.addCoding(new Coding("http://unitsofmeasure.org", null,
-                                                                "{Number}"));
-                                                coding.setText(fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId));
-                                                observation.setValue(coding);
+                                                // Create the component (only once)
+                                                Observation.ObservationComponentComponent component = new Observation.ObservationComponentComponent();
+
+                                                // Set the question code
+                                                CodeableConcept componentCode = new CodeableConcept();
+                                                componentCode.addCoding(new Coding(
+                                                        fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId),
+                                                        data.getQuestionCode(),
+                                                        fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)
+                                                ));
+                                                component.setCode(componentCode);
+
+                                                // Prepare the shared valueCodeableConcept with multiple codings
+                                                CodeableConcept value = new CodeableConcept();
+
+                                                for (String rawCode : rawAnswerCodes) {
+                                                String trimmedCode = rawCode.trim();
+                                                if (!trimmedCode.isEmpty()) {
+                                                        String answerCode = fetchCode(trimmedCode, CsvConstants.ANSWER_CODE, interactionId);
+                                                        String answerSystem = fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId);
+                                                        String answerDisplay = fetchDisplay(trimmedCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
+
+                                                        value.addCoding(new Coding(answerSystem, answerCode, answerDisplay));
+                                                }
+                                                }
+
+                                                component.setValue(value);
+                                                observation.addComponent(component);
                                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                                CodeableConcept dataAbsentReason = new CodeableConcept();
-                                                String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                dataAbsentReason.addCoding(
-                                                        new Coding()
-                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        dataAbsentReason.addCoding(
+                                                new Coding()
+                                                        .setSystem(
+                                                                "http://terminology.hl7.org/CodeSystem/data-absent-reason")
                                                         .setCode(dataAbsentReasonCode)
                                                         .setDisplay(dataAbsentReasonDisplay));
-                                                observation.setDataAbsentReason(dataAbsentReason);
+                                        observation.setDataAbsentReason(dataAbsentReason);
                                         }
-                                }
-                                case "77594-0" ->  { // Physical Activity
-                                        Quantity quantity = new Quantity();
-                                        String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
-                                         String codeDescription = fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
-                                          if (codeDescription != null && !codeDescription.isEmpty()) {
-                                                try{
-                                                      Optional<Double> doubleValue = Optional.of(Double.valueOf(codeDescription));
-                                                        doubleValue.ifPresent(doubleVal -> {
-                                                            quantity.setValue(doubleVal);
-                                                        });
-                                               }catch(NumberFormatException nfe){
-                                                LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
-                                                quantity.setValue(0.0);
-                                               }
-                                        }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                                CodeableConcept dataAbsentReason = new CodeableConcept();
-                                                String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                dataAbsentReason.addCoding(
-                                                        new Coding()
-                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                        .setCode(dataAbsentReasonCode)
-                                                        .setDisplay(dataAbsentReasonDisplay));
-                                                observation.setDataAbsentReason(dataAbsentReason);
                                         } else {
-                                            quantity.setValue(0.0);
-                                            quantity.setUnit("minutes per week");
-                                            quantity.setSystem("http://unitsofmeasure.org");
-                                            observation.setValue(quantity);
+                                        if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
+                                        CodeableConcept value = new CodeableConcept();
+                                        String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                        value.addCoding(new Coding(
+                                                fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
+                                                        interactionId),
+                                                answerCode,
+                                                fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
+                                        observation.setValue(value);
+                                        } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        dataAbsentReason.addCoding(
+                                                new Coding()
+                                                        .setSystem(
+                                                                "http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                        .setCode(dataAbsentReasonCode)
+                                                        .setDisplay(dataAbsentReasonDisplay));
+                                        observation.setDataAbsentReason(dataAbsentReason);
                                         }
                                 }
-                                default -> {
-                        }
-
-                        }
-
-                        if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
-                                Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
-                                List<Reference> derivedFromRefs = screeningObservationDataList.stream()
-                                                .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
-                                                .map(obs -> {
-                                                        String derivedFromId = CsvConversionUtil.sha256(obs.getObservationId());
-                                                        return new Reference("Observation/" + derivedFromId);
-                                                })
-                                                .collect(Collectors.toList());
-                                derivedFromMap.put(observationId, derivedFromRefs);
-                        }
-                        List<Reference> derivedRefs = derivedFromMap.get(observationId);
-
-                        if (derivedRefs != null && !derivedRefs.isEmpty()) {
-                                observation.setDerivedFrom(derivedRefs);
-                                if (LOG.isDebugEnabled()) {
-                                        derivedRefs.forEach(
-                                                        ref -> LOG.debug("Added reference {} for the observation {}",
-                                                                        ref.getReference(), observationId));
+                                }        
+                                observation.addCategory(
+                                                createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
+                                                                "social-history", null));
+                                observation.addCategory(
+                                                createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
+                                                                "survey", null));
+                                CodeableConcept code = new CodeableConcept();
+                                code.addCoding(new Coding(fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
+                                                fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
+                                observation.setCode(code);
+                                observation.setSubject(new Reference("Patient/" +
+                                        idsGenerated.get(CsvConstants.PATIENT_ID)));
+                                if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
+                                Period period = new Period();
+                                period.setStartElement(
+                                        new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
+                                period.setEndElement(
+                                        new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDateTime())));
+                                observation.setEffective(period);
+                                } else if (data.getScreeningStartDateTime() != null) {
+                                observation.setEffective(
+                                        new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                                 }
-                        }
+                                observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
+                                String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
+                                if (encounterId != null) {
+                                observation.setEncounter(new Reference("Encounter/" + encounterId));
+                                }
+                                String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                                if (organizationId != null) {
+                                observation.addPerformer(new Reference("Organization/" + organizationId));
+                                }
+                                String rawValue = StringUtils.trimToEmpty(data.getPotentialNeedIndicated());
+                                if (!"NULL".equalsIgnoreCase(rawValue)) {
+                                        String[] codes = StringUtils.defaultString(rawValue).split(";");
+                                        CodeableConcept interpretation = new CodeableConcept();
 
-                        BundleEntryComponent entry = new BundleEntryComponent();
-                        entry.setFullUrl(fullUrl);
-                        entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                                        .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed));
-                        entry.setResource(observation);
-                        bundleEntryComponents.add(entry);
+                                        for (String rawCode : codes) {
+                                                rawCode = rawCode.trim();
+                                                if (StringUtils.isNotEmpty(rawCode) && !"NULL".equalsIgnoreCase(rawCode)) {
+                                                String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+                                                String display = fetchDisplay(potentialNeedIndicated, "Positive", CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+
+                                                interpretation.addCoding(
+                                                        new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, display)
+                                                );
+                                                }
+                                        }
+
+                                        if (!interpretation.getCoding().isEmpty()) {
+                                                observation.addInterpretation(interpretation);
+                                        }
+                                }
+                                //TO-DO
+                                questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
+
+                                switch (data.getQuestionCode()) {
+                                        case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
+                                                if (!data.getAnswerCodeDescription().isEmpty()) {
+                                                        CodeableConcept coding = new CodeableConcept();
+                                                        String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
+                                                                        "{Number}"));
+                                                        coding.setText(fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId));
+                                                        observation.setValue(coding);
+                                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+                                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        dataAbsentReason.addCoding(
+                                                                new Coding()
+                                                                .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                                .setCode(dataAbsentReasonCode)
+                                                                .setDisplay(dataAbsentReasonDisplay));
+                                                        observation.setDataAbsentReason(dataAbsentReason);
+                                                }
+                                        }
+                                        case "77594-0" ->  { // Physical Activity
+                                                Quantity quantity = new Quantity();
+                                                String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                                String codeDescription = fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
+                                                if (codeDescription != null && !codeDescription.isEmpty()) {
+                                                        try{
+                                                        Optional<Double> doubleValue = Optional.of(Double.valueOf(codeDescription));
+                                                                doubleValue.ifPresent(doubleVal -> {
+                                                                quantity.setValue(doubleVal);
+                                                                });
+                                                }catch(NumberFormatException nfe){
+                                                        LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
+                                                        quantity.setValue(0.0);
+                                                }
+                                                }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+                                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        dataAbsentReason.addCoding(
+                                                                new Coding()
+                                                                .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                                .setCode(dataAbsentReasonCode)
+                                                                .setDisplay(dataAbsentReasonDisplay));
+                                                        observation.setDataAbsentReason(dataAbsentReason);
+                                                } else {
+                                                quantity.setValue(0.0);
+                                                quantity.setUnit("minutes per week");
+                                                quantity.setSystem("http://unitsofmeasure.org");
+                                                observation.setValue(quantity);
+                                                }
+                                        }
+                                        default -> {
+                                }
+
+                                }
+
+                                if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
+                                        Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
+                                        List<Reference> derivedFromRefs = screeningObservationDataList.stream()
+                                                        .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
+                                                        .map(obs -> {
+                                                                String derivedFromId = CsvConversionUtil.sha256(obs.getScreeningIdentifier());
+                                                                return new Reference("Observation/" + derivedFromId);
+                                                        })
+                                                        .collect(Collectors.toList());
+                                        derivedFromMap.put(observationId, derivedFromRefs);
+                                }
+                                List<Reference> derivedRefs = derivedFromMap.get(observationId);
+
+                                if (derivedRefs != null && !derivedRefs.isEmpty()) {
+                                        observation.setDerivedFrom(derivedRefs);
+                                        if (LOG.isDebugEnabled()) {
+                                                derivedRefs.forEach(
+                                                                ref -> LOG.debug("Added reference {} for the observation {}",
+                                                                                ref.getReference(), observationId));
+                                        }
+                                }
+
+                                BundleEntryComponent entry = new BundleEntryComponent();
+                                entry.setFullUrl(fullUrl);
+                                entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
+                                                .setUrl(baseUrl + "/Observation/" + observationIdHashed));
+                                entry.setResource(observation);
+                                bundleEntryComponents.add(entry);
+                        }
                 }
 
                 try {
@@ -403,6 +430,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Group observations by screening code
                 Map<String, List<ScreeningObservationData>> screeningCodeGroups = screeningObservationDataList.stream()
+                                .filter(data ->
+                                        (!data.getAnswerCode().isEmpty()) ||
+                                        (!data.getAnswerCodeDescription().isEmpty()) ||
+                                        (!data.getDataAbsentReasonCode().isEmpty())
+                                )
                                 .collect(Collectors.groupingBy(
                                                 data -> fetchCode(data.getScreeningCode(), CsvConstants.SCREENING_CODE,
                                                                 interactionId)));
@@ -449,7 +481,22 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         meta.setLastUpdated(new Date());
                 }
                 groupObservation.setMeta(meta);
-                groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
+                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
+                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                groupObservation.setLanguage("en");
+                String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : "http://shinny.org/us/ny/hrsn";
+                if (baseUrl.endsWith("/")) {
+                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                }
+
+                if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
+                    Extension languageExtension = new Extension(
+                        baseUrl + "/StructureDefinition/shinny-observation-language");
+                    CodeableConcept valueConcept = new CodeableConcept();
+                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                    languageExtension.setValue(valueConcept);
+                    groupObservation.addExtension(languageExtension);
+                }
 
                 // Set status from screening profile
                 String screeningStatusCode = screeningProfileData.getScreeningStatusCode();
@@ -470,30 +517,38 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 record CategoryCodeText(String code, String text) {}
 
                 groupData.stream()
-                .flatMap(data -> {
-                        String[] rawCodeArr = (data.getObservationCategorySdohCode() != null)
-                                ? data.getObservationCategorySdohCode().split(";")
-                                : new String[0];
+                        .flatMap(data -> {
+                            String[] rawCodeArr = (data.getObservationCategorySdohCode() != null)
+                                    ? data.getObservationCategorySdohCode().split(";")
+                                    : new String[0];
 
-                        List<CategoryCodeText> codeTextList = new ArrayList<>();
+                            List<CategoryCodeText> codeTextList = new ArrayList<>();
 
-                        for (String rawCode : rawCodeArr) {
-                        String trimmedCode = rawCode.trim();
-                        if (!trimmedCode.isEmpty()) {
-                                String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
-                                if (code != null && !code.isEmpty()) {
-                                String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
-                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
-                                codeTextList.add(new CategoryCodeText(code, text));
+                            for (String rawCode : rawCodeArr) {
+                                String trimmedCode = rawCode.trim();
+                                if (!trimmedCode.isEmpty()) {
+                                    // String codeExists = fetchCodeIfPresent(
+                                    //         trimmedCode,
+                                    //         CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                    //         interactionId);
+
+                                    // if (codeExists == null || codeExists.isBlank()) {
+                                    //     continue;
+                                    // }
+                                    String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                    if (code != null && !code.isEmpty()) {
+                                        String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
+                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                        codeTextList.add(new CategoryCodeText(code, text));
+                                    }
                                 }
-                        }
-                        }
+                            }
 
-                        return codeTextList.stream();
-                })
-                .distinct()
-                .forEach(ct -> groupObservation.addCategory(
-                        createCategory(SDOH_CATEGORY_URL, ct.code(), ct.text())));
+                            return codeTextList.stream();
+                        })
+                        .distinct()
+                        .forEach(ct -> groupObservation.addCategory(
+                                createCategory(SDOH_CATEGORY_URL, ct.code(), ct.text())));
 
                 // Set code from groupData (take from first available)
                 ScreeningObservationData firstData = groupData.stream().findFirst().orElse(null);
@@ -576,7 +631,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setHasMember(hasMemberReferences);
 
                 // Create bundle entry
-                String fullUrl = OBSERVATION_URL_BASE + observationId;
+                //String fullUrl = OBSERVATION_URL_BASE + observationId;
+                String fullUrl = baseUrl + "/Observation/" + observationId;
                 BundleEntryComponent groupEntry = new BundleEntryComponent();
                 groupEntry.setFullUrl(fullUrl);
                 groupEntry.setResource(groupObservation);

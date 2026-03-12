@@ -4,19 +4,19 @@ import java.util.Iterator;
 import java.util.UUID;
 
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
 
 import org.springframework.stereotype.Component;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapHeader;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpServletConnection;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.techbd.ingest.model.RequestContext;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class SoapResponseUtil {
@@ -42,41 +42,36 @@ public class SoapResponseUtil {
 
         if (relatesTo == null) {
             relatesTo = "urn:uuid:unknown-incoming-message-id";
-            log.warn("RelatesTo header not found in request. Using fallback: {}", relatesTo);
+            log.warn("RelatesTo header not found in request. Using fallback: {} interactionId={}", relatesTo, interactionId);
         }
 
-        var wsa = appConfig.getSoap().getWsa();
-        var techbd = appConfig.getSoap().getTechbd();
+            var wsa = appConfig.getSoap().getWsa();
+              String action;
+              var transportContext = TransportContextHolder.getTransportContext();
+              var connection = (HttpServletConnection) transportContext.getConnection();
+              HttpServletRequest httpRequest = connection.getHttpServletRequest();
 
-        // Standard WS-Addressing headers
-        header.addHeaderElement(new QName(wsa.getNamespace(), "Action", wsa.getPrefix()))
-              .setText(wsa.getAction());
-        header.addHeaderElement(new QName(wsa.getNamespace(), "MessageID", wsa.getPrefix()))
-              .setText(messageId);
-        header.addHeaderElement(new QName(wsa.getNamespace(), "RelatesTo", wsa.getPrefix()))
-              .setText(relatesTo);
-        header.addHeaderElement(new QName(wsa.getNamespace(), "To", wsa.getPrefix()))
-              .setText(wsa.getTo());
+              RequestContext context = (RequestContext) httpRequest.getAttribute(Constants.REQUEST_CONTEXT);
+              if (context.isPixRequest()) {
+                  action = wsa.getAction();
+                  log.info("PIX request detected. Using Action={} interactionId={}", action, interactionId);
+              } else {
+                  action = wsa.getPnrAction();
+                  log.info("PNR request detected. Using Action={} interactionId={}", action, interactionId);
+              }
 
-        // Build <techbd:Interaction> as DOM element
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        Document doc = dbf.newDocumentBuilder().newDocument();
+            // Standard WS-Addressing headers only
+            header.addHeaderElement(new QName(wsa.getNamespace(), "Action", wsa.getPrefix()))
+                    .setText(action);
+            header.addHeaderElement(new QName(wsa.getNamespace(), "MessageID", wsa.getPrefix()))
+                    .setText(messageId);
+            header.addHeaderElement(new QName(wsa.getNamespace(), "RelatesTo", wsa.getPrefix()))
+                    .setText(relatesTo);
+            header.addHeaderElement(new QName(wsa.getNamespace(), "To", wsa.getPrefix()))
+                    .setText(wsa.getTo());
 
-        Element interactionElement = doc.createElementNS(
-                techbd.getNamespace(), techbd.getPrefix() + ":Interaction");
-
-        interactionElement.setAttribute("InteractionID", interactionId);
-        interactionElement.setAttribute("TechBDIngestionApiVersion", appConfig.getVersion());
-
-        // Write it into the SOAP header
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.transform(new DOMSource(interactionElement), header.getResult());
-
-        log.info("SOAP response built successfully for interactionId={}, version={}",
-                interactionId, appConfig.getVersion());
-
-        return soapResponse;
+            log.info("SOAP response built successfully for interactionId={}", interactionId);
+            return soapResponse;
 
     } catch (Exception e) {
         log.error("Failed to build SOAP response for interactionId={}, version={}",

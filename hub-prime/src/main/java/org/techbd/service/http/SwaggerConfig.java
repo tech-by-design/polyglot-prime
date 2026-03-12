@@ -129,7 +129,8 @@ public class SwaggerConfig {
     public GroupedOpenApi techByDesignFhirApiGroup() {
         return GroupedOpenApi.builder()
                 .group("FHIR API")
-                .pathsToMatch("/metadata",
+                .pathsToMatch("/metadata", "/Bundles/status/nyec-submission-failed",
+                "/Bundles/status/operation-outcome",
                         "/Bundle", "/Bundle/**",
                         "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
                         "/api/expect/fhir/**")
@@ -211,6 +212,14 @@ public class SwaggerConfig {
                                             .name("X-TechBD-Validation-Severity-Level")
                                             .description(
                                                     "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Part2")
+                                            .description(
+                                                    "The `Bundle.meta.security` element is added to the FHIR Bundle only if the request header variable `X-TechBD-Part2` is set to `True`.\n" +
+                                                    "The `meta.security` element will not be added to the Bundle if the header variable is missing, or the value in the header variable is NULL, or the value is not set to `True`.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
@@ -325,6 +334,14 @@ public class SwaggerConfig {
                                             .name("X-TechBD-Validation-Severity-Level")
                                             .description(
                                                     "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Part2")
+                                            .description(
+                                                    "The `Bundle.meta.security` element is added to the FHIR Bundle only if the request header variable `X-TechBD-Part2` is set to `True`.\n" +
+                                                    "The `meta.security` element will not be added to the Bundle if the header variable is missing, or the value in the header variable is NULL, or the value is not set to `True`.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))

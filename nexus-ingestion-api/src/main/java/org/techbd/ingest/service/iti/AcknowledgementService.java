@@ -112,9 +112,8 @@ public class AcknowledgementService {
         // Attach device to sender
         sender.setDevice(senderDevice);
 
-// Add sender to ack
-ack.setSender(sender);
-
+        // Add sender to ack
+        ack.setSender(sender);
 
         // Acknowledgement
         MCCIMT000200UV01Acknowledgement ackBlock = new MCCIMT000200UV01Acknowledgement();
@@ -134,10 +133,20 @@ ack.setSender(sender);
         return ack;
     }
 
-    public MCCIIN000002UV01 createPixAcknowledgmentError(String errorMessage, String techBDInteractionId) {
+    /**
+     * Creates a PIX acknowledgement error response with error trace ID
+     * MODIFIED: Added errorTraceId parameter
+     * 
+     * @param errorMessage The error message
+     * @param techBDInteractionId The interaction ID
+     * @param errorTraceId The error trace ID for debugging
+     * @return MCCIIN000002UV01 acknowledgement with error details
+     */
+    public MCCIIN000002UV01 createPixAcknowledgmentError(String errorMessage, String techBDInteractionId, 
+            String errorTraceId) {
         logger.warn(
-                "AcknowledgementService:: Creating HL7 error acknowledgment for interactionId: {}, errorMessage: {}",
-                techBDInteractionId, errorMessage);
+                "AcknowledgementService:: Creating HL7 error acknowledgment for interactionId: {}, errorTraceId: {}, errorMessage: {}",
+                techBDInteractionId, errorTraceId, errorMessage);
 
         MCCIIN000002UV01 ack = new MCCIIN000002UV01();
 
@@ -155,8 +164,8 @@ ack.setSender(sender);
             ack.setCreationTime(creationTime);
         } catch (Exception e) {
             logger.error(
-                    "AcknowledgementService:: Error setting creationTime in error acknowledgment for interactionId: {}",
-                    techBDInteractionId, e);
+                    "AcknowledgementService:: Error setting creationTime in error acknowledgment for interactionId: {}, errorTraceId: {}",
+                    techBDInteractionId, errorTraceId, e);
         }
 
         // Interaction ID
@@ -184,19 +193,29 @@ ack.setSender(sender);
         typeCode.setCode("AE");
         acknowledgement.setTypeCode(typeCode);
 
-        // Add error detail
+        // Add error detail with interaction ID and error trace ID
         MCCIMT000200UV01AcknowledgementDetail detail = new MCCIMT000200UV01AcknowledgementDetail();
         detail.setTypeCode(AcknowledgementDetailType.E);
+        
         ED text = new ED();
+        // Include both interaction ID and error trace ID in the error message
+        String detailedErrorMessage = String.format(
+            "%s | InteractionId: %s | ErrorTraceId: %s",
+            errorMessage != null ? errorMessage : "Internal server error",
+            techBDInteractionId,
+            errorTraceId
+        );
+        
         TEL tel = new TEL();
-        tel.setValue(errorMessage);
+        tel.setValue(detailedErrorMessage);
         text.setReference(tel);
         detail.setText(text);
+        
         acknowledgement.getAcknowledgementDetail().add(detail);
         ack.getAcknowledgement().add(acknowledgement);
 
-        logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}",
-                techBDInteractionId);
+        logger.warn("AcknowledgementService:: HL7 error acknowledgment created successfully for interactionId: {}, errorTraceId: {}",
+                techBDInteractionId, errorTraceId);
         return ack;
     }
 
@@ -216,6 +235,43 @@ ack.setSender(sender);
         logger.debug(
                 "AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}",
                 techBDInteractionId, UUID.randomUUID());
+        return response;
+    }
+
+    /**
+     * Creates a PnR acknowledgement with error trace ID for failure responses
+     * ADDED: New method with errorTraceId parameter
+     * 
+     * @param status The status ("Success" or "Failure")
+     * @param techBDInteractionId The interaction ID
+     * @param errorTraceId The error trace ID for debugging
+     * @return RegistryResponseType acknowledgement
+     */
+    public RegistryResponseType createPnrAcknowledgement(String status, String techBDInteractionId, String errorTraceId) {
+        logger.warn("AcknowledgementService:: Creating PnR acknowledgement with status: {} for interactionId: {}, errorTraceId: {}",
+                status, techBDInteractionId, errorTraceId);
+
+        ObjectFactory factory = new ObjectFactory();
+        RegistryResponseType response = factory.createRegistryResponseType();
+
+        if ("Success".equalsIgnoreCase(status)) {
+            response.setStatus("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success");
+        } else {
+            response.setStatus("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure");
+            
+            // TODO: Add error trace ID to RegistryError if RegistryResponseType supports it
+            // The XDS.b specification allows for RegistryError elements in the response
+            // which could contain the error trace ID for client debugging
+            // Example structure (if supported by your schema):
+            // RegistryError error = factory.createRegistryError();
+            // error.setErrorCode("XDSRegistryError");
+            // error.setCodeContext("InteractionId: " + techBDInteractionId + " | ErrorTraceId: " + errorTraceId);
+            // response.getRegistryErrorList().getRegistryError().add(error);
+        }
+
+        logger.debug(
+                "AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}, errorTraceId: {}",
+                techBDInteractionId, UUID.randomUUID(), errorTraceId);
         return response;
     }
 }

@@ -35,7 +35,7 @@ public class CsvToFhirConverter {
         Bundle bundle = null;
         try {
             LOG.info("CsvToFhirConvereter::convert - BEGIN for interactionId :{}", interactionId);
-            bundle = bundleConverter.generateEmptyBundle(interactionId, demographicData, baseFHIRUrl);
+            bundle = bundleConverter.generateEmptyBundle(interactionId, demographicData, baseFHIRUrl, qeAdminData);
             LOG.debug("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
             LOG.debug("Conversion of resources - BEGIN for interactionId :{}", interactionId);
             addEntries(bundle, demographicData, screeningDataList, qeAdminData, screeningProfileData, interactionId,baseFHIRUrl);

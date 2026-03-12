@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
-import org.techbd.udi.UdiPrimeJpaConfig;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +26,6 @@ public class NeedAttentionController {
     private final Presentation presentation;
 
     public NeedAttentionController(final Presentation presentation,
-            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.presentation = presentation;
@@ -44,34 +42,33 @@ public class NeedAttentionController {
         return "redirect:/data-quality/needs-attention";
     } 
 
-    // @GetMapping("/needs-attention/scn-to-qe")
-    // @RouteMapping(label = "CrossRoads SCN to (QE)", title = "Needs Attention -", siblingOrder = 5)
-    // public String diagnosticsFhirNeedsAttentionScnToQe(final Model model, final HttpServletRequest request) {
- 
-    // model.addAttribute("qeName", request.getParameter("qeName"));
-    // String templateName = "page/diagnostics/scn-to-qe"; 
-    // return presentation.populateModel(templateName, model, request);
-
-    // }
-
-    @GetMapping("/needs-attention/qe-to-techbd")
-    @RouteMapping(label = "(QE) to Tech by Design", title = "Needs Attention -", siblingOrder = 6)
-    public String diagnosticsFhirNeedsAttentionQeToTechbd(final Model model, final HttpServletRequest request) {
+    @GetMapping("/needs-attention/techbd-processing-failures")
+    @RouteMapping(label = "Tech by Design – Processing Failures", title = "Tech by Design – Processing Failures", siblingOrder = 5)
+    public String diagnosticsFhirNeedsAttentionScnToQe(final Model model, final HttpServletRequest request) {
  
     model.addAttribute("qeName", request.getParameter("qeName"));
-    String templateName = "page/diagnostics/qe-to-techbd"; 
+    String templateName = "page/diagnostics/techbd-processing-failures"; 
     return presentation.populateModel(templateName, model, request);
 
-    }
+    }    
 
-
-    @GetMapping("/needs-attention/techbd-to-scoring-engine")
-    @RouteMapping(label = "Tech by Design to SHIN-NY Data Lake", title = "Needs Attention -", siblingOrder = 7)
+    @GetMapping("/needs-attention/techbd-validation-failures")
+    @RouteMapping(label = "Tech by Design – Validation Failures", title = "Tech by Design – Validation Failures", siblingOrder = 6)
     public String diagnosticsFhirNeedsAttentionTechbdToScoringEngine(final Model model, final HttpServletRequest request) {
  
     model.addAttribute("qeName", request.getParameter("qeName"));
-    String templateName = "page/diagnostics/techbd-to-scoring-engine"; 
+    String templateName = "page/diagnostics/techbd-validation-failures"; 
     return presentation.populateModel(templateName, model, request);
 
-    }
+    }    
+
+    @GetMapping("/needs-attention/shinny-datalake-failed-submissions")
+    @RouteMapping(label = "SHIN-NY Data Lake – Failed Submissions", title = "SHIN-NY Data Lake – Failed Submissions", siblingOrder = 7)
+    public String diagnosticsFhirNeedsAttentionQeToTechbd(final Model model, final HttpServletRequest request) {
+ 
+    model.addAttribute("qeName", request.getParameter("qeName"));
+    String templateName = "page/diagnostics/shinny-datalake-failed-submissions"; 
+    return presentation.populateModel(templateName, model, request);
+
+    }    
 }

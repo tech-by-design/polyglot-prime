@@ -1,6 +1,5 @@
 package org.techbd.ingest.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -8,31 +7,34 @@ import org.springframework.stereotype.Component;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Health indicator that checks the availability of configured MLLP ports on
  * localhost.
- * <p>
- * Attempts a socket connection to each port defined in {@code HL7_MLLP_PORTS}.
- * Reports the status as UP if the port is reachable, otherwise DOWN.
- * </p>
  */
 @Component
 public class MllpHealthIndicator implements HealthIndicator {
 
-    @Value("${HL7_MLLP_PORTS:2575}")
-    private String mllpPorts;
+    private final PortConfig portConfig;
+
+    public MllpHealthIndicator(PortConfig portConfig) {
+        this.portConfig = portConfig;
+    }
 
     @Override
     public Health health() {
         Map<String, Object> details = new HashMap<>();
 
-        // Test MLLP ports
-        String[] ports = mllpPorts.split(",");
+        if (portConfig == null || !portConfig.isLoaded()) {
+            details.put("MLLP Ports", Map.of());
+            return Health.up().withDetails(details).build();
+        }
+
+        List<Integer> ports = portConfig.getMllpPorts();
         Map<String, String> mllpStatus = new HashMap<>();
 
-        for (String portStr : ports) {
-            int port = Integer.parseInt(portStr.trim());
+        for (Integer port : ports) {
             try (Socket socket = new Socket("localhost", port)) {
                 mllpStatus.put("Port " + port, "UP");
             } catch (Exception e) {

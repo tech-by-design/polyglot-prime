@@ -194,6 +194,7 @@ const CLI = new Command()
             console.log("  ==> run `mvn clean compile` to freshen the cache");
           })
        )
+
       .command("docs", "Generate documentation artifacts")
         .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: cleanableTarget("../../hub-prime/target/site/schemaSpy") })
         .option("-c, --conn-id <id:string>", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
@@ -322,13 +323,163 @@ const CLI = new Command()
     .command("omnibus-fresh", "Freshen the given connection ID")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
+      .option("--deploy-jar", "Deploy the generated JAR file after omnibus-fresh completes")
+      .option("--jar <jar:string>", "Path to the JAR file to deploy (defaults to generated jOOQ JAR)")
+      .option("-t, --targets <targets:string>", "Comma-separated list of target directories for JAR deployment (optional)")
+      .option("--dry-run", "Show what would be copied without actually copying (for JAR deployment)")
+      .option("-v, --verbose", "Enable verbose output (for JAR deployment)")
       .action(async (options) => {
         await CLI.parse(["ic", "generate", "sql"]);
         await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);
         await CLI.parse(["ic", "test", "--conn-id", options.connId]);
         await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", options.isLinted]);
         await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
+
+        // Deploy JAR if requested
+        if (options.deployJar) {
+          console.log("\n?? Starting JAR deployment...");
+
+          // Use provided JAR path or default to the generated jOOQ JAR
+          const jarPath = options.jar || "../hub-prime/lib/techbd-udi-jooq-ingress.auto.jar";
+
+          // Build deploy-jar command arguments
+          const deployArgs = ["ic", "deploy-jar", "--jar", jarPath];
+
+          if (options.targets) {
+            deployArgs.push("--targets", options.targets);
+          }
+
+          if (options.dryRun) {
+            deployArgs.push("--dry-run");
+          }
+
+          if (options.verbose) {
+            deployArgs.push("--verbose");
+          }
+
+          await CLI.parse(deployArgs);
+        }
       })
+    .command("deploy-jar", new Command()
+      .description("Deploy JAR file to multiple target lib directories")
+      .option("-j, --jar <jar:string>", "Path to the JAR file to deploy", { required: true })
+      .option("-t, --targets <targets:string>", "Comma-separated list of target directories (optional)")
+      .option("--dry-run", "Show what would be copied without actually copying")
+      .option("-v, --verbose", "Enable verbose output")
+      .action(async (options) => {
+
+        if (options.verbose) {
+          console.log(`?? Options:`, options);
+        }
+
+        // Verify the source JAR file exists
+        try {
+          const jarStat = await Deno.stat(options.jar);
+          if (options.verbose) {
+            console.log(`?? Source JAR: ${options.jar} (${jarStat.size} bytes)`);
+          }
+        } catch (_error) {
+          console.error(`? Error: JAR file not found: ${options.jar}`);
+          Deno.exit(1);
+        }
+
+        // Define target directories
+        const defaultTargetDirs = [
+          "../nexus-core-lib/lib",
+          "../csv-service/lib",
+          "../fhir-validation-service/lib",
+          "../core-lib/lib"
+        ];
+
+        const targetDirs = options.targets
+          ? options.targets.split(",").map(dir => dir.trim())
+          : defaultTargetDirs;
+
+        if (options.verbose) {
+          console.log(`?? Target directories:`, targetDirs);
+        }
+
+        if (options.dryRun) {
+          console.log(`?? DRY RUN MODE - No files will be copied`);
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+        const results = [];
+
+        // === Deploy the JAR to multiple target lib directories ===
+        for (const targetDir of targetDirs) {
+          try {
+            const jarFileName = options.jar.split("/").pop();
+            const targetPath = `${targetDir}/${jarFileName}`;
+
+            if (options.dryRun) {
+              console.log(`?? Would copy: ${options.jar} ? ${targetPath}`);
+
+              // Check if target directory exists
+              try {
+                await Deno.stat(targetDir);
+                console.log(`   ? Target directory exists: ${targetDir}`);
+              } catch {
+                console.log(`   ?? Target directory would be created: ${targetDir}`);
+              }
+
+              successCount++;
+              results.push({ target: targetPath, status: "would-copy" });
+              continue;
+            }
+
+            // Ensure the target directory exists
+            await Deno.mkdir(targetDir, { recursive: true });
+
+            if (options.verbose) {
+              console.log(`?? Ensured directory exists: ${targetDir}`);
+            }
+
+            // Copy the file
+            await Deno.copyFile(options.jar, targetPath);
+
+            console.log(`? Successfully deployed to: ${targetPath}`);
+            successCount++;
+            results.push({ target: targetPath, status: "success" });
+
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`? Failed to deploy to ${targetDir}: ${errorMessage}`);
+            errorCount++;
+            results.push({ target: `${targetDir}/${options.jar.split("/").pop()}`, status: "error", error: errorMessage });
+          }
+        }
+
+        // === Summary Report ===
+        console.log(`\n?? Deployment Summary:`);
+        console.log(`   ? Successful: ${successCount}`);
+        console.log(`   ? Failed: ${errorCount}`);
+        console.log(`   ?? Total targets: ${targetDirs.length}`);
+
+        if (options.dryRun) {
+          console.log(`   ?? Mode: DRY RUN (no files copied)`);
+        }
+
+        if (options.verbose && results.length > 0) {
+          console.log(`\n?? Detailed Results:`);
+          results.forEach((result, index) => {
+            const status = result.status === "success" ? "?" :
+                          result.status === "would-copy" ? "??" : "?";
+            console.log(`   ${index + 1}. ${status} ${result.target}`);
+            if (result.error) {
+              console.log(`      Error: ${result.error}`);
+            }
+          });
+        }
+
+        if (errorCount > 0) {
+          console.log(`\n??  Some deployments failed. Check the errors above.`);
+          Deno.exit(1);
+        } else {
+          console.log(`\n?? All deployments completed successfully!`);
+        }
+      }))
     );
 
 await CLI.parse(Deno.args);

@@ -1,4 +1,4 @@
-name: Nexus Polyglot Prime Deployment
+name: Nexus Devl Deployment
 on:
   push:
     tags:
@@ -8,15 +8,14 @@ permissions:
   contents: write
   pages: write
   id-token: write
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
+  
 jobs:
     nexus-hub-devl-deployment:
       if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
-      runs-on: ubuntu-latest 
+      runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
 
@@ -24,7 +23,7 @@ jobs:
           run: |
             git config --global user.email "action@github.com"
             git config --global user.name "GitHub Action"
-  
+
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
@@ -33,25 +32,25 @@ jobs:
           run: |
             cd infrastructure-prime
             git checkout -b nexus-hub-devl-deployment-${{ github.ref_name}}-deployment
-        
+
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
             sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/hub.dev.techbd.org/.env
-  
+
         - name: Commit and push changes
           run: |
             cd infrastructure-prime
             git add .
             git commit -m "ci: nexus-hub-ui devl ${{ github.ref_name }} deployment"
-            git push --set-upstream origin nexus-hub-devl-deployment-${{ github.ref_name}}-deployment	
+            git push --set-upstream origin nexus-hub-devl-deployment-${{ github.ref_name}}-deployment
         - name: Create Pull Request
           env:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
             cd infrastructure-prime
-            gh pr create --base main --head nexus-hub-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus Devl techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl deployment for version ${{ github.ref_name }}"
-    
+            gh pr create --base main --head nexus-hub-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus devl techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl deployment for version ${{ github.ref_name }}"
+
     nexus-api-devl-deployment:
       needs: nexus-hub-devl-deployment
       if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
@@ -63,7 +62,7 @@ jobs:
           run: |
             git config --global user.email "action@github.com"
             git config --global user.name "GitHub Action"
-  
+
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
@@ -77,7 +76,7 @@ jobs:
           run: |
             cd infrastructure-prime
             sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/nexus-api.dev.interface.engine.techbd.org/.env
-  
+
         - name: Commit and push changes
           run: |
             cd infrastructure-prime
@@ -89,4 +88,83 @@ jobs:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
             cd infrastructure-prime
-            gh pr create --base main --head nexus-api-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus Devl API techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl API deployment for version ${{ github.ref_name }}"
+            gh pr create --base main --head nexus-api-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus devl API techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl API deployment for version ${{ github.ref_name }}"
+
+    nexus-fhir-devl-deployment:
+      needs: nexus-hub-devl-deployment
+      if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Configure Git
+          run: |
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+
+        - name: Clone infrastructure repository
+          run: |
+            git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b nexus-fhir-devl-deployment-${{ github.ref_name}}-deployment
+
+        - name: Update fhir environment file
+          run: |
+            cd infrastructure-prime
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/nexus-fhir.dev.techbd.org/.env
+
+        - name: Commit and push changes
+          run: |
+            cd infrastructure-prime
+            git add .
+            git commit -m "ci: nexus-fhir-devl ${{ github.ref_name }} deployment"
+            git push --set-upstream origin nexus-fhir-devl-deployment-${{ github.ref_name}}-deployment
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head nexus-fhir-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus devl FHIR techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl FHIR deployment for version ${{ github.ref_name }}"
+
+
+    nexus-csv-devl-deployment:
+      needs: nexus-hub-devl-deployment
+      if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Configure Git
+          run: |
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+
+        - name: Clone infrastructure repository
+          run: |
+            git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b nexus-csv-devl-deployment-${{ github.ref_name}}-deployment
+
+        - name: Update fhir environment file
+          run: |
+            cd infrastructure-prime
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/nexus-csv.dev.techbd.org/.env
+
+        - name: Commit and push changes
+          run: |
+            cd infrastructure-prime
+            git add .
+            git commit -m "ci: nexus-csv-devl ${{ github.ref_name }} deployment"
+            git push --set-upstream origin nexus-csv-devl-deployment-${{ github.ref_name}}-deployment
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head nexus-csv-devl-deployment-${{ github.ref_name}}-deployment --title "Nexus devl CSV techbd.org ${{ github.ref_name }} update" --body "Automated techbd Nexus devl CSV deployment for version ${{ github.ref_name }}"

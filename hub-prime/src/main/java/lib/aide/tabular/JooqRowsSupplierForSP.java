@@ -30,6 +30,7 @@ import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
+import org.techbd.udi.auto.jooq.ingress.tables.GetMissingTechbydesigndispositionDetails;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -418,6 +419,30 @@ public class JooqRowsSupplierForSP {
                         startDate.toString(), endDate.toString());
                 return DSL.table(functionCall);
             }
+            case "get_api_interaction_observe" -> {
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are
+                // regenerated
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                LocalDate startDate = paramMap.get("start_date");
+                LocalDate endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_api_interaction_observe('%s', '%s')",
+                        startDate.toString(), endDate.toString());
+                return DSL.table(functionCall);
+            }
+            case "get_user_interaction_observe" -> {
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are
+                // regenerated
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                LocalDate startDate = paramMap.get("start_date");
+                LocalDate endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_user_interaction_observe('%s', '%s')",
+                        startDate.toString(), endDate.toString());
+                return DSL.table(functionCall);
+            }                        
             case "get_fhir_patient_screening_questions_answers" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
@@ -438,6 +463,7 @@ public class JooqRowsSupplierForSP {
                         zipFileHubInteractionId);
                 return DSL.table(functionCall);
             }
+  
             case "get_fhir_session_diagnostics" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
@@ -450,29 +476,42 @@ public class JooqRowsSupplierForSP {
                         "techbd_udi_ingress.get_fhir_session_diagnostics(DATE '%s', DATE '%s')",
                         startDate, endDate);
                 return DSL.table(functionCall);
-            }
+            }            
+ 
             case "get_fhir_session_diagnostics_details" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
 
-                String tenantId = paramMap.get("p_tenant_id");
-                String severity = paramMap.get("p_severity");
-                String message = paramMap.get("p_message");
-                String igVersion = paramMap.get("p_ig_version");
-                String validationEngine = paramMap.get("p_validation_engine");
-                String encounteredDate = paramMap.get("p_encountered_date");
+                String hubInteractionId = paramMap.get("p_hub_interaction_id"); 
+                String startDate = paramMap.get("p_start_date");
+                String endDate = paramMap.get("p_end_date");                
 
                 // Create a table from the function call using raw SQL with proper null handling
                 String functionCall = String.format(
-                        "techbd_udi_ingress.get_fhir_session_diagnostics_details( %s, %s, %s, %s, %s,DATE %s)",
-                        tenantId != null ? "'" + tenantId + "'" : "NULL",
-                        severity != null ? "'" + severity + "'" : "NULL",
-                        message != null ? "'" + message.replace("'", "''") + "'" : "NULL",
-                        igVersion != null ? "'" + igVersion + "'" : "NULL",
-                        validationEngine != null ? "'" + validationEngine + "'" : "NULL",
-                        encounteredDate != null ? "'" + encounteredDate + "'" : "NULL");
+                        "techbd_udi_ingress.get_fhir_session_diagnostics_details(DATE '%s', DATE '%s', %s)",
+                        startDate, endDate, hubInteractionId != null ? "'" + hubInteractionId + "'" : "NULL");
                 return DSL.table(functionCall);
-            }
+            }  
+            case "get_fhir_validation_issue_details" -> {
+                // Parse parameters from JSON
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String igVersion = paramMap.get("p_ig_version");
+                String validationEngine = paramMap.get("p_validation_engine");
+                String issueDate = paramMap.get("p_issue_date");
+                String source = paramMap.get("p_source");
+
+                // Build the function call with proper null handling and quoting
+                String functionCall = String.format(
+                    "techbd_udi_ingress.get_fhir_validation_issue_details(%s, %s, %s, %s)",
+                    igVersion != null ? "'" + igVersion.replace("'", "''") + "'" : "NULL",
+                    validationEngine != null ? "'" + validationEngine.replace("'", "''") + "'" : "NULL",
+                    issueDate != null ? "'" + issueDate.replace("'", "''") + "'" : "NULL",
+                    source != null ? "'" + source.replace("'", "''") + "'" : "NULL"
+                );
+                return DSL.table(functionCall);
+            }                           
             case "get_interaction_http_request" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
@@ -485,19 +524,25 @@ public class JooqRowsSupplierForSP {
                     startDate, endDate);
                 return DSL.table(functionCall);
             }
-            case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
+            case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" ,"get_missing_techbydesigndisposition_details"  -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
                 Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);
                 String tenantId = paramsMap.get("tenant_id").toLowerCase();
+                LocalDate startDate = dateMap.get("start_date");
+                LocalDate endDate = dateMap.get("end_date");
+                 if (storedProcName.equals("get_fhir_needs_attention_details")) {
+                     return new GetFhirNeedsAttentionDetails()
+                                .call(tenantId, startDate, endDate);
 
-                if (storedProcName.equals("get_fhir_needs_attention_details")) {
-                    return new GetFhirNeedsAttentionDetails().call(tenantId, dateMap.get("start_date"),
-                            dateMap.get("end_date"));
-                } else {
-                    return new GetMissingDatalakeSubmissionDetails().call(tenantId, dateMap.get("start_date"),
-                            dateMap.get("end_date"));
-                }
-            }
+                    } else if (storedProcName.equals("get_missing_datalake_submission_details")) {
+                        return new GetMissingDatalakeSubmissionDetails()
+                                .call(tenantId, startDate, endDate);
+
+                    } else {
+                        return new GetMissingTechbydesigndispositionDetails()
+                                .call(tenantId, startDate, endDate);
+                    }
+                            }
             default ->
                 throw new IllegalArgumentException("Invalid stored procedure name: " + storedProcName);
         }

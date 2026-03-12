@@ -258,6 +258,7 @@ function getHeaderParameters(headers, channelMap, sourceMap) {
         Packages.org.techbd.config.Constants.MASTER_INTERACTION_ID,
         Packages.org.techbd.config.Constants.SOURCE_TYPE,
         Packages.org.techbd.config.Constants.VALIDATION_SEVERITY_LEVEL,
+        Packages.org.techbd.config.Constants.SHIN_NY_IG_VERSION,
         Packages.org.techbd.config.Constants.BASE_FHIR_URL
     ];
 

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.techbd.service.http.hub.prime.ux.config.FileDownloadProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,7 +36,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.http.hub.prime.ux.validator.Validator;
-import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,18 +57,34 @@ public class TabularRowsController {
 
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
-    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
+    private DSLContext readerDSlContext;
     private final List<Validator> validators;
     @Autowired
     private FileDownloadProperties fileDownloadProperties;
     @Autowired
     private ObjectMapper objectMapper;
 
-    public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig, List<Validator> validators) {
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+    public TabularRowsController(List<Validator> validators,@Qualifier("primaryDslContext") DSLContext primaryDslContext) {
         this.validators = validators;
+        this.primaryDslContext = primaryDslContext;
     }
 
+    @Autowired(required = false)
+    public void setUdiReaderConfig(@Qualifier("secondaryDslContext") DSLContext readerDSlContext) {
+        LOG.info("READER INSTANCE CONFIGURED SUCCESSFULLY!!");
+        this.readerDSlContext = readerDSlContext    ;
+    }
+
+    // Helper method to get the DSLContext, prefer reader if available
+    private DSLContext getDsl() {
+        if (readerDSlContext != null) {
+            // LOG.info("READER INSTANCE - Exceuting Query");
+            return readerDSlContext;
+        }
+        // LOG.info("WRITER INSTANCE - Exceuting Query");
+        return primaryDslContext;
+    }
     @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
             Retrieves rows from a specified master table or view, within a specific schema.
             The request body contains the filter criteria (via `TabularRowsRequest`) used to query the data.
@@ -92,7 +108,7 @@ public class TabularRowsController {
         return new JooqRowsSupplier.Builder()
                 .withRequest(payload)
                 .withTable(Tables.class, schemaName, masterTableNameOrViewName)
-                .withDSL(udiPrimeJpaConfig.dsl())
+                .withDSL(getDsl())
                 .withLogger(LOG)
                 .includeGeneratedSqlInResp(includeGeneratedSqlInResp)
                 .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
@@ -135,7 +151,7 @@ public class TabularRowsController {
         }
 
         try {
-            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(udiPrimeJpaConfig.dsl())
+            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(getDsl())
                     .withSchemaName(schemaName)
                     .withStoredProcName(storedProcName)
                     .withParamsJson(storedProcparams)
@@ -177,7 +193,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue)))
                 .fetch()
                 .intoMaps();
@@ -225,7 +241,7 @@ public class TabularRowsController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
 
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(columnValue2))))
                 .fetch()
@@ -285,7 +301,7 @@ public class TabularRowsController {
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
-        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        List<Map<String, Object>> result = getDsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName1)).eq(DSL.val(decodedColumnValue1))
                         .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(decodedColumnValue2)))
                         .and(DSL.field(typableTable.column(columnName3)).eq(DSL.val(decodedColumnValue3))))
@@ -333,7 +349,7 @@ public class TabularRowsController {
         try {
             // Define the table based on schema and table name
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-            final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
+            final var jooqCfg = primaryDslContext.configuration();
 
             // Filter validators based on the table name
             Validator tableValidator = validators.stream()
@@ -361,7 +377,7 @@ public class TabularRowsController {
 
             if (primaryKeyValue != null) {
                 // Update statement
-                var updateStep = udiPrimeJpaConfig.dsl().update(typableTable.table())
+                var updateStep = primaryDslContext.update(typableTable.table())
                         .set(rowData.entrySet().stream()
                                 .collect(Collectors.toMap(
                                         e -> DSL.field(typableTable.column(e.getKey())),
@@ -385,9 +401,6 @@ public class TabularRowsController {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
                 }
             } else {
-                // Perform an insert if no primary key value is provided
-                DSLContext dsl = udiPrimeJpaConfig.dsl();
-
                 // Prepare the data for insertion
                 Map<org.jooq.Field<?>, Object> dataToInsert = rowData.entrySet().stream()
                         .collect(Collectors.toMap(
@@ -404,7 +417,7 @@ public class TabularRowsController {
                 dataToInsert.put(DSL.field(typableTable.column("created_by")), TabularRowsController.class.getName());
                 dataToInsert.put(DSL.field(typableTable.column("provenance")), provenance);
 
-                dsl.insertInto(typableTable.table())
+                primaryDslContext.insertInto(typableTable.table())
                         .set(dataToInsert)
                         .execute();
 
@@ -441,7 +454,7 @@ public class TabularRowsController {
 
         try {
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-            int deletedRows = udiPrimeJpaConfig.dsl().deleteFrom(typableTable.table())
+            int deletedRows = primaryDslContext.deleteFrom(typableTable.table())
                     .where(DSL.field(typableTable.column(columnName)).eq(primaryKey))
                     .execute();
 
@@ -482,7 +495,7 @@ public class TabularRowsController {
 
         JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
             .withTable(Tables.class, schemaName, tableName)
-            .withDSL(udiPrimeJpaConfig.dsl())
+            .withDSL(getDsl())
             .withLogger(LOG)
             .build();
 
@@ -517,4 +530,64 @@ public class TabularRowsController {
                 .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
                 .body(content);
     }
+
+    
+    @Operation(summary = "Download file from a table by ID and nature", description = "Downloads a file and its name from the specified table and column when the row matches a given nature value.")
+    @GetMapping(value = "/api/ux/tabular/jooq/download/{schemaName}/{tableName}/{fileContentColName}/{idColumn}/{id}/nature/{natureValue}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<byte[]> downloadFileByIdAndNature(
+            @PathVariable String schemaName,
+            @PathVariable String tableName,
+            @PathVariable String fileContentColName,
+            @PathVariable String idColumn,
+            @PathVariable String id,
+            @PathVariable String natureValue,
+            @RequestParam(value = "fileName", required = true) String fileName
+    ) {
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(idColumn).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(fileContentColName).matches()) {
+            throw new IllegalArgumentException("Invalid schema, table, or column name.");
+        }
+
+        JooqRowsSupplier jooqRowsSupplier = new JooqRowsSupplier.Builder()
+            .withTable(Tables.class, schemaName, tableName)
+            .withDSL(getDsl())
+            .withLogger(LOG)
+            .build();
+
+        // Decode nature value from path and use the column name "nature" by convention
+        String decodedNature = URLDecoder.decode(natureValue, StandardCharsets.UTF_8);
+        byte[] content = jooqRowsSupplier.downloadFileByIdAndNature(id, idColumn, fileContentColName, "nature", decodedNature);
+        int maxContentSize = fileDownloadProperties != null ? fileDownloadProperties.getMaxDownloadJsonPrettyPrintSizeBytes() : 1 * 1024 * 1024;
+        String resolvedFileName = (fileName != null && !fileName.isBlank()) ? fileName : "downloaded_file.dat";
+        boolean prettifyContent = false;
+        if (fileName != null && !fileName.isBlank()) {
+            try {
+                boolean endsWithJson = fileName.trim().toLowerCase().endsWith(".json");
+                if (endsWithJson && content != null && content.length < maxContentSize) {
+                    prettifyContent = true;
+                }
+                resolvedFileName = fileName;
+            } catch (Exception e) {
+                LOG.debug("fileName check failed, using as-is: {}", e.getMessage());
+                resolvedFileName = fileName;
+            }
+        }
+        if (prettifyContent) {
+            try {
+                // Try to parse and pretty-print the content
+                Object json = objectMapper.readValue(content, Object.class);
+                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+                String prettyJson = writer.writeValueAsString(json);
+                content = prettyJson.getBytes(StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                LOG.debug("File content is not valid JSON, sending as-is: {}", e.getMessage());
+            }
+        }
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=" + resolvedFileName)
+                .body(content);
+    }    
 }

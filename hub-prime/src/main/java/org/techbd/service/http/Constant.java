@@ -9,7 +9,8 @@ public class Constant {
             "/Bundle", "/Bundle/**",
             "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
             "/Hl7/v2", "/Hl7/v2/",
-            "/api/expect", "/api/expect/**"
+            "/api/expect", "/api/expect/**",
+            "/Bundles/**"
     };
 
     /** Public URLs (Authentication not required) */

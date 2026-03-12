@@ -5,11 +5,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -32,19 +34,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 
  @Service
 public class CCDAService {
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
     private final TemplateLogger logger;
     private final CoreAppConfig coreAppConfig;
 
-    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger, CoreAppConfig coreAppConfig) {
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+    public CCDAService(@Qualifier("primaryDslContext") final DSLContext primaryDslContext, AppLogger appLogger, CoreAppConfig coreAppConfig) {
+        this.primaryDslContext = primaryDslContext;
         this.logger = appLogger.getLogger(CCDAService.class);
         this.coreAppConfig = coreAppConfig;
     }
 
+    @Transactional
     public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveOriginalCcdaPayload  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -52,7 +55,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDslContext.configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -68,6 +71,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -98,9 +104,10 @@ public class CCDAService {
      * @param fileName         Original filename of the CCDA file
      * @return true if the data is successfully saved, false otherwise
      */
+    @Transactional
     public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -108,7 +115,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDslContext.dsl().configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -124,6 +131,9 @@ public class CCDAService {
             rihr.setPProvenance(provenance);
             rihr.setPTechbdVersionNumber(coreAppConfig.getVersion());
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -155,9 +165,10 @@ public class CCDAService {
      * @param fileName          Original filename of the CCDA file
      * @return true if the data is successfully saved, false otherwise
      */
+    @Transactional
     public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
             String tenantId, String requestUri,
-            Map<String, Object> bundle, String fileName) {
+            Map<String, Object> bundle, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             logger.info("CCDAService Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
@@ -166,7 +177,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDslContext.configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -182,6 +193,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();
@@ -213,9 +227,10 @@ public class CCDAService {
      * @param fileName         Original filename of the CCDA file
      * @return true if saving was successful, false otherwise
      */
+    @Transactional
     public boolean saveCcdaValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
-            Map<String, Object> operationOutcome, String fileName) {
+            Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress, String sourceSystem) {
         try {
             logger.info("CCDAService saveCcdaValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
@@ -223,7 +238,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
+            var jooqCfg = primaryDslContext.configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -238,6 +253,9 @@ public class CCDAService {
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
             rihr.setPFileName(fileName);
+            rihr.setPUserAgent(userAgent);
+            rihr.setPClientIpAddress(clientIpAddress);
+            rihr.setPCcdaAuthoringDevice(sourceSystem);
             final Instant start = Instant.now();
             final int result = rihr.execute(jooqCfg);
             final Instant end = Instant.now();

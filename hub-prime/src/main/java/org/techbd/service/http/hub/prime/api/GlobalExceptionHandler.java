@@ -112,7 +112,7 @@ public class GlobalExceptionHandler {
                 "Internal Server Error occurred. Tenant ID: {}, Session ID: {},  User-Agent: {}, Remote Address: {}, Method: {}, Query: {}, URI: {}",
                 tenantId, sessionId, userAgent, remoteAddress, method, queryString, requestUri, ex);
         SystemDiagnosticsLogger.logBasicSystemStats();
-        String responseBody = "{\"status\":\"Error\",\"message\":\"An unexpected system error occurred.\"}";
+        String responseBody = String.format("{\"status\":\"Error\",\"message\":\"An unexpected system error occurred.\",\"details\":\"%s\"}", ex.getMessage());
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

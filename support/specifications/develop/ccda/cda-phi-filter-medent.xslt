@@ -44,7 +44,7 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
-            <!-- Medent - always have consent details in Procedures section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value (Yes/No)  -->
+            <!-- Medent - always have consent details in Procedures section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value.code (LA33-6 = Yes/ LA33-8 = No)   -->
             <xsl:variable name="consent" select="
                 hl7:component/hl7:structuredBody/hl7:component
                 /hl7:section[hl7:code[@code='47519-4']]
@@ -54,7 +54,18 @@
             <xsl:if test="$consent">
                 <xsl:variable name="consentDisplay">
                     <xsl:choose>
-                        <xsl:when test="$consent/hl7:value/@displayName = 'Yes'">permit</xsl:when>
+                        <!-- <xsl:when test="$consent/hl7:value/@displayName = 'Yes'">permit</xsl:when> -->
+                        <xsl:when test="
+                            normalize-space($consent/hl7:value/@code) = 'LA33-6'
+                            or
+                            translate(
+                                normalize-space($consent/hl7:value/@displayName),
+                                'abcdefghijklmnopqrstuvwxyz',
+                                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                            ) = 'YES'
+                            ">
+                            permit
+                        </xsl:when>
                         <xsl:otherwise>deny</xsl:otherwise>
                     </xsl:choose>
                 </xsl:variable>

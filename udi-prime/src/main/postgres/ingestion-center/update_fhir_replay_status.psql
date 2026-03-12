@@ -1,0 +1,31 @@
+
+-- Purpose: Back fill the 'replay_status' value with the status of the replay process into `sat_interaction_fhir_request` table
+
+WITH list AS (
+    SELECT DISTINCT ON (hub_interaction_id)
+        hub_interaction_id,
+        to_state,
+        created_at
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
+    ORDER BY hub_interaction_id, created_at DESC
+)
+UPDATE techbd_udi_ingress.sat_interaction_fhir_request fhir
+SET 
+    replay_status = CASE 
+                        WHEN list.to_state = 'COMPLETE' THEN 'True'
+                        ELSE 'False'
+                    END,
+    replay_on = list.created_at
+FROM list
+WHERE fhir.nature = 'Forwarded HTTP Response Error'
+  AND fhir.hub_interaction_id = list.hub_interaction_id;
+
+-- To get total number of replayed records
+SELECT count(*) AS total_replays FROM techbd_udi_ingress.sat_interaction_fhir_request WHERE replay_status IS NOT NULL;
+
+-- To get the total number of success replays
+SELECT count(*) AS success_replays FROM techbd_udi_ingress.sat_interaction_fhir_request WHERE replay_status = 'True';
+
+-- To get the total number of failed replays
+SELECT count(*) AS failed_replays FROM techbd_udi_ingress.sat_interaction_fhir_request WHERE replay_status = 'False';

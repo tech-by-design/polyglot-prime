@@ -91,13 +91,13 @@
                 headerName: "Total Msgs", field: "qe_total_submissions",  filter: "agNumberColumnFilter" 
             },
             { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter" }, 
-            { headerName: "Failed Msgs", field: "faield_submissions", filter: "agNumberColumnFilter" },
+            { headerName: "Failed Msgs", field: "failed_submissions", filter: "agNumberColumnFilter" },
             {
                     headerName: "Discarded Msgs",
                     valueGetter: (params) => {
                         const total = Number(params.data.qe_total_submissions) || 0;
                         const success = Number(params.data.success_submissions) || 0;
-                        const failed = Number(params.data.faield_submissions) || 0;
+                        const failed = Number(params.data.failed_submissions) || 0;
                         return total - success - failed;
                     },
                     filter: "agNumberColumnFilter"

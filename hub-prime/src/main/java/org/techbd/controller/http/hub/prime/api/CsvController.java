@@ -68,6 +68,12 @@ public class CsvController {
       @Parameter(description = "Tenant ID, a mandatory parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID) String tenantId,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
+      @Parameter(hidden = false, description = "Optional parameter to decide whether response should be synchronous or asynchronous. " +
+          "Default: `immediate=true` → request is processed synchronously. " +
+          "Optional: `immediate=false` → request is processed asynchronously. " +
+          "When using `immediate=false`, an interim response is returned containing a zipFileInteractionId. " +
+          "The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. " +
+          "This option is useful for large ZIP files that may otherwise result in timeout issues.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
@@ -83,6 +89,7 @@ public class CsvController {
         null, null, null, null, request.getRequestURI());
     requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     Map<String, Object> responseParameters = new HashMap<>();
     requestDetailsMap.putAll(headerParameters);
     final var result  = csvService.validateCsvFile(file, requestDetailsMap, responseParameters);
@@ -96,10 +103,16 @@ public class CsvController {
   public ResponseEntity<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+      @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = Constants.DATALAKE_API_URL, required = false) String customDataLakeApi,
       @Parameter(description = "Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.", required = false) @RequestHeader(value = "X-TechBD-Base-FHIR-URL", required = false) String baseFHIRURL,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
-      @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
+      @Parameter(hidden = false, description = "Optional parameter to decide whether response should be synchronous or asynchronous. " +
+          "Default: `immediate=true` → request is processed synchronously. " +
+          "Optional: `immediate=false` → request is processed asynchronously. " +
+          "When using `immediate=false`, an interim response is returned containing a zipFileInteractionId. " +
+          "The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. " +
+          "This option is useful for large ZIP files that may otherwise result in timeout issues.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
       @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
@@ -108,7 +121,7 @@ public class CsvController {
     validateTenantId(tenantId);
     CoreFHIRUtil.validateBaseFHIRProfileUrl(coreAppConfig, baseFHIRURL);
     Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
-    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
         null,
         null, validationSeverityLevel, null, null,
         null,null);    
@@ -121,6 +134,7 @@ public class CsvController {
       requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
+    requestDetailsMap.put(Constants.DATALAKE_API_URL, customDataLakeApi);
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
     List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);

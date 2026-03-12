@@ -9,7 +9,8 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.techbd.service.csv.CodeLookupService;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
@@ -19,17 +20,16 @@ public abstract class BaseConverter implements IConverter {
     public static Map<String, Map<String, String>> SYSTEM_LOOKUP;
     public static Map<String, Map<String, String>> DISPLAY_LOOKUP;
     private final CodeLookupService codeLookupService;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
 
-    public BaseConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+    public BaseConverter(CodeLookupService codeLookupService,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) {
         this.codeLookupService = codeLookupService;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
     }
 
     public String fetchCode(String valueFromCsv, String category, String interactionId) {
         if (CODE_LOOKUP == null) {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(dslContext, interactionId);
+            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(primaryDslContext, interactionId);
         }
 
         if (valueFromCsv == null || category == null) {
@@ -43,10 +43,23 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
     }
 
+    public String fetchCodeIfPresent(String valueFromCsv, String category, String interactionId) {
+        if (valueFromCsv == null || category == null) {
+            return null;
+        }
+        if (CODE_LOOKUP == null) {
+            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(primaryDslContext, interactionId);
+        }
+        Map<String, String> innerMap = CODE_LOOKUP.get(category);
+        if (innerMap == null) {
+            return null;
+        }        
+        return innerMap.get(valueFromCsv.toLowerCase());
+    }
+
     public String fetchSystem(String code, String valueFromCsv, String category, String interactionId) {
         if (SYSTEM_LOOKUP == null) {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext, interactionId);
+            BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(primaryDslContext, interactionId);
         }
 
         if (code == null || category == null) {
@@ -62,8 +75,7 @@ public abstract class BaseConverter implements IConverter {
 
     public String fetchDisplay(String code, String valueFromCsv, String category, String interactionId) {
         if (DISPLAY_LOOKUP == null) {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(dslContext, interactionId);
+            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(primaryDslContext, interactionId);
         }
 
         if (code == null || category == null) {
@@ -79,8 +91,7 @@ public abstract class BaseConverter implements IConverter {
 
     public String fetchCodeFromDisplay(String display, String category, String interactionId) {
         if (DISPLAY_LOOKUP == null) {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(dslContext, interactionId);
+            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(primaryDslContext, interactionId);
         }
 
         if (display == null || category == null) {
@@ -110,8 +121,7 @@ public abstract class BaseConverter implements IConverter {
 
     private String getCategoryType(String categoryType, String code, String interactionId) {
         if (CODE_LOOKUP == null) {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            CODE_LOOKUP = codeLookupService.fetchCode(dslContext, interactionId);
+            CODE_LOOKUP = codeLookupService.fetchCode(primaryDslContext, interactionId);    
         }
 
         Map<String, String> categoryMap = CODE_LOOKUP.get(categoryType);

@@ -1,0 +1,4119 @@
+﻿<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:sdtc="urn:hl7-org:sdtc" xmlns:voc="urn:hl7-org:v3/voc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<realmCode code="US" />
+	<typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+	<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.1.1" />
+	<templateId root="2.16.840.1.113883.10.20.22.1.1" />
+	<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.1.2" />
+	<templateId root="2.16.840.1.113883.10.20.22.1.2" />
+	<id extension="7UA2S" root="2.16.840.1.113883.3.227.2845.1.1" />
+	<code code="34133-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Summarization of Episode Note" />
+	<title>Elijah Oneil</title>
+	<effectiveTime value="20250821102723-0400" />
+	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality" displayName="normal" />
+	<languageCode code="en" />
+	<recordTarget>
+		<patientRole>
+			<id extension="760-403-4388" root="2.16.840.1.113883.3.227.2845.2.1" />
+			<id assigningAuthorityName="EPI" extension="AB12345C" root="1.2.840.114350.1.1" />
+			<addr use="HP">
+				<streetAddressLine>430 Clearwater St</streetAddressLine>
+				<city>Nekoosa</city>
+				<state>WI</state>
+				<postalCode>54457</postalCode>
+				<country>US</country>
+			</addr>
+			<telecom use="HP" value="tel:+1(571)555-6021" />
+			<telecom use="MC" value="tel:+1(571)555-6021" />
+			<telecom value="mailto:email@domain.com" />
+			<patient>
+				<name use="L">
+					<given>Mitzi</given>
+					<given>Marty</given>
+					<family>Nunez</family>
+				</name>
+				<name>
+					<given qualifier="BR">Mitzi</given>
+					<given qualifier="BR">Marty</given>
+					<family qualifier="BR">Cantu</family>
+				</name>
+				<administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGender" displayName="Male" />
+				<birthTime value="20151027" />
+				<maritalStatusCode code="S" codeSystem="2.16.840.1.113883.5.2" codeSystemName="MaritalStatus" displayName="Never Married" />
+				<raceCode code="2106-3" codeSystem="2.16.840.1.113883.6.238" codeSystemName="Race &amp; Ethnicity - CDC" displayName="White" />
+				<ethnicGroupCode nullFlavor="UNK" />
+				<languageCommunication>
+					<languageCode code="en" />
+					<proficiencyLevelCode nullFlavor="NI" />
+					<preferenceInd value="true" />
+				</languageCommunication>
+			</patient>
+		</patientRole>
+	</recordTarget>
+	<author>
+		<time value="20250511022723-0400" />
+		<assignedAuthor>
+			<id extension="XAPBU" root="2.16.840.1.113883.4.6" />
+			<addr nullFlavor="NI" />
+			<telecom nullFlavor="NI" />
+			<assignedAuthoringDevice>
+				<manufacturerModelName>MEDENT - Version 237</manufacturerModelName>
+				<softwareName>MEDENT - Version 237</softwareName>
+			</assignedAuthoringDevice>
+			<representedOrganization>
+				<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+				<name>Represented Organization</name>
+				<telecom use="WP" value="tel:+1(571)555-9835" />
+				<addr use="WP">
+					<streetAddressLine>787 George St</streetAddressLine>
+					<city>South Yarmouth</city>
+					<state>WI</state>
+					<postalCode>02664</postalCode>
+					<country>US</country>
+				</addr>
+			</representedOrganization>
+		</assignedAuthor>
+	</author>
+	<custodian>
+		<assignedCustodian>
+			<representedCustodianOrganization>
+				<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+				<name>Represented Custodian Organization</name>
+				<telecom use="WP" value="tel:+1(571)555-9835" />
+				<addr use="WP">
+					<streetAddressLine>787 George St</streetAddressLine>
+					<city>South Yarmouth</city>
+					<state>WI</state>
+					<postalCode>02664</postalCode>
+					<country>US</country>
+				</addr>
+			</representedCustodianOrganization>
+		</assignedCustodian>
+	</custodian>
+	<documentationOf>
+		<serviceEvent classCode="PCPR">
+			<effectiveTime>
+				<low value="20160213" />
+				<high value="20250729" />
+			</effectiveTime>
+			<performer typeCode="PRF">
+				<functionCode code="AUTM" codeSystem="2.16.840.1.113883.5.88" codeSystemName="participationFunction" displayName="Care Team Information Receiver">
+					<originalText>Care Team Member</originalText>
+				</functionCode>
+				<assignedEntity>
+					<id nullFlavor="NA" />
+					<addr nullFlavor="NI" />
+					<telecom use="WP" value="tel:+1(571)555-7143" />
+					<telecom use="WP" value="tel:+1(571)555-6262" />
+					<assignedPerson>
+						<name>Healthelink</name>
+					</assignedPerson>
+				</assignedEntity>
+			</performer>
+			<performer typeCode="PRF">
+				<functionCode code="AUTM" codeSystem="2.16.840.1.113883.5.88" codeSystemName="participationFunction" displayName="Care Team Information Receiver">
+					<originalText>Primary Provider</originalText>
+				</functionCode>
+				<assignedEntity>
+					<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+					<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="NUCCProviderTaxonomy" displayName="Physician Assistant" />
+					<addr use="WP">
+						<streetAddressLine>638 Eagles View Dr</streetAddressLine>
+						<city>South Yarmouth</city>
+						<state>WI</state>
+						<postalCode>03253</postalCode>
+						<country>US</country>
+					</addr>
+					<telecom use="WP" value="tel:+1(571)555-9835" />
+					<assignedPerson>
+						<name>
+							<given>Leslie</given>
+							<family>Hobbs</family>
+							<suffix qualifier="AC">PA</suffix>
+						</name>
+					</assignedPerson>
+					<representedOrganization>
+						<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+						<name>Represented Organization</name>
+						<telecom use="WP" value="tel:+1(571)555-9835" />
+						<addr use="WP">
+							<streetAddressLine>787 George St</streetAddressLine>
+							<city>South Yarmouth</city>
+							<state>WI</state>
+							<postalCode>02664</postalCode>
+							<country>US</country>
+						</addr>
+					</representedOrganization>
+				</assignedEntity>
+			</performer>
+		</serviceEvent>
+	</documentationOf>
+	<component>
+		<structuredBody>
+			<component>
+				<section nullFlavor="NI">
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.5.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.5.1" />
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.5" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.5" />
+					<code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem List" />
+					<title>Problems</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.17" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.17" />
+					<code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Social history" />
+					<title>Social History</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Type</th>
+									<th>Date</th>
+									<th>Description</th>
+									<th>Comments</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Birth Sex</td>
+									<td />
+									<td>Male</td>
+									<td />
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId extension="2016-06-01" root="2.16.840.1.113883.10.20.22.4.200" />
+							<code code="76689-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex Assigned At Birth" />
+							<statusCode code="completed" />
+							<value code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGender" displayName="Male" xsi:type="CD" />
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time nullFlavor="NI" />
+								<assignedAuthor>
+									<id nullFlavor="NI" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.6.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.6.1" />
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.6" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.6" />
+					<code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies and adverse reactions Document" />
+					<title>Allergies and adverse reactions</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Active Allergies</th>
+									<th>Criticality</th>
+									<th>Reaction | Severity</th>
+									<th>Comments</th>
+									<th>Date</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										<content ID="atext-0" xmlns="urn:hl7-org:v3">Amoxicillin</content>
+									</td>
+									<td>Unable to assess criticality</td>
+									<td />
+									<td />
+									<td>05/11/2025</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<act classCode="ACT" moodCode="EVN">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.30" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.30" />
+							<id extension="8MOAS" root="2.16.840.1.113883.3.227.2845.10.4" />
+							<code code="CONC" codeSystem="2.16.840.1.113883.5.6" codeSystemName="HL7ActClass" displayName="Concern" />
+							<statusCode code="active" />
+							<effectiveTime>
+								<low value="20250729" />
+								<high nullFlavor="NI" />
+							</effectiveTime>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.7" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.7" />
+									<id extension="8MOAS" root="2.16.840.1.113883.3.227.2845.10.4" />
+									<code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+									<statusCode code="completed" />
+									<effectiveTime>
+										<low nullFlavor="UNK" />
+										<high nullFlavor="UNK" />
+									</effectiveTime>
+									<value code="420134006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Adverse Reaction" xsi:type="CD" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+									<participant typeCode="CSM">
+										<participantRole classCode="MANU">
+											<playingEntity classCode="MMAT">
+												<code code="723" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Amoxicillin">
+													<originalText>
+														<reference value="#atext-0" />
+													</originalText>
+												</code>
+											</playingEntity>
+										</participantRole>
+									</participant>
+									<entryRelationship inversionInd="true" typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId root="2.16.840.1.113883.10.20.22.4.145" />
+											<code code="82606-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Criticality" />
+											<statusCode code="completed" />
+											<value code="CRITU" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="HL7ObservationValue" displayName="Unable to assess criticality" xsi:type="CD" />
+										</observation>
+									</entryRelationship>
+								</observation>
+							</entryRelationship>
+						</act>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section nullFlavor="NI">
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.1.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.1.1" />
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.1" />
+					<code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of medication use narrative" />
+					<title>Medications</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.2.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.2.1" />
+					<code code="11369-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Immunization Narrative" />
+					<title>Immunizations</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>CPT Code</th>
+									<th>Status</th>
+									<th>Date</th>
+									<th>Vaccine</th>
+									<th>Lot #</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>05/26/2023</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>04/25/2022</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90710</td>
+									<td>Given</td>
+									<td>03/12/2021</td>
+									<td>Pro-Quad (MMR/Varivax)</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90696</td>
+									<td>Given</td>
+									<td>03/12/2021</td>
+									<td>DTaP&amp;IPV 4-6 yr</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>06/29/2019</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>11/11/2018</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>04/04/2018</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>U-HEPA</td>
+									<td>Given</td>
+									<td>11/28/2018</td>
+									<td>Hepatitis A,Unspecified</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90686</td>
+									<td>Given</td>
+									<td>11/28/2018</td>
+									<td>Flu Vaccine, Quadrivalent preservative free 6 Months And Older</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90707</td>
+									<td>Given</td>
+									<td>04/28/2018</td>
+									<td>MMR Virus Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90670</td>
+									<td>Given</td>
+									<td>04/28/2018</td>
+									<td>Prevnar [13 Valent]</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90648</td>
+									<td>Given</td>
+									<td>04/28/2018</td>
+									<td>hib</td>
+									<td />
+								</tr>
+								<tr>
+									<td>U-HEPA</td>
+									<td>Given</td>
+									<td>03/09/2018</td>
+									<td>Hepatitis A,Unspecified</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90716</td>
+									<td>Given</td>
+									<td>03/09/2018</td>
+									<td>Varicella (Chicken Pox) Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90700</td>
+									<td>Given</td>
+									<td>03/09/2018</td>
+									<td>DTaP Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90744</td>
+									<td>Given</td>
+									<td>07/09/2016</td>
+									<td>Hepatitis B Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90713</td>
+									<td>Given</td>
+									<td>07/09/2016</td>
+									<td>Poliomyelitis Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90700</td>
+									<td>Given</td>
+									<td>10/28/2016</td>
+									<td>DTaP Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90648</td>
+									<td>Given</td>
+									<td>10/28/2016</td>
+									<td>hib</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90713</td>
+									<td>Given</td>
+									<td>03/16/2016</td>
+									<td>Poliomyelitis Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90680</td>
+									<td>Given</td>
+									<td>03/16/2016</td>
+									<td>Rota Teq</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90670</td>
+									<td>Given</td>
+									<td>03/16/2016</td>
+									<td>Prevnar [13 Valent]</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90648</td>
+									<td>Given</td>
+									<td>03/16/2016</td>
+									<td>hib</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90700</td>
+									<td>Given</td>
+									<td>03/04/2016</td>
+									<td>DTaP Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90680</td>
+									<td>Given</td>
+									<td>03/04/2016</td>
+									<td>Rota Teq</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90670</td>
+									<td>Given</td>
+									<td>03/04/2016</td>
+									<td>Prevnar [13 Valent]</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90698</td>
+									<td>Given</td>
+									<td>06/14/2016</td>
+									<td>Pentacel (DTaP,Hib,IPV)</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90680</td>
+									<td>Given</td>
+									<td>06/14/2016</td>
+									<td>Rota Teq</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90670</td>
+									<td>Given</td>
+									<td>06/14/2016</td>
+									<td>Prevnar [13 Valent]</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90744</td>
+									<td>Given</td>
+									<td>12/03/2016</td>
+									<td>Hepatitis B Immunization</td>
+									<td />
+								</tr>
+								<tr>
+									<td>90744</td>
+									<td>Given</td>
+									<td>02/13/2016</td>
+									<td>Hepatitis B Immunization</td>
+									<td />
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="EY9IV" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20230526170800-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="EY9IV" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="KTSKJ" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20220425170800-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="KTSKJ" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="SQZDG" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20210312165700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="94" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Pro-Quad (MMR/Varivax)">
+											<translation code="90710" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Pro-Quad (MMR/Varivax)" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="SQZDG" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="WUAW4" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20210202165400-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="130" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="DTaP&amp;IPV 4-6 yr">
+											<translation code="90696" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="DTaP&amp;IPV 4-6 yr" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="WUAW4" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="7WSI7" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20190629170800-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="7WSI7" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="I9ALA" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20181111170700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="I9ALA" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="469HB" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20180404170700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="469HB" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="5XC9S" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20170717" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="85" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Hepatitis A,Unspecified">
+											<translation code="U-HEPA" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Hepatitis A,Unspecified" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="5XC9S" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="QAS3V" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20180421170700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older">
+											<translation code="90686" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Flu Vaccine, Quadrivalent preservative free 6 Months And Older" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="QAS3V" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="TE8J3" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20161230165700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="03" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="MMR Virus Immunization">
+											<translation code="90707" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="MMR Virus Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="TE8J3" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="YBWWC" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20161228165600-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="133" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Prevnar [13 Valent]">
+											<translation code="90670" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Prevnar [13 Valent]" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="YBWWC" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="OGP2J" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20161117165500-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="48" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="hib">
+											<translation code="90648" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="hib" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="OGP2J" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="GPTA0" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20170804" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="85" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Hepatitis A,Unspecified">
+											<translation code="U-HEPA" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Hepatitis A,Unspecified" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="GPTA0" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="D7EQ2" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20170723165800-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="21" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Varicella (Chicken Pox) Immunization">
+											<translation code="90716" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Varicella (Chicken Pox) Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="D7EQ2" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="NON91" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160922165400-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="106" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="DTaP Immunization">
+											<translation code="90700" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="DTaP Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="NON91" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="8UD9S" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160709165200-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="08" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Hepatitis B Immunization">
+											<translation code="90744" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Hepatitis B Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="8UD9S" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="NJU1V" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20161228165700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="10" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Poliomyelitis Immunization">
+											<translation code="90713" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Poliomyelitis Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="NJU1V" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="VX1IW" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20161028165300-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="106" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="DTaP Immunization">
+											<translation code="90700" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="DTaP Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="VX1IW" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="RTN1F" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160817165500-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="48" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="hib">
+											<translation code="90648" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="hib" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="RTN1F" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="5IJ0I" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160316165700-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="10" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Poliomyelitis Immunization">
+											<translation code="90713" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Poliomyelitis Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="5IJ0I" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="7OPT4" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160329165200-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="116" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Rota Teq">
+											<translation code="90680" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Rota Teq" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="7OPT4" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="FH6TX" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160331165600-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="133" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Prevnar [13 Valent]">
+											<translation code="90670" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Prevnar [13 Valent]" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="FH6TX" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="WLM34" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20151229165500-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="48" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="hib">
+											<translation code="90648" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="hib" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="WLM34" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="FF2HS" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160517165300-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="106" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="DTaP Immunization">
+											<translation code="90700" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="DTaP Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="FF2HS" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="SGOID" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20151210165200-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="116" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Rota Teq">
+											<translation code="90680" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Rota Teq" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="SGOID" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="0XA64" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160626165600-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="133" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Prevnar [13 Valent]">
+											<translation code="90670" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Prevnar [13 Valent]" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="0XA64" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="6B3CC" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20160614165300-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="120" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Pentacel (DTaP,Hib,IPV)">
+											<translation code="90698" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Pentacel (DTaP,Hib,IPV)" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="6B3CC" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="J866F" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20151019165200-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="116" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Rota Teq">
+											<translation code="90680" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Rota Teq" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="J866F" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="TCNEU" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20150629165500-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="133" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Prevnar [13 Valent]">
+											<translation code="90670" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Prevnar [13 Valent]" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="TCNEU" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="506GB" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20151018165100-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="08" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Hepatitis B Immunization">
+											<translation code="90744" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Hepatitis B Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="506GB" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+					<entry typeCode="DRIV">
+						<substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.52" />
+							<id extension="K7DW2" root="2.16.840.1.113883.3.227.2845.10.6" />
+							<statusCode code="completed" />
+							<effectiveTime value="20151202165100-0400" />
+							<doseQuantity nullFlavor="NI" unit="1" />
+							<consumable>
+								<manufacturedProduct classCode="MANU">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.54" />
+									<manufacturedMaterial>
+										<code code="08" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CDC Vaccine Code (CVX)" displayName="Hepatitis B Immunization">
+											<translation code="90744" codeSystem="2.16.840.1.113883.3.227.10.6.1" codeSystemName="HouseCode" displayName="Hepatitis B Immunization" />
+										</code>
+										<lotNumberText nullFlavor="UNK" />
+									</manufacturedMaterial>
+									<manufacturerOrganization nullFlavor="UNK" />
+								</manufacturedProduct>
+							</consumable>
+							<performer typeCode="PRF">
+								<assignedEntity>
+									<id extension="03Q0X" root="2.16.840.1.113883.3.227.HW510.99" />
+									<addr nullFlavor="NI" />
+									<telecom nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="03Q0X" root="6825F9CB-D668-0000-2000-0000003A79B9" />
+									<code nullFlavor="NI" />
+									<assignedPerson>
+										<name>Unknown</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<entryRelationship inversionInd="true" typeCode="COMP">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId root="2.16.840.1.113883.10.20.22.4.118" />
+									<id extension="K7DW2" root="2.16.840.1.113883.3.227.2845.10.6" />
+									<code code="416118004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Administration" />
+									<statusCode code="completed" />
+								</act>
+							</entryRelationship>
+						</substanceAdministration>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.4.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.4.1" />
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.4" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.4" />
+					<code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital signs" />
+					<title>Vital Signs</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Vital</th>
+									<th>Result</th>
+									<th>Comment</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td rowspan="13">05/11/2025  8:42am</td>
+									<td>
+										<content ID="vit-0-0" xmlns="urn:hl7-org:v3">Weight</content>
+									</td>
+									<td>60.38 lb</td>
+									<td />
+								</tr>
+								<tr>
+									<td>Weight Percentile</td>
+									<td>27th</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-2" xmlns="urn:hl7-org:v3">BMI (Body Mass Index)</content>
+									</td>
+									<td>16.6 kg/m2</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-3" xmlns="urn:hl7-org:v3">Height</content>
+									</td>
+									<td>50.5 inches</td>
+									<td>
+										<content ID="vitc-0-3" xmlns="urn:hl7-org:v3">4'2.50"</content>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-4" xmlns="urn:hl7-org:v3">Height Percentile</content>
+									</td>
+									<td>10 %</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-5" xmlns="urn:hl7-org:v3">BP Systolic</content>
+									</td>
+									<td>90 mmHg</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-6" xmlns="urn:hl7-org:v3">BP Diastolic</content>
+									</td>
+									<td>50 mmHg</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-7" xmlns="urn:hl7-org:v3">Blood Pressure Percentile</content>
+									</td>
+									<td>23 %</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-8" xmlns="urn:hl7-org:v3">Heart Rate</content>
+									</td>
+									<td>69 /min</td>
+									<td />
+								</tr>
+								<tr>
+									<td>Right Visual Acuity Distance</td>
+									<td>20/20</td>
+									<td />
+								</tr>
+								<tr>
+									<td>Left Visual Acuity Distance</td>
+									<td>20/20</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-11" xmlns="urn:hl7-org:v3">Body Mass Index Percentile</content>
+									</td>
+									<td>55 %</td>
+									<td />
+								</tr>
+								<tr>
+									<td>
+										<content ID="vit-0-12" xmlns="urn:hl7-org:v3">O2 % BldC Oximetry</content>
+									</td>
+									<td>100 %</td>
+									<td />
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<organizer classCode="CLUSTER" moodCode="EVN">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.26" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.26" />
+							<id extension="QZRF6" root="2.16.840.1.113883.3.227.2845.10.7" />
+							<code code="46680005" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Vital signs">
+								<translation code="74728-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital signs" />
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250414084200" />
+								<high value="20250414084200" />
+							</effectiveTime>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="LDDN7" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="29463-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Weight" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="[lb_av]" value="60.38" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="MWAUZ" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="39156-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="BMI (Body Mass Index)" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="kg/m2" value="16.6" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="6WC7B" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="8302-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Height" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="[in_i]" value="50.5" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+									<entryRelationship inversionInd="true" typeCode="SUBJ">
+										<act classCode="ACT" moodCode="EVN">
+											<templateId root="2.16.840.1.113883.10.20.22.4.64" />
+											<code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Annotation comment" />
+											<text>
+												<reference value="#vitc-0-3" />
+											</text>
+										</act>
+									</entryRelationship>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="KZAF1" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="8303-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Height Percentile" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="%" value="10" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="LXF6P" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="8480-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="BP Systolic" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="mm[Hg]" value="90" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="NOFU3" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="8462-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="BP Diastolic" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="mm[Hg]" value="50" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="9S2L4" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="71896-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Blood Pressure Percentile" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="%" value="23" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="X0ICZ" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="8867-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Heart Rate" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="/min" value="69" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="7TYM4" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="59576-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Body Mass Index Percentile" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="%" value="55" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+							<component>
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.27" />
+									<id extension="2GM8B" root="2.16.840.1.113883.3.227.2845.10.8" />
+									<code code="59408-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="O2 % BldC Oximetry" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250414084200" />
+									<value unit="%" value="100" xsi:type="PQ" />
+									<author>
+										<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+										<time value="20250511022723-0400" />
+										<assignedAuthor>
+											<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+											<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+											<assignedPerson>
+												<name>
+													<given>Leslie</given>
+													<family>Hobbs</family>
+													<suffix qualifier="AC">PA</suffix>
+												</name>
+											</assignedPerson>
+										</assignedAuthor>
+									</author>
+								</observation>
+							</component>
+						</organizer>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section nullFlavor="NI">
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.3.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.3.1" />
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.3" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.3" />
+					<code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests and/or laboratory data" />
+					<title>Results</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.7.1" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.7.1" />
+					<code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Procedures" />
+					<title>Procedures</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Code</th>
+									<th>Description</th>
+									<th>Status</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>05/11/2025</td>
+									<td>G2211</td>
+									<td>
+										<content ID="prc-0" xmlns="urn:hl7-org:v3">add on 72666654 for Longitidinal care relationship</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>G0136</td>
+									<td>
+										<content ID="prc-1" xmlns="urn:hl7-org:v3">Adm of soc dtr assess 5-15 m</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>99173</td>
+									<td>
+										<content ID="prc-2" xmlns="urn:hl7-org:v3">Visual Acuity Screening Test</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>99072</td>
+									<td>
+										<content ID="prc-3" xmlns="urn:hl7-org:v3">Medical Supplies</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>97802</td>
+									<td>
+										<content ID="prc-4" xmlns="urn:hl7-org:v3">Nutritional Therapy/Initial Asses</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>94760</td>
+									<td>
+										<content ID="prc-5" xmlns="urn:hl7-org:v3">Pulse Oximetry</content>
+									</td>
+									<td>Completed</td>
+								</tr>
+							</tbody>
+						</table>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Assessment</th>
+									<th>Value</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>05/11/2025</td>
+									<td colspan="2">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Was consent given</td>
+									<td>Yes</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Housing status</td>
+									<td>I have a steady place to live</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Problems with place where you live</td>
+									<td>None of the above</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months</td>
+									<td>No</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</td>
+									<td>Sometimes true</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</td>
+									<td>Sometimes true</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living</td>
+									<td>No</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Wants help finding or keeping work or a job</td>
+									<td>I do not need or want help</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Wants help with school or training</td>
+									<td>No</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Physically hurt you</td>
+									<td>Never</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Insult you or talk down to you</td>
+									<td>Rarely</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Threaten you with physical harm</td>
+									<td>Rarely</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Scream or curse at you</td>
+									<td>Rarely</td>
+								</tr>
+								<tr>
+									<td />
+									<td>Total score [HITS]</td>
+									<td>7</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="OPHUH" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="G2211" codeSystem="2.16.840.1.113883.6.285" codeSystemName="HCPCS" displayName="add on code for Longitidinal care relationship">
+								<originalText>
+									<reference value="#prc-0" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="5L2V8" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="G0136" codeSystem="2.16.840.1.113883.6.285" codeSystemName="HCPCS" displayName="Adm of soc dtr assess 5-15 m">
+								<originalText>
+									<reference value="#prc-1" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="L84VS" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="99173" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Visual Acuity Screening Test">
+								<originalText>
+									<reference value="#prc-2" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="6J899" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="99072" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Medical Supplies">
+								<originalText>
+									<reference value="#prc-3" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="2AT82" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="97802" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Nutritional Therapy/Initial Asses">
+								<originalText>
+									<reference value="#prc-4" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<procedure classCode="PROC" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.14" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.14" />
+							<id extension="FBRS7" root="2.16.840.1.113883.3.227.2845.10.11" />
+							<code code="94760" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Pulse Oximetry">
+								<originalText>
+									<reference value="#prc-5" />
+								</originalText>
+							</code>
+							<statusCode code="completed" />
+							<effectiveTime>
+								<low value="20250729" />
+							</effectiveTime>
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<author>
+								<templateId root="2.16.840.1.113883.10.20.22.4.119" />
+								<time value="20250511022723-0400" />
+								<assignedAuthor>
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<code code="363A00000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="Healthcare Provider Taxonomy" displayName="Physician Assistant" />
+									<assignedPerson>
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedAuthor>
+							</author>
+						</procedure>
+					</entry>
+					<entry typeCode="DRIV">
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.69" />
+							<id extension="ICT7G" root="2.16.840.1.113883.3.227.2845.10.41.1" />
+							<code code="96777-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Accountable health communities (AHC) health-related social needs screening (HRSN) tool" />
+							<statusCode code="completed" />
+							<effectiveTime value="20250729" />
+							<value value="0" xsi:type="INT" />
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="NLVFA" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Was consent given" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA33-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="MHXLC" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="71802-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Housing status" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA31993-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="I have a steady place to live" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="LOQL1" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA9-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="None of the above" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="17TFQ" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="96779-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="B2BQN" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="88122-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA6729-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sometimes true" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="R9DUW" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="88123-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA6729-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sometimes true" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="KW9XV" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="93030-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="9380H" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="96780-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help finding or keeping work or a job" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA31983-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="I do not need or want help" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="76KMF" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="96782-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help with school or training" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD">
+										<translation code="0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="3H5XE" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="95618-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physically hurt you" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD">
+										<translation code="1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="463I4" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="95617-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Insult you or talk down to you" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA10066-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Rarely" xsi:type="CD">
+										<translation code="2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="X013A" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="95616-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Threaten you with physical harm" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA10066-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Rarely" xsi:type="CD">
+										<translation code="2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="GDM8G" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="95615-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Scream or curse at you" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value code="LA10066-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Rarely" xsi:type="CD">
+										<translation code="2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+									</value>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.86" />
+									<id extension="GDM8G" root="2.16.840.1.113883.3.227.2845.10.41.1.1" />
+									<code code="95614-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Total score [HITS]" />
+									<statusCode code="completed" />
+									<effectiveTime value="20250729" />
+									<value value="7" xsi:type="INT" />
+								</observation>
+							</entryRelationship>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.23" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.23" />
+					<code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of medical device use" />
+					<title>Medical Devices</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.22" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.22" />
+					<code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of encounters" />
+					<title>Encounters</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Type</th>
+									<th>Date</th>
+									<th>Location</th>
+									<th>Provider</th>
+									<th>Dx</th>
+									<th>Diagnosis</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td rowspan="5">
+										<content ID="enc-0" xmlns="urn:hl7-org:v3">Office Visit</content>
+									</td>
+									<td rowspan="5">05/11/2025  8:30a</td>
+									<td rowspan="5">Represented Organization</td>
+									<td rowspan="5">Leslie Hobbs, PA</td>
+									<td>Z00.121</td>
+									<td>Encounter for routine child health exam w abnormal findings</td>
+								</tr>
+								<tr>
+									<td>R41.840</td>
+									<td>Attention and concentration deficit</td>
+								</tr>
+								<tr>
+									<td>Z28.82</td>
+									<td>Immunization not carried out because of caregiver refusal</td>
+								</tr>
+								<tr>
+									<td>Z68.52</td>
+									<td>Body mass index pediatric, 5th percentile to &lt; 85% for age</td>
+								</tr>
+								<tr>
+									<td>Z71.3</td>
+									<td>Dietary counseling and surveillance</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+					<entry typeCode="DRIV">
+						<encounter classCode="ENC" moodCode="EVN">
+							<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.49" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.49" />
+							<id extension="8KVSS" root="2.16.840.1.113883.3.227.2845.7.1" />
+							<code code="99383" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" displayName="Preventive Visit New 5-11 Yrs">
+								<originalText>
+									<reference value="#enc-0" />
+								</originalText>
+								<translation code="405672008" codeSystem="1.2.840.114350.1.72.1.30" displayName="Direct questioning (procedure)" />
+							</code>
+							<effectiveTime value="20250227083000-0400" />
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+									<representedOrganization>
+										<id extension="HW510" root="2.16.840.1.113883.3.227.2845.4.1" />
+										<name>Represented Organization</name>
+										<telecom use="WP" value="tel:+1(571)555-9835" />
+										<addr use="WP">
+											<streetAddressLine>787 George St</streetAddressLine>
+											<city>South Yarmouth</city>
+											<state>WI</state>
+											<postalCode>02664</postalCode>
+											<country>US</country>
+										</addr>
+									</representedOrganization>
+								</assignedEntity>
+							</performer>
+							<participant typeCode="LOC">
+								<participantRole classCode="SDLOC">
+									<templateId root="2.16.840.1.113883.10.20.22.4.32" />
+									<code code="1120-5" codeSystem="2.16.840.1.113883.6.259" codeSystemName="HealthcareServiceLocation" displayName="Medical Clinic" />
+									<addr use="WP">
+										<streetAddressLine>787 George St</streetAddressLine>
+										<city>South Yarmouth</city>
+										<state>WI</state>
+										<postalCode>02664</postalCode>
+										<country>US</country>
+									</addr>
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<telecom use="WP" value="tel:+1(571)555-4155" />
+									<playingEntity classCode="PLC">
+										<name>Jamestown Pediatric Associates</name>
+									</playingEntity>
+								</participantRole>
+							</participant>
+							<entryRelationship typeCode="RSON">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.80" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.80" />
+									<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+									<entryRelationship typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+											<templateId root="2.16.840.1.113883.10.20.22.4.4" />
+											<id root="6825F9CB-D668-0000-0381-0000003A79B9" />
+											<code code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis">
+												<translation code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+											</code>
+											<statusCode code="completed" />
+											<effectiveTime>
+												<low value="20250729" />
+											</effectiveTime>
+											<value nullFlavor="OTH" xsi:type="CD">
+												<translation code="Z00.121" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM" displayName="Encounter for routine child health exam w abnormal findings" xsi:type="CD" />
+											</value>
+										</observation>
+									</entryRelationship>
+								</act>
+							</entryRelationship>
+							<entryRelationship typeCode="RSON">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.80" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.80" />
+									<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+									<entryRelationship typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+											<templateId root="2.16.840.1.113883.10.20.22.4.4" />
+											<id root="6825F9CB-D668-0000-0382-0000003A79B9" />
+											<code code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis">
+												<translation code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+											</code>
+											<statusCode code="completed" />
+											<effectiveTime>
+												<low value="20250729" />
+											</effectiveTime>
+											<value nullFlavor="OTH" xsi:type="CD">
+												<translation code="R41.840" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM" displayName="Attention and concentration deficit" xsi:type="CD" />
+											</value>
+										</observation>
+									</entryRelationship>
+								</act>
+							</entryRelationship>
+							<entryRelationship typeCode="RSON">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.80" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.80" />
+									<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+									<entryRelationship typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+											<templateId root="2.16.840.1.113883.10.20.22.4.4" />
+											<id root="6825F9CB-D668-0000-0383-0000003A79B9" />
+											<code code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis">
+												<translation code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+											</code>
+											<statusCode code="completed" />
+											<effectiveTime>
+												<low value="20250729" />
+											</effectiveTime>
+											<value nullFlavor="OTH" xsi:type="CD">
+												<translation code="Z28.82" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM" displayName="Immunization not carried out because of caregiver refusal" xsi:type="CD" />
+											</value>
+										</observation>
+									</entryRelationship>
+								</act>
+							</entryRelationship>
+							<entryRelationship typeCode="RSON">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.80" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.80" />
+									<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+									<entryRelationship typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+											<templateId root="2.16.840.1.113883.10.20.22.4.4" />
+											<id root="6825F9CB-D668-0000-0384-0000003A79B9" />
+											<code code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis">
+												<translation code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+											</code>
+											<statusCode code="completed" />
+											<effectiveTime>
+												<low value="20250729" />
+											</effectiveTime>
+											<value nullFlavor="OTH" xsi:type="CD">
+												<translation code="Z68.52" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM" displayName="Body mass index pediatric, 5th percentile to &lt; 85% for age" xsi:type="CD" />
+											</value>
+										</observation>
+									</entryRelationship>
+								</act>
+							</entryRelationship>
+							<entryRelationship typeCode="RSON">
+								<act classCode="ACT" moodCode="EVN">
+									<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.80" />
+									<templateId root="2.16.840.1.113883.10.20.22.4.80" />
+									<code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+									<entryRelationship typeCode="SUBJ">
+										<observation classCode="OBS" moodCode="EVN">
+											<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+											<templateId root="2.16.840.1.113883.10.20.22.4.4" />
+											<id root="6825F9CB-D668-0000-0385-0000003A79B9" />
+											<code code="282291009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Diagnosis">
+												<translation code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Diagnosis" />
+											</code>
+											<statusCode code="completed" />
+											<effectiveTime>
+												<low value="20250729" />
+											</effectiveTime>
+											<value nullFlavor="OTH" xsi:type="CD">
+												<translation code="Z71.3" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD-10-CM" displayName="Dietary counseling and surveillance" xsi:type="CD" />
+											</value>
+										</observation>
+									</entryRelationship>
+								</act>
+							</entryRelationship>
+						</encounter>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.8" />
+					<code code="51848-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Assessments" />
+					<title>Assessments</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>72666654</th>
+									<th>Description</th>
+									<th>2025-07-14</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>05/11/2025</td>
+									<td>Z00.121</td>
+									<td>Encounter for routine child health examination with abnormal findings</td>
+									<td>Leslie Hobbs, PA</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>R41.840</td>
+									<td>Attention and concentration deficit</td>
+									<td>Leslie Hobbs, PA</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>Z28.82</td>
+									<td>Immunization not carried out because of caregiver refusal</td>
+									<td>Leslie Hobbs, PA</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>Z68.52</td>
+									<td>Body mass index pediatric, 5th percentile to &lt; 85% for age</td>
+									<td>Leslie Hobbs, PA</td>
+								</tr>
+								<tr>
+									<td>05/11/2025</td>
+									<td>Z71.3</td>
+									<td>Dietary counseling and surveillance</td>
+									<td>Leslie Hobbs, PA</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.10" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.10" />
+					<code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Treatment plan" />
+					<title>Plan of Treatment</title>
+					<text>
+						<content>No Content</content>
+						<list>
+							<item>ETNWDYMLX</item>
+						</list>
+					</text>
+					<entry>
+						<encounter classCode="ENC" moodCode="ARQ">
+							<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.40" />
+							<templateId root="2.16.840.1.113883.10.20.22.4.40" />
+							<id extension="EE340" root="2.16.840.1.113883.3.227.2845.7.1" />
+							<code code="185347001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Encounter for problem" />
+							<statusCode code="active" />
+							<effectiveTime value="20260701100000" />
+							<performer typeCode="PRF">
+								<assignedEntity classCode="ASSIGNED">
+									<id extension="XWOMT" root="2.16.840.1.113883.4.6" />
+									<addr nullFlavor="NI" />
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<assignedPerson classCode="PSN" determinerCode="INSTANCE">
+										<name>
+											<given>Leslie</given>
+											<family>Hobbs</family>
+											<suffix qualifier="AC">PA</suffix>
+										</name>
+									</assignedPerson>
+								</assignedEntity>
+							</performer>
+							<participant typeCode="LOC">
+								<participantRole classCode="SDLOC">
+									<templateId root="2.16.840.1.113883.10.20.22.4.32" />
+									<code code="1120-5" codeSystem="2.16.840.1.113883.6.259" codeSystemName="HealthcareServiceLocation" displayName="Medical Clinic" />
+									<addr use="WP">
+										<streetAddressLine>787 George St</streetAddressLine>
+										<city>South Yarmouth</city>
+										<state>WI</state>
+										<postalCode>02664</postalCode>
+										<country>US</country>
+									</addr>
+									<telecom use="WP" value="tel:+1(571)555-9835" />
+									<telecom use="WP" value="tel:+1(571)555-4155" />
+									<playingEntity classCode="PLC">
+										<name>Main Office</name>
+									</playingEntity>
+								</participantRole>
+							</participant>
+						</encounter>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.14" />
+					<templateId root="2.16.840.1.113883.10.20.22.2.14" />
+					<code code="47420-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Functional Status" />
+					<title>Functional Status</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.56" />
+					<code code="10190-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Mental Status" />
+					<title>Mental Status</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+			<component>
+				<section>
+					<templateId extension="2014-06-09" root="1.3.6.1.4.1.19376.1.5.3.1.3.1" />
+					<templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.1" />
+					<code code="42349-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for Referral" />
+					<title>Referrals</title>
+					<text>
+						<table border="thin solid #cccccc" width="100%">
+							<thead>
+								<tr>
+									<th>Description</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>No Information Available</td>
+								</tr>
+							</tbody>
+						</table>
+					</text>
+				</section>
+			</component>
+		</structuredBody>
+	</component>
+</ClinicalDocument>

@@ -14,20 +14,22 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.CsvProcessingState;
 import org.techbd.config.Nature;
 import org.techbd.config.Origin;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
+import org.techbd.model.csv.CsvDataValidationStatus;
 import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.service.csv.engine.CsvOrchestrationEngine;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
@@ -47,7 +49,7 @@ public class CsvService {
     private final TemplateLogger LOG;
     private final CsvBundleProcessorService csvBundleProcessorService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
     private final TaskExecutor asyncTaskExecutor;
     private final CoreAppConfig coreAppConfig;
 
@@ -55,55 +57,175 @@ public class CsvService {
             final CsvOrchestrationEngine engine,
             final CsvBundleProcessorService csvBundleProcessorService,
             final CoreDataLedgerApiClient coreDataLedgerApiClient,
-            final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,
+            @Qualifier("primaryDslContext") final DSLContext primaryDslContext,
             @Qualifier("asyncTaskExecutor") final TaskExecutor asyncTaskExecutor,
             final CoreAppConfig coreAppConfig,AppLogger appLogger) {
         this.engine = engine;
         this.csvBundleProcessorService = csvBundleProcessorService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;             
         this.asyncTaskExecutor = asyncTaskExecutor;
         this.coreAppConfig = coreAppConfig;
         this.LOG = appLogger.getLogger(CsvService.class);
     }
 
     public Object validateCsvFile(final MultipartFile file, final Map<String, Object> requestParameters,
-            Map<String, Object> resonseParameters) throws Exception {
+            Map<String, Object> responseParameters) throws Exception {
         final var zipFileInteractionId = (String) requestParameters.get(Constants.MASTER_INTERACTION_ID);
-        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {}",
-                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
+        final var tenantId = (String) requestParameters.get(Constants.TENANT_ID);
+        final String isSync = String.valueOf(requestParameters.get(Constants.IMMEDIATE));
+        
+        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {} isSync: {}",
+                zipFileInteractionId, tenantId, isSync);
+        if (file == null) {
+                LOG.error("CsvService validateCsvFile - File is null. InteractionId: {}",
+                                zipFileInteractionId);
+                throw new IllegalArgumentException("Uploaded file cannot be null");
+        }
+        if (file.isEmpty()) {
+                LOG.error("CsvService validateCsvFile - File is empty. InteractionId: {}, TenantId: {}",
+                                zipFileInteractionId);
+                throw new IllegalArgumentException("Uploaded file is empty");
+        }
+
+        long fileSizeBytes = file.getSize();
+        double fileSizeKB = fileSizeBytes / 1024.0;
+        double fileSizeMB = fileSizeKB / 1024.0;
+
+        LOG.info("CsvService validateCsvFile file received details - InteractionId: {}, TenantId: {}, FileName: {}, FileSize: {} bytes ({} KB / {} MB)",
+                        zipFileInteractionId,
+                        requestParameters.get(Constants.TENANT_ID),
+                        file.getOriginalFilename(),
+                        fileSizeBytes,
+                        String.format("%.2f", fileSizeKB),
+                        String.format("%.2f", fileSizeMB));
+                  
+        long start = System.nanoTime();
+        saveArchiveInteraction(zipFileInteractionId, requestParameters, file, CsvProcessingState.RECEIVED); 
+        saveIncomingFileToInboundFolder(file, zipFileInteractionId);       
+       if ("true".equalsIgnoreCase(isSync)) {
+
+                LOG.info("Starting synchronous Validation for zipFileInteractionId: {}",
+                        zipFileInteractionId);
+
+                return runValidationProcess(
+                        zipFileInteractionId,
+                        tenantId,
+                        file,
+                        requestParameters,
+                        responseParameters,
+                        start
+                );
+
+                } else {
+
+                LOG.info("Starting asynchronous Validation for zipFileInteractionId: {}",
+                        zipFileInteractionId);
+
+                CompletableFuture.runAsync(() -> {
+                        try {
+                        runValidationProcess(
+                                zipFileInteractionId,
+                                tenantId,
+                                file,
+                                requestParameters,
+                                responseParameters,
+                                start
+                        );
+                        } catch (Exception ex) {
+                        LOG.error("Async Validation failed for zipFileInteractionId={}",
+                                zipFileInteractionId, ex);
+                        }
+                 }, asyncTaskExecutor);
+
+                 LOG.info("Returning interim async response for zipFileInteractionId: {} tenantId: {}", zipFileInteractionId, tenantId);
+                   return buildAsyncResponse(zipFileInteractionId);
+                 }
+
+                }
+
+    private Map<String, Object> runValidationProcess(
+        String zipFileInteractionId,
+        String tenantId,
+        MultipartFile file,
+        Map<String, Object> requestParams,
+        Map<String, Object> responseParams,
+        long start) throws Exception {
+
         CsvOrchestrationEngine.OrchestrationSession session = null;
+        boolean success = false;
+        Map<String, Object> fullOperationOutcome = null;
+
         try {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(zipFileInteractionId, jooqCfg, requestParameters, file,
-                    CsvProcessingState.PROCESSING_COMPLETED);
-            saveIncomingFileToInboundFolder(file, zipFileInteractionId);         
-            session = engine.session()
-                    .withMasterInteractionId(zipFileInteractionId)
-                    .withSessionId(UUID.randomUUID().toString())
-                    .withTenantId((String) requestParameters.get(Constants.TENANT_ID))
-                    .withFile(file)
-                    .withRequestParameters(requestParameters)
-                    .build();
-            engine.orchestrate(session);
-            LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
-                    zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
-            Map<String, Object> fullOperationOutcome =  session.getValidationResults();
-            saveMiscErrorsForValidation(session.getFilesNotProcessed(), zipFileInteractionId, requestParameters, file.getOriginalFilename(),session.getMetricsBuilder().build());
-            saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
-            return fullOperationOutcome;
+                saveArchiveInteractionStatus(
+                        zipFileInteractionId,
+                        CsvProcessingState.PROCESSING_INPROGRESS,
+                        requestParams,
+                        null
+                );
+
+                session = engine.session()
+                        .withMasterInteractionId(zipFileInteractionId)
+                        .withSessionId(UUID.randomUUID().toString())
+                        .withTenantId(tenantId)
+                        .withFile(file)
+                        .withRequestParameters(requestParams)
+                        .build();
+
+                engine.orchestrate(session);
+
+                fullOperationOutcome = session.getValidationResults();
+                success = true;
+
+                LOG.info("Validation completed for zipFileInteractionId={}", zipFileInteractionId);
+
+                return fullOperationOutcome;
+
         } finally {
-            if (null == session) {
+
+                if (session != null) {
+                saveMiscErrorsForValidation(
+                        session.getFilesNotProcessed(),
+                        zipFileInteractionId,
+                        requestParams,
+                        file.getOriginalFilename(),
+                        session.getMetricsBuilder().build()
+                );
+                }
+
+                if (fullOperationOutcome != null) {
+                saveFullOperationOutcome(
+                        fullOperationOutcome,
+                        zipFileInteractionId,
+                        requestParams
+                );
+                }
+
+                saveArchiveInteractionStatus(
+                        zipFileInteractionId,
+                        success
+                                ? CsvProcessingState.PROCESSING_COMPLETED
+                                : CsvProcessingState.PROCESSING_FAILED,
+                        requestParams,
+                        session != null ? session.getMetricsBuilder() : null
+                );
+
+                if (session != null) {
                 engine.clear(session);
-            }
+                }
+
+                long durationMs = (System.nanoTime() - start) / 1_000_000;
+                LOG.info("Validation cleanup done zipFileInteractionId={} timeTaken={}ms",
+                        zipFileInteractionId,
+                        durationMs
+                );
         }
     }
 
+    @Transactional
     private void saveArchiveInteractionStatus(
             String zipFileInteractionId,
-            org.jooq.Configuration jooqCfg,
-            CsvProcessingState state,Map<String,Object> requestParameters) {
+            CsvProcessingState state,Map<String,Object> requestParameters,CsvProcessingMetrics.CsvProcessingMetricsBuilder metricsBuilder) {
 
         LOG.info("CsvService saveArchiveInteraction - STATUS UPDATE ONLY | zipFileInteractionId: {}, newState: {}",
                 zipFileInteractionId, state.name());
@@ -111,11 +233,27 @@ public class CsvService {
         final var updateRIHR = new SatInteractionCsvRequestUpserted();
 
         try {
+            final var jooqCfg = primaryDslContext.configuration();
             updateRIHR.setInteractionId(zipFileInteractionId);
             updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
+             if (CsvProcessingState.PROCESSING_FAILED == state && null!= metricsBuilder && CsvDataValidationStatus.SUCCESS.getDescription().equals(
+                metricsBuilder.build().getDataValidationStatus())) {
+                updateRIHR.setPDataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
+            }
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             updateRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            // Extract and set client IP address and user agent for consistency
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            updateRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            updateRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = updateRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -137,9 +275,11 @@ public class CsvService {
         }
     }
 
-    private void saveArchiveInteraction(String zipFileInteractionId, final org.jooq.Configuration jooqCfg,
+    @Transactional
+    private void saveArchiveInteraction(String zipFileInteractionId,
             final Map<String, Object> requestParameters,
             final MultipartFile file, final CsvProcessingState state) {
+        final var jooqCfg = primaryDslContext.configuration();
         final var tenantId = requestParameters.get(Constants.TENANT_ID);
         LOG.info("CsvService saveArchiveInteraction  -BEGIN zipFileInteractionId  : {} tenant id : {}",
                 zipFileInteractionId, tenantId);
@@ -169,6 +309,13 @@ public class CsvService {
             initRIHR.setPProvenance(provenance);
             initRIHR.setPCsvGroupId(zipFileInteractionId);
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            // RETRIEVE CLIENT_IP_ADDRESS from requestParameters
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                    clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            // SET IT IN THE JOOQ OBJECT
+            initRIHR.setPClientIpAddress(clientIpAddress);
             setUserDetails(initRIHR, requestParameters);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
@@ -205,8 +352,7 @@ public class CsvService {
             String interactionId,
             String provenance,
             Map<String, Object> requestParams,
-            MultipartFile file,
-            org.jooq.Configuration jooqCfg) {
+            MultipartFile file) {
 
         var dataLedgerPayload = DataLedgerPayload.create(
                 CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
@@ -216,7 +362,7 @@ public class CsvService {
 
         coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, provenance,
                 SourceType.CSV.name(), null);
-        saveArchiveInteraction(interactionId, jooqCfg, requestParams, file, CsvProcessingState.RECEIVED);
+        saveArchiveInteraction(interactionId, requestParams, file, CsvProcessingState.RECEIVED);
     }
 
     private List<Object> processSync(
@@ -225,14 +371,15 @@ public class CsvService {
             Map<String, Object> requestParams,
             Map<String, Object> responseParams,
             MultipartFile file,
-            org.jooq.Configuration jooqCfg,
             long start) throws Exception {
 
         CsvOrchestrationEngine.OrchestrationSession session = null;
+        List<Object> fullOperationOutcome = null;
+        boolean processingSuccessful = false;
 
         try {
-            saveArchiveInteractionStatus(interactionId, jooqCfg,
-                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
+            saveArchiveInteractionStatus(interactionId,
+                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams, null);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -244,7 +391,7 @@ public class CsvService {
 
             engine.orchestrate(session);
 
-            List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
+            fullOperationOutcome = csvBundleProcessorService.processPayload(
                     interactionId,
                     session.getPayloadAndValidationOutcomes(),
                     session.getFilesNotProcessed(),
@@ -252,20 +399,34 @@ public class CsvService {
                     responseParams,
                     tenantId,
                     file.getOriginalFilename(),
-                    (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
+                    (String) requestParams.get(Constants.BASE_FHIR_URL), session.getMetricsBuilder());
 
-            saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+            processingSuccessful = true;
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
             return fullOperationOutcome;
         } catch (Exception ex) {
             LOG.error("Synchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                     interactionId, ex.getMessage(), ex);
-            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_FAILED, requestParams);
-            SystemDiagnosticsLogger.logResourceStats(interactionId,
-                    coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,coreAppConfig.getVersion());
+            SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,
+                    coreAppConfig.getVersion());
             throw ex;
         } finally {
-            engine.clear(session);
+            try {
+                saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                if (processingSuccessful) {
+                    saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_COMPLETED,
+                            requestParams, session.getMetricsBuilder());
+                } else {
+                    saveArchiveInteractionStatus(interactionId, CsvProcessingState.PROCESSING_FAILED,
+                            requestParams, session.getMetricsBuilder());
+                }
+            } catch (Exception finallyEx) {
+                LOG.error("Error saving final status for zipFileInteractionId: {}", interactionId,
+                        finallyEx);
+            }
+            if (null != session) {
+                engine.clear(session);
+            }
             long durationMs = (System.nanoTime() - start) / 1_000_000;
             LOG.info("Synchronous cleanup complete for zipFileInteractionId: {}, Total time taken: {} ms",
                     interactionId, durationMs);
@@ -278,13 +439,14 @@ public class CsvService {
             Map<String, Object> requestParams,
             Map<String, Object> responseParams,
             MultipartFile file,
-            org.jooq.Configuration jooqCfg,
             long start) {        
         CompletableFuture.runAsync(() -> {
             CsvOrchestrationEngine.OrchestrationSession session = null;
+            List<Object> fullOperationOutcome = null;
+            boolean processingSuccessful = false;
             try {
-                saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
+                saveArchiveInteractionStatus(interactionId, 
+                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams, null);
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
@@ -297,7 +459,7 @@ public class CsvService {
 
                 engine.orchestrate(session);
 
-                List<Object> fullOperationOutcome = csvBundleProcessorService.processPayload(
+                fullOperationOutcome = csvBundleProcessorService.processPayload(
                         interactionId,
                         session.getPayloadAndValidationOutcomes(),
                         session.getFilesNotProcessed(),
@@ -307,18 +469,32 @@ public class CsvService {
                         file.getOriginalFilename(),
                         (String) requestParams.get(Constants.BASE_FHIR_URL),session.getMetricsBuilder());
 
-                saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                processingSuccessful = true;
                 LOG.info("Asynchronous processing completed for zipFileInteractionId: {}",
                         interactionId);
             } catch (Exception ex) {
                 LOG.error("Asynchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                         interactionId, ex.getMessage(), ex);
-                saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_FAILED, requestParams);
-                SystemDiagnosticsLogger.logResourceStats(interactionId,
-                        coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor,coreAppConfig.getVersion());
+                saveArchiveInteractionStatus(interactionId, 
+                        CsvProcessingState.PROCESSING_FAILED, requestParams, session.getMetricsBuilder());
+                SystemDiagnosticsLogger.logResourceStats(interactionId, asyncTaskExecutor,coreAppConfig.getVersion());
             } finally {
-                engine.clear(session);
+                try {
+                    saveFullOperationOutcome(fullOperationOutcome, interactionId, requestParams);
+                    if (processingSuccessful) {
+                       saveArchiveInteractionStatus(interactionId,
+                                CsvProcessingState.PROCESSING_COMPLETED, requestParams, session.getMetricsBuilder());
+                    } else if (!processingSuccessful) {
+                        saveArchiveInteractionStatus(interactionId,
+                                CsvProcessingState.PROCESSING_FAILED, requestParams, session.getMetricsBuilder());
+                    }
+                } catch (Exception finallyEx) {
+                    LOG.error("Error saving final status for zipFileInteractionId: {}", interactionId,
+                            finallyEx);
+                }
+                if (null != session) {
+                    engine.clear(session);
+                }
                 long durationMs = (System.nanoTime() - start) / 1_000_000;
                 LOG.info("Asynchronous cleanup complete for zipFileInteractionId: {}, Total time taken: {} ms",
                         interactionId, durationMs);
@@ -330,7 +506,7 @@ public class CsvService {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "RECEIVED");
         response.put("message",
-                "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI  Interactions > CSV via HTTPs tab for detailed status updates.");
+                "Your file has been received and is being processed. You can track the progress using the interaction ID provided below. Please refer to the Hub UI  Interactions > CSV Submissions tab for detailed status updates.");
         response.put("zipFileInteractionId", interactionId);
         response.put("zipFileInteractionId", interactionId);
         response.put(Constants.TECHBD_VERSION, coreAppConfig.getVersion());
@@ -346,25 +522,44 @@ public class CsvService {
         final var tenantId = (String) requestParameters.get(Constants.TENANT_ID);
         final var provenance = "%s.processZipFile".formatted(CsvService.class.getName());
         final String isSync = String.valueOf(requestParameters.get(Constants.IMMEDIATE));
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {}",
+                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
+        if (file == null) {
+                LOG.error("CsvService validateCsvFile - File is null. InteractionId: {}",
+                                zipFileInteractionId);
+                throw new IllegalArgumentException("Uploaded file cannot be null");
+        }
+        if (file.isEmpty()) {
+                LOG.error("CsvService validateCsvFile - File is empty. InteractionId: {}, TenantId: {}",
+                                zipFileInteractionId);
+                throw new IllegalArgumentException("Uploaded file is empty");
+        }
 
-        LOG.info("CsvService processZipFile - BEGIN zipFileInteractionId: {} tenantId: {} isSync: {}",
-                zipFileInteractionId, tenantId, isSync);
+        long fileSizeBytes = file.getSize();
+        double fileSizeKB = fileSizeBytes / 1024.0;
+        double fileSizeMB = fileSizeKB / 1024.0;
+
+        LOG.info("CsvService validateCsvFile file received details - InteractionId: {}, TenantId: {}, FileName: {}, FileSize: {} bytes ({} KB / {} MB)",
+                        zipFileInteractionId,
+                        requestParameters.get(Constants.TENANT_ID),
+                        file.getOriginalFilename(),
+                        fileSizeBytes,
+                        String.format("%.2f", fileSizeKB),
+                        String.format("%.2f", fileSizeMB));        
 
         // Ledger + Initial Archive
-        auditInitialReceipt(zipFileInteractionId, provenance, requestParameters, file, jooqCfg);
+        auditInitialReceipt(zipFileInteractionId, provenance, requestParameters, file);
         saveIncomingFileToInboundFolder(file, zipFileInteractionId);           
         long start = System.nanoTime();
 
         if ("true".equalsIgnoreCase(isSync)) {
             LOG.info("Starting synchronous processing for zipFileInteractionId: {}", zipFileInteractionId);
             return processSync(zipFileInteractionId, tenantId, requestParameters, responseParameters, file,
-                    jooqCfg, start);
+                    start);
         } else {
             LOG.info("Starting asynchronous processing for zipFileInteractionId: {}", zipFileInteractionId);
             processAsync(zipFileInteractionId, tenantId, requestParameters, responseParameters, file,
-                    jooqCfg, start);
+                    start);
 
             Map<String, Object> response = buildAsyncResponse(zipFileInteractionId);
             LOG.info("Returning interim async response for zipFileInteractionId: {} tenantId: {}",
@@ -373,12 +568,12 @@ public class CsvService {
         }
     }
 
+    @Transactional
     private void saveFullOperationOutcome(final Map<String, Object> fullOperationOutcome,
                     final String masterInteractionId, Map<String, Object> requestParameters) {
             LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
                             masterInteractionId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
@@ -391,6 +586,17 @@ public class CsvService {
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
                     initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+                    // Extract and set client IP address and user agent for consistency
+                    String clientIpAddress = null;
+                    if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                        clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+                    }
+                    initRIHR.setClientIpAddress(clientIpAddress);
+                    String userAgent = null;
+                    if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                        userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+                    }
+                    initRIHR.setUserAgent(userAgent);
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -406,13 +612,12 @@ public class CsvService {
             }
     }
 
-    
+    @Transactional
     private void saveFullOperationOutcome(final List<Object> fullOperationOutcome,
                     final String masterInteractionId, Map<String, Object> requestParameters) {
             LOG.info("CsvService::saveFullOperationOutcome BEGIN for zipFileInteractionId  : {}",
                             masterInteractionId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
@@ -425,6 +630,17 @@ public class CsvService {
                     initRIHR.setPFullOperationOutcome(
                                     (JsonNode) Configuration.objectMapper.valueToTree(fullOperationOutcome));
                     initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+                    // Extract and set client IP address and user agent for consistency
+                    String clientIpAddress = null;
+                    if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                        clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+                    }
+                    initRIHR.setClientIpAddress(clientIpAddress);
+                    String userAgent = null;
+                    if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                        userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+                    }
+                    initRIHR.setUserAgent(userAgent);
                     final var start = Instant.now();
                     final var execResult = initRIHR.execute(jooqCfg);
                     final var end = Instant.now();
@@ -440,6 +656,7 @@ public class CsvService {
             }
     }
     
+    @Transactional
     private void saveMiscErrorsForValidation(final List<org.techbd.model.csv.FileDetail> filesNotProcessed,
             final String masterInteractionId, final Map<String, Object> requestParameters, final String originalFileName, CsvProcessingMetrics metricsBuilder) {
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
@@ -452,8 +669,7 @@ public class CsvService {
         final List<Object> miscErrors = List.of(fileNotProcessedError);
         
         LOG.info("SaveMiscErrorsForValidation: BEGIN for zipFileInteractionId: {}", masterInteractionId);
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {
@@ -466,6 +682,17 @@ public class CsvService {
                     (JsonNode) Configuration.objectMapper.valueToTree(miscErrors));
             initRIHR.setElaboration((JsonNode) Configuration.objectMapper.valueToTree(metricsBuilder));
             initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+            // Extract and set client IP address and user agent for consistency
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();

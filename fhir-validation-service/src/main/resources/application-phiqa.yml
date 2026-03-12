@@ -1,0 +1,12 @@
+org:
+    techbd:
+        baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+        defaultDataLakeApiAuthn:
+            mTlsStrategy: aws-secrets
+            mTlsAwsSecrets: 
+                mTlsKeySecretName: techbd-qa-client-key
+                mTlsCertSecretName: techbd-qa-client-certificate
+        dataLedgerApiUrl: https://zq34s8hsvh.execute-api.us-east-1.amazonaws.com/qa/DataLedger
+        dataLedgerTracking: true
+        dataLedgerDiagnostics: true
+        dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key       

@@ -1,0 +1,2963 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet href="CCDA.xsl" type="text/xsl"?><ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:sdtc="urn:hl7-org:sdtc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <realmCode code="US"/>
+    <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3"/>
+    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.1.1"/>
+    <templateId extension="2023-05-01" root="2.16.840.1.113883.10.20.22.1.1"/>
+    <templateId root="2.16.840.1.113883.10.20.22.1.1"/>
+    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.1.2"/>
+    <templateId root="2.16.840.1.113883.10.20.22.1.2"/>
+    <id root="97f93311-b50b-4d5c-ad0b-eca572ec0bea"/>
+    <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summarization of Episode Note"/>
+    <title>Continuity of Care Document</title>
+    <effectiveTime value="20251211134205-0500"/>
+    <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+    <languageCode code="en-US"/>
+    <recordTarget>
+        <patientRole>
+            <id extension="a-2190101.E-79236.P-79236" root="2.16.840.1.113883.3.564"/>
+            <addr use="HP">
+                <streetAddressLine>238 ARSENAL ST</streetAddressLine>
+                <city>WATERTOWN</city>
+                <state>NY</state>
+                <postalCode>13601</postalCode>
+                <country>USA</country>
+                <useablePeriod xsi:type="IVL_TS">
+                    <low value="20220919"/>
+                </useablePeriod>
+            </addr>
+            <addr use="PST">
+                <streetAddressLine>238 ARSENAL ST</streetAddressLine>
+                <city>WATERTOWN</city>
+                <state>NY</state>
+                <postalCode>13601</postalCode>
+                <country>USA</country>
+                <useablePeriod xsi:type="IVL_TS">
+                    <low value="20220919"/>
+                </useablePeriod>
+            </addr>
+            <telecom use="HP" value="tel:+1-(315) 785-9450"/>
+            <telecom use="WP" value="tel:+1-(315) 785-9450"/>
+            <patient>
+                <name use="L">
+                    <given>Patient</given>
+                    <family>Test</family>
+                </name>
+                <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGender" displayName="Male"/>
+                <birthTime value="19910604"/>
+                <maritalStatusCode code="S" codeSystem="2.16.840.1.113883.5.2" codeSystemName="MaritalStatusCode" displayName="Never married"/>
+                <raceCode code="2106-3" codeSystem="2.16.840.1.113883.6.238" codeSystemName="Race &amp; Ethnicity - CDC" displayName="White"/>
+                <ethnicGroupCode code="2186-5" codeSystem="2.16.840.1.113883.6.238" codeSystemName="Race &amp; Ethnicity - CDC" displayName="Not Hispanic or Latino"/>
+                <languageCommunication>
+                    <languageCode code="en"/>
+                </languageCommunication>
+            </patient>
+            <providerOrganization>
+                <id extension="1477304210" root="2.16.840.1.113883.4.6"/>
+                <name>NY - NORTH COUNTRY FAMILY HEALTH CENTER</name>
+                <telecom use="WP" value="tel: (315) 782-9450"/>
+                <addr use="WP">
+                    <streetAddressLine>238 Arsenal St</streetAddressLine>
+                    <city>Watertown</city>
+                    <state>NY</state>
+                    <postalCode>13601-2504</postalCode>
+                    <country>USA</country>
+                </addr>
+            </providerOrganization>
+        </patientRole>
+    </recordTarget>
+    <author>
+        <time value="20251211134205-0500"/>
+        <assignedAuthor>
+            <id root="2.16.840.1.113883.3.564"/>
+            <addr use="WP">
+                <streetAddressLine>Boston Landing</streetAddressLine>
+                <streetAddressLine>80 Guest Street</streetAddressLine>
+                <city>Boston</city>
+                <state>MA</state>
+                <postalCode>02135</postalCode>
+                <country>US</country>
+            </addr>
+            <telecom use="WP" value="tel:+1-617-4021000"/>
+            <assignedAuthoringDevice>
+                <manufacturerModelName>athenahealth</manufacturerModelName>
+                <softwareName>Document Generation Engine</softwareName>
+            </assignedAuthoringDevice>
+            <representedOrganization>
+                <id extension="2190101" root="ce793b29-479d-4cf3-b440-715c968d4ce2"/>
+                <name>NY - NORTH COUNTRY FAMILY HEALTH CENTER, Main Campus Medical</name>
+                <telecom use="WP" value="tel: (315) 782-9450"/>
+                <addr use="WP">
+                    <streetAddressLine>238 Arsenal St</streetAddressLine>
+                    <city>Watertown</city>
+                    <state>NY</state>
+                    <postalCode>13601-2504</postalCode>
+                    <country>USA</country>
+                </addr>
+            </representedOrganization>
+        </assignedAuthor>
+    </author>
+    <custodian>
+        <assignedCustodian>
+            <representedCustodianOrganization>
+                <id root="2.16.840.1.113883.3.564"/>
+                <name>athenahealth</name>
+                <telecom use="WP" value="tel:+1-617-4021000"/>
+                <addr use="WP">
+                    <streetAddressLine>Boston Landing</streetAddressLine>
+                    <streetAddressLine>80 Guest Street</streetAddressLine>
+                    <city>Boston</city>
+                    <state>MA</state>
+                    <postalCode>02135</postalCode>
+                    <country>US</country>
+                </addr>
+            </representedCustodianOrganization>
+        </assignedCustodian>
+    </custodian>
+    <legalAuthenticator>
+        <time value="20251211133944-0500"/>
+        <signatureCode code="S"/>
+        <assignedEntity>
+            <id extension="1477304210" root="2.16.840.1.113883.4.6"/>
+            <addr use="WP">
+                <streetAddressLine>238 ARSENAL STREET</streetAddressLine>
+                <city>WATERTOWN</city>
+                <state>NY</state>
+                <postalCode>13601-2504</postalCode>
+                <country>US</country>
+            </addr>
+            <telecom use="WP" value="tel: (315) 782-9450"/>
+            <assignedPerson>
+                <name>
+                    <given>DAVID</given>
+                    <family>FLORES</family>
+                    <suffix>RES</suffix>
+                </name>
+            </assignedPerson>
+        </assignedEntity>
+    </legalAuthenticator>
+    <documentationOf>
+        <serviceEvent classCode="PCPR">
+            <effectiveTime>
+                <low value="20251211"/>
+                <high nullFlavor="NI"/>
+            </effectiveTime>
+        </serviceEvent>
+    </documentationOf>
+    <componentOf>
+        <encompassingEncounter>
+            <id extension="E-973172.A-2251777" root="2.16.840.1.113883.19"/>
+            <effectiveTime value="20251211"/>
+            <encounterParticipant typeCode="ATND">
+                <assignedEntity>
+                    <id extension="1477304210" root="2.16.840.1.113883.4.6"/>
+                    <code code="390200000X" codeSystem="2.16.840.1.113883.6.101" codeSystemName="NUCC" displayName="Family Medicine"/>
+                    <addr use="WP">
+                        <streetAddressLine>238 Arsenal St </streetAddressLine>
+                        <city>Watertown</city>
+                        <state>NY</state>
+                        <postalCode>13601-2504</postalCode>
+                        <country>USA</country>
+                    </addr>
+                    <telecom use="WP" value="tel: (315) 782-9450"/>
+                    <assignedPerson>
+                        <name>
+                            <given>David</given>
+                            <family>Flores</family>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+        </encompassingEncounter>
+    </componentOf>
+    <component>
+        <structuredBody>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.8"/>
+                    <id root="a4216249-8494-49b5-86b2-b89d1d897123"/>
+                    <code code="51848-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="ASSESSMENTS"/>
+                    <title>Assessment</title>
+                    <text>
+                        <paragraph>No assessment recorded.</paragraph>
+                    </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.10"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.10"/>
+                    <id root="ed4a41fa-c76d-4cf1-827e-4eb6faa3404a"/>
+                    <code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Plan of Treatment</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Reminders</th>
+                                    <th/>
+                                    <th>Order Date</th>
+                                    <th>Submit Date</th>
+                                    <th>Provider Name</th>
+                                    <th>Organization Details</th>
+                                    <th>Last Modified By</th>
+                                    <th>Last Modified Time</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Appointments</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+                                        <content ID="PlanOfCareAct1">ANNUAL EXAM</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    12/11/2025 09:30AM
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">DAVID FLORES, MD</td>
+                                    <td styleCode="Botrule">Not available</td>
+                                    <td styleCode="Botrule">Not available</td>
+                                    <td styleCode="Botrule">Not available</td>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Lab</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Referral</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Procedures</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Surgeries</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">Imaging</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">MedicationOrders</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content styleCode="Bold">VaccineOrders</content>
+                                    </td>
+                                    <td styleCode="Botrule">
+    None recorded.
+  </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br/>
+                        <content>Patient Targets</content>
+                        <content>No targets recorded.</content>
+                        <br/>
+                        <content>Patient Instructions</content>
+                        <content>No instructions recorded.</content>
+                    </text>
+                    <entry>
+                        <encounter classCode="ENC" moodCode="INT">
+                            <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.40"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.40"/>
+                            <id root="8d6e5b54-493c-4823-82ea-04b0bb16c94d"/>
+                            <code codeSystem="2.16.840.1.113883.3.88.12.80.32" codeSystemName="CPT-4" nullFlavor="NI">
+                                <originalText>
+                                    <reference value="#PlanOfCareAct1"/>
+                                </originalText>
+                            </code>
+                            <statusCode code="active"/>
+                            <effectiveTime value="202512110930"/>
+                            <performer typeCode="PRF">
+                                <assignedEntity>
+                                    <id root="efcfb03d-785c-4690-98f2-8f583cdb8a46"/>
+                                    <addr use="WP">
+                                        <streetAddressLine>238 Arsenal St</streetAddressLine>
+                                        <city>Watertown</city>
+                                        <state>NY</state>
+                                        <postalCode>13601-2504</postalCode>
+                                        <country>USA</country>
+                                    </addr>
+                                    <telecom use="WP" value="tel: (315) 782-9450"/>
+                                    <assignedPerson>
+                                        <name>
+                                            <given>David</given>
+                                            <family>Flores</family>
+                                        </name>
+                                    </assignedPerson>
+                                </assignedEntity>
+                            </performer>
+                        </encounter>
+                    </entry>
+                </section>
+            </component>
+            <!-- Reason for Referral Section -->
+            <component>
+                <section>
+                    <templateId extension="2014-06-09" root="1.3.6.1.4.1.19376.1.5.3.1.3.1"/>
+                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.1"/>
+                    <id root="55882787-dc73-4eda-8ed4-ee5372f81ca2"/>
+                    <code code="42349-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for Referral"/>
+                    <title>Reason for Referral</title>
+                    <text>
+      None Reported.
+      </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.12"/>
+                    <id root="fac9198c-acf0-4e73-8601-96870b1c229a"/>
+                    <code code="29299-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for Visit"/>
+                    <title>Reason for Visit</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Reason</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">abdominal pain</td>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                </section>
+            </component>
+            <component>
+                <section nullFlavor="NI">
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.3.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.3.1"/>
+                    <id root="1051ae15-8e49-4ea4-9602-17eca777a769"/>
+                    <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Results</title>
+                    <text>
+                        <paragraph>
+                            <content ID="result1">None recorded.</content>
+                        </paragraph>
+                    </text>
+                    <entry>
+                        <organizer classCode="BATTERY" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.1"/>
+                            <id root="fa82b3a4-39d0-4d80-8c30-60761eeca9c5"/>
+                            <code nullFlavor="NI" xsi:type="CE"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime nullFlavor="NI"/>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+                                    <id root="52e2d5ac-fdce-4a08-96da-909858adf15d"/>
+                                    <code nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#result1"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime nullFlavor="NI"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                    <interpretationCode nullFlavor="NI"/>
+                                    <referenceRange>
+                                        <observationRange>
+                                            <text nullFlavor="NI"/>
+                                            <value nullFlavor="NI" xsi:type="ST"/>
+                                        </observationRange>
+                                    </referenceRange>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.5.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>
+                    <id root="dd0166ae-17f9-4109-b3df-30e692cc2501"/>
+                    <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems"/>
+                    <title>Problems</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Problem SNOMED Code</th>
+                                    <th>Status</th>
+                                    <th>Onset Date</th>
+                                    <th>Resolution Date</th>
+                                    <th>Notes</th>
+                                    <th>Provider Name and Address</th>
+                                    <th>Organization Details</th>
+                                    <th>Recorded Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="problem0">Anxiety disorder</content>
+                                    </td>
+                                    <td styleCode="Botrule">197480006</td>
+                                    <td styleCode="Botrule">Active</td>
+                                    <td styleCode="Botrule">02/24/2021</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">
+                                        Erica Freeman, LCSW-R
+            
+              
+                                        <paragraph> 238 Arsenal Street,   Watertown,  </paragraph>
+                                        <paragraph> NY,   13601-2504, US </paragraph>
+                                    </td>
+                                    <td styleCode="Botrule">NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td styleCode="Botrule">02/24/2021 14:56:03</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="problem1">Generalized anxiety disorder</content>
+                                    </td>
+                                    <td styleCode="Botrule">21897009</td>
+                                    <td styleCode="Botrule">Active</td>
+                                    <td styleCode="Botrule">09/18/2023</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">
+                                        ANDREA SMITH-HAWTHORNE, LMSW
+            
+              
+                                        <paragraph> 238 Arsenal Street,   Watertown,  </paragraph>
+                                        <paragraph> NY,   13601-2504, US </paragraph>
+                                    </td>
+                                    <td styleCode="Botrule">NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td styleCode="Botrule">09/18/2023 13:24:58</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br/>
+                        <br/>
+                        <content>Problem Notes</content>
+                        <paragraph>None recorded.</paragraph>
+                    </text>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.3"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+                            <id root="5ab38ce3-7699-445a-b854-a65f1c6bb112"/>
+                            <code code="CONC" codeSystem="2.16.840.1.113883.5.6" displayName="Concern"/>
+                            <text>
+                                <reference value="#problem0"/>
+                            </text>
+                            <statusCode code="active"/>
+                            <effectiveTime>
+                                <low value="20210224000000-0500"/>
+                            </effectiveTime>
+                            <entryRelationship typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                                    <id root="84a9eec8-a9f6-487b-a2c9-83bba96cea5b"/>
+                                    <code code="55607006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Problem">
+                                        <translation code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem HL7.CCDAR2"/>
+                                    </code>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime>
+                                        <low value="20210224000000-0500"/>
+                                    </effectiveTime>
+                                    <value code="197480006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED" displayName="Anxiety disorder" xsi:type="CD">
+                                        <translation code="F41.9" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD10" displayName="Anxiety disorder, unspecified"/>
+                                    </value>
+                                    <author>
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
+                                        <time value="20210224145603-0500"/>
+                                        <assignedAuthor>
+                                            <id extension="1013241942" root="2.16.840.1.113883.4.6"/>
+                                            <addr use="WP">
+                                                <streetAddressLine>238 Arsenal Street</streetAddressLine>
+                                                <city>Watertown</city>
+                                                <state>NY</state>
+                                                <postalCode>13601-2504</postalCode>
+                                                <country>US</country>
+                                            </addr>
+                                            <assignedPerson>
+                                                <name>
+                                                    <given>Erica Freeman, LCSW-R</given>
+                                                    <family>Freeman</family>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id nullFlavor="UNK" root="4948e1ab-6921-4f4b-9f9b-b77d49268965"/>
+                                                <name>NY - NORTH COUNTRY FAMILY HEALTH CENTER</name>
+                                                <telecom nullFlavor="NI"/>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.3"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.3"/>
+                            <id root="6207a606-5482-4945-b1a8-3e46862e9e51"/>
+                            <code code="CONC" codeSystem="2.16.840.1.113883.5.6" displayName="Concern"/>
+                            <text>
+                                <reference value="#problem1"/>
+                            </text>
+                            <statusCode code="active"/>
+                            <effectiveTime>
+                                <low value="20230918000000-0500"/>
+                            </effectiveTime>
+                            <entryRelationship typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.4"/>
+                                    <id root="02062d2e-3c42-4927-bf7b-8fdf5c76717e"/>
+                                    <code code="55607006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Problem">
+                                        <translation code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem HL7.CCDAR2"/>
+                                    </code>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime>
+                                        <low value="20230918000000-0500"/>
+                                    </effectiveTime>
+                                    <value code="21897009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED" displayName="Generalized anxiety disorder" xsi:type="CD">
+                                        <translation code="F41.1" codeSystem="2.16.840.1.113883.6.90" codeSystemName="ICD10" displayName="Generalized anxiety disorder"/>
+                                    </value>
+                                    <author>
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
+                                        <time value="20230918132458-0500"/>
+                                        <assignedAuthor>
+                                            <id extension="1790496941" root="2.16.840.1.113883.4.6"/>
+                                            <addr use="WP">
+                                                <streetAddressLine>238 Arsenal Street</streetAddressLine>
+                                                <city>Watertown</city>
+                                                <state>NY</state>
+                                                <postalCode>13601-2504</postalCode>
+                                                <country>US</country>
+                                            </addr>
+                                            <assignedPerson>
+                                                <name>
+                                                    <given>ANDREA SMITH-HAWTHORNE, LMSW</given>
+                                                    <family>SMITH HAWTHORNE</family>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id nullFlavor="UNK" root="a0cb8098-5de5-43be-9ad9-ceac17a68d8d"/>
+                                                <name>NY - NORTH COUNTRY FAMILY HEALTH CENTER</name>
+                                                <telecom nullFlavor="NI"/>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section nullFlavor="NI">
+                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.7.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.7.1"/>
+                    <id root="112aaa2b-f43f-48f7-8e05-c27ab58cbed0"/>
+                    <code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Procedures</title>
+                    <text>
+                        <content>Surgical History</content>
+                        <paragraph>None recorded.</paragraph>
+                        <br/>
+                        <content>Imaging Results</content>
+                        <paragraph>None recorded.</paragraph>
+                        <br/>
+                        <content>Procedure Notes</content>
+                        <paragraph>None recorded.</paragraph>
+                    </text>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.13"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.13"/>
+                            <id root="ee04b8fe-67a1-41c1-b336-61357e248f50"/>
+                            <code nullFlavor="NI"/>
+                            <statusCode code="active"/>
+                            <effectiveTime nullFlavor="NI"/>
+                            <value nullFlavor="NI" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.23"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.23"/>
+                    <id root="43430c7b-02db-4807-9162-bb1c6a06f960"/>
+                    <code code="46264-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Medical Equipment"/>
+                    <title>Medical Equipment</title>
+                    <text>
+      None Reported.
+      </text>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.13"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.13"/>
+                            <id root="24c42038-4259-4a7c-b689-446ee278f55e"/>
+                            <code nullFlavor="NI"/>
+                            <statusCode code="active"/>
+                            <effectiveTime nullFlavor="NI"/>
+                            <value nullFlavor="NI" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.6.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.6.1"/>
+                    <id root="78f0550b-6067-40d2-8ead-d32317f1f8d3"/>
+                    <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies, adverse reactions, alerts"/>
+                    <title>Allergies</title>
+                    <text>
+                        <paragraph>
+                            <content ID="allergy">No known drug allergies</content>
+                        </paragraph>
+                    </text>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <!-- Allergy Concern Act -->
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.30"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.30"/>
+                            <id root="cd252426-ac91-409d-ad25-006dafc6fe3c"/>
+                            <code code="CONC" codeSystem="2.16.840.1.113883.5.6" codeSystemName="HL7ActClass" displayName="Concern"/>
+                            <statusCode code="active"/>
+                            <effectiveTime>
+                                <low value="20251211"/>
+                            </effectiveTime>
+                            <entryRelationship typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="true">
+                                    <!-- Allergy observation -->
+                                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.7"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.7"/>
+                                    <id root="85a0c598-ecfe-4342-a93f-c6227496b46f"/>
+                                    <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7ActCode"/>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime>
+                                        <low nullFlavor="NI"/>
+                                    </effectiveTime>
+                                    <value code="416098002" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Allergy to drug" xsi:type="CD">
+                                        <originalText>
+                                            <reference value="#allergy"/>
+                                        </originalText>
+                                    </value>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code nullFlavor="NI"/>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section nullFlavor="NI">
+                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.1.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.1.1"/>
+                    <id root="98dcf2c0-40d8-40a5-9ea6-34023904717c"/>
+                    <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Medication Use"/>
+                    <title>Medications</title>
+                    <text>
+                        <paragraph>
+                            <content ID="med1">No information.</content>
+                        </paragraph>
+                    </text>
+                    <entry>
+                        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="true">
+                            <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.16"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.16"/>
+                            <id root="072f00fc-4f9d-4516-8d6f-ed00ed523fe0"/>
+                            <statusCode code="active"/>
+                            <effectiveTime xsi:type="IVL_TS">
+                                <low nullFlavor="NI"/>
+                            </effectiveTime>
+                            <doseQuantity nullFlavor="NI"/>
+                            <consumable>
+                                <manufacturedProduct classCode="MANU">
+                                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.23"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.23"/>
+                                    <manufacturedMaterial>
+                                        <code nullFlavor="NI">
+                                            <originalText>
+                                                <reference value="#med1"/>
+                                            </originalText>
+                                        </code>
+                                    </manufacturedMaterial>
+                                </manufacturedProduct>
+                            </consumable>
+                            <author>
+                                <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
+                                <time nullFlavor="NI"/>
+                                <assignedAuthor>
+                                    <id nullFlavor="UNK"/>
+                                </assignedAuthor>
+                            </author>
+                        </substanceAdministration>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.4"/>
+                    <id root="ccd16e39-ee23-48da-800d-dfa337dbd18f"/>
+                    <code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Present Illness"/>
+                    <title>History of Present Illness</title>
+                    <text>None recorded.</text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.2.10"/>
+                    <id root="d81c1946-92ca-4f55-bd1f-eb5f08a4fd10"/>
+                    <code code="29545-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Physical Exam</title>
+                    <text>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td/>
+                                    <td>
+                                        <content styleCode="Bold"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <content styleCode="Bold">Notes:</content>
+                                    </td>
+                                    <td>
+                                        <content>
+                  None recorded.
+                </content>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.18"/>
+                    <id root="e8fb4f73-6332-42cb-ac68-9a6ab7a13aa7"/>
+                    <code code="10187-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="REVIEW OF SYSTEMS"/>
+                    <title>Review of Systems</title>
+                    <text>None recorded.</text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.4.1"/>
+                    <id root="7a31244f-36b8-476d-a1d0-83c81f159193"/>
+                    <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="VITAL SIGNS"/>
+                    <title>Vitals</title>
+                    <text>
+                        <paragraph>
+                            <content ID="vit1">None Recorded</content>
+                        </paragraph>
+                    </text>
+                    <entry typeCode="DRIV">
+                        <organizer classCode="CLUSTER" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.26"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.26"/>
+                            <id root="1fc2fed5-920c-4bae-abdf-eb0cdfbbb63d"/>
+                            <code code="46680005" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Vital signs">
+                                <translation code="74728-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital signs, weight, height, head circumference, oximetry, BMI, and BSA panel"/>
+                            </code>
+                            <statusCode code="completed"/>
+                            <effectiveTime nullFlavor="NI"/>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.27"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.27"/>
+                                    <id root="0da84b25-a96c-4ebc-abff-d299c82d1115"/>
+                                    <code nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#vit1"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime nullFlavor="NI"/>
+                                    <value xsi:type="PQ"/>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.17"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+                    <id root="10fb1b24-0a2c-4d94-af72-498df66a741f"/>
+                    <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Social History</title>
+                    <text>
+                        <br/>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Social History Observation</th>
+                                    <th>Description</th>
+                                    <th>Date Observed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="BirthSexInfo">Birth Sex</content>
+                                    </td>
+                                    <td styleCode="Botrule">Female</td>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">Gender Identity</td>
+                                    <td styleCode="Botrule">Identifies as female</td>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">Sexual orientation</td>
+                                    <td styleCode="Botrule">Straight or heterosexual</td>
+                                    <td styleCode="Botrule">09/19/2022</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">Legal Sex</td>
+                                    <td styleCode="Botrule">Male</td>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">Pregnancy Status</td>
+                                    <td styleCode="Botrule">Not pregnant (finding)</td>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br/>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Assessment</th>
+                                    <th>Value</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialscreener140327">
+                    NYS Accountable Health Communities (AHC) Health-Related Social Needs (HRSN) Screening Tool</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839960">Please note: This screening questionnaire is intended to be used for the New York State’s Health Equity Reform (NYHER) 1115 Waiver Amendment.</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839961">We use this survey to understand needs our [Members / patients / clients] have which could interfere with good health. We may share your answers with your other healthcare providers, and with your health plan and social services organizations, so they can determine if you qualify for any free non-medical services that could be helpful. Please check this box if you agree to continue. You can choose not to answer this survey, but we can only check for services if you do answer. You can choose to be screened later and may be eligible for extra services at that time. None of this will affect your ongoing Medicaid eligibility.</content>
+                                    </td>
+                                    <td>Permit</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839962">Housing and Utilities</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839963">1. What is your living situation today?</content>
+                                    </td>
+                                    <td>I have a steady place to live</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839964">2. Think about the place you live. Do you have problems with any of the following? 
+  &lt;content&gt; CHOOSE ALL THAT APPLY &lt;/content&gt;</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839965">Pests such as bugs, ants, or mice</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839966">Mold</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839967">Lead paint or pipes</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839968">Lack of heat</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839969">Oven or stove not working</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839970">Smoke detectors missing or not working</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839971">Water leaks</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839972">None of the above</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839973">3. In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839974">Food 
+  &lt;content&gt; Some people have made the following statements about their food situation. Please answer whether the statements were OFTEN, SOMETIMES, or NEVER true for you and your household in the last 12 months. &lt;/content&gt;</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839975">4. Within the past 12 months, you worried that your food would run out before you got money to buy more.</content>
+                                    </td>
+                                    <td>Often true*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839976">5. Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.</content>
+                                    </td>
+                                    <td>Often true*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839977">Transportation</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839978">6. In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839979">Employment</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839980">7. Do you want help finding or keeping work or a job?</content>
+                                    </td>
+                                    <td>Yes, help finding work*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839981">Education</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839982">8. Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent</content>
+                                    </td>
+                                    <td>Yes*</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839983">Safety</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839984">9. How often does anyone, including family and friends, physically hurt you?</content>
+                                    </td>
+                                    <td>Never</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839985">10. How often does anyone, including family and friends, insult or talk down to you?</content>
+                                    </td>
+                                    <td>Never</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839986">11. How often does anyone, including family and friends, threaten you with harm?</content>
+                                    </td>
+                                    <td>Never</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839987">12. How often does anyone, including family and friends, scream or curse at you?</content>
+                                    </td>
+                                    <td>Never</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839988">Practice Staff Only Questions:</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839989">Was screening conducted during direct interaction with the Member?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td>12/11/2025</td>
+                                    <td>
+                                        <content ID="socialassessment1839990">How many minutes of direct patient interaction did you have with the Member while administering the screening?</content>
+                                    </td>
+                                    <td/>
+                                    <td>Not Available</td>
+                                    <td>Not Available</td>
+                                    <td>12/11/2025 13:39:33</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                    <td styleCode="Botrule">
+                                        <content ID="socialassessment1839991">Is this screening covered under other funding? 
+  &lt;content&gt; If "yes" document in the notes field at the bottom of the screener. &lt;/content&gt;</content>
+                                    </td>
+                                    <td styleCode="Botrule">No</td>
+                                    <td styleCode="Botrule">Not Available</td>
+                                    <td styleCode="Botrule">Not Available</td>
+                                    <td styleCode="Botrule">12/11/2025 13:39:33</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <paragraph>No social history SDOH screeners recorded</paragraph>
+                    </text>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.78"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.78"/>
+                            <id root="35b0828d-835a-4312-8e99-bce50a2c8e54"/>
+                            <code code="72166-2" codeSystem="2.16.840.1.113883.6.1"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime nullFlavor="NI"/>
+                            <value code="266927001" codeSystem="2.16.840.1.113883.6.96" displayName="Unknown If Ever Smoked" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2016-06-01" root="2.16.840.1.113883.10.20.22.4.200"/>
+                            <code code="76689-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex Assigned At Birth"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20251211"/>
+                            <value codeSystem="2.16.840.1.113883.5.1" displayName="female" nullFlavor="UNK" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.38"/>
+                            <templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.34.3.45"/>
+                            <id root="f62689c2-199e-4331-8ffa-c44aba158f9a"/>
+                            <code code="76691-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Gender Identity"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime>
+                                <low value="20251211"/>
+                            </effectiveTime>
+                            <value code="446141000124107" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Identifies as Female" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.38"/>
+                            <templateId extension="2023-05-01" root="2.16.840.1.113883.10.20.22.4.501"/>
+                            <id root="c5170569-c9ed-4c69-a2c9-41c42b8c273a"/>
+                            <code code="76690-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sexual Orientation"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime>
+                                <low value="20220919133200-0500"/>
+                            </effectiveTime>
+                            <value displayName="Straight or heterosexual" nullFlavor="UNK" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2023-06-28" root="2.16.840.1.113883.10.20.22.4.507"/>
+                            <id root="646ac9cc-06e8-458f-b4c9-acb92cc7b348"/>
+                            <code code="46098-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20251211"/>
+                            <value code="248153007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Male" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry>
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.15.3.8"/>
+                            <id extension="123456789" root="2.16.840.1.113883.19"/>
+                            <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime>
+                                <low value="20251211000000-0500"/>
+                                <high nullFlavor="NI"/>
+                            </effectiveTime>
+                            <value code="60001007" codeSystem="2.16.840.1.113883.6.96" displayName="Not Pregnant (finding)" xsi:type="CD"/>
+                        </observation>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.69"/>
+                            <id root="360b91d8-6666-42c4-b259-9a697641f620"/>
+                            <code code="273601006" codeSystem="2.16.840.1.113883.6.1" codeSystemName="SNOMED2"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20251211133933-0500"/>
+                            <value xsi:type="CD"/>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="d41c5efc-3bd4-4058-b1b3-ae0d303e978f"/>
+                                    <code nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialscreener140327"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="9a3c655f-31be-4f06-b031-486d99fa8b11"/>
+                                    <code displayName="Please note: This screening questionnaire is intended to be used for the New York State’s Health Equity Reform (NYHER) 1115 Waiver Amendment." nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839960"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="74061467-5685-4327-9222-97517e287346"/>
+                                    <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Was consent given"/>
+                                    <text>
+                                        <reference value="#socialassessment1839961"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA33-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Permit" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="561c877b-a128-4987-972e-18be4334228e"/>
+                                    <code displayName="Housing and Utilities" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839962"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="fc25a308-a382-4d59-8742-ab36f9a2d587"/>
+                                    <code code="71802-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Housing status"/>
+                                    <text>
+                                        <reference value="#socialassessment1839963"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31993-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="I have a steady place to live" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="dc1373b6-4a7d-49c3-ad0e-301de30f6fc1"/>
+                                    <code displayName="2. Think about the place you live. Do you have problems with any of the following?    &lt;content&gt; CHOOSE ALL THAT APPLY &lt;/content&gt;" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839964"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="56f9603a-95d9-438b-96ee-f6e6701a8781"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839965"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31996-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="0dfdea05-6996-4569-bf70-e4fc62ac6a8c"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839966"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA28580-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="19e0b1a4-58ed-45c4-a4f8-68092fc7f5a1"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839967"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31997-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="36acda96-92e1-4b4f-9055-815156c9d372"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839968"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31998-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="46230607-83fb-4875-bd70-a7a45a6b63f5"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839969"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31999-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="5f031c32-cdc6-4f8f-bf52-a5c8d57a310f"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839970"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA32000-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="39f65506-5a25-484b-97fc-3c8a4bcdfeda"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839971"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA32001-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="9df0dfbe-36fc-45e2-8ebd-5d377ab09f42"/>
+                                    <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live"/>
+                                    <text>
+                                        <reference value="#socialassessment1839972"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value displayName="Yes" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="7566af60-6b22-4c5a-944b-70f0ad49d812"/>
+                                    <code code="96779-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months"/>
+                                    <text>
+                                        <reference value="#socialassessment1839973"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA33-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="249eef2a-e98a-4019-a252-2b4a21f6b620"/>
+                                    <code displayName="Food    &lt;content&gt; Some people have made the following statements about their food situation. Please answer whether the statements were OFTEN, SOMETIMES, or NEVER true for you and your household in the last 12 months. &lt;/content&gt;" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839974"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="6a460d1a-78e4-40f6-910f-39e4aca07d4f"/>
+                                    <code code="88122-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more"/>
+                                    <text>
+                                        <reference value="#socialassessment1839975"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA28397-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Often true*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="1f5de966-d06d-4c55-980e-b67791166310"/>
+                                    <code code="88123-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months the food we bought just didn't last and we didn't have money to get more"/>
+                                    <text>
+                                        <reference value="#socialassessment1839976"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA28397-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Often true*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="4f8d5755-c342-414e-ab0e-77ea33f1dbc9"/>
+                                    <code displayName="Transportation" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839977"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="3f3c32c5-e4a7-4f9e-a558-7d13de5d965d"/>
+                                    <code code="93030-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living"/>
+                                    <text>
+                                        <reference value="#socialassessment1839978"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA33-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="85b844fc-9aa0-402e-a608-c78a4f7a0a60"/>
+                                    <code displayName="Employment" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839979"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="c670b097-a163-47d7-9223-d972709039e6"/>
+                                    <code code="96780-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help finding or keeping work or a job"/>
+                                    <text>
+                                        <reference value="#socialassessment1839980"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA31981-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes, help finding work*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="ffc45e40-a6b1-424f-aa2b-575eb3d2da82"/>
+                                    <code displayName="Education" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839981"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="438066f0-961a-47b4-a72e-789695433ecf"/>
+                                    <code code="96782-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help with school or training"/>
+                                    <text>
+                                        <reference value="#socialassessment1839982"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA33-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes*" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="f76594b8-4cf6-4468-9c13-9e5c173af625"/>
+                                    <code displayName="Safety" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839983"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="445dd385-1c35-4f20-a48d-fdaccd64778b"/>
+                                    <code code="95618-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physically hurt you"/>
+                                    <text>
+                                        <reference value="#socialassessment1839984"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="50ba166d-f3ac-46f6-b772-8440f5937492"/>
+                                    <code code="95617-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Insult you or talk down to you"/>
+                                    <text>
+                                        <reference value="#socialassessment1839985"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="91ff6458-5a56-4b46-8fda-c9b6f6a7fef5"/>
+                                    <code code="95616-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Threaten you with physical harm"/>
+                                    <text>
+                                        <reference value="#socialassessment1839986"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="46b13011-bdf7-4387-a516-9cc83ae6b06e"/>
+                                    <code code="95615-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Scream or curse at you"/>
+                                    <text>
+                                        <reference value="#socialassessment1839987"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="e3c5b232-4c00-462e-a186-38b76d1888db"/>
+                                    <code displayName="Practice Staff Only Questions:" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839988"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="96f68fb5-634e-47b8-abc3-56331892f9c8"/>
+                                    <code displayName="Was screening conducted during direct interaction with the Member?" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839989"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value displayName="Yes" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="03b4ea10-850e-4597-900c-0de780282e4c"/>
+                                    <code displayName="How many minutes of direct patient interaction did you have with the Member while administering the screening?" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839990"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value nullFlavor="NI" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="a882129a-eaf4-481a-a73f-0a2397c5eb96"/>
+                                    <code displayName="Is this screening covered under other funding?    &lt;content&gt; If &quot;yes&quot; document in the notes field at the bottom of the screener. &lt;/content&gt;" nullFlavor="NI"/>
+                                    <text>
+                                        <reference value="#socialassessment1839991"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20251211133933-0500"/>
+                                    <value displayName="No" xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                        </observation>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.2.14"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.14"/>
+                    <id root="d22c0571-a312-4f08-aed9-0dff787fecee"/>
+                    <code code="47420-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Functional Status</title>
+                    <text>
+                                
+          None recorded.
+        
+        
+            
+                        <paragraph>No Functional Screening assessment recorded</paragraph>
+                        <br/>
+                        <paragraph>No Functional SDOH screeners recorded</paragraph>
+                    </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.56"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.56"/>
+                    <id root="01669096-ae18-4e0d-8876-8c0f9b791456"/>
+                    <code code="10190-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Mental Status</title>
+                    <text>
+                              
+        None recorded.
+      
+      
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Assessment</th>
+                                    <th>Value</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="screener75759">
+                    Patient Health Questionnaire</content>
+                                    </td>
+                                    <td>2</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                    
+                  </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964517">Little interest or pleasure in doing things</content>
+                                    </td>
+                                    <td>Several days</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964518">Feeling down, depressed, or hopeless</content>
+                                    </td>
+                                    <td>Several days</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964519">Trouble falling or staying asleep, or sleeping too much</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964520">Feeling tired or having little energy</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964521">Poor appetite or overeating</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964522">Feeling bad about yourself - or that you are a failure or have let yourself or your family down</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964523">Trouble concentrating on things, such as reading the newspaper or watching television</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964524">Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964525">Thoughts that you would be better off dead or of hurting yourself in some way</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">09/18/2023</td>
+                                    <td styleCode="Botrule">
+                                        <content ID="assessment964526">If you checked off any problems, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?</content>
+                                    </td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td styleCode="Botrule">NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td styleCode="Botrule">09/18/2023 13:26:18</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="screener75760">
+                    Generalized Anxiety Disorder</content>
+                                    </td>
+                                    <td>18</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                    
+                  </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964527">Feeling nervous, anxious or on edge</content>
+                                    </td>
+                                    <td>More than half the days</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964528">Not being able to stop or control worrying</content>
+                                    </td>
+                                    <td>More than half the days</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964529">Worrying too much about different things</content>
+                                    </td>
+                                    <td>More than half the days</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964530">Trouble relaxing</content>
+                                    </td>
+                                    <td>Nearly every day</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964531">Being so restless that it is hard to sit still</content>
+                                    </td>
+                                    <td>Nearly every day</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964532">Becoming easily annoyed or irritable</content>
+                                    </td>
+                                    <td>Nearly every day</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">09/18/2023</td>
+                                    <td styleCode="Botrule">
+                                        <content ID="assessment964533">Feeling afraid as if something awful might happen</content>
+                                    </td>
+                                    <td styleCode="Botrule">Nearly every day</td>
+                                    <td styleCode="Botrule">ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td styleCode="Botrule">NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td styleCode="Botrule">09/18/2023 13:26:44</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="screener75761">
+                    Mood Disorder Questionnaire</content>
+                                    </td>
+                                    <td/>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                    
+                  </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964534">1a. Has there ever been a period of time when you were not your usual self and you felt so good or so hyper that other people thought you were not your normal self or you were so hyper that you got into trouble?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964535">1b. Has there ever been a period of time when you were not your usual self and you were so irritable that you shouted at people or started fights or arguments?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964536">1c. Has there ever been a period of time when you were not your usual self and you felt much more self-confident than usual?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964537">1d. Has there ever been a period of time when you were not your usual self and you got much less sleep than usual and found that you didn't really miss it?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964538">1e. Has there ever been a period of time when you were not your usual self and you were more talkative or spoke much faster than usual?</content>
+                                    </td>
+                                    <td>No</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964539">1f. Has there ever been a period of time when you were not your usual self and thoughts raced through your head or you couldn't slow your mind down?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964540">1g. Has there ever been a period of time when you were not your usual self and you were so easily distracted by things around you that you had trouble concentrating or staying on track?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964541">1h. Has there ever been a period of time when you were not your usual self and you had more energy than usual?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964542">1i. Has there ever been a period of time when you were not your usual self and you were much more active or did many more things than usual?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964543">1j. Has there ever been a period of time when you were not your usual self and you were much more social or outgoing than usual, for example, you telephoned friends in the middle of the night?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964544">1k. Has there ever been a period of time when you were not your usual self and you were much more interested in sex than usual?</content>
+                                    </td>
+                                    <td>No</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964545">1l. Has there ever been a period of time when you were not your usual self and you did things that were unusual for you or that other people might have thought were excessive, foolish, or risky?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964546">1m. Has there ever been a period of time when you were not your usual self and spending money got you or your family in trouble?</content>
+                                    </td>
+                                    <td>No</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964547">2. If you checked YES to more than one of the above, have several of these ever happened during the same period of time?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964548">3. How much of a problem did any of these cause you - like being unable to work; having family, money, or legal troubles; getting into arguments or fights?</content>
+                                    </td>
+                                    <td>Moderate problem</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td>09/18/2023</td>
+                                    <td>
+                                        <content ID="assessment964549">4. Have any of your blood relatives (ie, children, siblings, parents, grandparents, aunts, uncles) had manic-depressive illness or bipolar disorder?</content>
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td>NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td>09/18/2023 13:28:04</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">09/18/2023</td>
+                                    <td styleCode="Botrule">
+                                        <content ID="assessment964550">5. Has a health professional ever told you that you have manic-depressive illness or bipolar disorder?</content>
+                                    </td>
+                                    <td styleCode="Botrule">No</td>
+                                    <td styleCode="Botrule">ANDREA SMITH-HAWTHORNE, LMSW
+                      
+                    </td>
+                                    <td styleCode="Botrule">NY - NORTH COUNTRY FAMILY HEALTH CENTER </td>
+                                    <td styleCode="Botrule">09/18/2023 13:28:04</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br/>
+                        <paragraph>No Mental SDOH screeners recorded</paragraph>
+                    </text>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.69"/>
+                            <id root="c347b1ea-79f9-4fcb-a932-d1e9b0a475f0"/>
+                            <code code="55757-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20230918132618-0400"/>
+                            <value value="2" xsi:type="INT"/>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="6bbfc48b-b089-4143-b0d0-4fe608cb7a30"/>
+                                    <code code="55758-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Patient Health Questionnaire 2 item (PHQ-2) total score [Reported]"/>
+                                    <text>
+                                        <reference value="#screener75759"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20230918132618-0400"/>
+                                    <value value="2" xsi:type="INT"/>
+                                </observation>
+                            </entryRelationship>
+                        </observation>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.69"/>
+                            <id root="772b6136-8611-4c5a-bad5-5adb82348534"/>
+                            <code code="69737-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20230918132644-0400"/>
+                            <value value="18" xsi:type="INT"/>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="250ccc20-b73c-4d9f-8837-ff1efc78e50d"/>
+                                    <code code="70274-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Generalized anxiety disorder 7 item (GAD-7) total score [Reported.PHQ]"/>
+                                    <text>
+                                        <reference value="#screener75760"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20230918132644-0400"/>
+                                    <value value="18" xsi:type="INT"/>
+                                </observation>
+                            </entryRelationship>
+                        </observation>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <observation classCode="OBS" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.69"/>
+                            <id root="3f1ad049-c886-466a-87c1-403a58304ae7"/>
+                            <code code="85102-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20230918132804-0400"/>
+                            <value xsi:type="CD"/>
+                            <entryRelationship typeCode="COMP">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.86"/>
+                                    <id root="0557691c-b9b0-493d-bb3b-7caaf375ae9b"/>
+                                    <code code="84773-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Total score [MDQ]"/>
+                                    <text>
+                                        <reference value="#screener75761"/>
+                                    </text>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20230918132804-0400"/>
+                                    <value xsi:type="CD"/>
+                                </observation>
+                            </entryRelationship>
+                        </observation>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.15"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.15"/>
+                    <id root="89ff54bb-1510-4092-9930-3e4933d2a097"/>
+                    <code code="10157-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Family History"/>
+                    <title>Family History</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Relationship</th>
+                                    <th>Description</th>
+                                    <th>Onset Age</th>
+                                    <th>Died of this Age</th>
+                                    <th>Resolved Age</th>
+                                    <th>Notes</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">Father</td>
+                                    <td styleCode="Botrule">No current problems or disability</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">eallen117</td>
+                                    <td styleCode="Botrule">Not available</td>
+                                    <td styleCode="Botrule">09/19/2022 13:22:44</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">Mother</td>
+                                    <td styleCode="Botrule">No current problems or disability</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">eallen117</td>
+                                    <td styleCode="Botrule">Not available</td>
+                                    <td styleCode="Botrule">09/19/2022 13:22:44</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                    <entry typeCode="DRIV">
+                        <organizer classCode="CLUSTER" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.45"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.45"/>
+                            <id root="1eead3e0-5c78-45f8-a03c-870323096568"/>
+                            <statusCode code="completed"/>
+                            <subject>
+                                <relatedSubject classCode="PRS">
+                                    <code code="PRN" codeSystem="2.16.840.1.113883.5.111" codeSystemName="HL7RoleCode" displayName="Father"/>
+                                    <subject>
+                                        <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1"/>
+                                    </subject>
+                                </relatedSubject>
+                            </subject>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.46"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.46"/>
+                                    <id root="0b90568e-757e-4088-87df-20ceeb20dde1"/>
+                                    <code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem">
+                                        <translation code="55607006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Problem"/>
+                                    </code>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20220919132244"/>
+                                    <value code="160245001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="No current problems or disability" xsi:type="CD"/>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                    <entry typeCode="DRIV">
+                        <organizer classCode="CLUSTER" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.45"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.45"/>
+                            <id root="cc47f205-64a7-4bb7-ae2a-c1b117fdc7fb"/>
+                            <statusCode code="completed"/>
+                            <subject>
+                                <relatedSubject classCode="PRS">
+                                    <code code="PRN" codeSystem="2.16.840.1.113883.5.111" codeSystemName="HL7RoleCode" displayName="Mother"/>
+                                    <subject>
+                                        <administrativeGenderCode code="F" codeSystem="2.16.840.1.113883.5.1"/>
+                                    </subject>
+                                </relatedSubject>
+                            </subject>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.46"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.46"/>
+                                    <id root="e1338aff-0893-4b7b-8ae4-98d272065a74"/>
+                                    <code code="75326-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem">
+                                        <translation code="55607006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Problem"/>
+                                    </code>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime value="20220919132244"/>
+                                    <value code="160245001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="No current problems or disability" xsi:type="CD"/>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.39"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.39"/>
+                    <code code="11329-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Medical History</title>
+                    <text>
+      
+        No medical history recorded.
+      
+      
+    </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.2.1"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.2.1"/>
+                    <id root="51dbccc4-6c9d-4981-9914-9832b32a7933"/>
+                    <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of immunizations"/>
+                    <title>Immunizations</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Vaccine Type</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Note</th>
+                                    <th>Provider Name and Address</th>
+                                    <th>Organization Details</th>
+                                    <th>Recorded Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="immun1">COVID-19, mRNA, LNP-S, bivalent, PF, 30 mcg/0.3 mL dose</content>
+                                    </td>
+                                    <td styleCode="Botrule">11/27/2025</td>
+                                    <td styleCode="Botrule">completed</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">Not Available</td>
+                                    <td styleCode="Botrule">AthenaHealth </td>
+                                    <td styleCode="Botrule">12/11/2025 13:35:32</td>
+                                </tr>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="immun2">Influenza, split virus, quadrivalent, PF</content>
+                                    </td>
+                                    <td styleCode="Botrule">10/02/2023</td>
+                                    <td styleCode="Botrule">completed</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">Not Available</td>
+                                    <td styleCode="Botrule">AthenaHealth </td>
+                                    <td styleCode="Botrule">12/11/2025 13:35:32</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                    <entry>
+                        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52"/>
+                            <id root="e57bf4e1-1f41-4bc5-899d-b9782a75a2cf"/>
+                            <text>
+                                <reference value="#immun1"/>
+                            </text>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20251127"/>
+                            <routeCode nullFlavor="OTH">
+                                <translation code="78421000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Intramuscular use"/>
+                            </routeCode>
+                            <approachSiteCode code="16217701000119102" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Structure of left deltoid muscle"/>
+                            <doseQuantity unit="mL" value="0.3"/>
+                            <consumable>
+                                <manufacturedProduct classCode="MANU">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.54"/>
+                                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54"/>
+                                    <manufacturedMaterial>
+                                        <code code="300" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CVX" displayName="COVID-19, mRNA, LNP-S, bivalent, PF, 30 mcg/0.3 mL dose">
+                                            <originalText>
+                    COVID-19, mRNA, LNP-S, bivalent, PF, 30 mcg/0.3 mL dose
+                  </originalText>
+                                        </code>
+                                        <lotNumberText>
+                    FF2588
+                  </lotNumberText>
+                                    </manufacturedMaterial>
+                                    <manufacturerOrganization classCode="ORG">
+                                        <name>Pfizer, Inc</name>
+                                    </manufacturerOrganization>
+                                </manufacturedProduct>
+                            </consumable>
+                            <author>
+                                <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
+                                <time value="20251211133532-0500"/>
+                                <assignedAuthor>
+                                    <id root="2.16.840.1.113883.4.6"/>
+                                    <representedOrganization>
+                                        <id nullFlavor="UNK" root="f7bbe2de-41f2-4285-82a6-5412cfee5db3"/>
+                                        <name>AthenaHealth</name>
+                                        <telecom nullFlavor="NI"/>
+                                    </representedOrganization>
+                                </assignedAuthor>
+                            </author>
+                        </substanceAdministration>
+                    </entry>
+                    <entry>
+                        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+                            <templateId root="2.16.840.1.113883.10.20.22.4.52"/>
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.52"/>
+                            <id root="1d863b71-0700-4808-86b2-9658418f61bb"/>
+                            <text>
+                                <reference value="#immun2"/>
+                            </text>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20231002"/>
+                            <routeCode nullFlavor="OTH">
+                                <translation code="78421000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Intramuscular use"/>
+                            </routeCode>
+                            <approachSiteCode code="16217701000119102" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Structure of left deltoid muscle"/>
+                            <doseQuantity unit="mL" value="0.5"/>
+                            <consumable>
+                                <manufacturedProduct classCode="MANU">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.54"/>
+                                    <templateId extension="2014-06-09" root="2.16.840.1.113883.10.20.22.4.54"/>
+                                    <manufacturedMaterial>
+                                        <code code="150" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CVX" displayName="Influenza, split virus, quadrivalent, PF">
+                                            <originalText>
+                    Influenza, split virus, quadrivalent, PF
+                  </originalText>
+                                        </code>
+                                        <lotNumberText>
+                    946605
+                  </lotNumberText>
+                                    </manufacturedMaterial>
+                                    <manufacturerOrganization classCode="ORG">
+                                        <name>Seqirus</name>
+                                    </manufacturerOrganization>
+                                </manufacturedProduct>
+                            </consumable>
+                            <author>
+                                <templateId root="2.16.840.1.113883.10.20.22.4.119"/>
+                                <time value="20251211133532-0500"/>
+                                <assignedAuthor>
+                                    <id root="2.16.840.1.113883.4.6"/>
+                                    <representedOrganization>
+                                        <id nullFlavor="UNK" root="28157966-f528-4379-ae10-e3a0ab051bbd"/>
+                                        <name>AthenaHealth</name>
+                                        <telecom nullFlavor="NI"/>
+                                    </representedOrganization>
+                                </assignedAuthor>
+                            </author>
+                        </substanceAdministration>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.22"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.22"/>
+                    <id root="f58aa94c-cb55-47e5-9d1a-df9f753a9782"/>
+                    <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+                    <title>Past Encounters</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Encounter ID</th>
+                                    <th>Performer</th>
+                                    <th>Location</th>
+                                    <th>Encounter Start Date</th>
+                                    <th>Encounter Closed Date</th>
+                                    <th>Diagnosis/Indication</th>
+                                    <th>Diagnosis SNOMED-CT Code</th>
+                                    <th>Diagnosis ICD10 Code</th>
+                                    <th>Diagnosis IMO Codes</th>
+                                    <th>Diagnosis Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">
+                                        <content ID="encounter973172">973172</content>
+                                    </td>
+                                    <td styleCode="Botrule">Diane Keating Jones, DO </td>
+                                    <td styleCode="Botrule">
+                                        Main Campus Medical
+                        
+                                        <paragraph>238 Arsenal St</paragraph>
+                                        <paragraph>Watertown, NY 13601-2504</paragraph>
+                                    </td>
+                                    <td styleCode="Botrule">12/11/2025 13:35:01</td>
+                                    <td styleCode="Botrule">12/11/2025 13:39:46</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                    <entry>
+                        <encounter classCode="ENC" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.49"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.49"/>
+                            <id root="065a77b3-5741-4de1-9842-e81273cc9b03"/>
+                            <code codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4" nullFlavor="NI"/>
+                            <text>
+                                <reference value="#encounter973172"/>
+                            </text>
+                            <effectiveTime>
+                                <low value="20251211133501-0500"/>
+                                <high value="20251211133946-0500"/>
+                            </effectiveTime>
+                            <participant typeCode="LOC">
+                                <participantRole classCode="SDLOC">
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.32"/>
+                                    <code codeSystem="2.16.840.1.113883.6.259" codeSystemName="Healthcare Service Location (HL7)" nullFlavor="NI"/>
+                                    <addr use="WP">
+                                        <streetAddressLine>238 Arsenal St</streetAddressLine>
+                                        <city>Watertown</city>
+                                        <state>NY</state>
+                                        <postalCode>13601-2504</postalCode>
+                                        <country>US</country>
+                                    </addr>
+                                    <telecom use="WP" value="tel: (315) 782-9450"/>
+                                    <playingEntity classCode="PLC">
+                                        <name> - Main Campus Medical</name>
+                                    </playingEntity>
+                                </participantRole>
+                            </participant>
+                        </encounter>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section nullFlavor="NI">
+                    <templateId root="2.16.840.1.113883.10.20.22.2.60"/>
+                    <id root="c4ad6aa0-1193-44bc-a635-40b629595009"/>
+                    <code code="61146-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Goals"/>
+                    <title>Goals Section</title>
+                    <text>
+    
+      None Recorded
+    
+  </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <!-- Health Concern section -->
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.58"/>
+                    <code code="75310-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Health Concerns Document"/>
+                    <title>Health Concerns Section</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Related Observation</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>None Recorded</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Concern</th>
+                                    <th>Status</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>None Recorded</td>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>SDOH Concern</th>
+                                    <th>Status</th>
+                                    <th>LastModified by</th>
+                                    <th>Organization Details</th>
+                                    <th>LastModified Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>None Recorded</td>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                    <entry>
+                        <!-- Health Concern Act  -->
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.132"/>
+                            <templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.4.132"/>
+                            <id root="3420f3d8-c328-46d0-9a52-22269334aa7b"/>
+                            <code code="75310-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Health Concern"/>
+                            <statusCode code="completed"/>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.18"/>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.18"/>
+                    <code code="48768-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Payers"/>
+                    <title>Payers</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Encounter Date</th>
+                                    <th>Sequence</th>
+                                    <th>Insurance Name</th>
+                                    <th>Policy Number</th>
+                                    <th>Policy Holder</th>
+                                    <th>Covered Member ID</th>
+                                    <th>Holder Member ID</th>
+                                    <th>Guarantor Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td styleCode="Botrule">12/11/2025</td>
+                                    <td styleCode="Botrule">1</td>
+                                    <td styleCode="Botrule">*SELF PAY*</td>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule"/>
+                                    <td styleCode="Botrule">Patient  Test</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                    <entry typeCode="DRIV">
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId extension="2023-05-01" root="2.16.840.1.113883.10.20.22.4.60"/>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.60"/>
+                            <id root="1836a509-0adf-4800-996d-7e56d8323d96"/>
+                            <code code="48768-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Payment sources"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20220919"/>
+                            <entryRelationship typeCode="COMP">
+                                <sequenceNumber value="1"/>
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId extension="2023-05-01" root="2.16.840.1.113883.10.20.22.4.61"/>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.61"/>
+                                    <id root="2a52bc59-1be0-4681-a0e4-e85bebb380c5"/>
+                                    <code code="OT" codeSystem="2.16.840.1.113883.6.255.1336" codeSystemName="Insurance Type Code (x12N-1336)" displayName="Other">
+                                        <translation codeSystem="2.16.840.1.113883.3.221.5" codeSystemName="Source of Payment Typology (PHDSC)" nullFlavor="NI"/>
+                                    </code>
+                                    <statusCode code="completed"/>
+                                    <performer typeCode="PRF">
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.87"/>
+                                        <assignedEntity>
+                                            <id extension="0" root="4b8a7759-e618-4171-8140-6bfb0da3b5b0"/>
+                                            <code code="PAYOR" codeSystem="2.16.840.1.113883.5.110" codeSystemName="HL7RoleCode" displayName="Invoice Payor"/>
+                                            <addr use="WP">
+                                                <streetAddressLine nullFlavor="NI"/>
+                                                <city nullFlavor="NI"/>
+                                                <state nullFlavor="NI"/>
+                                                <postalCode nullFlavor="NI"/>
+                                                <country nullFlavor="NI"/>
+                                            </addr>
+                                            <telecom nullFlavor="NI"/>
+                                            <representedOrganization>
+                                                <name>*SELF PAY*</name>
+                                                <telecom nullFlavor="NI"/>
+                                                <addr use="WP">
+                                                    <streetAddressLine nullFlavor="NI"/>
+                                                    <city nullFlavor="NI"/>
+                                                    <state nullFlavor="NI"/>
+                                                    <postalCode nullFlavor="NI"/>
+                                                    <country nullFlavor="NI"/>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedEntity>
+                                    </performer>
+                                    <performer typeCode="PRF">
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.88"/>
+                                        <assignedEntity>
+                                            <id root="46046425-5adb-4d72-a556-5788a99c4eb3"/>
+                                            <code code="GUAR" codeSystem="2.16.840.1.113883.5.110" codeSystemName="HL7RoleClass" displayName="Guarantor"/>
+                                            <addr use="HP">
+                                                <streetAddressLine>238 Arsenal St</streetAddressLine>
+                                                <city>WATERTOWN</city>
+                                                <state>NY</state>
+                                                <postalCode>13601</postalCode>
+                                                <country>USA</country>
+                                            </addr>
+                                            <telecom nullFlavor="NI"/>
+                                        </assignedEntity>
+                                    </performer>
+                                    <participant typeCode="COV">
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.89"/>
+                                        <participantRole>
+                                            <id root="9f5046d3-eda6-408b-af23-8203d55bb3b5"/>
+                                            <code code="UNK" codeSystem="2.16.840.1.113883.5.111" codeSystemName="HL7RoleCode" displayName="Unknown"/>
+                                            <addr use="HP">
+                                                <streetAddressLine nullFlavor="NI"/>
+                                                <city nullFlavor="NI"/>
+                                                <state nullFlavor="NI"/>
+                                                <postalCode nullFlavor="NI"/>
+                                                <country nullFlavor="NI"/>
+                                            </addr>
+                                        </participantRole>
+                                    </participant>
+                                    <participant typeCode="HLD">
+                                        <templateId root="2.16.840.1.113883.10.20.22.4.90"/>
+                                        <participantRole>
+                                            <id root="03595770-27c6-4419-8266-b1612ad52080"/>
+                                            <addr use="HP">
+                                                <streetAddressLine nullFlavor="NI"/>
+                                                <city nullFlavor="NI"/>
+                                                <state nullFlavor="NI"/>
+                                                <postalCode nullFlavor="NI"/>
+                                                <country nullFlavor="NI"/>
+                                            </addr>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship typeCode="REFR">
+                                        <act classCode="ACT" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.19"/>
+                                            <id root="bcdf90bc-45c6-4acf-8107-97b1d556621c"/>
+                                            <code nullFlavor="NA"/>
+                                            <entryRelationship typeCode="SUBJ">
+                                                <procedure classCode="PROC" moodCode="PRMS">
+                                                    <code nullFlavor="NA"/>
+                                                </procedure>
+                                            </entryRelationship>
+                                        </act>
+                                    </entryRelationship>
+                                </act>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section nullFlavor="NI">
+                    <templateId root="2.16.840.1.113883.10.20.22.2.65"/>
+                    <id root="63618a18-3b52-4dd3-9361-3c34397ab489"/>
+                    <code code="34109-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Notes"/>
+                    <title>Notes</title>
+                    <text>
+    None Recorded
+    </text>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId extension="2019-07-01" root="2.16.840.1.113883.10.20.22.2.500"/>
+                    <templateId extension="2022-06-01" root="2.16.840.1.113883.10.20.22.2.500"/>
+                    <code code="85847-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Patient Care team information"/>
+                    <title>Care Team</title>
+                    <text>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Member ID</th>
+                                    <th>Specialty</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>None Recorded.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </text>
+                </section>
+            </component>
+        </structuredBody>
+    </component>
+</ClinicalDocument>

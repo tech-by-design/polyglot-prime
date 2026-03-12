@@ -57,6 +57,9 @@ public class QeAdminData {
     @CsvBindByName(column = "FACILITY_LAST_UPDATED")
     private String facilityLastUpdated;
 
+    @CsvBindByName(column = "VISIT_PART_2_FLAG")
+    private String visitPart2Flag;
+
     // Default constructor
     public QeAdminData() {
     }

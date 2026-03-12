@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Procedure;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.converters.csv.ProcedureConverter;
 import org.techbd.model.csv.QeAdminData;
@@ -33,9 +33,6 @@ import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 import org.techbd.util.csv.CsvConstants;
-
-import static org.mockito.Mockito.when;
-
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 
@@ -45,7 +42,7 @@ class ProcedureConverterTest {
     CodeLookupService codeLookupService;
     
     @Mock
-    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    DSLContext dslContext;
     
     @Mock
     AppLogger appLogger;

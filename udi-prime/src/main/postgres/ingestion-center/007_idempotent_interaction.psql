@@ -1,0 +1,579 @@
+/*FHIR Replay Process*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_bundles_to_replay(text, timestamptz, timestamptz);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_bundles_to_replay(text, timestamptz, timestamptz, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_bundles_to_replay(
+	p_replay_master_id TEXT,
+    start_time timestamptz DEFAULT NULL,
+    end_time timestamptz DEFAULT NULL,
+    p_tenant_id text DEFAULT NULL::text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_return jsonb := '{}'::jsonb;
+BEGIN
+    -- Step 1: Insert only new rows (prioritize Replay Error over Response Error)
+    WITH prioritized AS (
+        SELECT
+            bundle_id,
+            hub_interaction_id,
+            p_replay_master_id AS replay_master_id,
+            NULL::text AS replay_status,
+            NULL::text AS error_message,
+            NULL::jsonb AS elaboration,
+            fhir.created_at,
+            CURRENT_USER AS created_by,
+            'fhir_replay' AS provenance,
+            CASE 
+                WHEN nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+        WHERE fhir.to_state = 'FAIL'
+          AND fhir.bundle_id IS NOT NULL
+		  AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (fhir.nature = 'Forwarded HTTP Response Replay Error')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            fhir.nature = 'Forwarded HTTP Response Error'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = fhir.bundle_id
+						  AND sub.hub_interaction_id = fhir.hub_interaction_id
+		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
+		            )
+		            -- Apply date filter only for Response Error
+		            AND (
+		                (start_time IS NULL AND end_time IS NULL)
+		                OR (
+		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+				            AND fhir.created_at >= start_time
+				            AND fhir.created_at <= end_time
+		                )
+		            )
+		        )
+		     )
+		  -- Apply tenant_id filter
+          AND (p_tenant_id IS NULL OR fhir.tenant_id = p_tenant_id)
+    )
+    INSERT INTO techbd_udi_ingress.fhir_replay_details (
+        bundle_id,
+        hub_interaction_id,
+        replay_master_id,
+        replay_status,
+        error_message,
+        elaboration,
+        created_at,
+        created_by,
+        provenance
+    )
+    SELECT DISTINCT ON (bundle_id, hub_interaction_id)
+        bundle_id,
+        hub_interaction_id,
+        replay_master_id,
+        replay_status,
+        error_message,
+        elaboration,
+        CURRENT_TIMESTAMP,
+        created_by,
+        provenance
+    FROM prioritized
+    ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ON CONFLICT (bundle_id, hub_interaction_id, replay_master_id) DO NOTHING;
+
+    -- Step 2: Build JSON response (with the same prioritization condition)
+    WITH prioritized_json AS (
+        SELECT
+            rq.bundle_id,
+            rq.hub_interaction_id,
+            rq.tenant_id,
+            rq.source_type,
+            rq.uri,
+            rq.group_hub_interaction_id,
+            rq.source_hub_interaction_id,
+            rd.replay_status,
+            rd.error_message,
+			rq.created_at,
+			rq.nature,
+            CASE 
+                WHEN rq.nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN rq.nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request rq
+        LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
+          ON rq.bundle_id = rd.bundle_id
+         AND rq.hub_interaction_id = rd.hub_interaction_id
+        WHERE rq.to_state = 'FAIL'
+          AND rq.bundle_id IS NOT NULL
+          AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (rq.nature = 'Forwarded HTTP Response Replay Error')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            rq.nature = 'Forwarded HTTP Response Error'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = rq.bundle_id
+						  AND sub.hub_interaction_id = rq.hub_interaction_id
+		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
+		            )
+		            -- Apply date filter only for Response Error
+		            AND (
+		                (start_time IS NULL AND end_time IS NULL)
+		                OR (
+		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
+				            AND rq.created_at >= start_time
+				            AND rq.created_at <= end_time
+		                )
+		            )
+		        )
+		     )
+		  -- Apply tenant_id filter
+          AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
+    )
+    SELECT jsonb_build_object(
+        'bundle_count', COUNT(bundle_id),
+        'replay_master_id', p_replay_master_id,
+        'bundles', jsonb_agg(
+            jsonb_build_object(
+                'bundleid', bundle_id,
+				'created_at', created_at,
+				'nature', nature,
+                'interactionid', hub_interaction_id,
+                'tenantID', tenant_id,
+                'source', source_type,
+                'uri', uri,
+                'errorMessage', COALESCE(error_message::text, ''),
+                'groupInteractionId',
+                    CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
+                'zipInteractionID',
+                    CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END
+            )
+        )
+    )
+    INTO v_return
+    FROM (
+        SELECT DISTINCT ON (bundle_id, hub_interaction_id)
+            *
+        FROM prioritized_json
+        ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ) final_json;
+
+    RETURN COALESCE(v_return, jsonb_build_object(
+        'bundle_count', 0,
+        'replay_master_id', p_replay_master_id,
+        'bundles', '[]'::jsonb
+    ));
+END;
+$function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_payload_for_nyec(text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_payload_for_nyec(p_interaction_id TEXT) 
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$ 
+DECLARE
+    v_payload jsonb;
+BEGIN
+    SELECT payload
+    INTO v_payload
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature = 'Forward HTTP Request'
+      AND hub_interaction_id = p_interaction_id;
+
+    RETURN COALESCE(v_payload, '{}'::jsonb);
+END;
+$function$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, jsonb, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, text, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_fhir_replay_status(text, text, text, jsonb, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_fhir_replay_status(
+    p_interaction_id text,
+    p_status text,
+    p_error_message text DEFAULT NULL::text,
+    p_elaboration jsonb DEFAULT NULL::jsonb,
+    p_bundle_id text DEFAULT NULL::text,
+    p_replay_master_id text DEFAULT NULL::text
+) RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+	v_nyec_error_message TEXT := NULL;
+BEGIN
+	-- Get the error_message from sat_interaction_fhir_request table to update it in the nyec_error_message field of the fhir_replay_details table
+	SELECT error_message INTO v_nyec_error_message 
+	  FROM techbd_udi_ingress.sat_interaction_fhir_request 
+	 WHERE hub_interaction_id = p_interaction_id
+	   AND bundle_id = p_bundle_id 
+	   AND nature = 'Forwarded HTTP Response Replay Error'
+	   AND error_message IS NOT NULL; 
+
+	-- Update the replay status in fhir_replay_details table
+    UPDATE techbd_udi_ingress.fhir_replay_details
+    SET 
+        replay_status = p_status,
+        elaboration   = p_elaboration,
+        error_message = p_error_message,
+		nyec_error_message = v_nyec_error_message
+    WHERE hub_interaction_id = p_interaction_id
+	AND bundle_id = p_bundle_id 
+	AND replay_master_id = p_replay_master_id;
+
+    -- Check if any row was updated
+    IF NOT FOUND THEN
+        RETURN 'No record found for hub_interaction_id: ' 
+               || p_interaction_id 
+               || ' and replay_master_id: ' 
+               || p_replay_master_id;
+    END IF;
+
+    RETURN 'Updated successfully for hub_interaction_id: ' 
+           || p_interaction_id 
+           || ' and replay_master_id: ' 
+           || p_replay_master_id;
+END;
+$function$;
+/*End Of FHIR Replay Process*/
+
+
+/*****************************************************************************************************************
+-- Function to list all bundles with details which are not in 'COMPLETED' status within the given date range.
+******************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text, boolean);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_nyec_submission_failed_bundles(
+    p_start_time timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+    p_end_time timestamp with time zone DEFAULT NULL::timestamp with time ZONE, 
+    p_tenant_id text DEFAULT NULL::text,
+    p_includeDetails boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_return jsonb := '{}'::jsonb;
+BEGIN 
+    WITH prioritized_json AS (
+        SELECT
+            rq.bundle_id,
+            rq.hub_interaction_id,
+            rq.tenant_id,
+            rq.source_type,
+            rq.uri,
+            rq.group_hub_interaction_id,
+            rq.source_hub_interaction_id,
+            rd.replay_status,
+            rd.error_message AS rd_error_message,
+            rq.error_message AS rq_error_message,
+			rq.created_at,
+			rq.nature,
+			COALESCE(rq.replay_on, rq.created_at) AS submissionAttemptedDate,
+            CASE 
+                WHEN rq.nature = 'Forwarded HTTP Response Replay Error' THEN 2
+                WHEN rq.nature = 'Forwarded HTTP Response Error' THEN 1
+                ELSE 0
+            END AS priority
+        FROM techbd_udi_ingress.sat_interaction_fhir_request rq
+        LEFT JOIN techbd_udi_ingress.fhir_replay_details rd
+          ON rq.bundle_id = rd.bundle_id
+         AND rq.hub_interaction_id = rd.hub_interaction_id
+        WHERE rq.to_state = 'FAIL'
+          AND rq.bundle_id IS NOT NULL
+          AND (
+		        -- Case 1: Replay Error FAIL (always included)
+		        (rq.nature = 'Forwarded HTTP Response Replay Error')
+		
+		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
+		        OR (
+		            rq.nature = 'Forwarded HTTP Response Error'
+		            AND NOT EXISTS (
+		                SELECT 1
+		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+		                WHERE sub.bundle_id = rq.bundle_id
+						  AND sub.hub_interaction_id = rq.hub_interaction_id
+		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
+		            )		            
+		        )
+		     )
+		 -- Apply date filter
+         AND (rq.created_at >= p_start_time AND rq.created_at <= p_end_time)
+		 -- Apply tenant_id filter
+         AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
+    )
+    SELECT jsonb_build_object(
+        'bundle_count', COUNT(bundle_id),
+		'startDate', p_start_time,
+        'endDate', p_end_time,
+        'bundles', jsonb_agg(
+			CASE
+	            WHEN p_includeDetails THEN
+		            jsonb_build_object(
+		                'bundleid', bundle_id,
+						'created_at', created_at,
+						'nature', nature,
+		                'interactionid', hub_interaction_id,
+		                'tenantID', tenant_id,
+		                'source', source_type,
+		                'uri', uri,
+		                'errorMessage', COALESCE(rd_error_message::text, ''),
+		                'groupInteractionId', CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
+		                'zipInteractionID', CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END,
+		                'submissionAttemptedDate', submissionAttemptedDate,
+		                'submissionFailedReason', COALESCE(rd_error_message::text, rq_error_message::text, '')
+		            )
+				ELSE
+	                jsonb_build_object(
+	                    'bundleid', bundle_id,
+	                    'interactionid', hub_interaction_id
+	                )
+        	END
+        )
+    )
+    INTO v_return
+    FROM (
+        SELECT DISTINCT ON (bundle_id, hub_interaction_id)
+            *
+        FROM prioritized_json
+        ORDER BY bundle_id, hub_interaction_id, priority DESC
+    ) final_json;
+
+    RETURN 
+	    CASE 
+	        WHEN (v_return->>'bundle_count')::int > 0 THEN
+	            v_return
+	        ELSE
+	            jsonb_build_object(
+	                'bundle_count', 0,
+	                'startDate', p_start_time,
+	                'endDate', p_end_time,
+	                'bundles',
+	                jsonb_build_array(
+	                    format(
+	                        'No failed NYEC submission bundles found in the specified date range: %s to %s.',
+	                        p_start_time,
+	                        p_end_time
+	                    )
+	                )
+	            )
+	    END;
+END;
+$function$
+;
+
+
+/*****************************************************************************************************************
+-- Fetch latest OperationOutcome data by interactionId, bundleId, or tenantId
+--          with validation and tenant consistency checks
+******************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_operation_outcome_send_to_nyec(text, text, text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_operation_outcome_send_to_nyec(
+    p_interaction_id text,
+    p_bundle_id text,
+    p_tenant_id text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_exists boolean;
+    v_result jsonb;
+begin
+    ------------------------------------------------------------------
+    -- 1️ Atleast one parameter mandatory checking
+    ------------------------------------------------------------------
+    IF ((p_tenant_id IS NULL OR p_tenant_id = '') 
+          AND (p_bundle_id IS NULL OR p_bundle_id = '')
+             AND (p_interaction_id IS NULL OR p_interaction_id = ''))
+    THEN
+        RAISE EXCEPTION USING
+        ERRCODE = 'P0001',
+        MESSAGE = jsonb_build_object(
+            'error', jsonb_build_object(
+                'message', 'At least one parameter must be provided: interactionId, bundleId, or tenantId.',
+                'interactionId', NULL,
+                'bundleId', NULL,
+                'tenantId', NULL
+            )
+        )::text;
+    END IF;
+        
+    ------------------------------------------------------------------
+    -- 2 Tenant existence validation
+    ------------------------------------------------------------------
+    IF p_tenant_id IS NOT NULL AND p_tenant_id <> '' THEN
+        SELECT EXISTS (
+            SELECT DISTINCT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id_lower  = lower(p_tenant_id)
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'Invalid tenantId. No tenant found with the provided tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', NULL,
+                        'interactionId', NULL
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- 3 Tenant + Bundle mismatch
+    ------------------------------------------------------------------
+    IF (p_bundle_id IS NOT NULL AND p_bundle_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '') THEN
+
+        SELECT EXISTS (
+            SELECT DISTINCT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id_lower  = lower(p_tenant_id)
+              AND bundle_id = p_bundle_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. The provided bundleId does not belong to the specified tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', p_bundle_id,
+                        'interactionId', NULL
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+    ------------------------------------------------------------------
+    -- 4 Tenant + Interaction mismatch
+    ------------------------------------------------------------------
+    IF (p_interaction_id IS NOT NULL AND p_interaction_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> '') THEN
+
+        SELECT EXISTS (
+            SELECT DISTINCT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id_lower  = lower(p_tenant_id)
+              AND hub_interaction_id = p_interaction_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. The provided interactionId does not belong to the specified tenantId.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', NULL,
+                        'interactionId', p_interaction_id
+                    )
+                )::text;
+        END IF;
+    END IF;
+
+
+   ------------------------------------------------------------------
+    -- 5 Tenant + Interaction + bundle_id mismatch
+    ------------------------------------------------------------------
+    IF (p_interaction_id IS NOT NULL AND p_interaction_id <> ''
+       AND p_tenant_id IS NOT NULL AND p_tenant_id <> ''
+          AND p_bundle_id IS NOT NULL AND p_bundle_id <> '') THEN
+
+        SELECT EXISTS (
+            SELECT DISTINCT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request
+            WHERE tenant_id_lower  = lower(p_tenant_id)
+              AND hub_interaction_id = p_interaction_id
+              AND bundle_id = p_bundle_id
+        )
+        INTO v_exists;
+
+        IF NOT v_exists THEN
+            RAISE EXCEPTION USING
+                ERRCODE = 'P0001',
+                MESSAGE = jsonb_build_object(
+                    'error', jsonb_build_object(
+                        'message', 'No OperationOutcome found. No records were found for the given interaction and bundle ID in this tenant.',
+                        'tenantId', p_tenant_id,
+                        'bundleId', p_bundle_id,
+                        'interactionId', p_interaction_id
+                    )
+                )::text;
+        END IF;
+    END IF;
+    
+    SELECT
+    jsonb_build_object(
+        'bundleId', bundle_id,
+        'interactionId', hub_interaction_id,
+        'tenantId', tenant_id,
+        'bundleSubmittedToNyecAt', COALESCE(replay_on, created_at),
+        'replayStatus', replay_status,
+        'operationOutcome', operation_outcome
+    )
+    INTO v_result
+    FROM (
+    SELECT
+    r.bundle_id,
+    r.hub_interaction_id,
+    r.tenant_id_lower AS tenant_id,
+
+    -- From Forward HTTP Request only
+    MAX(r.created_at)
+        FILTER (WHERE r.nature = 'Forward HTTP Request')
+        AS created_at,
+
+    COALESCE(
+        jsonb_agg(oo)
+            FILTER (WHERE r.nature = 'Forward HTTP Request' AND oo IS NOT NULL),
+        '[]'::jsonb
+    ) AS operation_outcome,
+
+    -- From Forwarded HTTP Response Error only
+    MAX(r.replay_status)
+        FILTER (WHERE r.nature = 'Forwarded HTTP Response Error')
+        AS replay_status,
+
+    MAX(r.replay_on)
+        FILTER (WHERE r.nature = 'Forwarded HTTP Response Error')
+        AS replay_on
+
+FROM techbd_udi_ingress.sat_interaction_fhir_request r
+LEFT JOIN LATERAL jsonb_path_query(
+    r.payload,
+    '$.entry[*].resource ? (@.resourceType == "OperationOutcome")'
+) AS oo ON TRUE
+WHERE r.nature IN (
+    'Forward HTTP Request',
+    'Forwarded HTTP Response Error'
+)
+AND (p_interaction_id IS NULL OR r.hub_interaction_id = p_interaction_id)
+AND (p_bundle_id IS NULL OR r.bundle_id = p_bundle_id)
+AND (p_tenant_id IS NULL OR r.tenant_id_lower = lower(p_tenant_id))
+GROUP BY
+    r.bundle_id,
+    r.hub_interaction_id,
+    r.tenant_id_lower
+) t
+ORDER BY t.created_at DESC NULLS LAST
+LIMIT 1;
+
+RETURN v_result;
+END;
+$function$;

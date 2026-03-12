@@ -19,13 +19,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.checkerframework.checker.units.qual.m;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -62,17 +63,34 @@ public class CsvBundleProcessorService {
     private final FHIRService fhirService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final CoreAppConfig coreAppConfig;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,
-    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
+    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, @Qualifier("primaryDslContext") final DSLContext primaryDslContext,AppLogger appLogger) {
         this.csvToFhirConverter = csvToFhirConverter;
         this.fhirService = fhirService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreAppConfig = coreAppConfig;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;
         this.LOG = appLogger.getLogger(CsvBundleProcessorService.class);
     }
+
+    private static final Map<String, String> DESCRIPTION_MAP = Map.ofEntries(
+            Map.entry("invalid-prefix", "Filenames must start with one of the following prefixes: "),
+            Map.entry("incomplete-group-due-to-encoding", "Not processed as other files in the group were not UTF-8 encoded"),
+            Map.entry("wrong-encoding", "File is not UTF-8 encoded"),
+            Map.entry("invalid-content-null-bytes", "File contains null bytes"),
+            Map.entry("invalid-content-control", "File contains control characters"),
+            Map.entry("invalid-content-surrogates", "File contains invalid surrogate characters"),
+            Map.entry("invalid-content-noncharacters", "File contains Unicode non-characters"),
+            Map.entry("invalid-content-whitespace", "File contains problematic whitespace characters"),
+            Map.entry("invalid-content-format", "File contains invisible format characters"),
+            Map.entry("invalid-content-zero-width", "File contains zero-width characters"),
+            Map.entry("invalid-content-bom-middle", "File contains a Byte Order Mark (BOM) in the middle of the content"),
+            Map.entry("invalid-content-private-use", "File contains private-use area Unicode characters"),
+            Map.entry("invalid-content-other", "File contains invalid characters"),
+            Map.entry("content validation errors", "Not processed as other files in the group have content validation errors")
+        );
 
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
@@ -142,7 +160,7 @@ public class CsvBundleProcessorService {
             } catch (final Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
                 metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
-                final Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
+                final Map<String, Object> errors = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, groupInteractionId, "",
                         "", e, provenance,outcome.fileDetails(),requestParameters);                                
                 DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
                 CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
@@ -186,13 +204,13 @@ public class CsvBundleProcessorService {
         additionalDetails.put("isValid", outcome.isValid());
         return additionalDetails;
     }
+    @Transactional
     private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
             final String masterInteractionId, final Map<String,Object> requestParameters,CsvProcessingMetrics metrics) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         //final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
-        final var dslContext = coreUdiPrimeJpaConfig.dsl();
-        final var jooqCfg = dslContext.configuration();
+        final var jooqCfg = primaryDslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {
@@ -208,6 +226,17 @@ public class CsvBundleProcessorService {
             initRIHR.setPTotalNumberOfFilesInZipFile(metrics.getTotalNumberOfFilesInZipFile());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?
                     (JsonNode) Configuration.objectMapper.valueToTree(miscError):null);
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setUserAgent(userAgent);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -261,6 +290,7 @@ public class CsvBundleProcessorService {
                 "description", validationDescription));
     }
 
+    @Transactional
     private void saveFhirConversionStatus(final boolean isValid, final String masterInteractionId, final String groupKey,
             final String groupInteractionId, final String interactionId, final Map<String,Object> requestParameters,
             final String payload, final Map<String, Object> operationOutcome,
@@ -271,8 +301,7 @@ public class CsvBundleProcessorService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionCsvRequest();
         try {
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDslContext.configuration();
             initRIHR.setPOrigin("http");
             initRIHR.setPInteractionId(groupInteractionId);
             initRIHR.setPGroupHubInteractionId(groupInteractionId);
@@ -287,6 +316,17 @@ public class CsvBundleProcessorService {
                     : Configuration.objectMapper.readTree(payload));
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCreatedBy(CsvService.class.getName());
+            // Extract and set client IP address and user agent for consistency with other services
+            String clientIpAddress = null;
+            if (requestParameters.containsKey(Constants.CLIENT_IP_ADDRESS)) {
+                clientIpAddress = (String) requestParameters.get(Constants.CLIENT_IP_ADDRESS);
+            }
+            initRIHR.setPClientIpAddress(clientIpAddress);
+            String userAgent = null;
+            if (requestParameters.containsKey(Constants.USER_AGENT)) {
+                userAgent = (String) requestParameters.get(Constants.USER_AGENT);
+            }
+            initRIHR.setPUserAgent(userAgent);
             initRIHR.setPFromState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             initRIHR.setPToState(StringUtils.isNotEmpty(payload) ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
@@ -381,7 +421,7 @@ private List<Object> processScreening(final String groupKey,
 
                     if (demographicList.isEmpty() || qeAdminList.isEmpty() || screeningObservationList.isEmpty()) {
                         final String errorMessage = String.format(
-                                "Data missing in one or more files for patientMrIdValue: %s",
+                                "Foreign Key Error : Data missing in one or more files for patientMrIdValue: %s",
                                 profile.getPatientMrIdValue());
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
@@ -408,26 +448,29 @@ private List<Object> processScreening(final String groupKey,
                                 null,
                                 null,
                                 null,
-                                (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL), // Cast to String, // Pass severity level
+                                (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL),
                                 null,
                                 null,
                                 updatedProvenance, null);
+                        
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
                             false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,(String) requestParameters.get(Constants.REQUEST_URI));
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
+                        // Ensure CUSTOM_DATA_LAKE_API key is present by reusing any existing value from requestParameters (avoids referencing undefined variable)
+                        requestParameters.put(Constants.CUSTOM_DATA_LAKE_API, requestParameters.get(Constants.CUSTOM_DATA_LAKE_API));
                         requestParameters.putAll(headers);
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,responseParameters));
-                        LOG.error("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
+                        LOG.info("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);        
                     } else {
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);
                         errorCount.incrementAndGet();
-                        final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                        final Map<String, Object> result = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
                                 new Exception("Bundle not created"),
                                 payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(),requestParameters);
@@ -445,7 +488,7 @@ private List<Object> processScreening(final String groupKey,
                 } catch (final Exception e) {
                     errorCount.incrementAndGet();
                     metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
-                    final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                    final Map<String, Object> result = CsvConversionUtil.createOperationOutcomeForError(coreAppConfig,masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
                             payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(),requestParameters);
                     String bundleId =CoreFHIRUtil.extractBundleId(bundle, tenantId);                                
@@ -479,49 +522,6 @@ private List<Object> processScreening(final String groupKey,
         return List.of(); // return an empty list if the input is null
     }
 
-    private Map<String, Object> createOperationOutcomeForError(
-            final String masterInteractionId,
-            final String groupInteractionId,
-            final String patientMrIdValue,
-            final String encounterId,
-            final Exception e,
-            final Map<String, Object> provenance,List<FileDetail> fileDetails,final Map<String, Object> requestParameters) {
-        if (e == null) {
-            return Collections.emptyMap();
-        }
-
-        final String diagnosticsMessage = "Error processing data for Master Interaction ID: " + masterInteractionId +
-                ", Interaction ID: " + groupInteractionId +
-                ", Patient MRN: " + patientMrIdValue +
-                ", EncounterID : " + encounterId +
-                ", Error: " + e.getMessage();
-
-        final String remediationMessage = "Error processing data.";
-                // Get severity level from header or use default
-            String severityLevel = coreAppConfig.getValidationSeverityLevel(); // Get default from config
-            if (requestParameters != null && requestParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
-                severityLevel = ((String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL)).toLowerCase();
-            }
-
-        final Map<String, Object> errorDetails = Map.of(
-                "type", "processing-error",
-                "severity", severityLevel,
-                "description", remediationMessage,
-                "message", diagnosticsMessage);
-
-        return Map.of(
-                "masterInteractionId", masterInteractionId,
-                "groupInteractionId", groupInteractionId,
-                Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
-                "patientMrId", patientMrIdValue,
-                "encounterId", encounterId,
-                "provenance", provenance,
-                "fileDetails", fileDetails,
-                "validationResults", Map.of(
-                        "errors", List.of(errorDetails),
-                        "resourceType", "OperationOutcome")
-                        );
-    }
     public Map<String, Object> createOperationOutcomeForFileNotProcessed(
         final String masterInteractionId,
         final List<FileDetail> filesNotProcessed,
@@ -537,11 +537,33 @@ private List<Object> processScreening(final String groupKey,
                     String reason = fd.reason();
                     if (reason == null || reason.contains("Invalid file prefix")) {
                         return "invalid-prefix|Invalid file prefix";
-                    } else if (reason.contains("Group blocked by")) {
+                    } else if (reason.contains("group have content validation errors")) {
+                        return "content validation errors|" + reason;
+                    } else if (reason.contains("group were not UTF-8 encoded")) {
                         return "incomplete-group-due-to-encoding|" + reason;
-                    } else if (reason.contains("not UTF-8 encoded")) {
+                    } else if (reason.contains("not valid UTF-8 encoded")) {
                         return "wrong-encoding|File is not UTF-8 encoded";
-                    } else {
+                    }else if (reason.contains("Null bytes")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    }else if (reason.contains("Control characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("surrogate")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Unicode non-characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Problematic whitespace")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Invisible format characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Zero-width characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    }else if (reason.contains("BOM character in middle")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.contains("Private use area characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;
+                    } else if (reason.startsWith("File contains invalid characters")) {
+                        return "Invalid characters|Invalid characters|" + reason;} 
+                    else {
                         return "unknown|Unknown reason";
                     }
                 }));
@@ -549,26 +571,21 @@ private List<Object> processScreening(final String groupKey,
         List<Map<String, Object>> errors = new ArrayList<>();
     
         for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
-            String[] keyParts = entry.getKey().split("\\|", 2);
+            String[] keyParts = entry.getKey().split("\\|", 3);
             String subType = keyParts[0];
             String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
-    
-            String description;
-            switch (subType) {
-                case "invalid-prefix":
-                    description = "Filenames must start with one of the following prefixes: " +
-                            Arrays.stream(FileType.values())
-                                    .map(Enum::name)
-                                    .collect(Collectors.joining(", "));
-                    break;
-                case "incomplete-group-due-to-encoding":
-                    description = "Not processed as other files in the group were not UTF-8 encoded";
-                    break;
-                case "wrong-encoding":
-                    description = "File is not UTF-8 encoded";
-                    break;
-                default:
-                    description = "Unknown reason";
+            String errorDetail = (keyParts.length > 2 && keyParts[2] != null) ? keyParts[2] : "";
+            String description = DESCRIPTION_MAP.getOrDefault(subType, "Unknown reason");
+
+            // Special handling for invalid-prefix (dynamic list)
+            if ("invalid-prefix".equals(subType)) {
+                description += Arrays.stream(FileType.values())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+            }
+            // Append detail if present & not for invalid-prefix
+            if (!errorDetail.isEmpty() && !"invalid-prefix".equals(subType)) {
+                description = errorDetail;
             }
     
             List<String> filenames = entry.getValue().stream()

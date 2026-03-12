@@ -6,12 +6,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,9 +39,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.fhir.FHIRService;
+import org.techbd.service.fhir.FhirReplayService;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
@@ -62,13 +71,15 @@ public class FhirController {
         private final OrchestrationEngine engine;
         private final CoreAppConfig appConfig;
         private final CoreDataLedgerApiClient dataLedgerApiClient;
-        private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+        private final DSLContext primaryDslContext;
         private final FHIRService fhirService;
+        private final FhirReplayService fhirReplayService;
         private final Tracer tracer;
 
         public FhirController(final Tracer tracer,final OrchestrationEngine engine,
-        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService
-        ,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) throws IOException {
+        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,
+        final FHIRService fhirService, final FhirReplayService fhirReplayService
+        ,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) throws IOException {
                 // String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
                 // appConfig = ConfigLoader.loadConfig(activeProfile);
                 // this.fhirService = new FHIRService();
@@ -83,7 +94,8 @@ public class FhirController {
                 this.fhirService = fhirService;
                 this.dataLedgerApiClient = dataLedgerApiClient;
                 this.tracer = tracer;
-                this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+                this.primaryDslContext = primaryDslContext;
+                this.fhirReplayService = fhirReplayService;
         }
 
         @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -308,9 +320,8 @@ public class FhirController {
         public Object bundleStatus(
                         @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true) @PathVariable String bundleSessionId,
                         final Model model, HttpServletRequest request) {
-                final var jooqDSL = coreUdiPrimeJpaConfig.dsl();
                 try {
-                        final var result = jooqDSL.select()
+                        final var result = primaryDslContext.select()
                                         .from(INTERACTION_HTTP_REQUEST)
                                         .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(bundleSessionId))
                                         .fetch();
@@ -361,6 +372,152 @@ public class FhirController {
                 }
         }
 
+        @PostMapping(value = { "/Bundle/replay", "/Bundle/replay/" })
+        @Operation(summary = "Replay FHIR Bundles between a date or datetime range", description = """
+                        Accepts startDate and endDate
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Replay triggered successfully."),
+                        @ApiResponse(responseCode = "400", description = "Invalid or missing parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object replayBundles(
+                        @RequestHeader("X-TechBD-StartDate") String startDateStr,
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId, HttpServletRequest request) {
+
+                UUID interactionId = UUID.randomUUID();
+                 try {
+                         if (startDateStr.equals(endDateStr)) {
+                                 throw new IllegalArgumentException(
+                                                 "startDate cannot be same as endDate for interactionId: "
+                                                                 + interactionId);
+                         }
+                        OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
+                        OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
+
+                        if (endDate.isBefore(startDate)) {
+                                throw new IllegalArgumentException(
+                                                "endDate cannot be before startDate for interactionId: "
+                                                                + interactionId);
+                        }
+
+                        LOG.info("Replaying Bundles from {} to {} for interactionId {}", startDate, endDate,
+                                        interactionId);
+
+                        return fhirReplayService.replayBundles(request,interactionId.toString(), startDate, endDate,tenantId);
+
+                } catch (DateTimeParseException e) {
+                        LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for interactionId {}",
+                                        startDateStr, endDateStr, interactionId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message",
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                } 
+        }
+
+        @GetMapping(value = { "/Bundles/status/nyec-submission-failed", "/Bundles/status/nyec-submission-failed/" })
+        @Operation(summary = "Retrieve FHIR Bundles that failed NYEC submission", description = """
+                        Fetches bundles that failed NYEC submission within the specified date/datetime range.
+                        Optionally filter by tenant ID.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved failed bundles."),
+                        @ApiResponse(responseCode = "400", description = "Invalid or missing parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getFailedNyecSubmissions(
+                        @RequestHeader("X-TechBD-StartDate") String startDateStr,
+                        @RequestHeader("X-TechBD-EndDate") String endDateStr,
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = false) String tenantId,
+                        @RequestHeader(value = "X-TechBD-IncludeDetails", required = false) boolean includeDetails,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+
+                try {
+                        if (startDateStr.equals(endDateStr)) {
+                                throw new IllegalArgumentException(
+                                                "startDate cannot be same as endDate for requestId: " + requestId);
+                        }
+                        OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
+                        OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
+
+                        // Validate date range
+                        if (endDate.isBefore(startDate)) {
+                                throw new IllegalArgumentException(
+                                                "endDate cannot be before startDate for requestId: " + requestId);
+                        }
+
+                        LOG.info("Fetching failed NYEC submissions from {} to {} for requestId {} | tenantId={}",
+                                        startDate, endDate, requestId, tenantId != null ? tenantId : "ALL");
+                        return fhirReplayService.getFailedNyecSubmissionBundles(
+                                        startDate,
+                                        endDate,tenantId,includeDetails);
+
+                } catch (DateTimeParseException e) {
+                        LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for requestId {}",
+                                        startDateStr, endDateStr, requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message",
+                                        "Invalid date-time format. Expected one of: yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                                        "requestId", requestId.toString());
+                } catch (IllegalArgumentException e) {
+                        LOG.error("Validation error for requestId {}: {}", requestId, e.getMessage());
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", e.getMessage(),
+                                        "requestId", requestId.toString());
+                } catch (Exception e) {
+                        LOG.error("Unexpected error fetching failed NYEC submissions for requestId {}", requestId, e);
+                        return Map.of(
+                                        "status", "Error",
+                                        "message", "An unexpected error occurred while fetching failed submissions",
+                                        "requestId", requestId.toString());
+                }
+        }
+
+        private OffsetDateTime parseFlexibleDate(String input, boolean isStart) {
+                if (input == null || input.isBlank()) {
+                        throw new IllegalArgumentException("Date value cannot be null or empty");
+                }
+
+                List<DateTimeFormatter> formatters = List.of(
+                                DateTimeFormatter.ISO_OFFSET_DATE_TIME, // 2025-09-09T16:16:42.248+05:30
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS Z"), // 2025-09-09 16:16:42.248
+                                                                                          // +0530
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"), // 2025-09-09 16:16:42
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd") // 2025-09-09
+                );
+
+                for (DateTimeFormatter fmt : formatters) {
+                        try {
+                                TemporalAccessor ta = fmt.parse(input);
+
+                                if (ta.isSupported(ChronoField.OFFSET_SECONDS)) {
+                                        // Input has timezone info
+                                        return OffsetDateTime.from(ta).withOffsetSameInstant(ZoneOffset.UTC);
+                                } else if (ta.isSupported(ChronoField.HOUR_OF_DAY)) {
+                                        // Date + time but no zone: assume UTC
+                                        return OffsetDateTime.parse(input + "Z",
+                                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSS]X"));
+                                } else {
+                                        // Date only: start or end of day in UTC
+                                        return isStart
+                                                        ? OffsetDateTime.parse(input + "T00:00:00Z")
+                                                        : OffsetDateTime.parse(input + "T23:59:59.999999999Z");
+                                }
+                        } catch (DateTimeParseException ignored) {
+                                // try next
+                        }
+                }
+                throw new DateTimeParseException("Unrecognized date format", input, 0);
+        }
+
         private void deleteJSessionCookie(HttpServletRequest request, HttpServletResponse response) {
                 // Delete the JSESSIONID cookie
                 Cookie cookie = new Cookie("JSESSIONID", null); // Set the cookie name
@@ -368,5 +525,42 @@ public class FhirController {
                 cookie.setPath("/"); // Set the same path as the original cookie
                 response.addCookie(cookie); // Add it to the response to delete
         }
+     
+        @GetMapping(value = { "/Bundles/status/operation-outcome", "/Bundles/status/operation-outcome/" })
+        @Operation(summary = "Retrieve OperationOutcome(s) for a Bundle or Interaction", description = """
+                        Fetches OperationOutcome resources for a given Bundle ID or Interaction ID.
+                        Exactly ONE of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.
+                        """)
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Successfully retrieved OperationOutcome(s)."),
+                        @ApiResponse(responseCode = "400", description = "Invalid request parameters."),
+                        @ApiResponse(responseCode = "500", description = "Internal error occurred.")
+        })
+        @ResponseBody
+        public Object getOperationOutcomes(
+                        @RequestHeader(value = "X-TechBD-Tenant-ID", required = true) String tenantId,
+                        @RequestHeader(value = "X-TechBD-Bundle-ID", required = false) String bundleId,
+                        @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,
+                        HttpServletRequest request) {
+
+                UUID requestId = UUID.randomUUID();
+                if (tenantId == null || tenantId.isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. TenantId is required.");
+                }
+                if (bundleId == null && interactionId == null) {
+                        throw new IllegalArgumentException(
+                                        "Invalid request. Either bundleId or interactionId is required.");
+                }
+
+                LOG.info(
+                                "Fetching OperationOutcome(s) for requestId={} | tenantId={} | bundleId={} | interactionId={}",
+                                requestId,
+                                tenantId != null ? tenantId : "ALL",
+                                bundleId,
+                                interactionId);
+                return fhirService.getOperationOutcomeSendToNyec(interactionId, bundleId, tenantId);
+        }
 
 }
+

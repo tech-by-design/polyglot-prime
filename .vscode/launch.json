@@ -10,5 +10,15 @@
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         },
+        {
+            "type": "java",
+            "name": "Spring Boot-NexusIngestionApiApplication<nexus-ingestion-api>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "org.techbd.ingest.NexusIngestionApiApplication",
+            "projectName": "nexus-ingestion-api",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
     ]
 }

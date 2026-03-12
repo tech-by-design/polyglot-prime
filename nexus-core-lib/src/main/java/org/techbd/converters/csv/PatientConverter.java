@@ -23,12 +23,12 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -44,8 +44,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(2)
 public class PatientConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public PatientConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public PatientConverter(CodeLookupService codeLookupService,final DSLContext primaryDslContext, AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         LOG = appLogger.getLogger(PatientConverter.class);
     }
 
@@ -83,7 +83,11 @@ public class PatientConverter extends BaseConverter {
                 .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
                         demographicData.getPatientMrIdValue())));
         idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Patient/" + patient.getId();
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String fullUrl = baseUrl + "/Patient/" + patient.getId();
         Meta meta = patient.getMeta();
         if (StringUtils.isNotEmpty(demographicData.getPatientLastUpdated())) {
             meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
@@ -91,11 +95,11 @@ public class PatientConverter extends BaseConverter {
             meta.setLastUpdated(new java.util.Date());
         }                                                                                         
         patient.setLanguage("en");
-        populatePatientWithExtensions(patient, demographicData, interactionId);
+        populatePatientWithExtensions(patient, demographicData, interactionId, baseUrl);
         populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
-        populatePatientName(patient, demographicData);
+        populatePatientName(patient, demographicData, baseUrl);
         populateAdministrativeSex(patient, demographicData, interactionId);
         populateBirthDate(patient, demographicData);
         populatePhone(patient, demographicData, interactionId);
@@ -106,13 +110,13 @@ public class PatientConverter extends BaseConverter {
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
-        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Patient/" + patient.getId()));
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl(baseUrl + "/Patient/" + patient.getId()));
         bundleEntryComponent.setResource(patient);
         LOG.info("PatientConverter :: convert  END for transaction id :{}", interactionId);
         return List.of(bundleEntryComponent);
     }
 
-    public void populatePatientWithExtensions(Patient patient,DemographicData demographicData, String interactionId) {
+    public void populatePatientWithExtensions(Patient patient,DemographicData demographicData, String interactionId, String baseUrl) {
         if (StringUtils.isNotEmpty(demographicData.getRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
 
@@ -152,9 +156,10 @@ public class PatientConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(demographicData.getEthnicityCode())) {
             String[] rawCodes = demographicData.getEthnicityCode().split(";");
             List<String> validCodes = Arrays.stream(rawCodes)
-                .map(String::trim)
-                .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)))
-                .collect(Collectors.toList());
+                    .map(String::trim)
+                    .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)
+                            || "asked-declined".equalsIgnoreCase(code)))
+                    .collect(Collectors.toList());
 
             if (!validCodes.isEmpty()) {
                 Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
@@ -208,7 +213,7 @@ public class PatientConverter extends BaseConverter {
             String[] codes = demographicData.getPersonalPronounsCode().split(";");
             String[] displays = StringUtils.defaultString(demographicData.getPersonalPronounsDescription()).split(";");
 
-            Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
+            Extension pronounsExtension = new Extension(baseUrl + "/StructureDefinition/shinny-personal-pronouns");
             CodeableConcept concept = new CodeableConcept();
 
             for (int i = 0; i < codes.length; i++) {
@@ -238,7 +243,7 @@ public class PatientConverter extends BaseConverter {
             String[] systems = StringUtils.defaultString(demographicData.getGenderIdentityCodeSystem()).split(";");
             String[] descriptions = StringUtils.defaultString(demographicData.getGenderIdentityCodeDescription()).split(";");
 
-            Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
+            Extension genderIdentityExtension = new Extension(baseUrl + "/StructureDefinition/shinny-gender-identity");
             CodeableConcept genderConcept = new CodeableConcept();
 
             for (int i = 0; i < rawCodes.length; i++) {
@@ -266,14 +271,14 @@ public class PatientConverter extends BaseConverter {
             }
         }
     }
-    private static Patient populatePatientName(Patient patient, DemographicData demographicData) {
+    private static Patient populatePatientName(Patient patient, DemographicData demographicData, String baseUrl) {
         HumanName name = new HumanName();
         if (demographicData.getGivenName() != null) {
             name.addGiven(demographicData.getGivenName());
         }
         if (demographicData.getMiddleName() != null) {
             Extension middleNameExtension = new Extension();
-            middleNameExtension.setUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name"); // TODO : remove
+            middleNameExtension.setUrl(baseUrl+ "/StructureDefinition/middle-name"); // TODO : remove
                                                                                                         // static
                                                                                                         // reference
             middleNameExtension.setValue(new StringType(demographicData.getMiddleName()));
@@ -441,7 +446,12 @@ public class PatientConverter extends BaseConverter {
                 .ifPresent(languageCode -> {
                     String langCode = fetchCode(languageCode, CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId);
                     Coding coding = new Coding();
-                    coding.setSystem(fetchSystem(langCode, data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
+                    //coding.setSystem(fetchSystem(langCode, data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
+                    // Temporary fix (#2571):
+                    // Hardcoding system to "urn:ietf:bcp:47" to avoid ambiguity caused by multiple
+                    // system mappings for the same language code (e.g., 'en') in DB.
+                    // This will be reverted once the SHINNY language system structure is finalized.
+                    coding.setSystem("urn:ietf:bcp:47");
                     coding.setCode(langCode);
                     coding.setDisplay(fetchDisplay(langCode, data.getPreferredLanguageCodeDescription(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
                     CodeableConcept language = new CodeableConcept();

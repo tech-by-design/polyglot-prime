@@ -109,9 +109,9 @@ public class VfsCoreService {
      * @return A UUID representing the session ID for the processing session.
      * @throws FileSystemException If there is an error during file processing.
      */
-    public UUID processFiles(VfsIngressConsumer consumer, FileObject targetDirectory) throws FileSystemException {
+    public UUID processFiles(VfsIngressConsumer consumer, FileObject targetDirectory,String zipFileInteractionId) throws FileSystemException {
 
-        UUID sessionId = UUID.randomUUID();
+        UUID sessionId = UUID.fromString(zipFileInteractionId);
         try {
             consumer.drain(targetDirectory, Optional.of(sessionId));
             logAuditEvents(consumer);

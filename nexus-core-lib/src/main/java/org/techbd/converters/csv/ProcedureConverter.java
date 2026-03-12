@@ -16,9 +16,9 @@ import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.joda.time.DateTime;
+import org.jooq.DSLContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -47,8 +47,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(7)
 public class ProcedureConverter extends BaseConverter {
     private final TemplateLogger LOG;
-    public ProcedureConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig, AppLogger appLogger) {
-        super(codeLookupService,coreUdiPrimeJpaConfig);
+    public ProcedureConverter(CodeLookupService codeLookupService,final DSLContext primaryDslContext, AppLogger appLogger) {
+        super(codeLookupService,primaryDslContext);
         LOG = appLogger.getLogger(ProcedureConverter.class);
     }
 
@@ -94,7 +94,7 @@ public class ProcedureConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(screeningProfileData.getProcedureCode())) {
             Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
             populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated, interactionId);
-            BundleEntryComponent entry = createBundleEntry(procedure);
+            BundleEntryComponent entry = createBundleEntry(procedure, baseFHIRUrl);
             return List.of(entry);
         } else {
             LOG.info(
@@ -124,8 +124,13 @@ public class ProcedureConverter extends BaseConverter {
         return encounterId + "_" + facilityId + "_" + procedureCode;
     }
 
-    private BundleEntryComponent createBundleEntry(Procedure procedure) {
-        String fullUrl = PROCEDURE_BASE_URL + procedure.getId();
+    private BundleEntryComponent createBundleEntry(Procedure procedure, String baseFHIRUrl) {
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        //String fullUrl = PROCEDURE_BASE_URL + procedure.getId();
+        String fullUrl = baseUrl + "/Procedure/" + procedure.getId();
 
         return new BundleEntryComponent()
                 .setFullUrl(fullUrl)

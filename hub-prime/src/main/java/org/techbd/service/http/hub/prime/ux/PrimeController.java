@@ -5,12 +5,14 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
-import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
@@ -35,18 +36,33 @@ import lib.aide.tabular.JooqRowsSupplier;
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
-    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final DSLContext primaryDslContext;
+    private DSLContext readerDslContext;
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
 
-    public PrimeController(final Presentation presentation, final UdiPrimeJpaConfig udiPrimeJpaConfig,
+    public PrimeController(final Presentation presentation,@Qualifier("primaryDslContext") DSLContext primaryDslContext,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.primaryDslContext = primaryDslContext;   
     }
 
+    @Autowired(required = false)
+    public void setReaderDslContext(@Qualifier("secondaryDslContext") DSLContext readerDslContext) {
+        LOG.info("READER INSTANCE CONFIGURED SUCCESSFULLY!!");
+        this.readerDslContext = readerDslContext;
+    }
+    
+    private DSLContext getDsl() {
+        if (readerDslContext != null) {
+            // LOG.info("READER INSTANCE - Exceuting Query");
+            return readerDslContext;
+        }
+        // LOG.info("WRITER INSTANCE - Exceuting Query");
+        return primaryDslContext;
+    }
     @GetMapping("/home")
     @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
@@ -71,72 +87,39 @@ public class PrimeController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
     }
 
-    // @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-    //         "application/json", "text/html" })
-    // public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
-    //     final var account = sftpManager.configuredTenant(tenantId);
-    //     if (account.isPresent()) {
-    //         final var content = sftpManager.tenantEgressContent(account.get(), 10);
-    //         final var mre = content.mostRecentEgress();
-
-    //         if ("html".equalsIgnoreCase(extension)) {
-    //             String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
-    //             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-    //                     .body(content.error() == null
-    //                             ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
-    //                                     content.directories().length,
-    //                                     mre,
-    //                                     timeAgo)
-    //                             : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri()));
-    //         } else if ("json".equalsIgnoreCase(extension)) {
-    //             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-    //         } else {
-    //             return ResponseEntity.badRequest().build();
-    //         }
-    //     } else {
-    //         if ("html".equalsIgnoreCase(extension)) {
-    //             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-    //                     .body("Unknown tenantId '%s'".formatted(tenantId));
-    //         } else if ("json".equalsIgnoreCase(extension)) {
-    //             return ResponseEntity.noContent().build();
-    //         } else {
-    //             return ResponseEntity.badRequest().build();
-    //         }
-    //     }
-    // }
-
     @GetMapping(value = "/dashboard/stat/fhir/most-recent/{tenantId}.{extension}", produces = {
             "application/json", "text/html" })
     public ResponseEntity<?> handleFHRequest(@PathVariable String tenantId, @PathVariable String extension) {
         String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_fhir";
+        String viewName = "interaction_recent_widget_new";
 
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))                
-                .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
+                 //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase())) 
+                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
+                         .and(typableTable.column("widget_name").cast(String.class).eq("FHIR"))
+                       )
                 .fetch()
                 .intoMaps();
 
         if (recentInteractions != null && recentInteractions.size() > 0) {
 
-            String mre = recentInteractions.get(0).get("interaction_created_at").toString();
+            String mre = recentInteractions.get(0).get("last_updated_at").toString();
 
-            String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+            //  String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
 
             String formattedTime = getrecentInteractioString(mre);
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                         .body(mre.length() > 0
-                                ? "<span title=\"%s sessions found, most recent %s \">%s</span>".formatted(
-                                        interactionCount,
+                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
                                         convertToEST(mre),
                                         formattedTime)
-                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
 
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
@@ -146,7 +129,7 @@ public class PrimeController {
         } else {
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.noContent().build();
             } else {
@@ -230,7 +213,7 @@ public class PrimeController {
         try {
             final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                     viewName);
-            List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+            List<Map<String, Object>> fhirSubmission = getDsl().selectFrom(typableTable.table())
                     .fetch()
                     .intoMaps();
             if (CollectionUtils.isNotEmpty(fhirSubmission)) {
@@ -250,65 +233,65 @@ public class PrimeController {
         return "fragments/interactions :: serverTextStat";
     }
 
-    @GetMapping(value = "/dashboard/stat/fhir/mermaid")
-    public ResponseEntity<List<InteractionData>> fetchFHIRSMermaidDiagram(Model model) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "fhir_needs_attention_dashbaord";
+    // @GetMapping(value = "/dashboard/stat/fhir/mermaid")
+    // public ResponseEntity<List<InteractionData>> fetchFHIRSMermaidDiagram(Model model) {
+    //     String schemaName = "techbd_udi_ingress";
+    //     String viewName = "fhir_needs_attention_dashbaord";
 
-        // Initialize list to hold the results
-        List<InteractionData> interactions = new ArrayList<>();
+    //     // Initialize list to hold the results
+    //     List<InteractionData> interactions = new ArrayList<>();
 
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
+    //     final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
 
-        // Query the view and fetch the results
-        List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .fetch()
-                .intoMaps(); 
-        // Check if data is available
-        if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
-            Map<String, Object> data = fhirSubmission.get(0); 
+    //     // Query the view and fetch the results
+    //     List<Map<String, Object>> fhirSubmission = udiReaderConfig.dsl().selectFrom(typableTable.table())
+    //             .fetch()
+    //             .intoMaps(); 
+    //     // Check if data is available
+    //     if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+    //         Map<String, Object> data = fhirSubmission.get(0); 
 
-            // Populate the list with data 
-            interactions.add(new InteractionData("healthelink_total_submissions",
-                    getSafeIntegerValue(data.get("healthelink_total_submissions"))));
-            interactions.add(new InteractionData("healtheconnections_total_submissions",
-                    getSafeIntegerValue(data.get("healtheconnections_total_submissions"))));
-            interactions.add(new InteractionData("healthix_total_submissions",
-                    getSafeIntegerValue(data.get("healthix_total_submissions"))));
-            interactions.add(new InteractionData("grrhio_total_submissions",
-                    getSafeIntegerValue(data.get("grrhio_total_submissions"))));
-            interactions.add(new InteractionData("hixny_total_submissions",
-                    getSafeIntegerValue(data.get("hixny_total_submissions"))));
+    //         // Populate the list with data 
+    //         interactions.add(new InteractionData("healthelink_total_submissions",
+    //                 getSafeIntegerValue(data.get("healthelink_total_submissions"))));
+    //         interactions.add(new InteractionData("healtheconnections_total_submissions",
+    //                 getSafeIntegerValue(data.get("healtheconnections_total_submissions"))));
+    //         interactions.add(new InteractionData("healthix_total_submissions",
+    //                 getSafeIntegerValue(data.get("healthix_total_submissions"))));
+    //         interactions.add(new InteractionData("grrhio_total_submissions",
+    //                 getSafeIntegerValue(data.get("grrhio_total_submissions"))));
+    //         interactions.add(new InteractionData("hixny_total_submissions",
+    //                 getSafeIntegerValue(data.get("hixny_total_submissions"))));
 
-            interactions.add(new InteractionData("healthelink_shinny_datalake_submissions",
-                    getSafeIntegerValue(data.get("healthelink_shinny_datalake_submissions"))));
-            interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions",
-                    getSafeIntegerValue(data.get("healtheconnections_shinny_datalake_submissions"))));                    
-            interactions.add(new InteractionData("healthix_shinny_datalake_submissions",
-                    getSafeIntegerValue(data.get("healthix_shinny_datalake_submissions"))));
-            interactions.add(new InteractionData("grrhio_shinny_datalake_submissions",
-                    getSafeIntegerValue(data.get("grrhio_shinny_datalake_submissions"))));
-            interactions.add(new InteractionData("hixny_shinny_datalake_submissions",
-                    getSafeIntegerValue(data.get("hixny_shinny_datalake_submissions"))));        
-        } else {
-            // Default values if no data found 
-            interactions.add(new InteractionData("healthelink_total_submissions", 0));
-            interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
-            interactions.add(new InteractionData("healthix_total_submissions", 0));
-            interactions.add(new InteractionData("grrhio_total_submissions", 0));
-            interactions.add(new InteractionData("hixny_total_submissions", 0));
+    //         interactions.add(new InteractionData("healthelink_shinny_datalake_submissions",
+    //                 getSafeIntegerValue(data.get("healthelink_shinny_datalake_submissions"))));
+    //         interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions",
+    //                 getSafeIntegerValue(data.get("healtheconnections_shinny_datalake_submissions"))));                    
+    //         interactions.add(new InteractionData("healthix_shinny_datalake_submissions",
+    //                 getSafeIntegerValue(data.get("healthix_shinny_datalake_submissions"))));
+    //         interactions.add(new InteractionData("grrhio_shinny_datalake_submissions",
+    //                 getSafeIntegerValue(data.get("grrhio_shinny_datalake_submissions"))));
+    //         interactions.add(new InteractionData("hixny_shinny_datalake_submissions",
+    //                 getSafeIntegerValue(data.get("hixny_shinny_datalake_submissions"))));        
+    //     } else {
+    //         // Default values if no data found 
+    //         interactions.add(new InteractionData("healthelink_total_submissions", 0));
+    //         interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
+    //         interactions.add(new InteractionData("healthix_total_submissions", 0));
+    //         interactions.add(new InteractionData("grrhio_total_submissions", 0));
+    //         interactions.add(new InteractionData("hixny_total_submissions", 0));
 
-            interactions.add(new InteractionData("healthelink_shinny_datalake_submissions", 0));
-            interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions", 0));
-            interactions.add(new InteractionData("healthix_shinny_datalake_submissions", 0));
-            interactions.add(new InteractionData("grrhio_shinny_datalake_submissions", 0));
-            interactions.add(new InteractionData("hixny_shinny_datalake_submissions", 0));
+    //         interactions.add(new InteractionData("healthelink_shinny_datalake_submissions", 0));
+    //         interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions", 0));
+    //         interactions.add(new InteractionData("healthix_shinny_datalake_submissions", 0));
+    //         interactions.add(new InteractionData("grrhio_shinny_datalake_submissions", 0));
+    //         interactions.add(new InteractionData("hixny_shinny_datalake_submissions", 0));
 
-        }
+    //     }
 
-        // Return the data with HTTP status OK
-        return ResponseEntity.ok().body(interactions);
-    }
+    //     // Return the data with HTTP status OK
+    //     return ResponseEntity.ok().body(interactions);
+    // }
 
     public class InteractionData {
         private String label;
@@ -354,34 +337,34 @@ public class PrimeController {
         "application/json", "text/html" })
     public ResponseEntity<?> CSVviaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
         String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_csv_https";
+        String viewName = "interaction_recent_widget_new";
 
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-               // .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
-               .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())  
+               .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
+                         .and(typableTable.column("widget_name").cast(String.class).eq("CSV"))
+                       )
                 .fetch()
                 .intoMaps();
 
         if (recentInteractions != null && recentInteractions.size() > 0) {
 
-            String mre = recentInteractions.get(0).get("interaction_created_at").toString();
+            String mre = recentInteractions.get(0).get("last_updated_at").toString();
 
-            String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
 
             String formattedTime = getrecentInteractioString(mre);
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                         .body(mre.length() > 0
-                                ? "<span title=\"%s sessions found, most recent %s \">%s</span>".formatted(
-                                        interactionCount,
+                                ? "<span title=\"Most recent %s \">%s</span>".formatted(                                       
                                         convertToEST(mre),
                                         formattedTime)
-                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
 
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
@@ -405,34 +388,34 @@ public class PrimeController {
         "application/json", "text/html" })
     public ResponseEntity<?> CCDAviaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
         String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_ccda_https";
+        String viewName = "interaction_recent_widget_new";
 
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
-        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
-                 .where(typableTable.column("tenant_id_lower").cast(String.class).eq(tenantId))
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
+                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
+                         .and(typableTable.column("widget_name").cast(String.class).eq("CCDA"))
+                       )
                 .fetch()
                 .intoMaps();
 
         if (recentInteractions != null && recentInteractions.size() > 0) {
 
-            String mre = recentInteractions.get(0).get("interaction_created_at").toString();
+            String mre = recentInteractions.get(0).get("last_updated_at").toString();
 
-            String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
 
             String formattedTime = getrecentInteractioString(mre);
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                         .body(mre.length() > 0
-                                ? "<span title=\"%s sessions found, most recent %s \">%s</span>".formatted(
-                                        interactionCount,
+                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
                                         convertToEST(mre),
                                         formattedTime)
-                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
 
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
@@ -451,4 +434,54 @@ public class PrimeController {
         }
     }        
 
+    @GetMapping(value = "/dashboard/stat/hl7v2/most-recent/{tenantId}.{extension}", produces = {
+        "application/json", "text/html" })
+    public ResponseEntity<?> HL7V2viaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "interaction_recent_widget_new";
+
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                viewName);
+        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
+                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
+                         .and(typableTable.column("widget_name").cast(String.class).eq("HL7V2"))
+                       )
+                .fetch()
+                .intoMaps();
+
+        if (recentInteractions != null && recentInteractions.size() > 0) {
+
+            String mre = recentInteractions.get(0).get("last_updated_at").toString();
+
+            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+
+            String formattedTime = getrecentInteractioString(mre);
+
+            if ("html".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body(mre.length() > 0
+                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
+                                        convertToEST(mre),
+                                        formattedTime)
+                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
+
+            } else if ("json".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            if ("html".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
+            } else if ("json".equalsIgnoreCase(extension)) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+    }        
+    
 }

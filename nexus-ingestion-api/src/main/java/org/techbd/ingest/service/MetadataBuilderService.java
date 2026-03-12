@@ -50,7 +50,7 @@ public class MetadataBuilderService {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("interactionId", context.getInteractionId());
         metadata.put("ingestionApiVersion", appConfig.getVersion());
-        metadata.put("tenantId", context.getTenantId());
+        metadata.put("tenantId", resolveTenantId(context));
         metadata.put("fileName", context.getFileName());
         metadata.put("FileSize", String.valueOf(context.getFileSize()));
         metadata.put("s3DataObjectPath", context.getFullS3DataPath());
@@ -72,7 +72,9 @@ public class MetadataBuilderService {
      */
     public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
-        jsonMetadata.put("tenantId", context.getTenantId());
+        jsonMetadata.put("tenantId", resolveTenantId(context));
+        jsonMetadata.put("sourceId", context.getSourceId());
+        jsonMetadata.put("msgType", context.getMsgType());
         jsonMetadata.put("ingestionApiVersion", appConfig.getVersion());
         jsonMetadata.put("interactionId", context.getInteractionId());
         jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
@@ -129,4 +131,32 @@ public class MetadataBuilderService {
         }
         return message;
     }
+    
+    private String resolveTenantId(RequestContext context) {
+        String src = context.getSourceId();
+        String msg = context.getMsgType();
+        String tenant = context.getTenantId();
+
+        boolean srcBlank = (src == null || src.isBlank());
+        boolean msgBlank = (msg == null || msg.isBlank());
+
+        // If both are null or blank → fallback to existing tenantId
+        if (srcBlank && msgBlank) {
+            return tenant;
+        }
+
+        // If only src is present
+        if (!srcBlank && msgBlank) {
+            return src;
+        }
+
+        // If only msg is present
+        if (srcBlank && !msgBlank) {
+            return msg;
+        }
+
+        // Both present → combine
+        return src + "_" + msg;
+    }
+
 }

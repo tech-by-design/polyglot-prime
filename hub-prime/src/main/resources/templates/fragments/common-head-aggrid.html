@@ -1,5 +1,20 @@
 <head th:fragment="common-head-aggrid">
+    <style th:fragment="aggrid-styles"> 
+        .ag-overlay-wrapper  {   
+            align-items: flex-start !important;
+            text-align: left !important;            
+        }
+        .custom-error-message {
+        padding: 10px;
+        width: 100%; 
+        color: #333;
+        font-size: calc(var(--ag-font-size) + 1px);
+        font-family: var(--ag-font-family); 
+        text-align: left; 
+        border-bottom: 1px solid #e5e7eb;
+    }
 
+    </style>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
 	<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@33.1.1/dist/ag-grid-enterprise.min.js"></script>

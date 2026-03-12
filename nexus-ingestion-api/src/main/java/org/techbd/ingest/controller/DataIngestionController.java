@@ -1,13 +1,14 @@
 package org.techbd.ingest.controller;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,46 +19,59 @@ import org.techbd.ingest.AbstractMessageSourceProvider;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.commons.MessageSourceType;
 import org.techbd.ingest.config.AppConfig;
+import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.service.SoapForwarderService;
+import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
+import org.techbd.ingest.util.LogUtil;
+import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Controller for handling data ingestion requests.
- * This controller processes file uploads and string content ingestion.
+ * Supports both multipart file uploads and raw body content.
  */
 @RestController
+@RequestMapping("/ingest")
 public class DataIngestionController extends AbstractMessageSourceProvider {
+
+    private final SoapForwarderService forwarder;
     private final TemplateLogger LOG;
-    
     private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
-    private final AppConfig appConfig;
+    private final SoapFaultUtil soapFaultUtil;
 
-    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper, AppConfig appConfig, AppLogger appLogger) {
+    public DataIngestionController(
+            MessageProcessorService messageProcessorService,
+            ObjectMapper objectMapper,
+            AppConfig appConfig,
+            AppLogger appLogger,
+            PortResolverService portResolverService,
+            SoapForwarderService forwarder,
+            SoapFaultUtil soapFaultUtil) {
         super(appConfig, appLogger);
         this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
-        this.appConfig = appConfig;
-        LOG = appLogger.getLogger(DataIngestionController.class);
+        this.forwarder = forwarder;
+        this.soapFaultUtil = soapFaultUtil;
+        this.LOG = appLogger.getLogger(DataIngestionController.class);
         LOG.info("DataIngestionController initialized");
     }
 
     /**
-     * Health check endpoint using HEAD method on /ingest endpoint.
-     *
-     * @return A response entity indicating service health status.
+     * Health check endpoint.
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<Void> healthCheck() {
         try {
-            LOG.info("Health check requested via HEAD /ingest");
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             LOG.error("Health check failed", e);
@@ -66,78 +80,216 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
     }
 
     /**
-     * Endpoint to handle ingestion requests.
-     *
-     * This endpoint can accept either:
-     * - a file upload (multipart/form-data)
-     * - raw data in the body (JSON, XML, plain text, HL7, etc.)
-     *
-     * If raw body data is provided, a filename is generated
-     * based on the Content-Type header.
-     *
-     * @param file    The optional file to be ingested (when multipart/form-data).
-     * @param body    The optional raw payload (when Content-Type is JSON/XML/Text).
-     * @param headers The request headers containing metadata.
-     * @param request The HTTP servlet request.
-     * @return A response entity containing the result of the ingestion process.
-     * @throws Exception If an error occurs during processing.
+     * Universal ingest endpoint supporting:
+     * - /ingest (no params)
+     * - /ingest/ (no params with trailing slash)
+     * - /ingest/{sourceId}/{msgType} (with params)
+     * 
+     * Handles both multipart file uploads and raw body content.
      */
-    @PostMapping(value = "/ingest", consumes = { 
-        MediaType.MULTIPART_FORM_DATA_VALUE, 
-        "multipart/related", 
-        "application/xop+xml", 
-        MediaType.TEXT_XML_VALUE,
-        MediaType.APPLICATION_XML_VALUE,
-        MediaType.ALL_VALUE 
-    })
+    @PostMapping(
+            value = {"", "/", "/{sourceId}/{msgType}"},
+            consumes = {
+                    MediaType.MULTIPART_FORM_DATA_VALUE,
+                    "multipart/related",
+                    "application/xop+xml",
+                    MediaType.TEXT_XML_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    MediaType.ALL_VALUE
+            }
+    )
     public ResponseEntity<String> ingest(
+            @PathVariable(name = "sourceId", required = false) String sourceId,
+            @PathVariable(name = "msgType", required = false) String msgType,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestBody(required = false) String body,
             @RequestHeader Map<String, String> headers,
-            HttpServletRequest request) throws Exception {
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+
         String interactionId = (String) request.getAttribute(Constants.INTERACTION_ID);
-        LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+        Boolean isAllowedRoute = (Boolean) request.getAttribute(Constants.ALLOWED_ROUTES);
+        LOG.info("Received ingest request. interactionId={} sourceId={} msgType={}",
+                interactionId, sourceId, msgType);
 
-        Map<String, String> responseMap;
+        boolean isSoapReq = isSoapRequest(msgType) || Boolean.TRUE.equals(isAllowedRoute);
 
-    if (file != null && !file.isEmpty()) {
-        LOG.info("DataIngestionController:: File received: {} ({} bytes). interactionId={}",
-            file.getOriginalFilename(), file.getSize(), interactionId);
-        RequestContext context = createRequestContext(interactionId,
-            headers, request, file.getSize(), file.getOriginalFilename());
-        responseMap = messageProcessorService.processMessage(context, file);
+        // ── SOAP path: read raw bytes to preserve MTOM binary integrity ───────
+        if (isSoapReq && (file == null || file.isEmpty())) {
+            byte[] rawBytes = request.getInputStream().readAllBytes();
 
-    } else if (body != null && !body.isBlank()) {
+            if (rawBytes == null || rawBytes.length == 0) {
+                LOG.warn("Empty SOAP request received. interactionId={}", interactionId);
+                return handleEmptySoapRequest(interactionId, request);
+            }
+
+            LOG.info("SOAP forwarding to /ws. sourceId={} msgType={} interactionId={}",
+                    sourceId, msgType, interactionId);
+            return forwarder.forward(request, rawBytes, interactionId);
+        }
+
+        // ── Non-SOAP path: read as UTF-8 String (safe for text/xml, JSON) ─────
+        final String body = (file == null || file.isEmpty())
+                ? new String(request.getInputStream().readAllBytes(),
+                        java.nio.charset.StandardCharsets.UTF_8)
+                : null;
+
+        if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {
+            LOG.warn("Empty request received. interactionId={}", interactionId);
+            throw new IllegalArgumentException("Request must contain either a file or body");
+        }
+
+        Map<String, String> result = Optional.ofNullable(file)
+                .filter(f -> !f.isEmpty())
+                .map(f -> processMultipartFile(sourceId, msgType, headers, request, interactionId, f))
+                .orElseGet(() -> processRawBody(sourceId, msgType, headers, request, response, interactionId, body));
+
+        String json = objectMapper.writeValueAsString(result);
+        LOG.info("Returning response for interactionId={}", interactionId);
+        return ResponseEntity.ok(json);
+    }
+
+    private ResponseEntity<String> handleEmptySoapRequest(String interactionId, HttpServletRequest request) {
+        String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
+        
+        LOG.error("DataIngestionController:: Empty SOAP request body. interactionId={}, errorTraceId={}", 
+                interactionId, errorTraceId);
+        
+        // Log detailed error to CloudWatch
+        LogUtil.logDetailedError(
+            400, 
+            "Empty SOAP request body - no SOAP message provided", 
+            interactionId, 
+            errorTraceId, 
+            new IllegalArgumentException("Empty SOAP request body")
+        );
+        
+        // Determine SOAP version and generate fault
         String contentType = request.getContentType();
-        String extension = HttpUtil.resolveExtension(contentType);
-        String generatedFileName = "payload-" + UUID.randomUUID() + extension;
-        LOG.info("DataIngestionController:: Raw body received (Content-Type={}): {}... interactionId={}",
-            contentType, body.substring(0, Math.min(200, body.length())), interactionId);
-        RequestContext context = createRequestContext(interactionId,
-            headers, request, body.length(), generatedFileName);
-        responseMap = messageProcessorService.processMessage(context, body);
+        boolean isSoap12 = soapFaultUtil.isSoap12(contentType);
+        
+        String soapFault = isSoap12 
+            ? soapFaultUtil.createClientSoap12Fault("Empty request body - no SOAP message provided", interactionId, errorTraceId)
+            : soapFaultUtil.createClientSoap11Fault("Empty request body - no SOAP message provided", interactionId, errorTraceId);
+        
+        LOG.info("DataIngestionController:: Returning SOAP fault. interactionId={}, errorTraceId={}", 
+                interactionId, errorTraceId);
+        
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.valueOf(isSoap12 ? "application/soap+xml; charset=utf-8" : "text/xml; charset=utf-8"))
+            .body(soapFault);
+    }
 
-    } else {
-        LOG.warn("DataIngestionController:: Neither file nor body provided. interactionId={}", interactionId);
-        throw new IllegalArgumentException("Request must contain either a file or body data");
+    /**
+     * Processes multipart file uploads.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
+     */
+    private Map<String, String> processMultipartFile(
+            String sourceId,
+            String msgType,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            String interactionId,
+            MultipartFile file) {
+        
+        RequestContext context = null;
+        try {
+            LOG.info("File received: {} ({} bytes). interactionId={}",
+                    file.getOriginalFilename(), file.getSize(), interactionId);
+
+            context = createRequestContext(
+                    interactionId, headers, request, file.getSize(), file.getOriginalFilename());
+
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+
+            return messageProcessorService.processMessage(context, file);
+        } catch (Exception e) {
+            LOG.error("Error processing multipart file. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, file);
+                } catch (Exception storageException) {
+                    LOG.error("Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
+            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
+        }
     }
-        LOG.info("DataIngestionController:: Ingestion processed successfully. interactionId={}", interactionId);
-        String responseJson = objectMapper.writeValueAsString(responseMap);
-        LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
-        return ResponseEntity.ok(responseJson);
+
+    /**
+     * Processes raw request body content.
+     * Catches generic exceptions, sets ingestionFailed flag, and ensures payload storage.
+     */
+    private Map<String, String> processRawBody(
+            String sourceId,
+            String msgType,
+            Map<String, String> headers,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String interactionId,
+            String body) {
+        
+        RequestContext context = null;
+        try {
+            String contentType = request.getContentType();
+            String extension = HttpUtil.resolveExtension(contentType);
+            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+
+            LOG.info("Raw body received (Content-Type={}): interactionId={}",
+                    contentType, interactionId);
+
+            context = createRequestContext(
+                    interactionId, headers, request, body.length(), generatedFileName);
+
+            context.setSourceId(sourceId);
+            context.setMsgType(msgType);
+
+            return messageProcessorService.processMessage(context, body);
+        } catch (Exception e) {
+            LOG.error("Error processing raw body. interactionId={}", interactionId, e);
+            
+            // Set ingestion failed flag
+            if (context != null) {
+                context.setIngestionFailed(true);
+                
+                // Attempt to store the original payload even on failure
+                try {
+                    LOG.info("Attempting to store original payload despite failure. interactionId={}", interactionId);
+                    messageProcessorService.processMessage(context, body);
+                } catch (Exception storageException) {
+                    LOG.error("Failed to store original payload after exception. interactionId={}", 
+                            interactionId, storageException);
+                }
+            }
+            
+            throw new RuntimeException("Failed to process body: " + e.getMessage(), e);
+        }
     }
+
+    /**
+     * Determines if the request should be forwarded to SOAP endpoint.
+     */
+    private boolean isSoapRequest(String msgType) {
+        if (msgType == null) {
+            return false;
+        }
+        String normalized = msgType.trim().toLowerCase();
+        return normalized.equals("pix") 
+                || normalized.equals("pnr") 
+                || normalized.equals("ws");
+    }
+
     @Override
     public MessageSourceType getMessageSource() {
         return MessageSourceType.HTTP_INGEST;
-    }
-
-    @Override
-    public String getDataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getBucket();
-    }
-
-    @Override
-    public String getMetadataBucketName() {
-        return appConfig.getAws().getS3().getDefaultConfig().getMetadataBucket();
     }
 }

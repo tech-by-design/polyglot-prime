@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,13 +30,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.State;
 import org.techbd.model.csv.CsvDataValidationStatus;
@@ -45,6 +46,7 @@ import org.techbd.model.csv.CsvProcessingMetrics;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
+import org.techbd.service.csv.CsvBundleProcessorService;
 import org.techbd.service.csv.CsvService;
 import org.techbd.service.vfs.VfsCoreService;
 import org.techbd.service.vfs.VfsIngressConsumer;
@@ -68,17 +70,19 @@ public class CsvOrchestrationEngine {
     private final ConcurrentHashMap<String, OrchestrationSession> sessions;
     private final CoreAppConfig coreAppConfig;
     private final VfsCoreService vfsCoreService;
-    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    private final DSLContext primaryDSLContext;
+    private final CsvBundleProcessorService csvBundleProcessorService;
     private static TemplateLogger log;
     private static final Pattern FILE_PATTERN = Pattern.compile(
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
-    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig,AppLogger appLogger) {
+    public CsvOrchestrationEngine(final CoreAppConfig coreAppConfig, final VfsCoreService vfsCoreService, @Qualifier("primaryDslContext") final DSLContext primaryDSLContext,AppLogger appLogger,  CsvBundleProcessorService csvBundleProcessorService) {
         this.sessions = new ConcurrentHashMap<>();
         this.coreAppConfig = coreAppConfig;
         this.vfsCoreService = vfsCoreService;
-        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+        this.primaryDSLContext = primaryDSLContext;
         log = appLogger.getLogger(CsvOrchestrationEngine.class);
+        this.csvBundleProcessorService = csvBundleProcessorService;
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -265,12 +269,12 @@ public class CsvOrchestrationEngine {
                     file.getOriginalFilename(), masterInteractionId);
         }
 
+        @Transactional
         private void saveScreeningGroup(final String groupInteractionId, final Map<String,Object> requestParameters,
                 final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
             log.info("CsvOrchestrationEngine saveScreeningGroup REGISTER State NONE to CSV_ACCEPT: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var forwardedAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionCsvRequest();
             try {
@@ -369,14 +373,14 @@ public class CsvOrchestrationEngine {
             return false;
         }
 
+        @Transactional
         private void saveValidationResults(final Map<String, Object> validationResults,
                 final String masterInteractionId,
                 final String groupInteractionId,
                 final String tenantId) {
             log.info("CsvOrchestrationEngine REGISTER State VALIDATION CSV_ACCEPT TO VALIDATION : BEGIN for zipFileInteractionId : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionCsvRequest();
             try {
@@ -423,12 +427,12 @@ public class CsvOrchestrationEngine {
             }
         }
 
+        @Transactional
         private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
                 final String masterInteractionId,CsvProcessingMetrics metrics) {
             log.info("SaveCombinedValidationResults: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
-            final var dslContext = coreUdiPrimeJpaConfig.dsl();
-            final var jooqCfg = dslContext.configuration();
+            final var jooqCfg = primaryDSLContext.configuration();
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
@@ -514,7 +518,7 @@ public class CsvOrchestrationEngine {
                     "deviceName", device.deviceName()));
             result.put("initiatedAt", initiatedAt.toString());
             result.put("completedAt", completedAt.toString());
-            result.put("fileNotProcessed", this.filesNotProcessed);
+            // result.put("fileNotProcessed", this.filesNotProcessed);
             return result;
         }
 
@@ -582,7 +586,7 @@ public class CsvOrchestrationEngine {
                         if (!entry.getValue().isEmpty()) {
                         this.filesNotProcessed = entry.getValue();
                         combinedValidationResults.add(
-                                createOperationOutcomeForFileNotProcessed(
+                                csvBundleProcessorService.createOperationOutcomeForFileNotProcessed(
                                         masterInteractionId, entry.getValue(), originalFileName));
                         metricsBuilder.dataValidationStatus(CsvDataValidationStatus.FAILED.getDescription());
                         }
@@ -628,80 +632,6 @@ public class CsvOrchestrationEngine {
                 log.error("Error in ZIP processing tasklet for zipFileInteractionId: {}", masterInteractionId, e);
                 throw new RuntimeException("Error processing ZIP files for zipFileInteractionId: " + masterInteractionId + " - " + e.getMessage(), e);
             }
-        }
-        
-        private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-            final String masterInteractionId,
-            final List<FileDetail> filesNotProcessed,
-            final String originalFileName) {
-    
-            if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
-                return Collections.emptyMap();
-            }
-        
-            // Group by subType + reason to allow distinct reasons within a single subType
-            Map<String, List<FileDetail>> grouped = filesNotProcessed.stream()
-                    .collect(Collectors.groupingBy(fd -> {
-                        String reason = fd.reason();
-                        if (reason == null || reason.contains("Invalid file prefix")) {
-                            return "invalid-prefix|Invalid file prefix";
-                        } else if (reason.contains("Group blocked by")) {
-                            return "incomplete-group-due-to-encoding|" + reason;
-                        } else if (reason.contains("not UTF-8 encoded")) {
-                            return "wrong-encoding|File is not UTF-8 encoded";
-                        } else {
-                            return "unknown|Unknown reason";
-                        }
-                    }));
-        
-            List<Map<String, Object>> errors = new ArrayList<>();
-        
-            for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
-                String[] keyParts = entry.getKey().split("\\|", 2);
-                String subType = keyParts[0];
-                String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
-        
-                String description;
-                switch (subType) {
-                    case "invalid-prefix":
-                        description = "Filenames must start with one of the following prefixes: " +
-                                Arrays.stream(FileType.values())
-                                        .map(Enum::name)
-                                        .collect(Collectors.joining(", "));
-                        break;
-                    case "incomplete-group-due-to-encoding":
-                        description = "Not processed as other files in the group were not UTF-8 encoded";
-                        break;
-                    case "wrong-encoding":
-                        description = "File is not UTF-8 encoded";
-                        break;
-                    default:
-                        description = "Unknown reason";
-                }
-        
-                List<String> filenames = entry.getValue().stream()
-                        .map(FileDetail::filename)
-                        .collect(Collectors.toList());
-        
-                Map<String, Object> errorGroup = new LinkedHashMap<>();
-                errorGroup.put("type", "files-not-processed");
-                errorGroup.put("subType", subType);
-                errorGroup.put("description", description);
-                errorGroup.put("reason", reason);
-                errorGroup.put("files", filenames);
-        
-                errors.add(errorGroup);
-            }
-        
-            return Map.of(
-                    "zipFileInteractionId", masterInteractionId,
-                    Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
-                    "originalFileName", originalFileName,
-                    "validationResults", Map.of(
-                            "resourceType", "OperationOutcome",
-                            "errors", errors
-                    )
-            );
         }
         public boolean isGroupComplete(List<FileDetail> fileDetails) {
             Set<FileType> presentFileTypes = fileDetails.stream()
@@ -869,7 +799,7 @@ public class CsvOrchestrationEngine {
                     this::isGroupComplete);
 
             // Important: Capture the returned session UUID and processed file paths
-            final UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO);
+            final UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO,masterInteractionId);
             log.info("CsvService : processZipFilesFromInbound - END for zipFileInteractionId :{}" + masterInteractionId);
             return processId;
         }
@@ -993,6 +923,9 @@ public class CsvOrchestrationEngine {
         public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String zipFileInteractionId)
                 throws Exception {
             log.info("CsvService : validateCsvUsingPython BEGIN for zipFileInteractionId :{} " + zipFileInteractionId);
+
+            Process process = null; // ← CHANGE: Declare outside try block
+
             try {
                 final var config = coreAppConfig.getCsv().validation();
                 if (config == null) {
@@ -1030,7 +963,7 @@ public class CsvOrchestrationEngine {
                 processBuilder.command(command);
                 processBuilder.redirectErrorStream(true);
 
-                final Process process = processBuilder.start();
+                process = processBuilder.start();
 
                 // Capture and handle output/error streams
                 final StringBuilder output = new StringBuilder();
@@ -1040,7 +973,6 @@ public class CsvOrchestrationEngine {
                     String line;
 
                     while ((line = reader.readLine()) != null) {
-                        log.info("argument : " + line);
                         output.append(line).append("\n");
                     }
                 }
@@ -1053,19 +985,37 @@ public class CsvOrchestrationEngine {
                 }
 
                 final int exitCode = process.waitFor();
+
+                //Force destroy process immediately after waitFor
+                process.destroyForcibly();
+
                 if (exitCode != 0) {
                     log.error("Python script execution failed. Exit code: {}, Error: {} for zipFileInteractionId : {}",
                             exitCode, errorOutput.toString(), zipFileInteractionId);
                     throw new IOException("Python script execution failed with exit code " +
                             exitCode + ": " + errorOutput.toString());
                 }
-                log.info("CsvService : validateCsvUsingPython END for zipFileInteractionId :{} " + zipFileInteractionId);
+                log.info(
+                        "CsvService : validateCsvUsingPython END for zipFileInteractionId :{} " + zipFileInteractionId);
                 // Return parsed validation results
                 return output.toString();
 
             } catch (IOException | InterruptedException e) {
-                log.error("Error during CSV validation: {} for zipFileInteractionId : {}", e.getMessage(), zipFileInteractionId, e);
-                throw new RuntimeException("Error during CSV validation : "+e.getMessage(), e);
+                log.error("Error during CSV validation: {} for zipFileInteractionId : {}", e.getMessage(),
+                        zipFileInteractionId, e);
+                throw new RuntimeException("Error during CSV validation : " + e.getMessage(), e);
+            } finally {
+                // Cleanup block to force-kill process if still alive
+                if (process != null && process.isAlive()) {
+                    log.warn("Python process still alive, forcing destruction for zipFileInteractionId: {}",
+                            zipFileInteractionId);
+                    process.destroyForcibly();
+                    try {
+                        process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
             }
         }
 

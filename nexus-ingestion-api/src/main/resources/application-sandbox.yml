@@ -6,15 +6,15 @@ org:
       secret-key: test
       s3:
         default-config:
-          bucket: local-bucket
-          metadata-bucket: local-metadata-bucket
+          bucket: local-sbx-nexus-ingestion-s3-bucket
+          metadata-bucket: local-sbx-nexus-ingestion-s3-metadata-bucket
           endpoint: http://localhost:4566
         hold-config:
-          bucket: local-hold-bucket
-          metadata-bucket: local-hold-metadata-bucket
+          bucket: local-pdr-txd-sbx-hold
+          metadata-bucket: local-sbx-nexus-ingestion-s3-metadata-bucket
           endpoint: http://localhost:4566
       sqs:
         endpoint: http://localhost:4566
         base-url: http://localhost:4566/000000000000
-        fifo-queue-url: http://localhost:4566/000000000000/local-queue.fifo
+        fifo-queue-url: http://localhost:4566/000000000000/txd-sbx-main-queue.fifo
 

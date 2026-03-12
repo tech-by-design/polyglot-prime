@@ -6,12 +6,14 @@ import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CanonicalType;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
+import org.techbd.model.csv.QeAdminData;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
@@ -33,7 +35,7 @@ public class BundleConverter {
      * @return a Bundle with type set to COLLECTION, one empty entry, and Meta
      *         information.
      */
-    public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl) {
+    public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl, QeAdminData qeAdminData) {
         Bundle bundle = new Bundle();
         bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
@@ -44,6 +46,14 @@ public class BundleConverter {
                     new CanonicalType(CoreFHIRUtil.getProfileUrl(baseFHIRUrl, ResourceType.Bundle.name().toLowerCase()))));
         } else {
             meta.setProfile(List.of(new CanonicalType(CoreFHIRUtil.getBundleProfileUrl())));
+        }
+        if ("Yes".equalsIgnoreCase(qeAdminData.getVisitPart2Flag())) {
+            Coding ethCoding = new Coding();
+            ethCoding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            ethCoding.setCode("ETH");
+            ethCoding.setDisplay("Substance abuse information sensitivity");
+
+            meta.addSecurity(ethCoding);
         }
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",

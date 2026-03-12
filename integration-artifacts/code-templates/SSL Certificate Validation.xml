@@ -1,0 +1,659 @@
+<codeTemplateLibrary version="4.6.1">
+  <id>0cdea057-69bc-4524-9e5d-a776f18a3350</id>
+  <name>SSL Certificate Validation</name>
+  <revision>17</revision>
+  <lastModified>
+    <time>1772189797750</time>
+    <timezone>America/New_York</timezone>
+  </lastModified>
+  <description>For client cert validation </description>
+  <includeNewChannels>false</includeNewChannels>
+  <enabledChannelIds class="sorted-set">
+    <string>57cb9a58-396d-4dbb-8929-9a25bd5d2923</string>
+    <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
+    <string>72bd86ac-da6b-4788-9afc-c996bddfd508</string>
+    <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
+    <string>90c46954-ece6-4dfd-9eba-a9dd63b79b62</string>
+    <string>d35fc8f4-1ec2-47fb-b886-63e6052221d9</string>
+  </enabledChannelIds>
+  <disabledChannelIds class="sorted-set">
+    <string>01e37e06-9f21-489b-b10d-61aa52e64352</string>
+    <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+    <string>13c7192c-65b5-424f-b425-59dc744cfac7</string>
+    <string>1a3e2129-62fc-4fac-95ec-181bf03616ad</string>
+    <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
+    <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+    <string>7b875c8b-86e0-410c-8c08-b2cc545bae41</string>
+    <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
+    <string>95b0901e-413b-4aca-80b6-6573f91f3554</string>
+    <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
+    <string>a8a5bdc9-2e87-413f-89d9-856f68cd4963</string>
+    <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
+    <string>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</string>
+    <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
+    <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
+    <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
+    <string>d648f6be-8d35-45b4-937e-0041cebcfc4f</string>
+    <string>e34d353e-098a-40f6-bb1a-a938b7f69f35</string>
+    <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
+    <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
+    <string>f5506019-247f-49cd-af7c-6d275c3a11dd</string>
+  </disabledChannelIds>
+  <codeTemplates>
+    <codeTemplate version="4.6.1">
+      <id>4687d0b0-8884-4ef2-af79-6e39af0c1a07</id>
+      <name>performCertValidation</name>
+      <revision>6</revision>
+      <lastModified>
+        <time>1771582702504</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Do Client certificate validation using certificate provided in http header coming from AWS Load Balancer
+
+	@param {String} arg1 - arg1 description
+	@return {String} return description
+*/
+function performCertValidation(validationType, truststoreName, allowedPattern){
+	try {
+		// workaround for healthcheck
+		if(sourceMap.get(&quot;uri&quot;) == &quot;/healthcheck&quot;){ 
+			return true;
+		}
+		
+		// Get the certificate header from source connector
+		var certHeader = cleanCertHeader(String(sourceMap.get(&apos;headers&apos;).getHeader(&apos;x-amzn-mtls-clientcert&apos;))); 
+          //logger.info(channelName + &quot; - x-amzn-mtls-clientcert: &quot; + sourceMap.getHeader(&apos;x-amzn-mtls-clientcert&apos;));
+		
+		if (!certHeader) {
+		    logger.error(channelName + &quot; - No client certificate found in header&quot;);
+		    // Reject the message or handle as needed
+		    throw channelName + &quot; - No client certificate found in header&quot;;
+		    return;
+		}
+		
+		// Load your truststore (you already have this code)
+		&#xd;
+		var cfgController = Packages.com.mirth.connect.server.controllers.ControllerFactory.getFactory().createConfigurationController();&#xd;
+		var properties = cfgController.getPropertiesForGroup(&quot;SSL Settings&quot;, null);&#xd;
+		var certManagerProps = new Packages.com.innovarhealthcare.ssl.shared.model.CertificateManagerProperties(properties);
+		
+		var trustStoreName = truststoreName; // Configure this
+		var trustStoreKeyStoreInfo = certManagerProps.getTrustedStoreMap().get(trustStoreName);
+		var truststore = new Packages.java.security.KeyStore.getInstance(trustStoreKeyStoreInfo.getType());
+		var truststoreStream = new java.io.ByteArrayInputStream(trustStoreKeyStoreInfo.getData());
+		truststore.load(truststoreStream, trustStoreKeyStoreInfo.getPassword().toCharArray());
+		
+		//logger.info(&quot;Truststore loaded successfully&quot;);
+		
+		// Validate the certificate chain
+		var validationResult = validateClientCertificate(certHeader, truststore, validationType, allowedPattern);
+		//var validationResult = validateCertificateChain(certHeader, truststore);
+		
+		
+		if (validationResult.success) {
+			logger.info(&quot;Client certificate validated successfully&quot;);
+			logger.info(&quot;Subject: &quot; + validationResult.subject);
+			logger.info(&quot;Serial: &quot; + validationResult.serialNumber);
+		    
+		    // Store validation results in channel map for downstream use
+//		    channelMap.put(&apos;certValidated&apos;, true);
+//		    channelMap.put(&apos;certSubject&apos;, validationResult.subject);
+//		    channelMap.put(&apos;certIssuer&apos;, validationResult.issuer);
+		    
+		    // Continue processing the message
+		    
+		} else {
+		    	logger.error(&quot;Client certificate validation failed: &quot; + validationResult.error);
+		    
+		    	// Store failure information
+			channelMap.put(&apos;certValidated&apos;, false);
+			channelMap.put(&apos;certError&apos;, validationResult.error);
+		    
+		    // Reject the message or send error response
+		    // Example: Return a SOAP fault or HTTP error
+		    //responseMap.put(&apos;errorMessage&apos;, &apos;Certificate validation failed: &apos; + validationResult.error);
+		
+		    return false;
+		}
+		
+		return true;
+	
+	}
+	catch(exp){
+		//logger.error(channelName + &quot; - failed client cert validation - Exception: &quot; + exp);
+		return false;
+		//throw exp; 
+	}
+}
+
+
+
+function cleanCertHeader(urlEncodedCert) {
+    // Manually decode %XX sequences but leave + alone
+    var decoded = &quot;&quot;;
+    
+    for (var i = 0; i &lt; urlEncodedCert.length; i++) {
+        if (urlEncodedCert.charAt(i) === &apos;%&apos; &amp;&amp; i + 2 &lt; urlEncodedCert.length) {
+            var hex = urlEncodedCert.substring(i + 1, i + 3);
+            decoded += String.fromCharCode(parseInt(hex, 16));
+            i += 2;
+        } else {
+            decoded += urlEncodedCert.charAt(i);
+        }
+    }
+    
+    return decoded;
+}
+
+
+
+</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>faa5e18a-4be6-41a9-a859-61a89b8b3cd8</id>
+      <name>simpleValidation</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019686912</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Alternative simpler validation - just check if any cert in chain is in truststore
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore
+ * @returns {Object} Validation result
+ */
+function simpleValidation(certChain, truststore) {
+    try {
+        var aliases = truststore.aliases();
+        
+        // Check each certificate in the chain
+        while (aliases.hasMoreElements()) {
+            var alias = aliases.nextElement();
+            var trustedCert = truststore.getCertificate(alias);
+            
+            if (trustedCert == null) {
+                continue;
+            }
+            
+            // Check if any certificate in the chain matches or is issued by a trusted cert
+            for (var i = 0; i &lt; certChain.length; i++) {
+                var cert = certChain[i];
+                
+                // Direct match
+                if (cert.equals(trustedCert)) {
+                    logger.info(&quot;Certificate directly trusted: &quot; + alias);
+                    return {
+                        success: true,
+                        trustedAlias: alias,
+                        matchedCert: cert.getSubjectX500Principal().getName()
+                    };
+                }
+                
+                // Check if issued by trusted cert
+                try {
+                    cert.verify(trustedCert.getPublicKey());
+                    logger.info(&quot;Certificate verified by trusted issuer: &quot; + alias);
+                    return {
+                        success: true,
+                        trustedAlias: alias,
+                        verifiedBy: trustedCert.getSubjectX500Principal().getName()
+                    };
+                } catch (verifyError) {
+                    // Not issued by this trusted cert, continue checking
+                }
+            }
+        }
+        
+        return {
+            success: false,
+            error: &quot;No trusted certificate found in chain&quot;
+        };
+        
+    } catch (e) {
+        logger.error(&quot;Simple validation error: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Validation error: &quot; + e.message
+        };
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>d42b86cc-5aa2-4679-b7be-934f30c69585</id>
+      <name>updateRequestHeaderSize</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019687068</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Deploy Script: Increase Jetty Request Header Size
+ * 
+ * Problem: AWS ALB with mTLS forwards the full client certificate chain in HTTP headers
+ * (e.g. X-Amzn-Mtls-Clientcert-Chain). With 2+ intermediate certs, this can exceed
+ * Jetty&apos;s default 8KB (8192 bytes) request header limit, resulting in HTTP 431
+ * &quot;Request Header Fields Too Large&quot; errors.
+ *
+ * Solution: After the channel finishes deploying, this script stops the Jetty connector,
+ * replaces the HttpConnectionFactory with one configured for a larger header size (32KB),
+ * and restarts the connector. This runs in a background thread with a delay to ensure
+ * the channel is fully deployed before modifying the connector.
+ *
+ * Note: There is a brief (~1 second) window during the connector stop/start where the
+ * HTTP listener will not accept connections. This only occurs during channel deployment.
+ *
+ * TODO: This is a workaround. Ideally, requestHeaderSize should be a configurable 
+ * property on the HTTP Listener connector or in DefaultHttpConfiguration.java.
+ */
+function updateRequestHeaderSize() {
+	// Store channelId as a Java String so it survives beyond the deploy script context.
+	// Rhino&apos;s closure doesn&apos;t reliably capture Mirth context variables into background threads.
+	var myChannelId = new java.lang.String(channelId);
+	
+	var thread = new java.lang.Thread(function() {
+	    try {
+	        // Wait for the channel to fully deploy and the Jetty server/connectors to initialize.
+	        // Increase this if the channel hasn&apos;t finished deploying in time.
+	        java.lang.Thread.sleep(5000);
+	
+	        var HttpConnectionFactory = org.eclipse.jetty.server.HttpConnectionFactory;
+	        var donkey = com.mirth.connect.donkey.server.Donkey.getInstance();
+	        var deployedChannel = donkey.getDeployedChannels().get(myChannelId);
+	        var sourceConnector = deployedChannel.getSourceConnector();
+	
+	        // The HttpReceiver exposes the embedded Jetty Server directly via getServer()
+	        var server = sourceConnector.getServer();
+	        var connectors = server.getConnectors();
+	
+	        for (var i = 0; i &lt; connectors.length; i++) {
+	            var connector = connectors[i];
+	
+	            // Must stop the connector before modifying factories (Jetty throws
+	            // IllegalStateException: STARTED if you try to modify a running connector)
+	            connector.stop();
+	
+	            var factories = connector.getConnectionFactories();
+	            var iterator = factories.iterator();
+	            while (iterator.hasNext()) {
+	                var factory = iterator.next();
+	                if (factory instanceof HttpConnectionFactory) {
+	                    // Copy the existing config (preserves SSL settings, send server version, etc.)
+	                    // and override just the request header size
+	                    var oldConfig = factory.getHttpConfiguration();
+	                    var newConfig = new org.eclipse.jetty.server.HttpConfiguration(oldConfig);
+	                    newConfig.setRequestHeaderSize(32768); // 32KB — enough for full mTLS cert chain + other headers
+	
+	                    // Swap out the old factory for one using the new config
+	                    var newFactory = new HttpConnectionFactory(newConfig);
+	                    connector.removeConnectionFactory(factory.getProtocol());
+	                    connector.addConnectionFactory(newFactory);
+	
+	                    logger.info(&quot;Replaced HttpConnectionFactory with requestHeaderSize: &quot; + newConfig.getRequestHeaderSize());
+	                }
+	            }
+	
+	            // Restart the connector with the updated configuration
+	            connector.start();
+	            logger.info(&quot;Connector restarted on port: &quot; + connector.getPort());
+	        }
+	    } catch (e) {
+	        logger.error(&quot;Failed to update requestHeaderSize: &quot; + e);
+	    }
+	});
+	
+	// Daemon thread so it won&apos;t prevent JVM shutdown
+	thread.setDaemon(true);
+	thread.setName(&quot;header-size-fix-&quot; + myChannelId);
+	thread.start();
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>8b602a96-ea28-49d1-a7e3-2093f20b0918</id>
+      <name>validateCertificateChain</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019686868</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Validates the certificate chain against the truststore
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore
+ * @returns {Object} Validation result
+ */
+function validateCertificateChain(certChain, truststore) {
+    try {
+        // Create a CertPathValidator
+        var certPathValidator = Packages.java.security.cert.CertPathValidator.getInstance(&quot;PKIX&quot;);
+        
+        // Create a CertPath from the certificate chain
+        var certFactory = Packages.java.security.cert.CertificateFactory.getInstance(&quot;X.509&quot;);
+        var certList = java.util.Arrays.asList(certChain);
+        var certPath = certFactory.generateCertPath(certList);
+        
+        // Create PKIXParameters with the truststore
+        var pkixParams = new Packages.java.security.cert.PKIXParameters(truststore);
+        
+        // Disable revocation checking (enable if you have OCSP/CRL configured)
+        pkixParams.setRevocationEnabled(false);
+        
+        // Validate the certificate path
+        var result = certPathValidator.validate(certPath, pkixParams);
+        
+        //logger.info(&quot;Certificate chain validated successfully&quot;);
+        return {
+            success: true,
+            trustAnchor: result.getTrustAnchor().getTrustedCert().getSubjectX500Principal().getName()
+        };
+        
+    } catch (e) {
+        //logger.error(channelName + &quot; - Certificate chain validation failed: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate chain validation failed: &quot; + e.message
+        };
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>75020c55-79c3-43f8-907d-89e66a759f47</id>
+      <name>validateCertificateLeaf</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019686950</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Validates certificate by checking if it&apos;s directly in the truststore (certificate pinning)
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore containing leaf certificates
+ * @returns {Object} Validation result
+ */
+function validateCertificateLeaf(certChain, truststore) {
+    try {
+        var clientCert = certChain[0]; // First cert is the client cert
+        
+        // Check if the client certificate is directly in the truststore
+        var aliases = truststore.aliases();
+        
+        while (aliases.hasMoreElements()) {
+            var alias = aliases.nextElement();
+            var trustedCert = truststore.getCertificate(alias);
+            
+            if (trustedCert != null &amp;&amp; clientCert.equals(trustedCert)) {
+               // logger.info(&quot;Certificate matched trusted certificate: &quot; + alias);
+                return {
+                    success: true,
+                    trustedAlias: alias,
+                    matchType: &quot;direct&quot;
+                };
+            }
+        }
+        
+        // No match found
+        return {
+            success: false,
+            error: &quot;Client certificate not found in truststore&quot;
+        };
+        
+    } catch (e) {
+        logger.error(channelName + &quot; - Certificate validation failed: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate validation failed: &quot; + e.message
+        };
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>85b5e6fa-d4b8-40ff-8f4b-0771888838a0</id>
+      <name>validateCertificateSubject</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019687030</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Validates client certificate Subject DN and Subject Alternative Names (SANs) against allowed patterns.
+ * Provides an additional security layer by ensuring certificates match expected organizational identifiers
+ * even if they are signed by a trusted CA.
+ * 
+ * @param {java.security.cert.X509Certificate} clientCert - The client certificate to validate
+ * @param {Object} allowedPatterns - Object containing allowed patterns for matching
+ * @param {Array&lt;String&gt;} [allowedPatterns.subjects] - Array of string patterns to match against Subject DN (e.g., [&quot;CN=*.example.com&quot;, &quot;O=Example Org&quot;])
+ * @param {Array&lt;String&gt;} [allowedPatterns.sans] - Array of string patterns or regex to match against SANs (e.g., [&quot;example.com&quot;, &quot;.*\\.example\\.com&quot;])
+ * @returns {Object} Validation result object
+ * @returns {boolean} returns.success - Whether validation succeeded
+ * @returns {string} [returns.matched] - What was matched: &quot;subject&quot; or &quot;san&quot;
+ * @returns {string} [returns.value] - The actual value that matched
+ * @returns {string} [returns.error] - Error message if validation failed
+ * 
+ * @example
+ * // Allow certificates with specific organizational unit
+ * var patterns = {
+ *     subjects: [&quot;OU=Healthcare&quot;, &quot;O=Hospital System&quot;],
+ *     sans: [&quot;.*\\.hospitalnet\\.org&quot;]
+ * };
+ * var result = validateCertificateSubject(clientCert, patterns);
+ * if (!result.success) {
+ *     logger.error(&quot;Subject validation failed: &quot; + result.error);
+ * }
+ */
+function validateCertificateSubject(clientCert, allowedPatterns) {
+    try {
+        var subject = clientCert.getSubjectX500Principal().getName();
+        
+        // Check Subject DN
+        for each (var pattern in allowedPatterns.subjects || []) {
+            if (subject.contains(pattern)) {
+                return { success: true, matched: &quot;subject&quot;, value: subject };
+            }
+        }
+        
+        // Check SAN (Subject Alternative Names)
+        var sanCollection = clientCert.getSubjectAlternativeNames();
+        if (sanCollection != null) {
+            var sanIterator = sanCollection.iterator();
+            while (sanIterator.hasNext()) {
+                var san = sanIterator.next();
+                var sanType = san.get(0); // 2 = DNS, 1 = email, 6 = URI
+                var sanValue = san.get(1).toString();
+                
+                for each (var pattern in allowedPatterns.sans || []) {
+                    if (sanValue.contains(pattern) || sanValue.matches(pattern)) {
+                        return { success: true, matched: &quot;san&quot;, value: sanValue };
+                    }
+                }
+            }
+        }
+        
+        return {
+            success: false,
+            error: &quot;Certificate subject/SAN does not match allowed patterns&quot;
+        };
+        
+    } catch (e) {
+        return {
+            success: false,
+            error: &quot;Subject validation failed: &quot; + e.message
+        };
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.6.1">
+      <id>d6e2ba53-bc2d-4267-8863-5e2b5a2473fa</id>
+      <name>validateClientCertificate</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1771019687128</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+ * Validates the client certificate from the header against the truststore
+ * @param {string} certHeader - The URL-encoded certificate chain from the header
+ * @param {KeyStore} truststore - The loaded truststore
+ * @returns {Object} Validation result with success flag and details
+ */
+function validateClientCertificate(certHeader, truststore, validationType, allowedPatterns) {
+    try {
+       
+        // Step 1: Parse the certificate chain
+        var certFactory = Packages.java.security.cert.CertificateFactory.getInstance(&quot;X.509&quot;);
+        var certStream = new java.io.ByteArrayInputStream(new java.lang.String(certHeader).getBytes(&quot;UTF-8&quot;));
+        var certChain = certFactory.generateCertificates(certStream);
+        
+        if (certChain.isEmpty()) {
+            return {
+                success: false,
+                error: &quot;No certificates found in header&quot;
+            };
+        }
+        
+        //logger.info(&quot;Parsed &quot; + certChain.size() + &quot; certificates from chain&quot;);
+        
+        // Convert to array for easier handling
+        var certArray = certChain.toArray();
+        var clientCert = certArray[0]; // First certificate is the client certificate
+        
+        // Step 3: Validate certificate dates
+        try {
+            clientCert.checkValidity();
+            //logger.info(&quot;Certificate is within valid date range&quot;);
+        } catch (e) {
+            return {
+                success: false,
+                error: &quot;Certificate is expired or not yet valid: &quot; + e.message,
+                subject: clientCert.getSubjectX500Principal().getName()
+            };
+        }
+
+	   // Step 3.5: Validate subject/SAN if patterns provided
+	   if (allowedPatterns != undefined &amp;&amp; allowedPatterns != null) {
+	   	var subjectResult = validateCertificateSubject(clientCert, allowedPatterns);
+		if (!subjectResult.success) {
+		    return subjectResult;
+		}
+	   }
+        
+        // Step 4: Validate against truststore
+        var validationResult = null;
+        if(validationType == &quot;chain&quot;){
+        	validationResult = validateCertificateChain(certArray, truststore);
+        }
+        else {
+        	validationResult = validateCertificateLeaf(certArray, truststore);
+        }
+        if (validationResult.success) {
+            return {
+                success: true,
+                subject: clientCert.getSubjectX500Principal().getName(),
+                issuer: clientCert.getIssuerX500Principal().getName(),
+                serialNumber: clientCert.getSerialNumber().toString(16),
+                notBefore: clientCert.getNotBefore(),
+                notAfter: clientCert.getNotAfter(),
+                chainLength: certArray.length,
+                message: &quot;Certificate validated successfully&quot;
+            };
+        } else {
+            return validationResult;
+        }
+        
+    } catch (e) {
+        //logger.error(channelName + &quot; - Certificate validation error: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate validation failed: &quot; + e.message
+        };
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+  </codeTemplates>
+</codeTemplateLibrary>

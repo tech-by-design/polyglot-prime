@@ -351,11 +351,33 @@ export class AGGridAideBuilder {
                             : successArgs);
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, reqPayload, response, respMetrics);
-                        params.fail();
+                    // Show error message  
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });
                     }
                 } catch (error) {
                     await fetchError?.(dataSourceUrl, reqPayload, error);
-                    params.fail();
+            // Show error message  
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
+
+            params.api.showNoRowsOverlay();
+
+            // IMPORTANT: do NOT call params.fail()
+            params.success({ rowData: [], rowCount: 0 });
                 }
             }
         };
@@ -443,11 +465,34 @@ export class AGGridAideBuilder {
                         }
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
-                        params.fail();
+                    // Show error message  
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });
                     }
                 } catch (error) {
                     await fetchError?.(dataSourceUrl, error);
-                    params.fail();
+                    // Show error message  
+            params.api.setGridOption(
+                'overlayNoRowsTemplate',
+                '<div class="custom-error-message" >' +
+                'Data loading failed. Please retry after some time.' +
+                '</div>'
+            );
+
+                    params.api.showNoRowsOverlay();
+
+                    // IMPORTANT: do NOT call params.fail()
+                    params.success({ rowData: [], rowCount: 0 });                    
+                 //   params.fail();
                 }
             }
         };

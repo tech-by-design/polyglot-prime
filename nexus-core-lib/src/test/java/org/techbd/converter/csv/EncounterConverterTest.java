@@ -11,6 +11,7 @@ import java.util.Map;
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.jooq.DSLContext;
 import org.hl7.fhir.r4.model.Encounter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.EncounterConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -45,7 +45,7 @@ class EncounterConverterTest {
     CodeLookupService codeLookupService;
 
     @Mock
-    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    DSLContext dslContext;
     
     @Mock
     AppLogger appLogger;
@@ -61,7 +61,7 @@ class EncounterConverterTest {
             when(appLogger.getLogger(EncounterConverter.class)).thenReturn(templateLogger);
             
             // Manually instantiate the converter after mocks are set up
-            encounterConverter = new EncounterConverter(codeLookupService, coreUdiPrimeJpaConfig, appLogger);
+            encounterConverter = new EncounterConverter(codeLookupService, dslContext, appLogger);
             
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);

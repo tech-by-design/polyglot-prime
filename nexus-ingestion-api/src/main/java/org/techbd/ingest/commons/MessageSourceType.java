@@ -4,10 +4,11 @@ public enum MessageSourceType {
 
     // HTTP endpoints
     HTTP_INGEST(true, true),   // S3 + SQS
-    HTTP_HOLD(true, false),    // S3 only
+    HTTP_HOLD(true, true),    // S3 + SQS
 
     // HL7 via MLLP
     MLLP(true, true),          // S3 + SQS
+    TCP(true, true),          // S3 + SQS
 
     // SOAP endpoints
     SOAP_PIX(true, true),      // S3 + SQS

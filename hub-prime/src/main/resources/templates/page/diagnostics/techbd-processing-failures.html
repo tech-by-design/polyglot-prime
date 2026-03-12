@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        h1.assemtion {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 12px 0px 11px 2px;
+        }
+
+        .ag-theme-alpine {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ag-theme-alpine .ag-popup {
+            position: absolute;
+            z-index: 1000;
+            /* Ensure it's on top */
+            overflow: visible;
+        }
+        .qe-highlight {
+            background-color: rgb(227, 242, 253);
+            border: 1px solid rgb(33, 150, 243);
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 4px;
+            color: rgb(25, 118, 210);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #fromDateValue,
+        #toDateValue {
+            font-weight: bold;
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+
+
+        // get qeName
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const qeName = urlParams.get('qeName');
+        const schemaName = 'techbd_udi_ingress';
+        const storedProcName = 'get_missing_techbydesigndisposition_details'; 
+
+        let fromDate = urlParams.get('fromDate');
+        let toDate = urlParams.get('toDate');
+
+
+        const formatDateForStoredProc = (dateString) => {
+            console.log('dateString', dateString);
+            if (!dateString) return null;
+            const [month, day, year] = dateString.split('-');
+            return `${month}-${day}-${year}`;
+        };
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            function downloadCellRenderer(params) { 
+                const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;  
+                 const file_name =`${params.data.sat_interaction_http_request_id}_payload.json` ||  '';
+
+                const apiUrl = `/api/ux/tabular/jooq/download/${schemaName}/sat_interaction_fhir_request/payload/sat_interaction_fhir_request_id/${sat_interaction_http_request_id}?fileName=${file_name}`;
+
+                // Create a download link placeholder
+                return `<a href="${apiUrl}" title="${file_name}"  return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
+            }  
+
+            const helpers = new Helpers();
+            const modalAide = new ModalAide();
+            // Append parametrs at the end of ahref
+            const urls = [
+                '/needs-attention/techbd-processing-failures',
+                '/needs-attention/techbd-validation-failures',
+                '/needs-attention/shinny-datalake-failed-submissions'
+            ];
+
+            const links = document.querySelectorAll('a');
+            links.forEach(link => {
+                if (urls.some(url => link.href.endsWith(url))) {
+                    let updatedHref = link.href + `?qeName=${qeName}`;
+                    if (fromDate) {
+                        updatedHref += `&fromDate=${fromDate}`;
+                    }
+                    if (toDate) {
+                        updatedHref += `&toDate=${toDate}`;
+                    }
+                    link.href = updatedHref;
+                }
+            });
+
+
+             const heading = document.getElementById('heading-prime');
+            // if (heading) {
+            //     heading.textContent += ` ${qeName}`;
+            // }
+
+            // document.querySelectorAll('ul.flex li a').forEach(link => {
+            //     if (link.textContent.includes('(QE)')) {
+            //         link.textContent = link.textContent.replace('(QE)', qeName);
+            //     }
+            // });
+
+            // Select the breadcrumb terminal item
+            const breadcrumbTerminal = document.querySelector("#breadcrumb-terminal span");
+
+            // Remove the text "Needs Attention -" if it exists
+            if (breadcrumbTerminal) {
+                breadcrumbTerminal.textContent = breadcrumbTerminal.textContent.replace("Needs Attention -", qeName).trim();
+            }
+
+            // Populate the QE span in the description area (client-side insertion)
+            const qeSpanEl = document.getElementById('qeNameValue');
+            if (qeSpanEl) {
+                qeSpanEl.textContent = qeName || '';
+            }
+
+            // Populate date spans in the description
+            const fromDateSpan = document.getElementById('fromDateValue');
+            if (fromDateSpan) {
+                fromDateSpan.textContent = fromDate || 'N/A';
+            }
+
+            const toDateSpan = document.getElementById('toDateValue');
+            if (toDateSpan) {
+                toDateSpan.textContent = toDate || 'N/A';
+            }
+
+            const storedProcparams = {
+                            "tenant_id": qeName,
+                            "start_date": formatDateForStoredProc(fromDate),
+                            "end_date": formatDateForStoredProc(toDate)
+                        };
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+            const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+ 
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "TechBD Interaction Id",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Unique Id For Identify The Record",
+                         
+                        flex: 1, 
+                        cellRenderer: params => {
+                            const hub_interaction_id = params.value;
+                            const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+
+                            const button = document.createElement('button');
+                            button.innerText = hub_interaction_id;
+                            button.style.textDecoration = 'underline';
+
+                            button.addEventListener('click', () => {
+                                modalAide.viewFetchedJsonValue(
+                                    window.shell.serverSideUrl(
+                                        `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`
+                                    )
+                                );
+                            });
+
+                            return button;
+                        }
+                    },
+                    {
+                        headerName: "Submission Date",
+                        field: "created_at",
+                        filter: "agDateColumnFilter", 
+                        flex: 2
+                    },
+                    {
+                        headerName: "Error Description",
+                        field: "error_message",
+                        filter: "agTextColumnFilter", 
+                        flex: 3
+                    },
+                    {
+                        headerName: "Payload", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download Payload", filter: false, suppressFilter: true, sortable: false,
+                      
+                         flex: 4
+                    },
+                ])
+                .withServerSideDatasource(
+                        window.shell.serverSideUrl(url),
+                        (data, valueCols) => {
+                            return valueCols.map(col => ({
+                                headerName: col.displayName,
+                                field: col.field
+                            }));
+                        },
+                    )
+                    .withModalAide(modalAide)
+                    .withGridDivStyles({ height: "750px", width: "100%" })
+                    .build();
+
+                 agGridInstance.init('serverDataGrid');
+        });
+
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-title"> <span id="tenant"> </span></div>
+        <div class="grid-description">
+            This tab displays error details for submissions that failed during processing in Tech by Design for the date range <span id="fromDateValue"></span> to <span id="toDateValue"></span>. Click on an interaction to open a pop-up containing the detailed information.
+            <div class="qe-highlight">
+                <span>QE Name: <span id="qeNameValue"></span></span>
+            </div>
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine" ></div>
+
+    </div>
+
+</body>
+
+</html>
