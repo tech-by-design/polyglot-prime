@@ -28,7 +28,6 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
-
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
@@ -53,7 +52,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -349,6 +347,16 @@ public class NettyTcpServer implements MessageSourceProvider {
 
                                     @Override
                                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                                        // ReadTimeoutException must be handled exclusively by the
+                                        // ChannelInboundHandlerAdapter below, which applies the
+                                        // SEND_HL7_ACK_ON_IDLE_TIMEOUT feature flag gate.
+                                        // Passing it down here prevents this handler from sending
+                                        // a NACK_ON_EXCEPTION before the flag is checked.
+                                        if (cause instanceof ReadTimeoutException) {
+                                            ctx.fireExceptionCaught(cause);
+                                            return;
+                                        }
+
                                         String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                         UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                         if (interactionId == null) {
@@ -523,6 +531,10 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                         sessionId, interactionId, haproxyDetails(ctx), logException.getMessage());
                                             }
 
+                                            // -----------------------------------------------------------------
+                                            // Only send NACK on idle timeout if the feature flag is enabled.
+                                            // Otherwise, close the connection directly without sending a NACK.
+                                            // -----------------------------------------------------------------
                                             if (ctx.channel().isActive()) {
                                                 if (FeatureEnum.isEnabled(FeatureEnum.SEND_HL7_ACK_ON_IDLE_TIMEOUT)) {
                                                     try {
@@ -637,61 +649,69 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             }
 
                                             if (ctx.channel().isActive()) {
-                                                try {
-                                                    String timeoutError = String.format(
-                                                            "Read timeout: No complete message received within %d seconds",
-                                                            readTimeoutSeconds);
+                                                if (FeatureEnum.isEnabled(FeatureEnum.SEND_HL7_ACK_ON_IDLE_TIMEOUT)) {
+                                                    try {
+                                                        String timeoutError = String.format(
+                                                                "Read timeout: No complete message received within %d seconds",
+                                                                readTimeoutSeconds);
 
-                                                    // Generate HL7 NACK for timeout
-                                                    String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                            + Instant.now() + "||ACK|" +
-                                                            UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
-                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                            "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r"
-                                                            +
-                                                            "NTE|1||InteractionID: " + interactionId +
-                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+                                                        // Generate HL7 NACK for timeout
+                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                                + Instant.now() + "||ACK|" +
+                                                                UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r"
+                                                                +
+                                                                "NTE|1||InteractionID: " + interactionId +
+                                                                " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                                " | ErrorTraceID: " + errorTraceId + "\r";
 
-                                                    String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
-                                                            + (char) MLLP_END_1 + (char) MLLP_END_2;
+                                                        String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
+                                                                + (char) MLLP_END_1 + (char) MLLP_END_2;
 
-                                                    ByteBuf responseBuf = ctx.alloc().buffer();
-                                                    responseBuf
-                                                            .writeBytes(wrappedNack.getBytes(StandardCharsets.UTF_8));
+                                                        ByteBuf responseBuf = ctx.alloc().buffer();
+                                                        responseBuf
+                                                                .writeBytes(wrappedNack.getBytes(StandardCharsets.UTF_8));
 
-                                                    logger.info(
-                                                            "SENDING_NACK_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
-                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
-
-                                                    final UUID finalInteractionId = interactionId;
-                                                    final String finalErrorTraceId = errorTraceId;
-                                                    final String finalSessionId = sessionId;
-                                                    final String finalHaproxyDetails = haproxyDetails(ctx);
-
-                                                    ctx.writeAndFlush(responseBuf).addListener(future -> {
-                                                        if (future.isSuccess()) {
-                                                            logger.info(
-                                                                    "NACK_SENT_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
-                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId);
-                                                        } else {
-                                                            logger.error(
-                                                                    "NACK_SEND_FAILED_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
-                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId,
-                                                                    future.cause() != null ? future.cause().getMessage()
-                                                                            : "unknown");
-                                                        }
-                                                        // Close connection after attempting to send NACK
                                                         logger.info(
-                                                                "CLOSING_CONNECTION_AFTER_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}]",
-                                                                finalSessionId, finalInteractionId, finalHaproxyDetails);
+                                                                "SENDING_NACK_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
+                                                                sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
+
+                                                        final UUID finalInteractionId = interactionId;
+                                                        final String finalErrorTraceId = errorTraceId;
+                                                        final String finalSessionId = sessionId;
+                                                        final String finalHaproxyDetails = haproxyDetails(ctx);
+
+                                                        ctx.writeAndFlush(responseBuf).addListener(future -> {
+                                                            if (future.isSuccess()) {
+                                                                logger.info(
+                                                                        "NACK_SENT_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
+                                                                        finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId);
+                                                            } else {
+                                                                logger.error(
+                                                                        "NACK_SEND_FAILED_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
+                                                                        finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId,
+                                                                        future.cause() != null ? future.cause().getMessage()
+                                                                                : "unknown");
+                                                            }
+                                                            // Close connection after attempting to send NACK
+                                                            logger.info(
+                                                                    "CLOSING_CONNECTION_AFTER_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}]",
+                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails);
+                                                            clearChannelAttributes(ctx);
+                                                            ctx.close();
+                                                        });
+                                                    } catch (Exception e) {
+                                                        logger.error(
+                                                                "FAILED_TO_SEND_NACK_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
+                                                                sessionId, interactionId, haproxyDetails(ctx), errorTraceId, e.getMessage(), e);
                                                         clearChannelAttributes(ctx);
                                                         ctx.close();
-                                                    });
-                                                } catch (Exception e) {
-                                                    logger.error(
-                                                            "FAILED_TO_SEND_NACK_ON_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
-                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId, e.getMessage(), e);
+                                                    }
+                                                } else {
+                                                    logger.info("SKIPPING_NACK_ON_READ_TIMEOUT [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}] " +
+                                                            "SEND_HL7_ACK_ON_IDLE_TIMEOUT feature disabled - closing connection directly",
+                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
                                                     clearChannelAttributes(ctx);
                                                     ctx.close();
                                                 }
