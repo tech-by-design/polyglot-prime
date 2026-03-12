@@ -51,18 +51,7 @@ management:
       show-details: always
       show-components: always
 togglz: 
-  enabled: true 
-  features: 
-    DEBUG_LOG_REQUEST_HEADERS: 
-      enabled: true 
-    IGNORE_MUST_UNDERSTAND_HEADERS:
-      enabled: true
-    LOG_INCOMING_MESSAGE:
-      enabled: false
-    ADD_NTE_SEGMENT_TO_HL7_ACK:
-      enabled: true  
-    SEND_HL7_ACK_ON_IDLE_TIMEOUT:
-      enabled: true  
+  enabled: true
 logging:
   level:
     root: INFO
