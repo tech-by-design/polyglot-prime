@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.5 -->
+<!-- Version : 0.2.6 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -301,6 +301,7 @@
             <xsl:for-each select="$validAddresses">
               <xsl:call-template name="buildFhirAddressObject">
                 <xsl:with-param name="addrNode" select="."/>
+                <xsl:with-param name="resource_name" select="'Patient'"/>
               </xsl:call-template>
               <xsl:if test="position()!=last()">,</xsl:if>
             </xsl:for-each>
@@ -320,18 +321,21 @@
             </xsl:choose>",
 
             <!-- use -->
-            <xsl:if test="normalize-space(*[2])">
+            "use": "<xsl:choose>
+                      <xsl:when test="local-name() = 'PID.13'">home</xsl:when>
+                      <xsl:otherwise>work</xsl:otherwise>
+                    </xsl:choose>",
+            <!-- <xsl:variable name="telecomUse" select="normalize-space(*[2])"/>
+            <xsl:if test="$telecomUse">
               "use": "<xsl:choose>
-                <xsl:when test="normalize-space(*[2])='WPN' or normalize-space(*[2])='WP'">work</xsl:when>
-                <xsl:when test="normalize-space(*[2])='PRN' or normalize-space(*[2])='H'">home</xsl:when>
-                <xsl:when test="normalize-space(*[2])='NET' or normalize-space(*[2])='MC'">mobile</xsl:when>
-                <xsl:when test="normalize-space(*[2])='TMP'">temp</xsl:when>
-                <xsl:when test="normalize-space(*[2])='BAD'">old</xsl:when>
-                <xsl:otherwise>
-                  <xsl:value-of select="normalize-space(*[2])"/>
-                </xsl:otherwise>
+                <xsl:when test="$telecomUse='WP' or $telecomUse='AS' or $telecomUse='DIR' or $telecomUse='PUB'">work</xsl:when>
+                <xsl:when test="$telecomUse='H' or $telecomUse='HP' or $telecomUse='EC' or $telecomUse='HV'">home</xsl:when>
+                <xsl:when test="$telecomUse='MC' or $telecomUse='PG'">mobile</xsl:when>
+                <xsl:when test="$telecomUse='TMP'">temp</xsl:when>
+                <xsl:when test="$telecomUse='BAD'">old</xsl:when>
+                <xsl:otherwise>home</xsl:otherwise>
               </xsl:choose>",
-            </xsl:if>
+            </xsl:if> -->
 
             <!-- value -->
             <!-- "value": "<xsl:value-of select="normalize-space(*[1])"/>" -->
@@ -686,14 +690,56 @@
 
               <!-- ================= Telecom ================= -->
               <xsl:variable name="telecom">
-                <xsl:if test="normalize-space(NK1.5)">
-                  <t>{ "system": "phone", "value": "<xsl:value-of select="normalize-space(NK1.5)"/>" }</t>
+                <xsl:if test="normalize-space(NK1.5/NK1.5.1)">
+                  <t>{ "system": "phone", 
+                       "value": "<xsl:value-of select="normalize-space(NK1.5/NK1.5.1)"/>",
+                       "use": "home"
+                       <!-- <xsl:variable name="telecomUse" select="normalize-space(NK1.5/NK1.5.2)"/>
+                       <xsl:if test="telecomUse">
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse='WP' or $telecomUse='AS' or $telecomUse='DIR' or $telecomUse='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse='H' or $telecomUse='HP' or $telecomUse='EC' or $telecomUse='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse='MC' or $telecomUse='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if> -->
+                     }</t>
                 </xsl:if>
-                <xsl:if test="normalize-space(NK1.6)">
-                  <t>{ "system": "phone", "value": "<xsl:value-of select="normalize-space(NK1.6)"/>" }</t>
+                <xsl:if test="normalize-space(NK1.6/NK1.6.1)">
+                  <t>{ "system": "phone", 
+                       "value": "<xsl:value-of select="normalize-space(NK1.6/NK1.6.1)"/>",
+                       "use": "work"
+                       <!-- <xsl:variable name="telecomUse6" select="normalize-space(NK1.6/NK1.6.2)"/>
+                       <xsl:if test="telecomUse6">
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse6='WP' or $telecomUse6='AS' or $telecomUse6='DIR' or $telecomUse6='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse6='H' or $telecomUse6='HP' or $telecomUse6='EC' or $telecomUse6='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse6='MC' or $telecomUse6='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse6='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse6='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if> -->
+                     }</t>
                 </xsl:if>
-                <xsl:if test="normalize-space(NK1.40)">
-                  <t>{ "system": "phone", "value": "<xsl:value-of select="normalize-space(NK1.40)"/>" }</t>
+                <xsl:if test="normalize-space(NK1.40/NK1.40.1)">
+                  <t>{ "system": "phone", 
+                       "value": "<xsl:value-of select="normalize-space(NK1.40/NK1.40.1)"/>",
+                       "use": "work"
+                       <!-- <xsl:variable name="telecomUse40" select="normalize-space(NK1.40/NK1.40.2)"/> 
+                       <xsl:if test="telecomUse40">                           
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse40='WP' or $telecomUse40='AS' or $telecomUse40='DIR' or $telecomUse40='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse40='H' or $telecomUse40='HP' or $telecomUse40='EC' or $telecomUse40='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse40='MC' or $telecomUse40='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse40='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse40='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if>  -->
+                     }</t>
                 </xsl:if>
               </xsl:variable>
 
@@ -722,6 +768,7 @@
                   "address":
                     <xsl:call-template name="buildFhirAddressObject">
                       <xsl:with-param name="addrNode" select="NK1.4"/>
+                      <xsl:with-param name="resource_name" select="'Patient'"/>
                     </xsl:call-template>
                 </p>
               </xsl:if>
@@ -1187,15 +1234,9 @@
            </xsl:otherwise>
          </xsl:choose>"
 
-        <xsl:if test="//ORC.23[normalize-space(ORC.23.1) 
-                     or normalize-space(ORC.23.2) 
-                     or normalize-space(ORC.23.3)]">
+        <xsl:if test="//ORC.23[normalize-space(ORC.23.1)]">
           , "telecom": [
-            <xsl:for-each select="//ORC.23[
-                                    normalize-space(ORC.23.1) 
-                                    or normalize-space(ORC.23.2) 
-                                    or normalize-space(ORC.23.3)
-                                  ]">
+            <xsl:for-each select="//ORC.23[normalize-space(ORC.23.1)]">                      
               {
                 <!-- <xsl:if test="normalize-space(ORC.23.1)">
                   "value": "<xsl:value-of select='ORC.23.1'/>"
@@ -1220,19 +1261,20 @@
                   </xsl:choose>"
                 </xsl:if>
 
-                <xsl:if test="normalize-space(ORC.23.2)">
-                  <xsl:if test="normalize-space(ORC.23.1) 
-                                or normalize-space(ORC.23.3)">, </xsl:if>
+                <xsl:if test="normalize-space(ORC.23.1) or normalize-space(ORC.23.3)">, </xsl:if>
+                "use": "work"
+                <!-- <xsl:if test="normalize-space(ORC.23.2)">
+                  <xsl:if test="normalize-space(ORC.23.1) or normalize-space(ORC.23.3)">, </xsl:if>
+                  <xsl:variable name="telecomUseORC" select="normalize-space(ORC.23.2)"/>
+
                   "use": "<xsl:choose>
-                    <xsl:when test="normalize-space(ORC.23.2) = 'WP'">work</xsl:when>
-                    <xsl:when test="normalize-space(ORC.23.2) = 'H'">home</xsl:when>
-                    <xsl:when test="normalize-space(ORC.23.2) = 'TMP'">temp</xsl:when>
-                    <xsl:when test="normalize-space(ORC.23.2) = 'MC' or normalize-space(ORC.23.2) = 'PG'">mobile</xsl:when>
-                    <xsl:otherwise>
-                      <xsl:value-of select="normalize-space(ORC.23.2)"/>
-                    </xsl:otherwise>
+                    <xsl:when test="$telecomUseORC='WP' or $telecomUseORC='AS' or $telecomUseORC='DIR' or $telecomUseORC='PUB'">work</xsl:when>
+                    <xsl:when test="$telecomUseORC='MC' or $telecomUseORC='PG'">mobile</xsl:when>
+                    <xsl:when test="$telecomUseORC='TMP'">temp</xsl:when>
+                    <xsl:when test="$telecomUseORC='BAD'">old</xsl:when>
+                    <xsl:otherwise>work</xsl:otherwise>
                   </xsl:choose>"
-                </xsl:if>
+                </xsl:if> -->
               }<xsl:if test="position() != last()">,</xsl:if>
             </xsl:for-each>
           ]
@@ -1253,6 +1295,7 @@
             <xsl:for-each select="$validAddresses">
               <xsl:call-template name="buildFhirAddressObject">
                 <xsl:with-param name="addrNode" select="."/>
+                <xsl:with-param name="resource_name" select="'Organization'"/>
               </xsl:call-template>
               <xsl:if test="position()!=last()">,</xsl:if>
             </xsl:for-each>
@@ -1590,35 +1633,63 @@
     <xsl:if test="$validChildCount &gt; 0">
 
     <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
-    <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/>
+    <!-- <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/> -->
 	  
-	  <xsl:variable name="obrCode" select="substring-before(OBR.26, '&amp;')"/>
 	  <xsl:variable name="grouperObservationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
-              <xsl:with-param name="prefixString" select="$obrCode"/>
+              <xsl:with-param name="prefixString" select="$screeningCode"/>
               <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
             </xsl:call-template>
           </xsl:variable>
+    
+    <!-- Grouper Observation status : first valid OBX.11 OR OBR.25 -->
+    <xsl:variable name="firstValidObx"
+        select="(
+          following-sibling::OBX[
+            contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+            and normalize-space(OBX.5/OBX.5.1)
+            and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+            and normalize-space(OBX.11)
+          ]
+        )[1]"/>
+    
+    <xsl:variable name="obxStatus" select="normalize-space($firstValidObx/OBX.11)"/>
+    <xsl:variable name="obrStatus" select="normalize-space(OBR.25)"/>
 
     {
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>",
-	   <!-- "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='concat($grouperObservationResourceSha256Id, $screeningCode)'/>", -->
-      "resource": {
+	    "resource": {
         "resourceType": "Observation",
         "id": "<xsl:value-of select='$grouperObservationResourceId'/>",
         "meta": {
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
           "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
         },
-        "status": "<xsl:call-template name='mapObservationStatus'>
-                            <xsl:with-param name='statusCode' select='OBX.11'/>
-                        </xsl:call-template>",
+        "status": "<xsl:call-template name='getGrouperObservationStatus'>
+                    <xsl:with-param name='obxStatus' select='$obxStatus'/>
+                    <xsl:with-param name='obrStatus' select='$obrStatus'/>
+                  </xsl:call-template>",
         "code": {
           "coding": [{
-            "system": "http://loinc.org",
+            <!-- "system": "http://loinc.org", -->
+            "system": "<xsl:choose>
+                          <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+                          <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
+                        </xsl:choose>",
             "code": "<xsl:value-of select='$screeningCode'/>",
-            "display": "<xsl:value-of select='$screeningDisplay'/>"
-          }]
+            <!-- "display": "<xsl:value-of select='$screeningDisplay'/>" -->
+            "display": "<xsl:call-template name="mapScreeningCodeDisplay">
+                          <xsl:with-param name="screeningCode" select="$screeningCode"/>
+                        </xsl:call-template>"
+          }
+          <xsl:if test="starts-with($screeningCode, 'NYS')">
+            ,{
+              "code": "100698-0",
+              "system": "http://loinc.org",
+              "display": "Social Determinants of Health screening report Document"
+            }
+          </xsl:if>
+          ]
         },
         "subject": {
           "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
@@ -1813,14 +1884,17 @@
 <xsl:template name="mapObservationStatus">
     <xsl:param name="statusCode"/>
     <xsl:choose>
-        <xsl:when test="$statusCode = 'completed'">final</xsl:when>
+        <!-- <xsl:when test="$statusCode = 'completed'">final</xsl:when>
         <xsl:when test="$statusCode = 'final'">final</xsl:when>
         <xsl:when test="$statusCode = 'active'">preliminary</xsl:when>
         <xsl:when test="$statusCode = 'aborted'">cancelled</xsl:when>
         <xsl:when test="$statusCode = 'cancelled'">cancelled</xsl:when>
         <xsl:when test="$statusCode = 'held'">registered</xsl:when>
         <xsl:when test="$statusCode = 'suspended'">registered</xsl:when>
-        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when> -->
+        <xsl:when test="$statusCode='F' or $statusCode='U'">final</xsl:when>
+        <xsl:when test="$statusCode='C'">corrected</xsl:when>
+        <xsl:when test="$statusCode='D'">entered-in-error</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -2095,6 +2169,7 @@
   <!-- Reusable Address Template -->
   <xsl:template name="buildFhirAddressObject">
     <xsl:param name="addrNode"/>
+    <xsl:param name="resource_name"/>
 
     <!-- Trim components -->
 
@@ -2140,6 +2215,27 @@
       </xsl:call-template>
     </xsl:variable>
 
+    <!-- Address use -->
+    <xsl:variable name="addrUseRaw" select="normalize-space($addrNode/*[7])"/>
+
+    <xsl:variable name="addrUse">
+      <xsl:if test="string($addrUseRaw)">
+          <xsl:choose>
+            <xsl:when test="$addrUseRaw='B' or $addrUseRaw='O' or $addrUseRaw='S' or $addrUseRaw='SH' or $addrUseRaw='RH' or $addrUseRaw='TM'">work</xsl:when>
+            <xsl:when test="$addrUseRaw='F' or $addrUseRaw='H' or $addrUseRaw='M' or $addrUseRaw='P' or $addrUseRaw='BDL'">home</xsl:when>
+            <!-- <xsl:when test="$addrUseRaw='BI'">billing</xsl:when> -->
+            <xsl:when test="$addrUseRaw='C' or $addrUseRaw='V'">temp</xsl:when>
+            <xsl:when test="$addrUseRaw='BA'">old</xsl:when>
+            <xsl:otherwise>
+              <xsl:choose>
+                <xsl:when test="$resource_name='Organization' or $resource_name='Location'">work</xsl:when>
+                <xsl:otherwise>home</xsl:otherwise>
+              </xsl:choose>
+            </xsl:otherwise>
+          </xsl:choose>      
+      </xsl:if>
+    </xsl:variable>
+
     <!-- Combined values -->
     <xsl:variable name="combinedLine">
       <xsl:call-template name="string-trim">
@@ -2156,6 +2252,9 @@
 
     {
       <xsl:variable name="props">
+        <xsl:if test="string($addrUse)">
+          <p>"use": "<xsl:value-of select="$addrUse"/>"</p>
+        </xsl:if>
 
         <xsl:if test="string($combinedText)">
           <p>"text": "<xsl:value-of select="$combinedText"/>"</p>
@@ -2195,4 +2294,53 @@
 
   </xsl:template>
 
+  <xsl:template name="getGrouperObservationStatus">
+    <xsl:param name="obxStatus"/>
+    <xsl:param name="obrStatus"/>
+
+    <xsl:choose>
+      <!-- OBX.11 takes priority -->
+      <xsl:when test="$obxStatus">
+        <xsl:choose>
+          <xsl:when test="$obxStatus='F' or $obxStatus='U'">final</xsl:when>
+          <xsl:when test="$obxStatus='C'">corrected</xsl:when>
+          <xsl:when test="$obxStatus='D'">entered-in-error</xsl:when>
+          <!-- <xsl:when test="$obxStatus='P' or $obxStatus='R' or $obxStatus='S'">preliminary</xsl:when>  -->
+          <!-- <xsl:when test="$obxStatus='I'">registered</xsl:when> -->
+          <!-- <xsl:when test="$obxStatus='X'">cancelled</xsl:when> -->
+          <xsl:otherwise>unknown</xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
+      <!-- fallback to OBR.25 -->
+      <xsl:when test="$obrStatus">
+        <xsl:choose>
+          <xsl:when test="$obrStatus='F'">final</xsl:when>
+          <xsl:when test="$obrStatus='C'">corrected</xsl:when>
+          <!-- <xsl:when test="$obrStatus='P' or $obrStatus='R' or $obrStatus='S'">preliminary</xsl:when> -->
+          <!-- <xsl:when test="$obrStatus='I' or $obrStatus='O'">registered</xsl:when>  -->
+          <!-- <xsl:when test="$obrStatus='X'">cancelled</xsl:when> -->
+          <xsl:otherwise>unknown</xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
+      <!-- default -->
+      <xsl:otherwise>unknown</xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template name="mapScreeningCodeDisplay">
+    <xsl:param name="screeningCode"/>
+    <xsl:choose>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool [Alternate]</xsl:when>
+      <xsl:when test="$screeningCode = 'NYS-AHC-HRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
+      <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:otherwise>
+        <xsl:text/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
 </xsl:stylesheet>
