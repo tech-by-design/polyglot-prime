@@ -524,50 +524,58 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             }
 
                                             if (ctx.channel().isActive()) {
-                                                try {
-                                                    String timeoutError = String.format(
-                                                            "Read idle timeout: No data received within %d seconds", effectiveTimeout);
+                                                if (FeatureEnum.isEnabled(FeatureEnum.SEND_HL7_ACK_ON_IDLE_TIMEOUT)) {
+                                                    try {
+                                                        String timeoutError = String.format(
+                                                                "Read idle timeout: No data received within %d seconds", effectiveTimeout);
 
-                                                    String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                            + Instant.now() + "||ACK|" +
-                                                            UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
-                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                            "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
-                                                            "NTE|1||InteractionID: " + interactionId +
-                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                                + Instant.now() + "||ACK|" +
+                                                                UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                                "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
+                                                                "NTE|1||InteractionID: " + interactionId +
+                                                                " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                                " | ErrorTraceID: " + errorTraceId + "\r";
 
-                                                    String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
-                                                            + (char) MLLP_END_1 + (char) MLLP_END_2;
+                                                        String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
+                                                                + (char) MLLP_END_1 + (char) MLLP_END_2;
 
-                                                    ByteBuf responseBuf = ctx.alloc().buffer();
-                                                    responseBuf.writeBytes(wrappedNack.getBytes(StandardCharsets.UTF_8));
+                                                        ByteBuf responseBuf = ctx.alloc().buffer();
+                                                        responseBuf.writeBytes(wrappedNack.getBytes(StandardCharsets.UTF_8));
 
-                                                    logger.info("SENDING_NACK_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
-                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
+                                                        logger.info("SENDING_NACK_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
+                                                                sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
 
-                                                    final UUID finalInteractionId = interactionId;
-                                                    final String finalErrorTraceId = errorTraceId;
-                                                    final String finalSessionId = sessionId;
-                                                    final String finalHaproxyDetails = haproxyDetails(ctx);
+                                                        final UUID finalInteractionId = interactionId;
+                                                        final String finalErrorTraceId = errorTraceId;
+                                                        final String finalSessionId = sessionId;
+                                                        final String finalHaproxyDetails = haproxyDetails(ctx);
 
-                                                    ctx.writeAndFlush(responseBuf).addListener(future -> {
-                                                        if (future.isSuccess()) {
-                                                            logger.info("NACK_SENT_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
-                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId);
-                                                        } else {
-                                                            logger.error("NACK_SEND_FAILED_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
-                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId,
-                                                                    future.cause() != null ? future.cause().getMessage() : "unknown");
-                                                        }
-                                                        logger.info("CLOSING_CONNECTION_AFTER_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}]",
-                                                                finalSessionId, finalInteractionId, finalHaproxyDetails);
+                                                        ctx.writeAndFlush(responseBuf).addListener(future -> {
+                                                            if (future.isSuccess()) {
+                                                                logger.info("NACK_SENT_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]",
+                                                                        finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId);
+                                                            } else {
+                                                                logger.error("NACK_SEND_FAILED_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
+                                                                        finalSessionId, finalInteractionId, finalHaproxyDetails, finalErrorTraceId,
+                                                                        future.cause() != null ? future.cause().getMessage() : "unknown");
+                                                            }
+                                                            logger.info("CLOSING_CONNECTION_AFTER_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}]",
+                                                                    finalSessionId, finalInteractionId, finalHaproxyDetails);
+                                                            clearChannelAttributes(ctx);
+                                                            ctx.close();
+                                                        });
+                                                    } catch (Exception e) {
+                                                        logger.error("FAILED_TO_SEND_NACK_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
+                                                                sessionId, interactionId, haproxyDetails(ctx), errorTraceId, e.getMessage(), e);
                                                         clearChannelAttributes(ctx);
                                                         ctx.close();
-                                                    });
-                                                } catch (Exception e) {
-                                                    logger.error("FAILED_TO_SEND_NACK_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}]: {}",
-                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId, e.getMessage(), e);
+                                                    }
+                                                } else {
+                                                    logger.info("SKIPPING_NACK_ON_IDLE [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}] " +
+                                                            "SEND_HL7_ACK_ON_IDLE_TIMEOUT feature disabled - closing connection directly",
+                                                            sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
                                                     clearChannelAttributes(ctx);
                                                     ctx.close();
                                                 }
