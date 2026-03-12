@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>e0c3a613-7eed-4bc0-8288-4f7b5b2bc313</id>
+  <id>eef77031-2fb0-4094-951d-08f55d30d2be</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.20
-Configured health check endpoint using static resources.</description>
-  <revision>23</revision>
+  <description>Version 0.5.21
+Added validation message when 2 files are selected.</description>
+  <revision>11</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1114,6 +1114,29 @@ var rawData = connectorMessage.getRawData();
 // Check if rawData is empty
 if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
     errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// -----------------------------------------------------
+// Multiple multipart / multiple file validation
+// -----------------------------------------------------
+var partMatches = rawData.match(/Content-Disposition:/g) || [];
+var fileMatches = rawData.match(/filename=&quot;/g) || [];
+
+logger.info(&quot;Parts: &quot; + partMatches.length);
+logger.info(&quot;Files: &quot; + fileMatches.length);
+
+// if more than one multipart input
+if (partMatches.length &gt; 1) {
+    var errorMessage = &quot;Multiple files detected in upload. Only one file is allowed.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// if more than one file
+if (fileMatches.length &gt; 1) {
+    var errorMessage = &quot;Multiple files detected in upload. Only one file is allowed.&quot;;
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
@@ -2291,7 +2314,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         &quot;informational&quot;,
         &quot;information&quot;
     	);
-
+	responseMap.put(&apos;status&apos;, &apos;200&apos;);
     	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
     	saveCcdaPayload(interactionId, tenantId, requestedPath, successResponse, &quot;saveValidationSuccess&quot;);
 
@@ -2484,6 +2507,7 @@ else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/cc
         cleanedJsonString, &quot;saveConversionSuccess&quot;);
         
 	channelMap.put(&apos;jsonResult&apos;, cleanedJsonString);
+	responseMap.put(&apos;status&apos;, &apos;200&apos;);
 	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(cleanedJsonString));
      return &apos;dest_bundle&apos;;
 }
@@ -3038,7 +3062,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772788487211</time>
+        <time>1773304678918</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3049,14 +3073,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a43fa3b6-bd77-4ec7-aa9d-1fe491c5b238</id>
-        <name>0_5_20</name>
+        <id>2eb2c686-48fd-4431-89bb-63c98526315f</id>
+        <name>0_5_21</name>
         <channelIds>
-          <string>e0c3a613-7eed-4bc0-8288-4f7b5b2bc313</string>
+          <string>eef77031-2fb0-4094-951d-08f55d30d2be</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
