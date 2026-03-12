@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>8c85c362-b9b0-494e-bec4-597650c1d512</id>
+  <id>496ccf54-8775-4e1f-8f58-527e6dec6bfb</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.12
-Configured the health check endpoint using static resources.</description>
-  <revision>4</revision>
+  <description>Version: 0.9.13
+Combined both the CSV Bundle and CSV Bundle Validate functionalities into a single channel.</description>
+  <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -109,6 +109,8 @@ function setErrorResponse(statusCode, errorMessage) {
           <enabled>true</enabled>
           <script>logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  AWS Secrets Manager Loader starts &apos;);
 ///////////////////////////////////////////////////////////////////////////////////////////
+
+
 /*******************************
     AWS Secrets Manager Loader
 ********************************/
@@ -145,16 +147,42 @@ function fetchSecret(secretName) {
     }
 }
 
+//////////
 
-var dataLakeApiUrl = &quot;&quot;;
-var incomingDataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
 
-if (incomingDataLakeApiUrl != null &amp;&amp; incomingDataLakeApiUrl.trim() !== &apos;&apos;) {
-    dataLakeApiUrl = incomingDataLakeApiUrl.trim();
+try {
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+
+    if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+        throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
+    }
+
+    channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
+    globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
+    logger.info(&quot;✔ Datalake API URL loaded from Lookup Manager(config)&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+    throw e;
 }
- logger.info(&quot;dataLakeApiUrl in CSV: &quot; + dataLakeApiUrl);
-channelMap.put(&quot;dataLakeApiUrl&quot;, dataLakeApiUrl);
 
+/********************************************
+    FETCH DEFAULT DATALAKE API URL (Plain text)
+    WITH HEADER OVERRIDE SUPPORT
+********************************************/
+
+// First, check if the header override is provided
+var headerDataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
+
+if (headerDataLakeApiUrl &amp;&amp; String(headerDataLakeApiUrl).trim() !== &quot;&quot;) {
+   // Header provided - use it as override
+   headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
+   channelMap.put(&quot;DATALAKE_API_URL&quot;, headerDataLakeApiUrl);
+   globalMap.put(&quot;datalakeApiUrl&quot;, headerDataLakeApiUrl);
+   logger.info(&quot;✔DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
+}
+//////////////////////////////////////////////
 /********************************************
     2️⃣ FETCH TECHBD_BL_BASEURL from header
 ********************************************/
@@ -229,7 +257,13 @@ channelMap.put(&apos;tenantId&apos;, tenantId);
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
 channelMap.put(&apos;userAgent&apos;, userAgent);
 logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] X-TechBD-Tenant-ID: &quot; + tenantId);
+/////
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+ 
+channelMap.put(&quot;requestUri&quot;, requestedPath);
 
+/////
 
 // Parse the incoming request (assumes multipart form data)
 var rawData = connectorMessage.getRawData();
@@ -532,8 +566,8 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form
           <enabled>true</enabled>
           <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
 var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-logger.info(&quot;HTTP Method: &quot; + httpMethod);
-logger.info(&quot;Context Path: &quot; + contextPath);
+//logger.info(&quot;HTTP Method: &quot; + httpMethod);
+//logger.info(&quot;Context Path: &quot; + contextPath);
 
 /**
  * Util function to generate JSON string
@@ -595,7 +629,7 @@ if (contextPath === &apos;/healthcheck&apos;) {
 /* =====================================
    3️⃣ CSV BUNDLE
 ===================================== */
-if (contextPath === &apos;/flatfile/csv/Bundle&apos; || contextPath === &apos;/flatfile/csv/Bundle/&apos;) {
+if (contextPath === &apos;/flatfile/csv/Bundle&apos; || contextPath === &apos;/flatfile/csv/Bundle/&apos; || contextPath === &apos;/flatfile/csv/Bundle/$validate&apos; || contextPath === &apos;/flatfile/csv/Bundle/$validate/&apos;) {
 
     if (httpMethod === &apos;POST&apos; || httpMethod === &apos;OPTIONS&apos;) {
         return true;
@@ -680,8 +714,9 @@ function notFound() {
  * Sends the uploaded ZIP file to the FHIR validate endpoint
  * using Apache HttpClient (DefaultHttpClient for Mirth compatibility)
  */
-
 // --- Retrieve data from channelMap ---
+var requestedPath = channelMap.get(&quot;requestUri&quot;);
+
 var attachmentBytes = Packages.java.util.Base64.getDecoder().decode(channelMap.get(&apos;multipartBodyBase64&apos;));
 var filename = channelMap.get(&apos;multipartFileName&apos;) || &apos;uploaded-file.zip&apos;;
 var tenantId = channelMap.get(&apos;tenantId&apos;) || &apos;defaultTenant&apos;;
@@ -705,9 +740,15 @@ logger.info(&quot;======================================:&quot; + csvServiceApiU
 // --- Build URL with query parameter ---
 //var urlStr = &quot;http://10.10.11.253:8082/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
 //var urlStr = &quot;https://nexus.csv.sandbox.techbd.org/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
-var urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+//var urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
 
-
+var urlStr  = &quot;&quot;;
+if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
+	urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+}else {
+	urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/$validate/?source=&quot; + encodeURIComponent(sourceParam);
+}
+logger.info(urlStr);
 
 // --- Import Apache HttpClient classes ---
 var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
@@ -887,7 +928,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772792824036</time>
+        <time>1773302240404</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -898,16 +939,16 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>303385b2-03f1-497e-885c-5ddf8a18ac99</id>
-        <name>0_1_27</name>
+        <id>a1b689a7-8a18-481b-8eae-d31573d3f100</id>
+        <name>0_9_13</name>
         <channelIds>
-          <string>368a5972-44f6-4d51-943e-3fe069c7469e</string>
-          <string>8c85c362-b9b0-494e-bec4-597650c1d512</string>
-          <string>95b0901e-413b-4aca-80b6-6573f91f3554</string>
+          <string>a92d48f1-6263-4927-b52c-68b8f6f2ae24</string>
+          <string>d5bd1b0c-2c2c-41af-a21b-199e0102c88b</string>
+          <string>496ccf54-8775-4e1f-8f58-527e6dec6bfb</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
