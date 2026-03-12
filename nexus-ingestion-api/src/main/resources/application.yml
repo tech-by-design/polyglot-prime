@@ -61,6 +61,8 @@ togglz:
       enabled: false
     ADD_NTE_SEGMENT_TO_HL7_ACK:
       enabled: true  
+    SEND_HL7_ACK_ON_IDLE_TIMEOUT:
+      enabled: true  
 logging:
   level:
     root: INFO
