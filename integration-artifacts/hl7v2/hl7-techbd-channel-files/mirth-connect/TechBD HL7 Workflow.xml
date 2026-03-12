@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.12</description>
-  <revision>42</revision>
+  <revision>45</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -55,7 +55,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name,X-TechBD-Part2</string>
           </list>
         </entry>
         <entry>
@@ -2256,7 +2256,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771571620873</time>
+        <time>1773310369434</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2265,6 +2265,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

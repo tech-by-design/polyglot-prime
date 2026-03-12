@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.9 -->
+<!-- Version : 0.1.10 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -263,6 +263,7 @@
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
             <xsl:call-template name="build-address-array">
               <xsl:with-param name="addresses" select="ccda:addr[not(@nullFlavor)]"/>
+              <xsl:with-param name="resource_name" select="'Patient'"/>
             </xsl:call-template>
         </xsl:if>
         <xsl:if test="ccda:telecom[not(@nullFlavor)]">
@@ -283,13 +284,14 @@
                                 </xsl:choose>",
                         </xsl:if>
                         <xsl:if test="@use">
+                            <xsl:variable name="use_trimmed" select="normalize-space(@use)"/>
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
-                                <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when>
-                                <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
+                                <xsl:when test="$use_trimmed='AS' or $use_trimmed='DIR' or $use_trimmed='PUB' or $use_trimmed='WP'">work</xsl:when>
+                                <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
+                                <xsl:when test="$use_trimmed='H' or $use_trimmed='HP' or $use_trimmed='HV' or $use_trimmed='EC'">home</xsl:when>
+                                <xsl:when test="$use_trimmed='MC' or $use_trimmed='PG'">mobile</xsl:when>
+                                <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
+                                <xsl:otherwise>home</xsl:otherwise> <!-- For Patient resource, default to 'home' if no match -->
                             </xsl:choose>",
                         </xsl:if>
                         "value": "<xsl:call-template name="clean-telecom-value">
@@ -841,13 +843,14 @@
                                 </xsl:choose>",
                         </xsl:if>
                         <xsl:if test="@use">
+                            <xsl:variable name="use_trimmed" select="normalize-space(@use)"/>
                             "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
-                                <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when>
-                                <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
+                                <xsl:when test="$use_trimmed='AS' or $use_trimmed='DIR' or $use_trimmed='PUB' or $use_trimmed='WP'">work</xsl:when>
+                                <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
+                                <!-- <xsl:when test="$use_trimmed='H' or $use_trimmed='HP' or $use_trimmed='HV' or $use_trimmed='EC'">home</xsl:when> -->
+                                <xsl:when test="$use_trimmed='MC' or $use_trimmed='PG'">mobile</xsl:when>
+                                <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
+                                <xsl:otherwise>work</xsl:otherwise>
                             </xsl:choose>",
                         </xsl:if>
                         "value": "<xsl:call-template name="clean-telecom-value">
@@ -861,6 +864,7 @@
         <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
             <xsl:call-template name="build-address-array">
               <xsl:with-param name="addresses" select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]"/>
+              <xsl:with-param name="resource_name" select="'Organization'"/>
             </xsl:call-template>
         </xsl:if>
       },
@@ -1363,12 +1367,12 @@
     <xsl:choose>
         <xsl:when test="$cleanCode = 'completed'">final</xsl:when>
         <xsl:when test="$cleanCode = 'final'">final</xsl:when>
-        <xsl:when test="$cleanCode = 'active'">preliminary</xsl:when>
-        <xsl:when test="$cleanCode = 'aborted'">cancelled</xsl:when>
-        <xsl:when test="$cleanCode = 'cancelled'">cancelled</xsl:when>
-        <xsl:when test="$cleanCode = 'held'">registered</xsl:when>
-        <xsl:when test="$cleanCode = 'suspended'">registered</xsl:when>
+        <xsl:when test="$cleanCode = 'aborted'">entered-in-error</xsl:when>
+        <xsl:when test="$cleanCode = 'cancelled'">entered-in-error</xsl:when>
         <xsl:when test="$cleanCode = 'nullified'">entered-in-error</xsl:when>
+        <!-- <xsl:when test="$cleanCode = 'active'">preliminary</xsl:when> -->
+        <!-- <xsl:when test="$cleanCode = 'held'">registered</xsl:when> -->
+        <!-- <xsl:when test="$cleanCode = 'suspended'">registered</xsl:when> -->
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
@@ -1832,6 +1836,7 @@
         <xsl:if test="ccda:addr[not(@nullFlavor)]">
             <xsl:call-template name="build-address-object-only">
               <xsl:with-param name="addresses" select="ccda:addr[not(@nullFlavor)]"/>
+              <xsl:with-param name="resource_name" select="'Location'"/>
             </xsl:call-template>            
         </xsl:if>
       },
@@ -2076,7 +2081,7 @@
   <xsl:template name="mapScreeningCodeSystem">
     <xsl:param name="screeningCode"/>
     <xsl:choose>
-      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'">http://test.shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
       <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0'">http://loinc.org</xsl:when>
       <xsl:otherwise>
         <xsl:text>http://loinc.org</xsl:text>
@@ -2217,6 +2222,7 @@
   <!-- Render address array if there are any addresses without nullFlavor -->
   <xsl:template name="build-address-object">
     <xsl:param name="addr"/>
+    <xsl:param name="resource_name"/>
     {
       <!-- Pre-calculate trimmed values -->
       <xsl:variable name="street">
@@ -2288,13 +2294,18 @@
 
       <!-- use -->
       <xsl:if test="$addr/@use">
+        <xsl:variable name="use_trimmed" select="normalize-space($addr/@use)"/>
         "use": "<xsl:choose>
-          <xsl:when test="$addr/@use='HP' or $addr/@use='H'">home</xsl:when>
-          <xsl:when test="$addr/@use='WP'">work</xsl:when>
-          <xsl:when test="$addr/@use='TMP'">temp</xsl:when>
-          <xsl:when test="$addr/@use='OLD' or $addr/@use='BAD'">old</xsl:when>
-          <!-- <xsl:otherwise><xsl:value-of select="$addr/@use"/></xsl:otherwise>. -->
-          <xsl:otherwise>home</xsl:otherwise>
+          <xsl:when test="$use_trimmed='WP' or $use_trimmed='DIR' or $use_trimmed='PUB'">work</xsl:when>
+          <!-- <xsl:when test="$use_trimmed='BA'">billing</xsl:when> -->
+          <xsl:when test="$use_trimmed='TMP'">temp</xsl:when>
+          <xsl:when test="$use_trimmed='BAD'">old</xsl:when>
+          <xsl:otherwise>
+            <xsl:choose>
+              <xsl:when test="$resource_name='Location' or $resource_name='Organization'">work</xsl:when>
+              <xsl:otherwise>home</xsl:otherwise>
+            </xsl:choose>
+          </xsl:otherwise>
         </xsl:choose>"
         <xsl:if test="string($formattedAddress) or $addr/ccda:streetAddressLine or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
@@ -2373,11 +2384,13 @@
   <!-- Gives an array of address objects if there are any addresses without nullFlavor, used for Patient Address and Organization Address. -->
   <xsl:template name="build-address-array">
     <xsl:param name="addresses"/>
+    <xsl:param name="resource_name"/>
     <xsl:if test="$addresses[not(@nullFlavor)]">
       , "address": [
         <xsl:for-each select="$addresses[not(@nullFlavor)]">
           <xsl:call-template name="build-address-object">
             <xsl:with-param name="addr" select="."/>
+            <xsl:with-param name="resource_name" select="$resource_name"/>
           </xsl:call-template>
           <xsl:if test="position() != last()">,</xsl:if>
         </xsl:for-each>
@@ -2388,10 +2401,12 @@
   <!-- Gives an address object if there are any addresses without nullFlavor, used for Location address. -->
   <xsl:template name="build-address-object-only">
     <xsl:param name="addresses"/>
+    <xsl:param name="resource_name"/>
     <xsl:if test="$addresses[not(@nullFlavor)]">
       , "address":        
           <xsl:call-template name="build-address-object">
             <xsl:with-param name="addr" select="$addresses[not(@nullFlavor)][1]"/>
+            <xsl:with-param name="resource_name" select="$resource_name"/>
           </xsl:call-template>
     </xsl:if>
   </xsl:template>

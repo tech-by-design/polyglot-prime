@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.43</description>
-  <revision>49</revision>
+  <description>Version: 0.4.42</description>
+  <revision>54</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -482,8 +482,7 @@ function extractBoundaries(rawCcdaXml) {
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
 				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
 				    .trim();		
-		logger.info(&quot;rawXml 2: &quot; + rawXml);
-		//if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {			
+		logger.info(&quot;rawXml 2: &quot; + rawXml);		
 	        // Extract everything after first blank line
 	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
 	        if (match &amp;&amp; match[1]) {
@@ -495,7 +494,35 @@ function extractBoundaries(rawCcdaXml) {
 	        rawXml = rawXml.replace(/\r?\n--.*--\r?\n?$/, &apos;&apos;);
 	        rawXml = rawXml.replace(/\r?\n--.*$/, &apos;&apos;);
 	        logger.info(&quot;rawXml 4: &quot; + rawXml);
-	    //}
+
+			if (rawXml.indexOf(&quot;Content-Disposition:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex = rawXml.indexOf(&quot;Content-Disposition:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD = rawXml.indexOf(&quot;\n&quot;, cdIndex);
+			
+			    if (firstNewLineAfterCD !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD + 1);
+			        logger.info(&quot;rawXml after Content-Disposition removed: &quot; + rawXml);
+			    }
+			}
+
+			if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex1 = rawXml.indexOf(&quot;Content-Type:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD1 = rawXml.indexOf(&quot;\n&quot;, cdIndex1);
+			
+			    if (firstNewLineAfterCD1 !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD1 + 1);
+			        logger.info(&quot;rawXml after Content-Type removed: &quot; + rawXml);
+			    }
+			}
+	        
 	    rawXml = String(rawXml)
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
 				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
@@ -2550,7 +2577,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772018319590</time>
+        <time>1773310323654</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2559,6 +2586,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

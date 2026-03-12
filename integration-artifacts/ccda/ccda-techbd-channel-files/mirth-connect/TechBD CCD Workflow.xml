@@ -3,7 +3,7 @@
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
   <description>Version: 0.4.42</description>
-  <revision>41</revision>
+  <revision>54</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -55,7 +55,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code,X-TechBD-Part2</string>
           </list>
         </entry>
         <entry>
@@ -479,8 +479,7 @@ function extractBoundaries(rawCcdaXml) {
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
 				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
 				    .trim();		
-		logger.info(&quot;rawXml 2: &quot; + rawXml);
-		if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {			
+			
 	        // Extract everything after first blank line
 	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
 	        if (match &amp;&amp; match[1]) {
@@ -492,7 +491,35 @@ function extractBoundaries(rawCcdaXml) {
 	        rawXml = rawXml.replace(/\r?\n--.*--\r?\n?$/, &apos;&apos;);
 	        rawXml = rawXml.replace(/\r?\n--.*$/, &apos;&apos;);
 	        logger.info(&quot;rawXml 4: &quot; + rawXml);
-	    }
+
+			if (rawXml.indexOf(&quot;Content-Disposition:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex = rawXml.indexOf(&quot;Content-Disposition:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD = rawXml.indexOf(&quot;\n&quot;, cdIndex);
+			
+			    if (firstNewLineAfterCD !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD + 1);
+			        logger.info(&quot;rawXml after Content-Disposition removed: &quot; + rawXml);
+			    }
+			}
+
+			if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex1 = rawXml.indexOf(&quot;Content-Type:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD1 = rawXml.indexOf(&quot;\n&quot;, cdIndex1);
+			
+			    if (firstNewLineAfterCD1 !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD1 + 1);
+			        logger.info(&quot;rawXml after Content-Type removed: &quot; + rawXml);
+			    }
+			}
+	        
 	    rawXml = String(rawXml)
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
 				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
@@ -1715,7 +1742,7 @@ function validateMandatoryFields() {
 		   }
 	
 		   // 5. Patient MRN
-	       var patientMrn = channelMap.get(&apos;Patient-MRN&apos;);
+		   var patientMrn = channelMap.get(&apos;Patient-MRN&apos;);
 		   if (patientMrn === null || String(patientMrn).trim() === &quot;&quot;) {
 		   		errors.push(&quot;Patient MRN -&gt; ClinicalDocument.recordTarget.patientRole.id.extension.&quot;);
 		   }
@@ -2516,7 +2543,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1771571148530</time>
+        <time>1773310323654</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2525,6 +2552,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>
