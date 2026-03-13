@@ -1,0 +1,63 @@
+name: Nexus Sandbox Tag Update
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  nexus-sandbox-env-update:
+    if: endsWith(github.ref, '-nexus')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+      - name: Clone infrastructure repository
+        run: |
+          git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+      - name: Create branch
+        run: |
+          cd infrastructure-prime
+          git checkout -b nexus-sandbox-env-update-${{ github.ref_name }}
+
+      - name: Update TAG for all sandbox services
+        run: |
+          cd infrastructure-prime
+
+          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-hub.sandbox.techbd.org/.env
+          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-api.sandbox.interface.engine.techbd.org/.env
+          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-fhir.sandbox.interface.engine.techbd.org/.env
+          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-csv.sandbox.interface.engine.techbd.org/.env
+
+      - name: Commit changes
+        run: |
+          cd infrastructure-prime
+          git add .
+          git commit -m "ci: update sandbox TAG to ${{ github.ref_name }} for HUB, API, FHIR, CSV"
+
+      - name: Push branch
+        run: |
+          cd infrastructure-prime
+          git push --set-upstream origin nexus-sandbox-env-update-${{ github.ref_name }}
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+        run: |
+          cd infrastructure-prime
+          gh pr create \
+            --base main \
+            --head nexus-sandbox-env-update-${{ github.ref_name }} \
+            --title "Nexus Sandbox TAG update ${{ github.ref_name }}" \
+            --body "Updates TAG=${{ github.ref_name }} for HUB, API, FHIR and CSV sandbox environments."
