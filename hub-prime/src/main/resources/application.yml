@@ -65,11 +65,11 @@ spring:
             redirect-uri: "https://hub.fo.dev.techbd.org/login/oauth2/code/fusionauth"
         provider:
           fusionauth:
-           authorization-uri: https://technology-by-design-dev.fusionauth.io/oauth2/authorize
-           token-uri: https://technology-by-design-dev.fusionauth.io/oauth2/token
-           user-info-uri: https://technology-by-design-dev.fusionauth.io/oauth2/userinfo
-           jwk-set-uri: https://technology-by-design-dev.fusionauth.io/.well-known/jwks.json
-           user-name-attribute: email    
+           authorization-uri: https://idp.dev.techbd.org/oauth2/authorize
+           token-uri: https://idp.dev.techbd.org/oauth2/token
+           user-info-uri: https://idp.dev.techbd.org/oauth2/userinfo
+           jwk-set-uri: https://idp.dev.techbd.org/.well-known/jwks.json
+           user-name-attribute: email     
   jpa: 
     properties:
       hibernate:

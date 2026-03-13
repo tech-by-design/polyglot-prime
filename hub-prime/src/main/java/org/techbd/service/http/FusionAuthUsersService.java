@@ -49,10 +49,10 @@ public class FusionAuthUsersService {
         //  private final String fusionAuthBaseUrl = System.getenv("ORG_TECHBD_SERVICE_HTTP_FUSIONAUTH_BASE_URL");
         //  private final String tenantID = System.getenv("ORG_TECHBD_SERVICE_HTTP_FUSIONAUTH_TENANT_ID");
          // FusionAuth API Token (hardcoded)
-         private final String fusionAuthApiToken = "ydEfF0PxHZzRYtXCIKksJWNginsc6DpPm_S7VhNKVvPc3Gcf_N3DSF1n";
+         private final String fusionAuthApiToken = "0841lUG3ARECmctabdEWAfxM4S9Ca0cbdF7B2OdPkpFBX7Ub1bVswrjN";
         // FusionAuth Tenant ID (hardcoded)
-         private final String tenantID = "31f6f067-0aab-2fa7-be40-e6f1f64b59b7";
-         private final String fusionAuthBaseUrl = "https://technology-by-design-dev.fusionauth.io";
+         private final String tenantID = "3297cb50-07a9-424b-b9dc-a869708da5da";
+         private final String fusionAuthBaseUrl = "https://idp.dev.techbd.org";
 
          private final WebClient fusionAuthApiClient = WebClient.builder()
             .defaultHeader("Authorization", fusionAuthApiToken)
