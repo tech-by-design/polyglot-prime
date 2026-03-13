@@ -2,9 +2,9 @@
   <id>c48e397f-769f-4e14-961f-e34ac1a2df46</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.8
-Configured health check endpoint using static resources.</description>
-  <revision>7</revision>
+  <description>Version: 0.8.9
+Fixed lookup manager cache issue.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -91,8 +91,7 @@ Configured health check endpoint using static resources.</description>
 /*******************************
     AWS Secrets Manager Loader
 ********************************/
-// Lookup cache TTL: 20 days
-var ttlHours = 24 * 20;
+
 //
 //function fetchSecret(secretName) {
 //    var region = &quot;us-east-1&quot;;
@@ -134,8 +133,8 @@ try {
 //    var jdbcSecretString = fetchSecret(jdbcSecretName);
 //    var jdbcSecret = JSON.parse(jdbcSecretString);
 
-	var username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
-	var password = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;, ttlHours);
+	var username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
+	var password = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
 
 	channelMap.put(&quot;JDBC_USERNAME&quot;, username);
 	channelMap.put(&quot;JDBC_PASSWORD&quot;, password);
@@ -156,7 +155,7 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
    
     channelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerApiKey);
     logger.info(&quot; DataLedger API Key loaded into channelMap&quot;);
@@ -169,7 +168,7 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirChannelUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirChannelUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
 
     if (!fhirChannelUrl || fhirChannelUrl.trim() === &quot;&quot;) {
         throw &quot;FHIR Channel URL retrieved from Lookup Manager is empty.&quot;;
@@ -188,7 +187,7 @@ try {
     6️⃣ FETCH JDBC URL (Plain text)
 ********************************************/
 try {
-    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
 
     if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
         throw &quot; MC_JDBC_URL retrieved from Lookup Manager is empty.&quot;;
@@ -209,7 +208,7 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;CSV Service URL retrieved from Lookup Manager is empty.&quot;;
@@ -239,8 +238,7 @@ try {
     } else {
         var datalakeApiUrl = LookupHelper.get(
             &quot;Config&quot;,
-            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;,
-            ttlHours
+            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
         );
 
         if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
@@ -266,7 +264,7 @@ try {
 ********************************************/&#xd;
 &#xd;
 try {&#xd;
-    var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;, ttlHours);&#xd;
+    var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;);&#xd;
  &#xd;
     channelMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);&#xd;
     logger.info(&quot; DataLake API Key loaded into channelMap&quot;);&#xd;
@@ -280,7 +278,7 @@ try {&#xd;
     7️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;);
 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
         throw &quot;BL FHIR Bundle Validation API URL retrieved from Lookup Manager is empty.&quot;;
@@ -301,7 +299,7 @@ try {
     8️⃣ FETCH HUB UI URL (Plain text)
 ********************************************/
 try {
-    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;);
 
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;HUB UI URL retrieved from Lookup Manager is empty.&quot;;
@@ -421,8 +419,6 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
           <enabled>true</enabled>
           <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
 var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-logger.info(&quot;HTTP Method: &quot; + httpMethod);
-logger.info(&quot;Context Path: &quot; + contextPath);
 
 /**
  * Util function to generate JSON string
@@ -1005,7 +1001,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1772789416620</time>
+        <time>1773375179554</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1016,12 +1012,11 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>1dc99cdc-7b7b-4373-ae55-ce3496060dc9</id>
-        <name>0_8_8</name>
+        <id>e8ac8112-03cb-4910-9227-a080b4fd581c</id>
+        <name>0_8_9</name>
         <channelIds>
+          <string>b7e67dfd-4901-43ab-968d-ed1ab8e3c8ab</string>
           <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
-          <string>7266100a-4e89-488d-b6f0-ba1af10dc0fe</string>
-          <string>116c8c0d-e092-4cdf-b9a9-10853618da18</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>

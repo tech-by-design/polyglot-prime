@@ -2,9 +2,9 @@
   <id>eef77031-2fb0-4094-951d-08f55d30d2be</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.21
-Added validation message when 2 files are selected.</description>
-  <revision>11</revision>
+  <description>Version 0.5.22
+Fixed lookup manager cache issue.</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -291,10 +291,10 @@ function getJsonInvalidOperationOutcome(errorMsg, code, severity) {
 function sendDataLedgerSync(payload) {
     logger.info(&quot;sendDataLedgerSync: &quot; + payload);
     
-    var apiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    var apiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
 
 // 1️⃣ Load from Lookup Manager (NOT sensitive)
-var dataLedgerApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+var dataLedgerApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
 &#xd;
 // 3️⃣ Store real key into channelMap
 channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerApiKey);
@@ -607,8 +607,7 @@ function applyPhiFilter(xmlString) {
     logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
 
     // ← ADDED: Retrieve XSLT content from LookupHelper
-    var ttlHours = 24 * 20;
-    var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName, ttlHours);
+    var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
     logger.info(&quot;Retrieved XSLT from LookupHelper&quot;);
 
     // ← ADDED: Validation check
@@ -643,8 +642,6 @@ function validateAgainstXsd(xmlString) {
     var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
     logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
     
-    var ttlHours = 24 * 24;
-    
     // ← ADDED: Create temp directory for XSD files
     var File = Packages.java.io.File;
     var FileWriter = Packages.java.io.FileWriter;
@@ -658,7 +655,7 @@ function validateAgainstXsd(xmlString) {
     
     // ← ADDED: Load index.txt to get list of all XSD files
     logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
-    var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;, ttlHours);
+    var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;);
     
     // ← ADDED: Normalize rawIndex to string
     var indexText = null;
@@ -693,7 +690,7 @@ function validateAgainstXsd(xmlString) {
     // ← ADDED: Write each XSD file from LookupHelper to temp directory
     for (var i = 0; i &lt; xsdFiles.length; i++) {
         var name = xsdFiles[i];
-        var content = LookupHelper.get(&quot;SchemaFiles&quot;, name, ttlHours);
+        var content = LookupHelper.get(&quot;SchemaFiles&quot;, name);
         
         if (!content || content.trim().length === 0) {
             throw new Error(&quot;Missing XSD in LookupManager: &quot; + name);
@@ -738,8 +735,7 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
     logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
 
-    var ttlHours = 24 * 20;
-    var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName, ttlHours);
+    var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
     logger.info(&quot;Value from cdaPhiBundle XSLT: &quot; + xsltContent);
 
     if (!xsltContent) {
@@ -768,7 +764,7 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
     logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
     
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
     logger.info(&quot;MC_VALID_FHIR_URLS from LookupHelper: &quot; + validUrlsEnv);
 	
     // Convert VALID_URLS to an array for validation
@@ -820,10 +816,10 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
 
 try {
   
-var jdbc_Passord = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;, ttlHours);
+var jdbc_Passord = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
 channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbc_Passord);
 logger.info(&quot;✔**************************** jdbc_Passord loaded into channelMap&quot; + jdbc_Passord);
-var jdbc_Username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
+var jdbc_Username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
 channelMap.put(&quot;JDBC_USERNAME&quot;, jdbc_Username);
 logger.info(&quot;✔**************************** jdbc_Username loaded into channelMap&quot; + jdbc_Username);    
     
@@ -836,7 +832,7 @@ logger.info(&quot;✔**************************** jdbc_Username loaded into chan
 ********************************************/
 
 try {
-    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
     
     channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
@@ -850,7 +846,7 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration  for FHIR API URL returned empty.&quot;;
@@ -872,7 +868,7 @@ try {
 try {
 
     // Get REAL jdbc URL from Config-sensitive group
-    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
     
 
     if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
@@ -893,7 +889,7 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for CSV Service URL returned empty.&quot;;
@@ -913,7 +909,7 @@ try {
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
-    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
 
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
@@ -950,7 +946,7 @@ try {
 ********************************************/
  
 try {
-    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
     
     channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
@@ -966,7 +962,7 @@ try {
 ********************************************/
 
 try {
-    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
     
      globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, ledgerUrl);
 
@@ -980,7 +976,7 @@ try {
 ********************************************/
 // Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header
 try {
-    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;);
  
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager(config) for HUB_UI_URL returned empty.&quot;;
@@ -1187,7 +1183,7 @@ if (!xmlExtracted || xmlExtracted.trim().length == 0 || xmlExtracted.trim() == &
 var missingEnvVars = [];
 
 // get the key from Lookup Manager
-var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours).trim();
+var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;).trim();
 &#xd;
     if (!fhirBundleSubmissionApiUrl || fhirBundleSubmissionApiUrl.trim() === &quot;&quot;) {
         missingEnvVars.push(&quot;Lookup Manager configuration for MC_FHIR_BUNDLE_SUBMISSION_API_URL returned empty value&quot;);
@@ -1199,7 +1195,7 @@ var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_F
 /////////////////////////////////////
 
 // Fetch and check environment variable: MC_CCDA_SCHEMA_FOLDER
-var ccdaSchemaFolder = LookupHelper.get(&quot;Config&quot;, &quot;MC_CCDA_SCHEMA_FOLDER&quot;, ttlHours);
+var ccdaSchemaFolder = LookupHelper.get(&quot;Config&quot;, &quot;MC_CCDA_SCHEMA_FOLDER&quot;);
 if (ccdaSchemaFolder != null) {
     channelMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
     logger.info(&quot;ccdaSchemaFolder: &quot; + ccdaSchemaFolder);
@@ -1911,19 +1907,19 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 }
 
 function set_fhir_resource_profile_urls(transformer) {
-	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;, ttlHours);   
-	var bundleMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;, ttlHours); 
-	var patientMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;, ttlHours);
-	var encounterMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;, ttlHours);
-	var consentMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;, ttlHours); 
-	var organizationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;, ttlHours);
-	var observationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;, ttlHours);
-	var observationSexualOrientationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;, ttlHours);
-	var questionnaireMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;, ttlHours);
-	var questionnaireResponseMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;, ttlHours);
-	var practitionerMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;, ttlHours);
-	var procedureMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;, ttlHours);
-	var locationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_LOCATION&quot;, ttlHours);
+	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);   
+	var bundleMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;); 
+	var patientMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;);
+	var encounterMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;);
+	var consentMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;); 
+	var organizationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;);
+	var observationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;);
+	var observationSexualOrientationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;);
+	var questionnaireMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;);
+	var questionnaireResponseMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;);
+	var practitionerMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;);
+	var procedureMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;);
+	var locationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_LOCATION&quot;);
 	//logger.info(&quot;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*************************???????????????????????????????&quot; + &quot;: &quot; + locationMetaProfileUrl);
 	//&quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
@@ -2218,7 +2214,6 @@ if (requestedPath == &quot;/&quot;) {
 //Extract the name and extension of the file received before processing.
 msg = channelMap.get(&apos;fileContent&apos;);
 logger.info(&quot;msg: &quot; + msg);
-var ttlHours = 24 * 20;
 // Route based on the API call
 if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 	requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
@@ -2351,7 +2346,7 @@ else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/cc
 	    });
 		
 		// Check if tracking is enabled
-		var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+		var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
 
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
 		    logger.info(&quot;data ledger api call -BEGIN received&quot;);
@@ -3062,7 +3057,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773304678918</time>
+        <time>1773375102951</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3073,8 +3068,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>2eb2c686-48fd-4431-89bb-63c98526315f</id>
-        <name>0_5_21</name>
+        <id>36250f40-722f-4582-8449-c0eead5b5a5e</id>
+        <name>0_5_22</name>
         <channelIds>
           <string>eef77031-2fb0-4094-951d-08f55d30d2be</string>
         </channelIds>

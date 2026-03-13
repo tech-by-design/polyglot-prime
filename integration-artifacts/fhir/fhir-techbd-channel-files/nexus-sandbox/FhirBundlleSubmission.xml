@@ -2,9 +2,9 @@
   <id>45d4298d-99cc-4b5c-b051-e4ac1c78c209</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.18
-Implemented process agent feature in datalake api.</description>
-  <revision>8</revision>
+  <description>Version: 0.8.19
+Fixed lookup manager cache issue.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -16,7 +16,7 @@ Implemented process agent feature in datalake api.</description>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
-        <port>9007</port>
+        <port>9003</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="4.6.1">
         <responseVariable>finalResponse</responseVariable>
@@ -91,8 +91,7 @@ Implemented process agent feature in datalake api.</description>
 /*******************************
     AWS Secrets Manager Loader
 ********************************/
-// Lookup cache TTL: 20 days
-var ttlHours = 24 * 20;
+
 
 //function fetchSecret(secretName) {
 //    var region = &quot;us-east-1&quot;;
@@ -134,8 +133,8 @@ try {
 //    var jdbcSecretString = fetchSecret(jdbcSecretName);
 //    var jdbcSecret = JSON.parse(jdbcSecretString);
 
-	var username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
-	var password = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;, ttlHours);
+	var username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
+	var password = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
 
 	channelMap.put(&quot;JDBC_USERNAME&quot;, username);
 	channelMap.put(&quot;JDBC_PASSWORD&quot;, password);
@@ -156,7 +155,7 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
 
      channelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
      globalMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, dataLedgerKey);
@@ -171,7 +170,7 @@ try {
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirChannelUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirChannelUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
 
     if (!fhirChannelUrl || fhirChannelUrl.trim() === &quot;&quot;) {
         throw &quot;FHIR Channel URL retrieved from Lookup Manager is empty.&quot;;
@@ -191,7 +190,7 @@ try {
     6️⃣ FETCH JDBC URL (Plain text)
 ********************************************/
 try {
-    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
 
     if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
         throw &quot; MC_JDBC_URL retrieved from Lookup Manager is empty.&quot;;
@@ -212,7 +211,7 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot; CSV Service URL retrieved from Lookup Manager is empty.&quot;;
@@ -253,8 +252,7 @@ try {
 
         datalakeApiUrl = LookupHelper.get(
             &quot;Config&quot;,
-            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;,
-            ttlHours
+            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
         );
 
         if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
@@ -279,7 +277,7 @@ try {
 ********************************************/
 
 try {
-    var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;, ttlHours);
+    var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;);
 
     channelMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);
     logger.info(&quot; DataLake API Key loaded into channelMap&quot;);
@@ -293,7 +291,7 @@ try {
     7️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;);
 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
         throw &quot; BL FHIR Bundle Validation API URL retrieved from Lookup Manager is empty.&quot;;
@@ -315,7 +313,7 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    var dataLedgerApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
 
      channelMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerApiUrl);
      globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, dataLedgerApiUrl);
@@ -332,7 +330,7 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
    
     channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
@@ -348,7 +346,7 @@ try {
     10️⃣ FETCH HUB UI URL (Plain text)
 ********************************************/
 try {
-    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;);
   
 
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
@@ -372,7 +370,7 @@ try {
 
 try {
 	//value is either true or false
-    var processingFeatureEnable = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, ttlHours);
+    var processingFeatureEnable = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;);
    
     channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, processingFeatureEnable);
     globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;, processingFeatureEnable);
@@ -385,7 +383,7 @@ try {
 
 try {
 	//values will be comma seperated tenant ids eg:abc,xyz,test
-    var processingAgentTenantIds = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, ttlHours);
+    var processingAgentTenantIds = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;);
    
     channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, processingAgentTenantIds);
     globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;, processingAgentTenantIds);
@@ -398,7 +396,7 @@ try {
 
 try {
 	//value is TXD
-    var processingAgentValue = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, ttlHours);
+    var processingAgentValue = LookupHelper.get(&quot;Config&quot;, &quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;);
    
     channelMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, processingAgentValue);
     globalMap.put(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;, processingAgentValue);
@@ -2419,7 +2417,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773219831868</time>
+        <time>1773375161144</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2430,14 +2428,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>49ceb33e-8f36-4129-a5fc-f076d4c904fd</id>
-        <name>0_8_18</name>
+        <id>92183f0c-0328-493f-9418-f65a9713e909</id>
+        <name>0_8_19</name>
         <channelIds>
           <string>45d4298d-99cc-4b5c-b051-e4ac1c78c209</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
