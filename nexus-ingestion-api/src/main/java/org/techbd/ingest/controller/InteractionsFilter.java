@@ -167,9 +167,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context , Constants.HTTP);
 
                 if (portEntryOpt.isEmpty()) {
-                    String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s - rejecting request",
-                            requestPort, sourceId, msgType);
-                    LOG.warn("InteractionsFilter: {}", msg);
+                    String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s interactionId=%s - rejecting request",
+                            requestPort, sourceId, msgType, interactionId);
+                    LOG.warn("InteractionsFilter: {}  interactionId: {}", msg, interactionId);
                     origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
                     origResponse.setContentType("application/json;charset=UTF-8");
                     String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
@@ -178,7 +178,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                 .write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
                         origResponse.getWriter().flush();
                     } catch (IOException ioe) {
-                        LOG.error("InteractionsFilter: failed to write Bad Request response", ioe);
+                        LOG.error("InteractionsFilter: failed to write Bad Request response  interactionId: {}", ioe);
                     }
                     return;
                 }
@@ -189,22 +189,30 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         String route = portEntry.route;
                        if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && ALLOWED_ROUTES_LIST.contains(route)) {
                             cachedRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
-                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true", route);
+                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true  interactionId: {}", route, interactionId);
                           }
                     // 3) If this port config requires mtls via mtls field, client must supply
                 // header
                 String mtlsName = portEntry.mtls;
                 String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
                 cachedRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
-                LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}", mtlsName, mtlsBucket);
+                LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}  interactionId: {}", mtlsName, mtlsBucket, interactionId);
                
                 // CRITICAL: Wrap response EARLY in filter chain to force Content-Type override
                 // This must happen BEFORE MessageDispatcherServlet writes the response
                 if (portEntry.ackContentType != null && !portEntry.ackContentType.isBlank()) {
                      wrappedResponse = new ContentTypeOverrideResponseWrapper(origResponse, portEntry.ackContentType);
-                    LOG.info("InteractionsFilter: Early wrapping response with forceContentType={}", portEntry.ackContentType);
+                    LOG.debug("InteractionsFilter: Early wrapping response with forceContentType={}  interactionId: {}", portEntry.ackContentType, interactionId);
 
                 }
+
+                // Skip only mTLS check for internal forwards from SoapForwarderService
+                if ("true".equalsIgnoreCase(cachedRequest.getHeader(Constants.HEADER_MTLS_VERIFIED))) {
+                    LOG.info("InteractionsFilter: internal forward - mTLS already verified, skipping mTLS check. interactionId={}", interactionId);
+                    chain.doFilter(cachedRequest, wrappedResponse);
+                    return;
+                }
+
                 String clientCertHeader = cachedRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
                 // Accept header value as URL-encoded (always expected to be URL-encoded).
                 String clientCertPem = null;
@@ -216,9 +224,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         v = v.replace("+", "%2B");
                         v = v.replace(" ", "%20");
                         clientCertPem = java.net.URLDecoder.decode(v, java.nio.charset.StandardCharsets.UTF_8);
-                        LOG.info("InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}", clientCertPem.length());
+                        LOG.info("InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}  interactionId: {}", clientCertPem.length(), interactionId);
                     } catch (Exception urlDecodeException) {
-                        LOG.error("InteractionsFilter: URL decoding failed, treating as raw header", urlDecodeException);
+                        LOG.error("InteractionsFilter: URL decoding failed, treating as raw header  interactionId: {}", urlDecodeException, interactionId);
                         clientCertPem = v;
                     }
                 }
@@ -227,7 +235,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     if (clientCertHeader == null) {
                         String msg = String.format("Missing required header '%s' for mTLS on port %d",
                                 Constants.REQ_HEADER_MTLS_CLIENT_CERT, requestPort);
-                        LOG.warn("InteractionsFilter: {}", msg);
+                        LOG.warn("InteractionsFilter: {}  interactionId: {}", msg, interactionId);
                         wrappedResponse.setStatus(HttpStatus.BAD_REQUEST.value());
                         wrappedResponse.setContentType("application/json;charset=UTF-8");
                         String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
@@ -237,16 +245,16 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             wrappedResponse.getWriter().flush();
                         } catch (IOException ioe) {
                             LOG.error(
-                                    "InteractionsFilter: failed to write Bad Request response for missing mTLS header",
-                                    ioe);
+                                    "InteractionsFilter: failed to write Bad Request response for missing mTLS header  interactionId: {}",
+                                    ioe, interactionId);
                         }
                         return;
                     }
                 } else {
                     // mtlsName null -> still allow header-based flow if header present, but not
                     // mandatory
-                    LOG.info("InteractionsFilter: mtls not set in port config for port {}. clientCertHeaderPresent={}",
-                            requestPort, clientCertHeader != null);
+                    LOG.info("InteractionsFilter: mtls not set in port config for port {}. clientCertHeaderPresent={}  interactionId: {}",
+                            requestPort, clientCertHeader != null, interactionId);
                 }
 
                 // prepare server bundle key if mtlsName + bucket available
@@ -257,8 +265,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
                 // If mtls is not configured for this port, skip mTLS processing entirely.
                 if (mtlsName == null || mtlsName.isBlank()) {
-                    LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
-                            requestPort);
+                    LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS  interactionId: {}",
+                            requestPort, interactionId);
                     chain.doFilter(cachedRequest, wrappedResponse);
                     return;
                 }
@@ -267,7 +275,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     // parse client certificate chain (if header present)
                     X509Certificate[] clientChain = clientCertPem != null ? parsePemChain(clientCertPem)
                             : new X509Certificate[0];
-                    LOG.info("InteractionsFilter: parsed client certificate chain length={}", clientChain.length);
+                    LOG.info("InteractionsFilter: parsed client certificate chain length={}  interactionId: {}", clientChain.length, interactionId);
 
                     // 4) obtain CA/server cert(s) to validate client against:
                     X509Certificate[] caCerts = null;
@@ -279,33 +287,34 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         // log cache hit/miss
                         X509Certificate[] cached = caCache.getIfPresent(cacheKey);
                         if (cached != null) {
-                            LOG.info("InteractionsFilter: CA bundle cache hit for {}", cacheKey);
+                            LOG.info("InteractionsFilter: CA bundle cache hit for {}  interactionId: {}", cacheKey, interactionId);
                         } else {
-                            LOG.info("InteractionsFilter: CA bundle cache miss for {}, fetching from S3 {}/{}",
-                                    cacheKey, bucketFinal, keyFinal);
+                            LOG.info("InteractionsFilter: CA bundle cache miss for {}, fetching from S3 {}/{}  interactionId: {}",
+                                    cacheKey, bucketFinal, keyFinal, interactionId);
                         }
 
                         caCerts = caCache.get(cacheKey, () -> {
                             try {
                                 return fetchPemFromS3AndParse(bucketFinal, keyFinal);
                             } catch (Exception ex) {
-                                LOG.error("InteractionsFilter: error fetching CA bundle from S3 {}/{}", bucketFinal,
+                                LOG.error("InteractionsFilter: error fetching CA bundle from S3 {}/{} ", bucketFinal,
                                         keyFinal, ex);
                                 throw new RuntimeException(ex);
                             }
                         });
-                        LOG.info("InteractionsFilter: loaded CA bundle from S3, cert count={}",
-                                caCerts != null ? caCerts.length : 0);
+                        LOG.info("InteractionsFilter: loaded CA bundle from S3, cert count={}  interactionId: {}",
+                                caCerts != null ? caCerts.length : 0, interactionId);
                     }
 
                     // 5) verify client chain against CA certs (server bundle is used as trust
                     // anchors)
-                    verifyCertificateChain(clientChain, caCerts);
-                    LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}", requestPort,
-                            cachedRequest.getRequestURI());
+                    verifyCertificateChain(clientChain, caCerts);                    
+                    cachedRequest.setAttribute(Constants.HEADER_MTLS_VERIFIED, "true");
+                    LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}  interactionId: {}", requestPort,
+                            cachedRequest.getRequestURI(), interactionId);
 
                 } catch (ExecutionException ee) {
-                    LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3", ee);
+                    LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3  interactionId: {}", ee, interactionId);
                     // return 500 with a small JSON body (similar handling as IOException)
                     wrappedResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
                     wrappedResponse.setContentType("application/json;charset=UTF-8");
@@ -316,18 +325,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                 String.format("{\"error\":\"Internal Server Error\",\"description\":\"%s\"}", safe));
                         wrappedResponse.getWriter().flush();
                     } catch (IOException ioe2) {
-                        LOG.error("InteractionsFilter: failed to write Internal Server Error response", ioe2);
+                        LOG.error("InteractionsFilter: failed to write Internal Server Error response  interactionId: {}", ioe2, interactionId);
                     }
                     return;
                 } catch (IOException ioe) {
-                    LOG.error("InteractionsFilter: IO error during mTLS processing", ioe);
+                    LOG.error("InteractionsFilter: IO error during mTLS processing  interactionId: {}", ioe, interactionId);
                     wrappedResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                             "mTLS processing error: " + ioe.getMessage());
                     return;
                 } catch (CertificateException ce) {
                     // Log full details (stack trace and cause) and return a JSON body with a
                     // descriptive message.
-                    LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:", requestPort, ce);
+                    LOG.error("InteractionsFilter: mTLS verification failed for port={}. Cause:  interactionId: {}", requestPort, ce, interactionId);
                     wrappedResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
                     wrappedResponse.setContentType("application/json;charset=UTF-8");
                     String description = ce.getMessage() != null ? ce.getMessage() : "mTLS verification failed";

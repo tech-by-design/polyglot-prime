@@ -41,10 +41,10 @@ public class SoapForwarderService {
                 : "";
         try {
             String contentType = request.getContentType();
-            String targetUrl = getBaseUrl(request) + "/ws";
+            String targetUrl = getBaseUrl(request,interactionId) + "/ws";
             LOG.info(
-                    "SoapForwarderService:: Forwarding raw to /ws. ContentType={} sourceId={} msgType={} interactionId={}",
-                    contentType, sourceId, msgType, interactionId);
+                    "SoapForwarderService:: Forwarding raw to targetUrl={} ContentType={} sourceId={} msgType={} interactionId={}",
+                    targetUrl, contentType, sourceId, msgType, interactionId);
             return forwardRaw(request, rawBytes, contentType, targetUrl, sourceId, msgType, interactionId);
         } catch (Exception e) {
             errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
@@ -90,6 +90,10 @@ public class SoapForwarderService {
             String interactionId) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(targetUrl).openConnection();
         try {
+            String mtlsVerified = (String) request.getAttribute(Constants.HEADER_MTLS_VERIFIED);
+            if ("true".equals(mtlsVerified)) {
+                conn.setRequestProperty(Constants.HEADER_MTLS_VERIFIED, "true");
+            }
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setRequestMethod("POST");
@@ -275,7 +279,7 @@ public class SoapForwarderService {
         return ct.toString();
     }
 
-    public static String getBaseUrl(HttpServletRequest request) {
+    public static String getBaseUrl(HttpServletRequest request, String interactionId ) {
         String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
                 .orElse(request.getScheme());
         String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
