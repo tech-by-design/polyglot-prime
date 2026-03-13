@@ -102,13 +102,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
             return;
         }
         cachedRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
-        // Skip mTLS for internal forwards from SoapForwarderService
-        if ("true".equalsIgnoreCase(cachedRequest.getHeader(Constants.HEADER_MTLS_VERIFIED))) {
-            LOG.info("InteractionsFilter: internal forward - mTLS already verified, skipping. interactionId={}", interactionId);
-            chain.doFilter(cachedRequest, origResponse);
-            return;
-        }
-
         try {
             if (!cachedRequest.getRequestURI().equals("/")
                     && !cachedRequest.getRequestURI().startsWith("/actuator/health")) {
@@ -191,7 +184,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
 
                 PortConfig.PortEntry portEntry = portEntryOpt.get();
-                LOG.info("InteractionsFilter: resolved PortConfig entry for port {} -> sourceId={}, msgType={}, route={}",
+                LOG.info("InteractionsFilter: resolved PortConfig entry for port {} -> sourceId={}, msgType={}, route={}", 
                         requestPort, portEntry.sourceId, portEntry.msgType, portEntry.route);
                         String route = portEntry.route;
                        if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && ALLOWED_ROUTES_LIST.contains(route)) {
@@ -212,6 +205,14 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     LOG.debug("InteractionsFilter: Early wrapping response with forceContentType={}  interactionId: {}", portEntry.ackContentType, interactionId);
 
                 }
+
+                // Skip only mTLS check for internal forwards from SoapForwarderService
+                if ("true".equalsIgnoreCase(cachedRequest.getHeader(Constants.HEADER_MTLS_VERIFIED))) {
+                    LOG.info("InteractionsFilter: internal forward - mTLS already verified, skipping mTLS check. interactionId={}", interactionId);
+                    chain.doFilter(cachedRequest, wrappedResponse);
+                    return;
+                }
+
                 String clientCertHeader = cachedRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
                 // Accept header value as URL-encoded (always expected to be URL-encoded).
                 String clientCertPem = null;
