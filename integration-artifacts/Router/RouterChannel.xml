@@ -1,15 +1,36 @@
 <channel version="4.6.1">
-  <id>f0e1ad2d-ce0d-4cbf-be18-0d6a90cdac29</id>
+  <id>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>RouterChannel</name>
-  <description>Version: 0.2.0
+  <name>RouterChannel-0_2_1</name>
+  <description>Version: 0.2.1
 Implemented port sequencing to ensure proper processing order.</description>
-  <revision>3</revision>
+  <revision>14</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+  <sslEnabled>true</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType>JKS</keystoreType>
+          <truststoreType/>
+          <keystoreSettingFromSystem>true</keystoreSettingFromSystem>
+          <keystoreUid>Util-sbx-bl-net.JKS</keystoreUid>
+          <myCertificateAlias>bridgelink</myCertificateAlias>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -98,41 +119,62 @@ channelMap.put(&apos;interactionId&apos;, interactionId);
 
 
 
-
 // X-TechBD-Tenant-ID
-var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-channelMap.put(&apos;tenantId&apos;, tenantId);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-Tenant-ID: &quot; + tenantId);
+var tenantId = &quot;&quot;;
+var incomingTenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+
+if (incomingTenantId != null &amp;&amp; incomingTenantId.trim() !== &apos;&apos;) {
+    tenantId = incomingTenantId.trim();
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Tenant-ID: &quot; + tenantId);
+channelMap.put(&quot;tenantId&quot;, tenantId);
 
 
-var baseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);&#xd;
-channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);&#xd;
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-Base-FHIR-URL: &quot; + baseFhirUrl);
+// X-TechBD-Base-FHIR-URL
+var baseFhirUrl = &quot;&quot;;
+var incomingBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
 
-// X-TechBD-CIN
-var cin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
-channelMap.put(&apos;cin&apos;, cin);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-CIN: &quot; + cin);
+if (incomingBaseFhirUrl != null &amp;&amp; incomingBaseFhirUrl.trim() !== &apos;&apos;) {
+    baseFhirUrl = incomingBaseFhirUrl.trim();
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Base-FHIR-URL: &quot; + baseFhirUrl);
+channelMap.put(&quot;baseFhirUrl&quot;, baseFhirUrl);
 
-// X-TechBD-OrgNPI
-var orgNpi = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-channelMap.put(&apos;orgNpi&apos;, orgNpi);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-OrgNPI: &quot; + orgNpi);
 
 // X-TechBD-Facility-ID
-var facilityId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Facility-ID&apos;);
-channelMap.put(&apos;facilityId&apos;, facilityId);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-Facility-ID: &quot; + facilityId);
+var facilityId = &quot;&quot;;
+var incomingFacilityId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Facility-ID&apos;);
+
+if (incomingFacilityId != null &amp;&amp; incomingFacilityId.trim() !== &apos;&apos;) {
+    facilityId = incomingFacilityId.trim();
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Facility-ID: &quot; + facilityId);
+channelMap.put(&quot;facilityId&quot;, facilityId);
+
 
 // X-TechBD-Encounter-Type
-var encounterType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Encounter-Type&apos;);
-channelMap.put(&apos;encounterType&apos;, encounterType);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-Encounter-Type: &quot; + encounterType);
+var encounterType = &quot;&quot;;
+var incomingEncounterType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Encounter-Type&apos;);
+
+if (incomingEncounterType != null &amp;&amp; incomingEncounterType.trim() !== &apos;&apos;) {
+    encounterType = incomingEncounterType.trim();
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Encounter-Type: &quot; + encounterType);
+channelMap.put(&quot;encounterType&quot;, encounterType);
+
 
 // X-TechBD-Validation-Severity-Level
-var validationSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
-channelMap.put(&apos;validationSeverity&apos;, validationSeverity);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-TechBD-Validation-Severity-Level: &quot; + validationSeverity);
+var validationSeverity = &quot;error&quot;;
+var incomingValidationSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
+
+if (incomingValidationSeverity != null &amp;&amp; incomingValidationSeverity.trim() !== &apos;&apos;) {
+    validationSeverity = incomingValidationSeverity.trim();
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Validation-Severity-Level: &quot; + validationSeverity);
+channelMap.put(&quot;validationSeverity&quot;, validationSeverity);
+
+//
+
 
 // X-SHIN-NY-IG-Version
 var igVersion = $(&apos;headers&apos;).getHeader(&apos;X-SHIN-NY-IG-Version&apos;);
@@ -167,65 +209,116 @@ if (dataLakeApiUrl == null || dataLakeApiUrl.trim() === &apos;&apos;) {&#xd;
 channelMap.put(&apos;dataLakeApiUrl&apos;, dataLakeApiUrl);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-DataLake-API-URL: &quot; + dataLakeApiUrl);
 
-///////////////////
+
+
+
 var source = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-if (source == null || source.trim() === &apos;&apos;) {
-    source = &quot;&quot;;  // optional, already null if missing
+if (source == null || source.trim() === &apos;&apos;) {&#xd;
+    source = &quot;&quot;; // optional, already null if missing&#xd;
 }
+
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Source-Type: &quot; + source);
+
 channelMap.put(&apos;source&apos;, source);
-////////////////
+
+
+var elaboration = &quot;&quot;;&#xd;
+var incomingElaboration = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Elaboration&apos;);&#xd;
+&#xd;
+// If header has valid value, use it; otherwise keep default (empty string or any fallback)&#xd;
+if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;&apos;) {&#xd;
+    elaboration = incomingElaboration.trim();&#xd;
+}&#xd;
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Elaboration: &quot; + elaboration);&#xd;
+channelMap.put(&quot;elaboration&quot;, elaboration);
 
 
 
 
+&#xd;
+var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);&#xd;
+&#xd;
+&#xd;
+//.TIN&#xd;
+var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);&#xd;
+&#xd;
+&#xd;
+// Check if both are missing — only then it&apos;s an error&#xd;
+if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;&#xd;
+    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {&#xd;
+    logger.info(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);&#xd;
+} else {&#xd;
+    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {&#xd;
+        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);&#xd;
+    }&#xd;
+    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {&#xd;
+        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);&#xd;
+    }&#xd;
+}
 
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgNPI: &quot; + organizationNPI);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgTIN: &quot; + organizationTIN);&#xd;
+&#xd;
+&#xd;
+var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);&#xd;
+logger.info(&quot;X-TechBD-Screening-Code: &quot; + screeningCode);&#xd;
+if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {&#xd;
+    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);&#xd;
+}
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Screening-Code: &quot; + screeningCode);
 
+&#xd;
+&#xd;
+//Part 2 Data Flagging &#xd;
+var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);&#xd;
+logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);&#xd;
+if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {&#xd;
+    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);&#xd;
+}
 
-
-
-
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Part2: &quot; + part2DataFlag);
 
 
 if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003/Bundle/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;application/fhir+json&quot;);	
 	logger.info(&quot;FHIRBundle submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001/Bundle/$validate/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;application/fhir+json&quot;);	
 	logger.info(&quot;FHIRBundle validation  RouterChannel &quot;);
 }
 
 
 if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002/ccda/Bundle/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CCDA submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002/ccda/Bundle/$validate/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CCDA validation  RouterChannel &quot;);
 }
 
 
 if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004/flatfile/csv/Bundle/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CSV FlatFile submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/flatfile/csv/Bundle/$validate/&quot; || requestedPath == &quot;/flatfile/csv/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004/flatfile/csv/Bundle/$validate/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CSV FlatFile validation  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006/hl7v2/Bundle/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;HL7 submission  RouterChannel &quot;);
 }
@@ -233,7 +326,7 @@ if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2
 
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006/hl7v2/Bundle/$validate/&quot;);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;HL7 validation  RouterChannel &quot;);
 }
@@ -344,7 +437,29 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
       <metaDataId>1</metaDataId>
       <name>response_operationoutcome</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+  <sslEnabled>true</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType>JKS</truststoreType>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>true</truststoreSettingFromSystem>
+            <truststoreUid>Util-sbx-bl-net.JKS</truststoreUid>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -366,14 +481,7 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
           <reattachAttachments>true</reattachAttachments>
           <pluginProperties>
             <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
-                              
-    
-    
-    
-    
-    
-    
-    <sslEnabled>false</sslEnabled>
+  <sslEnabled>false</sslEnabled>
               <mutualTlsEnabled>false</mutualTlsEnabled>
               <verifyHostname>false</verifyHostname>
               <keystorePath/>
@@ -477,6 +585,36 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
             <string>X-TECHBD-BL-BASEURL</string>
             <list>
               <string>${blBaseUrl}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Source-Type</string>
+            <list>
+              <string>${source}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-OrgTIN</string>
+            <list>
+              <string>${organizationTIN}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Screening-Code</string>
+            <list>
+              <string>${X-TechBD-Screening-Code}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Part2</string>
+            <list>
+              <string>${X-TechBD-Part2}</string>
             </list>
           </entry>
         </headers>
@@ -685,26 +823,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773302157682</time>
+        <time>1773395636421</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>36bc596b-7742-4a19-9829-510e4a54b6cb</id>
-        <name>0_2_0</name>
+        <id>62c015b1-43b6-43be-a51f-4fbcf8eb58a7</id>
+        <name>0_2_1</name>
         <channelIds>
-          <string>f0e1ad2d-ce0d-4cbf-be18-0d6a90cdac29</string>
-          <string>76ee6311-a5e2-4a2a-9059-7eb40d364b14</string>
+          <string>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
