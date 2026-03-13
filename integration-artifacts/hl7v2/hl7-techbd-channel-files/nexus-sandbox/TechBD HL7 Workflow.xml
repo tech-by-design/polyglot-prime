@@ -2,9 +2,9 @@
   <id>55073658-befa-437d-8ce7-e91ac6f54961</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.28
-Reverted hl7 file validation is not exist in synthetic</description>
-  <revision>18</revision>
+  <description>Version: 0.1.29
+Fixed lookup manager cache issue.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -475,8 +475,7 @@ for (var i = 0; i &lt; lines.length; i++) {
           <enabled>true</enabled>
           <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
 var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-logger.info(&quot;HTTP Method: &quot; + httpMethod);
-logger.info(&quot;Context Path: &quot; + contextPath);
+
 
 /**
  * Util function to generate JSON string
@@ -1543,8 +1542,7 @@ if (requestedPath == &quot;/&quot;) {
 }
 
 		// Extraction from Lookup Manager.
-		var ttlHours = 24 * 20;
-		var validationSchemaXML = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-validation-schema&quot;, ttlHours);
+		var validationSchemaXML = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-validation-schema&quot;);
 		logger.info(&quot;Value from hl7v2-validation-schema: &quot; + validationSchemaXML);
 
 
@@ -1904,8 +1902,7 @@ try {
 
 
 		// Extraction from Lookup Manager.
-		var ttlHours = 24 * 20; // Time to live in hours
-		var xsltString = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-fhir-bundle.xslt&quot;, ttlHours);
+		var xsltString = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-fhir-bundle.xslt&quot;);
 		logger.info(&quot;Value from hl7v2-fhir-bundle.xslt : &quot; + xsltString);
 
 		
@@ -2473,18 +2470,18 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 ****************************************************************************************/
 
 try {
-    var ttlHours = 24 * 20;
+    
 
     /*************** JDBC URL (PLAIN TEXT) ****************/
 
-    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;, ttlHours);
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
 
     if (!jdbcUrl) {
         throw &quot;Empty JDBC URL returned from Lookup Manager (Config-sensitive group)&quot;;
     }
 
 // Step 2: Get ACTUAL USERNAME directly from Lookup Manager
-    var jdbcUsername = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;, ttlHours);
+    var jdbcUsername = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
 
     if (!jdbcUsername || jdbcUsername.trim() === &quot;&quot;) {
         throw &quot;MC_JDBC_USERNAME not configured in Lookup Manager (Config-sensitive group)&quot;;
@@ -2493,7 +2490,7 @@ try {
     jdbcUsername = jdbcUsername.trim();
 
     // Step 3: Get ACTUAL PASSWORD directly from Lookup Manager
-    var jdbcPassword = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;, ttlHours);
+    var jdbcPassword = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
 
     if (!jdbcPassword || jdbcPassword.trim() === &quot;&quot;) {
         throw &quot;MC_JDBC_PASSWORD not configured in Lookup Manager (Config-sensitive group)&quot;;
@@ -2525,7 +2522,7 @@ logger.info(&quot;✔ HL7 JDBC configuration loaded directly from Lookup Manager
     3️⃣ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
 ********************************************/
 try {
-    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;, ttlHours);
+    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
 
     fhirApiUrl = fhirApiUrl.trim(); 
     if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
@@ -2548,7 +2545,7 @@ try {
 ********************************************/
 
 try {
-    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, ttlHours);
+    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
     
     globalMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
@@ -2564,7 +2561,7 @@ try {
 ********************************************/
 
 try {
-    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;, ttlHours);
+    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
    
      globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, ledgerUrl);
 
@@ -2575,17 +2572,16 @@ try {
 }
 ////////////////
 try {
-    var ttlHours = 24 * 20;
 
     // DATA_LEDGER_TRACKING (true / false)
-    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;, ttlHours);
+    var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
     if (!trackingEnabled || trackingEnabled.trim() === &quot;&quot;) {
         throw &quot;DATA_LEDGER_TRACKING is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, trackingEnabled.trim());
 
     // MC_VALID_FHIR_URLS (comma-separated list)
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
     if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
         throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
     }
@@ -2602,7 +2598,7 @@ try {
     4️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for CSV Service URL returned empty.&quot;;
@@ -2622,7 +2618,7 @@ try {
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
-    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
 
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
@@ -2660,7 +2656,7 @@ try {
 ********************************************/
 // Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header.
 try {
-    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;, ttlHours);
+    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;);
  
     if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for HUB_UI_URL returned empty.&quot;;
@@ -2737,54 +2733,53 @@ function toJsonb(value) {
  ****************************************************************************************/
 
 try {
-    var ttlHours = 24 * 20;
 
     // Base FHIR URL
-    var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;, ttlHours);
+    var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);
     if (!baseFhirUrl || baseFhirUrl.trim() === &quot;&quot;) {
         throw &quot;BASE_FHIR_URL is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;BASE_FHIR_URL&quot;, baseFhirUrl.trim());
 
     // Profile URLs
-    var bundleProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;, ttlHours);
+    var bundleProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;);
     if (!bundleProfile || bundleProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_BUNDLE is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_BUNDLE&quot;, bundleProfile.trim());
 
-    var patientProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;, ttlHours);
+    var patientProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;);
     if (!patientProfile || patientProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_PATIENT is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_PATIENT&quot;, patientProfile.trim());
 
-    var encounterProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;, ttlHours);
+    var encounterProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;);
     if (!encounterProfile || encounterProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_ENCOUNTER is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_ENCOUNTER&quot;, encounterProfile.trim());
 
-    var consentProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;, ttlHours);
+    var consentProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_CONSENT&quot;);
     if (!consentProfile || consentProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_CONSENT is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_CONSENT&quot;, consentProfile.trim());
 
-    var orgProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;, ttlHours);
+    var orgProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ORGANIZATION&quot;);
     if (!orgProfile || orgProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_ORGANIZATION is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_ORGANIZATION&quot;, orgProfile.trim());
 
-    var obsProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;, ttlHours);
+    var obsProfile = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_OBSERVATION&quot;);
     if (!obsProfile || obsProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_OBSERVATION is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_OBSERVATION&quot;, obsProfile.trim());
 
     var sexualOrientationProfile =
-        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;, ttlHours);
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;);
     if (!sexualOrientationProfile || sexualOrientationProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_SEXUAL_ORIENTATION is not configured in Lookup Manager&quot;;
     }
@@ -2794,14 +2789,14 @@ try {
     );
 
     var questionnaireProfile =
-        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;, ttlHours);
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE&quot;);
     if (!questionnaireProfile || questionnaireProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_QUESTIONNAIRE is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_QUESTIONNAIRE&quot;, questionnaireProfile.trim());
 
     var questionnaireResponseProfile =
-        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;, ttlHours);
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;);
     if (!questionnaireResponseProfile || questionnaireResponseProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE is not configured in Lookup Manager&quot;;
     }
@@ -2811,14 +2806,14 @@ try {
     );
 
     var practitionerProfile =
-        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;, ttlHours);
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PRACTITIONER&quot;);
     if (!practitionerProfile || practitionerProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_PRACTITIONER is not configured in Lookup Manager&quot;;
     }
     globalMap.put(&quot;PROFILE_URL_PRACTITIONER&quot;, practitionerProfile.trim());
 
     var procedureProfile =
-        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;, ttlHours);
+        LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;);
     if (!procedureProfile || procedureProfile.trim() === &quot;&quot;) {
         throw &quot;PROFILE_URL_PROCEDURE is not configured in Lookup Manager&quot;;
     }
@@ -3018,7 +3013,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773127814484</time>
+        <time>1773375842905</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3029,13 +3024,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>911fc781-fa20-420b-a098-4ea5e570d804</id>
-        <name>0_1_28</name>
+        <id>eed0e66c-4123-43c4-b899-2603d5df8481</id>
+        <name>0_1_29</name>
         <channelIds>
           <string>55073658-befa-437d-8ce7-e91ac6f54961</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

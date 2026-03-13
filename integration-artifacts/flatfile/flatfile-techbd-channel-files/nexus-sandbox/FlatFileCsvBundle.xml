@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>496ccf54-8775-4e1f-8f58-527e6dec6bfb</id>
+  <id>f933e873-90e7-4b7f-81c7-40afa9e5c9c6</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.13
-Combined both the CSV Bundle and CSV Bundle Validate functionalities into a single channel.</description>
-  <revision>3</revision>
+  <description>Version: 0.9.14
+Fixed lookup manager cache issue.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -114,8 +114,6 @@ function setErrorResponse(statusCode, errorMessage) {
 /*******************************
     AWS Secrets Manager Loader
 ********************************/
-// Lookup cache TTL: 20 days
-var ttlHours = 24 * 20;
 
 function fetchSecret(secretName) {
     var region = &quot;us-east-1&quot;;
@@ -151,7 +149,7 @@ function fetchSecret(secretName) {
 
 
 try {
-    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;, ttlHours);
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
 
     if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
         throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
@@ -200,7 +198,7 @@ channelMap.put(&quot;techbdBlBaseUrl&quot;, techbdBlBaseUrl);
     2️⃣ FETCH CSV SERVICE API URL (Plain text)
 ********************************************/
 try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;, ttlHours);
+    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
 // TODO remove commented lines
 
@@ -227,7 +225,7 @@ try {
 
 try {
 // MC_VALID_FHIR_URLS (comma-separated list)
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
     if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
         throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
     }
@@ -295,7 +293,7 @@ if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
 // Read Base FHIR URL header
 var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
     logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;, ttlHours);
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
     logger.info(&quot;MC_VALID_FHIR_URLS from LookupHelper: &quot; + validUrlsEnv);
     // Convert VALID_URLS to an array for validation
     var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
@@ -928,7 +926,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773302240404</time>
+        <time>1773375201719</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -939,16 +937,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a1b689a7-8a18-481b-8eae-d31573d3f100</id>
-        <name>0_9_13</name>
+        <id>827ee2b2-07e3-4ddc-9f5a-a2be880be4af</id>
+        <name>0_9_14</name>
         <channelIds>
-          <string>a92d48f1-6263-4927-b52c-68b8f6f2ae24</string>
-          <string>d5bd1b0c-2c2c-41af-a21b-199e0102c88b</string>
-          <string>496ccf54-8775-4e1f-8f58-527e6dec6bfb</string>
+          <string>f933e873-90e7-4b7f-81c7-40afa9e5c9c6</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
