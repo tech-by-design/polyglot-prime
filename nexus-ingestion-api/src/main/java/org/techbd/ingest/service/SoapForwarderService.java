@@ -234,8 +234,10 @@ public class SoapForwarderService {
         }
         if (boundaryEnd <= dashPos)
             return null;
+
         String boundary = new String(rawBytes, dashPos, boundaryEnd - dashPos,
-                StandardCharsets.UTF_8).stripTrailing();
+                StandardCharsets.UTF_8).strip().replace("\"", "");
+
         if (boundary.isBlank())
             return null;
 
@@ -248,8 +250,11 @@ public class SoapForwarderService {
         java.util.regex.Matcher ctMatcher = java.util.regex.Pattern
                 .compile("Content-Type:\\s*([^;\\r\\n]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
                 .matcher(headerSnippet);
+
         if (ctMatcher.find()) {
-            firstPartType = ctMatcher.group(1).trim();
+            firstPartType = ctMatcher.group(1)
+                    .replace("\"", "")
+                    .trim();
         }
 
         // Extract Content-ID of first part to use as 'start' parameter
@@ -257,8 +262,11 @@ public class SoapForwarderService {
         java.util.regex.Matcher cidMatcher = java.util.regex.Pattern
                 .compile("Content-ID:\\s*(<[^>]+>)", java.util.regex.Pattern.CASE_INSENSITIVE)
                 .matcher(headerSnippet);
+
         if (cidMatcher.find()) {
-            start = cidMatcher.group(1).trim();
+            start = cidMatcher.group(1)
+                    .replace("\"", "")
+                    .trim();
         }
 
         // ── Step 4: determine start-info from SOAP namespace ──────────────────
@@ -271,9 +279,11 @@ public class SoapForwarderService {
         ct.append("multipart/related");
         ct.append("; type=\"").append(firstPartType).append("\"");
         ct.append("; boundary=\"").append(boundary).append("\"");
-        if (start != null) {
+
+        if (start != null && !start.isBlank()) {
             ct.append("; start=\"").append(start).append("\"");
         }
+
         ct.append("; start-info=\"").append(startInfo).append("\"");
 
         return ct.toString();
@@ -299,7 +309,8 @@ public class SoapForwarderService {
                     || (proto.equals("https") && port == 443)
                     || (proto.equals("https") && port == 80);
         }
-        return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
+        host="localhost";
+        return skipPort ? proto + "://" + "host" : proto + "://" + host + ":" + port;
     }
 
     private String determineSoapVersion(String xml) {
