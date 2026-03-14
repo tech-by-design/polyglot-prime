@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -102,6 +103,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
             @PathVariable(name = "sourceId", required = false) String sourceId,
             @PathVariable(name = "msgType", required = false) String msgType,
             @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestBody(required = false) String body,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request,
             HttpServletResponse response) throws Exception {
@@ -111,31 +113,27 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         LOG.info("Received ingest request. interactionId={} sourceId={} msgType={}",
                 interactionId, sourceId, msgType);
 
+        // Check if this is a SOAP request
         boolean isSoapReq = isSoapRequest(msgType) || Boolean.TRUE.equals(isAllowedRoute);
 
-        // ── SOAP path: read raw bytes to preserve MTOM binary integrity ───────
-        if (isSoapReq && (file == null || file.isEmpty())) {
-            byte[] rawBytes = request.getInputStream().readAllBytes();
-
-            if (rawBytes == null || rawBytes.length == 0) {
-                LOG.warn("Empty SOAP request received. interactionId={}", interactionId);
+        // Validate that request contains data
+        if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {
+            LOG.warn("Empty request received. interactionId={} isSoapRequest={}", interactionId, isSoapReq);
+            
+            // Generate SOAP fault for SOAP requests
+            if (isSoapReq) {
                 return handleEmptySoapRequest(interactionId, request);
             }
-
-            LOG.info("SOAP forwarding to /ws. sourceId={} msgType={} interactionId={}",
-                    sourceId, msgType, interactionId);
-            return forwarder.forward(request, rawBytes, interactionId);
+            
+            // For non-SOAP requests, throw exception as before
+            throw new IllegalArgumentException("Request must contain either a file or body");
         }
 
-        // ── Non-SOAP path: read as UTF-8 String (safe for text/xml, JSON) ─────
-        final String body = (file == null || file.isEmpty())
-                ? new String(request.getInputStream().readAllBytes(),
-                        java.nio.charset.StandardCharsets.UTF_8)
-                : null;
-
-        if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {
-            LOG.warn("Empty request received. interactionId={}", interactionId);
-            throw new IllegalArgumentException("Request must contain either a file or body");
+        // Check for SOAP forwarding (if body is present)
+        if (body != null && !body.isBlank() && isSoapReq) {
+            LOG.info("SOAP forwarding to /ws endpoint sourceId={} msgType={} interactionId={}",
+                    sourceId, msgType, interactionId);
+            return forwarder.forward(request, body, sourceId, msgType, interactionId);
         }
 
         Map<String, String> result = Optional.ofNullable(file)
@@ -148,6 +146,9 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         return ResponseEntity.ok(json);
     }
 
+    /**
+     * Handles empty SOAP requests by generating a proper SOAP fault with error trace ID
+     */
     private ResponseEntity<String> handleEmptySoapRequest(String interactionId, HttpServletRequest request) {
         String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
         
