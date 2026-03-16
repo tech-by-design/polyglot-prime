@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>55073658-befa-437d-8ce7-e91ac6f54961</id>
+  <id>b56daaf1-9ff3-4baa-8219-890de8eb657e</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.29
-Fixed lookup manager cache issue.</description>
-  <revision>5</revision>
+  <description>Version: 0.1.30
+Updated Access-Control-Allow-Headers list to support additional request metadata required for Part 2 processing.</description>
+  <revision>18</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -56,7 +56,7 @@ Fixed lookup manager cache issue.</description>
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Organization-Name,X-TechBD-Part2</string>
           </list>
         </entry>
         <entry>
@@ -3013,7 +3013,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773375842905</time>
+        <time>1773667418362</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3024,13 +3024,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>eed0e66c-4123-43c4-b899-2603d5df8481</id>
-        <name>0_1_29</name>
+        <id>86e4e6d7-e6c4-478a-9cc9-18d654e1699b</id>
+        <name>0_1_30</name>
         <channelIds>
-          <string>55073658-befa-437d-8ce7-e91ac6f54961</string>
+          <string>b56daaf1-9ff3-4baa-8219-890de8eb657e</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
