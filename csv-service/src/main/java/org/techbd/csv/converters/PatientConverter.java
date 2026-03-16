@@ -40,6 +40,7 @@ import org.techbd.csv.model.ScreeningProfileData;
 import org.techbd.csv.service.CodeLookupService;
 import org.techbd.csv.util.CsvConstants;
 import org.techbd.csv.util.CsvConversionUtil;
+import org.techbd.corelib.util.CoreFHIRUtil;
 
 @Component
 @Order(2)
@@ -84,7 +85,7 @@ public class PatientConverter extends BaseConverter {
                 .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
                         demographicData.getPatientMrIdValue())));
         idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
-        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }

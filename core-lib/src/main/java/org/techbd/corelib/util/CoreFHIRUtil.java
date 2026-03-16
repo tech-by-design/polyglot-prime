@@ -40,6 +40,13 @@ public class CoreFHIRUtil {
                 : Collections.emptyMap();
     }
 
+    public static String getBaseFHIRURL() {
+        if (BASE_FHIR_URL == null) {
+            throw new IllegalStateException("FHIRUtil has not been initialized.");
+        }
+        return BASE_FHIR_URL;
+    }
+
     public static String getProfileUrl(String key) {
         if (BASE_FHIR_URL == null) {
             throw new IllegalStateException("FHIRUtil has not been initialized. Call initialize() first.");

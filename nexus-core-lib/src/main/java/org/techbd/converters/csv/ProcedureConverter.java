@@ -29,6 +29,7 @@ import org.techbd.util.DateUtil;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
+import org.techbd.util.fhir.CoreFHIRUtil;
 /**
  * Converts healthcare screening data into FHIR Procedure resources.
  * 
@@ -125,7 +126,7 @@ public class ProcedureConverter extends BaseConverter {
     }
 
     private BundleEntryComponent createBundleEntry(Procedure procedure, String baseFHIRUrl) {
-        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+       String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
