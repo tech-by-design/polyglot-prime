@@ -53,11 +53,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
 
 @Component
 public class InteractionsFilter extends OncePerRequestFilter {
@@ -84,7 +84,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(final HttpServletRequest origRequest, final HttpServletResponse origResponse,
             final FilterChain chain) throws IOException, ServletException {
         boolean isSoapEndpoint = origRequest.getRequestURI().startsWith("/ws");
-        String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);;
+        String interactionId = origRequest.getHeader(Constants.HEADER_INTERACTION_ID);
         HttpServletResponse wrappedResponse = origResponse;
 
         if (StringUtils.isEmpty(interactionId)) {
@@ -94,21 +94,40 @@ public class InteractionsFilter extends OncePerRequestFilter {
             interactionId = UUID.randomUUID().toString();
         }
         origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
+
+        // ── Cache body for multipart/related BEFORE Spring touches the stream ────
+        // Spring cannot bind multipart/related to @RequestBody; the raw bytes must
+        // be preserved so DataIngestionController can forward them intact to /ws.
+        // We also cache for any request type so InputStream is always re-readable.
+        HttpServletRequest mutableRequest = origRequest;
+        String reqContentType = origRequest.getContentType();
+        if (reqContentType != null && reqContentType.toLowerCase().contains("multipart/related")) {
+            try {
+                CachedBodyHttpServletRequest cached = new CachedBodyHttpServletRequest(origRequest);
+                cached.setAttribute(Constants.RAW_MULTIPART_BODY, cached.getCachedBody());
+                mutableRequest = cached;
+                LOG.info("InteractionsFilter: cached multipart/related body ({} bytes). interactionId={}",
+                        cached.getCachedBody().length, interactionId);
+            } catch (Exception e) {
+                LOG.warn("InteractionsFilter: failed to cache multipart body. interactionId={}, error={}",
+                        interactionId, e.getMessage());
+            }
+        }
+        final HttpServletRequest requestToUse = mutableRequest;
+
         try {
-            if (!origRequest.getRequestURI().equals("/")
-                    && !origRequest.getRequestURI().startsWith("/actuator/health")) {
-                LOG.info("InteractionsFilter: start - method={} uri={}", origRequest.getMethod(),
-                        origRequest.getRequestURI());
+            if (!requestToUse.getRequestURI().equals("/")
+                    && !requestToUse.getRequestURI().startsWith("/actuator/health")) {
+                LOG.info("InteractionsFilter: start - method={} uri={}", requestToUse.getMethod(),
+                        requestToUse.getRequestURI());
 
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
                     try {
-                        Enumeration<String> headerNames = origRequest.getHeaderNames();
-
+                        Enumeration<String> headerNames = requestToUse.getHeaderNames();
                         if (headerNames != null && headerNames.hasMoreElements()) {
-
                             String allHeaders = Collections.list(headerNames).stream()
                                     .map(name -> {
-                                        List<String> values = Collections.list(origRequest.getHeaders(name));
+                                        List<String> values = Collections.list(requestToUse.getHeaders(name));
                                         return name + " = " + String.join(", ", values);
                                     })
                                     .collect(Collectors.joining(" | "));
@@ -125,17 +144,17 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         LOG.warn("InteractionsFilter: interactionId={} | failed to enumerate request headers",
                                 interactionId, e);
                     }
-                } 
-        
-                origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
+                }
+
+                requestToUse.setAttribute(Constants.INTERACTION_ID, interactionId);
                 LOG.info("Incoming Request - interactionId={}", interactionId);
 
                 // 1) determine request port (prefer X-Forwarded-Port header)
-                int requestPort = resolveRequestPort(origRequest);
+                int requestPort = resolveRequestPort(requestToUse);
                 LOG.info("InteractionsFilter: resolved request port={} interactionId: {}", requestPort, interactionId);
 
                 // 2) Extract sourceId and msgType from URI path
-                String requestUri = origRequest.getRequestURI();
+                String requestUri = requestToUse.getRequestURI();
                 String sourceId = null;
                 String msgType = null;
                 
@@ -145,18 +164,19 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     msgType = matcher.group(2);
                     LOG.info("InteractionsFilter: extracted from path - sourceId={}, msgType={} interactionId: {}", sourceId, msgType, interactionId);
                 } else {
-                    LOG.info("InteractionsFilter: path does not match expected pattern for sourceId/msgType extraction: {} interactionId: {}", requestUri, interactionId);
+                    LOG.info("InteractionsFilter: path does not match expected pattern: {} interactionId: {}",
+                            requestUri, interactionId);
                 }
                 if (sourceId == null) {
-                    sourceId = origRequest.getHeader(Constants.HEADER_SOURCE_ID);
+                    sourceId = requestToUse.getHeader(Constants.HEADER_SOURCE_ID);
                 }
-                if(msgType == null) {
-                    msgType = origRequest.getHeader(Constants.HEADER_MSG_TYPE);
+                if (msgType == null) {
+                    msgType = requestToUse.getHeader(Constants.HEADER_MSG_TYPE);
                 }
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
 
                 // 4) Use PortResolverService to find the matching port entry
-                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context , Constants.HTTP);
+                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context, Constants.HTTP);
 
                 if (portEntryOpt.isEmpty()) {
                     String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s interactionId=%s - rejecting request",
@@ -178,40 +198,40 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 PortConfig.PortEntry portEntry = portEntryOpt.get();
                 LOG.info("InteractionsFilter: resolved PortConfig entry for port {} -> sourceId={}, msgType={}, route={}", 
                         requestPort, portEntry.sourceId, portEntry.msgType, portEntry.route);
-                        String route = portEntry.route;
-                       if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty() && ALLOWED_ROUTES_LIST.contains(route)) {
-                            origRequest.setAttribute(Constants.ALLOWED_ROUTES, true);
-                            LOG.info("InteractionsFilter: route {} is NOT in allowed routes list, setting ALLOWED_ROUTES attribute to true  interactionId: {}", route, interactionId);
-                          }
-                    // 3) If this port config requires mtls via mtls field, client must supply
-                // header
-                String mtlsName = portEntry.mtls;
-                String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
-                origRequest.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
-                LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}  interactionId: {}", mtlsName, mtlsBucket, interactionId);
-               
-                // CRITICAL: Wrap response EARLY in filter chain to force Content-Type override
-                // This must happen BEFORE MessageDispatcherServlet writes the response
-                if (portEntry.ackContentType != null && !portEntry.ackContentType.isBlank()) {
-                     wrappedResponse = new ContentTypeOverrideResponseWrapper(origResponse, portEntry.ackContentType);
-                    LOG.debug("InteractionsFilter: Early wrapping response with forceContentType={}  interactionId: {}", portEntry.ackContentType, interactionId);
 
+                String route = portEntry.route;
+                if (route != null && !route.isBlank() && !ALLOWED_ROUTES_LIST.isEmpty()
+                        && ALLOWED_ROUTES_LIST.contains(route)) {
+                    requestToUse.setAttribute(Constants.ALLOWED_ROUTES, true);
+                    LOG.info("InteractionsFilter: route {} is in allowed routes list, setting ALLOWED_ROUTES=true interactionId: {}",
+                            route, interactionId);
                 }
 
-                // Skip only mTLS check for internal forwards from SoapForwarderService
-                if ("true".equalsIgnoreCase(origRequest.getHeader(Constants.HEADER_MTLS_VERIFIED))) {
-                    LOG.info("InteractionsFilter: internal forward - mTLS already verified, skipping mTLS check. interactionId={}", interactionId);
-                    chain.doFilter(origRequest, wrappedResponse);
+                String mtlsName = portEntry.mtls;
+                String mtlsBucket = System.getenv(Constants.MTLS_BUCKET_NAME);
+                requestToUse.setAttribute(Constants.ACK_CONTENT_TYPE, portEntry.ackContentType);
+                LOG.info("InteractionsFilter: portEntry.mtls={}, MTLS_BUCKET={}  interactionId: {}",
+                        mtlsName, mtlsBucket, interactionId);
+
+                // CRITICAL: Wrap response EARLY in filter chain to force Content-Type override
+                if (portEntry.ackContentType != null && !portEntry.ackContentType.isBlank()) {
+                    wrappedResponse = new ContentTypeOverrideResponseWrapper(origResponse, portEntry.ackContentType);
+                    LOG.debug("InteractionsFilter: Early wrapping response with forceContentType={}  interactionId: {}",
+                            portEntry.ackContentType, interactionId);
+                }
+
+                // Skip mTLS check for internal forwards from SoapForwarderService
+                if ("true".equalsIgnoreCase(requestToUse.getHeader(Constants.HEADER_MTLS_VERIFIED))) {
+                    LOG.info("InteractionsFilter: internal forward - mTLS already verified. interactionId={}",
+                            interactionId);
+                    chain.doFilter(requestToUse, wrappedResponse);
                     return;
                 }
 
-                String clientCertHeader = origRequest.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
-                // Accept header value as URL-encoded (always expected to be URL-encoded).
+                String clientCertHeader = requestToUse.getHeader(Constants.REQ_HEADER_MTLS_CLIENT_CERT);
                 String clientCertPem = null;
                 if (clientCertHeader != null) {
                     String v = clientCertHeader.trim();
-                    
-                    // Header value is always expected to be URL-encoded, so decode it
                     try {
                         v = v.replace("+", "%2B");
                         v = v.replace(" ", "%20");
@@ -259,7 +279,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (mtlsName == null || mtlsName.isBlank()) {
                     LOG.info("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS  interactionId: {}",
                             requestPort, interactionId);
-                    chain.doFilter(origRequest, wrappedResponse);
+                    chain.doFilter(requestToUse, wrappedResponse);
                     return;
                 }
 
@@ -298,12 +318,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                 caCerts != null ? caCerts.length : 0, interactionId);
                     }
 
-                    // 5) verify client chain against CA certs (server bundle is used as trust
-                    // anchors)
-                    verifyCertificateChain(clientChain, caCerts);                    
-                    origRequest.setAttribute(Constants.HEADER_MTLS_VERIFIED, "true");
-                    LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}  interactionId: {}", requestPort,
-                            origRequest.getRequestURI(), interactionId);
+                    verifyCertificateChain(clientChain, caCerts);
+                    requestToUse.setAttribute(Constants.HEADER_MTLS_VERIFIED, "true");
+                    LOG.info("InteractionsFilter: mTLS verification succeeded for port={} uri={}  interactionId: {}",
+                            requestPort, requestToUse.getRequestURI(), interactionId);
 
                 } catch (ExecutionException ee) {
                     LOG.error("InteractionsFilter: failed to load CA bundle from cache/S3  interactionId: {}", ee, interactionId);
@@ -381,19 +399,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                // success: proceed
-                Enumeration<String> headerNames = origRequest.getHeaderNames();
+                Enumeration<String> headerNames = requestToUse.getHeaderNames();
                 while (headerNames.hasMoreElements()) {
                     String headerName = headerNames.nextElement();
-                    String headerValue = origRequest.getHeader(headerName);
-                    LOG.info("{} - Header: {} = {} for interaction id: {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,
-                            headerName, headerValue, interactionId);
+                    String headerValue = requestToUse.getHeader(headerName);
+                    LOG.info("{} - Header: {} = {} for interaction id: {}",
+                            FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, headerName, headerValue, interactionId);
                 }
 
-                chain.doFilter(origRequest, wrappedResponse);
+                chain.doFilter(requestToUse, wrappedResponse);
                 return;
             }
-            chain.doFilter(origRequest, wrappedResponse);
+            chain.doFilter(requestToUse, wrappedResponse);
 
         } catch (Exception e) {
             // NEW: Handle SOAP-specific errors
@@ -402,7 +419,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 if (interactionId == null) {
                     interactionId = "unknown";
                 }
-                handleSoapError(origRequest, wrappedResponse, e, interactionId);
+                handleSoapError(requestToUse, wrappedResponse, e, interactionId);
             } else {
                 // Re-throw non-SOAP errors
                 throw e;

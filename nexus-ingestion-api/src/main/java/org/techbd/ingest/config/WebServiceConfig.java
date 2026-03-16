@@ -150,6 +150,8 @@ public class WebServiceConfig extends WsConfigurationSupport {
                     try {
                         var connection = (org.springframework.ws.transport.http.HttpServletConnection) transportContext.getConnection();
                         httpContentType = connection.getHttpServletRequest().getContentType();
+                        connection.getHttpServletRequest().setAttribute(Constants.RAW_SOAP_ATTRIBUTE,
+                        new String(bytes, StandardCharsets.UTF_8));
                     } catch (Exception e) {
                         // CLIENT SCENARIO: HTTP context not available or different type
                         // This happens when WebServiceTemplate is parsing responses
