@@ -26,10 +26,6 @@ public class SoapForwarderService {
 
     private final TemplateLogger LOG;
 
-    /**
-     * Shared HttpClient instance — connection pool is maintained across all calls.
-     * Configured once at construction time; thread-safe by design.
-     */
     private final HttpClient httpClient;
 
     public SoapForwarderService(AppLogger appLogger) {
