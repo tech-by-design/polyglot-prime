@@ -39,6 +39,7 @@ import org.techbd.util.DateUtil;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 @Component
 @Order(6)
@@ -105,8 +106,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 //                                 data.getQuestionCode() + data.getEncounterId());
                                 observation.setId(observationIdHashed);
                                 data.setObservationId(observationId);
-                                String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl
-                                        : "http://shinny.org/us/ny/hrsn";
+                                 String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
                                 if (baseUrl.endsWith("/")) {
                                     baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
                                 }
@@ -484,7 +484,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                 groupObservation.setLanguage("en");
-                String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : "http://shinny.org/us/ny/hrsn";
+                String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : CoreFHIRUtil.getBaseFHIRURL();
                 if (baseUrl.endsWith("/")) {
                     baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
                 }

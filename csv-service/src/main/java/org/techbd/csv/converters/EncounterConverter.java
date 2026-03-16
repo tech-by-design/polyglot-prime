@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.corelib.util.AppLogger;
+import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.DateUtil;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.csv.model.DemographicData;
@@ -81,7 +82,7 @@ public class EncounterConverter extends BaseConverter {
         
         idsGenerated.put(CsvConstants.ENCOUNTER_ID, encounter.getId());
 
-        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }

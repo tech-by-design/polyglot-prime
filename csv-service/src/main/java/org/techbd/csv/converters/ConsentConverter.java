@@ -30,6 +30,7 @@ import org.techbd.corelib.util.DateUtil;
 import org.techbd.csv.util.CsvConstants;
 import org.techbd.csv.util.CsvConversionUtil;
 import io.micrometer.common.util.StringUtils;
+import org.techbd.corelib.util.CoreFHIRUtil;
 
 /**
  * Converts data into a FHIR Consent resource.
@@ -111,7 +112,7 @@ public class ConsentConverter extends BaseConverter {
 
         populateConsentPolicy(consent, screeningProfileData);
         
-        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : "http://shinny.org/us/ny/hrsn";
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
