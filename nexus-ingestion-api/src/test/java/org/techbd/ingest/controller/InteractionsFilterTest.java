@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -219,9 +220,13 @@ class InteractionsFilterTest {
             setupMockRequestWithPort("/api/test", encodedCert, 8443);
             System.setProperty("MTLS_BUCKET_NAME", "test-bucket");
             interactionsFilter.doFilterInternal(request, response, filterChain);
+
+            // Match actual log signature: message + decoded length + interactionId
+            // All arguments must use matchers when ANY argument uses a matcher
             verify(templateLogger).info(
-                "InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}",
-                443
+                    ArgumentMatchers.eq("InteractionsFilter: decoded client cert header as URL-encoded, decoded length={}  interactionId: {}"),
+                    ArgumentMatchers.eq(443),
+                    ArgumentMatchers.anyString()
             );
         }
 
@@ -232,9 +237,13 @@ class InteractionsFilterTest {
             setupMockRequestWithPort("/api/test", null, 8080);
             interactionsFilter.doFilterInternal(request, response, filterChain);
             verify(filterChain).doFilter(any(), any());
+
+            // Match actual log signature: message + port + interactionId
+            // All arguments must use matchers when ANY argument uses a matcher
             verify(templateLogger).info(
-                "InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS",
-                8080
+                    ArgumentMatchers.eq("InteractionsFilter: mtls NOT configured for port {} - proceeding without mTLS  interactionId: {}"),
+                    ArgumentMatchers.eq(8080),
+                    ArgumentMatchers.anyString()
             );
         }
     }

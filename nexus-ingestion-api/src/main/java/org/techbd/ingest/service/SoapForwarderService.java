@@ -289,28 +289,38 @@ public class SoapForwarderService {
         return ct.toString();
     }
 
-    public static String getBaseUrl(HttpServletRequest request, String interactionId ) {
-        String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
-                .orElse(request.getScheme());
-        String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
-                .orElse(request.getServerName());
-        String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-        int port;
-        boolean skipPort;
+    public static String getBaseUrl(HttpServletRequest request, String interactionId) {
+        String useExternalUrl = System.getenv("USE_EXTERNAL_URL");
+        boolean isExternal = "true".equalsIgnoreCase(useExternalUrl);
+        if (isExternal) {
 
-        if ("sandbox".equals(activeProfile)) {
-            port = request.getServerPort();
-            skipPort = false;
+            String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
+                    .orElse(request.getScheme());
+            String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
+                    .orElse(request.getServerName());
+            String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+            int port;
+            boolean skipPort;
+
+            if ("sandbox".equals(activeProfile)) {
+                port = request.getServerPort();
+                skipPort = false;
+            } else {
+                port = Optional.ofNullable(request.getHeader("X-Forwarded-Port"))
+                        .map(Integer::parseInt)
+                        .orElse(request.getServerPort());
+                skipPort = (proto.equals("http") && port == 80)
+                        || (proto.equals("https") && port == 443)
+                        || (proto.equals("https") && port == 80);
+            }
+            return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
         } else {
-            port = Optional.ofNullable(request.getHeader("X-Forwarded-Port"))
-                    .map(Integer::parseInt)
-                    .orElse(request.getServerPort());
-            skipPort = (proto.equals("http") && port == 80)
-                    || (proto.equals("https") && port == 443)
-                    || (proto.equals("https") && port == 80);
+            String serverPort = System.getenv("SERVER_PORT");
+            if (serverPort == null || serverPort.isBlank()) {
+                serverPort = "8080"; // Spring Boot default
+            }
+            return "http://localhost:" + serverPort;
         }
-        host="localhost";
-        return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
     }
 
     private String determineSoapVersion(String xml) {
