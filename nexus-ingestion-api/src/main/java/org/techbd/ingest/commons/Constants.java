@@ -52,4 +52,6 @@ public class Constants {
     public static final String HTTP = "HTTP";
     public static final String TCP = "TCP";
     public static final String EFFECTIVE_CONTENT_TYPE = "effectiveContentType";
+    public static final String RAW_MULTIPART_BODY = "rawMultipartBody";
+    public static final String NO_ACK_EXPECTED = "NO_ACK_EXPECTED";
 }

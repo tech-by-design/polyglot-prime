@@ -236,7 +236,7 @@ public class SoapForwarderService {
             return null;
 
         String boundary = new String(rawBytes, dashPos, boundaryEnd - dashPos,
-                StandardCharsets.UTF_8).strip().replace("\"", "");
+                StandardCharsets.UTF_8).trim();
 
         if (boundary.isBlank())
             return null;
@@ -310,7 +310,7 @@ public class SoapForwarderService {
                     || (proto.equals("https") && port == 80);
         }
         host="localhost";
-        return skipPort ? proto + "://" + "host" : proto + "://" + host + ":" + port;
+        return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
     }
 
     private String determineSoapVersion(String xml) {

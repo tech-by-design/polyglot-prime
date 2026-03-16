@@ -78,7 +78,16 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         messageContext.getRequest().writeTo(out);
         String soapXml = out.toString(StandardCharsets.UTF_8);
         messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, soapXml);
-
+        // Prefer raw bytes stored on request by the factory (original MIME boundary intact).
+        var transportContext = TransportContextHolder.getTransportContext();
+        if (transportContext != null && transportContext.getConnection() instanceof HttpServletConnection conn) {
+            HttpServletRequest httpRequest = conn.getHttpServletRequest();
+            String rawFromRequest = (String) httpRequest.getAttribute(Constants.RAW_SOAP_ATTRIBUTE);
+            if (rawFromRequest != null) {
+                messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, rawFromRequest);
+                return true;
+            }
+        }
         String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
         LOG.info("handleRequest: Captured SOAP request for /ws endpoint. interactionId={}", interactionId);
 

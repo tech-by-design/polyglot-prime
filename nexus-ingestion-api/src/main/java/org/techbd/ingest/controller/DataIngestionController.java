@@ -113,11 +113,44 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         LOG.info("Received ingest request. interactionId={} sourceId={} msgType={}",
                 interactionId, sourceId, msgType);
 
+        // ── For multipart/related, Spring cannot bind @RequestBody because it sees
+        // the content as multipart. InteractionsFilter caches the raw bytes in the
+        // RAW_MULTIPART_BODY request attribute before the stream is consumed.
+        // We read from that attribute here; 
+        String contentType = request.getContentType();
+        String effectiveBody = body;
+        if ((body == null || body.isBlank())
+                && contentType != null
+                && contentType.toLowerCase().contains("multipart/related")) {
+
+            // Primary: read from the cached bytes stored by InteractionsFilter
+            byte[] cachedBytes = (byte[]) request.getAttribute(Constants.RAW_MULTIPART_BODY);
+            if (cachedBytes != null && cachedBytes.length > 0) {
+                effectiveBody = new String(cachedBytes, java.nio.charset.StandardCharsets.UTF_8);
+                LOG.info("Read multipart/related body from RAW_MULTIPART_BODY attribute ({} bytes). interactionId={}",
+                        cachedBytes.length, interactionId);
+            } else {
+                // Fallback: attempt to read from InputStream (may already be consumed)
+                byte[] rawBytes = request.getInputStream().readAllBytes();
+                if (rawBytes != null && rawBytes.length > 0) {
+                    effectiveBody = new String(rawBytes, java.nio.charset.StandardCharsets.UTF_8);
+                    LOG.info("Read multipart/related body from InputStream fallback ({} bytes). interactionId={}",
+                            rawBytes.length, interactionId);
+                } else {
+                    LOG.warn("multipart/related body is empty from both attribute and InputStream. interactionId={}",
+                            interactionId);
+                }
+            }
+        }
+
+        // Write into a final variable for use in lambdas
+        final String resolvedBody = effectiveBody;
+
         // Check if this is a SOAP request
         boolean isSoapReq = isSoapRequest(msgType) || Boolean.TRUE.equals(isAllowedRoute);
 
         // Validate that request contains data
-        if ((file == null || file.isEmpty()) && (body == null || body.isBlank())) {
+        if ((file == null || file.isEmpty()) && (resolvedBody == null || resolvedBody.isBlank())) {
             LOG.warn("Empty request received. interactionId={} isSoapRequest={}", interactionId, isSoapReq);
             
             // Generate SOAP fault for SOAP requests
@@ -130,16 +163,16 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         }
 
         // Check for SOAP forwarding (if body is present)
-        if (body != null && !body.isBlank() && isSoapReq) {
+        if (resolvedBody != null && !resolvedBody.isBlank() && isSoapReq) {
             LOG.info("SOAP forwarding to /ws endpoint sourceId={} msgType={} interactionId={}",
                     sourceId, msgType, interactionId);
-            return forwarder.forward(request, body, sourceId, msgType, interactionId);
+            return forwarder.forward(request, resolvedBody, sourceId, msgType, interactionId);
         }
 
         Map<String, String> result = Optional.ofNullable(file)
                 .filter(f -> !f.isEmpty())
                 .map(f -> processMultipartFile(sourceId, msgType, headers, request, interactionId, f))
-                .orElseGet(() -> processRawBody(sourceId, msgType, headers, request, response, interactionId, body));
+                .orElseGet(() -> processRawBody(sourceId, msgType, headers, request, response, interactionId, resolvedBody));
 
         String json = objectMapper.writeValueAsString(result);
         LOG.info("Returning response for interactionId={}", interactionId);
