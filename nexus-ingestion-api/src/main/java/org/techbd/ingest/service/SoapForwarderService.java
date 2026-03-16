@@ -1,10 +1,11 @@
 package org.techbd.ingest.service;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.Set;
@@ -25,8 +26,18 @@ public class SoapForwarderService {
 
     private final TemplateLogger LOG;
 
+    /**
+     * Shared HttpClient instance — connection pool is maintained across all calls.
+     * Configured once at construction time; thread-safe by design.
+     */
+    private final HttpClient httpClient;
+
     public SoapForwarderService(AppLogger appLogger) {
         this.LOG = appLogger.getLogger(SoapForwarderService.class);
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)   // /ws is HTTP/1.1; upgrade later if needed
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
     }
 
     /**
@@ -41,7 +52,7 @@ public class SoapForwarderService {
                 : "";
         try {
             String contentType = request.getContentType();
-            String targetUrl = getBaseUrl(request,interactionId) + "/ws";
+            String targetUrl = getBaseUrl(request, interactionId) + "/ws";
             LOG.info(
                     "SoapForwarderService:: Forwarding raw to targetUrl={} ContentType={} sourceId={} msgType={} interactionId={}",
                     targetUrl, contentType, sourceId, msgType, interactionId);
@@ -78,119 +89,120 @@ public class SoapForwarderService {
     }
 
     /**
-     * Pipes rawBytes directly to targetUrl using HttpURLConnection.
+     * Pipes rawBytes directly to targetUrl using the shared HttpClient.
      * No SAAJ parsing — byte stream delivered exactly as received.
      * Content-Type is reconstructed from bytes if missing or not multipart/related,
      * so /ws (Spring-WS/SAAJ) can parse the MTOM message correctly.
      * All original request headers are forwarded except restricted ones.
+     *
+     * Key changes from HttpURLConnection:
+     *  - Connection pooling: keep-alive sockets are reused across calls automatically.
+     *  - No manual disconnect() — the HttpClient lifecycle manages connections.
+     *  - Read timeout set per-request via HttpRequest.timeout().
      */
     private ResponseEntity<String> forwardRaw(HttpServletRequest request, byte[] rawBytes,
             String contentType, String targetUrl,
             String sourceId, String msgType,
             String interactionId) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(targetUrl).openConnection();
-        try {
-            String mtlsVerified = (String) request.getAttribute(Constants.HEADER_MTLS_VERIFIED);
-            if ("true".equals(mtlsVerified)) {
-                conn.setRequestProperty(Constants.HEADER_MTLS_VERIFIED, "true");
+
+        // ── Step 1: determine outbound Content-Type ───────────────────────────
+        String outboundContentType = contentType;
+        if (isFromXdsRepository(request)
+                && (contentType == null || !contentType.toLowerCase().contains("multipart/related"))) {
+            String reconstructed = buildMultipartContentType(rawBytes);
+            if (reconstructed != null) {
+                outboundContentType = reconstructed;
+                LOG.info(
+                        "SoapForwarderService:: Reconstructed Content-Type for /ws. original={} outbound={} interactionId={}",
+                        contentType, outboundContentType, interactionId);
             }
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
-            conn.setRequestMethod("POST");
-            conn.setConnectTimeout(30_000);
-            conn.setReadTimeout(60_000);
-
-            // Content-Type: reconstruct BEFORE opening output stream
-            // /ws (Spring-WS/SAAJ) requires multipart/related to parse MTOM.
-            // If client sent missing or wrong Content-Type, reconstruct from bytes.
-            // ONLY populate if not already present as multipart/related.
-            String outboundContentType = contentType;
-            if (isFromXdsRepository(request) && (contentType == null || !contentType.toLowerCase().contains("multipart/related"))
-                    ) {
-                String reconstructed = buildMultipartContentType(rawBytes);
-                if (reconstructed != null) {
-                    outboundContentType = reconstructed;
-                    LOG.info(
-                            "SoapForwarderService:: Reconstructed Content-Type for /ws. original={} outbound={} interactionId={}",
-                            contentType, outboundContentType, interactionId);
-                }
-            }
-            conn.setRequestProperty("Content-Type", outboundContentType);
-
-            String soapAction = request.getHeader("SOAPAction");
-            if (soapAction != null)
-                conn.setRequestProperty("SOAPAction", soapAction);
-
-            // custom headers 
-            if (interactionId != null && !interactionId.isBlank()) {
-                conn.setRequestProperty(Constants.HEADER_INTERACTION_ID, interactionId);
-            }
-            String ackContentType = (String) request.getAttribute(Constants.ACK_CONTENT_TYPE);
-            if (ackContentType != null) {
-                conn.setRequestProperty(Constants.ACK_CONTENT_TYPE, ackContentType);
-            }
-            if (sourceId != null && !sourceId.isBlank()) {
-                conn.setRequestProperty(Constants.HEADER_SOURCE_ID, sourceId);
-                LOG.info("SoapForwarderService:: Forwarding sourceId={} interactionId={}", sourceId, interactionId);
-            }
-            if (msgType != null && !msgType.isBlank()) {
-                conn.setRequestProperty(Constants.HEADER_MSG_TYPE, msgType);
-                LOG.info("SoapForwarderService:: Forwarding msgType={} interactionId={}", msgType, interactionId);
-            }
-
-            // Forward ALL original request headers except restricted ones 
-            // content-type is already set above (possibly reconstructed)
-            // host, connection, content-length, transfer-encoding must not be set
-            Set<String> skip = Set.of(
-                    "host", "connection", "content-length", "transfer-encoding",
-                    "expect", "upgrade", "content-type");
-            Enumeration<String> headerNames = request.getHeaderNames();
-            while (headerNames != null && headerNames.hasMoreElements()) {
-                String name = headerNames.nextElement();
-                if (name == null || skip.contains(name.toLowerCase()))
-                    continue;
-                Enumeration<String> values = request.getHeaders(name);
-                while (values != null && values.hasMoreElements()) {
-                    String value = values.nextElement();
-                    if (value != null) {
-                        conn.addRequestProperty(name, value);
-                        LOG.debug("SoapForwarderService:: Forwarding header {}={} interactionId={}", name, value,
-                                interactionId);
-                    }
-                }
-            }
-
-            // Write raw bytes 
-            conn.setFixedLengthStreamingMode(rawBytes.length);
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(rawBytes);
-            }
-
-            // Read response 
-            int status = conn.getResponseCode();
-            String respContentType = conn.getContentType();
-            LOG.info("SoapForwarderService:: Raw forward response. status={} contentType={} interactionId={}",
-                    status, respContentType, interactionId);
-
-            InputStream responseStream = (status >= 200 && status < 300)
-                    ? conn.getInputStream()
-                    : conn.getErrorStream();
-
-            byte[] responseBytes = (responseStream != null)
-                    ? responseStream.readAllBytes()
-                    : new byte[0];
-
-            String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
-
-            return ResponseEntity.status(status)
-                    .header("Content-Type", respContentType != null
-                            ? respContentType
-                            : "text/xml; charset=utf-8")
-                    .body(responseBody);
-
-        } finally {
-            conn.disconnect();
         }
+
+        // ── Step 2: build HttpRequest ─────────────────────────────────────────
+        HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(targetUrl))
+                .timeout(Duration.ofSeconds(60))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(rawBytes));
+
+        // Content-Type (possibly reconstructed)
+        if (outboundContentType != null) {
+            reqBuilder.header("Content-Type", outboundContentType);
+        }
+
+        // SOAPAction
+        String soapAction = request.getHeader("SOAPAction");
+        if (soapAction != null) {
+            reqBuilder.header("SOAPAction", soapAction);
+        }
+
+        // Custom / correlation headers
+        if (interactionId != null && !interactionId.isBlank()) {
+            reqBuilder.header(Constants.HEADER_INTERACTION_ID, interactionId);
+        }
+        String ackContentType = (String) request.getAttribute(Constants.ACK_CONTENT_TYPE);
+        if (ackContentType != null) {
+            reqBuilder.header(Constants.ACK_CONTENT_TYPE, ackContentType);
+        }
+        if (sourceId != null && !sourceId.isBlank()) {
+            reqBuilder.header(Constants.HEADER_SOURCE_ID, sourceId);
+            LOG.info("SoapForwarderService:: Forwarding sourceId={} interactionId={}", sourceId, interactionId);
+        }
+        if (msgType != null && !msgType.isBlank()) {
+            reqBuilder.header(Constants.HEADER_MSG_TYPE, msgType);
+            LOG.info("SoapForwarderService:: Forwarding msgType={} interactionId={}", msgType, interactionId);
+        }
+
+        // mTLS verified attribute
+        String mtlsVerified = (String) request.getAttribute(Constants.HEADER_MTLS_VERIFIED);
+        if ("true".equals(mtlsVerified)) {
+            reqBuilder.header(Constants.HEADER_MTLS_VERIFIED, "true");
+        }
+
+        // Forward ALL original request headers except restricted ones.
+        // content-type is already set above (possibly reconstructed).
+        // host, connection, content-length, transfer-encoding must not be forwarded —
+        // HttpClient manages these automatically.
+        Set<String> skip = Set.of(
+                "host", "connection", "content-length", "transfer-encoding",
+                "expect", "upgrade", "content-type");
+
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames != null && headerNames.hasMoreElements()) {
+            String name = headerNames.nextElement();
+            if (name == null || skip.contains(name.toLowerCase())) {
+                continue;
+            }
+            Enumeration<String> values = request.getHeaders(name);
+            while (values != null && values.hasMoreElements()) {
+                String value = values.nextElement();
+                if (value != null) {
+                    reqBuilder.header(name, value);
+                    LOG.debug("SoapForwarderService:: Forwarding header {}={} interactionId={}", name, value,
+                            interactionId);
+                }
+            }
+        }
+
+        // ── Step 3: send (blocking) and read response ─────────────────────────
+        HttpResponse<byte[]> response = httpClient.send(
+                reqBuilder.build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+
+        int status = response.statusCode();
+        String respContentType = response.headers()
+                .firstValue("Content-Type")
+                .orElse(null);
+
+        LOG.info("SoapForwarderService:: Raw forward response. status={} contentType={} interactionId={}",
+                status, respContentType, interactionId);
+
+        String responseBody = new String(response.body(), StandardCharsets.UTF_8);
+
+        return ResponseEntity.status(status)
+                .header("Content-Type", respContentType != null
+                        ? respContentType
+                        : "text/xml; charset=utf-8")
+                .body(responseBody);
     }
 
     private boolean isFromXdsRepository(HttpServletRequest request) {
@@ -293,7 +305,6 @@ public class SoapForwarderService {
         String useExternalUrl = System.getenv("USE_EXTERNAL_URL");
         boolean isExternal = "true".equalsIgnoreCase(useExternalUrl);
         if (isExternal) {
-
             String proto = Optional.ofNullable(request.getHeader("X-Forwarded-Proto"))
                     .orElse(request.getScheme());
             String host = Optional.ofNullable(request.getHeader("X-Forwarded-Host"))
