@@ -1,10 +1,10 @@
 <channel version="4.6.1">
   <id>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>RouterChannel-0_2_1</name>
-  <description>Version: 0.2.1
-Implemented port sequencing to ensure proper processing order.</description>
-  <revision>14</revision>
+  <name>RouterChannel</name>
+  <description>Version: 0.2.2
+update additional headers and correct header keys used in destination</description>
+  <revision>28</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -234,14 +234,26 @@ channelMap.put(&quot;elaboration&quot;, elaboration);
 
 
 
+var cin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
+if (cin == null || cin.trim() === &apos;&apos;) {&#xd;
+    cin = &quot;&quot;; &#xd;
+}
+channelMap.put(&quot;cin&quot;, cin);
 
+
+var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+if (organizationNPI == null || organizationNPI.trim() === &apos;&apos;) {&#xd;
+    organizationNPI = &quot;&quot;; &#xd;
+}&#xd;
 &#xd;
-var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);&#xd;
-&#xd;
-&#xd;
+channelMap.put(&apos;organizationNPI&apos;, organizationNPI);&#xd;
 //.TIN&#xd;
-var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);&#xd;
+var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+if (organizationTIN == null || organizationTIN.trim() === &apos;&apos;) {&#xd;
+    organizationTIN = &quot;&quot;; &#xd;
+}&#xd;
 &#xd;
+ channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
 &#xd;
 // Check if both are missing — only then it&apos;s an error&#xd;
 if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;&#xd;
@@ -259,12 +271,15 @@ if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;)
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgNPI: &quot; + organizationNPI);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgTIN: &quot; + organizationTIN);&#xd;
 &#xd;
-&#xd;
-var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);&#xd;
-logger.info(&quot;X-TechBD-Screening-Code: &quot; + screeningCode);&#xd;
-if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {&#xd;
-    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);&#xd;
+
+var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);
+if (screeningCode == null || screeningCode.trim() === &apos;&apos;) {
+    screeningCode = &quot;&quot;;
 }
+channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
+
+
+
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Screening-Code: &quot; + screeningCode);
 
 &#xd;
@@ -530,7 +545,7 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
           <entry>
             <string>X-TechBD-OrgNPI</string>
             <list>
-              <string>${orgNpi}</string>
+              <string>${organizationNPI}</string>
             </list>
           </entry>
           <entry>
@@ -564,7 +579,7 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
             </list>
           </entry>
           <entry>
-            <string>X-TechBD-Base-FHIR-UR</string>
+            <string>X-TechBD-Base-FHIR-URL</string>
             <list>
               <string>${baseFhirUrl}</string>
             </list>
@@ -823,19 +838,19 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773395636421</time>
-        <timezone>Asia/Calcutta</timezone>
+        <time>1773666917796</time>
+        <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>15</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>62c015b1-43b6-43be-a51f-4fbcf8eb58a7</id>
-        <name>0_2_1</name>
+        <id>0ea9b935-1562-411b-aa39-c8baf1055dab</id>
+        <name>0_2_2</name>
         <channelIds>
           <string>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</string>
         </channelIds>
