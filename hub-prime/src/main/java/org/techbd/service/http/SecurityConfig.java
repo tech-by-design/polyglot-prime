@@ -2,8 +2,6 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,25 +15,30 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+ 
 @Configuration
-@ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("!localopen")
 public class SecurityConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class.getName());
+  
+    
+    @Autowired
+    private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
 
     @Autowired
-    private GitHubUserAuthorizationFilter authzFilter;
+    private RolePermissionInterceptor rolePermissionInterceptor;
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -67,21 +70,21 @@ public class SecurityConfig {
                                 .anyRequest().authenticated())
                 .oauth2Login(
                         oauth2Login -> oauth2Login
-                                .successHandler(gitHubLoginSuccessHandler())
+                                .successHandler(oAuth2LoginSuccessHandler())
                                 .defaultSuccessUrl(Constant.HOME_PAGE_URL)
                                 .loginPage(Constant.LOGIN_PAGE_URL))
-                .logout(
-                        logout -> logout
-                                .deleteCookies(Constant.SESSIONID_COOKIE)
-                                .logoutSuccessUrl(Constant.LOGOUT_PAGE_URL)
-                                .invalidateHttpSession(true)
+               .logout(logout -> logout
+                                .deleteCookies(Constant.SESSIONID_COOKIE)   // clear JSESSIONID (or your custom session cookie)
+                                .invalidateHttpSession(true)                // kill server-side session
+                                .clearAuthentication(true)  
+                                .logoutSuccessHandler(customLogoutSuccessHandler())
                                 .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
                         sessionManagement -> sessionManagement
                                 .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(fusionAuthAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
             headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
@@ -113,12 +116,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationSuccessHandler gitHubLoginSuccessHandler() {
-        return new GitHubLoginSuccessHandler();
+    public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {
+        return new OAuth2LoginSuccessHandler();
     }
-
-    private static class GitHubLoginSuccessHandler implements AuthenticationSuccessHandler {
-
+ 
+    private static class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
+ 
         private final RequestCache requestCache = new HttpSessionRequestCache();
 
         @Override
@@ -137,4 +140,31 @@ public class SecurityConfig {
         }
     }
 
+    @Bean
+    public LogoutSuccessHandler customLogoutSuccessHandler() {
+    return (request, response, authentication) -> {
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+        }
+        String fusionAuthLogoutUrl = "https://technology-by-design-dev.fusionauth.io/oauth2/logout"
+                + "?client_id=79425b8d-50cc-40fd-af2e-55ccb26422a5"
+                + "&post_logout_redirect_uri=https://hub.fo.dev.techbd.org/";
+        response.sendRedirect(fusionAuthLogoutUrl);
+    };
+}
+
+    /**
+     * Register RolePermissionInterceptor for all MVC requests.
+     */
+    @Bean
+    public WebMvcConfigurer mvcConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(rolePermissionInterceptor)
+                        .addPathPatterns("/**")
+                        .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS);
+            }
+        };
+    }
 }

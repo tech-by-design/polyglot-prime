@@ -64,7 +64,7 @@ public class PrimeController {
         return primaryDslContext;
     }
     @GetMapping("/home")
-    @RouteMapping(label = "Home", siblingOrder = 0)
+    @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/home", model, request);
     }
@@ -76,7 +76,7 @@ public class PrimeController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-        response.sendRedirect("/oauth2/authorization/github");
+        response.sendRedirect("/oauth2/authorization/fusionauth");
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")

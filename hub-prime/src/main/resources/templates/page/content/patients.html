@@ -11,9 +11,9 @@
         import { FhirViewer } from '@presentation/shell/fhir-view.js';
         customElements.define('fhir-viewer', FhirViewer);
         const schemaName = 'techbd_udi_ingress';
-        const patientDetailsView = 'fhir_screening_patient';
-        const screeningDetailsView = 'fhir_screening_info';
-        const questionAndAnswersView = 'fhir_patient_screening_questions_answers';
+        const patientDetailsView = 'fusion_fhir_screening_patient';
+        const screeningDetailsView = 'fusion_fhir_screening_info';
+        const questionAndAnswersView = 'fusion_fhir_patient_screening_questions_answers';
         const questionAndAnswersStoredProc = 'get_fhir_patient_screening_questions_answers';
         const patientDetailsColDefs = [
             { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
