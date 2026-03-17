@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.zip.ZipEntry;
+import java.io.IOException;
 
 @RestController
 @Tag(name = "Tech by Design Hub CSV Endpoints", description = "Tech by Design Hub CSV Endpoints")
@@ -43,14 +46,30 @@ public class CsvController {
   }
 
   private void validateFile(MultipartFile file) {
-    if (file == null || file.isEmpty() || file.getOriginalFilename() == null
-        || file.getOriginalFilename().trim().isEmpty()) {
-      throw new IllegalArgumentException(" Uploaded file is missing or empty.");
+    
+    if (file == null || file.getOriginalFilename() == null || file.getOriginalFilename().trim().isEmpty()) {
+        throw new IllegalArgumentException("Uploaded file is missing.");
+    }
+
+    if (file.getSize() <= 0) {
+        throw new IllegalArgumentException("Uploaded file is empty.");
     }
 
     String originalFilename = file.getOriginalFilename();
     if (!originalFilename.toLowerCase().endsWith(".zip")) {
       throw new IllegalArgumentException(" Uploaded file must have a .zip extension.");
+    }
+
+    try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
+
+        ZipEntry entry = zis.getNextEntry();
+
+        if (entry == null) {
+            throw new IllegalArgumentException("Uploaded file is missing or empty.");
+        }
+
+    } catch (IOException e) {
+        throw new IllegalArgumentException("Invalid ZIP file.");
     }
   }
 
