@@ -141,7 +141,7 @@ public class MessageProcessorService {
             response.put("fullS3MetaDataPath",
                     context.getFullS3MetadataPath() != null ? context.getFullS3MetadataPath() : "not-set");
             response.put("timestamp", context.getTimestamp());
-            if (context.getFullS3AckMessagePath() != null) {
+            if (context.isAckExpected() && context.getFullS3AckMessagePath() != null) {
                 response.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
             }
 
