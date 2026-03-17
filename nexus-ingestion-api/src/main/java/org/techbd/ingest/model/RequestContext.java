@@ -67,6 +67,7 @@ public class RequestContext {
     private boolean ingestionFailed;
     private String ackContentType;
     private boolean isPixRequest;
+    private boolean ackExpected = true;
 
     public RequestContext(Map<String, String> headers, String requestUrl, String tenantId, String interactionId,
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,

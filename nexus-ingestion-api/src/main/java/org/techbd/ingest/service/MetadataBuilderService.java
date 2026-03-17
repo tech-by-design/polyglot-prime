@@ -85,7 +85,7 @@ public class MetadataBuilderService {
         jsonMetadata.put("sourceSystem", context.getUserAgent());
         jsonMetadata.put("s3DataObjectPath", context.getFullS3DataPath());
         jsonMetadata.put("fullS3MetaDataPath", context.getFullS3MetadataPath());
-        if (context.getFullS3AckMessagePath() != null) {
+        if (context.isAckExpected() && context.getFullS3AckMessagePath() != null) {
             jsonMetadata.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath()); 
         }       
         jsonMetadata.put("requestUrl", context.getRequestUrl());
@@ -122,7 +122,7 @@ public class MetadataBuilderService {
         message.put("s3ObjectId", context.getObjectKey());
         message.put("s3DataObjectPath", context.getFullS3DataPath());
         message.put("fullS3MetaDataPath", context.getFullS3MetadataPath());
-        if (context.getFullS3AckMessagePath() != null) {
+        if (context.isAckExpected() && context.getFullS3AckMessagePath() != null) {
             message.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
         }
         message.put("messageGroupId", context.getMessageGroupId());

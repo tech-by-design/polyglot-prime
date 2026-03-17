@@ -148,6 +148,9 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
         // Check if this is a SOAP request
         boolean isSoapReq = isSoapRequest(msgType) || Boolean.TRUE.equals(isAllowedRoute);
+        if (!isSoapReq) {
+            request.setAttribute(Constants.NO_ACK_EXPECTED, true);
+        }
 
         // Validate that request contains data
         if ((file == null || file.isEmpty()) && (resolvedBody == null || resolvedBody.isBlank())) {
@@ -233,7 +236,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
             context = createRequestContext(
                     interactionId, headers, request, file.getSize(), file.getOriginalFilename());
-
+            context.setAckExpected(false);
             context.setSourceId(sourceId);
             context.setMsgType(msgType);
 
@@ -280,10 +283,11 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
 
             LOG.info("Raw body received (Content-Type={}): interactionId={}",
                     contentType, interactionId);
-
             context = createRequestContext(
                     interactionId, headers, request, body.length(), generatedFileName);
-
+            if (Boolean.TRUE.equals(request.getAttribute(Constants.NO_ACK_EXPECTED))) {
+                context.setAckExpected(false);
+            }
             context.setSourceId(sourceId);
             context.setMsgType(msgType);
 
