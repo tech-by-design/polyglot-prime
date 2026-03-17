@@ -63,34 +63,7 @@
                                     id="user-menu-button" aria-expanded="false" aria-haspopup="true">
                                     <span class="absolute -inset-1.5"></span>
                                     <span class="sr-only">Open user menu</span>
-                                    <div sec:authorize="isAuthenticated()">
-                                        <div class="relative group">
-                                            <a th:href="${#authentication.getPrincipal().attributes['html_url']}" id="principal_html">
-                                                <img th:src="${#authentication.getPrincipal().attributes['avatar_url']}" class="h-8 w-8 rounded-full" alt="User Profile" id="principal_image" />
-                                            </a>
-                                            <div class="absolute opacity-0 group-hover:opacity-100 invisible group-hover:visible !cursor-default z-10 mt-2 w-48 origin-top-right right-2 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5 transition-[opacity] duration-300"
-                                             role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-                                                <a href="#" class="block px-2 py-2 text-sm text-gray-700 text-left leading-[1.75rem] cursor-defualt" role="menuitem" tabindex="-1" id="user-menu-item-0">
-                                                    <div>
-                                                        Name: <span sec:authentication="principal.attributes['name']"></span>
-                                                    </div>
-                                                    <div>
-                                                        ID: <span sec:authentication="principal.attributes['login']"></span>
-                                                    </div>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div sec:authorize="!isAuthenticated()">
-                                        <!-- this should never happen since we're authn-only -->
-                                        <div class="relative group">
-                                            <a href="#" id="principal_html">
-                                                <img class="h-8 w-8 rounded-full"
-                                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                                    alt="" />
-                                            </a>
-                                        </div>
-                                    </div>
+                                    <img th:src="${#authentication.getPrincipal().attributes['avatar_url']}" class="h-8 w-8 rounded-full" alt="User Profile" id="principal_image" />
                                 </button>
                             </div>
 
@@ -105,17 +78,52 @@
                                     From: "transform opacity-100 scale-100"
                                     To: "transform opacity-0 scale-95"
                             -->
-                            <div class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                            <div id="user-menu-dropdown" class="hidden absolute bg-gray-100 right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                                 role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button"
                                 tabindex="-1">
                                 <!-- Active: "bg-gray-100", Not Active: "" -->
+                                  
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
-                                    id="user-menu-item-0">Your Profile</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
-                                    id="user-menu-item-1">Settings</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
-                                    id="user-menu-item-2">Sign out</a>
+                                    id="user-menu-item-0"> <span sec:authentication="principal.attributes['name']" class="font-bold"></span></a> 
+                                <!-- <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
+                                    id="user-menu-item-0">My Profile</a> -->
+                                    
+                                <form action="/settings" method="get">
+                                     <button type="submit"
+                                       class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                       role="menuitem" tabindex="-1" id="user-menu-item-2">
+                                       Settings
+                                     </button>
+                                </form>
+                                <form action="/logout" method="get">
+                                <button type="submit"
+                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="menuitem" tabindex="-1" id="user-menu-item-2">
+                                    Sign out
+                                </button>
+                                </form>
                             </div>
+                             <script>
+                        document.addEventListener('DOMContentLoaded', function () { 
+                            const userMenuButton = document.getElementById('user-menu-button');
+                            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+
+                            userMenuButton.addEventListener('click', function (event) { 
+                                event.stopPropagation();
+                                userMenuDropdown.classList.toggle('hidden');
+                            });
+
+                            // Hide the menu when clicking outside
+                            document.addEventListener('click', function () { 
+                                userMenuDropdown.classList.add('hidden');
+                            });
+
+                            // Prevent closing when clicking inside the menu
+                            userMenuDropdown.addEventListener('click', function (event) { 
+                                event.stopPropagation();
+                            });
+                        });
+                        </script>
                         </div>
                     </div>
                 </div>
@@ -197,121 +205,145 @@
                       <!-- <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Tech by Design</span> -->
                   </a>
               </div>
-              <div class="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-5">
-                <div>
+              <div class="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-5"> 
+                      <div th:if="${session.isSuperRole or session.rolePermissions['Content'] != null}">
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Content</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
-                        <li class="mb-4">
-                            <a href="/content/screenings" class="hover:underline">Screenings</a>
-                        </li>
-                          <li class="mb-4">
-                              <a href="/content/patients" class="hover:underline">Patients</a>
-                          </li>
-                          <li class="mb-4">
-                              <a href="/content/organizations" class="hover:underline">Organizations</a>
-                          </li> 
-                          <li class="mb-4">
-                            <a href="/content/scn" class="hover:underline">SCN</a>
-                        </li> 
-                        <li class="mb-4">
+                         <li class="mb-4" 
+                              th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Screenings')}">
+                             <a href="/content/screenings" class="hover:underline">Screenings</a>
+                            </li>
+                            <li class="mb-4" 
+                             th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Patients')}">
+                             <a href="/content/patients" class="hover:underline">Patients</a>
+                           </li>
+                            <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Organizations')}">
+                             <a href="/content/organizations" class="hover:underline">Organizations</a>
+                             </li> 
+                             <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('SCN')}">
+                             <a href="/content/scn" class="hover:underline">SCN</a>
+                             </li> 
+                             <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('HRSN Data Tracker')}">
                             <a href="/content/hrsn-data-tracker" class="hover:underline">HRSN Data Tracker</a>
-                        </li> 
+                            </li> 
                       </ul>
                   </div>
-                  <div>
+                     <div th:if="${session.isSuperRole or session.rolePermissions['Data Quality'] != null}">
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Data Quality</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
-                        <li class="mb-4">
-                            <a href="/data-quality/needs-attention" class="hover:underline">Needs Attention</a>
-                        </li> 
-                         
-                          <li class="mb-4">
-                            <a href="/data-quality/fhir-validation-issues" class="hover:underline">FHIR Data Quality</a>
+                          <li class="mb-4" 
+                            th:if="${session.isSuperRole or session.rolePermissions['Data Quality'].contains('Needs Attention')}">
+                           <a href="/data-quality/needs-attention" class="hover:underline">Needs Attention</a>
+                           </li> 
+                          <li class="mb-4" 
+                            th:if="${session.isSuperRole or session.rolePermissions['Data Quality'].contains('FHIR Data Quality')}">
+                           <a href="/data-quality/fhir-validation-issues" class="hover:underline">FHIR Data Quality</a>
                           </li>
-                          <li class="mb-4">
-                            <a href="/data-quality/csv-validations/csv-issues-summary" class="hover:underline">CSV Data Quality</a>
-                          </li>              
-                          <li class="mb-4">
-                            <a href="/data-quality/ccda-validations-issues" class="hover:underline">CCDA Data Quality</a>
-                          </li> 
-                          <li class="mb-4">
-                            <a href="/data-quality/hl7v2-validations-issues" class="hover:underline">HL7v2 Data Quality</a>
-                          </li>                                       
-                          <li class="mb-4">
-                            <a href="/data-quality/ig-publication-issues" class="hover:underline">IG Publication Issues</a>
-                          </li>
-                          <li class="mb-4">
-                            <a href="/data-quality/fhir-rules" class="hover:underline">FHIR Rules</a>
+                          <li class="mb-4" 
+                            th:if="${session.isSuperRole or session.rolePermissions['Data Quality'].contains('CSV Via HTTPs Data Quality')}">
+                           <a href="/data-quality/https-via-csv-validations" class="hover:underline">CSV Via HTTPs Data Quality</a>
+                          </li>                          
+                          <li class="mb-4" 
+                            th:if="${session.isSuperRole or session.rolePermissions['Data Quality'].contains('IG Publication Issues')}">
+                           <a href="/data-quality/ig-publication-issues" class="hover:underline">IG Publication Issues</a>
+                          <li class="mb-4" 
+                            th:if="${session.isSuperRole or session.rolePermissions['Data Quality'].contains('FHIR Rules')}">
+                           <a href="/data-quality/fhir-rules" class="hover:underline">FHIR Rules</a>
                           </li>
                       </ul>
                   </div>
-                  <div>
+                     <div th:if="${session.isSuperRole or session.rolePermissions['Interactions'] != null}">
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Interactions</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
-                          <li class="mb-4">
-                              <a href="/interactions/httpsfhir" class="hover:underline ">FHIR Data</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('FHIR via HTTPs')}">
+                            <a href="/interactions/httpsfhir" class="hover:underline">FHIR via HTTPs</a>
+                            </li>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('FHIR via HTTPs FAILED')}">
+                            <a href="/interactions/httpsfailed" class="hover:underline">FHIR via HTTPs FAILED</a>
                           </li>
-                          <li class="mb-4">
-                              <a href="/interactions/httpsfailed" class="hover:underline">FHIR Failed Submissions (Data Lake)</a>
-                          </li>
-                          <li class="mb-4">
-                              <a href="/interactions/httpscsv" class="hover:underline">CSV Submissions</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('CSV via HTTPs')}">
+                            <a href="/interactions/httpscsv" class="hover:underline">CSV via HTTPs</a>
                           </li>     
-                          <li class="mb-4">
-                              <a href="/interactions/httpsccda" class="hover:underline">CCDA Submissions</a>
-                          </li> 
-                          <li class="mb-4">
-                              <a href="/interactions/httpshl7v2" class="hover:underline">HL7v2 Submissions</a>
-                          </li> 
                         
-                        <li class="mb-4">
-                            <a href="/interactions/https" class="hover:underline">Hub Interactions</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('HTTP Interactions')}">
+                            <a href="/interactions/https" class="hover:underline">HTTP Interactions</a>
                         </li>
-                        <li class="mb-4">
+                         <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('Performance Overview')}">
                             <a href="/interactions/observe" class="hover:underline">Performance Overview</a>
                         </li>
-                        <li class="mb-4">
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('Provenance')}">
                             <a href="/interactions/provenance" class="hover:underline">Provenance</a>
                         </li>
-                        <li class="mb-4">
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('User Sessions')}">
                             <a href="/interactions/user" class="hover:underline">User Sessions</a>
                         </li>
                       </ul>
                   </div>
-                  <div>
+                     <div th:if="${session.isSuperRole or session.rolePermissions['Documentation'] != null}">
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Documentation</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
-                          <li class="mb-4">
-                              <a href="/docs/techbd-hub" class="hover:underline">Tech by Design Hub</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('Tech by Design Hub')}">
+                            <a href="/docs/techbd-hub" class="hover:underline">Tech by Design Hub</a>
                           </li>
-                          <li class="mb-4">
-                            <a href="/docs/shinny-fhir-ig" class="hover:underline">SHIN-NY FHIR IG</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('SHIN-NY FHIR IG')}">
+                             <a href="/docs/shinny-fhir-ig" class="hover:underline">SHIN-NY FHIR IG</a>
                         </li>
-                          <li class="mb-4">
-                              <a href="/docs/swagger-ui" class="hover:underline">OpenAPI UI</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('OpenAPI UI')}">
+                            <a href="/docs/swagger-ui" class="hover:underline">OpenAPI UI</a>
                           </li>
-                        <li class="mb-4">
-                            <a href="/docs/announcements" class="hover:underline">Announcements</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('Announcements')}">
+                             <a href="/docs/announcements" class="hover:underline">Announcements</a>
                         </li>
                       </ul>
                   </div>
-                  <div>
+                     <div th:if="${session.isSuperRole or session.rolePermissions['Console'] != null}">
                     <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Console</h2>
                     <ul class="text-gray-500 dark:text-gray-400 font-medium">
                     
-                        <li class="mb-4">
-                            <a href="/console/health-info" class="hover:underline ">Health Information</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Health Information')}">
+                             <a href="/console/health-info" class="hover:underline ">Health Information</a>
                         </li>
-                        <li class="mb-4">
-                            <a href="/console/project" class="hover:underline ">Project</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Project')}">
+                             <a href="/console/project" class="hover:underline ">Project</a>
                         </li>
-                        <li class="mb-4">
-                            <a href="/console/schema" class="hover:underline ">Schema</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Schema')}">
+                             <a href="/console/schema" class="hover:underline ">Schema</a>
                         </li>
-                        <li class="mb-4">
-                            <a href="/console/islm" class="hover:underline ">ISLM Migration</a>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('ISLM Migration')}">
+                              <a href="/console/islm" class="hover:underline ">ISLM Migration</a>
                         </li>
                         </ul>
+                </div>
+                <div th:if="${session.isSuperRole or session.rolePermissions['Settings'] != null}">
+                    <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Settings</h2>
+                    <ul class="text-gray-500 dark:text-gray-400 font-medium">
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Settings'].contains('Profile')}">
+                              <a href="/settings/profile" class="hover:underline">Profile</a>
+                        </li>
+                        <li class="mb-4" 
+                                th:if="${session.isSuperRole or session.rolePermissions['Settings'].contains('Role Permissions')}">
+                              <a href="/settings/roles" class="hover:underline">Role Permissions</a>
+                        </li>
+                    </ul>
                 </div>
               </div>
           </div>
@@ -349,7 +381,6 @@
           </div>
         </div>
     </nav>
-
 </body>
 
 </html>

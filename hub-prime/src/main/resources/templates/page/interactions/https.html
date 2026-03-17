@@ -67,16 +67,8 @@
         import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const storedProcName = 'get_interaction_http_request';
-        const popViewName = 'interaction_http_request_payload';
-
-        // Format dates as "mm-dd-yyyy"
-        const formatDate = (date) => {
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${month}-${day}-${year}`;
-        };
+        const viewName = 'fusion_interaction_http_request';
+        const popViewName = 'fusion_interaction_http_request_payload';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const helpers = new Helpers();
@@ -156,14 +148,14 @@
                                 // Define API endpoint based on the URI value
                                 let apiEndpoint;
 
-                                if (uri === "/Bundle" || uri === "/Bundle/"  || uri === "/Hl7/v2") {
-                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
-                                    // If URI is /Bundle, use the bundle-specific view
-                                    apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
-                                } else {
-                                    // Otherwise, use the default view
-                                    apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${params.value}.json`;
-                                }
+                            if (uri === "/Bundle" || uri === "/Bundle/"  || uri === "/Hl7/v2") {
+                                const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                                // If URI is /Bundle, use the bundle-specific view                                
+                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/fusion_interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
+                            } else {
+                                // Otherwise, use the default view
+                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${params.value}.json`;
+                            }
 
                                 // Fetch and display the JSON value in the modal
                                 modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(apiEndpoint));
