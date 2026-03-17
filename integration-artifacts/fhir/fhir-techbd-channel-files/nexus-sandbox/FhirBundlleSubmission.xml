@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>45d4298d-99cc-4b5c-b051-e4ac1c78c209</id>
+  <id>8d78b78e-51f1-4cba-b8a2-2686abaf2d1a</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.19
-Fixed lookup manager cache issue.</description>
-  <revision>4</revision>
+  <description>Version: 0.8.20
+Add processing agent along with request provenance.</description>
+  <revision>7</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2223,8 +2223,32 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		// 18. p_created_at (timestamp with time zone)
 		stmt.setNull(18, java.sql.Types.TIMESTAMP_WITH_TIMEZONE); // java.sql.Types.TIMESTAMP_WITH_TIMEZONE
 		
+	
+		var featureEnabled = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;)).toLowerCase() === &quot;true&quot;;
+		var configuredTenants = globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;);
+		var configuredAgentValue = globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;);
+		
+		var processingAgentFinal = tenantId; 
+		
+		if (featureEnabled &amp;&amp; configuredTenants != null) {
+		    var tenantList = String(configuredTenants)
+		        .split(&quot;,&quot;)
+		        .map(function(t) { return t.trim().toUpperCase(); });
+		
+		    if (tenantId != null &amp;&amp; tenantList.indexOf(String(tenantId).toUpperCase()) !== -1) {
+		        processingAgentFinal = configuredAgentValue; // TXD
+		    }
+		}
+		
+		
+		var provenanceString = 
+		    &quot;channel:&quot; + channelName +
+		    &quot;, script:deploy&quot; +
+		    &quot;, processingAgent:&quot; + processingAgentFinal;
+		    
 		// 19. p_provenance
-		stmt.setString(19, &quot;channel:&quot; + channelName + &quot;, script:deploy&quot;);
+		stmt.setString(19, provenanceString);
+
 		
 		// 20. p_hub_upsert_behavior boolean
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
@@ -2417,7 +2441,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773375161144</time>
+        <time>1773752968074</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2428,14 +2452,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>92183f0c-0328-493f-9418-f65a9713e909</id>
-        <name>0_8_19</name>
+        <id>ebf28a49-a002-44bc-bae4-3d8afe57867d</id>
+        <name>0_8_20</name>
         <channelIds>
-          <string>45d4298d-99cc-4b5c-b051-e4ac1c78c209</string>
+          <string>8d78b78e-51f1-4cba-b8a2-2686abaf2d1a</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
