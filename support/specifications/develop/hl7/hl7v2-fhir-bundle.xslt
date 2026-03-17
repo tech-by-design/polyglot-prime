@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.6 -->
+<!-- Version : 0.2.7 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -315,10 +315,12 @@
             {
             <!-- system -->
             "system": "<xsl:choose>
-              <xsl:when test="normalize-space(*[3]) = 'PH' or normalize-space(*[3]) = 'TEL'">phone</xsl:when>
-              <xsl:when test="normalize-space(*[3]) = 'EM' or normalize-space(*[3]) = 'MAIL'">email</xsl:when>
-              <xsl:otherwise>other</xsl:otherwise>
-            </xsl:choose>",
+                          <xsl:when test="normalize-space(*[3]) = 'PH' or normalize-space(*[3]) = 'CP' or normalize-space(*[3]) = 'SAT'">phone</xsl:when>
+                          <xsl:when test="normalize-space(*[3]) = 'FX'">fax</xsl:when>
+                          <xsl:when test="normalize-space(*[3]) = 'BP'">pager</xsl:when>
+                          <xsl:when test="normalize-space(*[3]) = 'Internet' or normalize-space(*[3]) = 'X.400'">email</xsl:when>
+                          <xsl:otherwise>other</xsl:otherwise>
+                        </xsl:choose>",
 
             <!-- use -->
             "use": "<xsl:choose>
@@ -691,7 +693,13 @@
               <!-- ================= Telecom ================= -->
               <xsl:variable name="telecom">
                 <xsl:if test="normalize-space(NK1.5/NK1.5.1)">
-                  <t>{ "system": "phone", 
+                  <t>{ "system": "<xsl:choose>
+                          <xsl:when test="normalize-space(NK1.5/NK1.5.3) = 'PH' or normalize-space(NK1.5/NK1.5.3) = 'CP' or normalize-space(NK1.5/NK1.5.3) = 'SAT'">phone</xsl:when>
+                          <xsl:when test="normalize-space(NK1.5/NK1.5.3) = 'FX'">fax</xsl:when>
+                          <xsl:when test="normalize-space(NK1.5/NK1.5.3) = 'BP'">pager</xsl:when>
+                          <xsl:when test="normalize-space(NK1.5/NK1.5.3) = 'Internet' or normalize-space(NK1.5/NK1.5.3) = 'X.400'">email</xsl:when>
+                          <xsl:otherwise>other</xsl:otherwise>
+                        </xsl:choose>",
                        "value": "<xsl:value-of select="normalize-space(NK1.5/NK1.5.1)"/>",
                        "use": "home"
                        <!-- <xsl:variable name="telecomUse" select="normalize-space(NK1.5/NK1.5.2)"/>
@@ -708,7 +716,14 @@
                      }</t>
                 </xsl:if>
                 <xsl:if test="normalize-space(NK1.6/NK1.6.1)">
-                  <t>{ "system": "phone", 
+                  <t>{ 
+                       "system": "<xsl:choose>
+                          <xsl:when test="normalize-space(NK1.6/NK1.6.3) = 'PH' or normalize-space(NK1.6/NK1.6.3) = 'CP' or normalize-space(NK1.6/NK1.6.3) = 'SAT'">phone</xsl:when>
+                          <xsl:when test="normalize-space(NK1.6/NK1.6.3) = 'FX'">fax</xsl:when>
+                          <xsl:when test="normalize-space(NK1.6/NK1.6.3) = 'BP'">pager</xsl:when>
+                          <xsl:when test="normalize-space(NK1.6/NK1.6.3) = 'Internet' or normalize-space(NK1.6/NK1.6.3) = 'X.400'">email</xsl:when>
+                          <xsl:otherwise>other</xsl:otherwise>
+                        </xsl:choose>",
                        "value": "<xsl:value-of select="normalize-space(NK1.6/NK1.6.1)"/>",
                        "use": "work"
                        <!-- <xsl:variable name="telecomUse6" select="normalize-space(NK1.6/NK1.6.2)"/>
@@ -725,7 +740,14 @@
                      }</t>
                 </xsl:if>
                 <xsl:if test="normalize-space(NK1.40/NK1.40.1)">
-                  <t>{ "system": "phone", 
+                  <t>{ 
+                       "system": "<xsl:choose>
+                          <xsl:when test="normalize-space(NK1.40/NK1.40.3) = 'PH' or normalize-space(NK1.5/NK1.5.3) = 'CP' or normalize-space(NK1.5/NK1.5.3) = 'SAT'">phone</xsl:when>
+                          <xsl:when test="normalize-space(NK1.40/NK1.40.3) = 'FX'">fax</xsl:when>
+                          <xsl:when test="normalize-space(NK1.40/NK1.40.3) = 'BP'">pager</xsl:when>
+                          <xsl:when test="normalize-space(NK1.40/NK1.40.3) = 'Internet' or normalize-space(NK1.40/NK1.40.3) = 'X.400'">email</xsl:when>
+                          <xsl:otherwise>other</xsl:otherwise>
+                        </xsl:choose>",
                        "value": "<xsl:value-of select="normalize-space(NK1.40/NK1.40.1)"/>",
                        "use": "work"
                        <!-- <xsl:variable name="telecomUse40" select="normalize-space(NK1.40/NK1.40.2)"/> 
@@ -1254,11 +1276,12 @@
                 <xsl:if test="normalize-space(ORC.23.3)">
                   <xsl:if test="normalize-space(ORC.23.1)">, </xsl:if>
                   "system": "<xsl:choose>
-                    <xsl:when test="normalize-space(ORC.23.3) = 'PH'">phone</xsl:when>
-                    <xsl:when test="normalize-space(ORC.23.3) = 'FX'">fax</xsl:when>
-                    <xsl:when test="normalize-space(ORC.23.3) = 'Internet'">email</xsl:when>
-                    <xsl:otherwise>other</xsl:otherwise>
-                  </xsl:choose>"
+                                <xsl:when test="normalize-space(ORC.23.3) = 'BP'">pager</xsl:when>
+                                <xsl:when test="normalize-space(ORC.23.3) = 'PH' or normalize-space(ORC.23.3) = 'CP' or normalize-space(ORC.23.3) = 'SAT'">phone</xsl:when>
+                                <xsl:when test="normalize-space(ORC.23.3) = 'FX'">fax</xsl:when>
+                                <xsl:when test="normalize-space(ORC.23.3) = 'Internet' or normalize-space(ORC.23.3) = 'X.400'">email</xsl:when>
+                                <xsl:otherwise>other</xsl:otherwise>
+                              </xsl:choose>"
                 </xsl:if>
 
                 <xsl:if test="normalize-space(ORC.23.1) or normalize-space(ORC.23.3)">, </xsl:if>
