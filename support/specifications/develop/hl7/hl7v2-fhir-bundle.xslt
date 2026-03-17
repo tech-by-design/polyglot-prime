@@ -321,7 +321,11 @@
             </xsl:choose>",
 
             <!-- use -->
-            <xsl:variable name="telecomUse" select="normalize-space(*[2])"/>
+            "use": "<xsl:choose>
+                      <xsl:when test="local-name() = 'PID.13'">home</xsl:when>
+                      <xsl:otherwise>work</xsl:otherwise>
+                    </xsl:choose>",
+            <!-- <xsl:variable name="telecomUse" select="normalize-space(*[2])"/>
             <xsl:if test="$telecomUse">
               "use": "<xsl:choose>
                 <xsl:when test="$telecomUse='WP' or $telecomUse='AS' or $telecomUse='DIR' or $telecomUse='PUB'">work</xsl:when>
@@ -331,7 +335,7 @@
                 <xsl:when test="$telecomUse='BAD'">old</xsl:when>
                 <xsl:otherwise>home</xsl:otherwise>
               </xsl:choose>",
-            </xsl:if>
+            </xsl:if> -->
 
             <!-- value -->
             <!-- "value": "<xsl:value-of select="normalize-space(*[1])"/>" -->
@@ -688,47 +692,53 @@
               <xsl:variable name="telecom">
                 <xsl:if test="normalize-space(NK1.5/NK1.5.1)">
                   <t>{ "system": "phone", 
-                       "value": "<xsl:value-of select="normalize-space(NK1.5/NK1.5.1)"/>", 
-
-                       <xsl:variable name="telecomUse" select="normalize-space(NK1.5/NK1.5.2)"/>                       
-                       "use": "<xsl:choose>
-                          <xsl:when test="$telecomUse='WP' or $telecomUse='AS' or $telecomUse='DIR' or $telecomUse='PUB'">work</xsl:when>
-                          <xsl:when test="$telecomUse='H' or $telecomUse='HP' or $telecomUse='EC' or $telecomUse='HV'">home</xsl:when>
-                          <xsl:when test="$telecomUse='MC' or $telecomUse='PG'">mobile</xsl:when>
-                          <xsl:when test="$telecomUse='TMP'">temp</xsl:when>
-                          <xsl:when test="$telecomUse='BAD'">old</xsl:when>
-                          <xsl:otherwise>home</xsl:otherwise>
-                       </xsl:choose>"
+                       "value": "<xsl:value-of select="normalize-space(NK1.5/NK1.5.1)"/>",
+                       "use": "home"
+                       <!-- <xsl:variable name="telecomUse" select="normalize-space(NK1.5/NK1.5.2)"/>
+                       <xsl:if test="telecomUse">
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse='WP' or $telecomUse='AS' or $telecomUse='DIR' or $telecomUse='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse='H' or $telecomUse='HP' or $telecomUse='EC' or $telecomUse='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse='MC' or $telecomUse='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if> -->
                      }</t>
                 </xsl:if>
                 <xsl:if test="normalize-space(NK1.6/NK1.6.1)">
                   <t>{ "system": "phone", 
                        "value": "<xsl:value-of select="normalize-space(NK1.6/NK1.6.1)"/>",
-
-                       <xsl:variable name="telecomUse6" select="normalize-space(NK1.6/NK1.6.2)"/>                       
-                       "use": "<xsl:choose>
-                          <xsl:when test="$telecomUse6='WP' or $telecomUse6='AS' or $telecomUse6='DIR' or $telecomUse6='PUB'">work</xsl:when>
-                          <xsl:when test="$telecomUse6='H' or $telecomUse6='HP' or $telecomUse6='EC' or $telecomUse6='HV'">home</xsl:when>
-                          <xsl:when test="$telecomUse6='MC' or $telecomUse6='PG'">mobile</xsl:when>
-                          <xsl:when test="$telecomUse6='TMP'">temp</xsl:when>
-                          <xsl:when test="$telecomUse6='BAD'">old</xsl:when>
-                          <xsl:otherwise>home</xsl:otherwise>
-                       </xsl:choose>"
+                       "use": "work"
+                       <!-- <xsl:variable name="telecomUse6" select="normalize-space(NK1.6/NK1.6.2)"/>
+                       <xsl:if test="telecomUse6">
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse6='WP' or $telecomUse6='AS' or $telecomUse6='DIR' or $telecomUse6='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse6='H' or $telecomUse6='HP' or $telecomUse6='EC' or $telecomUse6='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse6='MC' or $telecomUse6='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse6='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse6='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if> -->
                      }</t>
                 </xsl:if>
                 <xsl:if test="normalize-space(NK1.40/NK1.40.1)">
                   <t>{ "system": "phone", 
                        "value": "<xsl:value-of select="normalize-space(NK1.40/NK1.40.1)"/>",
-
-                       <xsl:variable name="telecomUse40" select="normalize-space(NK1.40/NK1.40.2)"/>                       
-                       "use": "<xsl:choose>
-                          <xsl:when test="$telecomUse40='WP' or $telecomUse40='AS' or $telecomUse40='DIR' or $telecomUse40='PUB'">work</xsl:when>
-                          <xsl:when test="$telecomUse40='H' or $telecomUse40='HP' or $telecomUse40='EC' or $telecomUse40='HV'">home</xsl:when>
-                          <xsl:when test="$telecomUse40='MC' or $telecomUse40='PG'">mobile</xsl:when>
-                          <xsl:when test="$telecomUse40='TMP'">temp</xsl:when>
-                          <xsl:when test="$telecomUse40='BAD'">old</xsl:when>
-                          <xsl:otherwise>home</xsl:otherwise>
-                       </xsl:choose>"
+                       "use": "work"
+                       <!-- <xsl:variable name="telecomUse40" select="normalize-space(NK1.40/NK1.40.2)"/> 
+                       <xsl:if test="telecomUse40">                           
+                          , "use": "<xsl:choose>
+                              <xsl:when test="$telecomUse40='WP' or $telecomUse40='AS' or $telecomUse40='DIR' or $telecomUse40='PUB'">work</xsl:when>
+                              <xsl:when test="$telecomUse40='H' or $telecomUse40='HP' or $telecomUse40='EC' or $telecomUse40='HV'">home</xsl:when>
+                              <xsl:when test="$telecomUse40='MC' or $telecomUse40='PG'">mobile</xsl:when>
+                              <xsl:when test="$telecomUse40='TMP'">temp</xsl:when>
+                              <xsl:when test="$telecomUse40='BAD'">old</xsl:when>
+                              <xsl:otherwise>home</xsl:otherwise>
+                          </xsl:choose>"
+                       </xsl:if>  -->
                      }</t>
                 </xsl:if>
               </xsl:variable>
@@ -1251,19 +1261,20 @@
                   </xsl:choose>"
                 </xsl:if>
 
-                <xsl:if test="normalize-space(ORC.23.2)">
+                <xsl:if test="normalize-space(ORC.23.1) or normalize-space(ORC.23.3)">, </xsl:if>
+                "use": "work"
+                <!-- <xsl:if test="normalize-space(ORC.23.2)">
                   <xsl:if test="normalize-space(ORC.23.1) or normalize-space(ORC.23.3)">, </xsl:if>
                   <xsl:variable name="telecomUseORC" select="normalize-space(ORC.23.2)"/>
 
                   "use": "<xsl:choose>
                     <xsl:when test="$telecomUseORC='WP' or $telecomUseORC='AS' or $telecomUseORC='DIR' or $telecomUseORC='PUB'">work</xsl:when>
-                    <!-- <xsl:when test="or $telecomUseORC='H' or $telecomUseORC='HP' or $telecomUseORC='HV'">home</xsl:when> -->
                     <xsl:when test="$telecomUseORC='MC' or $telecomUseORC='PG'">mobile</xsl:when>
                     <xsl:when test="$telecomUseORC='TMP'">temp</xsl:when>
                     <xsl:when test="$telecomUseORC='BAD'">old</xsl:when>
                     <xsl:otherwise>work</xsl:otherwise>
                   </xsl:choose>"
-                </xsl:if>
+                </xsl:if> -->
               }<xsl:if test="position() != last()">,</xsl:if>
             </xsl:for-each>
           ]
@@ -2210,10 +2221,11 @@
     <xsl:variable name="addrUse">
       <xsl:if test="string($addrUseRaw)">
           <xsl:choose>
-            <xsl:when test="$addrUseRaw='WP' or $addrUseRaw='O'">work</xsl:when>
-            <!-- <xsl:when test="$addrUseRaw='BA'">billing</xsl:when> -->
-            <xsl:when test="$addrUseRaw='TMP' or $addrUseRaw='C'">temp</xsl:when>
-            <xsl:when test="$addrUseRaw='BAD'">old</xsl:when>
+            <xsl:when test="$addrUseRaw='B' or $addrUseRaw='O' or $addrUseRaw='S' or $addrUseRaw='SH' or $addrUseRaw='RH' or $addrUseRaw='TM'">work</xsl:when>
+            <xsl:when test="$addrUseRaw='F' or $addrUseRaw='H' or $addrUseRaw='M' or $addrUseRaw='P' or $addrUseRaw='BDL'">home</xsl:when>
+            <!-- <xsl:when test="$addrUseRaw='BI'">billing</xsl:when> -->
+            <xsl:when test="$addrUseRaw='C' or $addrUseRaw='V'">temp</xsl:when>
+            <xsl:when test="$addrUseRaw='BA'">old</xsl:when>
             <xsl:otherwise>
               <xsl:choose>
                 <xsl:when test="$resource_name='Organization' or $resource_name='Location'">work</xsl:when>

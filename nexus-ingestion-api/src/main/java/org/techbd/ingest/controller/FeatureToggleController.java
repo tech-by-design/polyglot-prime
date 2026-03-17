@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.togglz.core.manager.FeatureManager;
 import org.togglz.core.repository.FeatureState;
+import org.togglz.core.repository.StateRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +20,11 @@ import java.util.Map;
 public class FeatureToggleController {
 
     private final FeatureManager featureManager;
+    private final StateRepository stateRepository;
 
-    public FeatureToggleController(FeatureManager featureManager) {
+    public FeatureToggleController(FeatureManager featureManager, StateRepository stateRepository) {
         this.featureManager = featureManager;
+        this.stateRepository = stateRepository;
     }
 
     /**
@@ -168,6 +171,51 @@ public class FeatureToggleController {
         response.put("features", featureNames);
         response.put("count", featureNames.length);
         
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{featureName}/reset")
+    public ResponseEntity<Map<String, Object>> resetFeature(@PathVariable String featureName) {
+
+        try {
+            FeatureEnum feature = FeatureEnum.valueOf(featureName.toUpperCase());
+
+            // Remove stored override
+            stateRepository.setFeatureState(null);
+
+            boolean active = featureManager.isActive(feature);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("feature", featureName);
+            response.put("status", active ? "enabled" : "disabled");
+            response.put("message", "Feature reset to enum default");
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Invalid feature name: " + featureName);
+
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+  
+    @PostMapping("/reset-all")
+    public ResponseEntity<Map<String, Object>> resetAllFeatures() throws NoSuchFieldException, SecurityException {
+
+        for (FeatureEnum feature : FeatureEnum.values()) {
+            boolean defaultEnabled = FeatureEnum.class
+                    .getField(feature.name())
+                    .isAnnotationPresent(
+                            org.togglz.core.annotation.EnabledByDefault.class);
+
+            featureManager.setFeatureState(new FeatureState(feature, defaultEnabled));
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "All features reset to default");
+
         return ResponseEntity.ok(response);
     }
 }
