@@ -405,13 +405,18 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                 String errorMsg = cause.getMessage() != null ? cause.getMessage() : "Unknown error";
                                                 String sanitizedError = errorMsg.replace("|", " ").replace("\r", " ").replace("\n", " ");
                                                 
-                                                String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK|" +
+                                                String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                        + Instant.now() + "||ACK|" +
                                                         UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
                                                         "MSA|AR|UNKNOWN|Channel exception: " + sanitizedError + "\r" +
-                                                        "ERR|||207^Application internal error^HL70357||E|||Channel exception occurred\r" +
-                                                        "NTE|1||InteractionID: " + interactionId + " | TechBDIngestionApiVersion: " + 
-                                                        appConfig.getVersion() + " | ErrorTraceID: " + errorTraceId + "\r";
-                                                
+                                                        "ERR|||207^Application internal error^HL70357||E|||Channel exception occurred\r";
+
+                                                if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                                                    genericNack += "NTE|1||InteractionID: " + interactionId +
+                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+                                                }
+                                   
                                                 String wrappedNack = String.valueOf((char)MLLP_START) + genericNack + (char)MLLP_END_1 + (char)MLLP_END_2;
                                                 
                                                 ByteBuf responseBuf = ctx.alloc().buffer();
@@ -541,14 +546,20 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                         String timeoutError = String.format(
                                                                 "Read idle timeout: No data received within %d seconds", effectiveTimeout);
 
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                                + Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
+                                                                Instant.now() + "||ACK|" +
+                                                                UUID.randomUUID().toString().substring(0, 20)
+                                                                + "|P|2.5\r" +
                                                                 "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
-                                                                "NTE|1||InteractionID: " + interactionId +
-                                                                " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                                " | ErrorTraceID: " + errorTraceId + "\r";
+                                                                "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r";
+
+                                                        if (FeatureEnum
+                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
+                                                                    " | TechBDIngestionApiVersion: "
+                                                                    + appConfig.getVersion() +
+                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
+                                                        }
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
@@ -656,15 +667,20 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                                 readTimeoutSeconds);
 
                                                         // Generate HL7 NACK for timeout
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                                + Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
+                                                                Instant.now() + "||ACK|" +
+                                                                UUID.randomUUID().toString().substring(0, 20)
+                                                                + "|P|2.5\r" +
                                                                 "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r"
-                                                                +
-                                                                "NTE|1||InteractionID: " + interactionId +
-                                                                " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                                " | ErrorTraceID: " + errorTraceId + "\r";
+                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r";
+
+                                                        if (FeatureEnum
+                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
+                                                                    " | TechBDIngestionApiVersion: "
+                                                                    + appConfig.getVersion() +
+                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
+                                                        }
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
@@ -1488,9 +1504,9 @@ public class NettyTcpServer implements MessageSourceProvider {
                 GenericParser parser = context.getGenericParser();
                 hl7Message = parser.parse(cleanMsg);
                 Message ack = hl7Message.generateACK();
-              if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
                    ackMessage = addNteWithInteractionId(ack, interactionId.toString(), appConfig.getVersion());
-                 }
+                }
                 ackMessage = new PipeParser().encode(ack);
                 logger.info("HL7_ACK_GENERATED [sessionId={}] [interactionId={}] [haproxyDetails={}]",
                         sessionId, interactionId, haproxyDetails(ctx));
@@ -1537,6 +1553,11 @@ public class NettyTcpServer implements MessageSourceProvider {
                     responseType = "HL7_NACK_MISSING_ZNT";
                     return;
                 }
+            } else {
+                if (hl7Message == null) {
+                     ackMessage = createHL7AckFromMsh(cleanMsg, "AA", null,
+                            interactionId.toString(), null);
+                }
             }
             messageProcessorService.processMessage(requestContext, cleanMsg, ackMessage);
             responseToSend = wrapMllp(ackMessage);
@@ -1580,10 +1601,14 @@ public class NettyTcpServer implements MessageSourceProvider {
                 String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK|" +
                         UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
                         "MSA|AR|UNKNOWN|Unexpected error occurred\r" +
-                        "ERR|||207^Application internal error^HL70357||E|||Unexpected error occurred\r" +
-                        "NTE|1||InteractionID: " + interactionId + " | TechBDIngestionApiVersion: " +
-                        appConfig.getVersion() + " | ErrorTraceID: " + errorTraceId + "\r";
-                
+                        "ERR|||207^Application internal error^HL70357||E|||Unexpected error occurred\r";
+
+                if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                    genericNack += "NTE|1||InteractionID: " + interactionId +
+                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                            " | ErrorTraceID: " + errorTraceId + "\r";
+                }
+            
                 sendResponseAndClose(ctx, wrapMllp(genericNack), sessionId, interactionId,
                         "HL7_NACK_UNEXPECTED_ERROR");
             }
@@ -1866,12 +1891,14 @@ public class NettyTcpServer implements MessageSourceProvider {
             nack.append("MSA|AR|UNKNOWN|").append(genericError).append("\r");
             nack.append("ERR|||207^Application internal error^HL70357||E|||")
                     .append(genericError.substring(0, Math.min(80, genericError.length()))).append("\r");
-            nack.append("NTE|1||InteractionID: ").append(interactionId)
-                    .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
-            if (errorTraceId != null) {
-                nack.append(" | ErrorTraceID: ").append(errorTraceId);
-            }
-            nack.append("\r");
+            if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {        
+                nack.append("NTE|1||InteractionID: ").append(interactionId)
+                        .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
+                if (errorTraceId != null) {
+                    nack.append(" | ErrorTraceID: ").append(errorTraceId);
+                }
+                nack.append("\r");
+            }            
             return nack.toString();
         }
 
@@ -1898,13 +1925,15 @@ public class NettyTcpServer implements MessageSourceProvider {
                     .append("E").append(fieldSep).append(fieldSep).append(fieldSep)
                     .append(err.substring(0, Math.min(80, err.length()))).append("\r");
         }
-        ack.append("NTE").append(fieldSep).append("1").append(fieldSep).append(fieldSep)
-                .append("InteractionID: ").append(interactionId)
-                .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
-        if (errorTraceId != null && !"AA".equals(finalAckCode)) {
-            ack.append(" | ErrorTraceID: ").append(errorTraceId);
+        if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+            ack.append("NTE").append(fieldSep).append("1").append(fieldSep).append(fieldSep)
+                    .append("InteractionID: ").append(interactionId)
+                    .append(" | TechBDIngestionApiVersion: ").append(appConfig.getVersion());
+            if (errorTraceId != null && !"AA".equals(finalAckCode)) {
+                ack.append(" | ErrorTraceID: ").append(errorTraceId);
+            }            
+            ack.append("\r");
         }
-        ack.append("\r");
         return ack.toString();
     }
 
