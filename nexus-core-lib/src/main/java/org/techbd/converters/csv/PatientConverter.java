@@ -121,29 +121,29 @@ public class PatientConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(demographicData.getRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
 
-            String[] raceCodes = fetchCode(demographicData.getRaceCode(), CsvConstants.RACE_CODE, interactionId).split(";");
+            String[] codes = demographicData.getRaceCode().split(";");
+            String[] displays = StringUtils.defaultString(demographicData.getRaceCodeDescription()).split(";");
 
-            String[] raceDescriptions = new String[raceCodes.length];
-            String raceCodeDesc = demographicData.getRaceCodeDescription();
             StringBuilder raceTextBuilder = new StringBuilder();
 
-            for (int i = 0; i < raceCodes.length; i++) {
-                String trimmedCode = raceCodes[i].trim();
-                String display = fetchDisplay(trimmedCode, raceCodeDesc, CsvConstants.RACE_CODE, interactionId);
+            for (int i = 0; i < codes.length; i++) {
+                String raceCode = codes[i].trim();
+                if (StringUtils.isNotEmpty(raceCode)) {
+                    String code = fetchCode(raceCode, CsvConstants.RACE_CODE, interactionId);
+                    String display = (i < displays.length) ? displays[i].trim() : null;
+                    display = fetchDisplay(code, display, CsvConstants.RACE_CODE, interactionId);
+                    Extension ombCategoryExtension = new Extension(getOmbRaceCategory(code, interactionId));
+                    ombCategoryExtension.setValue(new Coding()
+                            .setSystem(fetchSystem(code, demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE, interactionId))
+                            .setCode(code)
+                            .setDisplay(display));
+                    raceExtension.addExtension(ombCategoryExtension);
 
-                raceDescriptions[i] = display;
-                Extension ombCategoryExtension = new Extension(getOmbRaceCategory(trimmedCode, interactionId));
-                String system = fetchSystem(raceCodes[i].trim(), demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE, interactionId);
-                ombCategoryExtension.setValue(new Coding()
-                        .setSystem(system)
-                        .setCode(trimmedCode)
-                        .setDisplay(display));
-                raceExtension.addExtension(ombCategoryExtension);
+                    if (StringUtils.isNotBlank(display)) {
+                        if (raceTextBuilder.length() > 0) raceTextBuilder.append(", ");
+                        raceTextBuilder.append(display.trim());
 
-                if (StringUtils.isNotBlank(display)) {
-                    if (raceTextBuilder.length() > 0) raceTextBuilder.append(", ");
-                    raceTextBuilder.append(display.trim());
-
+                    }
                 }
             }
 
