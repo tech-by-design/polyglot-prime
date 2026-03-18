@@ -1,0 +1,141 @@
+name: Nexus Env TAG Update (PR Generator)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - devl
+          - phiqa
+          - prd
+
+      tag:
+        description: "Version tag (must end with -nexus)"
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  create-env-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -----------------------------------
+      # VALIDATE INPUT
+      # -----------------------------------
+      - name: Validate tag format
+        run: |
+          if [[ ! "${{ github.event.inputs.tag }}" =~ -nexus$ ]]; then
+            echo "ERROR: Tag must end with -nexus"
+            exit 1
+          fi
+
+      # -----------------------------------
+      # MAP ENV PATHS
+      # -----------------------------------
+      - name: Set environment paths
+        id: paths
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          case "$ENV" in
+            devl)
+              echo "HUB=aws/hub.dev.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/nexus-fhir.dev.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/nexus-csv.dev.techbd.org/.env" >> $GITHUB_OUTPUT
+              ;;
+            phiqa)
+              echo "HUB=aws/hub.qa.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/hub.fhir.qa.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/hub.csv.qa.techbd.org/.env" >> $GITHUB_OUTPUT
+              ;;
+            prd)
+              echo "HUB=aws/hub.prd.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/hub.fhir.prd.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/hub.csv.prd.techbd.org/.env" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "Invalid environment"
+              exit 1
+              ;;
+          esac
+
+      # -----------------------------------
+      # GIT CONFIG
+      # -----------------------------------
+      - name: Configure Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+      - name: Clone infrastructure repo
+        run: |
+          git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+      # -----------------------------------
+      # CREATE BRANCH
+      # -----------------------------------
+      - name: Create branch
+        run: |
+          cd infrastructure-prime
+          git checkout -b nexus-${{ github.event.inputs.environment }}-tag-update-${{ github.event.inputs.tag }}
+
+      # -----------------------------------
+      # UPDATE TAGS
+      # -----------------------------------
+      - name: Update TAG values
+        run: |
+          cd infrastructure-prime
+
+          TAG="${{ github.event.inputs.tag }}"
+
+          sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.HUB }}
+          sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.API }}
+          sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.FHIR }}
+          sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.CSV }}
+
+      # -----------------------------------
+      # COMMIT (SAFE)
+      # -----------------------------------
+      - name: Commit changes (only if any)
+        run: |
+          cd infrastructure-prime
+
+          git add .
+
+          if git diff --cached --quiet; then
+            echo "No changes detected. Exiting."
+            exit 0
+          fi
+
+          git commit -m "ci: update ${{ github.event.inputs.environment }} TAG to ${{ github.event.inputs.tag }} for HUB, API, FHIR, CSV"
+
+      # -----------------------------------
+      # PUSH
+      # -----------------------------------
+      - name: Push branch
+        run: |
+          cd infrastructure-prime
+          git push --set-upstream origin nexus-${{ github.event.inputs.environment }}-tag-update-${{ github.event.inputs.tag }}
+
+      # -----------------------------------
+      # CREATE PR
+      # -----------------------------------
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+        run: |
+          cd infrastructure-prime
+
+          gh pr create \
+            --base main \
+            --head nexus-${{ github.event.inputs.environment }}-tag-update-${{ github.event.inputs.tag }} \
+            --title "Nexus ${{ github.event.inputs.environment }} TAG update: ${{ github.event.inputs.tag }}" \
+            --body "This PR updates TAG=${{ github.event.inputs.tag }} for HUB, API, FHIR, and CSV in the ${{ github.event.inputs.environment }} environment."
