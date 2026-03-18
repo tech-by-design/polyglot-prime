@@ -97,7 +97,6 @@ jobs:
           TAG="${{ github.event.inputs.tag }}"
 
           sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.HUB }}
-          sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.API }}
           sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.FHIR }}
           sed -i "s/^TAG=.*/TAG=$TAG/" ${{ steps.paths.outputs.CSV }}
 
@@ -115,7 +114,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "ci: update ${{ github.event.inputs.environment }} TAG to ${{ github.event.inputs.tag }} for HUB, API, FHIR, CSV"
+          git commit -m "ci: update ${{ github.event.inputs.environment }} TAG to ${{ github.event.inputs.tag }} for HUB, FHIR, CSV"
 
       # -----------------------------------
       # PUSH
@@ -138,4 +137,4 @@ jobs:
             --base main \
             --head nexus-${{ github.event.inputs.environment }}-tag-update-${{ github.event.inputs.tag }} \
             --title "Nexus ${{ github.event.inputs.environment }} TAG update: ${{ github.event.inputs.tag }}" \
-            --body "This PR updates TAG=${{ github.event.inputs.tag }} for HUB, API, FHIR, and CSV in the ${{ github.event.inputs.environment }} environment."
+            --body "This PR updates TAG=${{ github.event.inputs.tag }} for HUB, FHIR, and CSV in the ${{ github.event.inputs.environment }} environment."
