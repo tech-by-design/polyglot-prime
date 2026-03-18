@@ -76,7 +76,7 @@ public class PrimeController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-        response.sendRedirect("/oauth2/authorization/github");
+        response.sendRedirect("/oauth2/authorization/fusionauth");
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")

@@ -13,7 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.techbd.conf.Configuration;
-import org.techbd.service.http.GitHubUserAuthorizationFilter;
+import org.techbd.service.http.FusionAuthUserAuthorizationFilter;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
@@ -72,7 +72,7 @@ public class Presentation {
         // make the request, authUser available to templates
         model.addAttribute("appVersion", this.appConfig.getVersion());
         model.addAttribute("req", request);
-        model.addAttribute("authUser", GitHubUserAuthorizationFilter.getAuthenticatedUser(request));
+        model.addAttribute("authUser", FusionAuthUserAuthorizationFilter.getAuthenticatedUser(request));
 
         // active route, siblings, ancestors (breadcrumbs) available for navigation
         model.addAttribute("navPrime", navPrimeLinks);
