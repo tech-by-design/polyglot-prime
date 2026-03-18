@@ -2,9 +2,9 @@
   <id>8d78b78e-51f1-4cba-b8a2-2686abaf2d1a</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.20
-Add processing agent along with request provenance.</description>
-  <revision>7</revision>
+  <description>Version: 0.8.21
+Add validation to content-type.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -443,6 +443,14 @@ if (requestedPath == &quot;/&quot;) {&#xd;
 	return;&#xd;
 }
 
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+ 
+if (!contentType || !contentType.toLowerCase().includes(&apos;application/json&apos;)) {
+    logger.error(&quot;Invalid or missing Content-Type: &quot; + contentType);
+ 
+    setErrorResponse(400, &quot;Bad request: Content-type must be Application/json&quot;);
+    throw &quot;Invalid Content-Type&quot;;
+}
 &#xd;
 //if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
 var fhirJson  = connectorMessage.getRawData();
@@ -2441,7 +2449,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773752968074</time>
+        <time>1773819290726</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2452,8 +2460,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ebf28a49-a002-44bc-bae4-3d8afe57867d</id>
-        <name>0_8_20</name>
+        <id>80d71304-f33e-45b4-aeaa-5f328a4d2e4c</id>
+        <name>0_8_21</name>
         <channelIds>
           <string>8d78b78e-51f1-4cba-b8a2-2686abaf2d1a</string>
         </channelIds>
