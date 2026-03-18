@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>f933e873-90e7-4b7f-81c7-40afa9e5c9c6</id>
+  <id>25855d07-fbb9-4df5-8274-a4667eee5b1f</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.14
-Fixed lookup manager cache issue.</description>
-  <revision>4</revision>
+  <description>Version: 0.9.15
+Resolved the issue where the X-TechBD-DataLake-API-URL header was not functioning as expected.</description>
+  <revision>14</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -779,7 +779,7 @@ channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
 logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 
-var dataLakeApiUrl = channelMap.get(&apos;dataLakeApiUrl&apos;);
+var dataLakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 var techbdBlBaseUrl = channelMap.get(&apos;techbdBlBaseUrl&apos;);
 //logger.info(&quot;**************************techbdBlBaseUrl from channelMap: &quot; + techbdBlBaseUrl);
 
@@ -926,7 +926,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773375201719</time>
+        <time>1773843176641</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -937,14 +937,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>827ee2b2-07e3-4ddc-9f5a-a2be880be4af</id>
-        <name>0_9_14</name>
+        <id>2143a552-2a71-4c6d-b3bb-9b21235a6f3a</id>
+        <name>0_9_15</name>
         <channelIds>
-          <string>f933e873-90e7-4b7f-81c7-40afa9e5c9c6</string>
+          <string>25855d07-fbb9-4df5-8274-a4667eee5b1f</string>
+          <string>d8e88936-47de-4918-8abf-c93cf75d95ad</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

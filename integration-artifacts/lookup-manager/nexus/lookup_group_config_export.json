@@ -23,7 +23,7 @@
     "MC_FHIR_BUNDLE_SUBMISSION_API_URL" : "http://localhost:9003/Bundle",
     "MC_VALID_FHIR_URLS" : "http://shinny.org/us/ny/hrsn,http://test.shinny.org/us/ny/hrsn",
     "ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED" : "true",
-    "ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS" : "HEALTHeLINK,QaTestAgent",
+    "ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS" : "HEALTHeLINK,QaTestAgent,qapartneragent",
     "ORG_TECHBD_PROCESSING_AGENT_VALUE" : "TXD",
     "PROFILE_URL_BUNDLE" : "/StructureDefinition/SHINNYBundleProfile",
     "PROFILE_URL_CONSENT" : "/StructureDefinition/shinny-Consent",
@@ -41,5 +41,5 @@
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle"
   },
-  "exportDate" : "2026-03-16T12:30:18.083+00:00"
+  "exportDate" : "2026-03-18T14:14:12.699+00:00"
 }
