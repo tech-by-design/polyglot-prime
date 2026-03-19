@@ -1,15 +1,18 @@
 <channel version="4.6.1">
-  <id>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</id>
+  <id>3633cec2-874c-4c8c-afbd-4e5a4dee980a</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>RouterChannel</name>
   <description>Version: 0.2.2
 update additional headers and correct header keys used in destination</description>
-  <revision>28</revision>
+  <revision>15</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>true</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ update additional headers and correct header keys used in destination</descripti
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -99,7 +99,15 @@ logger.info(&quot;group1 :&quot;  + group1);
 var sourceType1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
 logger.info(&quot;TechBD-Source-Type :&quot;  + sourceType1);
 
+var organizationName = &quot;&quot;;
+var organizationNameHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
 
+
+
+if (organizationNameHeader != null &amp;&amp; organizationNameHeader.trim() !== &apos;&apos;) {
+    organizationName = organizationNameHeader.trim();
+}
+channelMap.put(&quot;organizationName&quot;, organizationName);
 
 var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
 var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
@@ -114,8 +122,26 @@ if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &a
     interactionId = java.util.UUID.randomUUID().toString();
 }
 
-
 channelMap.put(&apos;interactionId&apos;, interactionId);
+
+var groupInteractionId = &quot;&quot;;
+var incomingGroupId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
+
+if (incomingGroupId != null &amp;&amp; incomingGroupId.trim() !== &apos;&apos;) {
+    groupInteractionId = incomingGroupId.trim();
+}
+
+var masterInteractionId = &quot;&quot;;
+var incomingMasterId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Master-Interaction-ID&apos;);
+
+if (incomingMasterId != null &amp;&amp; incomingMasterId.trim() !== &apos;&apos;) {
+    masterInteractionId = incomingMasterId.trim();
+}
+
+channelMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
+channelMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
+globalMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
+globalMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
 
 
 
@@ -632,6 +658,24 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
               <string>${X-TechBD-Part2}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Group-Interaction-ID</string>
+            <list>
+              <string>${groupInteractionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Master-Interaction-ID</string>
+            <list>
+              <string>${masterInteractionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Organization-Name</string>
+            <list>
+              <string>${organizationName}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map"/>
         <useHeadersVariable>false</useHeadersVariable>
@@ -838,21 +882,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773666917796</time>
-        <timezone>Asia/Kolkata</timezone>
+        <time>1773927382074</time>
+        <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>15</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0ea9b935-1562-411b-aa39-c8baf1055dab</id>
-        <name>0_2_2</name>
+        <id>4e882146-1acf-475f-93e6-929ca2a4a610</id>
+        <name>0_2_3</name>
         <channelIds>
-          <string>ea83c78a-d564-4d5e-8cc8-dc4d648956b6</string>
+          <string>3633cec2-874c-4c8c-afbd-4e5a4dee980a</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
