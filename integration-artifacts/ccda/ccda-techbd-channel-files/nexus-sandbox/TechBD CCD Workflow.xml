@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c676851e-d5ca-41f6-8e3b-3d7488c169f9</id>
+  <id>49e22aa9-5db3-4290-81fd-5c9d1aefea3d</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.23
-Implemented support for X-TechBD-Part2 in the Access-Control-Allow-Headers configuration within the CCDA channels.</description>
-  <revision>17</revision>
+  <description>Version 0.5.24
+Add Content-Type validation for ccda Channel.</description>
+  <revision>6</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -244,6 +244,14 @@ function removeEmptyValues(key, value) {
   return value; // Keep the value as is
 }
 
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;)|| $(&apos;headers&apos;).getHeader(&apos;content-type&apos;);
+ 
+if (!contentType || !contentType.toLowerCase().includes(&apos;multipart/form-data&apos;)) {
+    logger.error(&quot;Invalid or missing Content-Type: &quot; + contentType);
+ 
+    setErrorResponse(400, &quot;Bad request: Content-type must be multipart/form-data with boundary details&quot;);
+    throw &quot;Invalid Content-Type&quot;;
+}
 
 /**
 * Util function to generate json string wit hstatus and message
@@ -3083,7 +3091,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773666943216</time>
+        <time>1773910847848</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3094,11 +3102,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>2258596c-a9cc-4c46-82a5-83a40412b336</id>
-        <name>0_5_23</name>
+        <id>732fb2ca-b47b-4659-8df1-38977454c5a8</id>
+        <name>0_5_24</name>
         <channelIds>
-          <string>c676851e-d5ca-41f6-8e3b-3d7488c169f9</string>
-          <string>482a165f-6e48-48f0-b9e4-497c1f32f088</string>
+          <string>49e22aa9-5db3-4290-81fd-5c9d1aefea3d</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
