@@ -143,20 +143,21 @@ public class SecurityConfig {
         }
     }
 
-        @Bean
-        public LogoutSuccessHandler customLogoutSuccessHandler() {
-            return (request, response, authentication) -> {
-                if (authentication != null) {
-                    new SecurityContextLogoutHandler().logout(request, response, authentication);
-                }
-
-                String fusionAuthLogoutUrl = fusionAuthBaseUrl + "/oauth2/logout"
-                        + "?client_id=" + clientId
-                        + "&post_logout_redirect_uri=" + logoutRedirectUrl;
-
-                response.sendRedirect(fusionAuthLogoutUrl);
-            };
+@Bean
+public LogoutSuccessHandler customLogoutSuccessHandler() {
+    return (request, response, authentication) -> {
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
         }
+
+        String fusionAuthLogoutUrl =
+                "https://technology-by-design-dev.fusionauth.io/oauth2/logout"
+                + "?client_id=79425b8d-50cc-40fd-af2e-55ccb26422a5"
+                + "&post_logout_redirect_uri=https://synthetic.hub.devl.techbd.org/";
+
+        response.sendRedirect(fusionAuthLogoutUrl);
+    };
+}
 
     /**
      * Register RolePermissionInterceptor for all MVC requests.
