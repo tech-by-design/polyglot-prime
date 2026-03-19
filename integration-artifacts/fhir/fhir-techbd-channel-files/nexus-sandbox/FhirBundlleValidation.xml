@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c48e397f-769f-4e14-961f-e34ac1a2df46</id>
+  <id>00389d41-c2ce-45c7-a702-353b449b1026</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.9
-Fixed lookup manager cache issue.</description>
-  <revision>4</revision>
+  <description>Version: 0.8.10
+Add Content type validation for fhirvalidate Channel.</description>
+  <revision>14</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -360,6 +360,14 @@ var igVersion = channelMap.get(&apos;igVersion&apos;);
 var elaboration = channelMap.get(&apos;elaboration&apos;);
 &#xd;
 
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;)  || $(&apos;headers&apos;).getHeader(&apos;content-type&apos;);
+               
+if (!contentType || !contentType.toLowerCase().includes(&apos;application/json&apos;)) {
+    logger.error(&quot;Invalid or missing Content-Type: &quot; + contentType);
+ 
+    setErrorResponse(400, &quot;Bad request: Content-type must be Application/json&quot;);
+    throw &quot;Invalid Content-Type&quot;;
+}
 
 logger.info(&quot;Channel Name: - &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
@@ -1001,7 +1009,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773375179554</time>
+        <time>1773919289259</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1012,15 +1020,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>e8ac8112-03cb-4910-9227-a080b4fd581c</id>
-        <name>0_8_9</name>
+        <id>0bf67a4f-277c-4977-b4bc-f9ec6ab1468c</id>
+        <name>0_8_10</name>
         <channelIds>
-          <string>b7e67dfd-4901-43ab-968d-ed1ab8e3c8ab</string>
-          <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
+          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
+          <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
