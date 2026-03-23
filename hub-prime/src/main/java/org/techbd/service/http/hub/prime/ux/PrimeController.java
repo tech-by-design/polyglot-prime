@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,10 @@ import lib.aide.tabular.JooqRowsSupplier;
 @Controller
 @Tag(name = "Tech by Design Hub UX API")
 public class PrimeController {
+
+    @Value("${AUTH_PROVIDER}")
+    private String authProvider;
+
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 
     private final DSLContext primaryDslContext;
@@ -66,17 +71,19 @@ public class PrimeController {
     @GetMapping("/home")
     @RouteMapping(label = "Home", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
+        model.addAttribute("authProvider", authProvider);
         return presentation.populateModel("page/home", model, request);
     }
 
     @GetMapping("/")
-    public String index() {
+    public String index(Model model) {
+        model.addAttribute("authProvider", authProvider.toLowerCase());
         return "login/login";
     }
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-        response.sendRedirect("/oauth2/authorization/fusionauth");
+       response.sendRedirect("/oauth2/authorization/" + authProvider.toLowerCase());
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")

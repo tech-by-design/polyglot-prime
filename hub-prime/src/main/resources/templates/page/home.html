@@ -52,9 +52,13 @@
                 </ul>
             </div>
         </div>
-
-        <div sec:authorize="isAuthenticated()">
-            <div>You're logged in as Fusion Gateway User <span sec:authentication="principal.attributes['name']"></span> with
+            <div sec:authorize="isAuthenticated()">
+                <div>
+                    You're logged in as 
+                    <span th:text="${authProvider == 'fusionauth' ? 'Fusion Gateway User' : 'GitHub User'}"></span>
+                    <span class="font-bold"
+                    th:text="${authProvider == 'fusionauth'} ? ${#authentication.principal.attributes['name']} : ${#authentication.principal.attributes['login']}"> </span> 
+                with
                 role <code>TODO</code>.</div>
         </div>
         <div sec:authorize="isAnonymous()">
