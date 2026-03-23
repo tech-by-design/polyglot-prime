@@ -2,9 +2,9 @@
   <id>00389d41-c2ce-45c7-a702-353b449b1026</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.10
-Add Content type validation for fhirvalidate Channel.</description>
-  <revision>14</revision>
+  <description>Version: 0.8.11
+Revert Content type validation for fhirvalidate Channel.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -360,14 +360,7 @@ var igVersion = channelMap.get(&apos;igVersion&apos;);
 var elaboration = channelMap.get(&apos;elaboration&apos;);
 &#xd;
 
-var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;)  || $(&apos;headers&apos;).getHeader(&apos;content-type&apos;);
-               
-if (!contentType || !contentType.toLowerCase().includes(&apos;application/json&apos;)) {
-    logger.error(&quot;Invalid or missing Content-Type: &quot; + contentType);
- 
-    setErrorResponse(400, &quot;Bad request: Content-type must be Application/json&quot;);
-    throw &quot;Invalid Content-Type&quot;;
-}
+
 
 logger.info(&quot;Channel Name: - &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
@@ -1009,7 +1002,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773919289259</time>
+        <time>1774273792240</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1020,10 +1013,9 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0bf67a4f-277c-4977-b4bc-f9ec6ab1468c</id>
-        <name>0_8_10</name>
+        <id>a7d5ea54-ac91-4ea8-b759-7efdb1acb94d</id>
+        <name>0_8_11</name>
         <channelIds>
-          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
           <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
         </channelIds>
         <backgroundColor>
