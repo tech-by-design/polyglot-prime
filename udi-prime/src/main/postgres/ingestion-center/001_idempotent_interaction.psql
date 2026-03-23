@@ -1853,7 +1853,7 @@ DECLARE
     v_elaboration_steps_jsonb 		JSONB 	:= '[]'::jsonb;
     v_elaboration                   JSONB   := NULL;
     v_diagnostic_id                 TEXT    := gen_random_uuid()::text;
-    v_is_bundle_valid               BOOLEAN := false;
+    v_is_bundle_valid               BOOLEAN := NULL;
     v_bundle_type                   TEXT    := NULL;
     v_return_status                 BOOLEAN := false;
     v_is_exception                  BOOLEAN := false;
@@ -2173,7 +2173,10 @@ BEGIN
 	            p_source_type,
 	            p_source_hub_interaction_id,
 	            p_group_hub_interaction_id,
-	            COALESCE(v_is_bundle_valid, false),
+				CASE WHEN p_nature = 'techByDesignDisposition' THEN COALESCE(v_is_bundle_valid, false) ELSE v_is_bundle_valid END, 
+					/*When Original FHIR Payload keep it as NULL, 
+					  When techByDesignDisposition then, if 'OperationOutcome'->'validationResults'->0->>'valid' is NULL then it should save as false, otherwise true/false
+					  For All Others, save it as true/false*/
 	            v_bundle_type,
 	            p_additional_details,
 	            p_techbd_version_number
