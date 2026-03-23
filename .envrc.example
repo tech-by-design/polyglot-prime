@@ -68,3 +68,5 @@ export SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_TOKEN_URI=http://localh
 export SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_USER_INFO_URI=http://localhost:9011/oauth2/userinfo
 export SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_JWK_SET_URI=http://localhost:9011/.well-known/jwks.json
 export SPRING_SECURITY_OAUTH2_FUSIONAUTH_REDIRECT_URI=http://localhost:8080/login/oauth2/code/fusionauth
+
+export AUTH_PROVIDER=github # github or fusionauth

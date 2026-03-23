@@ -52,16 +52,23 @@
                 </ul>
             </div>
         </div>
-            <div sec:authorize="isAuthenticated()">
-                <div>
-                    You're logged in as 
-                    <span th:text="${authProvider == 'fusionauth' ? 'Fusion Gateway User' : 'GitHub User'}"></span>
-                    <span class="font-bold"
-                    th:text="${authProvider == 'fusionauth'} ? ${#authentication.principal.attributes['name']} : ${#authentication.principal.attributes['login']}"> </span> 
-                with
-                role <code>TODO</code>.</div>
-        </div>
-        <div sec:authorize="isAnonymous()">
+                <div sec:authorize="isAuthenticated()" 
+                    class="flex justify-center items-center h-full text-center">
+                    <div>
+                        You're logged in as 
+                        <span class="font-bold"
+                            th:text="${authProvider == 'fusionauth' ? 
+                                        #authentication.principal.attributes['name'] : 
+                                        #authentication.principal.attributes['login']}">
+                        </span>
+                        with role 
+                        <code th:text="${authProvider == 'fusionauth' ? 
+                                        #strings.listJoin(#authentication.principal.attributes['role'], ', ') : 
+                                        'admin'}">
+                        </code>.
+                    </div>
+                </div>
+      <div sec:authorize="isAnonymous()">
             <div>You're not logged in so you only have guest privileges.</div>
         </div>
 

@@ -36,7 +36,8 @@
                             </svg>
                         </div>
                         <div class="py-1">
-                           <span th:text="'Login with ' + ${authProvider}"></span>
+                        <span th:text="${authProvider == 'fusionauth'} ? 
+                        'Login with Fusion Gateway' : 'Login with GitHub'"> </span>                        
                         </div>
                     </a>
                 </div>
