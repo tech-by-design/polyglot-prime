@@ -124,6 +124,7 @@ public class NettyTcpServer implements MessageSourceProvider {
     // Persists the formatted HAProxy header string for the lifetime of the channel so it
     // can be re-logged on every message, idle event, and timeout — not just on first receipt.
     private static final AttributeKey<String> HAPROXY_DETAILS_KEY = AttributeKey.valueOf("HAPROXY_DETAILS");
+    private static final AttributeKey<PortConfig.PortEntry> PORT_ENTRY_KEY = AttributeKey.valueOf("PORT_ENTRY");
 
     /**
      * SESSION_ID_KEY — assigned once when the TCP connection is established
@@ -218,6 +219,14 @@ public class NettyTcpServer implements MessageSourceProvider {
         return parseHaproxyField(haproxyDetails(ctx), "destPort");
     }
 
+    /**
+     * Returns the cached PortConfig.PortEntry for this channel wrapped in an Optional,
+     * or Optional.empty() if PORT_ENTRY_KEY has not been set yet.
+     */
+    private Optional<PortConfig.PortEntry> cachedPortEntry(ChannelHandlerContext ctx) {
+        return Optional.ofNullable(ctx.channel().attr(PORT_ENTRY_KEY).get());
+    }
+
     @PostConstruct
     public void startServer() {
         // Parse TCP delimiters from hex strings
@@ -266,6 +275,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                 ch.attr(NO_DELIMITER_DETECTED_KEY).set(false);
                                 ch.attr(RAW_ACCUMULATOR_KEY).set(new StringBuilder());
                                 ch.attr(HAPROXY_DETAILS_KEY).set(null);
+                                ch.attr(PORT_ENTRY_KEY).set(null);
 
                                 // Always start with ReadTimeoutHandler; handleProxyHeader /
                                 // handleSandboxProxy will replace it with IdleStateHandler if
@@ -999,7 +1009,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                         logger.warn("MLLP_MESSAGE_SIZE_LIMIT_EXCEEDED [sessionId={}] [interactionId={}] [haproxyDetails={}] size={} bytes exceeds max={} bytes",
                                 sessionId, interactionId, haproxyDetails(ctx), in.readableBytes(), maxFrameLength);
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex = startIndex + 1;
+                        endIndex = in.writerIndex();
                     } else {
                         return;
                     }
@@ -1036,7 +1046,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                         logger.warn("TCP_DELIMITED_MESSAGE_SIZE_LIMIT_EXCEEDED [sessionId={}] [interactionId={}] [haproxyDetails={}] size={} bytes exceeds max={} bytes",
                                 sessionId, interactionId, haproxyDetails(ctx), in.readableBytes(), maxFrameLength);
                         ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).set(true);
-                        endIndex = startIndex + 1;
+                        endIndex = in.writerIndex();
                     } else {
                         return;
                     }
@@ -1125,6 +1135,7 @@ public class NettyTcpServer implements MessageSourceProvider {
         ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).set(null);
         ctx.channel().attr(RAW_ACCUMULATOR_KEY).set(null);
         ctx.channel().attr(HAPROXY_DETAILS_KEY).set(null);
+        ctx.channel().attr(PORT_ENTRY_KEY).set(null);
         // SESSION_ID_KEY, SESSION_START_TIME_KEY, SESSION_MESSAGE_COUNT_KEY
         // are deliberately left intact — cleared only in channelInactive.
     }
@@ -1255,7 +1266,7 @@ public class NettyTcpServer implements MessageSourceProvider {
      * Main message handler — routes to HL7 or generic handler based on MLLP detection.
      * Also installs IdleStateHandler in place of the default ReadTimeoutHandler when
      * the resolved PortEntry carries a keepAliveTimeout value.
-     */
+    */
     private void handleMessage(ChannelHandlerContext ctx, String rawMessage,
             String sessionId, UUID interactionId) {
         // All IP/port values come exclusively from HAPROXY_DETAILS_KEY.
@@ -1266,41 +1277,53 @@ public class NettyTcpServer implements MessageSourceProvider {
         String destinationIP  = haproxyDestAddress(ctx);
         String destinationPort = haproxyDestPort(ctx);
 
+       RequestContext portResolutionCtx = buildRequestContext(
+                rawMessage.trim(),
+                interactionId.toString(),
+                Optional.empty(),
+                clientPort,
+                clientIP,
+                destinationIP,
+                destinationPort,
+                MessageSourceType.TCP);
+
+        Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(portResolutionCtx, Constants.TCP);
+        ctx.channel().attr(PORT_ENTRY_KEY).set(portEntryOpt.orElse(null));
+
         // Check if message size exceeded limit
         Boolean messageSizeExceeded = ctx.channel().attr(MESSAGE_SIZE_EXCEEDED_KEY).get();
         if (messageSizeExceeded != null && messageSizeExceeded) {
             String errorTraceId = ErrorTraceIdGenerator.generateErrorTraceId();
-            String errorMessage = String.format("Message size %d bytes exceeds maximum allowed size of %d bytes", 
+            String errorMessage = String.format("Message size %d bytes exceeds maximum allowed size of %d bytes",
                     rawMessage.length(), maxMessageSizeBytes);
-            
+
             logger.error("MESSAGE_SIZE_LIMIT_EXCEEDED [sessionId={}] [interactionId={}] [haproxyDetails={}] [errorTraceId={}] size={} bytes, max={} bytes",
                     sessionId, interactionId, haproxyDetails(ctx), errorTraceId, rawMessage.length(), maxMessageSizeBytes);
-            
+
             LogUtil.logDetailedError(
-                413, 
-                errorMessage, 
-                interactionId.toString(), 
+                413,
+                errorMessage,
+                interactionId.toString(),
                 errorTraceId,
                 new IllegalArgumentException("Message size limit exceeded")
             );
-            
-            boolean isMllpWrapped = detectMllpWrapper(rawMessage);
-            boolean isTcpDelimited = detectTcpDelimiterWrapper(rawMessage);
-            
+
+           boolean isMllpPort = detectMllp(portEntryOpt);
+
             RequestContext requestContext = buildRequestContext(
                     rawMessage.trim(),
                     interactionId.toString(),
-                    Optional.empty(),
+                    portEntryOpt,
                     clientPort,
                     clientIP,
                     destinationIP,
                     destinationPort,
-                    isMllpWrapped ? MessageSourceType.MLLP : MessageSourceType.TCP);
-            
+                    isMllpPort ? MessageSourceType.MLLP : MessageSourceType.TCP);
+
             requestContext.setIngestionFailed(true);
-            
+
             String nackMessage;
-            if (isMllpWrapped) {
+            if (isMllpPort) {
                 nackMessage = createHL7AckFromMsh(
                         rawMessage, "AR", errorMessage, interactionId.toString(), errorTraceId);
                 sendResponseAndClose(ctx, wrapMllp(nackMessage), sessionId, interactionId, "HL7_NACK_SIZE_EXCEEDED");
@@ -1317,18 +1340,6 @@ public class NettyTcpServer implements MessageSourceProvider {
         logger.info("COMPLETE_MESSAGE_RECEIVED [sessionId={}] [interactionId={}] [haproxyDetails={}] from={}:{}, size={} bytes MLLP_WRAPPED={} TCP_DELIMITED={}",
                 sessionId, interactionId, haproxyDetails(ctx), clientIP, clientPort, rawMessage.length(),
                 isMllpWrapped ? "YES" : "NO", isTcpDelimited ? "YES" : "NO");
-
-        RequestContext initialContext = buildRequestContext(
-                rawMessage.trim(),
-                interactionId.toString(),
-                Optional.empty(),
-                clientPort,
-                clientIP,
-                destinationIP,
-                destinationPort,
-                isMllpWrapped ? MessageSourceType.MLLP : MessageSourceType.TCP);
-
-        Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(initialContext ,Constants.TCP);
 
         // --- keepAliveTimeout override ---
         int resolvedKat = portEntryOpt
@@ -1740,7 +1751,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     ctx.close();
                     return;
                 }
-                // Reset per-message state; session-level attributes are preserved
+                // Reset per-message state; session-level attributes are preserved.
                 ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(null);
                 ctx.channel().attr(MESSAGE_START_TIME_KEY).set(System.currentTimeMillis());
                 ctx.channel().attr(FRAGMENT_COUNT_KEY).set(new AtomicInteger(0));
@@ -1749,6 +1760,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 ctx.channel().attr(ERROR_NACK_SENT_KEY).set(false);
                 ctx.channel().attr(NO_DELIMITER_DETECTED_KEY).set(false);
                 ctx.channel().attr(RAW_ACCUMULATOR_KEY).set(new StringBuilder());
+                ctx.channel().attr(PORT_ENTRY_KEY).set(null);
             });
         } else {
             ctx.writeAndFlush(responseBuf).addListener(future -> {
