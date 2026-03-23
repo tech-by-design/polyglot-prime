@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.42</description>
-  <revision>54</revision>
+  <description>Version: 0.4.43</description>
+  <revision>57</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -639,6 +639,17 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     var xsltStream = new java.io.FileInputStream(xsltFile);
 
     var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+    // Set URIResolver — this resolves xsl:include/xsl:import at runtime
+    transformerFactory.setURIResolver(new javax.xml.transform.URIResolver({
+	    resolve: function(href, base) {
+	        // href = &quot;cda-fhir-bundle-common-utils.xslt&quot; (from xsl:include)
+	        // We resolve it against the same dynamic folder
+	        var resolvedPath = ccdaSchemaFolder + &quot;/&quot; + href;
+	        var file = new java.io.File(resolvedPath);
+	        logger.info(&quot;URIResolver resolving: &quot; + resolvedPath);
+	        return new javax.xml.transform.stream.StreamSource(file);
+	    }
+    }));
     var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
     var transformer = transformerFactory.newTransformer(xsltSource);
 
@@ -1251,10 +1262,12 @@ function getObservationCategoryCodes(transformer, observations) {
     var xml = new XML(observations); // Parse the source message as XML    
     var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
     default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var codes;
 
     // Extract all observation code attributes
-    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos; || channelMap.get(&apos;ehrVendor&apos;)  == &apos;Athenahealth&apos;) {
-	    var codes = xml..component
+    if (ehrVendor == &apos;Medent&apos; || ehrVendor == &apos;Athenahealth&apos;) {
+	    codes = xml..component
 	                   .structuredBody
 	                   .component
 	                   .section.(@ID == &apos;observations&apos;)
@@ -1263,9 +1276,8 @@ function getObservationCategoryCodes(transformer, observations) {
 	                   .entryRelationship
 	                   .observation
 	                   .code.@code;
-     }
-     else {
-     	var codes = xml..component
+     } else if (ehrVendor == &apos;Epic&apos;) {
+     	codes = xml..component
 	                   .structuredBody
 	                   .component
 	                   .section.(@ID == &apos;observations&apos;)
@@ -1276,7 +1288,15 @@ function getObservationCategoryCodes(transformer, observations) {
 	                   .entryRelationship
 	                   .observation
 	                   .code.@code;
-     }
+     } else { 
+   		codes = xml..component	
+                  .structuredBody	
+                  .component	
+                  .section.(@ID == &apos;observations&apos;)	
+                  .entry	
+                  .observation	
+                  .code.@code; 
+   	}
 
 	// collect unique category codes
 	var categorySet = {};
@@ -1331,10 +1351,12 @@ function getMultipleAnswersForComponent(transformer, observations) {
     var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
     default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
     var matchingObservations = [];
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var codes;
 
     // Extract all observation code attributes
     try {
-	    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos; || channelMap.get(&apos;ehrVendor&apos;)  == &apos;Athenahealth&apos;) {
+	    if (ehrVendor == &apos;Medent&apos; || ehrVendor  == &apos;Athenahealth&apos;) {
 		    matchingObservations = xml..component
 		        .structuredBody
 		        .component
@@ -1343,8 +1365,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
 		        .observation
 		        .entryRelationship
 		        .observation.(code.@code == &apos;96778-6&apos;);
-	     }
-	     else {
+	     } else if (ehrVendor == &apos;Epic&apos;) {
 	     	matchingObservations = xml..component
 		        .structuredBody
 		        .component
@@ -1354,6 +1375,13 @@ function getMultipleAnswersForComponent(transformer, observations) {
 		        .entryRelationship
 		        .observation
 		        .entryRelationship
+		        .observation.(code.@code == &apos;96778-6&apos;);
+	     } else {
+	     	matchingObservations = xml..component
+		        .structuredBody
+		        .component
+		        .section.(@ID == &apos;observations&apos;)
+		        .entry
 		        .observation.(code.@code == &apos;96778-6&apos;);
 	     }
      } catch (err) {
@@ -2577,7 +2605,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773310323654</time>
+        <time>1773745988092</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2586,5 +2614,6 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
+    <channelTags/>
   </exportData>
 </channel>
