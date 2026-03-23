@@ -10,9 +10,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundleValidate.xml",
-      "version": "0.8.10",
+      "version": "0.8.11",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-03-19"
+      "date": "2026-03-23"
     },
     {
       "type": "CCDA",
