@@ -9,11 +9,13 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.techbd.conf.Configuration;
 import org.techbd.service.http.FusionAuthUserAuthorizationFilter;
+import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
@@ -24,6 +26,10 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class Presentation {
+
+    @Value("${AUTH_PROVIDER}")
+    private String authProvider;
+    
     @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(Presentation.class.getName());
 
@@ -72,8 +78,13 @@ public class Presentation {
         // make the request, authUser available to templates
         model.addAttribute("appVersion", this.appConfig.getVersion());
         model.addAttribute("req", request);
-        model.addAttribute("authUser", FusionAuthUserAuthorizationFilter.getAuthenticatedUser(request));
-
+        Object authUser;
+        if ("fusionauth".equalsIgnoreCase(authProvider)) {
+            authUser = FusionAuthUserAuthorizationFilter.getAuthenticatedUser(request);
+        } else {
+            authUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+        }
+        model.addAttribute("authUser", authUser);
         // active route, siblings, ancestors (breadcrumbs) available for navigation
         model.addAttribute("navPrime", navPrimeLinks);
         model.addAttribute("navPrimeTree", navPrimeTree);

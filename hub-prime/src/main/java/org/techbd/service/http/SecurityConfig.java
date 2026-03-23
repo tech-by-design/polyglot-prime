@@ -31,8 +31,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
   
     
-    @Autowired
+    @Autowired(required = false)
     private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
+
+    @Autowired(required = false)
+    private GitHubUserAuthorizationFilter gitHubUserAuthorizationFilter;
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -48,6 +51,9 @@ public class SecurityConfig {
 
     @Value("${SPRING_SECURITY_OAUTH2_LOGOUT_REDIRECT_URI}")
     private String logoutRedirectUrl;
+   
+    @Value("${AUTH_PROVIDER:fusionauth}")
+    private String authProvider;
 
     @Bean
     public SecurityFilterChain statelessSecurityFilterChain(final HttpSecurity http) throws Exception {
@@ -86,8 +92,14 @@ public class SecurityConfig {
                 .sessionManagement(
                         sessionManagement -> sessionManagement
                                 .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .addFilterAfter(fusionAuthAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                  if (fusionAuthAuthorizationFilter != null) {
+                        http.addFilterAfter(fusionAuthAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
+                    }
+
+                    if (gitHubUserAuthorizationFilter != null) {
+                        http.addFilterAfter(gitHubUserAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
+                    }    
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
             headers.frameOptions(frameOptions -> frameOptions.sameOrigin());

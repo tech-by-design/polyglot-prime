@@ -7,8 +7,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +18,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.FusionAuthUserAuthorizationFilter;
+import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.AppLogger;
@@ -48,6 +47,9 @@ public class InteractionService {
     @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
 
+    @Value("${AUTH_PROVIDER:fusionauth}")
+    private String authProvider;
+
     @Transactional
     public void saveInteractionToDatabase(RequestResponseEncountered rre, String requestURI, 
             OffsetDateTime createdAt, String provenance, HttpServletRequest origRequest) {
@@ -70,28 +72,58 @@ public class InteractionService {
                 rihr.setPProvenance(provenance);
                 // User details
                 if (saveUserDataToInteractions) {
-                        var curUserName = "API_USER";
-                        var fusionAuthUserId = "N/A";
-                        final var sessionId = origRequest.getRequestedSessionId();
-                        var userRole = "API_ROLE";
+                    var curUserName = "API_USER";
+                    var userId = "N/A";
+                    final var sessionId = origRequest.getRequestedSessionId();
+                    var userRole = "API_ROLE";
 
-                         final var curUser = FusionAuthUserAuthorizationFilter.getAuthenticatedUser(origRequest);
-                        if (curUser.isPresent()) {
-                            final var faUser = curUser.get().faUser();
-                            if (null != faUser) {
+                    Optional<?> curUser = Optional.empty();
+
+                    if ("fusionauth".equalsIgnoreCase(authProvider)) {
+                        curUser = FusionAuthUserAuthorizationFilter.getAuthenticatedUser(origRequest);
+                    } else if ("github".equalsIgnoreCase(authProvider)) {
+                        curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
+                    }
+
+                    if (curUser.isPresent()) {
+                        Object user = curUser.get();
+
+                        if ("fusionauth".equalsIgnoreCase(authProvider)) {
+                            final var faUser = ((FusionAuthUserAuthorizationFilter.AuthenticatedUser) user).faUser();
+                            if (faUser != null) {
                                 curUserName = Optional.ofNullable(faUser.name()).orElse("NO_DATA");
-                                fusionAuthUserId = Optional.ofNullable(faUser.fusionAuthId()).orElse("NO_DATA");
-                                userRole = curUser.get().principal().getAuthorities().stream()
-                                        .map(GrantedAuthority::getAuthority)
-                                        .collect(Collectors.joining(","));
-                                LOG.info("userRole: " + userRole);
-                                userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented as part of Auth
+                                userId = Optional.ofNullable(faUser.fusionAuthId()).orElse("NO_DATA");
                             }
+
+                            userRole = ((FusionAuthUserAuthorizationFilter.AuthenticatedUser) user)
+                                    .principal()
+                                    .getAuthorities()
+                                    .stream()
+                                    .map(GrantedAuthority::getAuthority)
+                                    .collect(Collectors.joining(","));
+
+                        } else if ("github".equalsIgnoreCase(authProvider)) {
+                            final var ghUser = ((GitHubUserAuthorizationFilter.AuthenticatedUser) user).ghUser();
+                            if (ghUser != null) {
+                                curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                                userId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                            }
+
+                            userRole = ((GitHubUserAuthorizationFilter.AuthenticatedUser) user)
+                                    .principal()
+                                    .getAuthorities()
+                                    .stream()
+                                    .map(GrantedAuthority::getAuthority)
+                                    .collect(Collectors.joining(","));
                         }
-                        rihr.setPUserName(curUserName);
-                        rihr.setPUserId(fusionAuthUserId);
-                        rihr.setPUserSession(sessionId);
-                        rihr.setPUserRole(userRole);
+
+                        LOG.info("userRole: " + userRole);
+                        userRole = "DEFAULT_ROLE"; // TODO: remove when real role mapping is implemented
+                    }
+                    rihr.setPUserName(curUserName);
+                    rihr.setPUserId(userId);
+                    rihr.setPUserSession(sessionId);
+                    rihr.setPUserRole(userRole);
                 } else {
                     LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
                             + saveUserDataToInteractions);

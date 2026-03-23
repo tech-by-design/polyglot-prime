@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -21,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
+@ConditionalOnProperty(name = "AUTH_PROVIDER", havingValue = "fusionauth", matchIfMissing = true)
 public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FusionAuthUserAuthorizationFilter.class);
