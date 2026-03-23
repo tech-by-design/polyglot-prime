@@ -2,9 +2,9 @@
   <id>49e22aa9-5db3-4290-81fd-5c9d1aefea3d</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.24
-Add Content-Type validation for ccda Channel.</description>
-  <revision>6</revision>
+  <description>Version 0.5.25
+Revert Content-Type validation for ccda Channel.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -244,14 +244,7 @@ function removeEmptyValues(key, value) {
   return value; // Keep the value as is
 }
 
-var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;)|| $(&apos;headers&apos;).getHeader(&apos;content-type&apos;);
- 
-if (!contentType || !contentType.toLowerCase().includes(&apos;multipart/form-data&apos;)) {
-    logger.error(&quot;Invalid or missing Content-Type: &quot; + contentType);
- 
-    setErrorResponse(400, &quot;Bad request: Content-type must be multipart/form-data with boundary details&quot;);
-    throw &quot;Invalid Content-Type&quot;;
-}
+
 
 /**
 * Util function to generate json string wit hstatus and message
@@ -3091,7 +3084,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773910847848</time>
+        <time>1774275358856</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3102,14 +3095,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>732fb2ca-b47b-4659-8df1-38977454c5a8</id>
-        <name>0_5_24</name>
+        <id>4ccc58ab-f83b-4c21-b42d-c106d5f69959</id>
+        <name>0_5_25</name>
         <channelIds>
           <string>49e22aa9-5db3-4290-81fd-5c9d1aefea3d</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
