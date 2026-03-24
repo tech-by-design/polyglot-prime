@@ -71,7 +71,6 @@ public class PrimeController {
     @GetMapping("/home")
     @RouteMapping(label = "Home", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
-        model.addAttribute("authProvider", authProvider);
         return presentation.populateModel("page/home", model, request);
     }
 

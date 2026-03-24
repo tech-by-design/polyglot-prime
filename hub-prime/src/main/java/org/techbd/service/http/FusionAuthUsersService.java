@@ -51,6 +51,7 @@ public class FusionAuthUsersService {
             //    enrichedAttributes.put("groupNames", user.groups()); 
                enrichedAttributes.put("role", user.roles());              
                enrichedAttributes.put("avatar_url", createAvatarUrl(oAuth2User));
+               enrichedAttributes.put("authProvider", "fusionauth");
 
              
                DefaultOAuth2User enrichedOAuth2User = new DefaultOAuth2User(

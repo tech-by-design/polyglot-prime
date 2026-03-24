@@ -86,7 +86,7 @@
                               <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                 id="user-menu-item-0">
                                 <span class="font-bold"
-                                        th:text="${authProvider == 'fusionauth'} ? ${#authentication.principal.attributes['name']} : ${#authentication.principal.attributes['login']}">
+                                        th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth'} ? ${#authentication.principal.attributes['name']} : ${#authentication.principal.attributes['login']}">
                                 </span>
                                 </a>
                                 <!-- <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
@@ -97,7 +97,7 @@
                                     id="user-menu-item-0">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-1">Settings</a> -->
-                               <form th:if="${authProvider == 'fusionauth'}" action="/logout" method="get">
+                               <form th:if="${#authentication.principal.attributes['authProvider'] == 'fusionauth'}" action="/logout" method="get">
                                 <button type="submit"
                                     class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     role="menuitem" tabindex="-1" id="user-menu-item-2">
