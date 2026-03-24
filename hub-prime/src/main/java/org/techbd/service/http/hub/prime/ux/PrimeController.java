@@ -36,7 +36,7 @@ import lib.aide.tabular.JooqRowsSupplier;
 @Tag(name = "Tech by Design Hub UX API")
 public class PrimeController {
 
-    @Value("${AUTH_PROVIDER}")
+    @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
 
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());

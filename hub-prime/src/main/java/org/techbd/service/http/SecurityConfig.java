@@ -52,7 +52,7 @@ public class SecurityConfig {
     @Value("${SPRING_SECURITY_OAUTH2_LOGOUT_REDIRECT_URI}")
     private String logoutRedirectUrl;
    
-    @Value("${AUTH_PROVIDER:fusionauth}")
+    @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
 
     @Bean
