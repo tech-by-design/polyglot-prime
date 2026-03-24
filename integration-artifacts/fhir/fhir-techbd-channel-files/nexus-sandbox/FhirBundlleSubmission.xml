@@ -2,8 +2,8 @@
   <id>ebf6c718-f2dd-415c-9e24-3852cb49577a</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.22
-Revert validation to content-type.</description>
+  <description>Version: 0.8.23
+Remove Processing agent in Forward HTTP Response in FhirSubmission.</description>
   <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
@@ -2240,16 +2240,17 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		    }
 		}
 		
-		
 		var provenanceString = 
 		    &quot;channel:&quot; + channelName +
-		    &quot;, script:deploy&quot; +
-		    &quot;, processingAgent:&quot; + processingAgentFinal;
-		    
+		    &quot;, script:deploy&quot;;
+		
+		// ONLY for Forward HTTP Request
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		    provenanceString += &quot;, processingAgent:&quot; + processingAgentFinal;
+		}
 		// 19. p_provenance
 		stmt.setString(19, provenanceString);
 
-		
 		// 20. p_hub_upsert_behavior boolean
 		stmt.setNull(20, java.sql.Types.BOOLEAN);
 		
@@ -2441,7 +2442,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774271396025</time>
+        <time>1774338744354</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2452,8 +2453,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ca94b77c-87e1-47b2-8141-f1ba50685da8</id>
-        <name>0_8_22</name>
+        <id>ca7a3b13-ac50-4b37-9f7a-ecc1a028a372</id>
+        <name>0_8_23</name>
         <channelIds>
           <string>ebf6c718-f2dd-415c-9e24-3852cb49577a</string>
         </channelIds>
