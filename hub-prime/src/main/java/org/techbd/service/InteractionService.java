@@ -47,7 +47,7 @@ public class InteractionService {
     @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
 
-    @Value("${AUTH_PROVIDER:fusionauth}")
+    @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
 
     @Transactional

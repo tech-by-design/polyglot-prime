@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class Presentation {
 
-    @Value("${AUTH_PROVIDER}")
+    @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
     
     @SuppressWarnings("unused")
