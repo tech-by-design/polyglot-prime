@@ -712,8 +712,7 @@
               </xsl:if>
 
               <!-- ================= Address ================= -->
-              <xsl:variable name="validAddresses"
-                select="//NK1.4[
+              <xsl:if test="//NK1.4[
                        normalize-space(NK1.4.1)
                     or normalize-space(NK1.4.2)
                     or normalize-space(NK1.4.3)
@@ -721,18 +720,13 @@
                     or normalize-space(NK1.4.5)
                     or normalize-space(NK1.4.6)
                     or normalize-space(NK1.4.9)
-                    ]"/>
-              <xsl:if test="count($validAddresses) &gt; 0">
+                    ]">
                 <p>
-                  "address":[
-                    <xsl:for-each select="$validAddresses">
-                      <xsl:if test="position() &gt; 1">,</xsl:if>
-                      <xsl:call-template name="buildFhirAddressObject">
-                        <xsl:with-param name="addrNode" select="."/>
-                        <xsl:with-param name="resource_name" select="'Patient'"/>
-                      </xsl:call-template>
-                    </xsl:for-each>
-                  ]
+                  "address":
+                    <xsl:call-template name="buildFhirAddressObject">
+                      <xsl:with-param name="addrNode" select="NK1.4"/>
+                      <xsl:with-param name="resource_name" select="'Patient'"/>
+                    </xsl:call-template>
                 </p>
               </xsl:if>
             </xsl:variable>
