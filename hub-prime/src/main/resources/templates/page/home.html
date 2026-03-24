@@ -57,12 +57,12 @@
                     <div>
                         You're logged in as 
                         <span class="font-bold"
-                            th:text="${authProvider == 'fusionauth' ? 
+                            th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth' ? 
                                         #authentication.principal.attributes['name'] : 
                                         #authentication.principal.attributes['login']}">
                         </span>
                         with role 
-                        <code th:text="${authProvider == 'fusionauth' ? 
+                        <code th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth' ? 
                                         #strings.listJoin(#authentication.principal.attributes['role'], ', ') : 
                                         'admin'}">
                         </code>.

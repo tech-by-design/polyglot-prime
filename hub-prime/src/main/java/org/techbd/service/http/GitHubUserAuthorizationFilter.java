@@ -2,6 +2,8 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
@@ -90,7 +92,16 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                             + supportEmailDisplayName + "\">" + supportEmail + "</a>>.");
                     return;
                 }
-                setAuthenticatedUser(request, new AuthenticatedUser(gitHubPrincipal, gitHubAuthnUser.orElseThrow()));
+                Map<String, Object> attributes = new HashMap<>(gitHubPrincipal.getAttributes());
+                    // Add auth provider
+                    attributes.put("authProvider", "github");
+                    // Create updated principal
+                    DefaultOAuth2User updatedUser = new DefaultOAuth2User(
+                            gitHubPrincipal.getAuthorities(),
+                            attributes,
+                            "login" // GitHub username field
+                    );
+                setAuthenticatedUser(request, new AuthenticatedUser(updatedUser, gitHubAuthnUser.orElseThrow()));
             }
         }
 
