@@ -1,18 +1,15 @@
 <channel version="4.6.1">
-  <id>3633cec2-874c-4c8c-afbd-4e5a4dee980a</id>
-  <nextMetaDataId>2</nextMetaDataId>
+  <id>2bdaafc8-66c5-41a0-8d5c-c40297e2082f</id>
+  <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.2
-update additional headers and correct header keys used in destination</description>
-  <revision>15</revision>
+  <description>xVersion: 0.2.4
+Added basic validation for ccda in router channel</description>
+  <revision>37</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>true</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,13 +31,16 @@ update additional headers and correct header keys used in destination</descripti
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
         <port>9000</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="4.6.1">
-        <responseVariable>d1</responseVariable>
+        <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
         <firstResponse>false</firstResponse>
@@ -60,7 +60,7 @@ update additional headers and correct header keys used in destination</descripti
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>application/fhir+json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map"/>
       <responseHeadersVariable></responseHeadersVariable>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
@@ -94,10 +94,32 @@ logger.info(&quot;Request URL inside RouterChannel: &quot; + requestedPath);
 
 
 var group1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-logger.info(&quot;group1 :&quot;  + group1);
+//logger.info(&quot;group1 :&quot;  + group1);
 
 var sourceType1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-logger.info(&quot;TechBD-Source-Type :&quot;  + sourceType1);
+//logger.info(&quot;TechBD-Source-Type :&quot;  + sourceType1);
+
+
+
+
+&#xd;
+if(sourceType1 == &quot;CSV&quot;)&#xd;
+{&#xd;
+	var baseURL123 = $(&apos;headers&apos;).getHeader(&apos;X-TECHBD-BL-BASEURL&apos;);&#xd;
+	logger.info(&quot;Trans - X-TECHBD-BL-BASEURL  CSV  ############## :&quot;  + baseURL123);&#xd;
+	channelMap.put(&quot;baseURL123&quot;, &quot;CLONE No  Mtls  80004 CSV 2 &quot; + baseURL123);&#xd;
+&#xd;
+}else{&#xd;
+	var baseURL123 = $(&apos;headers&apos;).getHeader(&apos;X-TECHBD-BL-BASEURL&apos;);&#xd;
+	logger.info(&quot;Trans - X-TECHBD-BL-BASEURL First time ############## :&quot;  + baseURL123);&#xd;
+	channelMap.put(&quot;baseURL123&quot;, &quot;CLONE No  Mtls  80004 First Time 1 &quot; + baseURL123);&#xd;
+	&#xd;
+}
+
+
+
+
+
 
 var organizationName = &quot;&quot;;
 var organizationNameHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
@@ -155,6 +177,17 @@ if (incomingTenantId != null &amp;&amp; incomingTenantId.trim() !== &apos;&apos;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Tenant-ID: &quot; + tenantId);
 channelMap.put(&quot;tenantId&quot;, tenantId);
 
+
+
+// X-TechBD-Tenant-ID
+var patientCin = &quot;&quot;;
+var incomingpatientCin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
+
+if (incomingpatientCin != null &amp;&amp; incomingpatientCin.trim() !== &apos;&apos;) {
+    patientCin = incomingpatientCin.trim();
+}
+
+channelMap.put(&quot;patientCIN&quot;, patientCin);
 
 // X-TechBD-Base-FHIR-URL
 var baseFhirUrl = &quot;&quot;;
@@ -258,9 +291,9 @@ if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Elaboration: &quot; + elaboration);&#xd;
 channelMap.put(&quot;elaboration&quot;, elaboration);
 
+/*this is done in ccda basic validation**/
 
-
-var cin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
+/*var cin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
 if (cin == null || cin.trim() === &apos;&apos;) {&#xd;
     cin = &quot;&quot;; &#xd;
 }
@@ -296,7 +329,7 @@ if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;)
 
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgNPI: &quot; + organizationNPI);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgTIN: &quot; + organizationTIN);&#xd;
-&#xd;
+*/&#xd;
 
 var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);
 if (screeningCode == null || screeningCode.trim() === &apos;&apos;) {
@@ -317,11 +350,119 @@ if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {&#x
     channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);&#xd;
 }
 
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Part2: &quot; + part2DataFlag);
+logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Part2: &quot; + part2DataFlag);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <name>ccda basic validation</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/********************************************
+    CCDA ROUTER LEVEL VALIDATION (LIGHT ONLY)
+********************************************/
+
+var isCCDASubmit = (
+    requestedPath == &quot;/ccda/Bundle/&quot; ||
+    requestedPath == &quot;/ccda/Bundle&quot;
+);
+
+var isCCDAValidate = (
+    requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
+    requestedPath == &quot;/ccda/Bundle/$validate&quot;
+);
+
+if (isCCDASubmit || isCCDAValidate) {
+
+	function checkRequiredHeader(headerName, mapKey) {
+	    var value = $(&apos;headers&apos;).getHeader(headerName);
+	
+	    if (!value || String(value).trim() === &quot;&quot;) {
+	        missingHeaders.push(&quot;Missing required header &quot; + headerName);
+	        //missingHeaders.push(headerName);
+	    } else {
+	        channelMap.put(mapKey || headerName, value);
+	    }
+	}
 
 
-if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath);
+    logger.info(&quot;CCDA request detected in Router&quot;);
+
+    var missingHeaders = [];
+    
+    // ✅ Content-Type (light check only)
+    var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+    if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;)) {
+        missingHeaders.push(&quot;Content-Type must be multipart/form-data&quot;);
+    }
+
+    // ✅ Raw data presence
+    var rawData = connectorMessage.getRawData();
+    if (!rawData || rawData.trim().length === 0) {
+        missingHeaders.push(&quot;Uploaded file is empty&quot;);
+    }
+
+    // ✅ Only for SUBMIT (not validate)
+    if (isCCDASubmit) {
+        logger.info(&quot;CCDA SUBMIT flow&quot;);
+        checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;tenantId&apos;);
+    	   checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;patientCIN&apos;);
+ 	   checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;facilityId&apos;);
+    	   checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;encounterType&apos;);
+
+
+        // NPI / TIN
+        var npi = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+        var tin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+
+        if ((!npi || npi.trim() === &quot;&quot;) &amp;&amp; (!tin || tin.trim() === &quot;&quot;)) {
+            missingHeaders.push(&quot;Either X-TechBD-OrgNPI or X-TechBD-OrgTIN required&quot;);
+        } else {
+            if (npi) channelMap.put(&apos;organizationNPI&apos;, npi);
+            if (tin) channelMap.put(&apos;organizationTIN&apos;, tin);
+        }
+    }
+
+    // ✅ VALIDATE flow → minimal only
+    if (isCCDAValidate) {
+        logger.info(&quot;CCDA VALIDATE flow (light validation only)&quot;);
+        // ❌ DO NOT enforce CIN / Facility / Encounter
+    }
+
+    if (missingHeaders.length &gt; 0) {
+        var errorMessage = &quot;Bad Request : &quot; + missingHeaders.join(&quot;, &quot;);
+        logger.error(errorMessage);
+        setErrorResponse(400, errorMessage);
+        throw new Error(errorMessage);
+    }
+
+    logger.info(&quot;CCDA router validation passed&quot;);
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <name>common function</name>
+          <sequenceNumber>2</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, statusCode);
+
+    responseMap.put(&apos;finalResponse&apos;, JSON.stringify({
+        status: statusCode,
+        error: errorMessage
+    }));
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <name>redirection</name>
+          <sequenceNumber>3</sequenceNumber>
+          <enabled>true</enabled>
+          <script>if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 
 	channelMap.put(&apos;contentType&apos;, &quot;application/fhir+json&quot;);	
 	logger.info(&quot;FHIRBundle submission  RouterChannel &quot;);
 }
@@ -347,7 +488,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &qu
 
 
 if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:8005&quot; + requestedPath);
 	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CSV FlatFile submission  RouterChannel &quot;);
 }
@@ -452,18 +593,19 @@ function methodNotAllowed() {&#xd;
 
 
 var remoteAddress = sourceMap.get(&apos;remoteAddress&apos;) || &apos;&apos;;&#xd;
-logger.info(&quot;Remote Address: &quot; + remoteAddress);
+//logger.info(&quot;Remote Address: &quot; + remoteAddress);
 
 var group1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-logger.info(&quot;group1 :&quot;  + group1);
+//logger.info(&quot;group1 :&quot;  + group1);
 
 var sourceType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-logger.info(&quot;Filter TechBD-Source-Type :&quot;  + sourceType);
+//logger.info(&quot;Filter TechBD-Source-Type :&quot;  + sourceType);
 if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle the health check when the filter is enabled.
 {
 	return true;
 }else{
-	return performCertValidation(&quot;chain&quot;, &quot;Util-sbx-bl-net.JKS&quot;, null);
+	return true;
+	//return performCertValidation(&quot;chain&quot;, &quot;Util-sbx-bl-net.JKS&quot;, null);
 }</script>
         </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
       </elements>
@@ -701,6 +843,8 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
       </properties>
       <transformer version="4.6.1">
         <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
         <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
@@ -718,6 +862,8 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
       </transformer>
       <responseTransformer version="4.6.1">
         <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
         <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
@@ -748,8 +894,7 @@ return message;</preprocessingScript>
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 
 // Get the response from the HTTP Writer destination
-
-/*	var destinationName = &quot;response_operationoutcome&quot;;
+var destinationName = &quot;response_operationoutcome&quot;;
 	var destinationResponse = responseMap.get(destinationName);
 	logger.info(&quot;destinationResponse &quot; + destinationResponse + &quot;:&quot;);
 	
@@ -758,13 +903,7 @@ return message;</preprocessingScript>
 	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
 	    var responseData = destinationResponse.getMessage();   // Response message body
 		responseMap.put(&apos;finalResponse&apos;, responseData);
-
-		    responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
-		     responseMap.put(&apos;response&apos;, responseData);&#xd;
-		    responseMap.put(&apos;responseBody&apos;, responseData);&#xd;
-&#xd;
-
-		
+		responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
 	    // Log the response details
 	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
 	    logger.info(&quot;Status Code:---- &quot; + responseStatus);
@@ -772,72 +911,9 @@ return message;</preprocessingScript>
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
-*/
-return;
-
-
-
-// Automatically return the response from the first destination
-/*
-var it = responseMap.keySet().iterator();
-
-if (it.hasNext()) {
-    var key = it.next();
-    var destResponse = responseMap.get(key);
-
-    if (destResponse != null) {
-        var responseStatus = destResponse.getStatus();
-        var responseData = destResponse.getMessage();
-
-        logger.info(&quot;Returning response from destination: &quot; + key);
-        logger.info(&quot;Status: &quot; + responseStatus);
-
-        responseMap.put(&apos;response&apos;, responseData);
-        responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
-    }
-}
 
 return;
-*/
-/*
-
-var destinationName = &quot;response_operationoutcome&quot;;
-var destinationResponse = responseMap.get(destinationName);
-
-logger.info(&quot;destinationResponse &quot; + destinationResponse + &quot;:&quot;);
-
-if (destinationResponse != null) {
-    var responseStatus = destinationResponse.getStatus();
-    var responseData = destinationResponse.getMessage();
-
-    responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
-    responseMap.put(&apos;responseBody&apos;, responseData);
-
-    logger.info(&quot;Status Code: &quot; + responseStatus);
-    logger.info(&quot;Response Data: &quot; + responseData);
-    
-    
-								
-								logger.info(&quot;=== RESPONSE MAP KEYS ===&quot;);
-								
-								var it = responseMap.keySet().iterator();
-								while (it.hasNext()) {
-								var key = it.next();
-								logger.info(&quot;ResponseMap Key: &quot; + key);
-								}
-								
-								var destinationResponse = responseMap.get(&quot;response_operationoutcome&quot;);
-								logger.info(&quot;Destination Response Object: &quot; + destinationResponse);
-    
-    
-    
-} else {
-    logger.info(&quot;No response found for destination: &quot; + destinationName);
-}
-
-return;
-
-*/&#xd;</postprocessingScript>
+</postprocessingScript>
   <deployScript>// This script executes once when the channel is deployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</deployScript>
@@ -882,7 +958,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773927382074</time>
+        <time>1774338265243</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -893,10 +969,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>4e882146-1acf-475f-93e6-929ca2a4a610</id>
-        <name>0_2_3</name>
+        <id>73b7af72-7384-4e16-829d-2c75f6ebe202</id>
+        <name>0_2_4</name>
         <channelIds>
-          <string>3633cec2-874c-4c8c-afbd-4e5a4dee980a</string>
+          <string>2bdaafc8-66c5-41a0-8d5c-c40297e2082f</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
