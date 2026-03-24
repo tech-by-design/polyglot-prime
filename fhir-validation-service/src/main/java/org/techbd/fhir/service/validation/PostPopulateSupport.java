@@ -24,6 +24,7 @@ public class PostPopulateSupport {
         Span span = tracer.spanBuilder("PostPopulateSupport.update").startSpan();
         try {
             addObservationLoincCodes(validationSupportChain,profileBaseUrl);
+            addLanguageSubTags(validationSupportChain);
         } finally {
             span.end();
         }
@@ -52,6 +53,14 @@ public class PostPopulateSupport {
             span.end();
         }
         LOG.info("PrePopulateSupport:addObservationLoincCodes  -BEGIN");
+    }
+
+    private void addLanguageSubTags(ValidationSupportChain validationSupportChain) {
+        ValueSet languageVS = (ValueSet) validationSupportChain.fetchValueSet("http://hl7.org/fhir/ValueSet/languages");
+        languageVS.getCompose().addInclude(new ValueSet.ConceptSetComponent()
+                .setConcept(
+                        ConceptReaderUtils.getValueSetConcepts_wCode(referenceCodesPath.concat("language-subtags.psv")))
+                .setSystem("urn:ietf:bcp:47"));
     }
 
 }
