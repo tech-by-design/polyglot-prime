@@ -101,7 +101,7 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.3",
+      "version": "0.2.5",
       "editedby": "abhiramisanthosh90",
       "date": "2026-03-24"
     },
