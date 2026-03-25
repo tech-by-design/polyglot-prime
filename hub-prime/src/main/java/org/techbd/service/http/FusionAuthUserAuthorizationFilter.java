@@ -57,14 +57,18 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (getAuthenticatedUser(request).isEmpty()) {
             var authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication instanceof OAuth2AuthenticationToken oAuth2Token
-                    && authentication.isAuthenticated()) {
+                    && authentication.isAuthenticated()
+                    && "fusionauth".equalsIgnoreCase(oAuth2Token.getAuthorizedClientRegistrationId())) {
 
-                if ("fusionauth".equalsIgnoreCase(oAuth2Token.getAuthorizedClientRegistrationId())) {
-                    DefaultOAuth2User oAuth2User = (DefaultOAuth2User) oAuth2Token.getPrincipal();
+                DefaultOAuth2User oAuth2User = (DefaultOAuth2User) oAuth2Token.getPrincipal();
+                boolean alreadyEnriched = oAuth2User.getAttributes().containsKey("authProvider");
+
+                if (!alreadyEnriched) {
                     try {
+                        LOG.info("Enriching FusionAuth user (first time or missing attributes)");
+
                         FusionAuthUsersService.AuthorizedUser faUser =
                                 fusionAuthUsersService.extractFusionAuthUser(oAuth2User);
 
@@ -82,15 +86,16 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                     //    }
                         // fusionAuthUsersService.convertToJson(enrichedOAuth2User);
 
-                        LOG.info("FusionAuth user authenticated: {} roles={}", faUser.email(), faUser.roles());
+                        LOG.info("FusionAuth user enriched and set in SecurityContext: {}", faUser.email());
                     } catch (Exception e) {
                         LOG.error("Error processing FusionAuth user login", e);
                         response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal auth error");
                         return;
                     }
+                } else {
+                    LOG.debug("User already enriched, skipping enrichment");
                 }
             }
-        }
 
         // Actuator access check
         if (request.getRequestURI().startsWith("/actuator")) {
