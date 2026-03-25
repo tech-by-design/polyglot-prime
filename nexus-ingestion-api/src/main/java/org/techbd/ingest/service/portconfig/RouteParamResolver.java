@@ -85,8 +85,8 @@ public class RouteParamResolver implements PortConfigResolver {
 
             // 3. No match at all
             throw new IllegalArgumentException(String.format(
-                            "No matching port configuration found for sourceId='%s', msgType='%s', protocol='%s'",
-                            sourceId, msgType, protocol));
+                            "No matching port configuration found for sourceId='%s', msgType='%s', port='%s',protocol='%s'",
+                            sourceId, msgType, context.getDestinationPort(),protocol));
     }
     /**
      * Checks whether a configuration entry matches the provided
