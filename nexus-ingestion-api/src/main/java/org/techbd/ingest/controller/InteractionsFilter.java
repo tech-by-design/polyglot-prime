@@ -68,7 +68,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private final S3Client s3Client;
     private final Cache<String, X509Certificate[]> caCache;
     private final SoapFaultUtil soapFaultUtil;
-    private static final Pattern PATH_PATTERN = Pattern.compile("^/(?:ingest/)?([^/]+)/([^/]+)(?:/.*)?$");
+    private static final Pattern PATH_PATTERN = Pattern.compile("^/ingest/([^/]+)/([^/]+)(?:/.*)?$");
     private static final List<String> ALLOWED_ROUTES_LIST = Optional.ofNullable(System.getenv("ALLOWED_WS_ROUTES")).map(r -> Arrays.stream(r.split(",")).map(String::trim).collect(Collectors.toList())).orElse(Collections.emptyList());
     public InteractionsFilter(AppLogger appLogger, PortConfig portConfig, 
                              PortResolverService portResolverService, S3Client s3Client, SoapFaultUtil soapFaultUtil) {
@@ -176,7 +176,27 @@ public class InteractionsFilter extends OncePerRequestFilter {
                RequestContext context = new RequestContext(interactionId,requestPort,sourceId,msgType);
 
                 // 4) Use PortResolverService to find the matching port entry
-                Optional<PortConfig.PortEntry> portEntryOpt = portResolverService.resolve(context, Constants.HTTP);
+                Optional<PortConfig.PortEntry> portEntryOpt;
+                try {
+                    portEntryOpt = portResolverService.resolve(context, Constants.HTTP);
+                } catch (IllegalArgumentException iae) {
+                    String msg = iae.getMessage() != null ? iae.getMessage()
+                            : String.format("No matching port configuration found for sourceId='%s', msgType='%s', port='%d', protocol='HTTP'",
+                                    sourceId, msgType, requestPort);
+                    LOG.warn("InteractionsFilter: invalid port configuration - {} interactionId: {}", msg, interactionId);
+                    origResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+                    origResponse.setContentType("application/json;charset=UTF-8");
+                    String safe = msg.replace("\\", "\\\\").replace("\"", "\\\"");
+                    try {
+                        origResponse.getWriter()
+                                .write(String.format("{\"error\":\"Bad Request\",\"description\":\"%s\"}", safe));
+                        origResponse.getWriter().flush();
+                    } catch (IOException ioe) {
+                        LOG.error("InteractionsFilter: failed to write Bad Request response for IllegalArgumentException interactionId: {}",
+                                interactionId, ioe);
+                    }
+                    return;
+                }
 
                 if (portEntryOpt.isEmpty()) {
                     String msg = String.format("No port configuration entry found for port %d, sourceId=%s, msgType=%s interactionId=%s - rejecting request",

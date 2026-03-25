@@ -18,6 +18,8 @@ import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 class PortResolverServiceTest {
 
     private PortConfig portConfig;
@@ -55,7 +57,7 @@ class PortResolverServiceTest {
 
     @Test
     @DisplayName("Should return entry when first resolver matches")
-    void shouldReturnEntryWhenFirstResolverMatches() {
+    void shouldReturnEntryWhenFirstResolverMatches() throws JsonProcessingException {
         RequestContext context =
                 new RequestContext("interaction-1", 8080, "SRC", "MSG");
 
@@ -78,7 +80,7 @@ class PortResolverServiceTest {
 
     @Test
     @DisplayName("Should return entry when second resolver matches")
-    void shouldReturnEntryWhenSecondResolverMatches() {
+    void shouldReturnEntryWhenSecondResolverMatches() throws JsonProcessingException {
         RequestContext context =
                 new RequestContext("interaction-2", 9090, "SRC", "MSG");
 
