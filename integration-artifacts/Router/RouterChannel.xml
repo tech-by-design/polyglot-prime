@@ -1,18 +1,15 @@
 <channel version="4.6.1">
-  <id>2bdaafc8-66c5-41a0-8d5c-c40297e2082f</id>
+  <id>93ac0003-0bf5-4b85-8b1e-54b00884ca14</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.5
-Fixed Immediate parameter issue</description>
-  <revision>65</revision>
+  <description>Version: 0.2.6
+Resolved an issue where the CSV response was not returned in Postman/cURL.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>true</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Fixed Immediate parameter issue</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -44,7 +44,7 @@ Fixed Immediate parameter issue</description>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
         <firstResponse>false</firstResponse>
-        <processingThreads>2</processingThreads>
+        <processingThreads>20</processingThreads>
         <resourceIds class="linked-hash-map">
           <entry>
             <string>Default Resource</string>
@@ -973,25 +973,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774356305207</time>
+        <time>1774419262203</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>2c9e37d3-d9ae-42fa-ad47-a954890ee945</id>
-        <name>0_2_5</name>
+        <id>ffc45cf1-4f29-4a82-87d9-a716e710fef4</id>
+        <name>0_2_6</name>
         <channelIds>
-          <string>2bdaafc8-66c5-41a0-8d5c-c40297e2082f</string>
+          <string>93ac0003-0bf5-4b85-8b1e-54b00884ca14</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
