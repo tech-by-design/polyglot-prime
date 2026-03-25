@@ -13,6 +13,8 @@ import org.techbd.ingest.service.portconfig.PortConfigApplierService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 /**
  * {@code MessageProcessorService} is responsible for orchestrating the
  * processing of messages
@@ -57,8 +59,9 @@ public class MessageProcessorService {
      * @param file    The multipart file to process.
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
+     * @throws JsonProcessingException 
      */
-    public Map<String, String> processMessage(RequestContext context, MultipartFile file) {
+    public Map<String, String> processMessage(RequestContext context, MultipartFile file) throws JsonProcessingException {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info(
                 "MessageProcessorService:: processMessage called with MultipartFile. interactionId={}, filename={}, filesize={} from source : {}",
@@ -87,8 +90,9 @@ public class MessageProcessorService {
      * @param content The raw string content to process.
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
+     * @throws JsonProcessingException 
      */
-    public Map<String, String> processMessage(RequestContext context, String content) {
+    public Map<String, String> processMessage(RequestContext context, String content) throws JsonProcessingException {
         return processMessage(context, content, null);
     }
 
@@ -101,8 +105,9 @@ public class MessageProcessorService {
      * @param ackMessage The acknowledgement message to be processed.
      * @return A map containing the result of the processing, including message ID
      *         and S3 path.
+     * @throws JsonProcessingException 
      */
-    public Map<String, String> processMessage(RequestContext context, String content, String ackMessage) {
+    public Map<String, String> processMessage(RequestContext context, String content, String ackMessage) throws JsonProcessingException {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={} from source {}",
                 interactionId, context.getMessageSourceType().name());

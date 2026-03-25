@@ -21,6 +21,8 @@ import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 @ExtendWith(MockitoExtension.class)
 class PortConfigApplierServiceTest {
 
@@ -54,7 +56,7 @@ class PortConfigApplierServiceTest {
     }
 
     @Test
-    void shouldReturnContextUnchangedWhenNoPortEntryResolved() {
+    void shouldReturnContextUnchangedWhenNoPortEntryResolved() throws JsonProcessingException {
         // given
         RequestContext context = mock(RequestContext.class);
         when(context.getInteractionId()).thenReturn("interaction-123");
@@ -76,7 +78,7 @@ class PortConfigApplierServiceTest {
     }
 
     @Test
-    void shouldApplyAllResolversWhenPortEntryResolved() {
+    void shouldApplyAllResolversWhenPortEntryResolved() throws JsonProcessingException {
         // given
         RequestContext context = mock(RequestContext.class);
         when(context.getInteractionId()).thenReturn("interaction-456");

@@ -28,6 +28,8 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
@@ -67,13 +69,13 @@ public class NettyTcpServer implements MessageSourceProvider {
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortResolverService portResolverService;
-    @Value("${TCP_DISPATCHER_PORT:7980}")
+    @Value("7980")
     private int tcpPort;
 
-    @Value("${TCP_READ_TIMEOUT_SECONDS:180}")
+    @Value("180")
     private int readTimeoutSeconds;
 
-    @Value("${TCP_MAX_MESSAGE_SIZE_BYTES:52428800}") // 50MB default
+    @Value("52428800") // 50MB default
     private int maxMessageSizeBytes;
 
     // MLLP protocol markers
@@ -82,18 +84,18 @@ public class NettyTcpServer implements MessageSourceProvider {
     private static final byte MLLP_END_2 = 0x0D; // <CR> Carriage Return
 
     // TCP delimiter configuration from environment variables
-    @Value("${TCP_MESSAGE_START_DELIMITER:0x02}") // STX - Start of Text
+    @Value("0x02") // STX - Start of Text
     private String tcpStartDelimiterHex;
     
-    @Value("${TCP_MESSAGE_END_DELIMITER_1:0x03}") // ETX - End of Text
+    @Value("0x03") // ETX - End of Text
     private String tcpEndDelimiter1Hex;
     
-    @Value("${TCP_MESSAGE_END_DELIMITER_2:0x0A}") // LF - Line Feed
+    @Value("0x0A") // LF - Line Feed
     private String tcpEndDelimiter2Hex;
 
     // Time interval (in seconds) to log a "session still active" message for long-running connections.
 // Set to 0 to turn off periodic session logging.
-    @Value("${TCP_SESSION_LOG_INTERVAL_SECONDS:60}")
+    @Value("60")
     private int sessionLogIntervalSeconds;
 
     // Parsed TCP delimiter bytes
@@ -306,7 +308,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                 // Main message handler - handles both HAProxyMessage and ByteBuf
                                 ch.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
                                     @Override
-                                    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+                                    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws JsonProcessingException {
                                         String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                         UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                         if (interactionId == null) {
@@ -415,11 +417,11 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                 String errorMsg = cause.getMessage() != null ? cause.getMessage() : "Unknown error";
                                                 String sanitizedError = errorMsg.replace("|", " ").replace("\r", " ").replace("\n", " ");
                                                 
-                                                String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                        + Instant.now() + "||ACK|" +
-                                                        UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
-                                                        "MSA|AR|UNKNOWN|Channel exception: " + sanitizedError + "\r" +
-                                                        "ERR|||207^Application internal error^HL70357||E|||Channel exception occurred\r";
+                                                String genericNack = """
+                                                MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|%s||ACK|%s|P|2.5\r
+                                                MSA|AR|UNKNOWN|Channel exception: %s\r
+                                                ERR|||207^Application internal error^HL70357||E|||Channel exception occurred\r
+                                                """.formatted(Instant.now(), UUID.randomUUID().toString().substring(0, 20), sanitizedError);
 
                                                 if (FeatureEnum.isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
                                                     genericNack += "NTE|1||InteractionID: " + interactionId +
@@ -556,12 +558,15 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                         String timeoutError = String.format(
                                                                 "Read idle timeout: No data received within %d seconds", effectiveTimeout);
 
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
-                                                                Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20)
-                                                                + "|P|2.5\r" +
-                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r";
+                                                        String timeoutNack = """
+                                                            MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|%s||ACK|%s|P|2.5\r
+                                                            MSA|AR|UNKNOWN|%s\r
+                                                            ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r
+                                                            """.formatted(
+                                                                Instant.now(),
+                                                                UUID.randomUUID().toString().substring(0, 20),
+                                                                timeoutError
+                                                        );
 
                                                         if (FeatureEnum
                                                                 .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
@@ -677,13 +682,15 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                                 readTimeoutSeconds);
 
                                                         // Generate HL7 NACK for timeout
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
-                                                                Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20)
-                                                                + "|P|2.5\r" +
-                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r";
-
+                                                      String timeoutNack = """
+                                                        MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|%s||ACK|%s|P|2.5\r
+                                                        MSA|AR|UNKNOWN|%s\r
+                                                        ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r
+                                                        """.formatted(
+                                                            Instant.now(),
+                                                            UUID.randomUUID().toString().substring(0, 20),
+                                                            timeoutError
+                                                        );
                                                         if (FeatureEnum
                                                                 .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
                                                             timeoutNack += "NTE|1||InteractionID: " + interactionId +
@@ -1266,9 +1273,10 @@ public class NettyTcpServer implements MessageSourceProvider {
      * Main message handler — routes to HL7 or generic handler based on MLLP detection.
      * Also installs IdleStateHandler in place of the default ReadTimeoutHandler when
      * the resolved PortEntry carries a keepAliveTimeout value.
+     * @throws JsonProcessingException 
     */
     private void handleMessage(ChannelHandlerContext ctx, String rawMessage,
-            String sessionId, UUID interactionId) {
+            String sessionId, UUID interactionId) throws JsonProcessingException {
         // All IP/port values come exclusively from HAPROXY_DETAILS_KEY.
         // No fallback to ch.remoteAddress() / ch.localAddress() — if the HAProxy
         // header has not arrived yet these will be empty strings.
