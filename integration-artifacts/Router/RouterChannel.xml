@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>93ac0003-0bf5-4b85-8b1e-54b00884ca14</id>
+  <id>c0d65b25-997a-49a7-a5cf-3bed918cef21</id>
   <nextMetaDataId>3</nextMetaDataId>
-  <name>RouterChannel</name>
-  <description>Version: 0.2.6
-Resolved an issue where the CSV response was not returned in Postman/cURL.</description>
-  <revision>4</revision>
+  <name>RouterChannel-2503</name>
+  <description>Version: 0.2.7
+Reenable the mtls in source filter</description>
+  <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -612,8 +612,8 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
 {
 	return true;
 }else{
-	return true;
-	//return performCertValidation(&quot;chain&quot;, &quot;Util-sbx-bl-net.JKS&quot;, null);
+	
+	return performCertValidation(&quot;chain&quot;, &quot;Util-sbx-bl-net.JKS&quot;, null);
 }</script>
         </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
       </elements>
@@ -973,21 +973,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774419262203</time>
+        <time>1774433021442</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ffc45cf1-4f29-4a82-87d9-a716e710fef4</id>
-        <name>0_2_6</name>
+        <id>7a98bbb9-e26e-4625-897d-f5780c540879</id>
+        <name>0_2_7</name>
         <channelIds>
-          <string>93ac0003-0bf5-4b85-8b1e-54b00884ca14</string>
+          <string>c0d65b25-997a-49a7-a5cf-3bed918cef21</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
