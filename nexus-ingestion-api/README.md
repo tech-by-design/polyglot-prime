@@ -217,7 +217,6 @@ The SOAP version is identified by inspecting the **namespace in the SOAP envelop
 
 Relevant schemas and resources used for SOAP/XDS processing can be accessed here:
 
-* [https://drive.google.com/drive/u/0/folders/1wA-ucPl507mn5fVSt9FkMbiL9O3edn4](https://drive.google.com/drive/u/0/folders/1wA-ucPl507mn5fVSt9FkMbiL9O3edn4)_
 * [https://drive.google.com/drive/u/0/folders/1w8eCGlwqHfsZzmMfglAxnCNi3hXL2X3K](https://drive.google.com/drive/u/0/folders/1w8eCGlwqHfsZzmMfglAxnCNi3hXL2X3K)
 
 For SOAP message handling and schema binding, JAXB classes are generated using the XJC plugin during the build process:
