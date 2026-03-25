@@ -12,7 +12,7 @@ Once a complete frame is assembled, the server resolves the matching **`PortEntr
 
 ```json
 {"port":2575,"responseType":"outbound","protocol":"TCP","keepAliveTimeout":200}
-````
+```
 
 **Description**
 Configuration for traffic on port `2575` over TCP, indicating that the connection is handled as a raw TCP/MLLP stream. With `responseType = outbound`, the system expects inbound messages to be HL7 messages wrapped with MLLP delimiters, validates message structure and required segments, and returns a NACK if validation fails (for example, when required segments like `ZNT` are missing). The `keepAliveTimeout` defines how long (in seconds) the connection remains open after a response is sent, allowing multiple messages over the same TCP connection; if no data is received within this duration, the connection is closed.
