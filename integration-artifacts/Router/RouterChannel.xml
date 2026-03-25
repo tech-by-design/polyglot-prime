@@ -1,15 +1,18 @@
 <channel version="4.6.1">
   <id>c0d65b25-997a-49a7-a5cf-3bed918cef21</id>
   <nextMetaDataId>3</nextMetaDataId>
-  <name>RouterChannel-2503</name>
-  <description>Version: 0.2.7
-Reenable the mtls in source filter</description>
-  <revision>3</revision>
+  <name>RouterChannel</name>
+  <description>Version: 0.2.8
+Removed static content type setting and set content type from header </description>
+  <revision>15</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>true</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ Reenable the mtls in source filter</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -99,8 +99,8 @@ var group1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-I
 var sourceType1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
 //logger.info(&quot;TechBD-Source-Type :&quot;  + sourceType1);
 
-
-
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+channelMap.put(&quot;contentType&quot;, contentType);
 
 &#xd;
 if(sourceType1 == &quot;CSV&quot;)&#xd;
@@ -470,59 +470,49 @@ function setErrorResponse(statusCode, errorMessage) {
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
           <script>if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 
-	channelMap.put(&apos;contentType&apos;, &quot;application/fhir+json&quot;);	
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 	
 	logger.info(&quot;FHIRBundle submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;application/fhir+json&quot;);	
 	logger.info(&quot;FHIRBundle validation  RouterChannel &quot;);
 }
 
 
 if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
 	logger.info(&quot;CCDA submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
 	logger.info(&quot;CCDA validation  RouterChannel &quot;);
 }
 
 
 if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CSV FlatFile submission  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/flatfile/csv/Bundle/$validate/&quot; || requestedPath == &quot;/flatfile/csv/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
 	logger.info(&quot;CSV FlatFile validation  RouterChannel &quot;);
 }
 
 if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
 	logger.info(&quot;HL7 submission  RouterChannel &quot;);
 }
 
 
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);
-	channelMap.put(&apos;contentType&apos;, &quot;multipart/form-data&quot;);	
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
 	logger.info(&quot;HL7 validation  RouterChannel &quot;);
 }
 
-
-//channelMap.put(&apos;status&apos;, 200);
 
 var fhirJson  = connectorMessage.getRawData();
 channelMap.put(&apos;fhirJson&apos;, fhirJson);
@@ -973,7 +963,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774433021442</time>
+        <time>1774444245933</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -984,14 +974,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>7a98bbb9-e26e-4625-897d-f5780c540879</id>
-        <name>0_2_7</name>
+        <id>6f328648-1bfd-48c1-be7f-892a8c280390</id>
+        <name>0_2_8</name>
         <channelIds>
           <string>c0d65b25-997a-49a7-a5cf-3bed918cef21</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
