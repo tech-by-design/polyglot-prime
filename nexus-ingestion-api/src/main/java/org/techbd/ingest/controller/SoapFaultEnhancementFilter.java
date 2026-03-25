@@ -155,7 +155,7 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
                 
                 // Log to CloudWatch
                 LogUtil.logDetailedError(
-                    400,
+                    500,
                     "SOAP Fault [" + faultCode + "]: " + faultString, 
                     interactionId, 
                     errorTraceId, 
