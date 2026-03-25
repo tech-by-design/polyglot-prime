@@ -343,6 +343,20 @@ curl --location "https://fhir.api.sandbox.techbd.org/ingest/netspective/ws" \
 ```
 When `msgType` is `pix`, `pnr`, or `ws`, the request is treated as a **SOAP-based IHE transaction**. The request is then internally routed to the `/ws` endpoint for processing. After processing, an **IHE-compliant HL7 acknowledgment (`MCCI_IN000002UV01`)** is generated and returned to the caller.
 
+### Sample Port Configurations for /ingest/{sourceId}/{msgType}
+
+```json
+{"sourceId":"netspective","msgType":"pix","protocol":"HTTP","route":"/hold","queue":"txd-sbx-util-queue.fifo","dataDir":"/test","metadataDir":"/test","ackContentType":"application/soap+xml"}  
+```
+
+**Description:** For `https://<hostname>:<port>/ingest/netspective/pix`, the port configuration matches `sourceId = netspective` and `msgType = pix`; since `route = "/hold"`, payload and metadata are written to the hold bucket under `/test`; because `ackContentType` is specified and `msgType = pix`, the request is treated as SOAP and an IHE-compliant ACK is returned with the overridden content type.
+
+```json
+{"sourceId":"netspective","msgType":"test","protocol":"HTTP","queue":"txd-sbx-util-queue.fifo","dataDir":"/test","metadataDir":"/test"}  
+```
+
+**Description:** For `https://<hostname>:<port>/ingest/netspective/test`, the port configuration matches `sourceId = netspective` and `msgType = test`; no `route` is specified so payload and metadata go to the default bucket under `/test`; because `msgType` is not `pix`, `pnr`, or `ws`, the request is ingested as a raw payload without SOAP handling and no IHE ACK is generated.
+
 ---
 
 ### /ws
