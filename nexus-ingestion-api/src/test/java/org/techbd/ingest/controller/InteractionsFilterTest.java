@@ -30,8 +30,6 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -133,7 +131,7 @@ class InteractionsFilterTest {
                 .thenReturn(java.util.Optional.of(portEntry));
     }
 
-    private void setupPortConfigMock(int port, String mtlsName) throws JsonProcessingException {
+    private void setupPortConfigMock(int port, String mtlsName) {
         PortConfig.PortEntry portEntry = new PortConfig.PortEntry();
         portEntry.port = port;
         portEntry.mtls = mtlsName;

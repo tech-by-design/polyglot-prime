@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Getter;
-import lombok.Setter;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -50,7 +49,6 @@ public class PortConfig implements InitializingBean {
     }
 
     @Getter
-    @Setter
     public static class PortEntry {
         public int port;
         public String responseType;
