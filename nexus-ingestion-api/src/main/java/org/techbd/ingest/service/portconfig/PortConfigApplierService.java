@@ -9,8 +9,6 @@ import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import io.micrometer.common.util.StringUtils;
 
 import org.techbd.ingest.commons.Constants;
@@ -66,9 +64,8 @@ public class PortConfigApplierService {
      *
      * @param context the mutable request context containing routing and S3 metadata
      * @return the updated {@link RequestContext}, or the original if no entry matched
-     * @throws JsonProcessingException 
      */
-    public RequestContext applyPortConfigOverrides(RequestContext context) throws JsonProcessingException {
+    public RequestContext applyPortConfigOverrides(RequestContext context) {
         String interactionId = context.getInteractionId();
         String protocol = (StringUtils.isEmpty(context.getProtocol()) || context.getProtocol().contains(Constants.HTTP)) ? Constants.HTTP : context.getProtocol();
         Optional<PortEntry> portEntryOpt = portEntryResolver.resolve(context , protocol);

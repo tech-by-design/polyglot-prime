@@ -22,8 +22,6 @@ import org.techbd.ingest.service.portconfig.PortConfigApplierService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 public class MessageProcessorServiceTest {
 
     private MessageProcessorService service;
@@ -48,7 +46,7 @@ public class MessageProcessorServiceTest {
     }
 
     @Test
-    void testProcessMessageWithMultipartFile() throws JsonProcessingException {
+    void testProcessMessageWithMultipartFile() {
         MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("test.hl7");
         when(file.getSize()).thenReturn(123L);
@@ -73,7 +71,7 @@ public class MessageProcessorServiceTest {
         assertThat(result).containsEntry("timestamp", "2025-07-17T12:00:00Z");
     }
     @Test
-    void testProcessMessageWithMultipartFile_ForHoldApi() throws JsonProcessingException {
+    void testProcessMessageWithMultipartFile_ForHoldApi() {
         MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("test.hl7");
         when(file.getSize()).thenReturn(123L);
@@ -97,7 +95,7 @@ public class MessageProcessorServiceTest {
         assertThat(result).containsEntry("timestamp", "2025-07-17T12:00:00Z");
     }
     @Test
-    void testProcessMessageWithString() throws JsonProcessingException {
+    void testProcessMessageWithString() {
         String content = "MSH|^~\\&|...";
         String mllpAck = "MSA|AA|msg-002";
         RequestContext context = mock(RequestContext.class);
@@ -120,7 +118,7 @@ public class MessageProcessorServiceTest {
     }
 
     @Test
-    void testCreateSuccessResponseHandlesException() throws JsonProcessingException {
+    void testCreateSuccessResponseHandlesException() {
         RequestContext context = mock(RequestContext.class);
         when(context.getInteractionId()).thenReturn("int-003");
         when(context.getMessageId()).thenReturn("msg-003");

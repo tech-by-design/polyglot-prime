@@ -51,44 +51,36 @@ public class RouteParamResolver implements PortConfigResolver {
      */
     @Override
     public Optional<PortConfig.PortEntry> resolve(
-                    List<PortConfig.PortEntry> portConfigList,
-                    RequestContext context, String protocol) {
+            List<PortConfig.PortEntry> portConfigList,
+            RequestContext context , String protocol) {
 
-            String sourceId = context.getSourceId();
-            String msgType = context.getMsgType();
+        String sourceId = context.getSourceId();
+        String msgType = context.getMsgType();
 
-            if (sourceId == null || msgType == null) {
-                    return Optional.empty();
-            }
+        if (sourceId == null || msgType == null ) {
+             return Optional.empty();
+        }
 
-            // 1. Exact protocol match
-            Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
-                            .filter(Objects::nonNull)
-                            .filter(entry -> matches(entry, sourceId, msgType))
-                            .filter(entry -> entry.getProtocol() != null &&
-                                            entry.getProtocol().equalsIgnoreCase(protocol))
-                            .findFirst();
+        Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
+            .filter(Objects::nonNull)
+            .filter(entry -> matches(entry, sourceId, msgType))
+            .filter(entry -> entry.getProtocol() != null &&
+                    entry.getProtocol().equalsIgnoreCase(protocol))
+            .findFirst();
 
-            if (exactMatch.isPresent()) {
-                    return exactMatch;
-            }
-
-            // 2. Fallback → blank/null protocol
-            Optional<PortConfig.PortEntry> fallback = portConfigList.stream()
-                            .filter(Objects::nonNull)
-                            .filter(entry -> matches(entry, sourceId, msgType))
-                            .filter(entry -> entry.getProtocol() == null || entry.getProtocol().isBlank())
-                            .findFirst();
-
-            if (fallback.isPresent()) {
-                    return fallback;
-            }
-
-            // 3. No match at all
-            throw new IllegalArgumentException(String.format(
-                            "No matching port configuration found for sourceId='%s', msgType='%s', port='%s',protocol='%s'",
-                            sourceId, msgType, context.getDestinationPort(),protocol));
+    if (exactMatch.isPresent()) {
+        return exactMatch;
     }
+
+    //  Fallback → blank protocol
+    return portConfigList.stream()
+            .filter(Objects::nonNull)
+            .filter(entry -> matches(entry, sourceId, msgType))
+            .filter(entry -> entry.getProtocol() == null ||
+                    entry.getProtocol().isBlank())
+            .findFirst();
+    }
+
     /**
      * Checks whether a configuration entry matches the provided
      * {@code sourceId} and {@code msgType}.

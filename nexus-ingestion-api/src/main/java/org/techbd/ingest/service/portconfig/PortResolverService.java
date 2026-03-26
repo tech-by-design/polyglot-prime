@@ -10,7 +10,6 @@ import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -73,24 +72,29 @@ public class PortResolverService {
      *                info
      * @return an {@link Optional} containing the resolved PortEntry, or empty if
      *         none match
-     * @throws JsonProcessingException 
      */
-    public Optional<PortEntry> resolve(RequestContext context , String protocol) throws JsonProcessingException {
+    public Optional<PortEntry> resolve(RequestContext context , String protocol) {
         LOG.info("[PORT_RESOLVER] Resolving PortEntry for context: sourceId={}, msgType={}, port={}",
                 context.getSourceId(), context.getMsgType(), context.getDestinationPort());
+
         for (PortConfigResolver resolver : resolvers) {
             Optional<PortEntry> result = resolver.resolve(portConfig.getPortConfigurationList(), context , protocol);
+
             if (result.isPresent()) {
                 PortEntry entry = result.get();
-                ObjectMapper mapper = new ObjectMapper();
-                String json = mapper.writeValueAsString(entry);
-                LOG.info(
-                        "[PORT_CONFIG_MATCH] Found PortEntry using resolver {}: port={}, sourceId={}, msgType={} interactionId={} {}",
-                        resolver.getClass().getSimpleName(), context.getDestinationPort(), entry.sourceId,
-                        entry.msgType, context.getInteractionId(), json);
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    String json = mapper.writeValueAsString(entry);
+                    LOG.info("[PORT_CONFIG_MATCH] Found PortEntry using resolver {}: port={}, sourceId={}, msgType={} interactionId={} {}",
+                            resolver.getClass().getSimpleName(), context.getDestinationPort(), entry.sourceId, entry.msgType, context.getInteractionId(), json);
+                } catch (Exception e) {
+                    LOG.error("[PORT_CONFIG_ERROR] Failed to serialize PortEntry for port={} interactionId={}",
+                            context.getDestinationPort(), context.getInteractionId(), e);
+                }
                 return result;
             }
         }
+
         LOG.warn("[PORT_CONFIG_ERROR] No configuration found for port {} sourceId={} msgType={} interactionId={}",
                 context.getDestinationPort(), context.getSourceId(), context.getMsgType(), context.getInteractionId());
         throw new IllegalArgumentException("No configuration found for the given port = "+context.getDestinationPort()+" sourceId ="+context.getSourceId()+" msgType ="+context.getMsgType()+" interactionId ="+context.getInteractionId());
