@@ -69,13 +69,13 @@ public class NettyTcpServer implements MessageSourceProvider {
     private final MessageProcessorService messageProcessorService;
     private final AppConfig appConfig;
     private final PortResolverService portResolverService;
-    @Value("${TCP_DISPATCHER_PORT:7980}")
+    @Value("7980")
     private int tcpPort;
 
-    @Value("${TCP_READ_TIMEOUT_SECONDS:180}")
+    @Value("180")
     private int readTimeoutSeconds;
 
-    @Value("${TCP_MAX_MESSAGE_SIZE_BYTES:52428800}") // 50MB default
+    @Value("52428800") // 50MB default
     private int maxMessageSizeBytes;
 
     // MLLP protocol markers
@@ -84,18 +84,18 @@ public class NettyTcpServer implements MessageSourceProvider {
     private static final byte MLLP_END_2 = 0x0D; // <CR> Carriage Return
 
     // TCP delimiter configuration from environment variables
-    @Value("${TCP_MESSAGE_START_DELIMITER:0x02}") // STX - Start of Text
+    @Value("0x02") // STX - Start of Text
     private String tcpStartDelimiterHex;
     
-    @Value("${TCP_MESSAGE_END_DELIMITER_1:0x03}") // ETX - End of Text
+    @Value("0x03") // ETX - End of Text
     private String tcpEndDelimiter1Hex;
     
-    @Value("${TCP_MESSAGE_END_DELIMITER_2:0x0A}") // LF - Line Feed
+    @Value("0x0A") // LF - Line Feed
     private String tcpEndDelimiter2Hex;
 
     // Time interval (in seconds) to log a "session still active" message for long-running connections.
 // Set to 0 to turn off periodic session logging.
-    @Value("${TCP_SESSION_LOG_INTERVAL_SECONDS:60}")
+    @Value("60")
     private int sessionLogIntervalSeconds;
 
     // Parsed TCP delimiter bytes
