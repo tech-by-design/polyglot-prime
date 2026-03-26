@@ -326,9 +326,28 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
 
                     # print(f"📊 CSV has {len(actual_headers)} columns")
 
+                    # Before calculating missing_flags, check for extra fields (fields beyond headers)
+                    current_fields = resource.schema.fields
+                    current_field_names = [f.name for f in current_fields]
+
+                    missing_flags = []
+                    for field in potential_flag_fields:
+                        if field in actual_headers:
+                            continue
+                        # not in headers
+                        if field in current_field_names:
+                            index = current_field_names.index(field)
+                            if index < len(actual_headers):
+                                if actual_headers[index].strip() == '':
+                                    # blank label, keep in schema for BlankLabelError
+                                    continue
+                            else:
+                                # extra field beyond headers, keep for MissingLabelError
+                                continue
+                        missing_flags.append(field)
+
                     # Find which flag fields are present in CSV
                     present_flags = [field for field in potential_flag_fields if field in actual_headers]
-                    missing_flags = [field for field in potential_flag_fields if field not in actual_headers]
 
                     if present_flags:
                         # print(f"✅ Found flag fields in CSV: {present_flags}")
@@ -338,7 +357,6 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                         # print(f"🗑️  Flag fields missing from CSV: {missing_flags}")
 
                         # Remove missing flag fields from schema to avoid validation errors
-                        current_fields = resource.schema.fields
                         filtered_fields = [field for field in current_fields
                                          if field.name not in missing_flags]
 
