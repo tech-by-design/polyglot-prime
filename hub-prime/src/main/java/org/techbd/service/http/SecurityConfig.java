@@ -89,10 +89,18 @@ public class SecurityConfig {
                                 .logoutSuccessHandler(customLogoutSuccessHandler())
                                 .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(
-                        sessionManagement -> sessionManagement
-                                .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .sessionManagement(sessionManagement -> {
+            // Dynamically adjust session timeout behavior based on the authentication provider
+                        if ("github".equalsIgnoreCase(authProvider)) {
+                            sessionManagement
+                                    .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
+                                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+                        } else if ("fusionauth".equalsIgnoreCase(authProvider)) {
+                            sessionManagement
+                                    .invalidSessionUrl(fusionAuthLogoutUUrl())  // Use custom logout handler for FusionAuth
+                                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+                        }
+                    });
                   if (fusionAuthAuthorizationFilter != null) {
                         http.addFilterAfter(fusionAuthAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
                     }
@@ -161,13 +169,14 @@ public class SecurityConfig {
                 if (authentication != null) {
                     new SecurityContextLogoutHandler().logout(request, response, authentication);
                 }
-
-                String fusionAuthLogoutUrl = fusionAuthBaseUrl + "/oauth2/logout"
-                        + "?client_id=" + clientId
-                        + "&post_logout_redirect_uri=" + logoutRedirectUrl;
-
-                response.sendRedirect(fusionAuthLogoutUrl);
+                response.sendRedirect(fusionAuthLogoutUUrl());
             };
+        }
+
+        private String fusionAuthLogoutUUrl() {
+            return fusionAuthBaseUrl + "/oauth2/logout"
+                    + "?client_id=" + clientId
+                    + "&post_logout_redirect_uri=" + logoutRedirectUrl;
         }
 
     /**
