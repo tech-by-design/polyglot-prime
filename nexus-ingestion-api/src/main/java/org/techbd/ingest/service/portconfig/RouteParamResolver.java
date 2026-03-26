@@ -51,26 +51,27 @@ public class RouteParamResolver implements PortConfigResolver {
      */
     @Override
     public Optional<PortConfig.PortEntry> resolve(
-            List<PortConfig.PortEntry> portConfigList,
-            RequestContext context , String protocol) {
+                    List<PortConfig.PortEntry> portConfigList,
+                    RequestContext context, String protocol) {
 
-        String sourceId = context.getSourceId();
-        String msgType = context.getMsgType();
+            String sourceId = context.getSourceId();
+            String msgType = context.getMsgType();
 
-        if (sourceId == null || msgType == null ) {
-             return Optional.empty();
-        }
+            if (sourceId == null || msgType == null) {
+                    return Optional.empty();
+            }
 
-        Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
-            .filter(Objects::nonNull)
-            .filter(entry -> matches(entry, sourceId, msgType))
-            .filter(entry -> entry.getProtocol() != null &&
-                    entry.getProtocol().equalsIgnoreCase(protocol))
-            .findFirst();
+            // 1. Exact protocol match
+            Optional<PortConfig.PortEntry> exactMatch = portConfigList.stream()
+                            .filter(Objects::nonNull)
+                            .filter(entry -> matches(entry, sourceId, msgType))
+                            .filter(entry -> entry.getProtocol() != null &&
+                                            entry.getProtocol().equalsIgnoreCase(protocol))
+                            .findFirst();
 
-    if (exactMatch.isPresent()) {
-        return exactMatch;
-    }
+            if (exactMatch.isPresent()) {
+                    return exactMatch;
+            }
 
             // 2. Fallback → blank/null protocol
             Optional<PortConfig.PortEntry> fallback = portConfigList.stream()
