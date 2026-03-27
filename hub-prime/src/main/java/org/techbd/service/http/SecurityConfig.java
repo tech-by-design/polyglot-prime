@@ -174,7 +174,8 @@ public class SecurityConfig {
         }
 
         private String fusionAuthLogoutUUrl() {
-            return fusionAuthBaseUrl + "/oauth2/logout"
+            String fusionAuthBaseUrl1 = "https://dev.auth.techbd.org";
+            return fusionAuthBaseUrl1 + "/oauth2/logout"
                     + "?client_id=" + clientId
                     + "&post_logout_redirect_uri=" + logoutRedirectUrl;
         }
