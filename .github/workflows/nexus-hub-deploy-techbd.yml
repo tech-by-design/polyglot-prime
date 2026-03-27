@@ -71,7 +71,7 @@ jobs:
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
-            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/nexus-api.sandbox.interface.engine.techbd.org/.env
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/nexus-ingestion-api-sbx/.env
 
         - name: Commit and push changes
           run: |
