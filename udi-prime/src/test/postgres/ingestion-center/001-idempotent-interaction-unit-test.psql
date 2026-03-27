@@ -1,6 +1,5 @@
 /*pgTap function to test register_interaction_http_request function*/
 
---DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_requests(text);
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_requests(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text
@@ -9,7 +8,6 @@ AS $function$
 DECLARE    
     v_interaction_id TEXT; 
 	v_interaction_id_2 TEXT; 
-	v_hub_nexus_interaction_id TEXT; 
     v_payload jsonb; 
     function_exists boolean;
 	v_hub_diagnostic_id TEXT;
@@ -34,34 +32,28 @@ BEGIN
         RETURN NEXT 'Table techbd_udi_assurance.pgtap_fixtures_json does not exist';
     END IF;
     
-    -- Check existence of required functions     
-    -- Check function: register_interaction_nexus_ingestion
-	RETURN NEXT has_function(schema_name, 'register_interaction_nexus_ingestion',
-	    ARRAY['text', 'text', 'text', 'bytea', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'timestamptz', 'text', 'text'],
-	    'Function register_interaction_nexus_ingestion exists'
-	);
-	
+    -- Check existence of required functions
 	-- Check function: register_interaction_fhir_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_fhir_request',
-	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text'],
 	    'Function register_interaction_fhir_request exists'
 	);
 	
 	-- Check function: register_interaction_ccda_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_ccda_request',
-	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
 	    'Function register_interaction_ccda_request exists'
 	);
 	
 	-- Check function: register_interaction_csv_request
 	RETURN NEXT has_function(schema_name, 'register_interaction_csv_request',
-	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'],
 	    'Function register_interaction_csv_request exists'
 	);
 
 	-- Check function: register_user_interaction
 	RETURN NEXT has_function(schema_name, 'register_user_interaction',
-	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz', 'text'], 
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz', 'text'], 
 		'Function register_user_interaction exists'
 	);   
     
@@ -73,7 +65,7 @@ BEGIN
         'Function sat_interaction_ccda_request_upserted exists'
     );
 	RETURN NEXT has_function('techbd_udi_ingress', 'register_interaction_hl7_request',
-	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
 	    'Function register_interaction_hl7_request exists'
 	);
 	RETURN NEXT has_function('techbd_udi_ingress', 'sat_interaction_hl7_request_upserted',
@@ -82,16 +74,6 @@ BEGIN
 	);
 
 	-- Check existence of required tables   
-	RETURN NEXT has_table(schema_name, 'hub_nexus_interaction', 'The table techbd_udi_ingress.hub_nexus_interaction should exist.');
-	RETURN NEXT has_table(schema_name, 'sat_nexus_interaction_ingestion', 'The table techbd_udi_ingress.sat_nexus_interaction_ingestion should exist.');
-	RETURN NEXT has_pk(schema_name, 'sat_nexus_interaction_ingestion', 'The table techbd_udi_ingress.sat_nexus_interaction_ingestion should have a primary key.');
-    RETURN NEXT col_is_fk(schema_name::name, 'sat_nexus_interaction_ingestion'::name, 'hub_nexus_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_nexus_interaction_id should exist.');
-    RETURN NEXT columns_are(schema_name, 'sat_nexus_interaction_ingestion',
-	    ARRAY['sat_nexus_interaction_ingestion_id', 'hub_nexus_interaction_id', 'tenant_id', 'request_uri', 'request_url', 'nature', 'content_type', 'payload_hash', 'payload_size', 'original_file_name', 'from_state', 'to_state', 'user_agent', 'client_ip_address', 'additional_details', 'general_errors', 'elaboration', 'created_at', 'created_by', 'provenance', 'payload', 'techbd_version_number'],
-	    'The columns of techbd_udi_ingress.sat_nexus_interaction_ingestion should match the expected structure.'
-	);
-	RETURN NEXT has_table(schema_name, 'link_nexus_interaction', 'The table techbd_udi_ingress.link_nexus_interaction should exist.');
-
 	RETURN NEXT has_table(schema_name, 'hub_interaction', 'The table techbd_udi_ingress.hub_interaction should exist.');
 
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_request', 'The table techbd_udi_ingress.sat_interaction_fhir_request should exist.');
@@ -243,28 +225,6 @@ BEGIN
 		'The columns of techbd_udi_ingress.sat_interaction_file_exchange should match the expected structure.');
 
     /*=================== Testing TABLE COLUMNS  ========================*/
-	RETURN NEXT col_not_null(schema_name, 'hub_nexus_interaction', 'hub_nexus_interaction_id', 'The column hub_nexus_interaction_id in techbd_udi_ingress.hub_nexus_interaction should be NOT NULL.');
-	RETURN NEXT col_type_is(schema_name, 'hub_nexus_interaction', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.hub_nexus_interaction should be of type timestamp with time zone.');
-	RETURN NEXT col_not_null(schema_name, 'hub_nexus_interaction', 'created_by', 'The column created_by in techbd_udi_ingress.hub_nexus_interaction should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'hub_nexus_interaction', 'provenance', 'The column provenance in techbd_udi_ingress.hub_nexus_interaction should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'hub_nexus_interaction', ARRAY['hub_nexus_interaction_id', 'key', 'created_at','created_by','provenance'], 'The table techbd_udi_ingress.hub_nexus_interaction should have the expected column structure.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'sat_nexus_interaction_ingestion_id', 'The column sat_nexus_interaction_ingestion_id in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'hub_nexus_interaction_id', 'The column hub_nexus_interaction_id in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'request_uri', 'The column request_uri in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'request_url', 'The column request_url in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'nature', 'The column nature in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_type_is(schema_name, 'sat_nexus_interaction_ingestion', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_nexus_interaction_ingestion should be of type timestamp with time zone.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'created_by', 'The column created_by in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'provenance', 'The column provenance in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_nexus_interaction_ingestion', 'payload', 'The column payload in techbd_udi_ingress.sat_nexus_interaction_ingestion should be NOT NULL.');
-	RETURN NEXT col_type_is(schema_name, 'sat_nexus_interaction_ingestion', 'payload', 'bytea', 'The column payload in techbd_udi_ingress.sat_nexus_interaction_ingestion should be of type bytea.');
-	RETURN NEXT col_not_null(schema_name, 'link_nexus_interaction', 'hub_nexus_interaction_id', 'The column hub_nexus_interaction_id in techbd_udi_ingress.link_nexus_interaction should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'link_nexus_interaction', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.link_nexus_interaction should be NOT NULL.');
-	RETURN NEXT col_type_is(schema_name, 'link_nexus_interaction', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.link_nexus_interaction should be of type timestamp with time zone.');
-	RETURN NEXT col_not_null(schema_name, 'link_nexus_interaction', 'created_by', 'The column created_by in techbd_udi_ingress.link_nexus_interaction should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'link_nexus_interaction', 'provenance', 'The column provenance in techbd_udi_ingress.link_nexus_interaction should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'link_nexus_interaction', ARRAY['hub_nexus_interaction_id','hub_interaction_id','created_at','created_by','provenance'], 'The table techbd_udi_ingress.link_nexus_interaction should have the expected column structure.');
 	RETURN NEXT has_table(schema_name, 'ccda_replay_details', 'The table techbd_udi_ingress.ccda_replay_details should exist.');
 	RETURN NEXT col_not_null(schema_name, 'ccda_replay_details', 'bundle_id', 'The column bundle_id in techbd_udi_ingress.ccda_replay_details should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'ccda_replay_details', 'is_valid', 'The column is_valid in techbd_udi_ingress.ccda_replay_details should be NOT NULL.');
@@ -469,8 +429,6 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_zip_file_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
-	RETURN NEXT has_pk(schema_name, 'hub_nexus_interaction', 'The table techbd_udi_ingress.hub_nexus_interaction should have a primary key.');
-	RETURN NEXT has_pk(schema_name, 'link_nexus_interaction', 'The table techbd_udi_ingress.link_nexus_interaction should have a primary key.');
 	RETURN NEXT has_pk(schema_name, 'dashboard_widget_metadata', 'The table techbd_udi_ingress.dashboard_widget_metadata should have a primary key.');
 	RETURN NEXT has_pk(schema_name, 'file_exchange_protocol', 'The table techbd_udi_ingress.file_exchange_protocol should have a primary key.');
 	RETURN NEXT has_pk(schema_name, 'hub_diagnostic', 'The table techbd_udi_ingress.hub_diagnostic should have a primary key.');
@@ -512,18 +470,12 @@ BEGIN
 	RETURN NEXT has_index(schema_name, 'hub_interaction', 'hub_interaction_pkey',
 	    ARRAY['hub_interaction_id'],
 	    'hub_interaction_pkey should exist on hub_interaction_id');
-	RETURN NEXT has_index(schema_name, 'hub_nexus_interaction', 'hub_nexus_interaction_pkey',
-	    ARRAY['hub_nexus_interaction_id'],
-	    'hub_nexus_interaction_pkey should exist on hub_nexus_interaction_id');
 	RETURN NEXT has_index(schema_name, 'json_action_rule', 'json_action_rule_action_rule_id_pkey',
 	    ARRAY['action_rule_id'],
 	    'json_action_rule_action_rule_id_pkey should exist on action_rule_id');
 	RETURN NEXT has_index(schema_name, 'json_action_rule', 'json_action_rule_json_path_idx',
 	    ARRAY['json_path'],
 	    'json_action_rule_json_path_idx should exist on json_path');
-	RETURN NEXT has_index(schema_name, 'link_nexus_interaction', 'link_nexus_interaction_pkey',
-	    ARRAY['hub_nexus_interaction_id','hub_interaction_id'],
-	    'link_nexus_interaction_pkey should exist on hub_nexus_interaction_id, hub_interaction_id');
 	RETURN NEXT has_index(schema_name, 'ref_code_lookup', 'ref_code_lookup_code_type_idx',
 	    ARRAY['code_type'],
 	    'ref_code_lookup_code_type_idx should exist on code_type');
@@ -656,12 +608,6 @@ BEGIN
 	RETURN NEXT has_index(schema_name, 'sat_interaction_zip_file_request', 'sat_interaction_zip_file_request_pkey',
 	    ARRAY['sat_interaction_zip_file_request_id'],
 	    'sat_interaction_zip_file_request_pkey should exist on sat_interaction_zip_file_request_id');
-	RETURN NEXT has_index(schema_name, 'sat_nexus_interaction_ingestion', 'sat_inter_nexus_req_hub_nexus_inter_id_idx',
-	    ARRAY['hub_nexus_interaction_id'],
-	    'sat_inter_nexus_req_hub_nexus_inter_id_idx should exist on hub_nexus_interaction_id');
-	RETURN NEXT has_index(schema_name, 'sat_nexus_interaction_ingestion', 'sat_nexus_interaction_ingestion_pkey',
-	    ARRAY['sat_nexus_interaction_ingestion_id'],
-	    'sat_nexus_interaction_ingestion_pkey should exist on sat_nexus_interaction_ingestion_id');
 	RETURN NEXT has_index(schema_name, 'users', 'users_github_id_key',
 	    ARRAY['github_id'],
 	    'users_github_id_key should exist on github_id');
@@ -669,44 +615,6 @@ BEGIN
 	    ARRAY['id'],
 	    'users_pkey should exist on id');
     /*=================== END of Testing INDEXES ========================*/
-
-	/*=================== Testing with Nexus Interaction ========================*/
-	v_hub_nexus_interaction_id	:= 'nexus-4f-5cc8-9c5d-b65245d90fb6';
-
-	PERFORM techbd_udi_ingress.register_interaction_nexus_ingestion(
-	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
-	    p_request_uri              => '/Bundle/',
-	    p_request_url              => 'http://url',
-	    p_payload                  => '<abc>def</abc>'::bytea,
-	    p_nature                   => '{"nature":"Original Request Received", "tenant_id":"QE-123456"}'::jsonb,
-	    p_content_type             => 'application/json',
-	    p_payload_size             => '1234',
-	    p_original_file_name       => 'file.txt',
-	    p_from_state               => 'NONE',
-	    p_to_state                 => 'INGESTION_SUCCESS',
-	    p_user_agent               => 'agent',
-	    p_user_id                  => 'user_123',
-	    p_client_ip_address        => '127.0.0.1',
-	    p_additional_details       => NULL,
-	    p_general_errors           => NULL,
-	    p_elaboration              => '{"key" : "elaboration"}',
-	    p_created_by               => CURRENT_USER,
-	    p_provenance               => 'S3',
-		p_techbd_version_number    => v_techbd_version_number
-	);
-
-	RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_nexus_interaction hub_intr
-                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id),
-            'Nexus - Successfully inserted into the table hub_nexus_interaction'
-	);
-        
-	RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_nexus_interaction_ingestion hub_intr
-                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id
-					 AND techbd_version_number = v_techbd_version_number),
-            'Nexus - Successfully inserted into the table sat_nexus_interaction_ingestion'
-	);
 
 	/*=================== Testing with User Interaction ========================*/
 	v_interaction_id            := 'user-5f-5cc8-9c5d-b65245d90fb6';
@@ -717,7 +625,6 @@ BEGIN
 		p_nature 				=> '{"nature":"org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id":"QE-user1"}'::jsonb,
 		p_payload 				=> NULL,
 		p_payload_text 			=> NULL,
-		p_hub_nexus_interaction_id => NULL,
 		p_rule_namespace 		=> NULL,
 		p_elaboration 			=> '{"key" : "elaboration"}',
 		p_content_type 			=> 'application/json',
@@ -780,7 +687,6 @@ BEGIN
 	    p_interaction_key          => '/Bundle/'::text,
 	    p_nature                   => '{"nature": "Original FHIR Payload", "tenant_id": "qe-123"}'::jsonb,
 	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}'::jsonb, 
-	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id::text,
 	    p_payload_text 			   => NULL::text,
 	    p_rule_namespace		   => NULL::text,	    
 	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
@@ -858,7 +764,6 @@ BEGIN
 	    p_interaction_key          => '/Bundle/'::text,
 	    p_nature                   => '{"nature": "techByDesignDisposition", "tenant_id": "qe-123"}'::jsonb,
 	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}'::jsonb, 
-	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id::text,
 	    p_payload_text 			   => NULL::text,
 	    p_rule_namespace		   => NULL::text,	    
 	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
@@ -916,7 +821,6 @@ BEGIN
 	PERFORM techbd_udi_ingress.register_interaction_csv_request(
 	    p_interaction_id                              => v_interaction_id,
 	    p_interaction_key                             => '/flatfile/csv/Bundle',
-	    p_hub_nexus_interaction_id					  => v_hub_nexus_interaction_id,
 	    p_payload                  					  => NULL,
         p_payload_text             					  => NULL,
         p_rule_namespace           					  => NULL,
@@ -991,13 +895,12 @@ BEGIN
     
     /*----------------------------------------------------------------------------*/
 	/*Second call from NULL to CSV_ACCEPT and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/   
-    v_interaction_id_2          := 'csv-2-45-9a4f-5cc8-9c5d-b45245d90fb0';
+    v_interaction_id_2          := 'csv-2-45-9a4f-5cc8-9c5d-b45245d90fbT';
     v_group_hub_interaction_id	:= v_interaction_id_2;
 
 	PERFORM techbd_udi_ingress.register_interaction_csv_request(
 	    p_interaction_id                              => v_interaction_id_2,
 	    p_interaction_key                             => '/flatfile/csv/Bundle',
-	    p_hub_nexus_interaction_id					  => v_hub_nexus_interaction_id,
 	    p_payload                  					  => NULL,
         p_payload_text             					  => NULL,
         p_rule_namespace           					  => NULL,
@@ -1035,6 +938,7 @@ BEGIN
 		p_request_source							  => 'nexus',
 		p_techbd_version_number    					  => v_techbd_version_number
 	);
+
     RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
                    WHERE hub_intr.hub_interaction_id = v_interaction_id_2
@@ -1256,7 +1160,6 @@ BEGIN
         p_nature                   => '{"nature":"Original CCDA Payload", "tenant_id":"QE-123456"}'::jsonb,
         p_from_state               => 'NONE',
 	    p_to_state                 => 'CCDA_ACCEPT',
-        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
         p_payload                  => NULL,
         p_payload_text             => v_payload_text,
         p_rule_namespace           => NULL,
@@ -1327,7 +1230,6 @@ BEGIN
         p_nature                   => '{"nature":"CCDA Validation Result", "tenant_id":"QE-123456"}'::jsonb,
         p_from_state               => 'CCDA_ACCEPT',
 	    p_to_state                 => 'VALIDATION_SUCCESS',
-        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
         p_payload                  => NULL,
         p_payload_text             => v_payload_text,
         p_rule_namespace           => NULL,
@@ -1519,7 +1421,6 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
         p_nature                   => '{"nature":"Original CCDA Payload", "tenant_id":"QE-123456"}'::jsonb,
         p_from_state               => 'NONE',
 	    p_to_state                 => 'CCDA_ACCEPT',
-        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
         p_payload                  => NULL,
         p_payload_text             => v_payload_text,
         p_rule_namespace           => NULL,

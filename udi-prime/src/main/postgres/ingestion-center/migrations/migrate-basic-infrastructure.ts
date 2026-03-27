@@ -567,7 +567,7 @@ const refCodeLookUp = SQLa.tableDefinition("ref_code_lookup", {
   sqlNS: ingressSchema
 });
 
-const nexusInteractionHub = dvts.hubTable("nexus_interaction", {
+/*const nexusInteractionHub = dvts.hubTable("nexus_interaction", {
   hub_nexus_interaction_id: primaryKey(),
   key: textNullable(),
   ...dvts.housekeeping.columns,
@@ -605,7 +605,7 @@ const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
   }, {
     isIdempotent: true,
     sqlNS: ingressSchema
-});
+});*/
 
 const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
   bundle_id: text(),
@@ -1254,10 +1254,9 @@ const migrateSP = pgSQLa.storedProcedure(
     END IF;
     PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
 
-      ${nexusInteractionHub}
-      ${nexusInteractionIngestionSat}
+
       
-    IF NOT EXISTS (
+    /*IF NOT EXISTS (
         SELECT 1
         FROM information_schema.columns
         WHERE table_schema = 'techbd_udi_ingress'
@@ -1277,7 +1276,7 @@ const migrateSP = pgSQLa.storedProcedure(
     ) THEN
         EXECUTE 'CREATE INDEX sat_inter_nexus_req_hub_nexus_inter_id_idx 
                 ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
-    END IF;
+    END IF;*/
       ${csvFhirProcessingErrors}
       PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
           IF NOT EXISTS (
@@ -1356,8 +1355,8 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ${ccdaValidationErrorsSat}    
       ${hl7ValidationErrorsSat}        
-      ${linkNexusInteraction}
-      IF NOT EXISTS (
+
+      /*IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
           WHERE conname = 'link_nexus_interaction_pkey'
@@ -1365,7 +1364,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE techbd_udi_ingress.link_nexus_interaction
           ADD CONSTRAINT link_nexus_interaction_pkey
           PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
-      END IF;
+      END IF;*/
 
       ${ccdaReplayDetails}
       PERFORM pg_advisory_lock(hashtext('ccda_replay_details'));
