@@ -343,6 +343,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                                     continue
                             else:
                                 # extra field beyond headers, keep for MissingLabelError
+                                missing_flags.append(field)
                                 continue
                         missing_flags.append(field)
 
