@@ -18,14 +18,17 @@
 
 ## Port Configuration Matching
 
-Every inbound request is matched against a list of port configuration records loaded at startup. In production, the list is fetched from S3 (`PORT_CONFIG_S3_BUCKET`).In the local development environment, it is read from the local file `src/main/resources/list.json`.
+Every inbound request is matched against a list of port configuration records loaded at startup. In production, the list is fetched from S3 (`PORT_CONFIG_S3_BUCKET`). In the local development environment, it is read from the local file `src/main/resources/list.json`.
 
 ### How a PortEntry is Resolved
 
 The system evaluates an ordered list of resolution strategies and returns the first matching configuration for the incoming request.
 
-1. **Source + message type match** — if the request carries both `sourceId` and `msgType` (from the URL path `/{sourceId}/{msgType}`), the entry whose `sourceId` and `msgType` fields match is returned first.
-2. **Port match** — if no exact source/type match is found, the first entry whose `port` field matches the inbound destination port is used.
+1. **Source + message type match** — if the request carries both `sourceId` and `msgType` (from the URL path `/{sourceId}/{msgType}`), the entry whose `sourceId`, `msgType`, and **protocol** match is returned first.
+2. **Port + protocol match** — if no exact source/type match is found, the first entry whose `port` and **protocol** match the inbound request is used.
+
+   * Traffic received on **`TCP_DISPATCHER_PORT (7980)`** is treated as `TCP` and matched against port configurations with `"protocol": "TCP"`.
+   * Traffic on other ports (e.g., **8080**) is treated as `HTTP` and matched against port configurations with `"protocol": "HTTP"`.
 3. **No match** — an `IllegalArgumentException` is thrown and the request is rejected.
 
 ### What a PortEntry Controls
