@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c0d65b25-997a-49a7-a5cf-3bed918cef21</id>
+  <id>54c68a70-cbcc-4903-a228-86f6d553f6f6</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.8
-Removed static content type setting and set content type from header </description>
-  <revision>15</revision>
+  <description>Version: 0.2.9
+Replace header table with dynamic useMap and introduce header/param parsing utilities in Router channel</description>
+  <revision>25</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -40,7 +40,7 @@ Removed static content type setting and set content type from header </descripti
         <port>9000</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="4.6.1">
-        <responseVariable>finalResponse</responseVariable>
+        <responseVariable>d1</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
         <firstResponse>false</firstResponse>
@@ -79,7 +79,7 @@ Removed static content type setting and set content type from header </descripti
     <transformer version="4.6.1">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-          <name>Return Hello FHIR</name>
+          <name>pass original headers</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
@@ -87,440 +87,66 @@ if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot
 	return;
 }
 
-logger.info(&quot;Inside router channel&quot;)
-
 logger.info(&quot;Request URL inside RouterChannel: &quot; + requestedPath);
 
-
-
-var group1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-//logger.info(&quot;group1 :&quot;  + group1);
-
-var sourceType1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-//logger.info(&quot;TechBD-Source-Type :&quot;  + sourceType1);
-
 var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
-channelMap.put(&quot;contentType&quot;, contentType);
-
-&#xd;
-if(sourceType1 == &quot;CSV&quot;)&#xd;
-{&#xd;
-	var baseURL123 = $(&apos;headers&apos;).getHeader(&apos;X-TECHBD-BL-BASEURL&apos;);&#xd;
-	logger.info(&quot;Trans - X-TECHBD-BL-BASEURL  CSV  ############## :&quot;  + baseURL123);&#xd;
-	channelMap.put(&quot;baseURL123&quot;, &quot;CLONE No  Mtls  80004 CSV 2 &quot; + baseURL123);&#xd;
-&#xd;
-}else{&#xd;
-	var baseURL123 = $(&apos;headers&apos;).getHeader(&apos;X-TECHBD-BL-BASEURL&apos;);&#xd;
-	logger.info(&quot;Trans - X-TECHBD-BL-BASEURL First time ############## :&quot;  + baseURL123);&#xd;
-	channelMap.put(&quot;baseURL123&quot;, &quot;CLONE No  Mtls  80004 First Time 1 &quot; + baseURL123);&#xd;
-	&#xd;
-}
-
-
-
-
-
-
-var organizationName = &quot;&quot;;
-var organizationNameHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
-
-
-
-if (organizationNameHeader != null &amp;&amp; organizationNameHeader.trim() !== &apos;&apos;) {
-    organizationName = organizationNameHeader.trim();
-}
-channelMap.put(&quot;organizationName&quot;, organizationName);
-
-var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
-var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
-
-var interactionId;
-
-if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &apos;&apos;) {
-    interactionId = incomingInteractionId;
-} else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
-    interactionId = incomingCorrelationId;
-} else {
-    interactionId = java.util.UUID.randomUUID().toString();
-}
-
-channelMap.put(&apos;interactionId&apos;, interactionId);
-
-var groupInteractionId = &quot;&quot;;
-var incomingGroupId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-
-if (incomingGroupId != null &amp;&amp; incomingGroupId.trim() !== &apos;&apos;) {
-    groupInteractionId = incomingGroupId.trim();
-}
-
-var masterInteractionId = &quot;&quot;;
-var incomingMasterId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Master-Interaction-ID&apos;);
-
-if (incomingMasterId != null &amp;&amp; incomingMasterId.trim() !== &apos;&apos;) {
-    masterInteractionId = incomingMasterId.trim();
-}
-
-channelMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
-channelMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
-globalMap.put(&quot;groupInteractionId&quot;, groupInteractionId);
-globalMap.put(&quot;masterInteractionId&quot;, masterInteractionId);
-
-
-
-// X-TechBD-Tenant-ID
-var tenantId = &quot;&quot;;
-var incomingTenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-
-if (incomingTenantId != null &amp;&amp; incomingTenantId.trim() !== &apos;&apos;) {
-    tenantId = incomingTenantId.trim();
-}
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Tenant-ID: &quot; + tenantId);
-channelMap.put(&quot;tenantId&quot;, tenantId);
-
-
-var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim().toLowerCase();
-
-logger.info(&quot;Immediate (boolean): &quot; + immediateParam);
-
-channelMap.put(&quot;immediate&quot;, immediateParam);
-
-
-
-// X-TechBD-Tenant-ID
-var patientCin = &quot;&quot;;
-var incomingpatientCin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
-
-if (incomingpatientCin != null &amp;&amp; incomingpatientCin.trim() !== &apos;&apos;) {
-    patientCin = incomingpatientCin.trim();
-}
-
-channelMap.put(&quot;patientCIN&quot;, patientCin);
-
-// X-TechBD-Base-FHIR-URL
-var baseFhirUrl = &quot;&quot;;
-var incomingBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-
-if (incomingBaseFhirUrl != null &amp;&amp; incomingBaseFhirUrl.trim() !== &apos;&apos;) {
-    baseFhirUrl = incomingBaseFhirUrl.trim();
-}
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Base-FHIR-URL: &quot; + baseFhirUrl);
-channelMap.put(&quot;baseFhirUrl&quot;, baseFhirUrl);
-
-
-// X-TechBD-Facility-ID
-var facilityId = &quot;&quot;;
-var incomingFacilityId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Facility-ID&apos;);
-
-if (incomingFacilityId != null &amp;&amp; incomingFacilityId.trim() !== &apos;&apos;) {
-    facilityId = incomingFacilityId.trim();
-}
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Facility-ID: &quot; + facilityId);
-channelMap.put(&quot;facilityId&quot;, facilityId);
-
-
-// X-TechBD-Encounter-Type
-var encounterType = &quot;&quot;;
-var incomingEncounterType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Encounter-Type&apos;);
-
-if (incomingEncounterType != null &amp;&amp; incomingEncounterType.trim() !== &apos;&apos;) {
-    encounterType = incomingEncounterType.trim();
-}
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Encounter-Type: &quot; + encounterType);
-channelMap.put(&quot;encounterType&quot;, encounterType);
-
-
-// X-TechBD-Validation-Severity-Level
-var validationSeverity = &quot;error&quot;;
-var incomingValidationSeverity = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;);
-
-if (incomingValidationSeverity != null &amp;&amp; incomingValidationSeverity.trim() !== &apos;&apos;) {
-    validationSeverity = incomingValidationSeverity.trim();
-}
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Validation-Severity-Level: &quot; + validationSeverity);
-channelMap.put(&quot;validationSeverity&quot;, validationSeverity);
-
-//
-
-
-// X-SHIN-NY-IG-Version
-var igVersion = $(&apos;headers&apos;).getHeader(&apos;X-SHIN-NY-IG-Version&apos;);
-channelMap.put(&apos;igVersion&apos;, igVersion);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  X-SHIN-NY-IG-Version: &quot; + igVersion);
-
-// Accept (auto-sent by curl, but good to capture)
-var acceptHeader = $(&apos;headers&apos;).getHeader(&apos;Accept&apos;);
-channelMap.put(&apos;acceptHeader&apos;, acceptHeader);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  Accept: &quot; + acceptHeader);
-
-// User-Agent (auto-sent by curl)
-var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
-channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  User-Agent: &quot; + userAgent);
-
-
-
-// TECHBD_BL_BASEURL
-var blBaseUrl = $(&apos;headers&apos;).getHeader(&apos;X-TECHBD-BL-BASEURL&apos;);
-if (blBaseUrl == null || blBaseUrl.trim() === &apos;&apos;) {&#xd;
-    blBaseUrl = &quot;&quot;;  // optional, already null if missing&#xd;
-}
-channelMap.put(&apos;blBaseUrl&apos;, blBaseUrl);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TECHBD-BL-BASEURL: &quot; + blBaseUrl);
-
-// X-TechBD-DataLake-API-URL
-var dataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
-if (dataLakeApiUrl == null || dataLakeApiUrl.trim() === &apos;&apos;) {&#xd;
-    dataLakeApiUrl = &quot;&quot;;  // optional, already null if missing&#xd;
-}
-channelMap.put(&apos;dataLakeApiUrl&apos;, dataLakeApiUrl);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-DataLake-API-URL: &quot; + dataLakeApiUrl);
-
-
-
-
-var source = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-if (source == null || source.trim() === &apos;&apos;) {&#xd;
-    source = &quot;&quot;; // optional, already null if missing&#xd;
-}
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Source-Type: &quot; + source);
-
-channelMap.put(&apos;source&apos;, source);
-
-
-var elaboration = &quot;&quot;;&#xd;
-var incomingElaboration = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Elaboration&apos;);&#xd;
-&#xd;
-// If header has valid value, use it; otherwise keep default (empty string or any fallback)&#xd;
-if (incomingElaboration != null &amp;&amp; incomingElaboration.trim() !== &apos;&apos;) {&#xd;
-    elaboration = incomingElaboration.trim();&#xd;
-}&#xd;
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Elaboration: &quot; + elaboration);&#xd;
-channelMap.put(&quot;elaboration&quot;, elaboration);
-
-/*this is done in ccda basic validation**/
-
-/*var cin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-CIN&apos;);
-if (cin == null || cin.trim() === &apos;&apos;) {&#xd;
-    cin = &quot;&quot;; &#xd;
-}
-channelMap.put(&quot;cin&quot;, cin);
-
-
-var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-if (organizationNPI == null || organizationNPI.trim() === &apos;&apos;) {&#xd;
-    organizationNPI = &quot;&quot;; &#xd;
-}&#xd;
-&#xd;
-channelMap.put(&apos;organizationNPI&apos;, organizationNPI);&#xd;
-//.TIN&#xd;
-var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
-if (organizationTIN == null || organizationTIN.trim() === &apos;&apos;) {&#xd;
-    organizationTIN = &quot;&quot;; &#xd;
-}&#xd;
-&#xd;
- channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
-&#xd;
-// Check if both are missing — only then it&apos;s an error&#xd;
-if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;&#xd;
-    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {&#xd;
-    logger.info(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);&#xd;
-} else {&#xd;
-    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {&#xd;
-        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);&#xd;
-    }&#xd;
-    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {&#xd;
-        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);&#xd;
-    }&#xd;
-}
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgNPI: &quot; + organizationNPI);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-OrgTIN: &quot; + organizationTIN);&#xd;
-*/&#xd;
-
-var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);
-if (screeningCode == null || screeningCode.trim() === &apos;&apos;) {
-    screeningCode = &quot;&quot;;
-}
-channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
-
-
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Screening-Code: &quot; + screeningCode);
-
-&#xd;
-&#xd;
-//Part 2 Data Flagging &#xd;
-var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);&#xd;
-logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);&#xd;
-if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {&#xd;
-    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);&#xd;
-}
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: X-TechBD-Part2: &quot; + part2DataFlag);</script>
-        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-          <name>ccda basic validation</name>
-          <sequenceNumber>1</sequenceNumber>
-          <enabled>true</enabled>
-          <script>/********************************************
-    CCDA ROUTER LEVEL VALIDATION (LIGHT ONLY)
-********************************************/
-
-var isCCDASubmit = (
-    requestedPath == &quot;/ccda/Bundle/&quot; ||
-    requestedPath == &quot;/ccda/Bundle&quot;
-);
-
-var isCCDAValidate = (
-    requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
-    requestedPath == &quot;/ccda/Bundle/$validate&quot;
-);
-
-if (isCCDASubmit || isCCDAValidate) {
-
-	function checkRequiredHeader(headerName, mapKey) {
-	    var value = $(&apos;headers&apos;).getHeader(headerName);
-	
-	    if (!value || String(value).trim() === &quot;&quot;) {
-	        missingHeaders.push(&quot;Missing required header &quot; + headerName);
-	        //missingHeaders.push(headerName);
-	    } else {
-	        channelMap.put(mapKey || headerName, value);
-	    }
-	}
-
-
-    logger.info(&quot;CCDA request detected in Router&quot;);
-
-    var missingHeaders = [];
-    
-    // ✅ Content-Type (light check only)
-    var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
-    if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;)) {
-        missingHeaders.push(&quot;Content-Type must be multipart/form-data&quot;);
-    }
-
-    // ✅ Raw data presence
-    var rawData = connectorMessage.getRawData();
-    if (!rawData || rawData.trim().length === 0) {
-        missingHeaders.push(&quot;Uploaded file is empty&quot;);
-    }
-
-    // ✅ Only for SUBMIT (not validate)
-    if (isCCDASubmit) {
-        logger.info(&quot;CCDA SUBMIT flow&quot;);
-        checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;tenantId&apos;);
-    	   checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;patientCIN&apos;);
- 	   checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;facilityId&apos;);
-    	   checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;encounterType&apos;);
-
-
-        // NPI / TIN
-        var npi = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-        var tin = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
-
-        if ((!npi || npi.trim() === &quot;&quot;) &amp;&amp; (!tin || tin.trim() === &quot;&quot;)) {
-            missingHeaders.push(&quot;Either X-TechBD-OrgNPI or X-TechBD-OrgTIN required&quot;);
-        } else {
-            if (npi) channelMap.put(&apos;organizationNPI&apos;, npi);
-            if (tin) channelMap.put(&apos;organizationTIN&apos;, tin);
-        }
-    }
-
-    // ✅ VALIDATE flow → minimal only
-    if (isCCDAValidate) {
-        logger.info(&quot;CCDA VALIDATE flow (light validation only)&quot;);
-        // ❌ DO NOT enforce CIN / Facility / Encounter
-    }
-
-    if (missingHeaders.length &gt; 0) {
-        var errorMessage = &quot;Bad Request : &quot; + missingHeaders.join(&quot;, &quot;);
-        logger.error(errorMessage);
-        responseMap.put(&apos;status&apos;, &apos;400&apos;);
-        setErrorResponse(400, errorMessage);
-        throw new Error(errorMessage);
-    }
-
-    logger.info(&quot;CCDA router validation passed&quot;);
-}</script>
-        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-          <name>common function</name>
-          <sequenceNumber>2</sequenceNumber>
-          <enabled>true</enabled>
-          <script>/**
-* Util function to generate json string wit hstatus and message
-*/
-function createJsonResponse(status, message) {
-    return JSON.stringify({ status: status, message: message });
-}
-
-function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, statusCode);
-
-    responseMap.put(&apos;finalResponse&apos;, JSON.stringify({
-        status: statusCode,
-        error: errorMessage
-    }));
-}</script>
+channelMap.put(&quot;contentType&quot;, contentType);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>redirection</name>
-          <sequenceNumber>3</sequenceNumber>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 	
 	logger.info(&quot;FHIRBundle submission  RouterChannel &quot;);
 }
 
-if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
+else if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001&quot; + requestedPath);
 	logger.info(&quot;FHIRBundle validation  RouterChannel &quot;);
 }
 
 
-if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+else if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
 	logger.info(&quot;CCDA submission  RouterChannel &quot;);
 }
 
-if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
+else if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
 	logger.info(&quot;CCDA validation  RouterChannel &quot;);
 }
 
 
-if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
+else if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
 	logger.info(&quot;CSV FlatFile submission  RouterChannel &quot;);
 }
 
-if (requestedPath == &quot;/flatfile/csv/Bundle/$validate/&quot; || requestedPath == &quot;/flatfile/csv/Bundle/$validate&quot;) {
+else if (requestedPath == &quot;/flatfile/csv/Bundle/$validate/&quot; || requestedPath == &quot;/flatfile/csv/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
 	logger.info(&quot;CSV FlatFile validation  RouterChannel &quot;);
 }
 
-if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
 	logger.info(&quot;HL7 submission  RouterChannel &quot;);
 }
 
 
 
-if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
+else if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
 	logger.info(&quot;HL7 validation  RouterChannel &quot;);
+}
+else{
+	return;
 }
 
 
 var fhirJson  = connectorMessage.getRawData();
 channelMap.put(&apos;fhirJson&apos;, fhirJson);
-logger.info(fhirJson);
-
-channelMap.put(&apos;finalResponse&apos;, JSON.stringify({
-   message: &quot;hello fhir&quot;
-}));</script>
+logger.info(fhirJson);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
@@ -821,14 +447,14 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
           <entry>
             <string>immediate</string>
             <list>
-              <string>${immediate}</string>
+              <string>true</string>
             </list>
           </entry>
         </parameters>
-        <useHeadersVariable>false</useHeadersVariable>
-        <headersVariable></headersVariable>
-        <useParametersVariable>false</useParametersVariable>
-        <parametersVariable></parametersVariable>
+        <useHeadersVariable>true</useHeadersVariable>
+        <headersVariable>routerheaders</headersVariable>
+        <useParametersVariable>true</useParametersVariable>
+        <parametersVariable>routerparams</parametersVariable>
         <responseXmlBody>false</responseXmlBody>
         <responseParseMultipart>true</responseParseMultipart>
         <responseIncludeMetadata>false</responseIncludeMetadata>
@@ -847,7 +473,87 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
         <socketTimeout>30000</socketTimeout>
       </properties>
       <transformer version="4.6.1">
-        <elements/>
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+            <name>pass headers to destination</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
+  return;
+}
+
+
+// ======================================================
+//  PARSE HEADERS STRING + FORWARD
+// ======================================================
+var headersMap = new java.util.HashMap();
+var headers = $(&apos;headers&apos;);
+logger.info(&quot;HEADERS OBJECT: &quot; + $(&apos;headers&apos;));
+if (headers != null) {
+    var headerStr = String(headers);  // Convert full object to string
+    // Remove { and }
+    headerStr = headerStr.replace(/^\{|\}$/g, &apos;&apos;);
+    var pairs = headerStr.split(&apos;, &apos;);
+    for (var i = 0; i &lt; pairs.length; i++) {
+        var parts = pairs[i].split(&apos;=&apos;);
+        if (parts.length === 2) {
+
+            var key = parts[0].trim();
+            var value = parts[1].trim();
+            // Remove [ ]
+            var headerValue = value.replace(/^\[|\]$/g, &apos;&apos;);
+
+            if (headerValue !== &apos;&apos; &amp;&amp; key.toLowerCase() !== &apos;content-length&apos;) {
+               // logger.info(&quot;INCOMING HEADER: &quot; + key + &quot; = &quot; + headerValue);
+                headersMap.put(key, headerValue);
+            }
+        }
+    }
+}
+// ✅ Send headers via HTTP Sender
+connectorMap.put(&quot;routerheaders&quot;, headersMap);
+
+
+
+var paramsMap = new java.util.HashMap();
+var inboundParams = $(&apos;parameters&apos;); // Get query params from source
+
+if (inboundParams != null) {
+    var paramsStr = String(inboundParams);
+
+    // Clean the { } brackets
+    paramsStr = paramsStr.replace(/^\{|\}$/g, &apos;&apos;);
+
+    if (paramsStr.length &gt; 0) {
+        var pPairs = paramsStr.split(&apos;, &apos;);
+        for (var j = 0; j &lt; pPairs.length; j++) {
+            var pParts = pPairs[j].split(&apos;=&apos;);
+            if (pParts.length === 2) {
+                var pKey = pParts[0].trim();
+                var pValue = pParts[1].trim();
+
+                // Clean the [ ] brackets from the value
+                var finalPValue = pValue.replace(/^\[|\]$/g, &apos;&apos;);
+
+                if (finalPValue !== &apos;&apos;) {
+                    paramsMap.put(pKey, finalPValue);
+                }
+            }
+        }
+    }
+}
+
+// 2. Store for the HTTP Sender
+connectorMap.put(&quot;routerparams&quot;, paramsMap);
+
+
+
+
+//  CRITICAL: REMOVE BODY COMPLETELY
+return &apos;&apos;;</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
@@ -897,28 +603,45 @@ if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle th
 return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
-
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
+  return;
+}
 // Get the response from the HTTP Writer destination
 var destinationName = &quot;response_operationoutcome&quot;;
-	var destinationResponse = responseMap.get(destinationName);
-	logger.info(&quot;destinationResponse &quot; + destinationResponse + &quot;:&quot;);
-	
-	// Check if the response exists
-	if (destinationResponse) {
-	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
-	    var responseData = destinationResponse.getMessage();   // Response message body
-		responseMap.put(&apos;finalResponse&apos;, responseData);
-		responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
-	    // Log the response details
-	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
-	    logger.info(&quot;Status Code:---- &quot; + responseStatus);
-	    logger.info(&quot;Response Data: -------&quot; + responseData);
-	} else {
-	    logger.info(&quot;No response found for destination: &quot; + destinationName);
-	}
+  var destinationResponse = responseMap.get(destinationName);
 
-return;
-</postprocessingScript>
+  // Check if the response exists
+  if (destinationResponse) {
+      var responseStatus = destinationResponse.getStatus();  // HTTP status code
+      var responseData = destinationResponse.getMessage();   // Response message body
+    responseMap.put(&apos;finalResponse&apos;, responseData);
+    //responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
+    responseMap.put(&apos;status&apos;, responseStatus);
+    var finalStatus = &quot;&quot;; 
+    try {
+          var jsonStr = String(responseData);
+          var jsonResponse = JSON.parse(jsonStr);
+
+          var bodyStatus = jsonResponse[&quot;status&quot;];
+
+          if (bodyStatus != null &amp;&amp; bodyStatus !== &quot;&quot;) {
+              finalStatus = String(bodyStatus);
+              responseMap.put(&apos;status&apos;, finalStatus);
+          }
+        } catch (e) {
+            logger.warn(&quot;JSON parse failed: &quot; + e);
+        }
+
+
+
+      // Log the response details
+    //  logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;+&quot; Status Code:---- &quot; + responseStatus + &quot;Response Data: -------&quot; + responseData);
+  } else {
+      logger.info(&quot;No response found for destination: &quot; + destinationName);
+  }
+
+return;</postprocessingScript>
   <deployScript>// This script executes once when the channel is deployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</deployScript>
@@ -963,7 +686,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774444245933</time>
+        <time>1774842389815</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -974,14 +697,16 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>6f328648-1bfd-48c1-be7f-892a8c280390</id>
-        <name>0_2_8</name>
+        <id>5d347ab9-d759-4536-a094-dca36b8e4438</id>
+        <name>0_2_9</name>
         <channelIds>
-          <string>c0d65b25-997a-49a7-a5cf-3bed918cef21</string>
+          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
+          <string>54c68a70-cbcc-4903-a228-86f6d553f6f6</string>
+          <string>34f8c6e3-a33a-4bd7-9b05-6438e1991d44</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
