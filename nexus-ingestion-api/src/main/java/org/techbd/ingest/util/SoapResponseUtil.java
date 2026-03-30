@@ -14,10 +14,16 @@ import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapHeader;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpServletConnection;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.feature.FeatureEnum;
+import org.techbd.ingest.model.RequestContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class SoapResponseUtil {
@@ -48,11 +54,24 @@ public class SoapResponseUtil {
             }
 
             var wsa    = appConfig.getSoap().getWsa();
+            String action;
+            var transportContext = TransportContextHolder.getTransportContext();
+            var connection = (HttpServletConnection) transportContext.getConnection();
+            HttpServletRequest httpRequest = connection.getHttpServletRequest();
+
+            RequestContext context = (RequestContext) httpRequest.getAttribute(Constants.REQUEST_CONTEXT);
+            if (context.isPixRequest()) {
+                action = wsa.getAction();
+                log.info("PIX request detected. Using Action={} interactionId={}", action, interactionId);
+            } else {
+                action = wsa.getPnrAction();
+                log.info("PNR request detected. Using Action={} interactionId={}", action, interactionId);
+            }
             var techbd = appConfig.getSoap().getTechbd();
 
             // ── Standard WS-Addressing headers ────────────────────────────────
             header.addHeaderElement(new QName(wsa.getNamespace(), "Action", wsa.getPrefix()))
-                  .setText(wsa.getAction());
+                  .setText(action);
             header.addHeaderElement(new QName(wsa.getNamespace(), "MessageID", wsa.getPrefix()))
                   .setText(messageId);
             header.addHeaderElement(new QName(wsa.getNamespace(), "RelatesTo", wsa.getPrefix()))
