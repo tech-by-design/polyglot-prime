@@ -154,6 +154,9 @@ public class SoapForwarderService {
             reqBuilder.header(Constants.HEADER_MTLS_VERIFIED, "true");
         }
 
+        reqBuilder.header(Constants.IS_LOCALHOST_WS_FORWARD, "true");
+        reqBuilder.header(Constants.ORIGINAL_REQUEST_URL, request.getRequestURL().toString());
+
         // Forward ALL original request headers except restricted ones.
         // content-type is already set above (possibly reconstructed).
         // host, connection, content-length, transfer-encoding must not be forwarded —
