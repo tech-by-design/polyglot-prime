@@ -57,6 +57,10 @@ public abstract class AbstractMessageSourceProvider implements MessageSourceProv
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
         String fullRequestUrl = request.getRequestURL().toString();
+        if (headers.containsKey(Constants.IS_LOCALHOST_WS_FORWARD) && "true".equalsIgnoreCase(headers.get(Constants.IS_LOCALHOST_WS_FORWARD))) {
+            fullRequestUrl =headers.getOrDefault(Constants.ORIGINAL_REQUEST_URL, fullRequestUrl);
+        }
+        
         String queryParams = request.getQueryString();
         String protocol = request.getProtocol();
         String localAddress = request.getLocalAddr();

@@ -25,6 +25,8 @@ public class Constants {
     public static final String REQ_HEADER_CONTENT_DISPOSITION = "content-disposition";
     public static final String REQ_HEADER_MTLS_CLIENT_CERT = "X-Amzn-Mtls-Clientcert";
     public static final String HEADER_MTLS_VERIFIED = "X-TecchBD-Internal-Mtls-Verified";
+    public static final String IS_LOCALHOST_WS_FORWARD = "x-techbd-internal-localhost-ws-forward";
+    public static final String REQ_HEADER_CONTENT_TYPE = "content-type";
     public static final String DEFAULT_TENANT_ID = "unknown-tenant";
     public static final String DEFAULT_USER_AGENT = "unknown-user-agent";
     public static final String DEFAULT_MESSAGE_GROUP_ID = "DEFAULT_MESSAGE_GROUP";
@@ -54,4 +56,5 @@ public class Constants {
     public static final String EFFECTIVE_CONTENT_TYPE = "effectiveContentType";
     public static final String RAW_MULTIPART_BODY = "rawMultipartBody";
     public static final String NO_ACK_EXPECTED = "NO_ACK_EXPECTED";
+    public static final String ORIGINAL_REQUEST_URL = "x-techbd-original-uri";
 }
