@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>b56daaf1-9ff3-4baa-8219-890de8eb657e</id>
+  <id>f1f09a06-9044-4e7b-a11a-1c967f5d8d38</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.30
-Updated Access-Control-Allow-Headers list to support additional request metadata required for Part 2 processing.</description>
-  <revision>18</revision>
+  <description>Version: 0.1.31
+Validation given to Organization name in HL7 channel.</description>
+  <revision>1</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -890,6 +890,7 @@ function validateOneOfGroups(groups, hl7Text) {
     return violations;
 }
 
+
 function validateOBXSpecialRule(hl7Text) {
 
     var violations = [];
@@ -944,6 +945,10 @@ function validateOrganizationName(hl7Text) {
     // Check header first
     var orgNameHeader = channelMap.get(&quot;OrganizationName&quot;);
     if (orgNameHeader &amp;&amp; String(orgNameHeader).trim().length &gt; 0) {
+    	        
+        // ensure UI uses header
+     channelMap.put(&quot;OrganizationName&quot;, String(orgNameHeader).trim());
+
         return violations;
     }
 
@@ -956,6 +961,9 @@ function validateOrganizationName(hl7Text) {
             if (fields.length &gt;= 6) {
                 var msh6 = fields[5] ? fields[5].trim() : &quot;&quot;;
                 if (msh6.length &gt; 0) {
+                	                    
+                    // Set it back so UI uses it
+                    channelMap.put(&quot;OrganizationName&quot;, msh6);
                     return violations;
                 }
             }
@@ -3013,7 +3021,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773667418362</time>
+        <time>1774873618687</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3024,10 +3032,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>86e4e6d7-e6c4-478a-9cc9-18d654e1699b</id>
-        <name>0_1_30</name>
+        <id>c1be1a0d-ac38-4175-8ecd-d2c7c9ae1552</id>
+        <name>0_1_31</name>
         <channelIds>
-          <string>b56daaf1-9ff3-4baa-8219-890de8eb657e</string>
+          <string>f1f09a06-9044-4e7b-a11a-1c967f5d8d38</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
