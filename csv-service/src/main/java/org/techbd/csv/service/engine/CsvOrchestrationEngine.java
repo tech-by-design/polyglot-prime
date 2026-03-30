@@ -797,7 +797,8 @@ public class CsvOrchestrationEngine {
             final VfsIngressConsumer consumer = vfsCoreService.createConsumer(
                     inboundFO,
                     this::extractGroupId,
-                    this::isGroupComplete);
+                    this::isGroupComplete,
+                    masterInteractionId);
 
             // Important: Capture the returned session UUID and processed file paths
             final UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO,masterInteractionId);

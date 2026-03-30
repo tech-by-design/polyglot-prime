@@ -30,14 +30,19 @@ public class VfsCoreService {
     public VfsIngressConsumer createConsumer(
             FileObject ingressPath,
             Function<FileObject, String> groupingFunction,
-            Function<VfsIngressConsumer.IngressGroup, Boolean> groupValidator) throws FileSystemException {
+            Function<VfsIngressConsumer.IngressGroup, Boolean> groupValidator
+        ,String masterInteractionId) throws FileSystemException {
         try {
             return new VfsIngressConsumer.Builder()
                     .addIngressPath(ingressPath)
                     .isGroup(groupingFunction)
                     .isGroupComplete(this::isGroupComplete)
-                    .isSnapshotable(this::isZipFile)
-                    .populateSnapshot((ingressEntry, file, dir, audit) -> List.of())
+                    .isSnapshotable((ingressEntry, file, dir, audit) -> {
+                        String fileName = ingressEntry.entry().getName().getBaseName();
+                         return fileName.endsWith(".zip") 
+                        && fileName.startsWith(masterInteractionId);  // ← only THIS request's zip
+                     })
+                        .populateSnapshot((ingressEntry, file, dir, audit) -> List.of())
                     .consumables(VfsIngressConsumer::consumeUnzipped)
                     .build();
         } catch (FileSystemException e) {
