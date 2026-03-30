@@ -62,10 +62,10 @@ spring:
             redirect-uri: "${SPRING_SECURITY_OAUTH2_FUSIONAUTH_REDIRECT_URI}"
         provider:
           fusionauth:
-            authorization-uri: https://dev.auth.techbd.org/oauth2/authorize
-            token-uri: https://dev.auth.techbd.org/oauth2/token
-            user-info-uri: https://dev.auth.techbd.org/oauth2/userinfo
-            jwk-set-uri: https://dev.auth.techbd.org/.well-known/jwks.json
+            authorization-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_AUTHORIZATION_URI} 
+            token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_TOKEN_URI} 
+            user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_USER_INFO_URI} 
+            jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_FUSIONAUTH_JWK_SET_URI}
             user-name-attribute: email   
   
   jpa:
