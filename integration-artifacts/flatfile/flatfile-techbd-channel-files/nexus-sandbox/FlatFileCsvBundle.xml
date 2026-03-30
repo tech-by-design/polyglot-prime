@@ -1,15 +1,36 @@
 <channel version="4.6.1">
-  <id>25855d07-fbb9-4df5-8274-a4667eee5b1f</id>
+  <id>c5901802-8fa8-40a0-ad36-63252e9b39dd</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.15
-Resolved the issue where the X-TechBD-DataLake-API-URL header was not functioning as expected.</description>
-  <revision>14</revision>
+  <description>Version: 0.9.16
+Fixed URI Column incorrect value.</description>
+  <revision>4</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -107,47 +128,7 @@ function setErrorResponse(statusCode, errorMessage) {
           <name>lookup_manager</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
-          <script>logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  AWS Secrets Manager Loader starts &apos;);
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
-/*******************************
-    AWS Secrets Manager Loader
-********************************/
-
-function fetchSecret(secretName) {
-    var region = &quot;us-east-1&quot;;
-
-    var Region = Packages.software.amazon.awssdk.regions.Region;
-    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-
-    try {
-        var client = SecretsManagerClient.builder()
-            .region(Region.of(region))
-            .build();
-
-        var request = GetSecretValueRequest.builder()
-            .secretId(secretName)
-            .build();
-
-        var response = client.getSecretValue(request);
-        client.close();
-
-        var value = response.secretString();
-        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
-
-        return value;
-
-    } catch (e) {
-        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
-        throw e;
-    }
-}
-
-//////////
-
-
+          <script>logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  Lookup Manager Loader starts &apos;);
 try {
     var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
 
@@ -157,10 +138,10 @@ try {
 
     channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
     globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
-    logger.info(&quot;✔ Datalake API URL loaded from Lookup Manager(config)&quot;);
+    logger.info(&quot;Datalake API URL loaded from Lookup Manager(config)&quot;);
 
 } catch (e) {
-    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    logger.error(&quot;Error fetching Datalake API URL: &quot; + e);
     setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
     throw e;
 }
@@ -178,7 +159,7 @@ if (headerDataLakeApiUrl &amp;&amp; String(headerDataLakeApiUrl).trim() !== &quo
    headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
    channelMap.put(&quot;DATALAKE_API_URL&quot;, headerDataLakeApiUrl);
    globalMap.put(&quot;datalakeApiUrl&quot;, headerDataLakeApiUrl);
-   logger.info(&quot;✔DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
+   logger.info(&quot;DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
 }
 //////////////////////////////////////////////
 /********************************************
@@ -200,49 +181,36 @@ channelMap.put(&quot;techbdBlBaseUrl&quot;, techbdBlBaseUrl);
 try {
     var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
-// TODO remove commented lines
-
-//    if (!csvSecretName || csvSecretName.trim() === &quot;&quot;) {
-//        throw &quot;Lookup value TECHBD_CSV_SERVICE_API_URL does not contain a secret name.&quot;;
-//    }
-//
-//    var csvServiceUrl = fetchSecret(csvSecretName);
-
     if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
         throw &quot;AWS Secret for CSV Service URL returned empty.&quot;;
     }
 
     channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
     globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
-    logger.info(&quot;✔ CSV Service API URL loaded from AWS Secret Manager&quot; + csvServiceUrl);
+    logger.info(&quot;CSV Service API URL loaded from Lookup Manager&quot; + csvServiceUrl);
 
 } catch (e) {
-    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
+    logger.error(&quot;Error fetching CSV Service API URL: &quot; + e);
     setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
     throw e;
 }
 
 
 try {
-// MC_VALID_FHIR_URLS (comma-separated list)
     var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
     if (!validUrlsEnv || validUrlsEnv.trim() === &quot;&quot;) {
         throw &quot;MC_VALID_FHIR_URLS is not configured in Lookup Manager&quot;;
     }
     channelMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
  
-    logger.info(&quot;✔ Valid FHIR URLs loaded from Lookup Manager&quot;);
+    logger.info(&quot;Valid FHIR URLs loaded from Lookup Manager&quot;);
 } catch (e) {
-    logger.error(&quot;❌ Error fetching valid FHIR URLs: &quot; + e);
+    logger.error(&quot;Error fetching valid FHIR URLs: &quot; + e);
     setErrorResponse(500, &quot;Failed to load valid FHIR URLs&quot;);
     throw e;
 }
 
-logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  AWS Secrets Manager Loader end &apos;);
-
-/********************************************
-    DONE
-********************************************/</script>
+logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  Lookup Manager Loader end &apos;);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>Validate HTTP Request and collect headers</name>
@@ -254,14 +222,12 @@ var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 channelMap.put(&apos;tenantId&apos;, tenantId);
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
 channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] X-TechBD-Tenant-ID: &quot; + tenantId);
-/////
+var headers = $(&apos;headers&apos;);
+logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] HEADERS OBJECT: &quot; + $(&apos;headers&apos;));
+
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-logger.info(&quot;Request URL: &quot; + requestedPath);
- 
 channelMap.put(&quot;requestUri&quot;, requestedPath);
 
-/////
 
 // Parse the incoming request (assumes multipart form data)
 var rawData = connectorMessage.getRawData();
@@ -273,12 +239,9 @@ if (contentType == null || String(contentType).trim() === &apos;&apos; ||
     contentType.toLowerCase().indexOf(&apos;multipart/form-data&apos;) === -1) {
 
     var errorResponse = &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;;
-
-    logger.error(&quot;[CHANNEL: &quot; + channelName + &quot;] Missing or invalid Content-Type header: &quot; + contentType);
-
-    setErrorResponse(400, errorResponse);
-
-    throw &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;;
+logger.error(&quot;[CHANNEL: &quot; + channelName + &quot;] Missing or invalid Content-Type header: &quot; + contentType);
+setErrorResponse(400, errorResponse);
+throw &quot;Bad Request: Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;;
 }
 
 // Check if rawData is empty
@@ -297,7 +260,6 @@ var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHI
     logger.info(&quot;MC_VALID_FHIR_URLS from LookupHelper: &quot; + validUrlsEnv);
     // Convert VALID_URLS to an array for validation
     var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
-    // Check if the header value is valid
     if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
  
     if (validUrls.includes(customBaseFhirUrl)) {
@@ -310,25 +272,23 @@ var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHI
     }&#xd;
 &#xd;
 &#xd;    
-//Check the file type, only .xml and .txt allowed
+//Check the file type, only .zip is allowed
 var filename = null;
-var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); 
 
 if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
     channelMap.put(&apos;filename&apos;, filename);
 	logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] filename &quot; + filename);
-    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
 
     if (extension !== &quot;zip&quot; ) {
        var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .zip is allowed.&quot;;
-       logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] &quot; + errorMessage);
-       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-    	  throw errorMessage; // Stop further processing by throwing an exception
+       setErrorResponse(400, errorMessage); 
+    	  throw errorMessage; 
     }
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
@@ -338,16 +298,11 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 }
 
 
-//var baseFhirURL =  $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-//channelMap.put(&apos;baseFhirURL&apos;, baseFhirURL);
-
-// Check if the header is null or empty
+// Check if the tenant is null or empty
 if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
-    // Log the error for debugging
     var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-    throw errorMessage; // Stop further processing by throwing an exception
+    setErrorResponse(400, errorMessage); 
+    throw errorMessage;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -357,7 +312,7 @@ var rawData = connectorMessage.getRawData();
 // Check if rawData is empty
 if (!rawData || rawData.trim().length === 0) {
     errorMessage = &quot;No file provided in the request.&quot;;
-    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    setErrorResponse(400, errorMessage); 
     throw errorMessage;
 }
 
@@ -383,7 +338,6 @@ for each (var part in parts) {
 // Validate the file content
 if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
     errorMessage = &quot;Uploaded file is empty or missing.&quot;;
-    // Set the HTTP response status to 400 (Bad Request)
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
@@ -727,13 +681,9 @@ var baseFhirurl =  channelMap.get(&apos;baseFhirurl&apos;); &#xd;logger.info(&qu
 
 // Read &apos;immediate&apos; parameter from request (like how headers are fetched)
 var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim();
-logger.info(&quot;======================================&quot; + immediateParam);
-
+var csvServiceApiUrl = &quot;https://organismal-nonprovisionary-mika.ngrok-free.dev&quot;;
 var csvServiceApiUrl = channelMap.get(&apos;CSV_SERVICE_API_URL&apos;);
-logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;);
-
-csvServiceApiUrl = csvServiceApiUrl.trim();
-logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;);
+logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;+&quot;immediateParam :&quot;+ immediateParam);
 
 // --- Build URL with query parameter ---
 //var urlStr = &quot;http://10.10.11.253:8082/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
@@ -742,11 +692,10 @@ logger.info(&quot;======================================:&quot; + csvServiceApiU
 
 var urlStr  = &quot;&quot;;
 if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
-	urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+	urlStr = csvServiceApiUrl +requestedPath+&quot;?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
 }else {
-	urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/$validate/?source=&quot; + encodeURIComponent(sourceParam);
+	urlStr = csvServiceApiUrl +requestedPath+&quot;?source=&quot; + encodeURIComponent(sourceParam);
 }
-logger.info(urlStr);
 
 // --- Import Apache HttpClient classes ---
 var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
@@ -776,8 +725,6 @@ var uri = channelMap.get(&apos;uri&apos;) || &apos;/flatfile/csv/Bundle/&apos;;
 
 var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
 channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
-logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
-
 
 var dataLakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 var techbdBlBaseUrl = channelMap.get(&apos;techbdBlBaseUrl&apos;);
@@ -926,22 +873,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1773843176641</time>
+        <time>1774870309273</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>2143a552-2a71-4c6d-b3bb-9b21235a6f3a</id>
-        <name>0_9_15</name>
+        <id>ca9653c4-a8b1-4eca-9d1c-a2e4287ed93f</id>
+        <name>0_9_16</name>
         <channelIds>
-          <string>25855d07-fbb9-4df5-8274-a4667eee5b1f</string>
-          <string>d8e88936-47de-4918-8abf-c93cf75d95ad</string>
+          <string>c5901802-8fa8-40a0-ad36-63252e9b39dd</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
