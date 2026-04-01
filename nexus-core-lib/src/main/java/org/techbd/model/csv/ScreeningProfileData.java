@@ -117,6 +117,9 @@ public class ScreeningProfileData {
     @CsvBindByName(column = "ENCOUNTER_LAST_UPDATED")
     private String encounterLastUpdated;
 
+    @CsvBindByName(column = "VISIT_PART_2_FLAG")
+    private String visitPart2Flag;
+
     // Default constructor
     public ScreeningProfileData() {
     }

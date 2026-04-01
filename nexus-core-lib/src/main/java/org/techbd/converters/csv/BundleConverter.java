@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
-import org.techbd.model.csv.QeAdminData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
@@ -35,7 +35,7 @@ public class BundleConverter {
      * @return a Bundle with type set to COLLECTION, one empty entry, and Meta
      *         information.
      */
-    public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl, QeAdminData qeAdminData) {
+    public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl, ScreeningProfileData screeningProfileData) {
         Bundle bundle = new Bundle();
         bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
@@ -47,7 +47,7 @@ public class BundleConverter {
         } else {
             meta.setProfile(List.of(new CanonicalType(CoreFHIRUtil.getBundleProfileUrl())));
         }
-        if ("Yes".equalsIgnoreCase(qeAdminData.getVisitPart2Flag())) {
+        if ("Yes".equalsIgnoreCase(screeningProfileData.getVisitPart2Flag())) {
             Coding ethCoding = new Coding();
             ethCoding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
             ethCoding.setCode("ETH");
