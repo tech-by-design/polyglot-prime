@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c5901802-8fa8-40a0-ad36-63252e9b39dd</id>
+  <id>c6785dde-cd64-4546-bf7c-3f8f7abb4132</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.16
-Fixed URI Column incorrect value.</description>
-  <revision>4</revision>
+  <description>Version: 0.9.17
+Added multiple file validation.</description>
+  <revision>8</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -315,6 +315,29 @@ if (!rawData || rawData.trim().length === 0) {
     setErrorResponse(400, errorMessage); 
     throw errorMessage;
 }
+
+// -----------------------------------------------------
+// Multiple multipart / multiple file validation
+// -----------------------------------------------------
+var partMatches = rawData.match(/Content-Disposition:/g) || [];
+var fileMatches = rawData.match(/filename=&quot;/g) || [];
+
+// If more than one multipart section
+if (partMatches.length &gt; 1) {
+    var errorMessage = &quot;Multiple parts detected in upload. Only one file is allowed.&quot;;
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// If more than one file
+if (fileMatches.length &gt; 1) {
+    var errorMessage = &quot;Multiple files detected in upload. Only one file is allowed.&quot;;
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
 
 // Parse the rawData as multipart form data
 var boundary = rawData.split(&quot;\r\n&quot;)[0];
@@ -873,7 +896,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774870309273</time>
+        <time>1775034982584</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -884,10 +907,10 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>ca9653c4-a8b1-4eca-9d1c-a2e4287ed93f</id>
-        <name>0_9_16</name>
+        <id>5fcb553d-307b-46d7-be17-757e168b10af</id>
+        <name>0_9_17</name>
         <channelIds>
-          <string>c5901802-8fa8-40a0-ad36-63252e9b39dd</string>
+          <string>c6785dde-cd64-4546-bf7c-3f8f7abb4132</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
