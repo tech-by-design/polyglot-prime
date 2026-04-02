@@ -167,6 +167,24 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                 validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleDeclined9to12.json");
         }
 
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse Part2 ExampleFile")
+        void testValidateTestShinnyIG_NYScreeningResponsePart2ExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExamplePart2.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OWH ExampleFile")
+        void testValidateTestShinnyIG_NYScreeningResponseOMHExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleOMH.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateTestShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
+        }
+
         private void validateFile(String filePath) throws IOException {
                 List<OrchestrationEngine.ValidationResult> results = getValidationErrors(filePath);
                 assertValidationResults(results);

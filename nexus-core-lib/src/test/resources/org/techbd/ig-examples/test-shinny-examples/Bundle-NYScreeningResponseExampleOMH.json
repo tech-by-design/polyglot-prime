@@ -1,9 +1,12 @@
 {
   "resourceType" : "Bundle",
-  "id" : "NYScreeningResponseExample",
+  "id" : "NYScreeningResponseExampleOMH",
   "meta" : {
     "lastUpdated" : "2024-02-23T00:00:00Z",
-    "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
+    "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"],
+    "security" : [{
+      "code" : "MH"
+    }]
   },
   "type" : "transaction",
   "timestamp" : "2024-02-03T00:00:00Z",
