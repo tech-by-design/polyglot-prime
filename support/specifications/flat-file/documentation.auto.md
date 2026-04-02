@@ -260,17 +260,17 @@
   - `constraints`:
     - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))`
 ### `VISIT_PART_2_FLAG`
-  - `description` Identifies part 2 data. Permissable values are 'Yes' or 'No'
+  - `description` Bundle.meta.security.code
   - `type` string
   - `constraints`:
     - `pattern` `^(?i:yes|no)$`
 ### `VISIT_OMH_FLAG`
-  - `description` Identifies an OMH facility. Permissable values are 'Yes' or 'No'
+  - `description` Bundle.meta.security.code
   - `type` string
   - `constraints`:
     - `pattern` `^(?i:yes|no)$`
 ### `VISIT_OPWDD_FLAG`
-  - `description` Identifies an OPWDD facility. Permissable values are 'Yes' or 'No'
+  - `description` Bundle.meta.security.code
   - `type` string
   - `constraints`:
     - `pattern` `^(?i:yes|no)$`

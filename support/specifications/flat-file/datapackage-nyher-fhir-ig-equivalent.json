@@ -379,19 +379,19 @@
           {
             "name": "VISIT_PART_2_FLAG",
             "type": "string",
-            "description": "Identifies part 2 data. Permissable values are 'Yes' or 'No'",
+            "description": "Bundle.meta.security.code",
             "constraints": { "pattern": "^(?i:yes|no)$" }
           },
           {
             "name": "VISIT_OMH_FLAG",
             "type": "string",
-            "description": "Identifies an OMH facility. Permissable values are 'Yes' or 'No'",
+            "description": "Bundle.meta.security.code",
             "constraints": { "pattern": "^(?i:yes|no)$" }
           },
           {
             "name": "VISIT_OPWDD_FLAG",
             "type": "string",
-            "description": "Identifies an OPWDD facility. Permissable values are 'Yes' or 'No'",
+            "description": "Bundle.meta.security.code",
             "constraints": { "pattern": "^(?i:yes|no)$" }
           }          
         ],
