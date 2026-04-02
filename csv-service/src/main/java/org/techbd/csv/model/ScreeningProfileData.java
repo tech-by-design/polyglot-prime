@@ -119,6 +119,12 @@ public class ScreeningProfileData {
 
     @CsvBindByName(column = "VISIT_PART_2_FLAG")
     private String visitPart2Flag;
+
+    @CsvBindByName(column = "VISIT_OMH_FLAG")
+    private String visitOmhFlag;
+
+    @CsvBindByName(column = "VISIT_OPWDD_FLAG")
+    private String visitOpwddFlag;
     
     // Default constructor
     public ScreeningProfileData() {

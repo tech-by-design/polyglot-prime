@@ -55,6 +55,25 @@ public class BundleConverter {
 
             meta.addSecurity(ethCoding);
         }
+
+        if ("Yes".equalsIgnoreCase(screeningProfileData.getVisitOmhFlag())) {
+            Coding ethCoding = new Coding();
+            ethCoding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            ethCoding.setCode("MH");
+            ethCoding.setDisplay("Mental health information sensitivity");
+
+            meta.addSecurity(ethCoding);
+        }
+
+        if ("Yes".equalsIgnoreCase(screeningProfileData.getVisitOpwddFlag())) {
+            Coding ethCoding = new Coding();
+            ethCoding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            ethCoding.setCode("DVD");
+            ethCoding.setDisplay("Developmental disability information sensitivity");
+
+            meta.addSecurity(ethCoding);
+        }
+
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",
                 interactionId);
