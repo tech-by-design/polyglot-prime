@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +23,7 @@ import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -159,7 +159,7 @@ public class DataHoldController extends AbstractMessageSourceProvider {
         try {
             String contentType = request.getContentType();
             String extension = HttpUtil.resolveExtension(contentType);
-            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+            String generatedFileName = "payload-" + UuidUtil.generateUuid() + extension;
             
             LOG.info("DataHoldController:: Raw body received (Content-Type={}): {}... interactionId={}",
                     contentType, body.substring(0, Math.min(200, body.length())), interactionId);

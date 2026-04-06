@@ -27,6 +27,7 @@ import org.techbd.ingest.service.portconfig.PortResolverService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
@@ -247,7 +248,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                 // SESSION initialisation — done ONCE per TCP connection.
                                 // The sessionId never changes for the lifetime of this channel.
                                 // -----------------------------------------------------------------
-                                String sessionId = UUID.randomUUID().toString();
+                                String sessionId = UuidUtil.generateUuid();
                                 long sessionStartTime = System.currentTimeMillis();
 
                                 ch.attr(SESSION_ID_KEY).set(sessionId);
@@ -310,7 +311,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                         String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                         UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                         if (interactionId == null) {
-                                            interactionId = UUID.randomUUID();
+                                            interactionId = UUID.fromString(UuidUtil.generateUuid());
                                             ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                         }
 
@@ -370,7 +371,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                         String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                         UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                         if (interactionId == null) {
-                                            interactionId = UUID.randomUUID();
+                                            interactionId = UUID.fromString(UuidUtil.generateUuid());
                                             ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                         }
                                         
@@ -415,9 +416,8 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                 String errorMsg = cause.getMessage() != null ? cause.getMessage() : "Unknown error";
                                                 String sanitizedError = errorMsg.replace("|", " ").replace("\r", " ").replace("\n", " ");
                                                 
-                                                String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
-                                                        + Instant.now() + "||ACK|" +
-                                                        UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                                                String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK|" +
+                                                        UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
                                                         "MSA|AR|UNKNOWN|Channel exception: " + sanitizedError + "\r" +
                                                         "ERR|||207^Application internal error^HL70357||E|||Channel exception occurred\r";
 
@@ -505,7 +505,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                             UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                             if (interactionId == null) {
-                                                interactionId = UUID.randomUUID();
+                                                interactionId = UUID.fromString(UuidUtil.generateUuid());
                                                 ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                             }
 
@@ -556,20 +556,14 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                         String timeoutError = String.format(
                                                                 "Read idle timeout: No data received within %d seconds", effectiveTimeout);
 
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
-                                                                Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20)
-                                                                + "|P|2.5\r" +
-                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r";
-
-                                                        if (FeatureEnum
-                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
-                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
-                                                                    " | TechBDIngestionApiVersion: "
-                                                                    + appConfig.getVersion() +
-                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
-                                                        }
+                                                    String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                            + Instant.now() + "||ACK|" +
+                                                            UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
+                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                            "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
+                                                            "NTE|1||InteractionID: " + interactionId +
+                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                            " | ErrorTraceID: " + errorTraceId + "\r";
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
@@ -627,7 +621,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                                             String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
                                             UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
                                             if (interactionId == null) {
-                                                interactionId = UUID.randomUUID();
+                                                interactionId = UUID.fromString(UuidUtil.generateUuid());
                                                 ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
                                             }
 
@@ -676,21 +670,16 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                                 "Read timeout: No complete message received within %d seconds",
                                                                 readTimeoutSeconds);
 
-                                                        // Generate HL7 NACK for timeout
-                                                        String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" +
-                                                                Instant.now() + "||ACK|" +
-                                                                UUID.randomUUID().toString().substring(0, 20)
-                                                                + "|P|2.5\r" +
-                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r";
-
-                                                        if (FeatureEnum
-                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
-                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
-                                                                    " | TechBDIngestionApiVersion: "
-                                                                    + appConfig.getVersion() +
-                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
-                                                        }
+                                                    // Generate HL7 NACK for timeout
+                                                    String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
+                                                            + Instant.now() + "||ACK|" +
+                                                            UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
+                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                            "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r"
+                                                            +
+                                                            "NTE|1||InteractionID: " + interactionId +
+                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
+                                                            " | ErrorTraceID: " + errorTraceId + "\r";
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
@@ -864,7 +853,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                     minimalHeaders,
                     "",
                     appConfig.getAws().getSqs().getFifoQueueUrl(),
-                    UUID.randomUUID().toString(),
+                    UuidUtil.generateUuid(),
                     now, timestamp,
                     "tcp-message", 0,
                     "", "", "", "", "",
@@ -962,7 +951,7 @@ public class NettyTcpServer implements MessageSourceProvider {
             String sessionId = ctx.channel().attr(SESSION_ID_KEY).get();
             UUID interactionId = ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).get();
             if (interactionId == null) {
-                interactionId = UUID.randomUUID();
+                interactionId = UUID.fromString(UuidUtil.generateUuid());
                 ctx.channel().attr(INTERACTION_ATTRIBUTE_KEY).set(interactionId);
             }
 
@@ -1610,7 +1599,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                         sessionId, interactionId, haproxyDetails(ctx), errorTraceId);
                 
                 String genericNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|" + Instant.now() + "||ACK|" +
-                        UUID.randomUUID().toString().substring(0, 20) + "|P|2.5\r" +
+                        UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
                         "MSA|AR|UNKNOWN|Unexpected error occurred\r" +
                         "ERR|||207^Application internal error^HL70357||E|||Unexpected error occurred\r";
 
@@ -1899,7 +1888,7 @@ public class NettyTcpServer implements MessageSourceProvider {
             StringBuilder nack = new StringBuilder();
             nack.append("MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|")
                     .append(Instant.now()).append("||ACK|")
-                    .append(UUID.randomUUID().toString().substring(0, 20)).append("|P|2.5\r");
+                    .append(UuidUtil.generateUuid().substring(0, 20)).append("|P|2.5\r");
             nack.append("MSA|AR|UNKNOWN|").append(genericError).append("\r");
             nack.append("ERR|||207^Application internal error^HL70357||E|||")
                     .append(genericError.substring(0, Math.min(80, genericError.length()))).append("\r");
@@ -1923,7 +1912,7 @@ public class NettyTcpServer implements MessageSourceProvider {
                 .append(sendingFacility.isEmpty() ? "REMOTE" : sendingFacility).append(fieldSep)
                 .append(Instant.now()).append(fieldSep).append(fieldSep)
                 .append("ACK").append(fieldSep)
-                .append(UUID.randomUUID().toString().substring(0, 20)).append(fieldSep)
+                .append(UuidUtil.generateUuid().substring(0, 20)).append(fieldSep)
                 .append("P").append(fieldSep).append(version).append("\r");
         ack.append("MSA").append(fieldSep).append(finalAckCode).append(fieldSep)
                 .append(messageControlId);

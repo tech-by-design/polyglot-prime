@@ -1,8 +1,6 @@
 package org.techbd.ingest.util;
 
 import java.util.Iterator;
-import java.util.UUID;
-
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -45,7 +43,7 @@ public class SoapResponseUtil {
             SoapMessage soapRequest  = (SoapMessage) messageContext.getRequest();
             SoapHeader  header       = soapResponse.getSoapHeader();
 
-            String messageId = "urn:uuid:" + UUID.randomUUID();
+            String messageId = "urn:uuid:" + UuidUtil.generateUuid();
             String relatesTo = extractRelatesTo(soapRequest);
 
             if (relatesTo == null) {

@@ -2,7 +2,6 @@ package org.techbd.ingest.controller;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +29,7 @@ import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -279,7 +279,7 @@ public class DataIngestionController extends AbstractMessageSourceProvider {
         try {
             String contentType = request.getContentType();
             String extension = HttpUtil.resolveExtension(contentType);
-            String generatedFileName = "payload-" + UUID.randomUUID() + extension;
+            String generatedFileName = "payload-" + UuidUtil.generateUuid() + extension;
 
             LOG.info("Raw body received (Content-Type={}): interactionId={}",
                     contentType, interactionId);

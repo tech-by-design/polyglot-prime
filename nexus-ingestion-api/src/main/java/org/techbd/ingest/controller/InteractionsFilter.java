@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +43,7 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.SoapFaultUtil;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -91,7 +91,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
             interactionId = (String) origRequest.getAttribute(Constants.INTERACTION_ID);
         }
         if (StringUtils.isEmpty(interactionId)) {
-            interactionId = UUID.randomUUID().toString();
+            interactionId = UuidUtil.generateUuid();
         }
         origRequest.setAttribute(Constants.INTERACTION_ID, interactionId);
 

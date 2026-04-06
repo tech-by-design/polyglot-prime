@@ -3,7 +3,6 @@ package org.techbd.ingest.service.iti;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.GregorianCalendar;
-import java.util.UUID;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -11,6 +10,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.springframework.stereotype.Service;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 import org.techbd.iti.schema.AcknowledgementDetailType;
 import org.techbd.iti.schema.CS;
 import org.techbd.iti.schema.CommunicationFunctionType;
@@ -53,7 +53,7 @@ public class AcknowledgementService {
 
         // Main ID
         II id = new II();
-        id.setRoot(UUID.randomUUID().toString());
+        id.setRoot(UuidUtil.generateUuid());
         ack.setId(id);
         logger.debug("AcknowledgementService:: Assigned response ID: {} for interaction id :{}", id.getRoot(),
                 techBDInteractionId);
@@ -234,7 +234,7 @@ public class AcknowledgementService {
 
         logger.debug(
                 "AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}",
-                techBDInteractionId, UUID.randomUUID());
+                techBDInteractionId, UuidUtil.generateUuid());
         return response;
     }
 
@@ -271,7 +271,7 @@ public class AcknowledgementService {
 
         logger.debug(
                 "AcknowledgementService:: techbdGeneratedInteractionId: urn:uuid:techbd-generated-interactionid:{} for interactionId: {}, errorTraceId: {}",
-                techBDInteractionId, UUID.randomUUID(), errorTraceId);
+                techBDInteractionId, UuidUtil.generateUuid(), errorTraceId);
         return response;
     }
 }

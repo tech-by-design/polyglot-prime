@@ -237,6 +237,11 @@
             <artifactId>javax.xml.soap-api</artifactId>
             <version>1.4.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.f4b6a3</groupId>
+            <artifactId>uuid-creator</artifactId>
+            <version>5.3.0</version>
+        </dependency>
 
         <!-- mTLS related -->
         <!-- Bouncy Castle for certificate parsing and verification -->

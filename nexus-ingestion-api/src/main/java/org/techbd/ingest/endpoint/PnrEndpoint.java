@@ -1,6 +1,5 @@
 package org.techbd.ingest.endpoint;
 
-import java.util.UUID;
 
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -20,6 +19,7 @@ import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.LogUtil;
 import org.techbd.ingest.util.TemplateLogger;
+import org.techbd.ingest.util.UuidUtil;
 import org.techbd.iti.schema.ObjectFactory;
 import org.techbd.iti.schema.ProvideAndRegisterDocumentSetRequestType;
 import org.techbd.iti.schema.RegistryResponseType;
@@ -82,7 +82,7 @@ public class PnrEndpoint extends AbstractMessageSourceProvider {
             interactionId = (String) httpRequest.getAttribute(Constants.INTERACTION_ID);
         }
         if (StringUtils.isEmpty(interactionId)) {
-            interactionId = UUID.randomUUID().toString();
+            interactionId = UuidUtil.generateUuid();
         }
         
         String errorTraceId = null;

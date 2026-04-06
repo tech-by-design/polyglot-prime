@@ -1,7 +1,8 @@
 package org.techbd.ingest.exceptions;
 
 
-import java.util.UUID;
+
+import org.techbd.ingest.util.UuidUtil;
 
 /**
  * Utility class for generating unique error trace identifiers.
@@ -15,6 +16,6 @@ public class ErrorTraceIdGenerator {
      * @return A string representation of a UUID v4
      */
     public static String generateErrorTraceId() {
-        return UUID.randomUUID().toString();
+        return UuidUtil.generateUuid();
     }
 }
