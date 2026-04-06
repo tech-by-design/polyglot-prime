@@ -560,10 +560,14 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                             + Instant.now() + "||ACK|" +
                                                             UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
                                                             "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                            "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r" +
-                                                            "NTE|1||InteractionID: " + interactionId +
-                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+                                                          "ERR|||207^Application internal error^HL70357||E|||Idle timeout occurred\r";
+                                                        if (FeatureEnum
+                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
+                                                                    " | TechBDIngestionApiVersion: "
+                                                                    + appConfig.getVersion() +
+                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
+                                                           }
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
@@ -673,13 +677,18 @@ public class NettyTcpServer implements MessageSourceProvider {
                                                     // Generate HL7 NACK for timeout
                                                     String timeoutNack = "MSH|^~\\&|SERVER|LOCAL|CLIENT|REMOTE|"
                                                             + Instant.now() + "||ACK|" +
-                                                            UuidUtil.generateUuid().substring(0, 20) + "|P|2.5\r" +
-                                                            "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
-                                                            "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r"
-                                                            +
-                                                            "NTE|1||InteractionID: " + interactionId +
-                                                            " | TechBDIngestionApiVersion: " + appConfig.getVersion() +
-                                                            " | ErrorTraceID: " + errorTraceId + "\r";
+                                                            UuidUtil.generateUuid().substring(0, 20)
+                                                                + "|P|2.5\r" +
+                                                                "MSA|AR|UNKNOWN|" + timeoutError + "\r" +
+                                                                "ERR|||207^Application internal error^HL70357||E|||Read timeout occurred\r";
+
+                                                        if (FeatureEnum
+                                                                .isEnabled(FeatureEnum.ADD_NTE_SEGMENT_TO_HL7_ACK)) {
+                                                            timeoutNack += "NTE|1||InteractionID: " + interactionId +
+                                                                    " | TechBDIngestionApiVersion: "
+                                                                    + appConfig.getVersion() +
+                                                                    " | ErrorTraceID: " + errorTraceId + "\r";
+                                                        }
 
                                                         String wrappedNack = String.valueOf((char) MLLP_START) + timeoutNack
                                                                 + (char) MLLP_END_1 + (char) MLLP_END_2;
