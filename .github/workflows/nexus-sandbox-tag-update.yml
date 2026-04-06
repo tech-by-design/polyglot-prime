@@ -36,7 +36,7 @@ jobs:
           cd infrastructure-prime
 
           sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-hub.sandbox.techbd.org/.env
-          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-api.sandbox.interface.engine.techbd.org/.env
+          sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-ingestion-api-sbx/.env
           sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-fhir.sandbox.interface.engine.techbd.org/.env
           sed -i "s/TAG=.*/TAG=${{ github.ref_name }}/g" aws/nexus-csv.sandbox.interface.engine.techbd.org/.env
 
