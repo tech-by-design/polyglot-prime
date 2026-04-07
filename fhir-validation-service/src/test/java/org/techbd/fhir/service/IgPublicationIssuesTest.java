@@ -97,6 +97,24 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
         }
 
         @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse Part2 ExampleFile")
+        void testValidateShinnyIG_NYScreeningResponsePart2ExampleFile() throws IOException {
+                validateFile("shinny-examples/Bundle-NYScreeningResponseExamplePart2.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OWH ExampleFile")
+        void testValidateShinnyIG_NYScreeningResponseOMHExampleFile() throws IOException {
+                validateFile("shinny-examples/Bundle-NYScreeningResponseExampleOMH.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
+                validateFile("shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
+        }
+
+        @Test
         @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse ExampleFile")
         void testValidateTestShinnyIG_AHCHRSNScreeningResponseExampleFile() throws IOException {
                 validateFile("test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json");
@@ -169,19 +187,19 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
         }
 
         @Test
-        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse Part2 ExampleFile")
+        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse Part2 ExampleFile")
         void testValidateTestShinnyIG_NYScreeningResponsePart2ExampleFile() throws IOException {
                 validateFile("test-shinny-examples/Bundle-NYScreeningResponseExamplePart2.json");
         }
 
         @Test
-        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OWH ExampleFile")
+        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse OWH ExampleFile")
         void testValidateTestShinnyIG_NYScreeningResponseOMHExampleFile() throws IOException {
                 validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleOMH.json");
         }
 
         @Test
-        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
         void testValidateTestShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
                 validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
         }
