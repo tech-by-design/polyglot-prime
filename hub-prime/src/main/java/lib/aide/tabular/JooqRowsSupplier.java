@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -40,6 +42,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
     public record TypableTable(Table<?> table, boolean stronglyTyped) {
 
+        private static final Set<String> VALIDATED_TABLES = ConcurrentHashMap.newKeySet();
+
         static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
                 @Nonnull String tableLikeName) {
 
@@ -55,6 +59,33 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
                         : DSL.name(tableLikeName)), false);
             }
+        }
+
+        /**
+         * Validates that the table or view exists in the database.
+         *
+         * @param dsl        the DSLContext to use for the validation query
+         * @param schemaName the schema name (may be null for default schema)
+         * @throws IllegalArgumentException if the table/view does not exist
+         */
+        public void validateExists(DSLContext dsl, @Nullable String schemaName) {
+            final var tableName = table.getName();
+            final var cacheKey = (schemaName != null ? schemaName + "." : "") + tableName;
+            if (VALIDATED_TABLES.contains(cacheKey)) {
+                return;
+            }
+            var query = dsl.selectCount()
+                    .from(DSL.table(DSL.name("information_schema", "tables")))
+                    .where(DSL.field(DSL.name("table_name")).equalIgnoreCase(tableName));
+            if (schemaName != null) {
+                query = query.and(DSL.field(DSL.name("table_schema")).equalIgnoreCase(schemaName));
+            }
+            int count = query.fetchOne(0, int.class);
+            if (count == 0) {
+                throw new IllegalArgumentException(
+                        "Table or view '" + cacheKey + "' does not exist in the database.");
+            }
+            VALIDATED_TABLES.add(cacheKey);
         }
 
         public Field<Object> column(final String columnName) {
@@ -673,6 +704,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         private Logger logger;
         private Query customQuery;
         private List<Object> customBindValues;
+        private String schemaName;
 
         public Builder withRequest(final TabularRowsRequest request) {
             this.request = request;
@@ -686,6 +718,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         public Builder withTable(Class<?> tablesClass, @Nullable String schemaName, String tableLikeName) {
             this.table = TypableTable.fromTablesRegistry(tablesClass, schemaName, tableLikeName);
+            this.schemaName = schemaName;
             return this;
         }
 
@@ -716,6 +749,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 ArrayList<Object> bindValues) {
             TypableTable table = TypableTable.fromTablesRegistry(tablesClass, schema, tableLikeName);
             this.table = table;
+            this.schemaName = schema;
             this.customQuery = customQuery;
             if (bindValues.size() > 0) {
                 this.customBindValues = bindValues;
@@ -725,6 +759,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         }
 
         public JooqRowsSupplier build() {
+            if (dsl != null && table != null && !table.stronglyTyped()) {
+                table.validateExists(dsl, schemaName);
+            }
             return new JooqRowsSupplier(this);
         }
     }
