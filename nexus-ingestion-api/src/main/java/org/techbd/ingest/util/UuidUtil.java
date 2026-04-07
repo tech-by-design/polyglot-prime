@@ -1,6 +1,7 @@
 package org.techbd.ingest.util;
 
-import com.github.f4b6a3.uuid.UuidCreator;
+import com.fasterxml.uuid.Generators;
+
 
 public final class UuidUtil {
       private UuidUtil() {
@@ -13,7 +14,6 @@ public final class UuidUtil {
      * @return UUIDv7 string
      */
     public static String generateUuid() {
-        return UuidCreator.getTimeOrderedEpoch().toString();
-    }
+        return Generators.timeBasedEpochGenerator().generate().toString();    }
 
 }
