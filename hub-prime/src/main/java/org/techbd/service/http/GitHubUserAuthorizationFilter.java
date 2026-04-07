@@ -107,8 +107,10 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
 
         if (request.getRequestURI().startsWith("/actuator")) {
             Optional<AuthenticatedUser> userOptional = getAuthenticatedUser(request);
-            if (userOptional.isPresent()) {
-                if (!userOptional.get().ghUser.isUserHasActuatorAccess()) {
+
+            if (userOptional.isEmpty() || 
+                !userOptional.get().ghUser.isUserHasActuatorAccess()) {
+
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("text/plain"); // Ensure content type is set to text/plain
                     response.getWriter().write("GitHub ID " + userOptional.get().ghUser.gitHubId()
@@ -117,7 +119,6 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                             + " from your manager, to add roles to access actuator from this GitHub ID.");
                     response.flushBuffer();
                     return; // Stop further processing of the request
-                }
             }
         }
 
