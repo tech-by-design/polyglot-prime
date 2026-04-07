@@ -51,8 +51,8 @@ public class FhirReplayService {
         this.asyncTaskExecutor = asyncTaskExecutor;
     }
 
-    public Map<String, Object> replayBundles(HttpServletRequest request, String replayId, String startDate,
-            String endDate,String tenantId) {
+    public Map<String, Object> replayBundles(HttpServletRequest request, String replayId, OffsetDateTime startDate,
+            OffsetDateTime endDate,String tenantId) {
         LOG.info("FHIR-REPLAY Starting replayBundles for replayId={} | startDate={} | endDate={}",
                 replayId, startDate, endDate);
         final var jooqCfg = primaryDslContext.configuration();
@@ -264,8 +264,8 @@ public class FhirReplayService {
 
     private Map<String, Object> getBundlesToReplay(final org.jooq.Configuration jooqCfg,
             final String interactionId,
-            final String startDate,
-            final String endDate,String teanantId) {
+            final OffsetDateTime startDate,
+            final OffsetDateTime endDate,String teanantId) {
         LOG.info("FHIR-REPLAY Fetching bundles to replay for interactionId={} | startDate={} | endDate={}",
                 interactionId, startDate, endDate);
 
