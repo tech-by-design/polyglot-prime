@@ -1039,8 +1039,8 @@ public class FHIRService {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getFailedNyecSubmissionBundles(
-            final OffsetDateTime startDate,
-            final OffsetDateTime endDate,final String tenantId,boolean includeDetails) {
+            final String startDate,
+            final String endDate,final String tenantId,boolean includeDetails) {
 
         LOG.info("Fetching failed NYEC submission bundles | startDate={} | endDate={}",
                 startDate, endDate);

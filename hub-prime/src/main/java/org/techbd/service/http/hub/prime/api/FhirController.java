@@ -453,10 +453,10 @@ public class FhirController {
                         }
 
                         LOG.info("Fetching failed NYEC submissions from {} to {} for requestId {} | tenantId={}",
-                                        startDate, endDate, requestId, tenantId != null ? tenantId : "ALL");
+                                        startDateStr, endDateStr, requestId, tenantId != null ? tenantId : "ALL");
                         return fhirReplayService.getFailedNyecSubmissionBundles(
-                                        startDate,
-                                        endDate,tenantId,includeDetails);
+                                        startDateStr,
+                                        endDateStr,tenantId,includeDetails);
 
                 } catch (DateTimeParseException e) {
                         LOG.error("Invalid date-time format for startDate='{}' or endDate='{}' for requestId {}",

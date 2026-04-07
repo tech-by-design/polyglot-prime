@@ -51,8 +51,8 @@ public class FhirReplayService {
         this.asyncTaskExecutor = asyncTaskExecutor;
     }
 
-    public Map<String, Object> replayBundles(HttpServletRequest request, String replayId, OffsetDateTime startDate,
-            OffsetDateTime endDate,String tenantId) {
+    public Map<String, Object> replayBundles(HttpServletRequest request, String replayId, String startDate,
+            String endDate,String tenantId) {
         LOG.info("FHIR-REPLAY Starting replayBundles for replayId={} | startDate={} | endDate={}",
                 replayId, startDate, endDate);
         final var jooqCfg = primaryDslContext.configuration();
@@ -221,8 +221,8 @@ public class FhirReplayService {
      * @return Map containing bundle_count and list of failed bundles
      */
     public Map<String, Object> getFailedNyecSubmissionBundles(
-            final OffsetDateTime startDate,
-            final OffsetDateTime endDate,final String tenantId,boolean includeDetails) {
+            final String startDate,
+            final String endDate,final String tenantId,boolean includeDetails) {
 
         LOG.info("Fetching failed NYEC submission bundles | startDate={} | endDate={}",
                 startDate, endDate);
@@ -264,8 +264,8 @@ public class FhirReplayService {
 
     private Map<String, Object> getBundlesToReplay(final org.jooq.Configuration jooqCfg,
             final String interactionId,
-            final OffsetDateTime startDate,
-            final OffsetDateTime endDate,String teanantId) {
+            final String startDate,
+            final String endDate,String teanantId) {
         LOG.info("FHIR-REPLAY Fetching bundles to replay for interactionId={} | startDate={} | endDate={}",
                 interactionId, startDate, endDate);
 
