@@ -18,6 +18,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
+import org.techbd.corelib.util.UuidUtil;
 
 import jakarta.annotation.Nonnull;
 
@@ -204,7 +205,7 @@ public class VfsIngressConsumer {
     }
 
     public void drain(final FileObject egressRoot, final Optional<UUID> sessionIdOpt) {
-        sessionId = sessionIdOpt.orElse(UUID.randomUUID());
+        sessionId = sessionIdOpt.orElse(UUID.fromString(UuidUtil.generateUuid()));
         try {
             sessionHome = egressRoot.resolveFile(sessionId.toString());
             snapshotHome = sessionHome.resolveFile("ingress");

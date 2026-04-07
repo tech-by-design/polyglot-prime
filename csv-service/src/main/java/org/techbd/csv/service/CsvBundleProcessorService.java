@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -33,6 +32,7 @@ import org.techbd.corelib.service.dataledger.DataLedgerApiClient.DataLedgerPaylo
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.TemplateLogger;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.csv.config.AppConfig;
 import org.techbd.csv.config.Nature;
 import org.techbd.csv.converters.CsvToFhirConverter;
@@ -411,7 +411,7 @@ private List<Object> processScreening(final String groupKey,
         final AtomicInteger errorCount = new AtomicInteger();
         screeningProfileData.forEach((encounterId, profileList) -> {
             for (final ScreeningProfileData profile : profileList) {
-                final String interactionId = UUID.randomUUID().toString();
+                final String interactionId = UuidUtil.generateUuid();
                 String bundle = null;
                 try {
                     final List<DemographicData> demographicList = demographicData.getOrDefault(

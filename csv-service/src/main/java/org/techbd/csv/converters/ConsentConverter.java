@@ -3,7 +3,6 @@ package org.techbd.csv.converters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -27,6 +26,7 @@ import org.techbd.csv.model.ScreeningObservationData;
 import org.techbd.csv.model.ScreeningProfileData;
 import org.techbd.csv.service.CodeLookupService;
 import org.techbd.corelib.util.DateUtil;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.csv.util.CsvConstants;
 import org.techbd.csv.util.CsvConversionUtil;
 import io.micrometer.common.util.StringUtils;
@@ -81,7 +81,7 @@ public class ConsentConverter extends BaseConverter {
         Consent consent = new Consent();
         setMeta(consent, baseFHIRUrl);
 
-        consent.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
+        consent.setId(CsvConversionUtil.sha256(UuidUtil.generateUuid()));
 
         Meta meta = consent.getMeta();
         

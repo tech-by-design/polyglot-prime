@@ -250,17 +250,85 @@ $function$;
 ******************************************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(timestamptz, timestamptz, text, boolean);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_nyec_submission_failed_bundles(text, text, text, bool);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_nyec_submission_failed_bundles(
-    p_start_time timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-    p_end_time timestamp with time zone DEFAULT NULL::timestamp with time ZONE, 
-    p_tenant_id text DEFAULT NULL::text,
-    p_includeDetails boolean DEFAULT false)
+    p_start_time text DEFAULT NULL,
+    p_end_time text DEFAULT NULL,
+    p_tenant_id text DEFAULT NULL,
+    p_includedetails boolean DEFAULT false
+)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
 DECLARE
     v_return jsonb := '{}'::jsonb;
-BEGIN 
+
+    -- Internal timestamp variables used for filtering
+    v_start_time timestamp with time zone;
+    v_end_time timestamp with time zone;
+
+    -- Flags to identify date-only input
+    v_start_is_date_only boolean := false;
+    v_end_is_date_only boolean := false;
+BEGIN
+    --------------------------------------------------------------------
+    -- Validate and convert p_start_time
+    --------------------------------------------------------------------
+    IF p_start_time IS NOT NULL THEN
+	    BEGIN
+	        IF p_start_time ~ '^\d{4}-\d{2}-\d{2}$' THEN
+	            v_start_is_date_only := true;
+	            v_start_time := p_start_time::date::timestamp with time zone;
+	        ELSE
+	            v_start_time := p_start_time::timestamp with time zone;
+	        END IF;
+	    EXCEPTION
+	        WHEN others THEN
+	            RETURN jsonb_build_object(
+	                'bundle_count', 0,
+	                'startDate', p_start_time,
+	                'endDate', p_end_time,
+	                'error',
+	                    format(
+	                        'Invalid p_start_time format: %s. Expected YYYY-MM-DD or valid timestamp.',
+	                        p_start_time
+	                    )
+	            );
+	    END;
+	END IF;
+
+    --------------------------------------------------------------------
+    -- Validate and convert p_end_time
+    --------------------------------------------------------------------
+	IF p_end_time IS NOT NULL THEN
+	    BEGIN
+	        IF p_end_time ~ '^\d{4}-\d{2}-\d{2}$' THEN
+	            v_end_is_date_only := true;
+	
+	            -- Move to next day start for full-day inclusion
+	            v_end_time := (p_end_time::date + INTERVAL '1 day')::timestamp with time zone;
+	        ELSE
+	            v_end_time := p_end_time::timestamp with time zone;
+	        END IF;
+	
+	    EXCEPTION
+	        WHEN others THEN
+	            RETURN jsonb_build_object(
+	                'bundle_count', 0,
+	                'startDate', p_start_time,
+	                'endDate', p_end_time,
+	                'error',
+	                    format(
+	                        'Invalid p_end_time format: %s. Expected YYYY-MM-DD or valid timestamp.',
+	                        p_end_time
+	                    )
+	            );
+	    END;
+	END IF;
+
+    --------------------------------------------------------------------
+    -- Main query
+    --------------------------------------------------------------------
     WITH prioritized_json AS (
         SELECT
             rq.bundle_id,
@@ -273,9 +341,9 @@ BEGIN
             rd.replay_status,
             rd.error_message AS rd_error_message,
             rq.error_message AS rq_error_message,
-			rq.created_at,
-			rq.nature,
-			COALESCE(rq.replay_on, rq.created_at) AS submissionAttemptedDate,
+            rq.created_at,
+            rq.nature,
+            COALESCE(rq.replay_on, rq.created_at) AS submissionAttemptedDate,
             CASE 
                 WHEN rq.nature = 'Forwarded HTTP Response Replay Error' THEN 2
                 WHEN rq.nature = 'Forwarded HTTP Response Error' THEN 1
@@ -288,53 +356,89 @@ BEGIN
         WHERE rq.to_state = 'FAIL'
           AND rq.bundle_id IS NOT NULL
           AND (
-		        -- Case 1: Replay Error FAIL (always included)
-		        (rq.nature = 'Forwarded HTTP Response Replay Error')
-		
-		        -- Case 2: Response Error FAIL (only if no Replay FAIL or COMPLETE exists)
-		        OR (
-		            rq.nature = 'Forwarded HTTP Response Error'
-		            AND NOT EXISTS (
-		                SELECT 1
-		                FROM techbd_udi_ingress.sat_interaction_fhir_request sub
-		                WHERE sub.bundle_id = rq.bundle_id
-						  AND sub.hub_interaction_id = rq.hub_interaction_id
-		                  AND sub.nature IN ('Forwarded HTTP Response Replay', 'Forwarded HTTP Response Replay Error')
-		            )		            
-		        )
-		     )
-		 -- Apply date filter
-         AND (rq.created_at >= p_start_time AND rq.created_at <= p_end_time)
-		 -- Apply tenant_id filter
-         AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
+                -- Case 1: Replay Error FAIL (always included)
+                rq.nature = 'Forwarded HTTP Response Replay Error'
+
+                -- Case 2: Response Error FAIL
+                OR (
+                    rq.nature = 'Forwarded HTTP Response Error'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM techbd_udi_ingress.sat_interaction_fhir_request sub
+                        WHERE sub.bundle_id = rq.bundle_id
+                          AND sub.hub_interaction_id = rq.hub_interaction_id
+                          AND sub.nature IN (
+                              'Forwarded HTTP Response Replay',
+                              'Forwarded HTTP Response Replay Error'
+                          )
+                    )
+                )
+            )
+
+          -- Apply date filter
+          AND (
+                (v_start_time IS NULL OR rq.created_at >= v_start_time)
+                AND
+                (
+                    v_end_time IS NULL
+                    OR (
+                        v_end_is_date_only = true
+                        AND rq.created_at < v_end_time
+                    )
+                    OR (
+                        v_end_is_date_only = false
+                        AND rq.created_at <= v_end_time
+                    )
+                )
+            )
+
+          -- Apply tenant filter
+          AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
     )
+
     SELECT jsonb_build_object(
         'bundle_count', COUNT(bundle_id),
-		'startDate', p_start_time,
+        'startDate', p_start_time,
         'endDate', p_end_time,
-        'bundles', jsonb_agg(
-			CASE
-	            WHEN p_includeDetails THEN
-		            jsonb_build_object(
-		                'bundleid', bundle_id,
-						'created_at', created_at,
-						'nature', nature,
-		                'interactionid', hub_interaction_id,
-		                'tenantID', tenant_id,
-		                'source', source_type,
-		                'uri', uri,
-		                'errorMessage', COALESCE(rd_error_message::text, ''),
-		                'groupInteractionId', CASE WHEN source_type = 'CSV' THEN group_hub_interaction_id ELSE NULL END,
-		                'zipInteractionID', CASE WHEN source_type = 'CSV' THEN source_hub_interaction_id ELSE NULL END,
-		                'submissionAttemptedDate', submissionAttemptedDate,
-		                'submissionFailedReason', COALESCE(rd_error_message::text, rq_error_message::text, '')
-		            )
-				ELSE
-	                jsonb_build_object(
-	                    'bundleid', bundle_id,
-	                    'interactionid', hub_interaction_id
-	                )
-        	END
+        'bundles',
+        jsonb_agg(
+            CASE
+                WHEN p_includedetails THEN
+                    jsonb_build_object(
+                        'bundleid', bundle_id,
+                        'created_at', created_at,
+                        'nature', nature,
+                        'interactionid', hub_interaction_id,
+                        'tenantID', tenant_id,
+                        'source', source_type,
+                        'uri', uri,
+                        'errorMessage', COALESCE(rd_error_message::text, ''),
+                        'groupInteractionId',
+                            CASE
+                                WHEN source_type = 'CSV'
+                                THEN group_hub_interaction_id
+                                ELSE NULL
+                            END,
+                        'zipInteractionID',
+                            CASE
+                                WHEN source_type = 'CSV'
+                                THEN source_hub_interaction_id
+                                ELSE NULL
+                            END,
+                        'submissionAttemptedDate', submissionAttemptedDate,
+                        'submissionFailedReason',
+                            COALESCE(
+                                rd_error_message::text,
+                                rq_error_message::text,
+                                ''
+                            )
+                    )
+                ELSE
+                    jsonb_build_object(
+                        'bundleid', bundle_id,
+                        'interactionid', hub_interaction_id
+                    )
+            END
         )
     )
     INTO v_return
@@ -345,25 +449,27 @@ BEGIN
         ORDER BY bundle_id, hub_interaction_id, priority DESC
     ) final_json;
 
-    RETURN 
-	    CASE 
-	        WHEN (v_return->>'bundle_count')::int > 0 THEN
-	            v_return
-	        ELSE
-	            jsonb_build_object(
-	                'bundle_count', 0,
-	                'startDate', p_start_time,
-	                'endDate', p_end_time,
-	                'bundles',
-	                jsonb_build_array(
-	                    format(
-	                        'No failed NYEC submission bundles found in the specified date range: %s to %s.',
-	                        p_start_time,
-	                        p_end_time
-	                    )
-	                )
-	            )
-	    END;
+    --------------------------------------------------------------------
+    -- Return response
+    --------------------------------------------------------------------
+    RETURN CASE
+        WHEN COALESCE((v_return->>'bundle_count')::int, 0) > 0 THEN
+            v_return
+        ELSE
+            jsonb_build_object(
+                'bundle_count', 0,
+                'startDate', p_start_time,
+                'endDate', p_end_time,
+                'bundles',
+                jsonb_build_array(
+                    format(
+                        'No failed NYEC submission bundles found in the specified date range: %s to %s.',
+                        p_start_time,
+                        p_end_time
+                    )
+                )
+            )
+    END;
 END;
 $function$
 ;

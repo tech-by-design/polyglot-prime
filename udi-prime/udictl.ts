@@ -388,7 +388,7 @@ const CLI = new Command()
           "../nexus-core-lib/lib",
           "../csv-service/lib",
           "../fhir-validation-service/lib",
-          "../core-lib/lib"
+          "../hub-core-lib/lib"
         ];
 
         const targetDirs = options.targets

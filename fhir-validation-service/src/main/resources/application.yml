@@ -50,6 +50,18 @@ org:
           uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
     baseFHIRURL: ${TECHBD_BASE_FHIR_URL} #This is the default FHIR url used in generating FHIR from CSV
     validation-severity-level: error  # Possible values: fatal, error, warning, information
+    structureDefinitionsUrls:
+      bundle: /StructureDefinition/SHINNYBundleProfile
+      patient: /StructureDefinition/shinny-patient
+      consent: /StructureDefinition/shinny-Consent
+      encounter: /StructureDefinition/shinny-encounter
+      organization: /StructureDefinition/shin-ny-organization
+      observation: /StructureDefinition/shinny-observation-screening-response
+      questionnaire: /StructureDefinition/shinny-questionnaire
+      practitioner: /StructureDefinition/shin-ny-practitioner
+      questionnaireResponse: /StructureDefinition/shinny-questionnaire
+      observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+      procedure: /StructureDefinition/shinny-sdoh-procedure
     operationOutcomeHelpUrl: "https://techbd.org/get-help/"
     dataLedgerApiUrl: ${TECHBD_DATA_LEDGER_API_URL}
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key

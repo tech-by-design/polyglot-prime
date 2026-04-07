@@ -33,6 +33,19 @@ org:
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
     dataLedgerTracking: ${TECHBD_DATA_LEDGER_TRACKING_ENABLED:false}
     dataLedgerDiagnostics: ${TECHBD_DATA_LEDGER_DIAGNOSTICS_ENABLED:true}
+    validation-severity-level: error  # Possible values: fatal, error, warning, information
+    structureDefinitionsUrls:
+      bundle: /StructureDefinition/SHINNYBundleProfile
+      patient: /StructureDefinition/shinny-patient
+      consent: /StructureDefinition/shinny-Consent
+      encounter: /StructureDefinition/shinny-encounter
+      organization: /StructureDefinition/shin-ny-organization
+      observation: /StructureDefinition/shinny-observation-screening-response
+      questionnaire: /StructureDefinition/shinny-questionnaire
+      practitioner: /StructureDefinition/shin-ny-practitioner
+      questionnaireResponse: /StructureDefinition/shinny-questionnaire
+      observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+      procedure: /StructureDefinition/shinny-sdoh-procedure
 spring:
   servlet:
     multipart:

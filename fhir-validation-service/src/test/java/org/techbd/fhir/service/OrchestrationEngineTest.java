@@ -7,13 +7,13 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -21,7 +21,7 @@ import ca.uhn.fhir.parser.IParser;
 
 @ExtendWith(MockitoExtension.class)
 class OrchestrationEngineTest extends BaseIgValidationTest {
-        private static final String INTERACTION_ID = UUID.randomUUID().toString();  
+        private static final String INTERACTION_ID = UuidUtil.generateUuid();  
 
         @Test
         void testOrchestrateSingleSession() {
@@ -30,7 +30,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 try {
                         realSession = engine.session()
                                         .withPayloads(List.of(payload))
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
@@ -65,13 +65,13 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         realSession = engine.session()
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
                         realSession2 = engine.session()
                                         .withPayloads(List.of(payload2))
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
@@ -98,7 +98,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         session1 = engine.session()
                                         .withPayloads(List.of("payload1"))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
@@ -106,7 +106,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         session2 = engine.session()
                                         .withPayloads(List.of("payload2"))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
@@ -133,7 +133,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         realSession = engine.session()
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
@@ -163,7 +163,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         realSession = engine.session()
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
@@ -202,7 +202,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                         realSession = engine.session()
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .withInteractionId(INTERACTION_ID)
                                         .addHapiValidationEngine()
                                         .build();
@@ -235,7 +235,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .addHapiValidationEngine()
                                         .build();
                         engine.orchestrate(realSession);
@@ -273,7 +273,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .addHapiValidationEngine()
                                         .build();
                         engine.orchestrate(realSession);
@@ -312,7 +312,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withSessionId(UUID.randomUUID().toString())
+                                        .withSessionId(UuidUtil.generateUuid())
                                         .addHapiValidationEngine()
                                         .build();
                         engine.orchestrate(realSession);

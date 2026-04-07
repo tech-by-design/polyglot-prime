@@ -1,4 +1,4 @@
-package org.techbd.ingest.util;
+package org.techbd.corelib.util;
 
 import com.fasterxml.uuid.Generators;
 
