@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -162,7 +161,7 @@ public class CoreFHIRUtil {
         requestDetails.put(Constants.FULL_URL, request.getRequestURL()
                 .append(request.getQueryString() != null ? "?" + request.getQueryString() : "").toString());
         requestDetails.put(Constants.URI, request.getRequestURI());
-        requestDetails.put(Constants.REQUEST_ID, UUID.randomUUID().toString());
+        requestDetails.put(Constants.REQUEST_ID, UuidUtil.generateUuid());
         requestDetails.put(Constants.REQUEST_SESSION_ID, request.getSession().getId());
         requestDetails.put(Constants.REMOTE_ADDR, request.getRemoteAddr());
         requestDetails.put(Constants.REMOTE_HOST, request.getRemoteHost());

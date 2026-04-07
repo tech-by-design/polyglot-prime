@@ -39,6 +39,7 @@ import org.techbd.corelib.config.Constants;
 import org.techbd.corelib.config.Helpers;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
 import org.techbd.corelib.util.CoreFHIRUtil;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.service.FHIRService;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
@@ -168,7 +169,7 @@ public class FhirController {
                         if (interactionId != null && !interactionId.trim().isEmpty()) {
                             requestDetailsMap.put(Constants.INTERACTION_ID, interactionId.trim());
                         } else {
-                            requestDetailsMap.put(Constants.INTERACTION_ID, UUID.randomUUID().toString());
+                            requestDetailsMap.put(Constants.INTERACTION_ID,UuidUtil.generateUuid());
                         }                                        
                         requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
                         requestDetailsMap.put(Constants.ELABORATION, elaboration);
@@ -258,7 +259,7 @@ public class FhirController {
                         @RequestHeader(value = "X-TechBD-IncludeDetails", required = false) boolean includeDetails,
                         HttpServletRequest request) {
 
-                UUID requestId = UUID.randomUUID();
+                UUID requestId = UUID.fromString(UuidUtil.generateUuid());
 
                 try {
                         if (startDateStr.equals(endDateStr)) {
@@ -320,7 +321,7 @@ public class FhirController {
                         @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,
                         HttpServletRequest request) {
 
-                UUID requestId = UUID.randomUUID();
+                UUID requestId = UUID.fromString(UuidUtil.generateUuid());
                 if (tenantId == null || tenantId.isBlank()) {
                         throw new IllegalArgumentException(
                                         "Invalid request. TenantId is required.");

@@ -11,7 +11,6 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.techbd.csv.model.CsvProcessingMetrics.CsvProcessingMetricsBuilder;
 import org.jooq.DSLContext;
@@ -32,6 +31,7 @@ import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.CoreFHIRUtil;
 import org.techbd.corelib.util.SystemDiagnosticsLogger;
 import org.techbd.corelib.util.TemplateLogger;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.csv.config.AppConfig;
 import org.techbd.csv.config.CsvProcessingState;
 import org.techbd.csv.config.Nature;
@@ -107,7 +107,7 @@ public class CsvService {
             saveIncomingFileToInboundFolder(file, zipFileInteractionId);         
             session = engine.session()
                     .withMasterInteractionId(zipFileInteractionId)
-                    .withSessionId(UUID.randomUUID().toString())
+                    .withSessionId(UuidUtil.generateUuid())
                     .withTenantId((String) requestParameters.get(Constants.TENANT_ID))
                     .withFile(file)
                     .withRequestParameters(requestParameters)
@@ -234,7 +234,7 @@ public class CsvService {
                 : (String) requestParameters.get(Constants.USER_NAME));
         rihr.setPUserId(null == requestParameters.get(Constants.USER_ID) ? Constants.DEFAULT_USER_ID
                 : (String) requestParameters.get(Constants.USER_ID));
-        rihr.setPUserSession(UUID.randomUUID().toString());
+        rihr.setPUserSession(UuidUtil.generateUuid());
         rihr.setPUserRole(null == requestParameters.get(Constants.USER_ROLE) ? Constants.DEFAULT_USER_ROLE
                 : (String) requestParameters.get(Constants.USER_ROLE));
     }
@@ -273,7 +273,7 @@ public class CsvService {
                     CsvProcessingState.PROCESSING_INPROGRESS, requestParams,null);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
-                    .withSessionId(UUID.randomUUID().toString())
+                    .withSessionId(UuidUtil.generateUuid())
                     .withTenantId(tenantId)
                     .withGenerateBundle(true)
                     .withFile(file)
@@ -335,7 +335,7 @@ public class CsvService {
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
-                        .withSessionId(UUID.randomUUID().toString())
+                        .withSessionId(UuidUtil.generateUuid())
                         .withTenantId(tenantId)
                         .withGenerateBundle(true)
                         .withFile(file)

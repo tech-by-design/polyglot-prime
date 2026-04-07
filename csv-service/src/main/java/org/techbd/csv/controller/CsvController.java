@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.corelib.config.Configuration;
 import org.techbd.corelib.util.CoreFHIRUtil;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.csv.config.AppConfig;
 import org.techbd.csv.config.Constants;
 import org.techbd.csv.service.CsvService;
@@ -80,7 +80,7 @@ public class CsvController {
         null,null);   
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
+    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID,UuidUtil.generateUuid());
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     Map<String, Object> responseParameters = new HashMap<>();
     requestDetailsMap.putAll(headerParameters);
@@ -115,7 +115,7 @@ public class CsvController {
         null,null);    
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
+    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UuidUtil.generateUuid());
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     if (validationSeverityLevel != null) {

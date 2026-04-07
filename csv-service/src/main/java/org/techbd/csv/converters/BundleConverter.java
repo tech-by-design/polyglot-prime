@@ -2,8 +2,6 @@ package org.techbd.csv.converters;
 
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
-
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Coding;
@@ -16,6 +14,7 @@ import org.techbd.csv.model.DemographicData;
 import org.techbd.csv.model.ScreeningProfileData;
 import org.techbd.csv.util.CsvConversionUtil;
 import org.techbd.corelib.util.CoreFHIRUtil;
+import org.techbd.corelib.util.UuidUtil;
 
 import io.micrometer.common.util.StringUtils;
 
@@ -37,7 +36,7 @@ public class BundleConverter {
      */
     public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl, ScreeningProfileData screeningProfileData) {
         Bundle bundle = new Bundle();
-        bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
+        bundle.setId(CsvConversionUtil.sha256(UuidUtil.generateUuid()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());

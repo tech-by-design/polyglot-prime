@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
 import org.techbd.fhir.service.engine.OrchestrationEngine.ValidationResult;
 
@@ -220,7 +221,7 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                                 "src/test/resources/org/techbd/ig-examples/" + exampleFileName));
                 OrchestrationEngine.OrchestrationSession session = engine.session()
                                 .withPayloads(List.of(payload))
-                                .withSessionId(UUID.randomUUID().toString())
+                                .withSessionId(UuidUtil.generateUuid())
                                 .withTracer(tracer)
                                 .addHapiValidationEngine()
                                 .build();

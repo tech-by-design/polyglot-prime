@@ -34,6 +34,7 @@ import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
+import org.techbd.corelib.util.UuidUtil;
 import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.config.Constants;
 import org.techbd.fhir.exceptions.ErrorCode;
@@ -320,7 +321,7 @@ public class FHIRService {
 			}
 			prepareRequestBase(
 					rihr,
-					interactionId != null ? interactionId : UUID.randomUUID().toString(),
+					interactionId != null ? interactionId : UuidUtil.generateUuid(),
 					groupInteractionId,
 					masterInteractionId,
 					sourceType,
@@ -440,7 +441,7 @@ public class FHIRService {
 				: (String) requestParameters.get(Constants.USER_NAME));
 		rihr.setPUserId(null == requestParameters.get(Constants.USER_ID) ? Constants.DEFAULT_USER_ID
 				: (String) requestParameters.get(Constants.USER_ID));
-		rihr.setPUserSession(UUID.randomUUID().toString());
+		rihr.setPUserSession(UuidUtil.generateUuid());
 		rihr.setPUserRole(null == requestParameters.get(Constants.USER_ROLE) ? Constants.DEFAULT_USER_ROLE
 				: (String) requestParameters.get(Constants.USER_ROLE));
 	}
@@ -455,7 +456,7 @@ public class FHIRService {
             var requestedIgVersion = (String) requestParameters.get(Constants.SHIN_NY_IG_VERSION);
             LOG.info("headerIgVersion : "+ requestedIgVersion);
 			final var sessionBuilder = engine.session()
-					.withSessionId(UUID.randomUUID().toString())
+					.withSessionId(UuidUtil.generateUuid())
 					.onDevice(Device.createDefault())
 					.withInteractionId(interactionId)
 					.withPayloads(List.of(payload))
