@@ -218,8 +218,21 @@ public class SwaggerConfig {
                                     .addParametersItem(new Parameter()
                                             .name("X-TechBD-Part2")
                                             .description(
-                                                    "The `Bundle.meta.security` element is added to the FHIR Bundle only if the request header variable `X-TechBD-Part2` is set to `True`.\n" +
-                                                    "The `meta.security` element will not be added to the Bundle if the header variable is missing, or the value in the header variable is NULL, or the value is not set to `True`.")
+                                                    "If the request header variable `X-TechBD-Part2` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `ETH`.")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-OMH")
+                                            .description(
+                                                    "If the request header variable `X-TechBD-OMH` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `MH`.")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-OPWDD")
+                                            .description(
+                                                    "If the request header variable `X-TechBD-OPWDD` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `DVD`.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
@@ -340,8 +353,21 @@ public class SwaggerConfig {
                                     .addParametersItem(new Parameter()
                                             .name("X-TechBD-Part2")
                                             .description(
-                                                    "The `Bundle.meta.security` element is added to the FHIR Bundle only if the request header variable `X-TechBD-Part2` is set to `True`.\n" +
-                                                    "The `meta.security` element will not be added to the Bundle if the header variable is missing, or the value in the header variable is NULL, or the value is not set to `True`.")
+                                                    "If the request header variable `X-TechBD-Part2` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `ETH`.")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-OMH")
+                                            .description(
+                                                    "If the request header variable `X-TechBD-OMH` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `MH`.")
+                                            .required(false)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-OPWDD")
+                                            .description(
+                                                    "If the request header variable `X-TechBD-OPWDD` is set to `True`, it will be mapped to `Bundle.meta.security` with the code `DVD`.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
