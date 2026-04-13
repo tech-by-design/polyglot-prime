@@ -47,7 +47,6 @@ public class SecurityConfig {
                         // Feature toggle endpoints - allow all methods
                         .requestMatchers("/api/features/**").permitAll()
                         .requestMatchers("/feature").permitAll()
-                        .requestMatchers("/core-lib/features/**").permitAll()
                         .anyRequest().denyAll())
                         // Replace the default 403 with 404 for unmatched / denied routes
                         .exceptionHandling(ex -> ex

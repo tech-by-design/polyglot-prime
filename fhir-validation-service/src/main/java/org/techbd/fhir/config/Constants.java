@@ -98,4 +98,6 @@ public interface Constants {
     public static final String SESSION = "session";
     public static final String COOKIES = "cookies";
     public static final String TECHBD_VERSION = "techBdVersion";
+    public static final String DATA_LEDGER_TRACKING = "dataLedgerTracking";
+    public static final String DATA_LEDGER_DIAGNOSTICS = "dataLedgerDiagnostics";
 }
