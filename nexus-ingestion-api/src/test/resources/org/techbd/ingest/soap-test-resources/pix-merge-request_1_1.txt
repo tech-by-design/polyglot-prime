@@ -1,0 +1,101 @@
+<!-- 
+  SOAP 1.2 Envelope namespace is used here.
+  xmlns:v3 refers to the HL7 v3 XML namespace.
+  xmlns:wsa is for WS-Addressing headers.
+-->
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                   xmlns:v3="urn:hl7-org:v3"
+                   xmlns:wsa="http://www.w3.org/2005/08/addressing">
+
+   <!-- WS-Addressing Header -->
+   <SOAP-ENV:Header>
+      <wsa:MessageID>urn:uuid:223e4567-e89b-12d3-a456-426614174999</wsa:MessageID>
+      <wsa:Action>urn:hl7-org:v3:PRPA_IN201304UV02</wsa:Action>
+   </SOAP-ENV:Header>
+
+   <SOAP-ENV:Body>
+
+      <!-- HL7 v3 interaction: Patient Registry Record Merge Request -->
+      <v3:PRPA_IN201304UV02 ITSVersion="XML_1.0">
+
+         <!-- Message ID -->
+         <v3:id root="2.16.840.1.113883.3.72.5.9.1" extension="MERGE-12345"/>
+
+         <!-- Timestamp -->
+         <v3:creationTime value="20250805164500"/>
+
+         <!-- Interaction ID -->
+         <v3:interactionId root="2.16.840.1.113883.1.6" extension="PRPA_IN201304UV02"/>
+
+         <!-- Processing and acknowledgment codes -->
+         <v3:processingCode code="T"/>
+         <v3:processingModeCode code="T"/>
+         <v3:acceptAckCode code="AL"/>
+
+         <!-- Sender -->
+         <v3:sender typeCode="SND">
+            <v3:device classCode="DEV" determinerCode="INSTANCE">
+               <v3:id root="1.2.3.4.5"/>
+            </v3:device>
+         </v3:sender>
+
+         <!-- Receiver -->
+         <v3:receiver typeCode="RCV">
+            <v3:device classCode="DEV" determinerCode="INSTANCE">
+               <v3:id root="9.8.7.6.5.4.3.2.1"/>
+            </v3:device>
+         </v3:receiver>
+
+         <!-- Control Act Process for merge -->
+         <v3:controlActProcess classCode="CACT" moodCode="EVN">
+            <v3:code code="PRPA_TE201304UV02" codeSystem="2.16.840.1.113883.1.6"/>
+
+            <!-- Subject contains the merge event -->
+            <v3:subject typeCode="SUBJ">
+               <v3:registrationEvent classCode="REG" moodCode="EVN">
+                  <v3:statusCode code="active"/>
+
+                  <v3:subject1>
+                     <v3:patient classCode="PAT">
+                        <!-- This is the surviving patient record -->
+                        <v3:id root="2.25.123456789" extension="PATIENT-SURVIVOR-001"/>
+                        <v3:statusCode code="active"/>
+                        <v3:patientPerson>
+                           <v3:name>
+                              <v3:given>Jane</v3:given>
+                              <v3:family>Doe</v3:family>
+                           </v3:name>
+                           <v3:administrativeGenderCode code="F" codeSystem="2.16.840.1.113883.5.1"/>
+                           <v3:birthTime value="19851212"/>
+                        </v3:patientPerson>
+                     </v3:patient>
+                  </v3:subject1>
+
+                  <!-- ReplacementOf indicates the record being merged/deprecated -->
+                  <v3:replacementOf typeCode="RPLC">
+                     <v3:priorRegistration>
+                        <v3:statusCode code="obsolete"/>
+                        <v3:subject1>
+                           <v3:patient>
+                              <!-- This is the obsolete/old patient record -->
+                              <v3:id root="2.25.987654321" extension="PATIENT-OLD-002"/>
+                           </v3:patient>
+                        </v3:subject1>
+                     </v3:priorRegistration>
+                  </v3:replacementOf>
+
+                  <!-- Custodian organization -->
+                  <v3:custodian>
+                     <v3:assignedEntity>
+                        <v3:id root="2.16.840.1.113883.3.72.5.9.10"/>
+                     </v3:assignedEntity>
+                  </v3:custodian>
+
+               </v3:registrationEvent>
+            </v3:subject>
+         </v3:controlActProcess>
+
+      </v3:PRPA_IN201304UV02>
+
+   </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

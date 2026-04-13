@@ -1,0 +1,27 @@
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope"
+                  xmlns:xdsb="urn:ihe:iti:xds-b:2007"
+                  xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0"
+                  xmlns:xop="http://www.w3.org/2004/08/xop/include"
+                  xmlns:wsa="http://www.w3.org/2005/08/addressing">
+  <soapenv:Header>
+    <wsa:MessageID>urn:uuid:12345678-90ab-cdef-1234-567890abcdef</wsa:MessageID>
+    <wsa:Action>urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b</wsa:Action>
+    <wsa:To>http://your-server-endpoint-url</wsa:To>
+  </soapenv:Header>
+  <soapenv:Body>
+    <xdsb:ProvideAndRegisterDocumentSetRequest>
+      <xdsb:SubmitObjectsRequest>
+        <rim:RegistryObjectList>
+          <rim:ExtrinsicObject id="Document01" mimeType="text/xml" objectType="urn:ihe:iti:2007:Document">
+            <rim:Name>
+              <rim:LocalizedString value="Test Document"/>
+            </rim:Name>
+          </rim:ExtrinsicObject>
+        </rim:RegistryObjectList>
+      </xdsb:SubmitObjectsRequest>
+      <xdsb:Document id="Document01">
+        <xop:Include href="cid:testdocument@domain.com"/>
+      </xdsb:Document>
+    </xdsb:ProvideAndRegisterDocumentSetRequest>
+  </soapenv:Body>
+</soapenv:Envelope>

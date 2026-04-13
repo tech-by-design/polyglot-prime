@@ -27,7 +27,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 /**
- * Singleton Spring Boot component to load port configuration from AWS S3 or local JSON (for sandbox).
+ * Singleton Spring Boot component to load port configuration from AWS S3 or
+ * local JSON (for sandbox).
  */
 @Component
 public class PortConfig implements InitializingBean {
@@ -37,6 +38,9 @@ public class PortConfig implements InitializingBean {
     private static final String ENV_KEY = "PORT_CONFIG_S3_KEY";
     private static final String ENV_REGION = "AWS_REGION";
     private static final String ENV_PROFILE = "SPRING_PROFILES_ACTIVE";
+
+    @Autowired
+    private org.springframework.core.env.Environment environment;
 
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private List<PortEntry> portConfigurationList = Collections.emptyList();
@@ -80,21 +84,22 @@ public class PortConfig implements InitializingBean {
     }
 
     public synchronized void loadConfig() {
-        if (loaded.get()) return;
+        if (loaded.get())
+            return;
 
-        String activeProfile = System.getenv(ENV_PROFILE);
+        String activeProfile = getProperty(ENV_PROFILE);
         if ("sandbox".equalsIgnoreCase(activeProfile)) {
             log.info("PortConfig: Sandbox profile detected - loading configuration from local file.");
             loadConfigFromLocal();
             return;
         }
 
-        String bucket = System.getenv(ENV_BUCKET);
-        String key = System.getenv(ENV_KEY);
-        String region = System.getenv(ENV_REGION) != null ? System.getenv(ENV_REGION) : "us-east-1";
+        String bucket = getProperty(ENV_BUCKET);
+        String key = getProperty(ENV_KEY);
+        String region = getProperty(ENV_REGION) != null ? getProperty(ENV_REGION) : "us-east-1";
 
         if (bucket == null || key == null) {
-            log.error("PortConfig: Missing required environment variables {} or {}", ENV_BUCKET, ENV_KEY);
+            log.error("PortConfig: Missing required properties {} or {}", ENV_BUCKET, ENV_KEY);
             return;
         }
 
@@ -117,6 +122,16 @@ public class PortConfig implements InitializingBean {
         } catch (Exception e) {
             log.error("PortConfig: Unexpected error while loading from S3", e);
         }
+    }
+
+    private String getProperty(String key) {
+        String value = System.getenv(key);
+
+        if (value == null || value.isBlank()) {
+            value = environment.getProperty(key); // added for junits as junits have access to environment only
+        }
+
+        return value;
     }
 
     /**
@@ -147,7 +162,8 @@ public class PortConfig implements InitializingBean {
     private void parseAndSetConfig(String rawJson) throws IOException {
         var mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        var configList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {});
+        var configList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
+        });
         portConfigurationList = Optional.ofNullable(configList).orElse(Collections.emptyList());
 
         var mports = portConfigurationList.stream()
@@ -167,20 +183,31 @@ public class PortConfig implements InitializingBean {
     }
 
     public List<PortEntry> getPortConfigurationList() {
-        if (!isLoaded()) loadConfig();
+        if (!isLoaded())
+            loadConfig();
         return portConfigurationList;
     }
 
     public List<Integer> getMllpPorts() {
-        if (!isLoaded()) loadConfig();
+        if (!isLoaded())
+            loadConfig();
         return mllpPorts != null ? mllpPorts : Collections.emptyList();
     }
 
     public Optional<PortEntry> findEntryForPort(int port) {
-        if (!isLoaded()) loadConfig();
+        if (!isLoaded())
+            loadConfig();
         return portConfigurationList.stream()
                 .filter(Objects::nonNull)
                 .filter(p -> p.port == port)
                 .findFirst();
+    }
+
+    /**
+     * Resets the loaded state and forces a fresh reload of the configuration.
+     */
+    public synchronized void reloadConfig() {
+        loaded.set(false);
+        loadConfig();
     }
 }

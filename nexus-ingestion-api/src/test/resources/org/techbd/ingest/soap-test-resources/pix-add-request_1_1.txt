@@ -1,0 +1,116 @@
+<!-- 
+  SOAP 1.2 Envelope namespace is used here. 
+  xmlns:v3 refers to the HL7 v3 XML namespace, commonly used in healthcare integration.
+  xmlns:wsa is for WS-Addressing headers (MessageID, etc.)
+-->
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                   xmlns:v3="urn:hl7-org:v3"
+                   xmlns:wsa="http://www.w3.org/2005/08/addressing">
+
+   <!-- SOAP Header contains WS-Addressing MessageID -->
+   <SOAP-ENV:Header>
+      <wsa:MessageID>urn:uuid:123e4567-e89b-12d3-a456-426614174000</wsa:MessageID>
+   </SOAP-ENV:Header>
+
+   <!-- SOAP Body starts here -->
+   <SOAP-ENV:Body>
+
+      <!-- HL7 v3 interaction: Patient Registry Record Added Request (ITI-44) -->
+      <v3:PRPA_IN201301UV02 ITSVersion="XML_1.0">
+
+         <!-- Unique ID for the message (OID + extension) -->
+         <v3:id root="2.16.840.1.113883.3.72.5.9.1" extension="12345"/>
+
+         <!-- Timestamp of message creation in format: YYYYMMDDHHMMSS -->
+         <v3:creationTime value="20250805163000"/>
+
+         <!-- Defines the type of HL7 interaction being performed -->
+         <v3:interactionId root="2.16.840.1.113883.1.6" extension="PRPA_IN201301UV02"/>
+
+         <!-- Message processing code: T = Training/Test, P = Production -->
+         <v3:processingCode code="T"/>
+
+         <!-- Processing mode code: T = Training/Test -->
+         <v3:processingModeCode code="T"/>
+
+         <!-- Acknowledgment request code: AL = Always acknowledge -->
+         <v3:acceptAckCode code="AL"/>
+
+         <!-- Message sender (system that sends the request) -->
+         <v3:sender typeCode="SND">
+            <v3:device classCode="DEV" determinerCode="INSTANCE">
+               <v3:id root="1.2.3.4.5"/>
+            </v3:device>
+         </v3:sender>
+
+         <!-- Optional: Message receiver (system expected to process the request) -->
+         <v3:receiver typeCode="RCV">
+            <v3:device classCode="DEV" determinerCode="INSTANCE">
+               <v3:id root="9.8.7.6.5.4.3.2.1"/>
+            </v3:device>
+         </v3:receiver>
+
+         <!-- Main control structure wrapping the core message payload -->
+         <v3:controlActProcess classCode="CACT" moodCode="EVN">
+
+            <!-- Trigger code for this control act process -->
+            <v3:code code="PRPA_TE201301UV02" codeSystem="2.16.840.1.113883.1.6"/>
+
+            <!-- Subject (the actual patient registration event being submitted) -->
+            <v3:subject typeCode="SUBJ">
+               <v3:registrationEvent classCode="REG" moodCode="EVN">
+                  <v3:statusCode code="active"/>
+
+                  <!-- Actual patient data -->
+                  <v3:subject1>
+                     <v3:patient classCode="PAT">
+                        <!-- Patient Identifier (assigned by the source system) -->
+                        <v3:id root="2.25.123456789" extension="PATIENT-001"/>
+                        <v3:statusCode code="active"/>
+
+                        <!-- Patient demographic info -->
+                        <v3:patientPerson>
+                           <!-- Patient name -->
+                           <v3:name>
+                              <v3:given>John</v3:given>
+                              <v3:family>Doe</v3:family>
+                           </v3:name>
+
+                           <!-- Gender: M = Male, F = Female, U = Unknown -->
+                           <v3:administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1"/>
+
+                           <!-- Birth date -->
+                           <v3:birthTime value="19900101"/>
+
+                           <!-- Optional: contact details -->
+                           <v3:telecom value="tel:+1-555-555-1234"/>
+
+                           <!-- Optional: address -->
+                           <v3:addr use="HP">
+                              <v3:streetAddressLine>123 Main St</v3:streetAddressLine>
+                              <v3:city>Anytown</v3:city>
+                              <v3:state>CA</v3:state>
+                              <v3:postalCode>90210</v3:postalCode>
+                              <v3:country>USA</v3:country>
+                           </v3:addr>
+
+                        </v3:patientPerson>
+                     </v3:patient>
+                  </v3:subject1>
+
+                  <!-- Custodian: the organization responsible for this patient record -->
+                  <v3:custodian>
+                     <v3:assignedEntity>
+                        <v3:id root="2.16.840.1.113883.3.72.5.9.10"/>
+                     </v3:assignedEntity>
+                  </v3:custodian>
+
+               </v3:registrationEvent>
+            </v3:subject>
+
+         </v3:controlActProcess>
+
+      </v3:PRPA_IN201301UV02>
+
+   </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

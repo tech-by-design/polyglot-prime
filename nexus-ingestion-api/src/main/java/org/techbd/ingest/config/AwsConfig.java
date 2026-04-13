@@ -145,15 +145,15 @@ public class AwsConfig {
         boolean sandboxSelected = false;
         for (String profile : environment.getActiveProfiles()) {
             LOG.info("AwsConfig:: Active profile: {}", profile);
-            if ("sandbox".equalsIgnoreCase(profile)) {
-                LOG.info("AwsConfig:: Sandbox profile detected");
+            if ("sandbox".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile)) {
+                LOG.info("AwsConfig:: Sandbox/Test profile detected");
                 sandboxSelected = true;
             } else {
-                LOG.info("AwsConfig:: Non-sandbox profile selected: {}", profile);
+                LOG.info("AwsConfig:: Non-sandbox/test profile selected: {}", profile);
             }
         }
         if (!sandboxSelected) {
-            LOG.info("AwsConfig:: Sandbox profile not detected");
+            LOG.info("AwsConfig:: Sandbox/Test profile not detected");
         }
         return sandboxSelected;
     }
