@@ -1,0 +1,12 @@
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Header>
+        <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-bResponse</wsa:Action>
+        <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:uuid:88d6f361-34c7-4481-8622-299c0644db93</wsa:MessageID>
+        <wsa:RelatesTo xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:uuid:12345678-90ab-cdef-1234-567890abcdef</wsa:RelatesTo>
+        <wsa:To xmlns:wsa="http://www.w3.org/2005/08/addressing">http://www.w3.org/2005/08/addressing/anonymous</wsa:To>
+        <techbd:Interaction xmlns:techbd="urn:techbd:custom" InteractionID="2e50c3d8-8dd5-46e4-bfa6-0a83447c71dc" TechBDIngestionApiVersion="0.1092.0"/>
+    </SOAP-ENV:Header>
+    <SOAP-ENV:Body>
+        <ns3:RegistryResponse xmlns:ns2="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0" xmlns:ns3="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0" xmlns:ns4="urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0" xmlns:ns5="urn:hl7-org:v3" xmlns:ns6="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:3.0" xmlns:ns7="urn:ihe:iti:xds-b:2007" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"/>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

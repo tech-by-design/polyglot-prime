@@ -207,7 +207,7 @@ Dedicated FHIR compliance validation service that validates data against FHIR sp
 
 ### Shared Libraries
 
-#### core-lib
+#### hub-core-lib
 Shared Java library containing common utilities, models, and components used across multiple services.
 
 #### nexus-core-lib

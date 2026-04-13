@@ -24,9 +24,29 @@
         <aws.sdk.version>2.28.0</aws.sdk.version>
         <hapi.version>2.6.0</hapi.version>
         <camel.version>4.10.0</camel.version>
+
+        <!--
+            Skip flags — override from the command line as needed:
+              -DskipUTs=true    skip unit tests only  (Surefire)
+              -DskipITs=true    skip integration tests only (Failsafe)
+              -DskipTests=true  skip ALL tests
+        -->
+        <skipUTs>false</skipUTs>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>    
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
@@ -38,12 +58,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>        
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-test-junit5</artifactId>
-            <version>${camel.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -67,11 +81,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-core</artifactId>
-            <version>4.16.0</version>
-        </dependency>
-        <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
             <version>4.0.0</version>
@@ -88,6 +97,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ws</groupId>
+            <artifactId>spring-ws-test</artifactId>
+            <version>4.0.10</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -259,21 +274,25 @@
 
     <build>
         <plugins>
+
+            <!-- ── Spring Boot repackage ──────────────────────────────────────── -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                   <configuration>
+                <configuration>
                     <includeSystemScope>true</includeSystemScope>
                 </configuration>
                 <executions>
-                   <execution>
-						<id>repackage</id>
-						<goals>
-							<goal>repackage</goal>
-						</goals>
-					</execution>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
+
+            <!-- ── Java compiler ─────────────────────────────────────────────── -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -281,6 +300,8 @@
                     <parameters>true</parameters>
                 </configuration>
             </plugin>
+
+            <!-- ── JAXB code generation ──────────────────────────────────────── -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
@@ -303,11 +324,113 @@
                     <packageName>org.techbd.iti.schema</packageName>
                 </configuration>
             </plugin>
+
+            <!--
+                ── Unit tests (Surefire) ─────────────────────────────────────────
+                Runs during the `test` phase — included in `mvn clean install`.
+
+                What is excluded:
+                  • excludes       → *ITCase / *IT / *IntegrationTest by file name
+
+                CLI overrides:
+                  -DskipUTs=true    skip unit tests without affecting Failsafe
+                  -DskipTests=true  skip everything (both Surefire and Failsafe)
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <skipTests>${skipUTs}</skipTests>
+                    <excludes>
+                        <exclude>**/*ITCase.java</exclude>
+                    </excludes>
+                    <!--
+                        Prevents "no tests found" issues on Java 21 with JUnit 5
+                        when the module path conflicts with classpath scanning.
+                    -->
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+
+            <!--
+                ── Integration tests (Failsafe) ──────────────────────────────────
+                Runs during integration-test + verify phases.
+
+                When it runs:
+                  `mvn clean install`                           → runs ITs (verify is part of install)
+                  `mvn clean install -DskipITs=true`           → skips ITs only
+                  `mvn clean install -DskipTests=true`         → skips all tests
+                  `mvn failsafe:integration-test failsafe:verify -DskipITs=true`
+                                                               → ITs only (CI phase 2 command)
+
+                Why `verify` goal is required:
+                  Failsafe intentionally does NOT fail the build during the
+                  integration-test phase. This lets post-integration-test teardown
+                  (e.g. stopping LocalStack) still execute even when a test fails.
+                  The `verify` goal then checks results and fails the build if needed.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <groups>integration</groups>
+                    <includes>
+                        <include>**/*ITCase.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <!--
+                            Activates application-test.yml automatically for all IT runs.
+                            Matches @ActiveProfiles("test") on Inegration tests like SoapWsEndPointIntegrationTest.
+                        -->
+                        <spring.profiles.active>test</spring.profiles.active>
+                    </systemPropertyVariables>
+                    <useModulePath>false</useModulePath>
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                </configuration>
+                
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-report-plugin</artifactId>
+            <version>3.2.5</version>
+            <executions>
+                <execution>
+                    <id>generate-it-report</id>
+                    <!-- runs after failsafe:verify -->
+                    <phase>post-integration-test</phase>
+                    <goals>
+                        <!-- failsafe-report reads from failsafe-reports/, not surefire-reports/ -->
+                        <goal>failsafe-report-only</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <outputName>failsafe-report</outputName>
+                <!-- aggregates across modules if multi-module -->
+                <aggregate>false</aggregate>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-site-plugin</artifactId>
+            <version>3.12.1</version>
+        </plugin>
         </plugins>
+
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <filtering>true</filtering> <!-- enable filtering -->
+                <filtering>true</filtering>
             </resource>
         </resources>
     </build>

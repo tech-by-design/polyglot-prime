@@ -1,0 +1,32 @@
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+    <env:Header>
+        <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:hl7-org:v3:MCCI_IN000002UV01</wsa:Action>
+        <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:uuid:37605834-d087-4a7f-8ec4-e2d5bd42627d</wsa:MessageID>
+        <wsa:RelatesTo xmlns:wsa="http://www.w3.org/2005/08/addressing">urn:uuid:unknown-incoming-message-id</wsa:RelatesTo>
+        <wsa:To xmlns:wsa="http://www.w3.org/2005/08/addressing">http://www.w3.org/2005/08/addressing/anonymous</wsa:To>
+        <techbd:Interaction xmlns:techbd="urn:techbd:custom" InteractionID="e21038b4-db8a-4d7f-a7f7-b36593dcfb03" TechBDIngestionApiVersion="0.1092.0"/>
+    </env:Header>
+    <env:Body>
+        <ns2:MCCI_IN000002UV01 xmlns:ns2="urn:hl7-org:v3" xmlns:ns3="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0" xmlns:ns4="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0" xmlns:ns5="urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0" xmlns:ns6="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:3.0" xmlns:ns7="urn:ihe:iti:xds-b:2007">
+            <ns2:id root="0e80dab0-b97c-49bb-8078-abb6250cc635"/>
+            <ns2:creationTime value="20260331163313+0530"/>
+            <ns2:interactionId extension="MCCI_IN000002UV01" root="2.16.840.1.113883.1.6"/>
+            <ns2:receiver typeCode="RCV">
+                <ns2:device determinerCode="INSTANCE">
+                    <ns2:id root="1.2.3.4.5.6.7.8.9"/>
+                </ns2:device>
+            </ns2:receiver>
+            <ns2:sender typeCode="SND">
+                <ns2:device determinerCode="INSTANCE">
+                    <ns2:id root="1.2.3.4.5.6.7.8.9"/>
+                    <ns2:telecom value="HTTP/1.1"/>
+                </ns2:device>
+            </ns2:sender>
+            <ns2:acknowledgement>
+                <ns2:targetMessage>
+                    <ns2:id extension="update-56789" root="2.16.840.1.113883.3.72.5.9.1"/>
+                </ns2:targetMessage>
+            </ns2:acknowledgement>
+        </ns2:MCCI_IN000002UV01>
+    </env:Body>
+</env:Envelope>

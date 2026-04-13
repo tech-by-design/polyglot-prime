@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.7 -->
+<!-- Version : 0.2.8 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -97,6 +97,8 @@
   <xsl:param name="categoryXml"/>
   <xsl:param name="componentAnswersXml"/>
   <xsl:param name="X-TechBD-Part2"/>
+  <xsl:param name="X-TechBD-OMH"/>
+  <xsl:param name="X-TechBD-OPWDD"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -133,14 +135,32 @@
     "profile": [
       "<xsl:value-of select='$bundleMetaProfileUrlFull'/>"
     ]
-    <xsl:if test="$X-TechBD-Part2 = 'true'">
+    <xsl:if test="$X-TechBD-Part2 = 'true' or $X-TechBD-OMH = 'true' or $X-TechBD-OPWDD = 'true'">
         ,"security": [
+          <xsl:if test="$X-TechBD-Part2 = 'true'">
             {
                 "code": "ETH",
                 "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
                 "display": "Substance abuse information sensitivity"
             }
-        ]
+          </xsl:if>
+          <xsl:if test="$X-TechBD-OMH = 'true'">
+            <xsl:if test="$X-TechBD-Part2 = 'true'">,</xsl:if>
+            {
+                "code": "MH",
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                "display": "Mental health information sensitivity"
+            }
+          </xsl:if>
+          <xsl:if test="$X-TechBD-OPWDD = 'true'">
+            <xsl:if test="$X-TechBD-Part2 = 'true' or $X-TechBD-OMH = 'true'">,</xsl:if>
+            {
+                "code": "DVD",
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                "display": "Developmental disability information sensitivity"
+            }
+          </xsl:if>
+      ]
     </xsl:if>
   },
   "type": "transaction",

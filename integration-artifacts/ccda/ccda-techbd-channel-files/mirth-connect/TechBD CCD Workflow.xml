@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.44</description>
-  <revision>58</revision>
+  <description>Version: 0.4.45</description>
+  <revision>5</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -55,7 +55,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code,X-TechBD-Part2</string>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code,X-TechBD-Part2,X-TechBD-OMH,X-TechBD-OPWDD</string>
           </list>
         </entry>
         <entry>
@@ -75,10 +75,43 @@
     <transformer version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>DB Save</name>
+          <name>Initialize DB Config and CCDA Save Utilities</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>var PGobject = Packages.org.postgresql.util.PGobject;
+
+var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+if(jdbcUrl != null) {
+    channelMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
+    //logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
+} else {
+    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+if(jdbcUsername != null) {
+    channelMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+    //logger.info(&quot;jdbcUsername: &quot; + jdbcUsername);
+} else {
+    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
+if(jdbcPassword != null) {
+    channelMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+    //logger.info(&quot;jdbcPassword: &quot; + jdbcPassword);
+} else {
+    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
 
 function toJsonb(value) {
     var jsonbObj = new PGobject();
@@ -91,7 +124,6 @@ function toJsonb(value) {
     jsonbObj.setValue(value);
     return jsonbObj;
 }
-
 
 function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, operation) {
 	
@@ -119,9 +151,9 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	    logger.info(&quot;Inside DB Try&quot;);
 
 	    // Database connection details
-		var dbUrl = globalMap.get(&apos;jdbcUrl&apos;);
-		var dbUser = globalMap.get(&apos;jdbcUsername&apos;);
-		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
+		var dbUrl = channelMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = channelMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = channelMap.get(&apos;jdbcPassword&apos;);
 
 		//Devl
 	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
@@ -209,7 +241,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>Common JS functions</name>
+          <name>Common Utility Functions</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
@@ -470,24 +502,20 @@ function extractClinicalDocumentFromRawXML(rawXml) {
 
 function extractBoundaries(rawCcdaXml) {
 	try {
-		logger.info(&quot;rawCcdaXml 1: &quot; + rawCcdaXml);
 		// Remove boundary
 		var rawXml = String(rawCcdaXml)
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
 				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
 				    .trim();		
-	
 	        // Extract everything after first blank line
 	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
 	        if (match &amp;&amp; match[1]) {
 			    rawXml = match[1];
-			    logger.info(&quot;rawXml 3: &quot; + rawXml);
 		   }
 		   
 	        // Remove trailing boundary (last line starting with --)
 	        rawXml = rawXml.replace(/\r?\n--.*--\r?\n?$/, &apos;&apos;);
 	        rawXml = rawXml.replace(/\r?\n--.*$/, &apos;&apos;);
-	        logger.info(&quot;rawXml 4: &quot; + rawXml);
 
 			if (rawXml.indexOf(&quot;Content-Disposition:&quot;) !== -1) {
 			   // Find the index where Content-Disposition starts
@@ -499,7 +527,6 @@ function extractBoundaries(rawCcdaXml) {
 			    if (firstNewLineAfterCD !== -1) {
 			        // Keep everything after that newline
 			        rawXml = rawXml.substring(firstNewLineAfterCD + 1);
-			        logger.info(&quot;rawXml after Content-Disposition removed: &quot; + rawXml);
 			    }
 			}
 
@@ -513,7 +540,6 @@ function extractBoundaries(rawCcdaXml) {
 			    if (firstNewLineAfterCD1 !== -1) {
 			        // Keep everything after that newline
 			        rawXml = rawXml.substring(firstNewLineAfterCD1 + 1);
-			        logger.info(&quot;rawXml after Content-Type removed: &quot; + rawXml);
 			    }
 			}
 	        
@@ -703,7 +729,7 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>Validate HTTP Request and collect headers</name>
+          <name>Validate HTTP Request and Collect Headers</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
@@ -788,18 +814,32 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	//5. Encounter Type
 	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
 
-	//Screening code (used for Grouper resource) for Epic CCD files
+	//6. Screening code (used for Grouper resource) for Epic CCD files
 	var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);	
 	logger.info(&quot;X-TechBD-Screening-Code: &quot; + screeningCode);
 	if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
 	}
 
-	//Part 2 Data Flagging 
+	//7. Part 2 Data Flagging 
 	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);	
 	logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);
 	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
+	}
+
+	// 8. OMH Flagging
+	var OMHFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OMH&apos;);
+	logger.info(&quot;X-TechBD-OMH: &quot; + OMHFlag);
+	if (OMHFlag &amp;&amp; String(OMHFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-OMH&apos;, OMHFlag);
+	}
+	
+	// 9. OPWDD Flagging
+	var OPWDDFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OPWDD&apos;);
+	logger.info(&quot;X-TechBD-OPWDD: &quot; + OPWDDFlag);
+	if (OPWDDFlag &amp;&amp; String(OPWDDFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-OPWDD&apos;, OPWDDFlag);
 	}
 }
 
@@ -976,39 +1016,10 @@ function getManufacturerModelName(xmlData) {
      }
 }
 
-var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
-if(jdbcUrl != null) {
-    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
-    logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
-} else {
-    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
-}
-
-var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
-if(jdbcUsername != null) {
-    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
-} else {
-    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
-}
-
-var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
-if(jdbcPassword != null) {
-    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
-} else {
-    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
-}</script>
+</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>step_validate_profile_urls_env_variables</name>
+          <name>Validate Profile URLs and Environment variables</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
           <script>/**
@@ -1390,6 +1401,15 @@ function getMultipleAnswersForComponent(transformer, observations) {
 	return transformer;
 }
 
+function setBooleanHeaderFlag(headerName, transformer) {
+    var value = channelMap.get(headerName);
+    transformer.setParameter(
+        headerName,
+        (value &amp;&amp; String(value).toLowerCase() === &quot;true&quot;) ? &quot;true&quot; : &quot;false&quot;
+    );
+    return transformer;
+}
+
 // Define Namespace Resolver
 function setResourceIdParameters(transformer) {
     	// Parse XML
@@ -1506,13 +1526,9 @@ function setResourceIdParameters(transformer) {
      transformer.setParameter(&apos;grouperScreeningCode&apos;, String(grouperScreeningCode));
      logger.info(&apos;grouperScreeningCode&apos; + &quot; : &quot; + grouperScreeningCode);
 
-     // Set part2 flag
-     var part2DataFlag = channelMap.get(&apos;X-TechBD-Part2&apos;);
-	var flagValue = &quot;false&quot;;
-	if (part2DataFlag &amp;&amp; String(part2DataFlag).toLowerCase() === &quot;true&quot;) {
-	    flagValue = &quot;true&quot;;
-	}	
-	transformer.setParameter(&apos;X-TechBD-Part2&apos;, flagValue);
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-Part2&apos;, transformer); // Set part2 flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OMH&apos;, transformer);	  // Set OMH flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OPWDD&apos;, transformer); // Set OPWDD flag
 
 	// Extract `location`
      try {
@@ -1838,7 +1854,7 @@ function validateMandatoryFields() {
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-          <name>API endpoint processing</name>
+          <name>API Endpoint Processing</name>
           <sequenceNumber>5</sequenceNumber>
           <enabled>true</enabled>
           <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
@@ -2566,7 +2582,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774931688528</time>
+        <time>1775474522298</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

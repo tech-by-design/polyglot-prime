@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>54c68a70-cbcc-4903-a228-86f6d553f6f6</id>
+  <id>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.9
-Replace header table with dynamic useMap and introduce header/param parsing utilities in Router channel</description>
-  <revision>25</revision>
+  <description>Version: 0.2.10
+Enhanced router channel by implementing a Postprocessor layer to handle timeout scenarios.</description>
+  <revision>2</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -601,45 +601,156 @@ return &apos;&apos;;</script>
   </destinationConnectors>
   <preprocessingScript>// Modify the message variable below to pre process data
 return message;</preprocessingScript>
-  <postprocessingScript>// This script executes once after a message has been processed
-// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+  <postprocessingScript>//////////////////////////////////////////////////////
+// This script executes once after a message has been processed
+
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
-  return;
+if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;) {
+    return;
 }
-// Get the response from the HTTP Writer destination
+
 var destinationName = &quot;response_operationoutcome&quot;;
-  var destinationResponse = responseMap.get(destinationName);
+var destinationResponse = responseMap.get(destinationName);
 
-  // Check if the response exists
-  if (destinationResponse) {
-      var responseStatus = destinationResponse.getStatus();  // HTTP status code
-      var responseData = destinationResponse.getMessage();   // Response message body
-    responseMap.put(&apos;finalResponse&apos;, responseData);
-    //responseMap.put(&apos;responseStatusCode&apos;, responseStatus);
-    responseMap.put(&apos;status&apos;, responseStatus);
-    var finalStatus = &quot;&quot;; 
-    try {
-          var jsonStr = String(responseData);
-          var jsonResponse = JSON.parse(jsonStr);
+if (destinationResponse) {
 
-          var bodyStatus = jsonResponse[&quot;status&quot;];
+    var responseStatus = String(destinationResponse.getStatus());
 
-          if (bodyStatus != null &amp;&amp; bodyStatus !== &quot;&quot;) {
-              finalStatus = String(bodyStatus);
-              responseMap.put(&apos;status&apos;, finalStatus);
-          }
-        } catch (e) {
-            logger.warn(&quot;JSON parse failed: &quot; + e);
-        }
+    // =========================
+    // ERROR HANDLING BLOCK
+    // =========================
+    if (responseStatus === &apos;ERROR&apos;) {
 
+        var responseError = &apos;&apos;;
+        try { responseError = String(destinationResponse.getError()); } catch (ex) {}
 
+        var statusMessage = String(destinationResponse.getStatusMessage() || &apos;&apos;);
+        var responseData = destinationResponse.getMessage();
 
-      // Log the response details
-    //  logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;+&quot; Status Code:---- &quot; + responseStatus + &quot;Response Data: -------&quot; + responseData);
-  } else {
-      logger.info(&quot;No response found for destination: &quot; + destinationName);
-  }
+        // ✅ Keep RAW + lowercase versions
+        var rawErrorDetail = responseError + &apos; &apos; + statusMessage + &apos; &apos; + String(responseData || &apos;&apos;);
+        var errorDetail = rawErrorDetail.toLowerCase();
+
+        logger.error(&apos;PostProcessor ERROR detail: &apos; + rawErrorDetail);
+
+        // ---- Detect conditions ----
+        var isTimeout = errorDetail.indexOf(&apos;timeout&apos;) !== -1
+                     || errorDetail.indexOf(&apos;timed out&apos;) !== -1
+                     || errorDetail.indexOf(&apos;sockettimeoutexception&apos;) !== -1
+                     || errorDetail.indexOf(&apos;read timed out&apos;) !== -1;
+
+        var isConnRefused = errorDetail.indexOf(&apos;connection refused&apos;) !== -1
+                         || errorDetail.indexOf(&apos;connectexception&apos;) !== -1;
+
+        // ---- Extract downstream HTTP status ----
+        var extractedStatus = null;
+
+        try {
+            var raw = String(responseData || &apos;&apos;);
+            var parsed = JSON.parse(raw);
+            if (parsed &amp;&amp; parsed.status != null) {
+                extractedStatus = parseInt(parsed.status);
+            }
+        } catch (e) {
+            // Fallback regex
+            var statusMatch = errorDetail.match(/&quot;status&quot;\s*:\s*(\d{3})/);
+            if (statusMatch) {
+                extractedStatus = parseInt(statusMatch[1]);
+            }
+        }
+
+        var statusNum = Number(extractedStatus);
+
+        var statusCode, issueCode, diagnosticMsg;
+
+        if (isTimeout) {
+            statusCode = 504;
+            issueCode = &apos;timeout&apos;;
+            diagnosticMsg = &apos;The downstream service did not respond within the allowed time.&apos;;
+
+        } else if (isConnRefused) {
+            statusCode = 502;
+            issueCode = &apos;exception&apos;;
+            diagnosticMsg = &apos;Unable to connect to the downstream service.&apos;;
+
+        } else if (!isNaN(statusNum) &amp;&amp; statusNum &gt;= 400) {
+            // ✅ Respect downstream status
+            statusCode = statusNum;
+            issueCode = statusNum &gt;= 500 ? &apos;exception&apos; : &apos;processing&apos;;
+
+            diagnosticMsg = &apos;Downstream error (&apos; + statusNum + &apos;): &apos; + rawErrorDetail.substring(0, 1000);
+
+        } else {
+            // Fallback
+            statusCode = 502;
+            issueCode = &apos;exception&apos;;
+            diagnosticMsg = &apos;Unknown downstream error. Detail: &apos; + rawErrorDetail.substring(0, 1000);
+        }
+
+        // ---- Build OperationOutcome ----
+        var operationOutcome = JSON.stringify({
+            resourceType: &quot;OperationOutcome&quot;,
+            issue: [{
+                severity: &quot;error&quot;,
+                code: issueCode,
+                diagnostics: diagnosticMsg
+            }]
+        });
+
+        // ✅ Modify response in-place (critical)
+        destinationResponse.setMessage(new java.lang.String(operationOutcome));
+        destinationResponse.setStatus(com.mirth.connect.userutil.Status.SENT);
+        destinationResponse.setStatusMessage(&apos;Error handled in PostProcessor&apos;);
+
+        responseMap.put(&apos;status&apos;, String(statusCode));
+
+        logger.error(&apos;PostProcessor: Final status=&apos; + statusCode + &apos;, body length=&apos; + operationOutcome.length);
+
+        return;
+    }
+
+    // =========================
+    // SUCCESS FLOW
+    // =========================
+
+    // Default success
+    responseMap.put(&apos;status&apos;, &apos;200&apos;);
+
+    try {
+        var jsonStr = String(destinationResponse.getMessage());
+        var jsonResponse = JSON.parse(jsonStr);
+
+        var bodyStatus = jsonResponse[&quot;status&quot;];
+
+        if (bodyStatus != null &amp;&amp; bodyStatus !== &quot;&quot;) {
+            responseMap.put(&apos;status&apos;, String(bodyStatus));
+        }
+
+    } catch (e) {
+        logger.warn(&quot;PostProcessor: JSON parse failed: &quot; + e);
+    }
+
+} else {
+
+    logger.error(&quot;PostProcessor: No response from destination: &quot; + destinationName);
+
+    var noResponseOutcome = JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        issue: [{
+            severity: &quot;error&quot;,
+            code: &quot;exception&quot;,
+            diagnostics: &quot;No response received from downstream service.&quot;
+        }]
+    });
+
+    var newResp = new com.mirth.connect.userutil.Response(
+        com.mirth.connect.userutil.Status.SENT,
+        new java.lang.String(noResponseOutcome)
+    );
+
+    responseMap.put(destinationName, newResp);
+    responseMap.put(&apos;status&apos;, &apos;502&apos;);
+}
 
 return;</postprocessingScript>
   <deployScript>// This script executes once when the channel is deployed
@@ -686,23 +797,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774842389815</time>
+        <time>1776057116775</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>5d347ab9-d759-4536-a094-dca36b8e4438</id>
-        <name>0_2_9</name>
+        <id>fd6569e3-63fc-4d50-a6a7-a0883d85eb7b</id>
+        <name>0_2_10</name>
         <channelIds>
-          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
-          <string>54c68a70-cbcc-4903-a228-86f6d553f6f6</string>
-          <string>34f8c6e3-a33a-4bd7-9b05-6438e1991d44</string>
+          <string>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
