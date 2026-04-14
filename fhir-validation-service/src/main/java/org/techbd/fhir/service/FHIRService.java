@@ -158,7 +158,7 @@ public class FHIRService {
 				}
 				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
 				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
-				SourceType.FHIR.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
+				SourceType.FHIR.name(), null, (boolean) requestParameters.get(Constants.DATA_LEDGER_TRACKING), (boolean) requestParameters.get(Constants.DATA_LEDGER_DIAGNOSTICS));
 			}
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
             

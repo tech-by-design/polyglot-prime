@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>c6785dde-cd64-4546-bf7c-3f8f7abb4132</id>
+  <id>11e42ebe-184e-4fcd-b81d-b5d56c315fa1</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.17
-Added multiple file validation.</description>
-  <revision>8</revision>
+  <description>Version: 0.9.18
+Added required headers for data ledger tracking and diagnostics from lookup manager</description>
+  <revision>1</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -208,6 +208,40 @@ try {
     logger.error(&quot;Error fetching valid FHIR URLs: &quot; + e);
     setErrorResponse(500, &quot;Failed to load valid FHIR URLs&quot;);
     throw e;
+}
+
+
+/********************************************
+    9️⃣ FETCH DATA LEDGER  DATA_LEDGER_TRACKING (Plain text)
+********************************************/
+
+try {
+    var dataLedgerTracking = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
+   
+    channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
+    globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
+
+    logger.info(&quot; DataLedger Tracking loaded into channelMap&quot;+ dataLedgerTracking);
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLedger Tracking secret: &quot; + e.message);
+}
+
+
+/********************************************
+    9️⃣ FETCH DATA LEDGER  DATA_LEDGER_DIAGNOSTICS (Plain text)
+********************************************/
+
+try {
+    var dataLedgerDiagnostics = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_DIAGNOSTICS&quot;);
+   
+    channelMap.put(&quot;DATA_LEDGER_DIAGNOSTICS&quot;, dataLedgerDiagnostics);
+    globalMap.put(&quot;DATA_LEDGER_DIAGNOSTICS&quot;, dataLedgerDiagnostics);
+
+    logger.info(&quot; DataLedger diagnostics loaded into channelMap&quot;+ dataLedgerDiagnostics);
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLedger diagnostics secret: &quot; + e.message);
 }
 
 logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  Lookup Manager Loader end &apos;);</script>
@@ -704,7 +738,6 @@ var baseFhirurl =  channelMap.get(&apos;baseFhirurl&apos;); &#xd;logger.info(&qu
 
 // Read &apos;immediate&apos; parameter from request (like how headers are fetched)
 var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim();
-var csvServiceApiUrl = &quot;https://organismal-nonprovisionary-mika.ngrok-free.dev&quot;;
 var csvServiceApiUrl = channelMap.get(&apos;CSV_SERVICE_API_URL&apos;);
 logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;+&quot;immediateParam :&quot;+ immediateParam);
 
@@ -714,11 +747,8 @@ logger.info(&quot;======================================:&quot; + csvServiceApiU
 //var urlStr = csvServiceApiUrl +&quot;/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
 
 var urlStr  = &quot;&quot;;
-if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
-	urlStr = csvServiceApiUrl +requestedPath+&quot;?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
-}else {
-	urlStr = csvServiceApiUrl +requestedPath+&quot;?source=&quot; + encodeURIComponent(sourceParam);
-}
+urlStr = csvServiceApiUrl +requestedPath+&quot;?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
+
 
 // --- Import Apache HttpClient classes ---
 var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
@@ -751,6 +781,8 @@ channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
 
 var dataLakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 var techbdBlBaseUrl = channelMap.get(&apos;techbdBlBaseUrl&apos;);
+var dataLedgerTracking = channelMap.get(&apos;DATA_LEDGER_TRACKING&apos;);
+var dataLedgerDiagnostics = channelMap.get(&apos;DATA_LEDGER_DIAGNOSTICS&apos;);
 //logger.info(&quot;**************************techbdBlBaseUrl from channelMap: &quot; + techbdBlBaseUrl);
 
 // --- Set required headers ---
@@ -768,6 +800,8 @@ post.setHeader(new BasicHeader(&quot;X-TechBD-Validation-Severity-Level&quot;, s
 post.setHeader(new BasicHeader(&quot;X-TechBD-Source-Type&quot;, sourceParam));
 post.setHeader(new BasicHeader(&quot;X-TechBD-Base-FHIR-URL&quot;, techBdBaseFhirUrl));
 post.setHeader(new BasicHeader(&quot;X-TechBD-DataLake-API-URL&quot;, dataLakeApiUrl));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Data-Ledger-Tracking&quot;, dataLedgerTracking));
+post.setHeader(new BasicHeader(&quot;X-TechBD-Data-Ledger-diagnostics&quot;, dataLedgerDiagnostics));
 if (techbdBlBaseUrl != null &amp;&amp; techbdBlBaseUrl !== &apos;&apos;) {
     post.setHeader(new BasicHeader(&quot;X-TechBD-BL-BaseURL&quot;, techbdBlBaseUrl));
 }
@@ -896,7 +930,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1775034982584</time>
+        <time>1776151095542</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -907,13 +941,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>5fcb553d-307b-46d7-be17-757e168b10af</id>
-        <name>0_9_17</name>
+        <id>7763ff76-fbe5-485d-8a71-8b9773e315ce</id>
+        <name>0_9_18</name>
         <channelIds>
-          <string>c6785dde-cd64-4546-bf7c-3f8f7abb4132</string>
+          <string>11e42ebe-184e-4fcd-b81d-b5d56c315fa1</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

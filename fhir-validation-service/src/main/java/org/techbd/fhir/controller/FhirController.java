@@ -146,7 +146,11 @@ public class FhirController {
                         @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Master-Interaction-ID", required = false) String masterInteractionId,
                         @Parameter(description = "Optional header to provide elaboration details.", required = false) @RequestHeader(value = "X-TechBD-Elaboration", required = false) String elaboration,
                         @Parameter(description = "Optional header to specify group interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Group-Interaction-ID", required = false) String groupInteractionId, @Parameter(description = "Optional header to specify interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String interactionId,         @Parameter(description = "Optional header to specify override request URI.", required = false)
-                        @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,                        
+                        @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,  
+                        @Parameter(description = "Optional header to specify data ledgder tracking.", required = false)@RequestHeader(value = "X-TechBD-Data-Ledger-Tracking", required = false, defaultValue = "false")
+                        boolean dataLedgerTracking,
+                        @Parameter(description = "Optional header to specify data ledger diagnostics.", required = false)@RequestHeader(value = "X-TechBD-Data-Ledger-diagnostics", required = false, defaultValue = "false")
+                        boolean dataLedgerDiagnostics,                       
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
@@ -173,6 +177,8 @@ public class FhirController {
                         }                                        
                         requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
                         requestDetailsMap.put(Constants.ELABORATION, elaboration);
+                        requestDetailsMap.put(Constants.DATA_LEDGER_TRACKING, dataLedgerTracking);
+                        requestDetailsMap.put(Constants.DATA_LEDGER_DIAGNOSTICS, dataLedgerDiagnostics);
                         requestDetailsMap.putAll(headers);
                         Map<String, Object> responseParameters = new HashMap<>();
                         final var result = fhirService.processBundle(payload, requestDetailsMap,  responseParameters);

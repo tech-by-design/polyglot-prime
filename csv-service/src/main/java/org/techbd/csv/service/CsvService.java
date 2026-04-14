@@ -352,7 +352,7 @@ public class CsvService {
                 interactionId);
 
         coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, provenance,
-                SourceType.CSV.name(), null, FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_TRACKING), FeatureEnum.isEnabled(FeatureEnum.FEATURE_DATA_LEDGER_DIAGNOSTICS));
+                SourceType.CSV.name(), null, (boolean) requestParams.get(Constants.DATA_LEDGER_TRACKING), (boolean) requestParams.get(Constants.DATA_LEDGER_DIAGNOSTICS));
         saveArchiveInteraction(interactionId, requestParams, file, CsvProcessingState.RECEIVED);
     }
 
