@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</id>
+  <id>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.10
-Enhanced router channel by implementing a Postprocessor layer to handle timeout scenarios.</description>
-  <revision>2</revision>
+  <description>Version: 0.2.11
+Show error message if the mTLS checking filter is disabled.</description>
+  <revision>15</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -79,8 +79,25 @@ Enhanced router channel by implementing a Postprocessor layer to handle timeout 
     <transformer version="4.6.1">
       <elements>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
-          <name>pass original headers</name>
+          <name>mTLS filter disabled guard</name>
           <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;) {
+	return;
+}
+
+var mtlsEnabled = globalChannelMap.get(&apos;mtlsFilterEnabled&apos;);
+if (String(mtlsEnabled) !== &apos;true&apos;) {
+	logger.error(&apos;[RouterChannel] mTLS filter is disabled – rejecting request with 500&apos;);
+	channelMap.put(&apos;mtlsFilterDisabled&apos;, &apos;true&apos;);
+	destinationSet.removeAll();
+	return;
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+          <name>pass original headers</name>
+          <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
@@ -94,7 +111,7 @@ channelMap.put(&quot;contentType&quot;, contentType);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
           <name>redirection</name>
-          <sequenceNumber>1</sequenceNumber>
+          <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 	
@@ -175,60 +192,54 @@ logger.info(fhirJson);</script>
           <script>var httpMethod = String(sourceMap.get(&apos;method&apos;)).toUpperCase();
 var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
 
-/* =====================================&#xd;
-   ⃣ HEALTHCHECK&#xd;
-   &#xd;
-===================================== */&#xd;
+// HEALTHCHECK&#xd;
 if (contextPath === &apos;/healthcheck&apos;) {&#xd;
 &#xd;
-    if (httpMethod === &apos;GET&apos;) {&#xd;
-         responseMap.put(&apos;responseStatusCode&apos;, 200);&#xd;
-	    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);&#xd;
-	    responseMap.put(&apos;responseBody&apos;, JSON.stringify({&#xd;
-	        status: 200,&#xd;
-	        message: &quot;OK&quot;&#xd;
-	    }));&#xd;
+	if (httpMethod === &apos;GET&apos;) {&#xd;
+		responseMap.put(&apos;responseStatusCode&apos;, 200);&#xd;
+		responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);&#xd;
+		responseMap.put(&apos;responseBody&apos;, JSON.stringify({&#xd;
+			status: 200,&#xd;
+			message: &quot;OK&quot;&#xd;
+		}));&#xd;
 	&#xd;
-	   return false;&#xd;
-    }&#xd;
+		return false;&#xd;
+	}&#xd;
 &#xd;
-    return methodNotAllowed();&#xd;
+	return methodNotAllowed();&#xd;
 }&#xd;
 &#xd;
 &#xd;
-/* =====================================&#xd;
-   Helper Functions&#xd;
-===================================== */&#xd;
+// Helper Functions&#xd;
 &#xd;
 function methodNotAllowed() {&#xd;
 &#xd;
-    var errorResponse = &quot;Method Not Allowed.&quot;;&#xd;
+	var errorResponse = &quot;Method Not Allowed.&quot;;&#xd;
 &#xd;
-    responseMap.put(&apos;responseStatusCode&apos;, 405);&#xd;
-    responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);&#xd;
-    responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));&#xd;
+	responseMap.put(&apos;responseStatusCode&apos;, 405);&#xd;
+	responseMap.put(&apos;responseContentType&apos;, &apos;application/json&apos;);&#xd;
+	responseMap.put(&apos;responseBody&apos;, JSON.stringify(errorResponse));&#xd;
 &#xd;
-    setErrorResponse(405, errorResponse);&#xd;
+	setErrorResponse(405, errorResponse);&#xd;
 &#xd;
-    throw &quot;Invalid method&quot;;&#xd;
+	throw &quot;Invalid method&quot;;&#xd;
 }&#xd;
 
 
 
 
+// Signal that the mTLS filter rule is active (checked by source transformer)
+globalChannelMap.put(&apos;mtlsFilterEnabled&apos;, true);
+
 var remoteAddress = sourceMap.get(&apos;remoteAddress&apos;) || &apos;&apos;;&#xd;
-//logger.info(&quot;Remote Address: &quot; + remoteAddress);
 
 var group1 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Group-Interaction-ID&apos;);
-//logger.info(&quot;group1 :&quot;  + group1);
 
 var sourceType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
-//logger.info(&quot;Filter TechBD-Source-Type :&quot;  + sourceType);
-if(sourceType == &quot;CSV&quot;)// TODO: Add a dedicated condition to handle the health check when the filter is enabled.
-{
+
+if(sourceType == &quot;CSV&quot;) { // TODO: Add a dedicated condition to handle the health check when the filter is enabled.
 	return true;
-}else{
-	
+} else {
 	return performCertValidation(&quot;chain&quot;, &quot;Util-sbx-bl-net.JKS&quot;, null);
 }</script>
         </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
@@ -485,7 +496,7 @@ if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot
 
 
 // ======================================================
-//  PARSE HEADERS STRING + FORWARD
+// PARSE HEADERS STRING + FORWARD
 // ======================================================
 var headersMap = new java.util.HashMap();
 var headers = $(&apos;headers&apos;);
@@ -511,7 +522,7 @@ if (headers != null) {
         }
     }
 }
-// ✅ Send headers via HTTP Sender
+// Send headers via HTTP Sender
 connectorMap.put(&quot;routerheaders&quot;, headersMap);
 
 
@@ -544,13 +555,13 @@ if (inboundParams != null) {
     }
 }
 
-// 2. Store for the HTTP Sender
+// Store for the HTTP Sender
 connectorMap.put(&quot;routerparams&quot;, paramsMap);
 
 
 
 
-//  CRITICAL: REMOVE BODY COMPLETELY
+// CRITICAL: REMOVE BODY COMPLETELY
 return &apos;&apos;;</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
@@ -606,6 +617,28 @@ return message;</preprocessingScript>
 
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;) {
+    return;
+}
+
+// If mTLS filter is disabled, return 500 immediately
+if (String(channelMap.get(&apos;mtlsFilterDisabled&apos;)) === &apos;true&apos;) {
+
+    var mtlsErrorBody = JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        issue: [{
+            severity: &quot;error&quot;,
+            code: 500,
+            diagnostics: &quot;mTLS filter is disabled.&quot;
+        }]
+    });
+
+    var mtlsResp = new com.mirth.connect.userutil.Response(
+        com.mirth.connect.userutil.Status.ERROR,
+        new java.lang.String(mtlsErrorBody)
+    );
+    responseMap.put(&apos;d1&apos;, mtlsResp);
+
+    logger.error(&apos;PostProcessor: mTLS filter disabled – returning 500&apos;);
     return;
 }
 
@@ -702,7 +735,7 @@ if (destinationResponse) {
         destinationResponse.setStatus(com.mirth.connect.userutil.Status.SENT);
         destinationResponse.setStatusMessage(&apos;Error handled in PostProcessor&apos;);
 
-        responseMap.put(&apos;status&apos;, String(statusCode));
+        channelMap.put(&apos;status&apos;, String(statusCode));
 
         logger.error(&apos;PostProcessor: Final status=&apos; + statusCode + &apos;, body length=&apos; + operationOutcome.length);
 
@@ -714,7 +747,7 @@ if (destinationResponse) {
     // =========================
 
     // Default success
-    responseMap.put(&apos;status&apos;, &apos;200&apos;);
+    channelMap.put(&apos;status&apos;, &apos;200&apos;);
 
     try {
         var jsonStr = String(destinationResponse.getMessage());
@@ -723,7 +756,7 @@ if (destinationResponse) {
         var bodyStatus = jsonResponse[&quot;status&quot;];
 
         if (bodyStatus != null &amp;&amp; bodyStatus !== &quot;&quot;) {
-            responseMap.put(&apos;status&apos;, String(bodyStatus));
+            channelMap.put(&apos;status&apos;, String(bodyStatus));
         }
 
     } catch (e) {
@@ -749,12 +782,17 @@ if (destinationResponse) {
     );
 
     responseMap.put(destinationName, newResp);
-    responseMap.put(&apos;status&apos;, &apos;502&apos;);
+    channelMap.put(&apos;status&apos;, &apos;502&apos;);
 }
 
 return;</postprocessingScript>
   <deployScript>// This script executes once when the channel is deployed
 // You only have access to the globalMap and globalChannelMap here to persist data
+
+
+// Flag starts as false; the mTLS filter rule will set it to true when it executes.
+globalChannelMap.put(&apos;mtlsFilterEnabled&apos;, false);
+
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
@@ -797,21 +835,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776057116775</time>
+        <time>1776158193963</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fd6569e3-63fc-4d50-a6a7-a0883d85eb7b</id>
-        <name>0_2_10</name>
+        <id>506df33f-3634-4e0a-8935-ec121c90cf03</id>
+        <name>0_2_11</name>
         <channelIds>
-          <string>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</string>
+          <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
