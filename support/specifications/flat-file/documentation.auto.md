@@ -328,7 +328,6 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `unique` True
     - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
 ### `SCREENING_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code
