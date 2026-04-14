@@ -73,10 +73,12 @@ public class CsvService {
     }
 
     public Object validateCsvFile(final MultipartFile file, final Map<String, Object> requestParameters,
-            Map<String, Object> resonseParameters) throws Exception {
+            Map<String, Object> responseParameters ) throws Exception {
         final var zipFileInteractionId = (String) requestParameters.get(Constants.MASTER_INTERACTION_ID);
-        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {}",
-                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
+        final var tenantId = (String) requestParameters.get(Constants.TENANT_ID);
+        final String isSync = String.valueOf(requestParameters.get(Constants.IMMEDIATE));
+        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {} isSync: {}",
+                zipFileInteractionId, tenantId, isSync);
         if (file == null) {
                 LOG.error("CsvService validateCsvFile - File is null. InteractionId: {}",
                                 zipFileInteractionId);
@@ -98,32 +100,129 @@ public class CsvService {
                         file.getOriginalFilename(),
                         fileSizeBytes,
                         String.format("%.2f", fileSizeKB),
-                        String.format("%.2f", fileSizeMB));            
-        CsvOrchestrationEngine.OrchestrationSession session = null;
-        Map<String, Object> fullOperationOutcome = null;
-        try {
+                        String.format("%.2f", fileSizeMB)); 
+                        long start = System.nanoTime();           
+        
             saveArchiveInteraction(zipFileInteractionId, requestParameters, file,
                     CsvProcessingState.PROCESSING_COMPLETED);
             saveIncomingFileToInboundFolder(file, zipFileInteractionId);         
-            session = engine.session()
-                    .withMasterInteractionId(zipFileInteractionId)
-                    .withSessionId(UuidUtil.generateUuid())
-                    .withTenantId((String) requestParameters.get(Constants.TENANT_ID))
-                    .withFile(file)
-                    .withRequestParameters(requestParameters)
-                    .build();
-            engine.orchestrate(session);
-            LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
-                    zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
-            fullOperationOutcome =  session.getValidationResults();
+            if ("true".equalsIgnoreCase(isSync)) {
+
+                LOG.info("Starting synchronous Validation for zipFileInteractionId: {}",
+                        zipFileInteractionId);
+
+                return runValidationProcess(
+                        zipFileInteractionId,
+                        tenantId,
+                        file,
+                        requestParameters,
+                        responseParameters,
+                        start
+                );
+
+                } else {
+
+                LOG.info("Starting asynchronous Validation for zipFileInteractionId: {}",
+                        zipFileInteractionId);
+
+                CompletableFuture.runAsync(() -> {
+                        try {
+                        runValidationProcess(
+                                zipFileInteractionId,
+                                tenantId,
+                                file,
+                                requestParameters,
+                                responseParameters,
+                                start
+                        );
+                        } catch (Exception ex) {
+                        LOG.error("Async Validation failed for zipFileInteractionId={}",
+                                zipFileInteractionId, ex);
+                        }
+                 }, asyncTaskExecutor);
+
+                 LOG.info("Returning interim async response for zipFileInteractionId: {} tenantId: {}", zipFileInteractionId, tenantId);
+                   return buildAsyncResponse(zipFileInteractionId);
+                 }
+
+    }
+
+    private Map<String, Object> runValidationProcess(
+        String zipFileInteractionId,
+        String tenantId,
+        MultipartFile file,
+        Map<String, Object> requestParams,
+        Map<String, Object> responseParams,
+        long start) throws Exception {
+
+        CsvOrchestrationEngine.OrchestrationSession session = null;
+        boolean success = false;
+        Map<String, Object> fullOperationOutcome = null;
+
+        try {
+                saveArchiveInteractionStatus(
+                        zipFileInteractionId,
+                        CsvProcessingState.PROCESSING_INPROGRESS,
+                        requestParams,
+                        null
+                );
+
+                session = engine.session()
+                        .withMasterInteractionId(zipFileInteractionId)
+                        .withSessionId(UuidUtil.generateUuid())
+                        .withTenantId(tenantId)
+                        .withFile(file)
+                        .withRequestParameters(requestParams)
+                        .build();
+
+                engine.orchestrate(session);
+
+                fullOperationOutcome = session.getValidationResults();
+                success = true;
+
+                LOG.info("Validation completed for zipFileInteractionId={}", zipFileInteractionId);
+
+                return fullOperationOutcome;
+
         } finally {
-            saveMiscErrorsForValidation(session.getFilesNotProcessed(), zipFileInteractionId, requestParameters, file.getOriginalFilename(),session.getMetricsBuilder().build());
-            saveFullOperationOutcome(fullOperationOutcome, zipFileInteractionId, requestParameters);
-            if (null != session) {
+
+                if (session != null) {
+                saveMiscErrorsForValidation(
+                        session.getFilesNotProcessed(),
+                        zipFileInteractionId,
+                        requestParams,
+                        file.getOriginalFilename(),
+                        session.getMetricsBuilder().build()
+                );
+                }
+
+                if (fullOperationOutcome != null) {
+                saveFullOperationOutcome(
+                        fullOperationOutcome,
+                        zipFileInteractionId,
+                        requestParams
+                );
+                }
+
+                saveArchiveInteractionStatus(
+                        zipFileInteractionId,
+                        success
+                                ? CsvProcessingState.PROCESSING_COMPLETED
+                                : CsvProcessingState.PROCESSING_FAILED,
+                        requestParams,
+                        session != null ? session.getMetricsBuilder() : null
+                );
+
+                if (session != null) {
                 engine.clear(session);
-            }
+                }
+
+                long durationMs = (System.nanoTime() - start) / 1_000_000;
+                LOG.info("Validation cleanup done zipFileInteractionId={} timeTaken={}ms",
+                        zipFileInteractionId,
+                        durationMs
+                );
         }
-        return fullOperationOutcome;
     }
 
     @Transactional
