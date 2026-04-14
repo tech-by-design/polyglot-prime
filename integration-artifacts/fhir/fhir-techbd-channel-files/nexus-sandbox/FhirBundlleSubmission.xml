@@ -1,15 +1,18 @@
 <channel version="4.6.1">
-  <id>ebf6c718-f2dd-415c-9e24-3852cb49577a</id>
+  <id>2435531d-2185-44a6-8c33-29a42af45b1d</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.24
-Updated FHIR Bundle channel to use register_interaction_fhir_request as per latest DB changes.</description>
-  <revision>7</revision>
+  <description>Version: 0.8.25
+Added required headers for data ledger tracking and diadnostics from lookup manager</description>
+  <revision>18</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -31,9 +34,6 @@ Updated FHIR Bundle channel to use register_interaction_fhir_request as per late
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -360,6 +360,23 @@ try {
 
 } catch (e) {
     logger.error(&quot; Error processing DataLedger Tracking secret: &quot; + e.message);
+}
+
+
+/********************************************
+    9️⃣ FETCH DATA LEDGER  DATA_LEDGER_DIAGNOSTICS (Plain text)
+********************************************/
+
+try {
+    var dataLedgerDiagnostics = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_DIAGNOSTICS&quot;);
+   
+    channelMap.put(&quot;DATA_LEDGER_DIAGNOSTICS&quot;, dataLedgerDiagnostics);
+    globalMap.put(&quot;DATA_LEDGER_DIAGNOSTICS&quot;, dataLedgerDiagnostics);
+
+    logger.info(&quot; DataLedger diagnostics loaded into channelMap&quot;+ dataLedgerDiagnostics);
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLedger diagnostics secret: &quot; + e.message);
 }
 
 
@@ -813,6 +830,18 @@ function notFound() {
             <string>X-TechBD-Master-Interaction-ID</string>
             <list>
               <string>${masterInteractionId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Data-Ledger-Tracking</string>
+            <list>
+              <string>${DATA_LEDGER_TRACKING}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Data-Ledger-diagnostics</string>
+            <list>
+              <string>${DATA_LEDGER_DIAGNOSTICS}</string>
             </list>
           </entry>
         </headers>
@@ -2485,24 +2514,24 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1775031878365</time>
+        <time>1776076074144</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>3eadcde6-b322-4023-b963-ff86264ce4b2</id>
-        <name>0_8_24</name>
+        <id>e034d2c6-2969-4c64-9ebc-c1fc321d9468</id>
+        <name>0_8_25</name>
         <channelIds>
-          <string>ebf6c718-f2dd-415c-9e24-3852cb49577a</string>
+          <string>2435531d-2185-44a6-8c33-29a42af45b1d</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

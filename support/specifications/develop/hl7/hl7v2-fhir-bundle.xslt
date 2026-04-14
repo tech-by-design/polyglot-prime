@@ -1048,6 +1048,8 @@
 					  <!-- Loop through all OBX segments globally and filter by code -->
 					  <xsl:for-each select="//OBX[
 											  contains($derivedFromCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+                        and string(OBX.5/OBX.5.1)
+                        and normalize-space(OBX.5/OBX.5.1) != 'UNK'
 											  and not(preceding::OBX[
 												normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
 											  ])

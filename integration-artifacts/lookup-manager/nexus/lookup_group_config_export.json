@@ -17,6 +17,7 @@
     "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "https://nexus.fhir.sandbox.techbd.org",
     "DATA_LEDGER_API_URL" : "https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger",
     "DATA_LEDGER_TRACKING" : "false",
+    "DATA_LEDGER_DIAGNOSTICS": "false",
     "HL7_XSLT_PATH" : "/opt/bridgelink/hl7-techbd-schema-files",
     "HUB_UI_URL" : "https://hub.sandbox.dev.techbd.org",
     "MC_CCDA_SCHEMA_FOLDER" : "/opt/bridgelink/ccda-techbd-schema-files/",

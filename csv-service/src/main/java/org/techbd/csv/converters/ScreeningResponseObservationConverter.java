@@ -100,7 +100,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if(!data.getAnswerCode().isEmpty() || !data.getAnswerCodeDescription().isEmpty() || !data.getDataAbsentReasonCode().isEmpty()){
                                 Observation observation = new Observation();
                                 String observationId = data.getScreeningIdentifier();
-                                String observationIdHashed = CsvConversionUtil.sha256(observationId);
+                                String observationIdHashed = CsvConversionUtil.sha256(observationId + data.getQuestionCode());
                                 // CsvConversionUtil
                                 //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                                 //                                 data.getQuestionCode() + data.getEncounterId());
@@ -372,7 +372,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         List<Reference> derivedFromRefs = screeningObservationDataList.stream()
                                                         .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
                                                         .map(obs -> {
-                                                                String derivedFromId = CsvConversionUtil.sha256(obs.getScreeningIdentifier());
+                                                                String derivedFromId = CsvConversionUtil.sha256(obs.getScreeningIdentifier() +  obs.getQuestionCode());
                                                                 return new Reference("Observation/" + derivedFromId);
                                                         })
                                                         .collect(Collectors.toList());
@@ -627,7 +627,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Add member references using observationId directly from the model
                 List<Reference> hasMemberReferences = groupData.stream()
-                                .map(data -> new Reference("Observation/" + CsvConversionUtil.sha256(data.getObservationId())))
+                                .map(data -> new Reference("Observation/" + CsvConversionUtil.sha256(data.getObservationId() + data.getQuestionCode())))
                                 .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
