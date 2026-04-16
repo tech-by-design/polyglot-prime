@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>3322c442-7c6e-46b4-b6d1-f0cff8c4741d</id>
+  <id>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.27
-update CCDA workflow and add OMH/OPWDD flag handling in XSLT</description>
-  <revision>15</revision>
+  <description>Version 0.5.28
+Implemented Uuid version 7.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -249,8 +249,10 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
           <script>/**
 * Replacer function to remove empty values
 */
-
-var interactionId = java.util.UUID.randomUUID().toString();
+var Generators = Packages.com.fasterxml.uuid.Generators;
+var uuid = Generators.timeBasedEpochGenerator().generate().toString();
+logger.info(&quot;Generated UUID v7: &quot; + uuid);
+var interactionId = uuid;
 channelMap.put(&apos;interactionId&apos;, interactionId);
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
@@ -3111,9 +3113,8 @@ if(endpoint == &apos;bundle&apos;) {
 		responseMap.put(&apos;finalResponse&apos;, responseData);
 		
 	    // Log the response details
-	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
-	    logger.info(&quot;Status Code: &quot; + responseStatus);
-	    logger.info(&quot;Response Data: &quot; + responseData);
+	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot; + &quot; Status Code: &quot; + responseStatus +&quot; Response Data: &quot; + responseData);
+	   
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
 	}
@@ -3164,25 +3165,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776329379624</time>
+        <time>1776334401999</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>f7881441-88b0-4182-9606-6c0b817bc4d9</id>
-        <name>0_5_27</name>
+        <id>923c9b91-edef-4f30-a263-0b290c22dbd9</id>
+        <name>0_5_28</name>
         <channelIds>
-          <string>3322c442-7c6e-46b4-b6d1-f0cff8c4741d</string>
+          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

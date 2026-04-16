@@ -1,18 +1,15 @@
 <channel version="4.6.1">
-  <id>2435531d-2185-44a6-8c33-29a42af45b1d</id>
+  <id>aa501a7f-bc5b-4953-8532-3116289e26c1</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.25
-Added required headers for data ledger tracking and diadnostics from lookup manager</description>
-  <revision>18</revision>
+  <description>Version: 0.8.26
+Implemented Uuid version 7.</description>
+  <revision>8</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Added required headers for data ledger tracking and diadnostics from lookup mana
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -109,40 +109,7 @@ Added required headers for data ledger tracking and diadnostics from lookup mana
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
 ///////////////////////////////////////////////////////////////////////////////////////////
-/*******************************
-    AWS Secrets Manager Loader
-********************************/
 
-
-//function fetchSecret(secretName) {
-//    var region = &quot;us-east-1&quot;;
-//
-//    var Region = Packages.software.amazon.awssdk.regions.Region;
-//    var SecretsManagerClient = Packages.software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-//    var GetSecretValueRequest = Packages.software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-//
-//    try {
-//        var client = SecretsManagerClient.builder()
-//            .region(Region.of(region))
-//            .build();
-//
-//        var request = GetSecretValueRequest.builder()
-//            .secretId(secretName)
-//            .build();
-//
-//        var response = client.getSecretValue(request);
-//        client.close();
-//
-//        var value = response.secretString();
-//        logger.info(&quot;★ Successfully fetched secret: &quot; + secretName);
-//
-//        return value;
-//
-//    } catch (e) {
-//        logger.error(&quot;❌ Failed fetching secret: &quot; + secretName + &quot; | Error: &quot; + e.message);
-//        throw e;
-//    }
-//}
 
 /********************************************
     1️⃣ FETCH JDBC SECRET (JSON secret)
@@ -228,25 +195,7 @@ try {
 }
 
 
-/********************************************
-    4️⃣ FETCH CSV SERVICE API URL (Plain text)
-********************************************/
-try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
 
-    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
-        throw &quot; CSV Service URL retrieved from Lookup Manager is empty.&quot;;
-    }
-    channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
-    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
-    
-     logger.info(&quot; CSV Service API URL loaded successfully from Lookup Manager: &quot; + csvServiceUrl);
-
-} catch (e) {
-    logger.error(&quot; Error fetching CSV Service API URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
-    throw e;
-}
 
 
 /********************************************
@@ -496,10 +445,7 @@ var groupInteractionId = channelMap.get(&apos;groupInteractionId&apos;);
 var masterInteractionId = channelMap.get(&apos;masterInteractionId&apos;);
 &#xd;
 
-logger.info(&quot;Channel Name: &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
-
-
 
 
 channelMap.put(&apos;interactionId&apos;, interactionId);
@@ -510,24 +456,13 @@ channelMap.put(&apos;elaboration&apos;, elaboration);
 channelMap.put(&apos;groupInteractionId&apos;, groupInteractionId);
 channelMap.put(&apos;masterInteractionId&apos;, masterInteractionId);
 
-
-
-//logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: fhirSubmissionApiUrl: &quot; + fhirSubmissionApiUrl);
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: igVersion: &quot; + igVersion);
-
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  inside channel processor -BEGIN: &quot; + channelMap);
 
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: tenantid: &quot; + tenantId); 
 channelMap.put(&apos;tenantId&apos;, tenantId);
 
-
-
 &#xd;
-&#xd;
-var userAgent = channelMap.get(&apos;userAgent&apos;);
-logger.info(&quot;userAgentL: &quot; + userAgent);&#xd;
+var userAgent = channelMap.get(&apos;userAgent&apos;);&#xd;
 channelMap.put(&apos;userAgent&apos;, userAgent);
 
 
@@ -953,10 +888,8 @@ function resolveProcessingAgent(tenantId) {
     var value = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;));
     tenantId = String(tenantId);
 
-    logger.info(&quot;Feature Flag: &quot; + featureEnabled);
-    logger.info(&quot;Tenant IDs Config: &quot; + tenantIds);
-    logger.info(&quot;Configured Value: &quot; + value);
-    logger.info(&quot;Incoming TenantId: [&quot; + tenantId + &quot;]&quot;);
+    logger.info(&quot;Feature Flag: &quot; + featureEnabled+&quot;Tenant IDs Config: &quot; + tenantIds+&quot;Configured Value: &quot; + value+&quot;Incoming TenantId: [&quot; + tenantId + &quot;]&quot;);
+   
 
     if (!tenantId || featureEnabled !== &quot;true&quot;) {
         logger.info(&quot;Feature disabled or tenantId missing&quot;);
@@ -966,17 +899,10 @@ function resolveProcessingAgent(tenantId) {
     var incomingTenant = tenantId.trim().toLowerCase();
     var tenantList = tenantIds.split(&quot;,&quot;);
 
-     logger.info(&quot;incomingTenant:&quot;+incomingTenant);
-
-      logger.info(&quot;tenantList:&quot;+tenantList);
 
     for (var i = 0; i &lt; tenantList.length; i++) {
 
         var configTenant = String(tenantList[i]).trim().toLowerCase();
-
-         logger.info(&quot;configTenant:&quot;+configTenant);
-
-        logger.info(&quot;Comparing [&quot; + configTenant + &quot;] with [&quot; + incomingTenant + &quot;]&quot;);
 
         if (configTenant === incomingTenant) {
             logger.info(&quot;Tenant matched. Returning value: &quot; + value);
@@ -1020,8 +946,6 @@ if (!apiKey) {
 // ------------------------------------------------------------
 
 var processingAgent = resolveProcessingAgent(tenantId);
-logger.info(&quot;Tenant ID: &quot; + tenantId);
-logger.info(&quot;Resolved Processing Agent: &quot; + processingAgent);
 var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + processingAgent;
 //var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + tenantId;
 logger.info(&quot;Calling DataLake URL: &quot; + finalUrl);
@@ -1066,9 +990,7 @@ try {
         responseBody = EntityUtils.toString(response.getEntity(), &quot;UTF-8&quot;);
     }
 
-    logger.info(&quot;DataLake Status Code: &quot; + statusCode);
-    logger.info(&quot;DataLake Status Text: &quot; + statusText);
-    logger.info(&quot;DataLake Response Body: &quot; + responseBody);
+    logger.info(&quot;DataLake Status Code: &quot; + statusCode+&quot;DataLake Status Text: &quot; + statusText+&quot;DataLake Response Body: &quot; + responseBody);
 
 } catch (e) {
 
@@ -1684,6 +1606,11 @@ function iterableToArrayStr(col) {&#xd;
 ///////////////////////////////////////////////////////////////////////////
 // Access the required header values using getHeader method
 
+
+var Generators = Packages.com.fasterxml.uuid.Generators;
+var uuid = Generators.timeBasedEpochGenerator().generate().toString();
+logger.info(&quot;Generated UUID v7: &quot; + uuid);
+
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 
 // Read both headers
@@ -1732,7 +1659,7 @@ if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &a
 } else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
     interactionId = incomingCorrelationId;
 } else {
-    interactionId = java.util.UUID.randomUUID().toString();
+    interactionId = uuid;
 }
 
 
@@ -1897,11 +1824,8 @@ var responseDataLakeData = channelMap.get(&quot;datalake_response_body&quot;);
 var responseDataLakeStatusText = channelMap.get(&quot;datalake_status_text&quot;);
 var dataLakeErrorMessage = channelMap.get(&quot;datalake_response_message&quot;);
 var destinationDataLakeName = &quot;dest_datalake&quot;;
-
-logger.info(&quot;DataLake HTTP Status: &quot; + responseDataLakeStatus);
-logger.info(&quot;DataLake HTTP Status Text: &quot; + responseDataLakeStatusText);
-logger.info(&quot;DataLake Response Body: &quot; + responseDataLakeData);
-
+ 
+logger.info(&quot;DataLake HTTP Status: &quot; + responseDataLakeStatus+&quot; DataLake HTTP Status Text: &quot; + responseDataLakeStatusText+&quot; DataLake Response Body: &quot; + responseDataLakeData);
 	
 	// Check if the response exists
 if (responseDataLakeStatusText &amp;&amp; isActionDiscard != &quot;discard&quot;) {
@@ -1911,8 +1835,6 @@ if (responseDataLakeStatusText &amp;&amp; isActionDiscard != &quot;discard&quot;
 var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 var source = channelMap.get(&quot;source&quot;);
-
-logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  source: ---&quot; + source);
 
 var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 		
@@ -2032,7 +1954,7 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 
 		
 		if (status === &quot;success&quot;) {
-		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Sucess&quot;);
+		   
 		    var operation = &quot;saveForwardFHIRSuccess&quot;;
 		logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  saveForwardFHIRSuccess - FHIR Data Lake Complete Payload save &quot;);
 		
@@ -2514,7 +2436,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776076074144</time>
+        <time>1776334384894</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2525,14 +2447,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>e034d2c6-2969-4c64-9ebc-c1fc321d9468</id>
-        <name>0_8_25</name>
+        <id>f0463eb6-f4be-4945-8d06-d7a1a04dd75d</id>
+        <name>0_8_26</name>
         <channelIds>
-          <string>2435531d-2185-44a6-8c33-29a42af45b1d</string>
+          <string>aa501a7f-bc5b-4953-8532-3116289e26c1</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

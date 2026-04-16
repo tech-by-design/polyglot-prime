@@ -1,15 +1,36 @@
 <channel version="4.6.1">
-  <id>00389d41-c2ce-45c7-a702-353b449b1026</id>
+  <id>9608b1d8-a780-4093-a7b2-14412f61e0ea</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.11
-Revert Content type validation for fhirvalidate Channel.</description>
-  <revision>4</revision>
+  <description>Version: 0.8.12
+Implemented Uuid version 7.</description>
+  <revision>2</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -203,28 +224,6 @@ try {
     throw e;
 }
 
-
-/********************************************
-    4️⃣ FETCH CSV SERVICE API URL (Plain text)
-********************************************/
-try {
-    var csvServiceUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_CSV_SERVICE_API_URL&quot;);
-
-    if (!csvServiceUrl || csvServiceUrl.trim() === &quot;&quot;) {
-        throw &quot;CSV Service URL retrieved from Lookup Manager is empty.&quot;;
-    }
-
-    channelMap.put(&quot;CSV_SERVICE_API_URL&quot;, csvServiceUrl);
-    globalMap.put(&quot;csvServiceApiUrl&quot;, csvServiceUrl);
-    logger.info(&quot;CSV Service API URL loaded successfully from Lookup Manager: &quot; + csvServiceUrl);
-
-} catch (e) {
-    logger.error(&quot;❌ Error fetching CSV Service API URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load CSV Service API URL&quot;);
-    throw e;
-}
-
-
 /********************************************
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
@@ -358,11 +357,7 @@ var validationSeverityLevel = channelMap.get(&apos;validationSeverityLevel&apos;
 var source = channelMap.get(&apos;source&apos;);
 var igVersion = channelMap.get(&apos;igVersion&apos;);
 var elaboration = channelMap.get(&apos;elaboration&apos;);
-&#xd;
 
-
-
-logger.info(&quot;Channel Name: - &quot; + channelName);
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot; ][INTERACTION ID: &quot; +interactionId +&quot; ]:Received message: &quot; + connectorMessage.getRawData());
 
 
@@ -540,7 +535,29 @@ function notFound() {
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.6.1">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>false</mutualTlsEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>true</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="4.6.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -732,14 +749,9 @@ function notFound() {
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>// Modify the message variable below to pre process data
-//logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
-//var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-//if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
-//    return;
-//}
-//TODO - check and add other parameters /header validation for /Bundle
-//logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);
+  <preprocessingScript>var Generators = Packages.com.fasterxml.uuid.Generators;
+var uuid = Generators.timeBasedEpochGenerator().generate().toString();
+logger.info(&quot;Generated UUID v7: &quot; + uuid);
 
 ///////////////////////////////////////////////////////////////////////////
 // Access the required header values using getHeader method
@@ -791,7 +803,7 @@ if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &a
 } else if (incomingCorrelationId != null &amp;&amp; incomingCorrelationId.trim() !== &apos;&apos;) {
     interactionId = incomingCorrelationId;
 } else {
-    interactionId = java.util.UUID.randomUUID().toString();
+    interactionId = uuid;
 }
 
 channelMap.put(&apos;interactionId&apos;, interactionId);
@@ -899,18 +911,12 @@ if(endpoint == &apos;validate&apos;) {&#xd;
 		responseMap.put(&apos;finalResponse&apos;, responseData);&#xd;
 		&#xd;
 	    // Log the response details&#xd;
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Response from &quot; + destinationName + &quot;:&quot;);&#xd;
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Status Code: &quot; + responseStatus);&#xd;
-	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Response Data: &quot; + responseData);&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:Response from &quot; + destinationName + &quot;:&quot; + &quot;:Status Code: &quot; + responseStatus + &quot; :Response Data: &quot; + responseData);&#xd;
 	} else {&#xd;
 	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:No response found for destination: &quot; + destinationName);&#xd;
 	}&#xd;
 }&#xd;
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor ENDS.&quot;);
-
-
-
-
 
 return;
 </postprocessingScript>
@@ -1002,25 +1008,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1774273792240</time>
+        <time>1776334052265</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>a7d5ea54-ac91-4ea8-b759-7efdb1acb94d</id>
-        <name>0_8_11</name>
+        <id>04e46c20-43c4-435b-8205-f053cf9c9db3</id>
+        <name>0_8_12</name>
         <channelIds>
-          <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
+          <string>9608b1d8-a780-4093-a7b2-14412f61e0ea</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>128</red>
+          <green>128</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

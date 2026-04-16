@@ -7,6 +7,9 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -276,12 +279,24 @@ public class SoapFaultEnhancementFilter extends OncePerRequestFilter {
                         headers.size(), destinationPort, context.getInteractionId());
             }
             
+            Instant now = Instant.now();
+
+            // Populate timestamp if not set
+            if (context.getTimestamp() == null) {
+                String timestamp = String.valueOf(now.toEpochMilli());
+                context.setTimestamp(timestamp);
+            }
+
             // Populate uploadTime if not set
             if (context.getUploadTime() == null) {
-                context.setUploadTime(java.time.ZonedDateTime.now());
-                logger.info("SoapFaultEnhancementFilter:: Set uploadTime to current time for interactionId={}", 
-                        context.getInteractionId());
+                ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
+                context.setUploadTime(uploadTime);
             }
+
+            logger.info("SoapFaultEnhancementFilter:: timestamp={} uploadTime={} for interactionId={}",
+                    context.getTimestamp(),
+                    context.getUploadTime(),
+                    context.getInteractionId());
             
             // Determine MessageSourceType based on SOAP message content
             org.techbd.ingest.commons.MessageSourceType messageSourceType = determineMessageSourceType(requestBody);
