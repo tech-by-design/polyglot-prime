@@ -1,19 +1,23 @@
 package org.techbd.corelib.util;
 
 import com.fasterxml.uuid.Generators;
-
+import com.fasterxml.uuid.impl.TimeBasedEpochGenerator;
 
 public final class UuidUtil {
-      private UuidUtil() {
-    }
 
-      /**
-     * Generates a UUID Version 7 (time-ordered).
-     * Recommended replacement for UUID.randomUUID().
+    // Single shared generator instance — critical for monotonicity within same ms
+    private static final TimeBasedEpochGenerator UUID_GENERATOR = 
+        Generators.timeBasedEpochGenerator();
+
+    private UuidUtil() {}
+
+    /**
+     * Generates a UUID Version 7 (time-ordered, monotonic).
+     * Uses a shared generator instance to ensure uniqueness within the same millisecond.
      *
      * @return UUIDv7 string
      */
     public static String generateUuid() {
-        return Generators.timeBasedEpochGenerator().generate().toString();    }
-
+        return UUID_GENERATOR.generate().toString();
+    }
 }
