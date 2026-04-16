@@ -1,18 +1,15 @@
 <channel version="4.6.1">
-  <id>01fbb835-f605-4376-84eb-9c4affcf159e</id>
+  <id>4c2ba30f-c175-44b4-a740-0297048c7969</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.33
-Added OMH and OPWDD flag handling similar to Part2.</description>
-  <revision>6</revision>
+  <description>Version: 0.1.34
+Implemented Uuid version 7.</description>
+  <revision>3</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -34,6 +31,9 @@ Added OMH and OPWDD flag handling similar to Part2.</description>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.6.1">
         <host>0.0.0.0</host>
@@ -288,9 +288,10 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }
 
-//var UuidCreator = Packages.com.github.f4b6a3.uuid.UuidCreator;
-//var interactionId = UuidCreator.getTimeOrdered().toString();
-var interactionId = java.util.UUID.randomUUID().toString();
+var Generators = Packages.com.fasterxml.uuid.Generators;
+var uuid = Generators.timeBasedEpochGenerator().generate().toString();
+logger.info(&quot;Generated UUID v7: &quot; + uuid);
+var interactionId = uuid;
 globalMap.put(&apos;interactionId&apos;, interactionId);
 var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;
 
@@ -2771,10 +2772,7 @@ if(endpoint == &apos;bundle&apos;) {
 		responseMap.put(&apos;finalResponse&apos;, responseData);
 		
 	    // Log the response details
-	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
-	    logger.info(&quot;Status Code: &quot; + responseStatus);
-	    logger.info(&quot;Response Data: &quot; + responseData);
-
+	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;+&quot; Status Code: &quot; + responseStatus+&quot;Response Data: &quot; + responseData);
 	   
 	} else {
 	    logger.info(&quot;No response found for destination: &quot; + destinationName);
@@ -3090,24 +3088,24 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776164136396</time>
+        <time>1776333946870</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>992de56c-8035-401c-bf39-8066cb52c9eb</id>
-        <name>0_1_33</name>
+        <id>2f9d37dd-3590-46ec-a9d1-83ff7560b369</id>
+        <name>0_1_34</name>
         <channelIds>
-          <string>01fbb835-f605-4376-84eb-9c4affcf159e</string>
+          <string>4c2ba30f-c175-44b4-a740-0297048c7969</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
