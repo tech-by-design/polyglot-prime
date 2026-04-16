@@ -746,6 +746,8 @@ public class CsvOrchestrationEngine {
             // Validate CSV files inside the group
             String validationResults = validateCsvUsingPython(fileDetails, masterInteractionId);
             Instant completedAtForThisGroup = Instant.now();
+            log.info("validationResults after Python Validate  -generated for  tenantId : {}, groupInteractionId : {} validationResults: {},",
+            tenantId, groupInteractionId , validationResults); 
 
             Map<String, Object> operationOutomeForThisGroup = createOperationOutcome(masterInteractionId,
                     groupInteractionId, validationResults, fileDetails,
