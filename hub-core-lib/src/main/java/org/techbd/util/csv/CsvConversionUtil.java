@@ -243,6 +243,11 @@ public class CsvConversionUtil {
         }
     }
     
+    public static String sha256_32(String input) {
+        String fullHash = sha256(input); // your existing method
+        return fullHash.substring(0, 32);
+    }
+    
      public static Map<String, Object> createOperationOutcomeForError(CoreAppConfig appConfig,
             final String masterInteractionId,
             final String groupInteractionId,

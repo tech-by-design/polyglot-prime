@@ -100,7 +100,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if(!data.getAnswerCode().isEmpty() || !data.getAnswerCodeDescription().isEmpty() || !data.getDataAbsentReasonCode().isEmpty()){
                                 Observation observation = new Observation();
                                 String observationId = data.getScreeningIdentifier();
-                                String observationIdHashed = CsvConversionUtil.sha256(observationId);
+                                String observationIdStringHashed = CsvConversionUtil.sha256_32(data.getFacilityName() + data.getPatientMrIdValue() +  data.getEncounterId()  + data.getScreeningIdentifier() + data.getScreeningStartDateTime());
+                                String observationIdHashed = observationIdStringHashed + "-obs3-" + data.getQuestionCode();
                                 // CsvConversionUtil
                                 //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                                 //                                 data.getQuestionCode() + data.getEncounterId());
@@ -369,12 +370,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
                                         Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
                                         List<Reference> derivedFromRefs = screeningObservationDataList.stream()
-                                                        .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
-                                                        .map(obs -> {
-                                                                String derivedFromId = CsvConversionUtil.sha256(obs.getScreeningIdentifier());
-                                                                return new Reference("Observation/" + derivedFromId);
-                                                        })
-                                                        .collect(Collectors.toList());
+                                                .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
+                                                .map(obs -> {
+                                                    String observationIdStringHashed1 = CsvConversionUtil
+                                                            .sha256_32(obs.getFacilityName() + obs.getPatientMrIdValue()
+                                                                    + obs.getEncounterId()
+                                                                    + obs.getScreeningIdentifier()
+                                                                    + obs.getScreeningStartDateTime());
+                                                    String derivedFromId = observationIdStringHashed1 + "-obs3-"
+                                                            + obs.getQuestionCode();
+                                                    return new Reference("Observation/" + derivedFromId);
+                                                })
+                                                .collect(Collectors.toList());
                                         derivedFromMap.put(observationId, derivedFromRefs);
                                 }
                                 List<Reference> derivedRefs = derivedFromMap.get(observationId);
@@ -626,8 +633,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Add member references using observationId directly from the model
                 List<Reference> hasMemberReferences = groupData.stream()
-                                .map(data -> new Reference("Observation/" + CsvConversionUtil.sha256(data.getObservationId())))
-                                .collect(Collectors.toList());
+                        .map(data -> new Reference("Observation/"
+                                + CsvConversionUtil.sha256_32(
+                                        data.getFacilityName() + data.getPatientMrIdValue() + data.getEncounterId()
+                                                + data.getScreeningIdentifier() + data.getScreeningStartDateTime())
+                                + "-obs3-" + data.getQuestionCode()))
+                        .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
                 // Create bundle entry
