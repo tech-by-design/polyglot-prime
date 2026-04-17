@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>4c2ba30f-c175-44b4-a740-0297048c7969</id>
+  <id>7bfc4fca-cf0a-4caf-b297-b4579d23684c</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.34
-Implemented Uuid version 7.</description>
-  <revision>3</revision>
+  <description>Version: 0.1.35
+Added organisation validation to HL7.</description>
+  <revision>5</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -980,7 +980,7 @@ function validateOrganizationName(hl7Text) {
 
     // Check header first
     var orgNameHeader = channelMap.get(&quot;OrganizationName&quot;);
-    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim().length &gt; 0) {
+    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim() !== &quot;&quot;) {
     	        
         // ensure UI uses header
      channelMap.put(&quot;OrganizationName&quot;, String(orgNameHeader).trim());
@@ -996,7 +996,7 @@ function validateOrganizationName(hl7Text) {
             var fields = line.split(&quot;|&quot;);
             if (fields.length &gt;= 6) {
                 var msh6 = fields[5] ? fields[5].trim() : &quot;&quot;;
-                if (msh6.length &gt; 0) {
+                if (msh6 !== &quot;&quot;) {    
                 	                    
                     // Set it back so UI uses it
                     channelMap.put(&quot;OrganizationName&quot;, msh6);
@@ -3088,24 +3088,24 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776333946870</time>
+        <time>1776411646320</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>11</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>2f9d37dd-3590-46ec-a9d1-83ff7560b369</id>
-        <name>0_1_34</name>
+        <id>c98f2dec-dfef-4d90-91cf-0c3a08173447</id>
+        <name>0_1_35</name>
         <channelIds>
-          <string>4c2ba30f-c175-44b4-a740-0297048c7969</string>
+          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
