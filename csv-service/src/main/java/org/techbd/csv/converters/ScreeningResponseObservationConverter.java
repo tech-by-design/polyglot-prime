@@ -100,8 +100,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if(!data.getAnswerCode().isEmpty() || !data.getAnswerCodeDescription().isEmpty() || !data.getDataAbsentReasonCode().isEmpty()){
                                 Observation observation = new Observation();
                                 String observationId = data.getScreeningIdentifier();
-                                String observationIdStringHashed = CsvConversionUtil.sha256_32(data.getFacilityName() + data.getPatientMrIdValue() +  data.getEncounterId()  + data.getScreeningIdentifier() + data.getScreeningStartDateTime());
-                                String observationIdHashed = observationIdStringHashed + "-obs3-" + data.getQuestionCode();
+                                String observationIdHashed = buildObservationId(data);
                                 // CsvConversionUtil
                                 //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                                 //                                 data.getQuestionCode() + data.getEncounterId());
@@ -369,31 +368,20 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 }
 
                                 if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
-                                        Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
-                                        List<Reference> derivedFromRefs = screeningObservationDataList.stream()
-                                                .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
-                                                .map(obs -> {
-                                                    String observationIdStringHashed1 = CsvConversionUtil
-                                                            .sha256_32(obs.getFacilityName() + obs.getPatientMrIdValue()
-                                                                    + obs.getEncounterId()
-                                                                    + obs.getScreeningIdentifier()
-                                                                    + obs.getScreeningStartDateTime());
-                                                    String derivedFromId = observationIdStringHashed1 + "-obs3-"
-                                                            + obs.getQuestionCode();
-                                                    return new Reference("Observation/" + derivedFromId);
-                                                })
-                                                .collect(Collectors.toList());
-                                        derivedFromMap.put(observationId, derivedFromRefs);
-                                }
-                                List<Reference> derivedRefs = derivedFromMap.get(observationId);
+                                    Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
+                                    List<Reference> derivedRefs = screeningObservationDataList.stream()
+                                            .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
+                                            .map(obs -> new Reference("Observation/" + buildObservationId(obs)))
+                                            .collect(Collectors.toList());
 
-                                if (derivedRefs != null && !derivedRefs.isEmpty()) {
+                                    if (!derivedRefs.isEmpty()) {
                                         observation.setDerivedFrom(derivedRefs);
                                         if (LOG.isDebugEnabled()) {
-                                                derivedRefs.forEach(
-                                                                ref -> LOG.debug("Added reference {} for the observation {}",
-                                                                                ref.getReference(), observationId));
+                                            derivedRefs.forEach(
+                                                    ref -> LOG.debug("Added reference {} for the observation {}",
+                                                            ref.getReference(), observationId));
                                         }
+                                    }
                                 }
 
                                 BundleEntryComponent entry = new BundleEntryComponent();
@@ -634,11 +622,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Add member references using observationId directly from the model
                 List<Reference> hasMemberReferences = groupData.stream()
-                        .map(data -> new Reference("Observation/"
-                                + CsvConversionUtil.sha256_32(
-                                        data.getFacilityName() + data.getPatientMrIdValue() + data.getEncounterId()
-                                                + data.getScreeningIdentifier() + data.getScreeningStartDateTime())
-                                + "-obs3-" + data.getQuestionCode()))
+                        .map(data -> new Reference("Observation/" + buildObservationId(data)))
                         .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
@@ -672,5 +656,23 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 observation.addIdentifier(identifier);
             }
         }
-         
+       
+        private String buildObservationId(ScreeningObservationData data) {
+            String hash = CsvConversionUtil.sha256_32(
+                    StringUtils.defaultString(data.getFacilityName())
+                            + StringUtils.defaultString(data.getPatientMrIdValue())
+                            + StringUtils.defaultString(data.getEncounterId())
+                            + StringUtils.defaultString(data.getScreeningIdentifier())
+                            + StringUtils.defaultString(data.getScreeningStartDateTime()));
+
+            String firstAnswerCode = "";
+            if (StringUtils.isNotBlank(data.getAnswerCode())) {
+                String[] parts = data.getAnswerCode().split(";");
+                if (parts.length > 0 && StringUtils.isNotBlank(parts[0])) {
+                    firstAnswerCode = "-" + parts[0].trim();
+                }
+            }
+
+            return hash + "-obs3-" + data.getQuestionCode() + firstAnswerCode;
+        }     
 }
