@@ -1,10 +1,10 @@
 <channel version="4.6.1">
-  <id>461db608-904d-41c3-a9f5-d1c23a450ce9</id>
+  <id>0f97d63c-b506-4b71-aa83-bfe95b9c08a5</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.36
-Implemented Uuid version 7 from code template.</description>
-  <revision>2</revision>
+  <description>Version: 0.1.37
+Revert organisation validation to HL7.</description>
+  <revision>9</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -978,10 +978,8 @@ function validateOrganizationName(hl7Text) {
 
     // Check header first
     var orgNameHeader = channelMap.get(&quot;OrganizationName&quot;);
-    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim() !== &quot;&quot;) {
-    	        
-        // ensure UI uses header
-     channelMap.put(&quot;OrganizationName&quot;, String(orgNameHeader).trim());
+    
+    if (orgNameHeader &amp;&amp; String(orgNameHeader).trim().length &gt; 0) {
 
         return violations;
     }
@@ -994,10 +992,7 @@ function validateOrganizationName(hl7Text) {
             var fields = line.split(&quot;|&quot;);
             if (fields.length &gt;= 6) {
                 var msh6 = fields[5] ? fields[5].trim() : &quot;&quot;;
-                if (msh6 !== &quot;&quot;) {    
-                	                    
-                    // Set it back so UI uses it
-                    channelMap.put(&quot;OrganizationName&quot;, msh6);
+                if (msh6.length &gt; 0) {   
                     return violations;
                 }
             }
@@ -3086,7 +3081,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776660520495</time>
+        <time>1776687457349</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3095,126 +3090,18 @@ return;</undeployScript>
       </pruningSettings>
       <userId>6</userId>
     </metadata>
-    <codeTemplateLibraries>
-      <codeTemplateLibrary version="4.6.1">
-        <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
-        <name>UuidUtil</name>
-        <revision>7</revision>
-        <lastModified>
-          <time>1776660220979</time>
-          <timezone>America/New_York</timezone>
-        </lastModified>
-        <description></description>
-        <includeNewChannels>false</includeNewChannels>
-        <enabledChannelIds class="sorted-set">
-          <string>1ec01527-8a44-4184-a05a-2a91c04f37df</string>
-          <string>32a3cbc1-921f-441c-8e68-3bda27e63ee6</string>
-          <string>461db608-904d-41c3-a9f5-d1c23a450ce9</string>
-          <string>48098091-34dc-4d63-b9a9-c6201f0c0fa4</string>
-          <string>6df6b37f-e6df-4648-a7e1-67715a4e3157</string>
-          <string>d341dceb-069e-49ab-8efa-c45398145216</string>
-        </enabledChannelIds>
-        <disabledChannelIds class="sorted-set">
-          <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
-          <string>01fbb835-f605-4376-84eb-9c4affcf159e</string>
-          <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
-          <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
-          <string>1c406954-d304-4882-b05d-b513d699785b</string>
-          <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
-          <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
-          <string>3322c442-7c6e-46b4-b6d1-f0cff8c4741d</string>
-          <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-          <string>4c2ba30f-c175-44b4-a740-0297048c7969</string>
-          <string>50e1c70e-7b48-4ed0-be9e-309710a85195</string>
-          <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
-          <string>784f3cf4-180a-4ea3-b519-f12626b33dcc</string>
-          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
-          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
-          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
-          <string>89118684-3b07-4336-ab6e-c06a1d9c0440</string>
-          <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
-          <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
-          <string>9608b1d8-a780-4093-a7b2-14412f61e0ea</string>
-          <string>a2eede47-0ee3-4345-b6c2-92c07c553950</string>
-          <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
-          <string>ac705673-f0a4-4cc1-aa75-8a92badefe1a</string>
-          <string>b1be1080-160c-42e5-a1fb-b82439b1757e</string>
-          <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
-          <string>bfe53f29-12c4-4575-856b-64c5700f2564</string>
-          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
-          <string>c56c8654-6ece-4975-bdad-29ef940c7081</string>
-          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
-          <string>cd224bbd-4d5c-46b7-99c5-ed3ec89e6d06</string>
-          <string>d3a8414c-8bcd-40c8-b806-5d163a5dbab1</string>
-          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
-          <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
-          <string>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</string>
-          <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
-        </disabledChannelIds>
-        <codeTemplates>
-          <codeTemplate version="4.6.1">
-            <id>5094a1a4-a8c6-4818-b26f-2a773e673ef3</id>
-            <name>Uuid Generator Instance</name>
-            <revision>3</revision>
-            <lastModified>
-              <time>1776656150928</time>
-              <timezone>America/New_York</timezone>
-            </lastModified>
-            <contextSet>
-              <delegate class="sorted-set">
-                <contextType>GLOBAL_DEPLOY</contextType>
-                <contextType>GLOBAL_UNDEPLOY</contextType>
-                <contextType>GLOBAL_PREPROCESSOR</contextType>
-                <contextType>GLOBAL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_DEPLOY</contextType>
-                <contextType>CHANNEL_UNDEPLOY</contextType>
-                <contextType>CHANNEL_PREPROCESSOR</contextType>
-                <contextType>CHANNEL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_ATTACHMENT</contextType>
-                <contextType>CHANNEL_BATCH</contextType>
-                <contextType>SOURCE_RECEIVER</contextType>
-                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_DISPATCHER</contextType>
-                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
-              </delegate>
-            </contextSet>
-            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
-              <type>FUNCTION</type>
-              <code>function getUuidGenerator() {
-    var generator = globalMap.get(&apos;UUID_GENERATOR&apos;);
-
-    if (generator == null) {
-        var Generators = Packages.com.fasterxml.uuid.Generators;
-        generator = Generators.timeBasedEpochGenerator();
-
-        globalMap.put(&apos;UUID_GENERATOR&apos;, generator);
-        logger.info(&apos;UUID Generator initialized ONCE&apos;);
-    }
-
-    return generator;
-}
-
-function generateUuid() {
-    return getUuidGenerator().generate().toString();
-}</code>
-            </properties>
-          </codeTemplate>
-        </codeTemplates>
-      </codeTemplateLibrary>
-    </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>7ef7960e-209a-4bf5-9948-7f6b23d0ae16</id>
-        <name>0_1_36</name>
+        <id>c98f2dec-dfef-4d90-91cf-0c3a08173447</id>
+        <name>0_1_37</name>
         <channelIds>
-          <string>461db608-904d-41c3-a9f5-d1c23a450ce9</string>
+          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
+          <string>0f97d63c-b506-4b71-aa83-bfe95b9c08a5</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>255</green>
-          <blue>255</blue>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
