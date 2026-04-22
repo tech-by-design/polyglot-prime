@@ -1,0 +1,36 @@
+name: Nexus Ingestion API - Integration Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: nexus-ingestion-api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 21
+          cache: maven
+
+      - name: Run Integration Tests
+        run: |
+          mvn clean verify site \
+            -DskipUTs=true \
+            -DgenerateReports=false
+      - name: Upload Failsafe Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-ingestion-api-failsafe-report
+          path: nexus-ingestion-api/target/site/failsafe-report.html
+          if-no-files-found: warn
