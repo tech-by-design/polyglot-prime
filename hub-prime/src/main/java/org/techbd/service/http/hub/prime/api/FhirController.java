@@ -389,11 +389,7 @@ public class FhirController {
 
                 UUID interactionId = UUID.randomUUID();
                  try {
-                         if (startDateStr.equals(endDateStr)) {
-                                 throw new IllegalArgumentException(
-                                                 "startDate cannot be same as endDate for interactionId: "
-                                                                 + interactionId);
-                         }
+                         
                         OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
                         OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
 
@@ -439,10 +435,7 @@ public class FhirController {
                 UUID requestId = UUID.randomUUID();
 
                 try {
-                        if (startDateStr.equals(endDateStr)) {
-                                throw new IllegalArgumentException(
-                                                "startDate cannot be same as endDate for requestId: " + requestId);
-                        }
+                        
                         OffsetDateTime startDate = parseFlexibleDate(startDateStr, true);
                         OffsetDateTime endDate = parseFlexibleDate(endDateStr, false);
 
