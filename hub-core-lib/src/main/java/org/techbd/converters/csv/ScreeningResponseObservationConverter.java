@@ -344,6 +344,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
                                                         quantity.setValue(0.0);
                                                 }
+                                                quantity.setUnit("minutes per week");
+                                                quantity.setSystem("http://unitsofmeasure.org");
+                                                observation.setValue(quantity);
                                                 }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                                         CodeableConcept dataAbsentReason = new CodeableConcept();
                                                         String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
