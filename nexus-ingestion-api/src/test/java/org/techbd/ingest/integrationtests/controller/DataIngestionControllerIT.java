@@ -1,4 +1,4 @@
-package org.techbd.ingest.controller;
+package org.techbd.ingest.integrationtests.controller;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
