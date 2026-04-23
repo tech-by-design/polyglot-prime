@@ -106,19 +106,20 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
         }
 
         if (request.getRequestURI().startsWith("/actuator")) {
-            Optional<AuthenticatedUser> userOptional = getAuthenticatedUser(request);
+            final var userOptional = getAuthenticatedUser(request);
+            final boolean hasAccess = userOptional.map(u -> u.ghUser().isUserHasActuatorAccess()).orElse(false);
 
-            if (userOptional.isEmpty() || 
-                !userOptional.get().ghUser.isUserHasActuatorAccess()) {
+            if (!hasAccess) {
+                final String message = userOptional
+                        .map(u -> "GitHub ID " + u.ghUser().gitHubId()
+                                 + " does not have roles to access actuator. Please contact " + supportEmailDisplayName)
+                        .orElse("Authentication required to access actuator endpoints. Please log in.");
 
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("text/plain"); // Ensure content type is set to text/plain
-                    response.getWriter().write("GitHub ID " + userOptional.get().ghUser.gitHubId()
-                            + " does not have roles to access actuator. Please send an email to "
-                            + supportEmailDisplayName
-                            + " from your manager, to add roles to access actuator from this GitHub ID.");
-                    response.flushBuffer();
-                    return; // Stop further processing of the request
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("text/plain");
+                response.getWriter().write(message);
+                response.flushBuffer();
+                return; // Stop further processing of the request
             }
         }
 
