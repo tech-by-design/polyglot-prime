@@ -32,5 +32,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nexus-ingestion-api-failsafe-report
-          path: nexus-ingestion-api/target/site/failsafe-report.html
+          path: nexus-ingestion-api/target/site/
           if-no-files-found: warn
