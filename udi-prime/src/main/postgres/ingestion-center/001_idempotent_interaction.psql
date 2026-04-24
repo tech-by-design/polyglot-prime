@@ -232,7 +232,7 @@ AS SELECT  created_at AS interaction_created_at,
     resource_type_set AS resource_types,
     source_hub_interaction_id,
         CASE
-            WHEN source_type = ANY (ARRAY['CSV'::text, 'CCDA'::text, 'HL7V2'::text]) THEN source_type
+            WHEN source_type = ANY (ARRAY['CSV', 'CCDA', 'HL7V2']) THEN source_type
             ELSE 'FHIR'::text
         END AS source_type,
         CASE
@@ -247,8 +247,7 @@ AS SELECT  created_at AS interaction_created_at,
 	ig_version,
 	techbd_version_number
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
-  WHERE uri <> '/api/expect/fhir/bundle'::text
-  AND nature = 'Original FHIR Payload' ;
+  WHERE nature = 'Original FHIR Payload' ;
 
 
 -- techbd_udi_ingress.interaction_http_request_payload source

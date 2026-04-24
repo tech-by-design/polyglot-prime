@@ -1,0 +1,24 @@
+-- #3056 Add concurrent indexes to improve UI filtering performance
+-- Run outside transaction block
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA techbd_udi_ingress;
+
+-- Covering / sort index
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fhir_req_cover
+ON techbd_udi_ingress.sat_interaction_fhir_request
+USING btree (created_at DESC)
+WHERE nature = 'Original FHIR Payload';
+
+
+-- interaction_id trigram index
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_interaction_id_trgm_partial
+ON techbd_udi_ingress.sat_interaction_fhir_request
+USING gin ((hub_interaction_id) gin_trgm_ops)
+WHERE nature = 'Original FHIR Payload';
+
+
+-- bundle_id trigram index
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_bundle_id_trgm_partial
+ON techbd_udi_ingress.sat_interaction_fhir_request
+USING gin ((bundle_id) gin_trgm_ops)
+WHERE nature = 'Original FHIR Payload';

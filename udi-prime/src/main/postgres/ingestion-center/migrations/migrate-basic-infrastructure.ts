@@ -835,6 +835,9 @@ const migrateSP = pgSQLa.storedProcedure(
 
       CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA ${ingressSchema.sqlNamespace};
 
+      CREATE EXTENSION IF NOT EXISTS "pg_trgm" SCHEMA ${ingressSchema.sqlNamespace};
+
+
       ${assuranceSchema}
 
 
@@ -896,6 +899,42 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
               ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
+          END IF;
+
+          -- Add idx_fhir_req_cover index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_fhir_req_cover'
+          ) THEN
+            CREATE INDEX idx_fhir_req_cover ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (created_at DESC) WHERE (nature = 'Original FHIR Payload');
+          END IF;
+
+          -- Add idx_interaction_id_trgm_partial index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_interaction_id_trgm_partial'
+          ) THEN
+            CREATE INDEX idx_interaction_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((hub_interaction_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
+          END IF;
+
+          -- Add idx_bundle_id_trgm_partial index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_bundle_id_trgm_partial'
+          ) THEN
+            CREATE INDEX idx_bundle_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((bundle_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
           END IF;
 
           IF NOT EXISTS (
