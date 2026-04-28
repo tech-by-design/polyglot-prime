@@ -524,6 +524,26 @@ public class JooqRowsSupplierForSP {
                     startDate, endDate);
                 return DSL.table(functionCall);
             }
+            case "get_fhir_screening_info" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String qeName     = paramMap.get("p_qe_name");
+                String patientMrn = paramMap.get("p_patient_mrn");
+                String orgId      = paramMap.get("p_org_id");
+
+                // Inline literals — no ? placeholders, so jOOQ can't miscount bindings
+                String qeNameLit     = qeName     != null ? "'" + qeName.replace("'", "''")      + "'" : "NULL";
+                String patientMrnLit = patientMrn != null ? "'" + patientMrn.replace("'", "''")  + "'" : "NULL";
+                String orgIdLit      = orgId      != null ? "'" + orgId.replace("'", "''")       + "'" : "NULL";
+
+                String functionCall = String.format(
+                    "techbd_udi_ingress.get_fhir_screening_info(%s, %s, %s)",
+                    qeNameLit, patientMrnLit, orgIdLit
+                );
+
+                return DSL.table(functionCall);
+            }               
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" ,"get_missing_techbydesigndisposition_details"  -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
                 Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);

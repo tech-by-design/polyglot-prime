@@ -541,3 +541,68 @@ SELECT
     tenant_id,
     last_updated_at
 FROM techbd_udi_ingress.dashboard_widget_metadata;
+
+
+/*******************************************************************************************
+ * Stored Procedure for FHIR Screening Info with Filtering. *
+ ******************************************************************************************/
+
+drop function if exists techbd_udi_ingress.get_fhir_screening_info(TEXT,
+TEXT,
+TEXT);
+
+create or replace
+function techbd_udi_ingress.get_fhir_screening_info(
+    p_qe_name TEXT default null,
+    p_patient_mrn TEXT default null,
+    p_org_id TEXT default null
+)
+returns table (
+    hub_interaction_id TEXT,
+    qe_name TEXT,
+    org_id TEXT,
+    org_name TEXT,
+    last_name TEXT,
+    full_name TEXT,
+    first_name TEXT,
+    submitted_date_time TIMESTAMP with TIME zone,
+    patient_mrn TEXT,
+    survey_date_time TIMESTAMP with TIME zone,  
+    areas_of_interest TEXT,
+    total_safety_score numeric
+)
+as $$
+begin
+    return QUERY
+    select
+	fsi.hub_interaction_id,
+	fsi.qe_name,
+	fsi.org_id,
+	fsi.org_name,
+	fsi.last_name,
+	fsi.full_name,
+	fsi.first_name,
+	fsi.submitted_date_time,
+	fsi.patient_mrn,
+	case
+		when fsi.survey_date_time ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$'::text then
+            case
+			when fsi.survey_date_time::timestamp with time zone is not null then fsi.survey_date_time::timestamp with time zone
+			else null::timestamp with time zone
+		end
+		else null::timestamp with time zone
+	end as survey_date_time,
+	fsi.areas_of_interest,
+	nullif(fsi.total_safety_score, '')::numeric
+from
+	techbd_udi_ingress.sat_interaction_fhir_screening_info fsi
+where
+	(p_qe_name is null
+		or fsi.qe_name = p_qe_name)
+	and (p_patient_mrn is null
+		or fsi.patient_mrn = p_patient_mrn)
+	and (p_org_id is null
+		or fsi.org_id = p_org_id);
+end;
+
+$$ language plpgsql;
