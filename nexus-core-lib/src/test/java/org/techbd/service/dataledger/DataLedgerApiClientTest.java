@@ -26,6 +26,7 @@ import org.techbd.corelib.service.dataledger.DataLedgerApiClient;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient.Action;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient.Actor;
 import org.techbd.corelib.service.dataledger.DataLedgerApiClient.DataLedgerPayload;
+import org.techbd.corelib.util.AWSUtil;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
 
@@ -43,19 +44,25 @@ class DataLedgerApiClientTest {
     private static AppLogger appLogger;
     private static TemplateLogger templateLogger;
 
+    private static MockedStatic<AWSUtil> mockedAWSUtil;
+
     @BeforeAll
     static void init() {
         mockedHttpClient = mockStatic(HttpClient.class);
         httpClient = mock(HttpClient.class);
+        mockedAWSUtil = mockStatic(AWSUtil.class); // ✅ ADD THIS
         appLogger = mock(AppLogger.class);
         templateLogger = mock(TemplateLogger.class);
         when(appLogger.getLogger(DataLedgerApiClient.class)).thenReturn(templateLogger);
         mockedHttpClient.when(HttpClient::newHttpClient).thenReturn(httpClient);
+        mockedAWSUtil.when(() -> AWSUtil.getValue(any()))
+                .thenReturn("mock-secret");
     }
 
     @AfterAll
     static void close() {
         mockedHttpClient.close();
+        mockedAWSUtil.close();
     }
 
     @BeforeEach

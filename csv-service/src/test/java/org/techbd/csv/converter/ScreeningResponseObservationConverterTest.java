@@ -85,7 +85,7 @@ class ScreeningResponseObservationConverterTest {
         //assertThat(result).hasSize(screeningObservationDataList.size() + 1);
         for (int i = 0; i < screeningObservationDataList.size(); i++) {
             BundleEntryComponent entry = result.get(i);
-            assertThat(entry.getFullUrl()).startsWith("http://shinny.org/us/ny/hrsn/Observation/");
+            assertThat(entry.getFullUrl()).startsWith(CsvTestHelper.BASE_FHIR_URL + "/Observation/");
             assertThat(entry.getResource()).isInstanceOf(Observation.class);
             Observation observation = (Observation) entry.getResource();
             assertThat(observation.getCode().getCodingFirstRep().getCode()).isEqualTo(screeningObservationDataList.get(i).getQuestionCode());

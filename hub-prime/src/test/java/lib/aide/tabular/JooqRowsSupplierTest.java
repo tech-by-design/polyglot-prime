@@ -94,7 +94,7 @@ public class JooqRowsSupplierTest {
                 final var expectedSQL = """
                                 SELECT "country", "gold"
                                 FROM medals
-                                WHERE "country" = ?
+                                WHERE lower(CAST("country" AS varchar)) = lower(?)
                                 ORDER BY "gold" DESC
                                 OFFSET ? ROWS
                                 FETCH NEXT ? ROWS ONLY
@@ -135,9 +135,9 @@ public class JooqRowsSupplierTest {
 
                 final var jooqQuery = supplier.query();
                 final var expectedSQL = """
-                                SELECT "country"
+                                SELECT "country", "country"
                                 FROM medals
-                                GROUP BY "country"
+                                GROUP BY "country", "country"
                                 OFFSET ? ROWS
                                 FETCH NEXT ? ROWS ONLY
                                 """;
@@ -185,9 +185,9 @@ public class JooqRowsSupplierTest {
 
                 final var jooqQuery = supplier.query();
                 final var expectedSQL = """
-                                SELECT "country", "gold"
+                                SELECT "country", "gold", "country", "gold"
                                 FROM medals
-                                GROUP BY "country", "gold"
+                                GROUP BY "country", "gold", "country", "gold"
                                 OFFSET ? ROWS
                                 FETCH NEXT ? ROWS ONLY
                                 """;
@@ -233,9 +233,10 @@ public class JooqRowsSupplierTest {
 
                 final var jooqQuery = supplier.query();
                 final var expectedSQL = """
-                                SELECT *
+                                SELECT * , "country"
                                 FROM medals
                                 WHERE "country" = ?
+                                GROUP BY "country"
                                 OFFSET ? ROWS
                                 FETCH NEXT ? ROWS ONLY
                                 """;

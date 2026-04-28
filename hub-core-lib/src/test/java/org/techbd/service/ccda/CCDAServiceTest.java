@@ -35,6 +35,7 @@ class CCDAServiceTest {
         templateLogger = mock(TemplateLogger.class);
         coreAppConfig = mock(CoreAppConfig.class);
         when(appLogger.getLogger(CCDAService.class)).thenReturn(templateLogger);
+        when(dslContext.dsl()).thenReturn(dslContext);
         when(dslContext.configuration()).thenReturn(jooqConfig);
         ccdaService = new CCDAService(dslContext, appLogger, coreAppConfig);
     }

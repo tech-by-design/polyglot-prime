@@ -25,6 +25,28 @@ public class PathsTest {
 
     private Paths<String, SyntheticPayload> paths;
 
+    private Paths<String, SyntheticPayload> createPaths() {
+        Paths.PayloadComponentsSupplier<String, SyntheticPayload> supplier =
+            new Paths.PayloadComponentsSupplier<>() {
+                @Override
+                public List<String> components(String path) {
+                    return List.of(path.split("/"));
+                }
+    
+                @Override
+                public List<String> components(SyntheticPayload payload) {
+                    return List.of(payload.absolutePath().split("/"));
+                }
+    
+                @Override
+                public String assemble(List<String> components) {
+                    return String.join("/", components);
+                }
+            };
+    
+        return new Paths<>(supplier);
+    }
+
     @BeforeEach
     public void setup() {
         Paths.PayloadComponentsSupplier<String, SyntheticPayload> supplier = new Paths.PayloadComponentsSupplier<>() {
@@ -48,6 +70,7 @@ public class PathsTest {
     }
 
     private void populateTree() {
+        paths = createPaths();
         // root [root]
         // ├── dir1 [root/dir1]
         // │ └── dir1_file1.md [root/dir1/dir1_file1.md]
