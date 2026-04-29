@@ -308,6 +308,7 @@ AS
     max(created_at) as created_at,
     primary_org_id
    FROM techbd_udi_ingress.sat_interaction_fhir_screening_patient 
+   WHERE patient_mrn !='' or patient_mrn IS NOT NULL
   GROUP BY qe_name, patient_mrn, primary_org_id
   ORDER BY created_at DESC;
 
