@@ -1,6 +1,9 @@
 -- #3056 Add concurrent indexes to improve UI filtering performance
 -- Run outside transaction block
 
+
+SET search_path TO techbd_udi_ingress;
+
 CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA techbd_udi_ingress;
 
 -- Covering / sort index
