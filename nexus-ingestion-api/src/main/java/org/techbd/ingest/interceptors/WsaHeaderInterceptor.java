@@ -107,7 +107,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         if (!isWsEndpoint(messageContext)) {
             return true; // Continue chain but skip processing
         }
-
+        String ackPayload;
         var transportContext = TransportContextHolder.getTransportContext();
         var connection = (HttpServletConnection) transportContext.getConnection();
         HttpServletRequest httpRequest = connection.getHttpServletRequest();
@@ -129,7 +129,7 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         messageContext.setProperty(Constants.INTERACTION_ID, interactionId);
         LOG.info("handleResponse: responseType={} interactionId={}", responseType, interactionId);
 
-        strategy.writeResponse(interactionId, messageContext, httpRequest, httpResponse, message);
+        byte[] actualResponseBytes =strategy.writeResponse(interactionId, messageContext, httpRequest, httpResponse, message);
 
         // ── For MTOM strategies: mark the MessageContext response as already sent ──
         // This prevents Spring-WS from serializing the SoapMessage a second time
@@ -148,10 +148,13 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
             });
             LOG.debug("handleResponse: suppressed Spring-WS secondary write for MTOM. interactionId={}", interactionId);
         }
-
-        messageProcessorService.processMessage(context, rawSoapMessage,
-                Hl7Util.soapMessageToString(message, interactionId));
-
+            if (isMtomResponseType(responseType)) {
+                ackPayload = new String(actualResponseBytes, StandardCharsets.UTF_8);
+            } else {
+                ackPayload = Hl7Util.soapMessageToString(message, interactionId);
+            }
+            messageProcessorService.processMessage(context, rawSoapMessage,
+                    ackPayload);
         return true;
     }
 

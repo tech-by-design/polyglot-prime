@@ -1,5 +1,7 @@
 package org.techbd.ingest.service.soap;
 
+import java.io.ByteArrayOutputStream;
+
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapMessage;
 import org.techbd.ingest.util.AppLogger;
@@ -23,14 +25,31 @@ public class DefaultSoapResponseStrategy implements SoapResponseStrategy {
     }
 
     @Override
-    public void writeResponse(
+    public byte[] writeResponse(
             String interactionId,
             MessageContext messageContext,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse,
             SoapMessage builtResponse) {
 
-        // Intentionally a no-op: Spring-WS handles serialisation in its normal pipeline.
-        log.debug("DefaultSoapResponseStrategy:: no-op for interactionId={}", interactionId);
+        // Intentionally a no-op: Spring-WS handles serialisation in its normal
+        // pipeline.
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            builtResponse.writeTo(baos);
+
+            byte[] bytes = baos.toByteArray();
+
+            log.debug("DefaultSoapResponseStrategy:: SOAP response captured. size={} interactionId={}",
+                    bytes.length, interactionId);
+
+            return bytes;
+
+        } catch (Exception e) {
+            log.error("DefaultSoapResponseStrategy:: Failed to serialize SOAP response. interactionId={} error={}",
+                    interactionId, e.getMessage(), e);
+
+            throw new RuntimeException("Failed to serialize SOAP response", e);
+        }
     }
 }

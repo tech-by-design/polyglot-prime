@@ -53,7 +53,7 @@ public class MtomSoapResponseStrategy implements SoapResponseStrategy {
     }
 
     @Override
-    public void writeResponse(
+    public byte[] writeResponse(
             String interactionId,
             MessageContext messageContext,
             HttpServletRequest httpRequest,
@@ -91,12 +91,13 @@ public class MtomSoapResponseStrategy implements SoapResponseStrategy {
             log.info("MtomSoapResponseStrategy:: MTOM response written. " +
                     "boundary={} interactionId={} soapMediaType={}",
                     boundary, interactionId, soapMediaType);
+            return responseBytes;
 
         } catch (IOException e) {
             if (isBrokenPipe(e)) {
                 log.warn("MtomSoapResponseStrategy:: Client disconnected before MTOM response " +
                         "could be written (caller timed out). interactionId={}", interactionId);
-                return;
+                throw new RuntimeException("Client disconnected during MTOM write", e);
             }
             log.error("MtomSoapResponseStrategy:: Failed to write MTOM response. " +
                     "interactionId={} error={}", interactionId, e.getMessage(), e);

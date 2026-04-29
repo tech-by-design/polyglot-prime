@@ -49,7 +49,7 @@ public class TruBridgeMtomSoapResponseStrategy implements SoapResponseStrategy {
     }
 
     @Override
-    public void writeResponse(
+    public byte[] writeResponse(
             String interactionId,
             MessageContext messageContext,
             HttpServletRequest httpRequest,
@@ -85,12 +85,13 @@ public class TruBridgeMtomSoapResponseStrategy implements SoapResponseStrategy {
 
             log.info("TruBridgeMtomSoapResponseStrategy:: TruBridge MTOM response written. " +
                     "boundary={} interactionId={} soapMediaType={}", boundary, interactionId, soapMediaType);
+            return responseBytes;
 
         } catch (IOException e) {
             if (isBrokenPipe(e)) {
                 log.warn("TruBridgeMtomSoapResponseStrategy:: Client disconnected before response " +
                         "could be written (caller timed out). interactionId={}", interactionId);
-                return;
+                throw new RuntimeException("Client disconnected during MTOM write", e);
             }
             log.error("TruBridgeMtomSoapResponseStrategy:: Failed to write TruBridge MTOM response. " +
                     "interactionId={} error={}", interactionId, e.getMessage(), e);

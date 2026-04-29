@@ -25,7 +25,7 @@ public interface SoapResponseStrategy {
      * @param httpResponse   raw servlet response (may be used to set headers directly)
      * @param builtResponse  the SOAP message already built by SoapResponseUtil.buildSoapResponse()
      */
-    void writeResponse(
+    byte[] writeResponse(
             String interactionId,
             MessageContext messageContext,
             HttpServletRequest httpRequest,
