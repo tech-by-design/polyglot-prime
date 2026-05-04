@@ -1,15 +1,21 @@
 package org.techbd.ingest.integrationtests.controller;
 
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ByteArrayResource;
 import org.techbd.ingest.integrationtests.base.BaseIntegrationTest;
 import org.techbd.ingest.integrationtests.base.NexusIntegrationTest;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.techbd.ingest.commons.Constants;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.sqs.model.*;
@@ -20,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
 
 @NexusIntegrationTest
 @Tag("integration")
@@ -238,5 +245,175 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                                     </SOAP-ENV:Body>
                                 </SOAP-ENV:Envelope>
                                 """;
+        }
+
+
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // IT: Multipart file upload
+        // ═══════════════════════════════════════════════════════════════════════
+
+        @Test
+        @DisplayName("IT: /ingest multipart file — verify S3 object, size, and SQS message")
+        void shouldProcessMultipartFile_andVerifyExactS3AndSqsDetails() throws Exception {
+
+                SoftAssertions softly = new SoftAssertions();
+
+                String payload = """
+                        <test>
+                                <message>Hello Multipart</message>
+                        </test>
+                        """;
+
+                byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+
+                // Multipart file
+                ByteArrayResource fileResource = new ByteArrayResource(payloadBytes) {
+                        @Override
+                        public String getFilename() {
+                        return "test.xml";
+                        }
+                };
+
+                MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+                body.add("file", fileResource);
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+                headers.set(Constants.REQ_X_FORWARDED_PORT, "9050");
+
+                HttpEntity<MultiValueMap<String, Object>> requestEntity =
+                        new HttpEntity<>(body, headers);
+
+                ResponseEntity<String> response = restTemplate.postForEntity(
+                        "http://localhost:" + port + "/ingest/",
+                        requestEntity,
+                        String.class
+                );
+
+                //  Response assertions
+                softly.assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+
+                // Parse response JSON
+                JsonNode json = new ObjectMapper().readTree(response.getBody());
+                String s3Path = json.get("fullS3Path").asText();
+                String metadataPath = json.get("fullS3MetaDataPath").asText();
+                String interactionId = json.get("interactionId").asText();
+
+                // ═══════════════════════════════════════════════════════════════
+                //  S3 DATA OBJECT VALIDATION
+                // ═══════════════════════════════════════════════════════════════
+
+                byte[] s3Bytes = s3Client.getObject(
+                        GetObjectRequest.builder()
+                                .bucket(DEFAULT_DATA_BUCKET)
+                                .key(extractKey(s3Path))
+                                .build()
+                ).readAllBytes();
+
+                //  Exact content match
+                softly.assertThat(s3Bytes)
+                        .as("S3 object content should match uploaded payload")
+                        .isEqualTo(payloadBytes);
+
+                //  Size match
+                softly.assertThat(s3Bytes.length)
+                        .as("S3 object size should match uploaded file size")
+                        .isEqualTo(payloadBytes.length);
+
+                // ═══════════════════════════════════════════════════════════════
+                //  S3 METADATA VALIDATION
+                // ═══════════════════════════════════════════════════════════════
+
+                byte[] metadataBytes = s3Client.getObject(
+                        GetObjectRequest.builder()
+                                .bucket(DEFAULT_METADATA_BUCKET)
+                                .key(extractKey(metadataPath))
+                                .build()
+                ).readAllBytes();
+
+                String metadataJson = new String(metadataBytes, StandardCharsets.UTF_8);
+
+                System.out.println("Metadata JSON: " + metadataJson);
+
+                softly.assertThat(metadataJson)
+                        .as("Metadata should contain interactionId")
+                        .contains(interactionId);
+
+
+                // ═══════════════════════════════════════════════════════════════
+                // ✅ SQS VALIDATION
+                // ═══════════════════════════════════════════════════════════════
+
+                String queueUrl = getQueueUrl("txd-sbx-ccd-queue.fifo");
+
+                var messages = sqsClient.receiveMessage(r -> r
+                        .queueUrl(queueUrl)
+                        .maxNumberOfMessages(1)
+                        .waitTimeSeconds(2)
+                        .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
+                ).messages();
+
+                System.out.println("Received SQS messages: " + messages);
+
+                softly.assertThat(messages).hasSize(1);
+
+                var message = messages.get(0);
+
+                JsonNode bodyJson = new ObjectMapper().readTree(message.body());
+
+                softly.assertThat(bodyJson.get("messageGroupId").asText())
+                .isEqualTo("9050");
+
+                softly.assertThat(s3Path)
+                .contains("ccd/data");
+
+                
+                softly.assertAll();
+                }
+
+        @Test
+        @DisplayName("IT: /ingest multipart — empty file should fail")
+        void shouldFail_whenMultipartFileIsEmpty() throws Exception {
+
+        SoftAssertions softly = new SoftAssertions();
+
+        // Empty file
+        ByteArrayResource emptyFile = new ByteArrayResource(new byte[0]) {
+                @Override
+                public String getFilename() {
+                return "empty.xml";
+                }
+        };
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", emptyFile);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set(Constants.REQ_X_FORWARDED_PORT, "9050");
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity =
+                new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/ingest/",
+                requestEntity,
+                String.class
+        );
+
+        // Depending on your exception handler:
+        softly.assertThat(response.getStatusCode().is4xxClientError()).isTrue();
+
+        softly.assertThat(response.getBody())
+                .contains("Illegal argument passed to request.");
+
+        softly.assertAll();
+        }
+
+
+        private String extractKey(String fullS3Path) {
+        // Example: s3://bucket-name/path/to/file.xml → path/to/file.xml
+        return fullS3Path.substring(fullS3Path.indexOf("/", 5) + 1);
         }
 }
