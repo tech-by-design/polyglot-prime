@@ -2,14 +2,12 @@ package org.techbd.ingest.integrationtests.controller;
 
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ByteArrayResource;
 import org.techbd.ingest.integrationtests.base.BaseIntegrationTest;
-import org.techbd.ingest.integrationtests.base.NexusIntegrationTest;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.techbd.ingest.commons.Constants;
@@ -26,11 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.springframework.http.*;
-import org.springframework.util.LinkedMultiValueMap;
 
-@NexusIntegrationTest
-@Tag("integration")
-class DataIngestionControllerIT extends BaseIntegrationTest {
+class DataIngestionControllerITCase extends BaseIntegrationTest {
 
         @Autowired
         private TestRestTemplate restTemplate;
@@ -136,7 +131,7 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
 
                 ListObjectsV2Response s3Objects = getHoldBucketObjects();
 
-                //  Not strict size → avoid fragile test
+                // Not strict size → avoid fragile test
                 assertThat(s3Objects.contents().size())
                                 .isLessThanOrEqualTo(2);
         }
@@ -175,7 +170,7 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
         }
 
         // =====================================================
-        // 🔧 HELPERS
+        //  HELPERS
         // =====================================================
 
         private ResponseEntity<String> sendRequest(
@@ -247,8 +242,6 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                                 """;
         }
 
-
-
         // ═══════════════════════════════════════════════════════════════════════
         // IT: Multipart file upload
         // ═══════════════════════════════════════════════════════════════════════
@@ -260,10 +253,10 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                 SoftAssertions softly = new SoftAssertions();
 
                 String payload = """
-                        <test>
-                                <message>Hello Multipart</message>
-                        </test>
-                        """;
+                                <test>
+                                        <message>Hello Multipart</message>
+                                </test>
+                                """;
 
                 byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
 
@@ -271,7 +264,7 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                 ByteArrayResource fileResource = new ByteArrayResource(payloadBytes) {
                         @Override
                         public String getFilename() {
-                        return "test.xml";
+                                return "test.xml";
                         }
                 };
 
@@ -282,16 +275,14 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                 headers.setContentType(MediaType.MULTIPART_FORM_DATA);
                 headers.set(Constants.REQ_X_FORWARDED_PORT, "9050");
 
-                HttpEntity<MultiValueMap<String, Object>> requestEntity =
-                        new HttpEntity<>(body, headers);
+                HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
                 ResponseEntity<String> response = restTemplate.postForEntity(
-                        "http://localhost:" + port + "/ingest/",
-                        requestEntity,
-                        String.class
-                );
+                                "http://localhost:" + port + "/ingest/",
+                                requestEntity,
+                                String.class);
 
-                //  Response assertions
+                // Response assertions
                 softly.assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
 
                 // Parse response JSON
@@ -301,58 +292,56 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                 String interactionId = json.get("interactionId").asText();
 
                 // ═══════════════════════════════════════════════════════════════
-                //  S3 DATA OBJECT VALIDATION
+                // S3 DATA OBJECT VALIDATION
                 // ═══════════════════════════════════════════════════════════════
 
                 byte[] s3Bytes = s3Client.getObject(
-                        GetObjectRequest.builder()
-                                .bucket(DEFAULT_DATA_BUCKET)
-                                .key(extractKey(s3Path))
-                                .build()
-                ).readAllBytes();
+                                GetObjectRequest.builder()
+                                                .bucket(DEFAULT_DATA_BUCKET)
+                                                .key(extractKey(s3Path))
+                                                .build())
+                                .readAllBytes();
 
-                //  Exact content match
+                // Exact content match
                 softly.assertThat(s3Bytes)
-                        .as("S3 object content should match uploaded payload")
-                        .isEqualTo(payloadBytes);
+                                .as("S3 object content should match uploaded payload")
+                                .isEqualTo(payloadBytes);
 
-                //  Size match
+                // Size match
                 softly.assertThat(s3Bytes.length)
-                        .as("S3 object size should match uploaded file size")
-                        .isEqualTo(payloadBytes.length);
+                                .as("S3 object size should match uploaded file size")
+                                .isEqualTo(payloadBytes.length);
 
                 // ═══════════════════════════════════════════════════════════════
-                //  S3 METADATA VALIDATION
+                // S3 METADATA VALIDATION
                 // ═══════════════════════════════════════════════════════════════
 
                 byte[] metadataBytes = s3Client.getObject(
-                        GetObjectRequest.builder()
-                                .bucket(DEFAULT_METADATA_BUCKET)
-                                .key(extractKey(metadataPath))
-                                .build()
-                ).readAllBytes();
+                                GetObjectRequest.builder()
+                                                .bucket(DEFAULT_METADATA_BUCKET)
+                                                .key(extractKey(metadataPath))
+                                                .build())
+                                .readAllBytes();
 
                 String metadataJson = new String(metadataBytes, StandardCharsets.UTF_8);
 
                 System.out.println("Metadata JSON: " + metadataJson);
 
                 softly.assertThat(metadataJson)
-                        .as("Metadata should contain interactionId")
-                        .contains(interactionId);
-
+                                .as("Metadata should contain interactionId")
+                                .contains(interactionId);
 
                 // ═══════════════════════════════════════════════════════════════
-                // ✅ SQS VALIDATION
+                //  SQS VALIDATION
                 // ═══════════════════════════════════════════════════════════════
 
                 String queueUrl = getQueueUrl("txd-sbx-ccd-queue.fifo");
 
                 var messages = sqsClient.receiveMessage(r -> r
-                        .queueUrl(queueUrl)
-                        .maxNumberOfMessages(1)
-                        .waitTimeSeconds(2)
-                        .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
-                ).messages();
+                                .queueUrl(queueUrl)
+                                .maxNumberOfMessages(1)
+                                .waitTimeSeconds(2)
+                                .messageSystemAttributeNames(MessageSystemAttributeName.ALL)).messages();
 
                 System.out.println("Received SQS messages: " + messages);
 
@@ -363,57 +352,53 @@ class DataIngestionControllerIT extends BaseIntegrationTest {
                 JsonNode bodyJson = new ObjectMapper().readTree(message.body());
 
                 softly.assertThat(bodyJson.get("messageGroupId").asText())
-                .isEqualTo("9050");
+                                .isEqualTo("9050");
 
                 softly.assertThat(s3Path)
-                .contains("ccd/data");
+                                .contains("ccd/data");
 
-                
                 softly.assertAll();
-                }
+        }
 
         @Test
         @DisplayName("IT: /ingest multipart — empty file should fail")
         void shouldFail_whenMultipartFileIsEmpty() throws Exception {
 
-        SoftAssertions softly = new SoftAssertions();
+                SoftAssertions softly = new SoftAssertions();
 
-        // Empty file
-        ByteArrayResource emptyFile = new ByteArrayResource(new byte[0]) {
-                @Override
-                public String getFilename() {
-                return "empty.xml";
-                }
-        };
+                // Empty file
+                ByteArrayResource emptyFile = new ByteArrayResource(new byte[0]) {
+                        @Override
+                        public String getFilename() {
+                                return "empty.xml";
+                        }
+                };
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", emptyFile);
+                MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+                body.add("file", emptyFile);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.set(Constants.REQ_X_FORWARDED_PORT, "9050");
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+                headers.set(Constants.REQ_X_FORWARDED_PORT, "9050");
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity =
-                new HttpEntity<>(body, headers);
+                HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                "http://localhost:" + port + "/ingest/",
-                requestEntity,
-                String.class
-        );
+                ResponseEntity<String> response = restTemplate.postForEntity(
+                                "http://localhost:" + port + "/ingest/",
+                                requestEntity,
+                                String.class);
 
-        // Depending on your exception handler:
-        softly.assertThat(response.getStatusCode().is4xxClientError()).isTrue();
+                // Depending on your exception handler:
+                softly.assertThat(response.getStatusCode().is4xxClientError()).isTrue();
 
-        softly.assertThat(response.getBody())
-                .contains("Illegal argument passed to request.");
+                softly.assertThat(response.getBody())
+                                .contains("Illegal argument passed to request.");
 
-        softly.assertAll();
+                softly.assertAll();
         }
 
-
         private String extractKey(String fullS3Path) {
-        // Example: s3://bucket-name/path/to/file.xml → path/to/file.xml
-        return fullS3Path.substring(fullS3Path.indexOf("/", 5) + 1);
+                // Example: s3://bucket-name/path/to/file.xml → path/to/file.xml
+                return fullS3Path.substring(fullS3Path.indexOf("/", 5) + 1);
         }
 }

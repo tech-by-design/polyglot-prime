@@ -1,4 +1,4 @@
-package org.techbd.ingest.integrationtests.soap;
+package org.techbd.ingest.integrationtests.controller;
 
 
 import java.nio.charset.StandardCharsets;
