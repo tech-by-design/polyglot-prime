@@ -2,8 +2,8 @@
   <id>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.12
-Resolved validation status discrepancies and corrected header validation messages.</description>
+  <description>Version: 0.2.13
+Error response message update</description>
   <revision>30</revision>
   <sourceConnector version="4.6.1">
     <metaDataId>0</metaDataId>
@@ -623,12 +623,8 @@ if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;)
 if (String(channelMap.get(&apos;mtlsFilterDisabled&apos;)) === &apos;true&apos;) {
 
     var mtlsErrorBody = JSON.stringify({
-        resourceType: &quot;OperationOutcome&quot;,
-        issue: [{
-            severity: &quot;error&quot;,
-            code: 500,
-            diagnostics: &quot;mTLS filter is disabled.&quot;
-        }]
+        code: 500,
+        message: &quot;mTLS filter is disabled.&quot;
     });
 
     var mtlsResp = new com.mirth.connect.userutil.Response(
