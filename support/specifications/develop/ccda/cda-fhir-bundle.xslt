@@ -650,7 +650,7 @@
         <xsl:variable name="locationDisplayRaw">
             <xsl:choose>
                 <!-- Primary location -->
-                <xsl:when test="string(ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name)">
+                <xsl:when test="string(ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name) and string(ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:addr)">
                   <xsl:value-of select="ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name"/>
                 </xsl:when>
 
@@ -793,7 +793,7 @@
         <xsl:variable name="locationDisplayRaw">
             <xsl:choose>
                 <!-- Primary location -->
-                <xsl:when test="string(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name)">
+                <xsl:when test="string(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name) and string(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:addr)">
                   <xsl:value-of select="ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name"/>
                 </xsl:when>
 
@@ -1721,7 +1721,7 @@
 
   <!-- Location Template from encompassingEncounter -->
   <xsl:template name="LocationResource" match="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location[position()=1]/ccda:healthCareFacility/ccda:location">
-  <xsl:if test="string($locationResourceId)">
+  <xsl:if test="normalize-space(ccda:name) and ccda:addr[not(@nullFlavor)] and string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
       "resource": {
@@ -1755,7 +1755,9 @@
   
   <!-- Location Template from Encounters section -->
   <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant[position()=1]/ccda:participantRole">
-  <xsl:if test="not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name) and string($locationResourceId)">
+  <xsl:if test="(not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name) 
+                or not(/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:addr))
+                and string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
       "resource": {
