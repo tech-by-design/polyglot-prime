@@ -319,29 +319,27 @@ AS
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_organization CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_organization
 AS 
-  select
-	sifso.qe_name,
-	sifso.org_id,
-	max(sifso.org_type) as org_type,
-	max(sifso.org_name) as org_name,
-	max(sifso.org_active) as org_active,
-	max(sifso.org_address) as org_address,
-	max(sifso.org_city) as org_city,
-	max(sifso.org_state) as org_state,
-	max(sifso.org_postal_code) as org_postal_code,
-	max(sifso.created_at) as created_at
-from
-	techbd_udi_ingress.sat_interaction_fhir_screening_organization as sifso
-join techbd_udi_ingress.sat_interaction_fhir_request as sifr   
- on
-	sifso.hub_interaction_id = sifr.hub_interaction_id
-where
-	sifso.org_id = sifr.organization_id
-group by
-	sifso.qe_name,
-	sifso.org_id
-order by
-	(created_at) desc;
+SELECT
+    sifso.qe_name,
+    sifso.org_id,
+    MAX(sifso.org_type) AS org_type,
+    MAX(sifso.org_name) AS org_name,
+    MAX(sifso.org_active) AS org_active,
+    MAX(sifso.org_address) AS org_address,
+    MAX(sifso.org_city) AS org_city,
+    MAX(sifso.org_state) AS org_state,
+    MAX(sifso.org_postal_code) AS org_postal_code,
+    MAX(sifso.created_at) AS created_at
+FROM techbd_udi_ingress.sat_interaction_fhir_screening_organization sifso
+WHERE EXISTS (
+    SELECT 1
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sifr
+    WHERE sifr.hub_interaction_id = sifso.hub_interaction_id
+      AND sifr.organization_id   = sifso.org_id
+)
+GROUP BY sifso.qe_name, sifso.org_id
+ORDER BY MAX(sifso.created_at) DESC;
+
 
 
 /****************************************************************************************
