@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.12 -->
+<!-- Version : 0.1.13 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -149,7 +149,7 @@
   <!-- End of Guthrie logic -->
 
   <!-- Get Organization name from the first encounter entry -->
-  <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC']/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
+  <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:participant[@typeCode='LOC' and position()=1]/ccda:participantRole[@classCode='SDLOC']/ccda:playingEntity/ccda:name"/>
 
   <xsl:template match="/">
   {
@@ -202,7 +202,7 @@
                                 | /ccda:ClinicalDocument/ccda:authorization/ccda:consent 
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
-                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant[position()=1]/ccda:participantRole
                                 "/>
             <!-- Call Grouper Observation template -->
             <xsl:call-template name="GrouperObservation"/>
@@ -671,17 +671,17 @@
                 }
             ]
         </xsl:if>
-        <xsl:if test="string($locationResourceId) or normalize-space(ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name)">
+        <xsl:if test="string($locationResourceId) or normalize-space(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name)">
         , "location": [
             {
                 "location": {
                     <xsl:if test="string($locationResourceId)"> 
                       "reference": "Location/<xsl:value-of select="$locationResourceId"/>"
-                      <xsl:if test="normalize-space(ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name)">,</xsl:if>
+                      <xsl:if test="normalize-space(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name)">,</xsl:if>
                     </xsl:if>
-                    <xsl:if test="normalize-space(ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name)">
+                    <xsl:if test="normalize-space(ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name)">
                       "display": "<xsl:call-template name="string-trim">
-                                    <xsl:with-param name="text" select="ccda:participant/ccda:participantRole/ccda:playingEntity/ccda:name"/>
+                                    <xsl:with-param name="text" select="ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name"/>
                                   </xsl:call-template>"
                     </xsl:if>
                 }
@@ -1327,7 +1327,7 @@
   </xsl:template>
 
   <!-- Location Template from Encounters section -->
-  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant/ccda:participantRole">
+  <xsl:template name="EncountersLocationResource" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant[position()=1]/ccda:participantRole">
   <xsl:if test="string($locationResourceId)">
     ,{
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select='$locationResourceId'/>",
