@@ -1857,7 +1857,7 @@ UPDATE techbd_udi_ingress.json_action_rule
 SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
 WHERE json_path LIKE '$.response.responseBody%';
 
-INSERT INTO techbd_udi_ingress.json_action_rule (
+/*INSERT INTO techbd_udi_ingress.json_action_rule (
     action_rule_id,
     "namespace",
     json_path,
@@ -1874,7 +1874,7 @@ INSERT INTO techbd_udi_ingress.json_action_rule (
     created_by,
     provenance
 ) VALUES (
-    gen_random_uuid(),
+    'd2876992-0b38-4afb-aab6-7dd44dd45e5c',
     'NYeC Rule',
     '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.severity == "error" && @.location[*] like_regex ".*meta\\.lastUpdated.*")',
     'reject',
@@ -1889,4 +1889,4 @@ INSERT INTO techbd_udi_ingress.json_action_rule (
     current_timestamp,
     current_user,
     '{"rule":"meta.lastUpdated error rejection"}'
-);
+) ON CONFLICT (action_rule_id) DO NOTHING;*/
