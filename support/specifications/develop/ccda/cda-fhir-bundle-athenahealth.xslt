@@ -722,6 +722,12 @@
                   <xsl:value-of select="ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name"/>
                 </xsl:when>
 
+                <xsl:when test="not(string($locationResourceId)) 
+                                and string(ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name) 
+                                and not(string(ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:addr))">
+                  <xsl:value-of select="ccda:location[position()=1]/ccda:healthCareFacility/ccda:location/ccda:name"/>
+                </xsl:when>
+
                 <!-- Fallback location -->
                 <xsl:otherwise>
                   <xsl:value-of select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter/ccda:participant[position()=1]/ccda:participantRole/ccda:playingEntity/ccda:name"/>

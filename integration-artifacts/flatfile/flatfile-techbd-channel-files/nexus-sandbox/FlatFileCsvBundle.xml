@@ -1,21 +1,23 @@
-<channel version="4.6.1">
-  <id>d341dceb-069e-49ab-8efa-c45398145216</id>
+<channel version="26.3.0">
+  <id>89def8c9-d8d2-46e2-a254-6345b05cfcb4</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.9.20
-Implemented Uuid version 7 from code template.</description>
-  <revision>2</revision>
-  <sourceConnector version="4.6.1">
+  <description>Version: 0.9.21
+Implemented validation and default handling for the `immediate` query parameter.
+</description>
+  <revision>8</revision>
+  <sourceConnector version="26.3.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.6.1">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.6.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.6.1">
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
+          <mutualTlsMigrated>true</mutualTlsMigrated>
+          <clientCertValidationEnabled>false</clientCertValidationEnabled>
+          <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
+          <serverCertValidationEnabled>true</serverCertValidationEnabled>
           <verifyHostname>false</verifyHostname>
           <keystorePath/>
           <keystorePassword/>
@@ -33,13 +35,19 @@ Implemented Uuid version 7 from code template.</description>
           <myCertificateAlias/>
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
+          <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
+          <pinnedLeafPins/>
+          <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="4.6.1">
+      <listenerConnectorProperties version="26.3.0">
         <host>0.0.0.0</host>
         <port>9004</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="4.6.1">
+      <sourceConnectorProperties version="26.3.0">
         <responseVariable>fhirResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -92,6 +100,7 @@ Implemented Uuid version 7 from code template.</description>
       <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
       <timeout>30000</timeout>
+      <requestHeaderSize>8192</requestHeaderSize>
       <staticResources>
         <com.mirth.connect.connectors.http.HttpStaticResource>
           <contextPath>/healthcheck</contextPath>
@@ -101,9 +110,9 @@ Implemented Uuid version 7 from code template.</description>
         </com.mirth.connect.connectors.http.HttpStaticResource>
       </staticResources>
     </properties>
-    <transformer version="4.6.1">
+    <transformer version="26.3.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>common js function</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -124,7 +133,7 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;fhirResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>lookup_manager</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -246,7 +255,7 @@ try {
 
 logger.info(&apos;[CHANNEL: &apos;+ channelName +&apos;  Lookup Manager Loader end &apos;);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>Validate HTTP Request and collect headers</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
@@ -460,7 +469,7 @@ if (!hasCsvFile) {
 }
 ///////////////////////////////////////////////////////////////////////////</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.6.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>FHIR validation and submission</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
@@ -558,22 +567,22 @@ logger.info(&quot;[CHANNEL: &quot;+ channelName +&quot;] Prepared multipart/form
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="4.6.1">
+    <filter version="26.3.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="4.6.1">
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.0">
           <name>Http method and url checking</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -697,12 +706,12 @@ function notFound() {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="4.6.1">
+    <connector version="26.3.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.6.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="4.6.1">
+        <destinationConnectorProperties version="26.3.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -736,14 +745,18 @@ var tenantId = channelMap.get(&apos;tenantId&apos;) || &apos;defaultTenant&apos;
 var userAgent = channelMap.get(&apos;userAgent&apos;) || &apos;MirthConnector/1.0&apos;;
 var sourceParam = &apos;CSV&apos;;
 
+var baseFhirurl =  channelMap.get(&apos;baseFhirurl&apos;); &#xd;logger.info(&quot;baseFhirurl&quot; +baseFhirurl);&#xd;&#xd;var techBdBaseFhirUrl =  channelMap.get(&apos;TechBdBaseFhirurl&apos;); &#xd;logger.info(&quot;techBdBaseFhirUrl&quot; +techBdBaseFhirUrl);&#xd;
 
-var baseFhirurl =  channelMap.get(&apos;baseFhirurl&apos;); &#xd;logger.info(&quot;baseFhirurl&quot; +baseFhirurl);&#xd;&#xd;&#xd;var techBdBaseFhirUrl =  channelMap.get(&apos;TechBdBaseFhirurl&apos;); &#xd;logger.info(&quot;techBdBaseFhirUrl&quot; +techBdBaseFhirUrl);&#xd;
+// Read &apos;immediate&apos; parameter from request and default invalid values to true.
+var immediateParamRaw = $(&apos;parameters&apos;).get(&apos;immediate&apos;);
+var immediateParam = String(immediateParamRaw == null ? &quot;true&quot; : immediateParamRaw).trim();
 
+if (immediateParam.toLowerCase() !== &quot;false&quot;) {
+    immediateParam = &quot;true&quot;;
+}
 
-// Read &apos;immediate&apos; parameter from request (like how headers are fetched)
-var immediateParam = String($(&apos;parameters&apos;).get(&apos;immediate&apos;) || &quot;true&quot;).trim();
 var csvServiceApiUrl = channelMap.get(&apos;CSV_SERVICE_API_URL&apos;);
-logger.info(&quot;======================================:&quot; + csvServiceApiUrl+&quot;:&quot;+&quot;immediateParam :&quot;+ immediateParam);
+logger.info(&quot;csvServiceApiUrl:&quot; + csvServiceApiUrl+&quot;:&quot;+&quot;immediateParam :&quot;+ immediateParam);
 
 // --- Build URL with query parameter ---
 //var urlStr = &quot;http://10.10.11.253:8082/flatfile/csv/Bundle/?source=&quot; + encodeURIComponent(sourceParam) + &quot;&amp;immediate=&quot; + encodeURIComponent(immediateParam);
@@ -843,43 +856,43 @@ channelMap.put(&quot;fhirResponseCode&quot;, responseCode);
 responseMap.put(&apos;fhirResponse&apos;, responseStr);
 </script>
       </properties>
-      <transformer version="4.6.1">
+      <transformer version="26.3.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="4.6.1">
+      <responseTransformer version="26.3.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.6.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.6.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="4.6.1">
+      <filter version="26.3.0">
         <elements/>
       </filter>
       <transportName>JavaScript Writer</transportName>
@@ -896,7 +909,7 @@ return;</postprocessingScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="4.6.1">
+  <properties version="26.3.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
@@ -919,7 +932,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="4.6.1">
+    <attachmentProperties version="26.3.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -934,129 +947,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1776657720396</time>
+        <time>1778062279775</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
-    <codeTemplateLibraries>
-      <codeTemplateLibrary version="4.6.1">
-        <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
-        <name>UuidUtil</name>
-        <revision>6</revision>
-        <lastModified>
-          <time>1776427029570</time>
-          <timezone>America/New_York</timezone>
-        </lastModified>
-        <description></description>
-        <includeNewChannels>false</includeNewChannels>
-        <enabledChannelIds class="sorted-set">
-          <string>1ec01527-8a44-4184-a05a-2a91c04f37df</string>
-          <string>32a3cbc1-921f-441c-8e68-3bda27e63ee6</string>
-          <string>48098091-34dc-4d63-b9a9-c6201f0c0fa4</string>
-          <string>6df6b37f-e6df-4648-a7e1-67715a4e3157</string>
-          <string>d341dceb-069e-49ab-8efa-c45398145216</string>
-        </enabledChannelIds>
-        <disabledChannelIds class="sorted-set">
-          <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
-          <string>01fbb835-f605-4376-84eb-9c4affcf159e</string>
-          <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
-          <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
-          <string>1c406954-d304-4882-b05d-b513d699785b</string>
-          <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
-          <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
-          <string>3322c442-7c6e-46b4-b6d1-f0cff8c4741d</string>
-          <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-          <string>4c2ba30f-c175-44b4-a740-0297048c7969</string>
-          <string>50e1c70e-7b48-4ed0-be9e-309710a85195</string>
-          <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
-          <string>784f3cf4-180a-4ea3-b519-f12626b33dcc</string>
-          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
-          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
-          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
-          <string>89118684-3b07-4336-ab6e-c06a1d9c0440</string>
-          <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
-          <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
-          <string>9608b1d8-a780-4093-a7b2-14412f61e0ea</string>
-          <string>a2eede47-0ee3-4345-b6c2-92c07c553950</string>
-          <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
-          <string>ac705673-f0a4-4cc1-aa75-8a92badefe1a</string>
-          <string>b1be1080-160c-42e5-a1fb-b82439b1757e</string>
-          <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
-          <string>bfe53f29-12c4-4575-856b-64c5700f2564</string>
-          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
-          <string>c56c8654-6ece-4975-bdad-29ef940c7081</string>
-          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
-          <string>cd224bbd-4d5c-46b7-99c5-ed3ec89e6d06</string>
-          <string>d3a8414c-8bcd-40c8-b806-5d163a5dbab1</string>
-          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
-          <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
-          <string>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</string>
-          <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
-        </disabledChannelIds>
-        <codeTemplates>
-          <codeTemplate version="4.6.1">
-            <id>5094a1a4-a8c6-4818-b26f-2a773e673ef3</id>
-            <name>Uuid Generator Instance</name>
-            <revision>3</revision>
-            <lastModified>
-              <time>1776656150928</time>
-              <timezone>America/New_York</timezone>
-            </lastModified>
-            <contextSet>
-              <delegate class="sorted-set">
-                <contextType>GLOBAL_DEPLOY</contextType>
-                <contextType>GLOBAL_UNDEPLOY</contextType>
-                <contextType>GLOBAL_PREPROCESSOR</contextType>
-                <contextType>GLOBAL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_DEPLOY</contextType>
-                <contextType>CHANNEL_UNDEPLOY</contextType>
-                <contextType>CHANNEL_PREPROCESSOR</contextType>
-                <contextType>CHANNEL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_ATTACHMENT</contextType>
-                <contextType>CHANNEL_BATCH</contextType>
-                <contextType>SOURCE_RECEIVER</contextType>
-                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_DISPATCHER</contextType>
-                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
-              </delegate>
-            </contextSet>
-            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
-              <type>FUNCTION</type>
-              <code>function getUuidGenerator() {
-    var generator = globalMap.get(&apos;UUID_GENERATOR&apos;);
-
-    if (generator == null) {
-        var Generators = Packages.com.fasterxml.uuid.Generators;
-        generator = Generators.timeBasedEpochGenerator();
-
-        globalMap.put(&apos;UUID_GENERATOR&apos;, generator);
-        logger.info(&apos;UUID Generator initialized ONCE&apos;);
-    }
-
-    return generator;
-}
-
-function generateUuid() {
-    return getUuidGenerator().generate().toString();
-}</code>
-            </properties>
-          </codeTemplate>
-        </codeTemplates>
-      </codeTemplateLibrary>
-    </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>23143a9d-13a4-43c5-9f3d-b9031c03f2c2</id>
-        <name>0_9_20</name>
+        <id>53ba11d2-c91b-4a4c-a281-86ad8ebb3706</id>
+        <name>0_9_21</name>
         <channelIds>
-          <string>d341dceb-069e-49ab-8efa-c45398145216</string>
+          <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
