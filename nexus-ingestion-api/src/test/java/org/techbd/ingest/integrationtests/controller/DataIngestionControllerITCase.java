@@ -1,5 +1,15 @@
 package org.techbd.ingest.integrationtests.controller;
 
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,23 +17,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ByteArrayResource;
-import org.techbd.ingest.integrationtests.base.BaseIntegrationTest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.integrationtests.base.BaseIntegrationTest;
+import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper;
+import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper.FlowAssertionParams;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.services.sqs.model.*;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-
-import org.springframework.http.*;
 
 class DataIngestionControllerITCase extends BaseIntegrationTest {
 
@@ -32,6 +51,15 @@ class DataIngestionControllerITCase extends BaseIntegrationTest {
 
         @LocalServerPort
         private int port;
+
+         // Shared helper instance
+        // ═══════════════════════════════════════════════════════════════════════════
+        /**
+         * Lazily-created helper for S3/SQS assertions.
+         */
+        private IngestionAssertionHelper assertionHelper() {
+                return new IngestionAssertionHelper(s3Client, sqsClient);
+        }
 
         private final ObjectMapper mapper = new ObjectMapper();
 
@@ -400,5 +428,176 @@ class DataIngestionControllerITCase extends BaseIntegrationTest {
         private String extractKey(String fullS3Path) {
                 // Example: s3://bucket-name/path/to/file.xml → path/to/file.xml
                 return fullS3Path.substring(fullS3Path.indexOf("/", 5) + 1);
+
         }
+
+
+        @Test
+        @DisplayName("IT: Ingest PIX — /ingest → /ws → S3 + SQS SUCCESS")
+        void shouldProcessPixViaIngest_andPersistToS3AndSqs() throws Exception {
+
+        String request = validPixSoapRequest();
+        SoftAssertions softly = new SoftAssertions();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.TEXT_XML); // SOAP 1.1
+        headers.set(Constants.REQ_X_FORWARDED_PORT, "9000");
+        headers.set(Constants.REQ_X_SERVER_IP, "127.0.0.1");
+        headers.set("SOAPAction", "PRPA_IN201301UV02");
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/ingest/netspective/pix",
+                new HttpEntity<>(request, headers),
+                String.class
+        );
+
+        //  STEP 1: HTTP success
+        softly.assertThat(response.getStatusCode().is2xxSuccessful())
+                .as("Response should be 2xx")
+                .isTrue();
+
+        //  STEP 2: SOAP response validation
+        String responseBody = response.getBody();
+        softly.assertThat(responseBody)
+                .as("SOAP response should not be empty")
+                .isNotBlank();
+
+        softly.assertThat(responseBody)
+                .as("SOAP Envelope must be present")
+                .contains("Envelope");
+
+        //  STEP 3: Verify S3 + SQS success flow
+                assertionHelper().assertCustomFlow(
+                defaultFlowParams(
+                        request,
+                        null,
+                        "netspective_pix",   
+                        false
+                ),
+                softly
+                );
+
+        softly.assertAll();
+        }
+
+
+        @Test
+        @DisplayName("IT: Ingest TEST — should NOT forward to SOAP, only S3 + SQS")
+        void shouldProcessTestMsgType_asNormalIngest() throws Exception {
+
+        String request = "<test>hello</test>";
+        SoftAssertions softly = new SoftAssertions();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.set(Constants.REQ_X_FORWARDED_PORT, "9000");
+        headers.set(Constants.REQ_X_SERVER_IP, "127.0.0.1");
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/ingest/netspective/test",
+                new HttpEntity<>(request, headers),
+                String.class
+        );
+
+        // ✅ STEP 1: HTTP success
+        softly.assertThat(response.getStatusCode().is2xxSuccessful())
+                .isTrue();
+
+        // ✅ STEP 2: Response should be JSON (NOT SOAP)
+        String responseBody = response.getBody();
+
+        softly.assertThat(responseBody)
+                .as("Should NOT be SOAP response")
+                .doesNotContain("Envelope");
+
+        softly.assertThat(responseBody)
+                .as("Should be JSON response")
+                .contains("{");
+
+        // ✅ STEP 3: Verify S3 + SQS
+        assertionHelper().assertCustomFlow(
+                defaultFlowParams(
+                        request,
+                        null,
+                        "netspective_test",   // groupId
+                        false                 // no ACK expected
+                ),
+                softly
+        );
+
+        softly.assertAll();
+        }
+
+
+      
+
+        private String validPixSoapRequest() {
+        return """
+                <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                                xmlns:v3="urn:hl7-org:v3"
+                                xmlns:wsa="http://www.w3.org/2005/08/addressing">
+                <SOAP-ENV:Header>
+                <wsa:MessageID>urn:uuid:123e4567-e89b-12d3-a456-426614174000</wsa:MessageID>
+                </SOAP-ENV:Header>
+                <SOAP-ENV:Body>
+                <v3:PRPA_IN201301UV02 ITSVersion="XML_1.0">
+                        <v3:id root="2.16.840.1.113883.3.72.5.9.1" extension="12345"/>
+                        <v3:creationTime value="20250805163000"/>
+                        <v3:interactionId root="2.16.840.1.113883.1.6" extension="PRPA_IN201301UV02"/>
+                        <v3:processingCode code="T"/>
+                        <v3:processingModeCode code="T"/>
+                        <v3:acceptAckCode code="AL"/>
+                        <v3:sender typeCode="SND">
+                        <v3:device classCode="DEV" determinerCode="INSTANCE">
+                        <v3:id root="1.2.3.4.5"/>
+                        </v3:device>
+                        </v3:sender>
+                </v3:PRPA_IN201301UV02>
+                </SOAP-ENV:Body>
+                </SOAP-ENV:Envelope>
+                """;
+        }
+
+
+        private FlowAssertionParams defaultFlowParams(
+                String payload, String ackFixture, String groupId, boolean ackExpected) {
+
+        FlowAssertionParams.Builder b = FlowAssertionParams.builder()
+                .dataBucket(DEFAULT_DATA_BUCKET)
+                .metadataBucket(DEFAULT_METADATA_BUCKET)
+                .queueUrl(mainQueueUrl)
+                .expectedMessageGroupId(groupId)
+                .tenantId(groupId)   
+                .expectedPayload(payload)
+                .payloadNormalizer(IngestionAssertionHelper::normalizeXml)
+                .ackExpected(ackExpected);
+
+        if (ackFixture != null) {
+                b.ackXPathAssertions((ackXml, softly) -> {
+                softly.assertThat(extractXPath(ackXml, "//sender/device/id/@root"))
+                        .isEqualTo(extractXPath(ackFixture, "//sender/device/id/@root"));
+                softly.assertThat(extractXPath(ackXml, "//receiver/device/id/@root"))
+                        .isEqualTo(extractXPath(ackFixture, "//receiver/device/id/@root"));
+                });
+        }
+
+        return b.build();
+        }
+
+        public static String extractXPath(String xml, String expression) {
+        try {
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                factory.setNamespaceAware(true); 
+                DocumentBuilder builder = factory.newDocumentBuilder();
+
+                Document document = builder.parse(new InputSource(new StringReader(xml)));
+
+                XPath xpath = XPathFactory.newInstance().newXPath();
+                return xpath.evaluate(expression, document);
+
+        } catch (Exception e) {
+                throw new RuntimeException("Failed to evaluate XPath: " + expression, e);
+        }
+        }
+
 }

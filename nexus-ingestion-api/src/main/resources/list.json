@@ -84,13 +84,24 @@
     {
         "sourceId": "netspective",
         "msgType": "pix",
-        "protocol": "TCP",
+        "protocol": "HTTP",
         "route": "/",
         "queue": "txd-sbx-util-queue.fifo",
         "dataDir": "/outbound",
         "metadataDir": "/outbound",
         "ackContentType": "application/soap+xml"
     },
+    {
+        "sourceId":"netspective",
+        "msgType":"test",
+        "protocol": "HTTP",
+        "route": "/",
+        "queue": "txd-sbx-util-queue.fifo",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound",
+         "ackContentType": "application/soap+xml"
+    },
+
     {
         "port": 3575,
         "responseType": "mllp",
