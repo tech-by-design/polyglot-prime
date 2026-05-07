@@ -9500,3 +9500,55 @@ SELECT
         AND sifsd.created_at <  (p_end_date::timestamp + interval '1 day')
     ORDER BY sifsd.hub_interaction_id, sifsd.created_at DESC;
 $function$;
+
+/****************
+-- Retrieves the latest CSV-based FHIR HTTP request record per bundle_id,
+-- including interaction, tenant, patient, and bundle validation details.
+******************/ 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_csv_http_fhir_request_details;
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_csv_http_fhir_request_details(
+    p_source_hub_interaction_id TEXT
+)
+RETURNS TABLE (
+    interaction_id TEXT,
+    uri TEXT,
+    bundle_id TEXT,
+    interaction_created_at TIMESTAMP,
+    sat_interaction_http_request_id TEXT,
+    tenant_id TEXT,
+    request_created_at TIMESTAMP,
+    patient_id TEXT,
+    patient_mrn TEXT,
+    source_hub_interaction_id TEXT,
+    is_bundle_valid TEXT
+)
+LANGUAGE sql
+STABLE
+AS $function$
+
+    SELECT DISTINCT ON (htt_req.bundle_id)
+        htt_req.hub_interaction_id AS interaction_id,
+        htt_req.uri,
+        htt_req.bundle_id,
+        htt_req.created_at AS interaction_created_at,
+        htt_req.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+        htt_req.tenant_id,
+        htt_req.created_at AS request_created_at,
+        htt_req.patient_id,
+        htt_req.patient_mrn,
+        htt_req.source_hub_interaction_id,
+        CASE
+            WHEN htt_req.is_bundle_valid = true THEN 'Valid'
+            WHEN htt_req.is_bundle_valid = false THEN 'Invalid'
+            ELSE NULL
+        END AS is_bundle_valid
+    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+    WHERE
+        htt_req.source_type = 'CSV'
+        AND htt_req.source_hub_interaction_id = p_source_hub_interaction_id
+    ORDER BY
+        htt_req.bundle_id,
+        htt_req.created_at DESC;
+
+$function$;

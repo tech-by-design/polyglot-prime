@@ -543,7 +543,21 @@ public class JooqRowsSupplierForSP {
                 );
 
                 return DSL.table(functionCall);
-            }               
+            }       
+            case "get_interaction_csv_http_fhir_request_details" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String sourceHubInteractionId = paramMap.get("p_source_hub_interaction_id");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format(
+                        "techbd_udi_ingress.get_interaction_csv_http_fhir_request_details('%s')",
+                        sourceHubInteractionId
+                );
+
+                return DSL.table(functionCall);
+            }                    
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" ,"get_missing_techbydesigndisposition_details"  -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
                 Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);

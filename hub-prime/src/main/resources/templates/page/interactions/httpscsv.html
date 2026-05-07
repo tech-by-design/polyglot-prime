@@ -24,7 +24,8 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'interaction_csv_http';
-        const viewdetail = 'interaction_csv_http_fhir_request';
+        // Use stored procedure instead of view for detail
+        const viewdetail = 'get_interaction_csv_http_fhir_request_details';
         const pipupviewName = 'interaction_http_fhir_request';
         const downloadviewName = 'interaction_http_fhir_request_payload_details';
         const modalAide = new ModalAide();
@@ -52,21 +53,58 @@
             },
             { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" }
         ];
+        // Use stored procedure for detail grid data fetch
         function getFhirGridData(params) {
             const hub_interaction_id = params.data.hub_interaction_id;
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/source_hub_interaction_id/${hub_interaction_id}.json`))
+            // Prepare stored procedure parameters as JSON
+            const storedProcParams = {
+                "p_source_hub_interaction_id": hub_interaction_id
+            };
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 100,
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            };
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${viewdetail}.json?storedProcparams=${paramsJson}`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(gridRequestBody)
+            })
                 .then(response => {
                     if (response.url.includes('/?timeout=true')) {
                         window.location.href = '/?timeout=true'; // Redirect to login page
                         return null; // Prevent further processing of the response
                     }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     return response.json();
                 })
-                .then(response => {
-                    params.successCallback(response);
+                .then(data => {
+                    let rowData = data;
+                    if (!Array.isArray(rowData)) {
+                        if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                            rowData = rowData.rows;
+                        } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                            rowData = rowData.data;
+                        } else {
+                            console.error("Unexpected response format:", data);
+                            rowData = [];
+                        }
+                    }
+                    params.successCallback(rowData, rowData.length);
                 })
                 .catch(error => {
-                    console.error('Error fetching details data' + error);
+                    console.error('Error fetching details data ' + error);
                 });
         }
 
