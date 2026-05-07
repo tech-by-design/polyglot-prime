@@ -7,11 +7,29 @@
     {
         "sourceId":"netspective",
         "msgType":"pnr",
-        "protocol": "TCP",
+        "protocol": "HTTP",
         "route": "/hold",
         "dataDir": "/outbound",
         "metadataDir": "/outbound",
         "ackContentType": "application/soap+xml"
+    },
+    {
+        "sourceId": "netspective_m",
+        "msgType": "pnr",
+        "protocol": "HTTP",
+        "route": "/hold",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound",
+        "responseType": "mtom"
+    },
+    {
+        "sourceId": "netspective_mt",
+        "msgType": "pnr",
+        "protocol": "HTTP",
+        "route": "/hold",
+        "dataDir": "/outbound",
+        "metadataDir": "/outbound",
+        "responseType": "mtom_trubridge"
     },
     {
         "port": 6555,
