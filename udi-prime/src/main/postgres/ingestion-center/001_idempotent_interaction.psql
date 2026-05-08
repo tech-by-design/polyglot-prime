@@ -1890,7 +1890,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failu
 SELECT DISTINCT ON (hub_interaction_id)
     sat_interaction_fhir_request_id,
     hub_interaction_id AS interaction_id,
-    tenant_id,
+    tenant_name AS tenant_id,
     uri,
     bundle_id,
     nature,
@@ -1907,7 +1907,7 @@ SELECT DISTINCT ON (hub_interaction_id)
     resource_type_set AS resource_types,
     patient_id,
     patient_mrn,
-    concat_ws('-', tenant_id, organization_id, patient_mrn) AS source_mrn,
+    concat_ws('-', tenant_name, organization_id, patient_mrn) AS source_mrn,
     CASE 
         WHEN source_type IN ('CSV', 'CCDA', 'HL7V2') THEN source_type
         WHEN lower(source_type) = 'fhir' THEN 'FHIR'
@@ -2155,6 +2155,7 @@ DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text,
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text,text,text,text,jsonb,text,text,text,text,text);
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text, text, text, text, jsonb, text, text, jsonb, text, text, text);
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text, text, text, text, jsonb, text, text, jsonb, text, text, text, timestamptz);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text, text, text, text, jsonb, text, text, jsonb, text, text, text, timestamptz, text);
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text, text, text, text, text, jsonb, text, text, jsonb, text, text, text, timestamptz, text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
     IN p_hub_interaction_id TEXT,
@@ -2238,7 +2239,7 @@ BEGIN
             session_diagnostic_set.column,
             session_diagnostic_set.diagnostics,
 			EXTRACT(EPOCH FROM v_created_at),
-            session_diagnostic_set.elaboration,
+            session_diagnostic_set.p_elaboration,
             p_created_by,
             p_provenance,
             p_ig_version,
@@ -6993,7 +6994,7 @@ BEGIN
 				        p_user_name					=> p_user_name, 
 				        p_user_session				=> p_user_session, 
 				        p_user_role					=> p_user_role,
-				        p_tenant_id					=> v_tenant_id_denorm,
+				        p_tenant_id					=> v_tenant_id,
 				        p_elaboration					=> p_elaboration,
 				        p_created_at 					=> v_created_at,
 				        p_created_by 					=> v_created_by,

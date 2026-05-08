@@ -1,0 +1,25 @@
+/* Create master table (tenants) entries from already ingested data */
+INSERT INTO techbd_udi_ingress.tenants (
+    tenant_id,
+    tenant_name,
+    tenant_displayname,
+    provenance,
+    created_at,
+    created_by
+)
+SELECT DISTINCT ON (LOWER(TRIM(t.tenant_name)))
+    gen_random_uuid()::text,
+    LOWER(TRIM(t.tenant_name)),
+    LOWER(TRIM(t.tenant_name)),
+    'Added through SQL',
+    CURRENT_TIMESTAMP,
+    CURRENT_USER
+FROM techbd_udi_ingress.sat_interaction_http_request t
+WHERE t.tenant_name IS NOT NULL
+  AND TRIM(t.tenant_name) <> ''
+  AND NOT EXISTS (
+        SELECT 1
+        FROM techbd_udi_ingress.tenants tm
+        WHERE LOWER(TRIM(tm.tenant_name)) = LOWER(TRIM(t.tenant_name))
+    )
+ORDER BY LOWER(TRIM(t.tenant_name));
