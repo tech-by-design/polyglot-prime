@@ -18,6 +18,7 @@
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
     IN exception_id TEXT,
     IN exception_key TEXT,
@@ -30,6 +31,7 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
     IN created_by TEXT DEFAULT NULL,
     IN provenance TEXT DEFAULT NULL,
     IN elaboration JSONB DEFAULT NULL,
+    IN p_tenant_name TEXT DEFAULT NULL::text,
     IN p_tenant_id text DEFAULT NULL::text, 
     IN p_hub_interaction_id text DEFAULT NULL::text
 )
@@ -49,11 +51,11 @@ BEGIN
     -- Insert into sat_diagnostic_exception
     INSERT INTO techbd_udi_ingress.sat_diagnostic_exception (
         sat_diagnostic_exception_id, hub_diagnostic_id, exception_type, message, err_returned_sqlstate,
-        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance, tenant_id, hub_interaction_id
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance, tenant_name, tenant_id, hub_interaction_id
     )
     VALUES (
         gen_random_uuid()::text, v_exception_id, exception_type, error_msg, sqlstate,
-        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance, p_tenant_id, p_hub_interaction_id
+        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance, p_tenant_name, p_tenant_id, p_hub_interaction_id
     );
 
     -- Return the exception ID
@@ -153,3 +155,183 @@ BEGIN
 END;
 $function$
 ;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_tenant_details(text, text, timestamp, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_tenant_details(
+    p_tenant_name text,
+    p_created_by  text DEFAULT NULL,
+    p_created_at  timestamp with time zone DEFAULT NULL,
+    p_provenance  text DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_result JSON;
+    v_tenant_id UUID;
+BEGIN
+
+   IF (p_tenant_name IS NULL OR TRIM(p_tenant_name) = '') THEN
+      RETURN json_build_object(
+          'status','error',
+          'message','tenant name cannot be empty'
+      );
+   END IF;
+   
+   SELECT tenant_id INTO v_tenant_id
+   FROM techbd_udi_ingress.tenants
+   WHERE tenant_name = LOWER(p_tenant_name);
+   
+   IF v_tenant_id IS NULL THEN
+      v_tenant_id := gen_random_uuid();
+
+      INSERT INTO techbd_udi_ingress.tenants (
+          tenant_id,
+          tenant_name,
+          tenant_displayname,
+          provenance,
+          created_at,
+          created_by
+      ) VALUES (
+          v_tenant_id,
+          LOWER(p_tenant_name),
+          LOWER(p_tenant_name),
+          p_provenance,
+          COALESCE(p_created_at, CURRENT_TIMESTAMP),
+          p_created_by        
+      );
+
+      v_result := json_build_object(
+          'status','success',
+          'message','tenant created successfully',
+          'tenant_id', v_tenant_id
+      );
+
+   ELSE
+      v_result := json_build_object(
+          'status','success',
+          'message','tenant already exists',
+          'tenant_id', v_tenant_id
+      );
+   END IF;
+
+   RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+        'status','error',
+        'message', SQLERRM,
+        'code', SQLSTATE
+    );
+END;
+$$;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user_session(
+    TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, JSON
+);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_user_session(
+    p_session_id TEXT,
+    p_user_id TEXT,
+    p_username TEXT,    
+    p_session_start_time TIMESTAMPTZ,
+    p_session_end_time TIMESTAMPTZ,
+    p_session_expiry_time TIMESTAMPTZ,
+    p_source TEXT,
+    p_provenance JSON
+)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_result JSON;
+    v_session_id UUID;
+BEGIN
+    
+   IF (p_session_id IS NULL OR p_session_id = '') THEN
+        v_session_id := gen_random_uuid();
+   ELSE
+        v_session_id := p_session_id::UUID;
+   END IF; 
+   
+   IF(p_session_id IS NULL OR p_session_id = '') then
+        IF p_user_id IS NULL OR p_username IS NULL THEN
+            RETURN json_build_object('status','error','message','user_id or username is missing');
+        END IF;
+
+        IF p_session_start_time IS NULL THEN
+            RETURN json_build_object('status','error','message','Session_start_time is missing');
+        END IF;
+
+        IF p_session_expiry_time IS NULL THEN
+            RETURN json_build_object('status','error','message','Session_expiry_time is missing');
+        END IF;
+
+        IF p_provenance IS NULL THEN
+            RETURN json_build_object('status','error','message','Provenance is missing');
+        END IF;     
+    END IF;
+
+    IF p_session_id IS NULL OR p_session_id = '' THEN        
+        INSERT INTO techbd_udi_ingress.user_sessions (
+            session_id,
+            user_id,
+            username,            
+            session_start_time,
+            session_end_time,
+            session_expiry_time,
+            source,
+            provenance,
+            created_at,
+            created_by          
+        )
+        VALUES (
+            v_session_id::TEXT,
+            p_user_id,
+            p_username,            
+            p_session_start_time,
+            p_session_end_time,
+            p_session_expiry_time,
+            p_source,
+            p_provenance,
+            CURRENT_TIMESTAMP,
+            p_user_id            
+        );
+
+        v_result := json_build_object(
+            'status','success',
+            'message','Session created successfully',
+            'session_id', v_session_id::TEXT
+        );
+
+    ELSE
+       
+        IF p_user_id IS NULL OR p_username IS NULL THEN
+            RETURN json_build_object('status','error','message','user_id or username is missing');
+        END IF;    
+    
+        UPDATE techbd_udi_ingress.user_sessions
+        SET
+            session_end_time    = COALESCE(p_session_end_time, session_end_time),
+            session_expiry_time = COALESCE(p_session_expiry_time, session_expiry_time),
+            updated_at          = CURRENT_TIMESTAMP,
+            updated_by          = p_user_id
+        WHERE session_id = v_session_id::TEXT;
+    
+        v_result := json_build_object(
+            'status','success',
+            'message','Session updated successfully',
+            'session_id', v_session_id
+        );
+    END IF;
+
+    RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+        'status','error',
+        'message', SQLERRM,
+        'code', SQLSTATE
+    );
+END;
+$$;

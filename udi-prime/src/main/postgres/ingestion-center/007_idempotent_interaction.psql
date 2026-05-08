@@ -59,7 +59,7 @@ BEGIN
 		        )
 		     )
 		  -- Apply tenant_id filter
-          AND (p_tenant_id IS NULL OR fhir.tenant_id = p_tenant_id)
+          AND (p_tenant_id IS NULL OR fhir.tenant_name = p_tenant_id)
     )
     INSERT INTO techbd_udi_ingress.fhir_replay_details (
         bundle_id,
@@ -91,7 +91,7 @@ BEGIN
         SELECT
             rq.bundle_id,
             rq.hub_interaction_id,
-            rq.tenant_id,
+            rq.tenant_name,
             rq.source_type,
             rq.uri,
             rq.group_hub_interaction_id,
@@ -137,7 +137,7 @@ BEGIN
 		        )
 		     )
 		  -- Apply tenant_id filter
-          AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
+          AND (p_tenant_id IS NULL OR rq.tenant_name = p_tenant_id)
     )
     SELECT jsonb_build_object(
         'bundle_count', COUNT(bundle_id),
@@ -148,7 +148,7 @@ BEGIN
 				'created_at', created_at,
 				'nature', nature,
                 'interactionid', hub_interaction_id,
-                'tenantID', tenant_id,
+                'tenantID', tenant_name,
                 'source', source_type,
                 'uri', uri,
                 'errorMessage', COALESCE(error_message::text, ''),
@@ -333,7 +333,7 @@ BEGIN
         SELECT
             rq.bundle_id,
             rq.hub_interaction_id,
-            rq.tenant_id,
+            rq.tenant_name,
             rq.source_type,
             rq.uri,
             rq.group_hub_interaction_id,
@@ -393,7 +393,7 @@ BEGIN
             )
 
           -- Apply tenant filter
-          AND (p_tenant_id IS NULL OR rq.tenant_id = p_tenant_id)
+          AND (p_tenant_id IS NULL OR rq.tenant_name = p_tenant_id)
     )
 
     SELECT jsonb_build_object(
@@ -409,7 +409,7 @@ BEGIN
                         'created_at', created_at,
                         'nature', nature,
                         'interactionid', hub_interaction_id,
-                        'tenantID', tenant_id,
+                        'tenantID', tenant_name,
                         'source', source_type,
                         'uri', uri,
                         'errorMessage', COALESCE(rd_error_message::text, ''),

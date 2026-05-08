@@ -35,7 +35,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_patient_screening_questions_answe
 AS WITH filtered_resources AS (
     SELECT
         sihr.hub_interaction_id,
-        sihr.tenant_id,
+        sihr.tenant_name AS tenant_id,
         jsonb_array_elements(sihr.payload -> 'entry') AS entry,
         sihr.patient_mrn
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
@@ -138,7 +138,7 @@ begin
     with filtered_resources as (
 select
 	sihr.hub_interaction_id,
-	sihr.tenant_id,
+	sihr.tenant_name as tenant_id,
 	jsonb_array_elements(sihr.payload -> 'entry'::text) as entry,
 	sihr.patient_mrn
 from
@@ -259,7 +259,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_detail CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_detail
 AS  WITH filtered_resources AS (
          SELECT sihr.hub_interaction_id,
-            sihr.tenant_id,
+            sihr.tenant_name AS tenant_id,
             jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
           WHERE sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/') AND sihr.nature = 'Original FHIR Payload'::text
@@ -537,7 +537,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_widget_new CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_widget_new AS
 SELECT 
     widget_name,
-    tenant_id,
+    tenant_name AS tenant_id,
     last_updated_at
 FROM techbd_udi_ingress.dashboard_widget_metadata;
 
@@ -545,18 +545,13 @@ FROM techbd_udi_ingress.dashboard_widget_metadata;
 /*******************************************************************************************
  * Stored Procedure for FHIR Screening Info with Filtering. *
  ******************************************************************************************/
-
-drop function if exists techbd_udi_ingress.get_fhir_screening_info(TEXT,
-TEXT,
-TEXT);
-
-create or replace
-function techbd_udi_ingress.get_fhir_screening_info(
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_screening_info(TEXT, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_screening_info(
     p_qe_name TEXT default null,
     p_patient_mrn TEXT default null,
     p_org_id TEXT default null
 )
-returns table (
+RETURNS TABLE (
     hub_interaction_id TEXT,
     qe_name TEXT,
     org_id TEXT,
@@ -570,10 +565,10 @@ returns table (
     areas_of_interest TEXT,
     total_safety_score numeric
 )
-as $$
-begin
-    return QUERY
-    select
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
 	fsi.hub_interaction_id,
 	fsi.qe_name,
 	fsi.org_id,
@@ -583,25 +578,24 @@ begin
 	fsi.first_name,
 	fsi.submitted_date_time,
 	fsi.patient_mrn,
-	case
-		when fsi.survey_date_time ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$'::text then
-            case
-			when fsi.survey_date_time::timestamp with time zone is not null then fsi.survey_date_time::timestamp with time zone
-			else null::timestamp with time zone
-		end
-		else null::timestamp with time zone
-	end as survey_date_time,
+	CASE
+		WHEN fsi.survey_date_time ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$'::text THEN
+            CASE
+			WHEN fsi.survey_date_time::timestamp with time zone is not null THEN fsi.survey_date_time::timestamp with time zone
+			ELSE null::timestamp with time zone
+		END
+		ELSE null::timestamp with time zone
+	END AS survey_date_time,
 	fsi.areas_of_interest,
 	nullif(fsi.total_safety_score, '')::numeric
-from
+FROM
 	techbd_udi_ingress.sat_interaction_fhir_screening_info fsi
-where
-	(p_qe_name is null
-		or fsi.qe_name = p_qe_name)
-	and (p_patient_mrn is null
-		or fsi.patient_mrn = p_patient_mrn)
-	and (p_org_id is null
-		or fsi.org_id = p_org_id);
-end;
-
+WHERE
+	(p_qe_name IS NULL
+		OR fsi.qe_name = p_qe_name)
+	AND (p_patient_mrn IS NULL
+		OR fsi.patient_mrn = p_patient_mrn)
+	AND (p_org_id IS NULL
+		OR fsi.org_id = p_org_id);
+END;
 $$ language plpgsql;

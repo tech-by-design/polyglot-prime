@@ -77,6 +77,7 @@ WHERE disposition = 'REJECTION';
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_diagnostic_log(text, text, text, text, text, text, text, text, text, int4, jsonb);
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_diagnostic_log(text, text, text, text, text, text, text, text, text, int4, jsonb, text, text);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_diagnostic_log(text, text, text, text, text, text, text, text, text, int4, jsonb, text, text, text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
     diagnostic_id TEXT,
     key TEXT,
@@ -89,6 +90,7 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
     parent_diagnostic_log_id TEXT,
     hierarchy_level INT,
     elaboration JSONB,
+    p_tenant_name text DEFAULT NULL::text,
     p_tenant_id text DEFAULT NULL::text, 
     p_hub_interaction_id text DEFAULT NULL::text
 )
@@ -125,6 +127,7 @@ BEGIN
 		created_at,
         created_by,
         provenance,
+		tenant_name,
 		tenant_id,
 		hub_interaction_id
     ) VALUES (
@@ -140,6 +143,7 @@ BEGIN
         clock_timestamp(),
         created_by,
         provenance,
+		p_tenant_name,
 		p_tenant_id,
 		p_hub_interaction_id
     );
@@ -166,7 +170,7 @@ SELECT
     err_pg_exception_detail,
     err_pg_exception_context,
     elaboration,
-    tenant_id,
+    tenant_name AS tenant_id,
     hub_interaction_id,
     created_at,
     sat_diagnostic_exception_id
@@ -180,7 +184,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.diagnostics_exception_summary AS
 SELECT
     message,
     err_pg_exception_detail, 
-    tenant_id,
+    tenant_name AS tenant_id,
     hub_interaction_id,
     created_at,
     sat_diagnostic_exception_id

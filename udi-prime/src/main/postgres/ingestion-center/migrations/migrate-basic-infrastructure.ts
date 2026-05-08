@@ -84,6 +84,7 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
     request_source: textNullable(),
     techbd_version_number: textNullable(),
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -136,6 +137,7 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
     bundle_type: textNullable(),
     replay_status: textNullable(), //True/False/Null
     replay_on: dateTimeNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -161,6 +163,7 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
     user_session_hash: textNullable(),
     techbd_version_number: textNullable(),
     ig_version: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -186,6 +189,7 @@ const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
     validation_engine: textNullable(),
     bundle_id: textNullable(),
     techbd_version_number: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -210,6 +214,7 @@ const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
     areas_of_interest: textNullable(),
     elaboration: jsonbNullable(),
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -240,6 +245,7 @@ const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
     elaboration: jsonbNullable(),
     primary_org_id: textNullable(), 
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -262,6 +268,7 @@ const interactionFhirScreeninOrganizationSat = interactionHub.satelliteTable(
     org_postal_code: textNullable(),
     elaboration: jsonbNullable(),
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -283,6 +290,7 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
     techbd_version_number: textNullable(),
     tenant_id: textNullable(),
     profile_url_domain: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -317,6 +325,7 @@ const interactionCsvRequestSat = interactionHub.satelliteTable(
     screening_profile_data_file_name: textNullable(),
     zip_file_hub_interaction_id: textNullable(),
     techbd_version_number: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -347,6 +356,7 @@ const interactionZipRequestSat = interactionHub.satelliteTable(
     number_of_fhir_bundles_generated_from_zip_file: integer().default(0),
     data_validation_status: textNullable(),
     ig_version: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -371,6 +381,7 @@ const interactionfileExchangeSat = interactionHub.satelliteTable(
     protocol: fileExchangeProtocol.references.code(),
     elaboration: jsonbNullable(),
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -390,6 +401,7 @@ const expectationHttpRequestSat = hubExpectation.satelliteTable(
     content_type: textNullable(), // eg: Permission Denied to the file
     payload: jsonB,
     tenant_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -414,6 +426,7 @@ const diagnosticsSat = hubDiagnostics.satelliteTable(
     elaboration: jsonbNullable(),
     tenant_id: textNullable(),
     hub_interaction_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -433,6 +446,7 @@ const exceptionDiagnosticSat = hubDiagnostics.satelliteTable(
     elaboration: jsonbNullable(),
     tenant_id: textNullable(),
     hub_interaction_id: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -460,6 +474,7 @@ const diagnosticDataledgerSat = hubDiagnostics.satelliteTable(
 	source: textNullable(),
 	additional_details: jsonbNullable(),
   tenant_id: textNullable(),
+  tenant_name: textNullable(),
   	...dvts.housekeeping.columns,
 },
 );
@@ -521,6 +536,7 @@ const interactionHl7RequestSat = interactionHub.satelliteTable(
     techbd_version_number: textNullable(),
     file_name: textNullable(),
     ig_version: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -549,6 +565,7 @@ const interactionCcdaRequestSat = interactionHub.satelliteTable(
     file_name: textNullable(),
     ig_version: textNullable(),
     ccda_authoring_device: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -646,6 +663,7 @@ const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_er
   origin: textNullable(),
   user_agent: textNullable(),
   techbd_version_number: textNullable(),
+  tenant_name: textNullable(),
   ...dvts.housekeeping.columns
 }, {
   isIdempotent: true,
@@ -667,6 +685,7 @@ const ccdaValidationErrorsSat = interactionHub.satelliteTable(
     user_agent: textNullable(),
     techbd_version_number: textNullable(),
     ig_version: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -687,6 +706,7 @@ const hl7ValidationErrorsSat = interactionHub.satelliteTable(
     user_agent: textNullable(),
     techbd_version_number: textNullable(),
     ig_version: textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -697,6 +717,7 @@ const users = SQLa.tableDefinition("users", {
     name:text(),
     tenant_id:textNullable(),
     role:textNullable(),
+    tenant_name: textNullable(),
     ...dvts.housekeeping.columns
   }, {
     isIdempotent: true,
@@ -721,6 +742,24 @@ const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
   }, {
   isIdempotent: true,
   sqlNS: ingressSchema
+});
+
+// For Tenant Master Implementation
+const tenant = SQLa.tableDefinition("tenants", {
+    tenant_id:text(),
+    tenant_name:text(),
+    tenant_displayname:textNullable(),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("tenant_name"),
+    ];
+  },
 });
 
 // Function to read SQL from a list of .psql files
@@ -1487,6 +1526,78 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
           ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ALTER COLUMN issue DROP NOT NULL;
       END IF;
+
+      ${tenant}
+      DO $$
+        DECLARE
+            tbl TEXT;
+            tables TEXT[] := ARRAY[
+                'dashboard_widget_metadata',
+                'sat_csv_fhir_processing_errors',
+                'sat_diagnostic_dataledger_api',
+                'sat_diagnostic_exception',
+                'sat_diagnostic_log',
+                'sat_expectation_http_request',
+                'sat_interaction_ccda_request',
+                'sat_interaction_ccda_validation_errors',
+                'sat_interaction_fhir_request',
+                'sat_interaction_fhir_screening_info',
+                'sat_interaction_fhir_screening_organization',
+                'sat_interaction_fhir_screening_patient',
+                'sat_interaction_fhir_session_diagnostic',
+                'sat_interaction_fhir_validation_issue',
+                'sat_interaction_file_exchange',
+                'sat_interaction_flat_file_csv_request',
+                'sat_interaction_hl7_request',
+                'sat_interaction_hl7_validation_errors',
+                'sat_interaction_http_request',
+                'sat_interaction_user',
+                'sat_interaction_zip_file_request',
+                'users'
+            ];
+        BEGIN
+            FOREACH tbl IN ARRAY tables
+            LOOP
+                -- Rename tenant_id → tenant_name (only if needed)
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_id'
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_name'
+                )
+                THEN
+                    EXECUTE format(
+                        'ALTER TABLE techbd_udi_ingress.%I RENAME COLUMN tenant_id TO tenant_name',
+                        tbl
+                    );
+                END IF;
+
+                -- Add new tenant_id column (only if missing)
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_id'
+                )
+                THEN
+                    EXECUTE format(
+                        'ALTER TABLE techbd_udi_ingress.%I ADD COLUMN tenant_id TEXT NOT NULL DEFAULT ''''',
+                        tbl
+                    );
+                END IF;
+
+            END LOOP;
+        END 
+      $$;
 
       ${dependenciesSQL}
 

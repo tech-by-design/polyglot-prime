@@ -537,7 +537,7 @@ $procedure$
  *******************************************************************************************************************************/
 
 
-CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
+/*CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
     diagnostic_id TEXT,
     key TEXT,
     created_by TEXT,
@@ -597,4 +597,4 @@ BEGIN
         created_by,
         provenance
     );
-END $$;
+END $$;*/

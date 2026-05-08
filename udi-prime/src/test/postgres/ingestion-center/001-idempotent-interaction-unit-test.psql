@@ -57,11 +57,11 @@ BEGIN
 		'Function register_user_interaction exists'
 	);   
     
-    RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text'], 'Function register_issue exists');  
-    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
-   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text'], 
+    RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text'], 'Function register_issue exists');  
+    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'jsonb', 'int4', 'int4', 'text', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
-	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text'],
+	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function sat_interaction_ccda_request_upserted exists'
     );
 	RETURN NEXT has_function('techbd_udi_ingress', 'register_interaction_hl7_request',
@@ -69,7 +69,7 @@ BEGIN
 	    'Function register_interaction_hl7_request exists'
 	);
 	RETURN NEXT has_function('techbd_udi_ingress', 'sat_interaction_hl7_request_upserted',
-	    ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
+	    ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
 	    'Function sat_interaction_hl7_request_upserted exists'
 	);
 
@@ -87,7 +87,7 @@ BEGIN
 			'state_transition_reason', 'outbound_http_message', 'error_message', 'issues_count', 'bundle_id', 'bundle_session_id', 'bundle_last_updated', 'organization_id', 
 			'organization_name', 'patient_id', 'patient_mrn', 'resource_type_set', 'validation_initiated_at', 'validation_completed_at', 'interaction_start_time', 'interaction_end_time', 
 			'validation_engine', 'ig_version', 'profile_url', 'passed', 'medicaid_cin', 'elaboration', 'created_at', 'created_by', 'provenance', 'techbd_disposition_action', 'patient_mrn_source_system', 
-			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details', 'techbd_version_number', 'replay_status', 'replay_on'],
+			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type', 'additional_details', 'techbd_version_number', 'replay_status', 'replay_on', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_fhir_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -99,7 +99,7 @@ BEGIN
         'The foreign key from sat_interaction_http_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_http_request',
         ARRAY['sat_interaction_http_request_id', 'hub_interaction_id', 'nature', 'content_type', 'payload', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 
-			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number', 'tenant_id'],
+			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source', 'techbd_version_number', 'tenant_id', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 
@@ -111,7 +111,7 @@ BEGIN
         'The foreign key from sat_interaction_user.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
         ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
-			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number', 'ig_version'],
+			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number', 'ig_version', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_user should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
 	
@@ -125,7 +125,7 @@ BEGIN
             'screening_observation_data_payload_text', 'screening_profile_data_payload_text',
             'demographic_data_payload_text', 'qe_admin_data_payload_text',
             'screening_observation_data_file_name', 'screening_profile_data_file_name',
-            'demographic_data_file_name', 'qe_admin_data_file_name', 'zip_file_hub_interaction_id', 'techbd_version_number'],
+            'demographic_data_file_name', 'qe_admin_data_file_name', 'zip_file_hub_interaction_id', 'techbd_version_number', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_flat_file_csv_request should match the expected structure.'
     );
   
@@ -140,7 +140,7 @@ BEGIN
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
             'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors', 'techbd_version_number', 'full_operation_outcome',
-			'total_number_of_files_in_zip_file', 'number_of_fhir_bundles_generated_from_zip_file', 'data_validation_status', 'ig_version'],
+			'total_number_of_files_in_zip_file', 'number_of_fhir_bundles_generated_from_zip_file', 'data_validation_status', 'ig_version', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');   
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
@@ -150,7 +150,7 @@ BEGIN
     RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
         ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
-			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name', 'ig_version', 'ccda_authoring_device'],
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance', 'techbd_version_number', 'file_name', 'ig_version', 'ccda_authoring_device', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
     );
 
@@ -160,68 +160,68 @@ BEGIN
 	RETURN NEXT columns_are(schema_name, 'sat_interaction_hl7_request',
 	    ARRAY['sat_interaction_hl7_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 
 	        'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 
-	        'created_by', 'provenance', 'hl7_payload_text', 'origin', 'techbd_version_number', 'file_name', 'ig_version'],
+	        'created_by', 'provenance', 'hl7_payload_text', 'origin', 'techbd_version_number', 'file_name', 'ig_version', 'tenant_name'],
 	    'The columns of techbd_udi_ingress.sat_interaction_hl7_request should match the expected structure.'
 	);
 
 	RETURN NEXT has_table(schema_name, 'sat_csv_fhir_processing_errors', 'The table techbd_udi_ingress.sat_csv_fhir_processing_errors should exist.');
 	RETURN NEXT columns_are(schema_name, 'sat_csv_fhir_processing_errors',
 	    ARRAY['sat_validation_and_fhir_conversion_errors_id','category','flat_file_hub_interaction_id','tenant_id','uri','zip_file_hub_interaction_id','group_id','section','field_name','value','error_type','error_subtype','error',
-			'description','row_number','field_number','zip_file_name','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance'],
+			'description','row_number','field_number','zip_file_name','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_csv_fhir_processing_errors should match the expected structure.'
 	);
 
 	RETURN NEXT has_table(schema_name, 'sat_interaction_hl7_validation_errors', 'The table techbd_udi_ingress.sat_interaction_hl7_validation_errors should exist.');
 	RETURN NEXT columns_are(schema_name, 'sat_interaction_hl7_validation_errors',
-	    ARRAY['sat_hl7_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version'],
+	    ARRAY['sat_hl7_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version', 'tenant_name'],
 	    'The columns of techbd_udi_ingress.sat_interaction_hl7_validation_errors should match the expected structure.'
 	);
 
 	RETURN NEXT has_table(schema_name, 'sat_interaction_ccda_validation_errors', 'The table techbd_udi_ingress.sat_interaction_ccda_validation_errors should exist.');
 	RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_validation_errors',
-	    ARRAY['sat_ccda_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version'],
+	    ARRAY['sat_ccda_validation_errors_id','hub_interaction_id','tenant_id','uri','error_type','error','file_name','origin','user_agent','techbd_version_number','created_at','created_by','provenance','ig_version', 'tenant_name'],
 	    'The columns of techbd_udi_ingress.sat_interaction_ccda_validation_errors should match the expected structure.'
 	);
 
 	RETURN NEXT has_table(schema_name, 'sat_diagnostic_log', 'The table techbd_udi_ingress.sat_diagnostic_log should exist.');
 	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_log',
-	    ARRAY['sat_diagnostic_log_id','hub_diagnostic_id','diagnostic_log_level','diagnostic_log_message','user_id','status','parent_diagnostic_log_id','hierarchy_level','elaboration','created_at','created_by','provenance','hub_interaction_id','tenant_id'],
+	    ARRAY['sat_diagnostic_log_id','hub_diagnostic_id','diagnostic_log_level','diagnostic_log_message','user_id','status','parent_diagnostic_log_id','hierarchy_level','elaboration','created_at','created_by','provenance','hub_interaction_id','tenant_id', 'tenant_name'],
 	    'The columns of techbd_udi_ingress.sat_diagnostic_log should match the expected structure.'
 	);
 
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_info', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_info should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_info',
 		ARRAY['sat_interaction_fhir_screening_info_id','hub_interaction_id','qe_name','submitted_date_time','survey_date_time','patient_mrn','full_name','last_name','first_name','org_id','org_name',
-			'total_safety_score','areas_of_interest','elaboration','created_at','created_by','provenance','tenant_id'],
+			'total_safety_score','areas_of_interest','elaboration','created_at','created_by','provenance','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_info should match the expected structure.');
 	
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_organization', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_organization should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_organization',
 		ARRAY['sat_interaction_fhir_screening_organization_id','hub_interaction_id','qe_name','org_id','org_type','org_name','org_active','org_address','org_city','org_state','org_postal_code',
-			'elaboration','created_at','created_by','provenance','tenant_id'],
+			'elaboration','created_at','created_by','provenance','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_organization should match the expected structure.');
 	
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_screening_patient', 'The table techbd_udi_ingress.sat_interaction_fhir_screening_patient should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_screening_patient',
 		ARRAY['sat_interaction_fhir_screening_patient_id','hub_interaction_id','qe_name','patient_mrn','patient_id','patient_type','patient_full_name','patient_first_name','patient_last_name','patient_gender',
-			'patient_birth_date','patient_address','patient_city','patient_state','patient_postal_code','patient_language','patient_ssn','org_id','elaboration','created_at','created_by','provenance','primary_org_id','tenant_id'],
+			'patient_birth_date','patient_address','patient_city','patient_state','patient_postal_code','patient_language','patient_ssn','org_id','elaboration','created_at','created_by','provenance','primary_org_id','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_fhir_screening_patient should match the expected structure.');
 	
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_session_diagnostic', 'The table techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_session_diagnostic',
 		ARRAY['sat_interaction_fhir_session_diagnostic_id','hub_interaction_id','tenant_id','uri','session_id','severity','message','line','column','diagnostics','encountered_at','elaboration','created_at','created_by',
-			'provenance','ig_version','validation_engine','bundle_id','techbd_version_number'],
+			'provenance','ig_version','validation_engine','bundle_id','techbd_version_number', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should match the expected structure.');
 	
 	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_validation_issue', 'The table techbd_udi_ingress.sat_interaction_fhir_validation_issue should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_fhir_validation_issue',
 		ARRAY['sat_interaction_fhir_validation_issue_id','hub_interaction_id','issue','date_time','validation_engine','ig_version','elaboration','created_at','created_by','provenance','severity',
-			'profile_url','techbd_version_number','tenant_id','profile_url_domain'],
+			'profile_url','techbd_version_number','tenant_id','profile_url_domain', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_fhir_validation_issue should match the expected structure.');
 	
 	RETURN NEXT has_table(schema_name, 'sat_interaction_file_exchange', 'The table techbd_udi_ingress.sat_interaction_file_exchange should exist.');
 	RETURN NEXT columns_are(schema_name,'sat_interaction_file_exchange',
-		ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id'],
+		ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_file_exchange should match the expected structure.');
 
     /*=================== Testing TABLE COLUMNS  ========================*/
@@ -239,7 +239,7 @@ BEGIN
 	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'last_updated_at', 'The column last_updated_at in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'dashboard_widget_metadata', 'last_updated_at', 'timestamp with time zone', 'The column last_updated_at in techbd_udi_ingress.dashboard_widget_metadata should be of type timestamp with time zone.');
-	RETURN NEXT columns_are(schema_name, 'dashboard_widget_metadata', ARRAY['id','widget_name','tenant_id','last_updated_at','last_updated_by'], 'The table techbd_udi_ingress.dashboard_widget_metadata should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'dashboard_widget_metadata', ARRAY['id','widget_name','tenant_id','last_updated_at','last_updated_by', 'tenant_name'], 'The table techbd_udi_ingress.dashboard_widget_metadata should have the expected column structure.');
 	RETURN NEXT has_table(schema_name, 'fhir_replay_details', 'The table techbd_udi_ingress.fhir_replay_details should exist.');
 	RETURN NEXT col_not_null(schema_name, 'fhir_replay_details', 'bundle_id', 'The column bundle_id in techbd_udi_ingress.fhir_replay_details should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'fhir_replay_details', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.fhir_replay_details should be NOT NULL.');
@@ -293,7 +293,7 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'users', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.users should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'users', 'created_by', 'The column created_by in techbd_udi_ingress.users should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'users', 'provenance', 'The column provenance in techbd_udi_ingress.users should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'users', ARRAY['id','github_id','name','tenant_id','role','created_at','created_by','provenance'], 'The table techbd_udi_ingress.users should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'users', ARRAY['id','github_id','name','tenant_id','role','created_at','created_by','provenance', 'tenant_name'], 'The table techbd_udi_ingress.users should have the expected column structure.');
 	RETURN NEXT has_table(schema_name, 'sat_diagnostic_dataledger_api', 'The table techbd_udi_ingress.sat_diagnostic_dataledger_api should exist.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_dataledger_api', 'sat_diagnostic_dataledger_api_id', 'The column sat_diagnostic_dataledger_api_id in techbd_udi_ingress.sat_diagnostic_dataledger_api should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_dataledger_api', 'hub_diagnostic_id', 'The column hub_diagnostic_id in techbd_udi_ingress.sat_diagnostic_dataledger_api should be NOT NULL.');
@@ -302,7 +302,7 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_diagnostic_dataledger_api', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_diagnostic_dataledger_api should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_dataledger_api', 'created_by', 'The column created_by in techbd_udi_ingress.sat_diagnostic_dataledger_api should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_dataledger_api', 'provenance', 'The column provenance in techbd_udi_ingress.sat_diagnostic_dataledger_api should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_dataledger_api', ARRAY['sat_diagnostic_dataledger_api_id','hub_diagnostic_id','hub_interaction_id','dataledger_url','source_hub_interaction_id','group_hub_interaction_id','received_payload','received_status','received_reason','dataledger_received_status_code','dataledger_received_response','sent_payload','sent_status','sent_reason','dataledger_sent_response','dataledger_sent_status_code','source','additional_details','created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_diagnostic_dataledger_api should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_dataledger_api', ARRAY['sat_diagnostic_dataledger_api_id','hub_diagnostic_id','hub_interaction_id','dataledger_url','source_hub_interaction_id','group_hub_interaction_id','received_payload','received_status','received_reason','dataledger_received_status_code','dataledger_received_response','sent_payload','sent_status','sent_reason','dataledger_sent_response','dataledger_sent_status_code','source','additional_details','created_at','created_by','provenance','tenant_id', 'tenant_name'], 'The table techbd_udi_ingress.sat_diagnostic_dataledger_api should have the expected column structure.');
 	RETURN NEXT has_table(schema_name, 'sat_diagnostic_exception', 'The table techbd_udi_ingress.sat_diagnostic_exception should exist.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_exception', 'sat_diagnostic_exception_id', 'The column sat_diagnostic_exception_id in techbd_udi_ingress.sat_diagnostic_exception should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_exception', 'hub_diagnostic_id', 'The column hub_diagnostic_id in techbd_udi_ingress.sat_diagnostic_exception should be NOT NULL.');
@@ -311,7 +311,7 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_diagnostic_exception', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_diagnostic_exception should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_exception', 'created_by', 'The column created_by in techbd_udi_ingress.sat_diagnostic_exception should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_exception', 'provenance', 'The column provenance in techbd_udi_ingress.sat_diagnostic_exception should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_exception', ARRAY['sat_diagnostic_exception_id','hub_diagnostic_id','exception_type','message','err_returned_sqlstate','err_pg_exception_detail','err_pg_exception_hint','err_pg_exception_context','elaboration','created_at','created_by','provenance','tenant_id','hub_interaction_id'], 'The table techbd_udi_ingress.sat_diagnostic_exception should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_diagnostic_exception', ARRAY['sat_diagnostic_exception_id','hub_diagnostic_id','exception_type','message','err_returned_sqlstate','err_pg_exception_detail','err_pg_exception_hint','err_pg_exception_context','elaboration','created_at','created_by','provenance','tenant_id','hub_interaction_id', 'tenant_name'], 'The table techbd_udi_ingress.sat_diagnostic_exception should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_log', 'sat_diagnostic_log_id', 'The column sat_diagnostic_log_id in techbd_udi_ingress.sat_diagnostic_log should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_log', 'hub_diagnostic_id', 'The column hub_diagnostic_id in techbd_udi_ingress.sat_diagnostic_log should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_diagnostic_log', 'diagnostic_log_level', 'The column diagnostic_log_level in techbd_udi_ingress.sat_diagnostic_log should be NOT NULL.');
@@ -328,21 +328,21 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_expectation_http_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_expectation_http_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_expectation_http_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_expectation_http_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_expectation_http_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_expectation_http_request should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_expectation_http_request', ARRAY['sat_expectation_http_request_id','hub_expectation_id','content_type','payload','created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_expectation_http_request should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_expectation_http_request', ARRAY['sat_expectation_http_request_id','hub_expectation_id','content_type','payload','created_at','created_by','provenance','tenant_id', 'tenant_name'], 'The table techbd_udi_ingress.sat_expectation_http_request should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'sat_interaction_ccda_request_id', 'The column sat_interaction_ccda_request_id in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_ccda_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_ccda_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_ccda_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'sat_ccda_validation_errors_id', 'The column sat_ccda_validation_errors_id in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_ccda_validation_errors', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ccda_validation_errors', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_ccda_validation_errors should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'sat_interaction_fhir_request_id', 'The column sat_interaction_fhir_request_id in techbd_udi_ingress.sat_interaction_fhir_request should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_fhir_request should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_fhir_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'issues_count', 'The column issues_count in techbd_udi_ingress.sat_interaction_fhir_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_request', 'bundle_last_updated', 'timestamp with time zone', 'The column bundle_last_updated in techbd_udi_ingress.sat_interaction_fhir_request should be of type timestamp with time zone.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_request', 'validation_initiated_at', 'timestamp with time zone', 'The column validation_initiated_at in techbd_udi_ingress.sat_interaction_fhir_request should be of type timestamp with time zone.');
@@ -360,24 +360,24 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_screening_info', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_fhir_screening_info should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_info', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_fhir_screening_info should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_info', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_fhir_screening_info should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_info', ARRAY['sat_interaction_fhir_screening_info_id','hub_interaction_id','qe_name','submitted_date_time','survey_date_time','patient_mrn','full_name','last_name','first_name','org_id','org_name','total_safety_score','areas_of_interest','elaboration','created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_info should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_info', ARRAY['sat_interaction_fhir_screening_info_id','hub_interaction_id','qe_name','submitted_date_time','survey_date_time','patient_mrn','full_name','last_name','first_name','org_id','org_name','total_safety_score','areas_of_interest','elaboration', 'tenant_name', 'created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_info should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_organization', 'sat_interaction_fhir_screening_organization_id', 'The column sat_interaction_fhir_screening_organization_id in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_organization', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_organization', 'qe_name', 'The column qe_name in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_screening_organization', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_organization', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_organization', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_fhir_screening_organization should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_organization', ARRAY['sat_interaction_fhir_screening_organization_id','hub_interaction_id','qe_name','org_id','org_type','org_name','org_active','org_address','org_city','org_state','org_postal_code','elaboration','created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_organization should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_organization', ARRAY['sat_interaction_fhir_screening_organization_id','hub_interaction_id','qe_name','org_id','org_type','org_name','org_active','org_address','org_city','org_state','org_postal_code','elaboration', 'tenant_name', 'created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_organization should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_patient', 'sat_interaction_fhir_screening_patient_id', 'The column sat_interaction_fhir_screening_patient_id in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_patient', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_patient', 'qe_name', 'The column qe_name in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_screening_patient', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_patient', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_screening_patient', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_fhir_screening_patient should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_patient', ARRAY['sat_interaction_fhir_screening_patient_id','hub_interaction_id','qe_name','patient_mrn','patient_id','patient_type','patient_full_name','patient_first_name','patient_last_name','patient_gender','patient_birth_date','patient_address','patient_city','patient_state','patient_postal_code','patient_language','patient_ssn','org_id','elaboration','created_at','created_by','provenance','primary_org_id','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_patient should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_screening_patient', ARRAY['sat_interaction_fhir_screening_patient_id','hub_interaction_id','qe_name','patient_mrn','patient_id','patient_type','patient_full_name','patient_first_name','patient_last_name','patient_gender','patient_birth_date','patient_address','patient_city','patient_state','patient_postal_code','patient_language','patient_ssn','org_id','elaboration','created_at','created_by','provenance','primary_org_id', 'tenant_name', 'tenant_id'], 'The table techbd_udi_ingress.sat_interaction_fhir_screening_patient should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'sat_interaction_fhir_session_diagnostic_id', 'The column sat_interaction_fhir_session_diagnostic_id in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'uri', 'The column uri in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_session_diagnostic', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_session_diagnostic', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_fhir_session_diagnostic should be NOT NULL.');
@@ -388,29 +388,29 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_fhir_validation_issue', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_fhir_validation_issue should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_validation_issue', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_fhir_validation_issue should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_validation_issue', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_fhir_validation_issue should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_validation_issue', ARRAY['sat_interaction_fhir_validation_issue_id','hub_interaction_id','issue','date_time','validation_engine','ig_version','elaboration','created_at','created_by','provenance','severity','tenant_id','profile_url','techbd_version_number','profile_url_domain'], 'The table techbd_udi_ingress.sat_interaction_fhir_validation_issue should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_validation_issue', ARRAY['sat_interaction_fhir_validation_issue_id','hub_interaction_id','issue','date_time','validation_engine','ig_version','elaboration','created_at','created_by','provenance','severity','tenant_id','profile_url','techbd_version_number', 'tenant_name', 'profile_url_domain'], 'The table techbd_udi_ingress.sat_interaction_fhir_validation_issue should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_file_exchange', 'sat_interaction_file_exchange_id', 'The column sat_interaction_file_exchange_id in techbd_udi_ingress.sat_interaction_file_exchange should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_file_exchange', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_file_exchange should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_file_exchange', 'protocol', 'The column protocol in techbd_udi_ingress.sat_interaction_file_exchange should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_file_exchange', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_file_exchange should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_file_exchange', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_file_exchange should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_file_exchange', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_file_exchange should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'sat_interaction_file_exchange', ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_file_exchange should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'sat_interaction_file_exchange', ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration', 'tenant_name', 'created_at','created_by','provenance','tenant_id'], 'The table techbd_udi_ingress.sat_interaction_file_exchange should have the expected column structure.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'sat_interaction_flat_file_csv_request_id', 'The column sat_interaction_flat_file_csv_request_id in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_flat_file_csv_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_flat_file_csv_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_flat_file_csv_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'sat_interaction_hl7_request_id', 'The column sat_interaction_hl7_request_id in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_hl7_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_hl7_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_hl7_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'sat_hl7_validation_errors_id', 'The column sat_hl7_validation_errors_id in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'hub_interaction_id', 'The column hub_interaction_id in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_hl7_validation_errors', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_hl7_validation_errors', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_hl7_validation_errors should be NOT NULL.');
@@ -425,7 +425,7 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_user', 'interaction_start_time', 'timestamp with time zone', 'The column interaction_start_time in techbd_udi_ingress.sat_interaction_user should be of type timestamp with time zone.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_user', 'interaction_end_time', 'timestamp with time zone', 'The column interaction_end_time in techbd_udi_ingress.sat_interaction_user should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'sat_interaction_zip_file_request_id', 'The column sat_interaction_zip_file_request_id in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
+	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_zip_file_request should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
@@ -455,9 +455,9 @@ BEGIN
 	RETURN NEXT has_index(schema_name, 'dashboard_widget_metadata', 'dashboard_widget_metadata_pkey',
 	    ARRAY['id'],
 	    'dashboard_widget_metadata_pkey should exist on id');
-	RETURN NEXT has_index(schema_name, 'dashboard_widget_metadata', 'uq_dashboard_widget_tenant',
+	/*RETURN NEXT has_index(schema_name, 'dashboard_widget_metadata', 'uq_dashboard_widget_tenant',
 	    ARRAY['widget_name','tenant_id'],
-	    'uq_dashboard_widget_tenant should exist on widget_name, tenant_id');
+	    'uq_dashboard_widget_tenant should exist on widget_name, tenant_id');*/
 	RETURN NEXT has_index(schema_name, 'fhir_replay_details', 'fhir_replay_details_unique_combo_key',
 	    ARRAY['bundle_id','hub_interaction_id','replay_master_id'],
 	    'fhir_replay_details_unique_combo_key should exist on bundle_id, hub_interaction_id, replay_master_id');
@@ -521,9 +521,9 @@ BEGIN
 	RETURN NEXT has_index(schema_name, 'sat_interaction_fhir_request', 'idx_sat_interaction_fhir_request_start_time',
 	    ARRAY['interaction_start_time'],
 	    'idx_sat_interaction_fhir_request_start_time should exist on interaction_start_time');
-	RETURN NEXT has_index(schema_name, 'sat_interaction_fhir_request', 'sat_int_fhir_req_uq_hub_int_tnt_nat',
+	/*RETURN NEXT has_index(schema_name, 'sat_interaction_fhir_request', 'sat_int_fhir_req_uq_hub_int_tnt_nat',
 	    ARRAY['hub_interaction_id','tenant_id','nature'],
-	    'sat_int_fhir_req_uq_hub_int_tnt_nat should exist on hub_interaction_id, tenant_id, nature');
+	    'sat_int_fhir_req_uq_hub_int_tnt_nat should exist on hub_interaction_id, tenant_id, nature');*/
 	RETURN NEXT has_index(schema_name, 'sat_interaction_fhir_request', 'sat_inter_fhir_req_bund_id_idx',
 	    ARRAY['bundle_id'],
 	    'sat_inter_fhir_req_bund_id_idx should exist on bundle_id');
@@ -686,7 +686,7 @@ BEGIN
 	    p_interaction_id           => v_interaction_id::text,
 	    p_interaction_key          => '/Bundle/'::text,
 	    p_nature                   => '{"nature": "Original FHIR Payload", "tenant_id": "qe-123"}'::jsonb,
-	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}'::jsonb, 
+	    p_payload                  => v_payload, 
 	    p_payload_text 			   => NULL::text,
 	    p_rule_namespace		   => NULL::text,	    
 	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
@@ -763,7 +763,7 @@ BEGIN
 	    p_interaction_id           => v_interaction_id::text,
 	    p_interaction_key          => '/Bundle/'::text,
 	    p_nature                   => '{"nature": "techByDesignDisposition", "tenant_id": "qe-123"}'::jsonb,
-	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}'::jsonb, 
+	    p_payload                  => v_payload, 
 	    p_payload_text 			   => NULL::text,
 	    p_rule_namespace		   => NULL::text,	    
 	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
@@ -979,7 +979,8 @@ BEGIN
     	interaction_id				=> v_source_hub_interaction_id::text, 
     	uri							=> '/flatfile/csv/Bundle', 
     	validation_result_payload 	=> v_payload::jsonb,
-    	nature 						=> 'Update Zip File Payload'::text
+    	nature 						=> 'Update Zip File Payload'::text,
+		tenant_id					=> 'QE-123456'
    	) INTO v_interaction_id;
   
     RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with consolidated payload');
@@ -995,7 +996,8 @@ BEGIN
     	nature 						=> 'Update Zip File Processing Details'::text,
 		p_full_operation_outcome 	=> '{"operation outcome": {"nature": "Original CSV Zip Archive", "tenant_id":"QE-123456"}}'::jsonb,
 		validation_result_payload 	=> '{"validation result payload": "test validation_result_payload", "nature":"Original CSV Zip Archive", "tenant_id":"QE-123456"}',
-		elaboration 				=> '{"elaboration": "test", "tenant_id": "QE-123456"}'::jsonb
+		elaboration 				=> '{"elaboration": "test", "tenant_id": "QE-123456"}'::jsonb,
+		tenant_id					=> 'QE-123456'
    	) INTO v_interaction_id;
   
     RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with status and error details');
@@ -1358,7 +1360,7 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
     PERFORM techbd_udi_ingress.register_interaction_hl7_request(
         p_interaction_id           => v_interaction_id,
         p_interaction_key          => '/hl7v2/Bundle'::text,
-        p_payload                  => '{"hl7": "hl7 json", "status": "ok"}'::jsonb,
+        p_payload                  => v_payload,
         p_payload_text             => null,
         p_rule_namespace           => NULL,
         p_elaboration              => '{"key" : "elaboration"}'::jsonb,
