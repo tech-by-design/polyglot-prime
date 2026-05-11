@@ -762,6 +762,23 @@ const tenant = SQLa.tableDefinition("tenants", {
   },
 });
 
+// User Sessions Table
+const userSessions = SQLa.tableDefinition("user_sessions", {
+    session_id: primaryKey(),
+    user_id: text(),
+    username: text(),
+    session_start_time: dateTime(),
+    session_end_time: dateTimeNullable(),
+    session_expiry_time: dateTime(),
+    source: textNullable(), // IDP Provider (GIT or FusionAuth)
+    updated_at: dateTimeNullable(),
+    updated_by: textNullable(),
+    ...dvts.housekeeping.columns,
+}, {
+    isIdempotent: true,
+    sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1598,6 +1615,61 @@ const migrateSP = pgSQLa.storedProcedure(
             END LOOP;
         END 
       $$;
+
+      ${userSessions}
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'user_sessions'
+            AND constraint_name = 'chk_session_time_valid'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.user_sessions
+          ADD CONSTRAINT chk_session_time_valid
+          CHECK (
+              session_end_time IS NULL
+              OR session_end_time >= session_start_time
+          );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'user_sessions'
+            AND constraint_name = 'chk_expiry_after_start'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.user_sessions
+          ADD CONSTRAINT chk_expiry_after_start
+          CHECK (
+              session_expiry_time >= session_start_time
+          );
+      END IF;
+
+      -- Index for active user sessions
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'user_sessions'
+          AND indexname = 'idx_active_user_session'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_active_user_session
+        ON techbd_udi_ingress.user_sessions(user_id)
+        WHERE session_end_time IS NULL;
+      END IF;
+
+      -- Index for session expiry lookup
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'user_sessions'
+          AND indexname = 'idx_user_sessions_expiry'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry
+        ON techbd_udi_ingress.user_sessions(session_expiry_time);
+      END IF;
 
       ${dependenciesSQL}
 

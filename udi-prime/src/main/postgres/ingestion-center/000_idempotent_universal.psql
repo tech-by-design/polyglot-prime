@@ -226,6 +226,26 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
+/*
+ * PostgreSQL function to insert or update user session details.
+ *
+ * - The session_id is of type UUID. It will be NULL during session creation
+ *   and generated during the insert operation.
+ *
+ * - The following fields are mandatory during session creation:
+ *     username, session_start_time, session_expiry_time, and source.
+ *
+ * - The session_end_time is updated when the user logs out.
+ *
+ * - The session_expiry_time is updated when the session is renewed
+ *   (e.g., during token refresh).
+ *
+ * - The session_id must be provided when updating session_end_time
+ *   or session_expiry_time.
+ * 
+ * - Session_id is getting as response when insert / update operation
+ */
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user_session(
     TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, JSON
 );

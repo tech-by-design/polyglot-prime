@@ -3574,10 +3574,19 @@ DECLARE
 	p_validation_result_payload		JSONB 	:= sat_interaction_csv_request_upserted.validation_result_payload;
 	p_interaction_id				TEXT 	:= sat_interaction_csv_request_upserted.interaction_id;
 	v_denormalize_result 			TEXT 	:= NULL;
+    v_tenant_id						TEXT 	:= tenant_id;
+	v_tenant_name					TEXT 	:= p_tenant_name;  
 BEGIN	
 	BEGIN
 		
 		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_csv_request_upserted function');
+
+        /* When calling from CsvService to update status or operation outcome or general errors, then there is no tenant_id, then get it from the table using hub_interaction_id. */
+        IF tenant_id IS NULL THEN
+            SELECT tenant_name, tenant_id INTO v_tenant_name, v_tenant_id
+            FROM techbd_udi_ingress.sat_interaction_fhir_request 
+            WHERE nature = 'Original FHIR Payload' AND hub_interaction_id = p_interaction_id;
+        END IF;
 	
 		    IF nature = 'Update Zip File Payload' THEN /*Update the full payload*/
 		    	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
@@ -3616,8 +3625,8 @@ BEGIN
 						p_category => 'processing_errors', 
 						p_hub_interaction_id => p_interaction_id,
 						p_uri => uri,
-                        p_tenant_id => tenant_id,
-                        p_tenant_name => p_tenant_name
+                        p_tenant_id => v_tenant_id,
+                        p_tenant_name => v_tenant_name
 					) INTO v_denormalize_result;
 				END IF;
 		
@@ -3668,9 +3677,9 @@ BEGIN
 			    VALUES (
 			        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
 			        p_interaction_id,
-					p_tenant_name,
-			        tenant_id, 
-			        LOWER(p_tenant_name), 
+					v_tenant_name,
+			        v_tenant_id, 
+			        LOWER(v_tenant_name), 
 			        uri, 
 			        nature,
 			        group_id, 
@@ -3707,9 +3716,9 @@ BEGIN
 			    VALUES (
 			        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
 			        p_interaction_id,
-					p_tenant_name,
-			        tenant_id, 
-			        LOWER(p_tenant_name), 
+					v_tenant_name,
+			        v_tenant_id, 
+			        LOWER(v_tenant_name), 
 			        uri, 
 			        nature,
 			        group_id, 
@@ -3732,8 +3741,8 @@ BEGIN
 					SELECT techbd_udi_ingress.denormalize_validation_errors(
 						p_category => 'data_integrity', 
 						p_hub_interaction_id => p_interaction_id,
-                        p_tenant_id => tenant_id,
-                        p_tenant_name => p_tenant_name
+                        p_tenant_id => v_tenant_id,
+                        p_tenant_name => v_tenant_name
 					) INTO v_denormalize_result;
 			
 					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Denormalized the errors from validation_result_payload');
@@ -3784,13 +3793,13 @@ BEGIN
 
     -- Register diagnostic log
     CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, uri, v_created_by, v_provenance, 'info'::text, 
-       						'sat_interaction_csv_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_name, tenant_id, p_interaction_id);
+       						'sat_interaction_csv_request_upserted function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_name, v_tenant_id, p_interaction_id);
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
         v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
         v_exception_id := techbd_udi_ingress.register_issue(
-            v_exception_id, uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, p_tenant_name, tenant_id, p_interaction_id
+            v_exception_id, uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_name, v_tenant_id, p_interaction_id
         );
 	END IF;
    	RETURN v_return;
