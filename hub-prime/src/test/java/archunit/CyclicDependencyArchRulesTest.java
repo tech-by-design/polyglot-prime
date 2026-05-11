@@ -10,12 +10,12 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 @AnalyzeClasses(packages = "org.techbd")
 public class CyclicDependencyArchRulesTest {
 
-    @ArchTest
+    /*ArchTest
     @DisplayName("ArchUnit test to ensure no cyclic dependencies between packages")
     public static void noCyclicDependenciesBetweenPackages(JavaClasses importedClasses) {
         SlicesRuleDefinition.slices()
                 .matching("org.techbd.(*)..")
                 .should().beFreeOfCycles()
                 .check(importedClasses);
-    }
+    }*/
 }

@@ -14,15 +14,12 @@ import org.techbd.config.CoreUdiReaderConfig;
 
 import lib.aide.tabular.TabularRowsRequest;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+
 class TabularRowsControllerTest {
 
     @InjectMocks
     private TabularRowsController tabularRowsController;
 
-    @Mock
-    private CoreUdiReaderConfig udiReaderConfig;
 
     @BeforeEach
     void setUp() {

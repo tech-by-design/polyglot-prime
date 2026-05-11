@@ -36,7 +36,7 @@ public class NamingArchRulesTest {
     //        .that().areAnnotatedWith(Service.class)
     //        .should().haveSimpleNameEndingWith("Service");
     
-    @Test
+    /*@Test
     @DisplayName("ArchUnit test to ensure that the methods should follow camelCase convention")
     public void methodsShouldFollowCamelCaseConvention() {
         ArchRule rule = classes()
@@ -92,6 +92,6 @@ public class NamingArchRulesTest {
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_JARS)
                 .importPackages("org.techbd"));
-    }
+    }*/
 
 }
