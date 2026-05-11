@@ -3615,7 +3615,9 @@ BEGIN
 					SELECT techbd_udi_ingress.denormalize_validation_errors(
 						p_category => 'processing_errors', 
 						p_hub_interaction_id => p_interaction_id,
-						p_uri => uri
+						p_uri => uri,
+                        p_tenant_id => tenant_id,
+                        p_tenant_name => p_tenant_name
 					) INTO v_denormalize_result;
 				END IF;
 		
@@ -3729,7 +3731,9 @@ BEGIN
 					--Denormalize the 'data_integrity' errors from validation_result_payload
 					SELECT techbd_udi_ingress.denormalize_validation_errors(
 						p_category => 'data_integrity', 
-						p_hub_interaction_id => p_interaction_id
+						p_hub_interaction_id => p_interaction_id,
+                        p_tenant_id => tenant_id,
+                        p_tenant_name => p_tenant_name
 					) INTO v_denormalize_result;
 			
 					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Denormalized the errors from validation_result_payload');
@@ -7490,7 +7494,8 @@ $$ LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.denormalize_validation_errors(text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.denormalize_validation_errors(text, text, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.denormalize_validation_errors(p_category text, p_hub_interaction_id text, p_uri text DEFAULT NULL::text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.denormalize_validation_errors(text, text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.denormalize_validation_errors(p_category text, p_hub_interaction_id text, p_uri text DEFAULT NULL::text, p_tenant_id text DEFAULT NULL::text, p_tenant_name text DEFAULT NULL::text)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -7880,14 +7885,14 @@ BEGIN
     END IF;
 
     -- Register diagnostic log
-    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, null, v_created_by, v_provenance, 'info'::text, 
-       																'denormalize_validation_errors function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, null, p_hub_interaction_id);
+    CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, v_uri, v_created_by, v_provenance, 'info'::text, 
+       																'denormalize_validation_errors function Logs'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, p_tenant_name, p_tenant_id, p_hub_interaction_id);
 
 	IF v_is_exception = true THEN    
         -- Log the exception, reusing the previous exception ID if it exists
         v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
         v_exception_id := techbd_udi_ingress.register_issue(
-            v_exception_id, null, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, null, p_hub_interaction_id
+            v_exception_id, v_uri, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, p_tenant_name, p_tenant_id, p_hub_interaction_id
         );
 	END IF;
    	RETURN v_return;
@@ -8629,9 +8634,19 @@ DECLARE
     v_exception_id 			TEXT 		:= gen_random_uuid()::text;
    	v_hub_interaction_key 	TEXT;
    	v_return				TEXT;
-	v_elaboration 			JSONB;   	
+	v_elaboration 			JSONB;
+    v_tenant_name 			TEXT;
+    v_tenant_id 			TEXT;
 BEGIN
-	/*---register diagnostic log---*/
+  	IF p_bundle_id IS NULL OR p_hub_interaction_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    /*---register diagnostic log---*/
+    SELECT tenant_name, tenant_id INTO v_tenant_name, v_tenant_id
+    FROM techbd_udi_ingress.sat_interaction_fhir_request 
+    WHERE nature = 'Original FHIR Payload' AND hub_interaction_id = p_hub_interaction_id;
+
 	v_elaboration := jsonb_build_object(
 							'old interaction_id', p_hub_interaction_id,
 							'bundle_id', p_bundle_id,
@@ -8640,12 +8655,8 @@ BEGIN
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, v_hub_interaction_key, v_created_by, v_provenance, 'info'::text,
-			'Input parameters into ccda_replay_details_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into ccda_replay_details_upserted function'::text, v_created_by, 'success'::text, NULL::text, 0, v_elaboration, v_tenant_name, v_tenant_id, p_hub_interaction_id);
 	/*------------------------------*/
- 
-  	IF p_bundle_id IS NULL OR p_hub_interaction_id IS NULL THEN
-        RETURN NULL;
-    END IF;
  
 	INSERT INTO techbd_udi_ingress.ccda_replay_details
 				(bundle_id, hub_interaction_id, retry_interaction_id, provenance, created_by, created_at,
@@ -8667,19 +8678,12 @@ EXCEPTION
 	        v_pg_hint = PG_EXCEPTION_HINT,
 	        v_pg_context = PG_EXCEPTION_CONTEXT;
 	        v_error_type = 'SQL';
-		    
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-		v_hub_interaction_key,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance);
+
+        -- Log the exception, reusing the previous exception ID if it exists
+        v_elaboration := v_elaboration || jsonb_build_array(jsonb_build_object('error_message', v_error_msg));
+        v_exception_id := techbd_udi_ingress.register_issue(
+            COALESCE(v_exception_id,NULL), v_hub_interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration, v_tenant_name, v_tenant_id, p_hub_interaction_id
+        );
 	RETURN NULL;
 END;
 $function$
