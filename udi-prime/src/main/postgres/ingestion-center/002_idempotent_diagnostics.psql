@@ -97,6 +97,7 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_diagnostic_log(
 LANGUAGE plpgsql
 AS $$
 BEGIN
+    IF p_tenant_id IS NOT NULL AND TRIM(p_tenant_id) != '' THEN
     -- Insert into hub_diagnostic table
     INSERT INTO techbd_udi_ingress.hub_diagnostic (
         hub_diagnostic_id,
@@ -147,6 +148,7 @@ BEGIN
 		p_tenant_id,
 		p_hub_interaction_id
     );
+    END IF;
 END $$;
 
 

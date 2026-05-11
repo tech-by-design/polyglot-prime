@@ -3582,11 +3582,12 @@ BEGIN
 		v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In sat_interaction_csv_request_upserted function');
 
         /* When calling from CsvService to update status or operation outcome or general errors, then there is no tenant_id, then get it from the table using hub_interaction_id. */
-        IF tenant_id IS NULL THEN
-            SELECT tenant_name, tenant_id INTO v_tenant_name, v_tenant_id
-            FROM techbd_udi_ingress.sat_interaction_fhir_request 
-            WHERE nature = 'Original FHIR Payload' AND hub_interaction_id = p_interaction_id;
-        END IF;
+        IF sat_interaction_csv_request_upserted.tenant_id IS NULL OR TRIM(sat_interaction_csv_request_upserted.tenant_id) = '' THEN		
+		    SELECT sifr.tenant_name, sifr.tenant_id
+		    INTO v_tenant_name, v_tenant_id
+		    FROM techbd_udi_ingress.sat_interaction_fhir_request sifr
+		    WHERE sifr.nature = 'Original FHIR Payload' AND sifr.hub_interaction_id = p_interaction_id;		
+		END IF;
 	
 		    IF nature = 'Update Zip File Payload' THEN /*Update the full payload*/
 		    	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
