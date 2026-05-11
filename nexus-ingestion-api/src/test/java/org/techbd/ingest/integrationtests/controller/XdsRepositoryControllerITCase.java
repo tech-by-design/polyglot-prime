@@ -161,7 +161,7 @@ class XdsRepositoryControllerITCase extends BaseIntegrationTest {
                     String.class);
 
             assertThat(response.getStatusCode())
-            .isEqualTo(HttpStatus.ACCEPTED);
+            .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         /**
