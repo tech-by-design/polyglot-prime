@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.13</description>
-  <revision>3</revision>
+  <description>Version: 0.1.14</description>
+  <revision>5</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1918,21 +1918,86 @@ try {
     var bundleId = channelMap.get(&apos;interactionId&apos;);
     transformer.setParameter(&quot;bundleId&quot;, bundleId);
 
-    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    var hl7Xml = new XML(rawTransformedData);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+    // Patient
+    var pidXml = hl7Xml.PID.toXMLString(); // Extract only PID segment and Convert PID XML back to string
+    transformer = generateSHA256Id(pidXml, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+    
+    // Consent
+    var consentObx = null;
+    for each (var obx in hl7Xml.OBX) {	
+	    var obx31 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();	
+	    var obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString().trim().toLowerCase();	
+	    if (obx31 == &quot;105511-0&quot; || obx32 == &quot;ahc-hrsn patient consent&quot;) {	
+	        consentObx = obx;
+	        break;
+	    }
+    }	
+    if (consentObx != null) {	
+	    var consentObxXml = consentObx.toXMLString();	
+    } else {	
+	    logger.info(&quot;No matching consent OBX found.&quot;);
+	    var consentObxXml = hl7Xml.OBX[0].toXMLString(); // Extract only OBX segment and Convert OBX XML back to string	
+    }
+    transformer = generateSHA256Id(consentObxXml, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
+    // Organization
+    var orgKey = channelMap.get(&apos;OrganizationName&apos;) + 
+      		  channelMap.get(&apos;organizationNPI&apos;) + 
+      		  channelMap.get(&apos;organizationTIN&apos;) + 
+      		  hl7Xml.ORC[&quot;ORC.22&quot;].toString() + // Organization Address
+      		  hl7Xml.ORC[&quot;ORC.23&quot;].toString() + // Organization Telecom  
+      		  hl7Xml.MSH[&quot;MSH.6&quot;].toString();   // Organization Name
+    transformer = generateSHA256Id(orgKey, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+    
+    // Encounter
+    var encounterXml = hl7Xml.PV1; // Extract only PV1 segment and Convert PV1 XML back to string
+    var encounterEffectiveTime = encounterXml.PV1[&quot;PV1.44&quot;][&quot;PV1.44.1&quot;].toString() + // Start Time
+      		  			   encounterXml.PV1[&quot;PV1.45&quot;][&quot;PV1.45.1&quot;].toString(); // End Time
+    transformer = generateSHA256Id(encounterXml, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+    // Sexual Orientation
+    var soXml = null;
+    for each (var obx in hl7Xml.OBX) {
+	    var code = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();	
+	    if (code == &quot;76690-7&quot;) {	
+	        soXml = obx.toXMLString();	
+	        break;
+	    }
+    }
+    if (soXml == null) {		    
+	    logger.info(&quot;No matching Sexual Orientation Segment found.&quot;);
+	    soXml = hl7Xml.OBX[0].toXMLString(); // Extract only OBX segment and Convert OBX XML back to string
+    }
+    transformer = generateSHA256Id(soXml, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
 
-	transformer = generateSHA256Id(rawTransformedData, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, currentTimestamp);
+    // Observations
+    var observationsXml = hl7Xml.OBX[0].toXMLString(); // Extract only first OBX segment and Convert OBX XML back to string
+    transformer = generateSHA256Id(observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
-
-    transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
-
-    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
+    // Grouper Observation
+    var selectedObr = null;
+    for each (var obr in hl7Xml.OBR) {		    
+	    var obr26 = obr[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;].toString(); // Get OBR.26.1 value	    
+	    var code = obr26.split(&quot;&amp;&quot;)[0];  // Extract code before &amp;	
+	    if (
+	        code == &quot;96777-8&quot; ||
+	        code == &quot;97023-6&quot; ||
+	        code == &quot;NYSAHCHRSN&quot; ||
+	        code == &quot;NYS-AHC-HRSN&quot;
+	    ) {
+	        selectedObr = obr;
+	        break;
+	    }
+    }	
+    if (selectedObr != null) {	
+	    var grouperObsXml = selectedObr.toXMLString();
+    } else {	
+	    logger.info(&quot;No matching OBR Segment found.&quot;);
+	    var grouperObsXml = hl7Xml.OBR[0].toXMLString();	 // Extract only first OBR segment and Convert OBR XML back to string
+    }
+    transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
 
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
@@ -2447,7 +2512,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1775480366501</time>
+        <time>1778502137566</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

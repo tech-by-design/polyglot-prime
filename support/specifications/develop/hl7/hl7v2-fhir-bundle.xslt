@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.9 -->
+<!-- Version : 0.2.10 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -1616,7 +1616,8 @@
 	  
 	  <xsl:variable name="grouperObservationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
-              <xsl:with-param name="prefixString" select="$screeningCode"/>
+              <!-- <xsl:with-param name="prefixString" select="$screeningCode"/> -->
+              <xsl:with-param name="prefixString" select="concat($facilityID, '-', $screeningCode)"/>
               <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
             </xsl:call-template>
           </xsl:variable>
