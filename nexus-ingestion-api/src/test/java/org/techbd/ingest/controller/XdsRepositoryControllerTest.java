@@ -1,8 +1,10 @@
 package org.techbd.ingest.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +23,7 @@ import org.techbd.ingest.service.SoapForwarderService;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 
 import org.junit.jupiter.api.Test;
 import org.techbd.ingest.commons.Constants;
@@ -80,26 +83,35 @@ public class XdsRepositoryControllerTest {
         }
 
         @Test
-        void handleXdsRequest_withEmptyBody_shouldForwardEmptyPayload() throws Exception {
+        void handleXdsRequest_withEmptyBody_shouldReturnSoapFault() throws Exception {
 
-                String interactionId = "test-interaction-id";
+        String interactionId = "test-interaction-id";
 
-                when(request.getAttribute(Constants.INTERACTION_ID)).thenReturn(interactionId);
-                when(request.getInputStream()).thenReturn(new DelegatingServletInputStream(
-                                new ByteArrayInputStream(new byte[0])));
+        when(request.getAttribute(Constants.INTERACTION_ID))
+                .thenReturn(interactionId);
 
-                ResponseEntity<String> expectedResponse = ResponseEntity.ok("EMPTY");
-                when(forwarder.forward(eq(request), eq(new byte[0]), eq(interactionId)))
-                                .thenReturn(expectedResponse);
+        when(request.getInputStream())
+                .thenReturn(new DelegatingServletInputStream(
+                        new ByteArrayInputStream(new byte[0])));
 
-                ResponseEntity<String> response = controller.handleXdsRequest(
-                                Map.of(),
-                                request);
+        ResponseEntity<String> response = controller.handleXdsRequest(
+                Map.of(),
+                request);
 
-                assertEquals(expectedResponse, response);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
 
-                verify(forwarder).forward(eq(request), eq(new byte[0]), eq(interactionId));
-                verify(templateLogger).warn("Empty XDS SOAP request. interactionId={}", interactionId);
+        assertEquals(
+                "text/xml; charset=utf-8",
+                response.getHeaders().getFirst("Content-Type"));
+
+        assertTrue(response.getBody().contains("soap:Fault"));
+        assertTrue(response.getBody().contains("Empty SOAP request body"));
+
+        verify(forwarder, never())
+                .forward(any(), any(), any());
+
+        verify(templateLogger)
+                .warn("Empty XDS SOAP request. interactionId={}", interactionId);
         }
 
         @Test
