@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.14</description>
-  <revision>5</revision>
+  <revision>7</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1320,7 +1320,6 @@ function getConsentResourceStatus(sourceXml) {
 		        break;
 		    }
 		}
-		logger.info(&quot;Consent Code: &quot; + consentCode);
 		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
 		    logger.info(&quot;Consent Code: &quot; + consentCode);
 		        consentInfo.status = &quot;provided&quot;;
@@ -1489,7 +1488,7 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
     if (sourceXml != undefined) { 
     	var xmlDoc = new XML(sourceXml);
         // Get MRN and CIN from channelMap
-        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var mrn = channelMap.get(&apos;patientMRN&apos;) || &quot;&quot;;
         var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
         var combinedText = mrn + cin;
 
@@ -1893,7 +1892,8 @@ try {
 
 try {
     var rawTransformedData = connectorMessage.getTransformedData();
-	logger.info(&quot;Raw HL7 Message (pre-clean): &quot; + rawTransformedData);
+    logger.info(&quot;Raw HL7 Message (pre-clean): &quot; + rawTransformedData);
+    getPatientMRN(rawTransformedData);
 	
 
     // Load XSLT from file system
@@ -2025,11 +2025,9 @@ try {
 		    }
 		}
 
-	var sourceXml = connectorMessage.getTransformedData();
-	getConsentResourceStatus(sourceXml);
-	getPatientMRN(sourceXml);
-	getObservationCategoryCodes(transformer, sourceXml);
-	getMultipleAnswersForComponent(transformer, sourceXml);
+	getConsentResourceStatus(rawTransformedData);	
+	getObservationCategoryCodes(transformer, rawTransformedData);
+	getMultipleAnswersForComponent(transformer, rawTransformedData);
     
 
     // Transform
@@ -2512,7 +2510,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1778502137566</time>
+        <time>1778564933683</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
