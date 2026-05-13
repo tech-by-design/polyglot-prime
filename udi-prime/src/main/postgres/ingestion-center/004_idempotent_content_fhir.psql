@@ -596,6 +596,7 @@ WHERE
 	AND (p_patient_mrn IS NULL
 		OR fsi.patient_mrn = p_patient_mrn)
 	AND (p_org_id IS NULL
-		OR fsi.org_id = p_org_id);
+    	OR p_org_id = ANY(string_to_array(fsi.org_id, ', '))
+        );
 END;
 $$ language plpgsql;
