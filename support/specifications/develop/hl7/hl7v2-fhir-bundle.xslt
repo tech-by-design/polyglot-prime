@@ -890,7 +890,7 @@
 </xsl:template>
 
 <!-- Observation Template -->
-  <xsl:template name="ObservationFromXON">
+<xsl:template name="ObservationFromXON">
 	<xsl:if test="string(OBX.5/OBX.5.1) 
           and OBX.5/OBX.5.1 != 'UNK' 
           and string(OBX.3/OBX.3.1) 
@@ -927,32 +927,32 @@
                         </xsl:call-template>",
               "category": [
                 {
-                  "coding": [{
-                    "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                    "code": "<xsl:value-of select='$categoryCode'/>",
-                    "display": "<xsl:call-template name="mapSDOHCategoryCodeDisplay">
-                                  <xsl:with-param name="questionCode" select="$questionCode"/>
-                                  <xsl:with-param name="categoryCode" select="$categoryCode"/>
-                                </xsl:call-template>"
-                  }]
-				}
-				  <xsl:choose>
-                        <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
-                          <xsl:choose>
-                            <xsl:when test="string($questionCode)= '96782-8'">
-                              ,{
-								"coding": [
-								{
-                                  "system": "http://snomed.info/sct",
-                                  "code": "365458002",
-                                  "display": "Education and/or schooling finding"
-                                }]
-								}
-                            </xsl:when>
-                          </xsl:choose>
-                        </xsl:when>
-                      </xsl:choose>
-				,{
+                    "coding": [{
+                      "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                      "code": "<xsl:value-of select='$categoryCode'/>",
+                      "display": "<xsl:call-template name="mapSDOHCategoryCodeDisplay">
+                                    <xsl:with-param name="questionCode" select="$questionCode"/>
+                                    <xsl:with-param name="categoryCode" select="$categoryCode"/>
+                                  </xsl:call-template>"
+                    }]
+                }
+                <xsl:choose>
+                  <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
+                    <xsl:choose>
+                      <xsl:when test="string($questionCode)= '96782-8'">
+                        ,{
+                          "coding": [
+                          {
+                            "system": "http://snomed.info/sct",
+                            "code": "365458002",
+                            "display": "Education and/or schooling finding"
+                          }]
+                        }
+                      </xsl:when>
+                    </xsl:choose>
+                  </xsl:when>
+                </xsl:choose>
+                ,{
                   "coding": [{
                       "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                       "code": "social-history"
@@ -974,20 +974,20 @@
                   }
                 ]
                 <xsl:choose>
-				  <xsl:when test="string(OBX.3/OBX.3.9)">
-					<xsl:text>,</xsl:text>
-					"text": "<xsl:value-of select='OBX.3/OBX.3.9'/>"
-				  </xsl:when>
-				  <xsl:when test="string(OBX.3/OBX.3.2)">
-					<xsl:text>,</xsl:text>
-					"text": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
-				  </xsl:when>
-				</xsl:choose>
+                  <xsl:when test="string(OBX.3/OBX.3.9)">
+                    <xsl:text>,</xsl:text>
+                    "text": "<xsl:value-of select='OBX.3/OBX.3.9'/>"
+                  </xsl:when>
+                  <xsl:when test="string(OBX.3/OBX.3.2)">
+                    <xsl:text>,</xsl:text>
+                    "text": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
+                  </xsl:when>
+                </xsl:choose>
               },
               <!-- https://test.shinny.org/change_log.html#v150 
                  According to v1.5.0 change log, add component element for the question code '96778-6' -->
-            <xsl:choose>
-				<xsl:when test="string(OBX.5/OBX.5.1) = 'X-SDOH-FLO-1570000066-Patient unable to answer' 
+              <xsl:choose>
+                <xsl:when test="string(OBX.5/OBX.5.1) = 'X-SDOH-FLO-1570000066-Patient unable to answer' 
                                   or string(OBX.5/OBX.5.1) = 'X-SDOH-FLO-1570000066-Patient declined'">
                       <xsl:variable name="dataAbsentReasonCode">
                         <xsl:call-template name="getDataAbsentReasonFhirCode">
@@ -1006,125 +1006,132 @@
                           ]
                       },
                 </xsl:when>
-			  <xsl:when test="string(OBX.3/OBX.3.1) = '96778-6'">
-				"component": [
-				  {
-					"code": {
-					  "coding": [
-						{
-						  "system": "http://loinc.org",
-						  "code": "<xsl:value-of select='OBX.3/OBX.3.1'/>",
-						  "display": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
-						}
-					  ]
-					  <xsl:choose>
-						<xsl:when test="string(OBX.3/OBX.3.9)">
-						  <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.3/OBX.3.9'/>"
-						</xsl:when>
-						<xsl:when test="string(OBX.3/OBX.3.2)">
-						  <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
-						</xsl:when>
-					  </xsl:choose>
-					},
-					"valueCodeableConcept": {
-					  "coding": <xsl:value-of select='$componentAnswersXml'/>
-					}
-				  }
-				],
-			  </xsl:when>
-			  <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
-				"valueCodeableConcept": {
-					"coding": [{
-					  "system": "http://unitsofmeasure.org",
-					  "display": "{Number}"
-					}]
-					<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.1'/>"
-				  },
-				  
-				  "derivedFrom": [
-					  <!-- Declare derivedFrom LOINC codes -->
-					  <xsl:variable name="derivedFromCodes" select="'|95618-5|95617-7|95616-9|95615-1|'" />
 
-					  <!-- Loop through all OBX segments globally and filter by code -->
-					  <xsl:for-each select="//OBX[
-											  contains($derivedFromCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
-                        and string(OBX.5/OBX.5.1)
-                        and normalize-space(OBX.5/OBX.5.1) != 'UNK'
-											  and not(preceding::OBX[
-												normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
-											  ])
-											]">
-						<xsl:variable name="code" select="normalize-space(OBX.3/OBX.3.1)"/>
-						<xsl:variable name="observationResourceId">
-						  <xsl:call-template name="generateFixedLengthResourceId">
-							<!-- <xsl:with-param name="prefixString" select="$code"/> -->
-              <xsl:with-param name="prefixString" select="concat($facilityID, '-', $code)"/>
-							<xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
-						  </xsl:call-template>
-						</xsl:variable>
-						{ "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
-						<xsl:if test="position() != last()">,</xsl:if>
-					  </xsl:for-each>
-					],
-			  </xsl:when>
-			  <xsl:otherwise>
-				  "valueCodeableConcept": {
-					"coding": [{
-					  "system": "http://loinc.org",
-					  "code": "<xsl:value-of select='OBX.5/OBX.5.1'/>",
-					  "display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-					}]
-					<xsl:choose>
-					  <xsl:when test="string(OBX.5/OBX.5.9)">
-						<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>"
-					  </xsl:when>
-					  <xsl:when test="string(OBX.5/OBX.5.2)">
-						<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-					  </xsl:when>
-					</xsl:choose>
-				  },
-			  </xsl:otherwise>
-			</xsl:choose>
+                <xsl:when test="string(OBX.3/OBX.3.1) = '96778-6'">
+                  "component": [
+                    {
+                      "code": {
+                        "coding": [
+                          {
+                            "system": "http://loinc.org",
+                            "code": "<xsl:value-of select='OBX.3/OBX.3.1'/>",
+                            "display": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
+                          }
+                        ]
+                        <xsl:choose>
+                          <xsl:when test="string(OBX.3/OBX.3.9)">
+                            <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.3/OBX.3.9'/>"
+                          </xsl:when>
+                          <xsl:when test="string(OBX.3/OBX.3.2)">
+                            <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.3/OBX.3.2'/>"
+                          </xsl:when>
+                        </xsl:choose>
+                      },
+                      "valueCodeableConcept": {
+                        "coding": <xsl:value-of select='$componentAnswersXml'/>
+                      }
+                    }
+                  ],
+                </xsl:when>
+
+                <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
+                  "valueCodeableConcept": {
+                    "coding": [{
+                      "system": "http://unitsofmeasure.org",
+                      "display": "{Number}"
+                    }]
+                    <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.1'/>"
+                  },
+                  
+                  "derivedFrom": [
+                    <!-- Declare derivedFrom LOINC codes -->
+                    <xsl:variable name="derivedFromCodes" select="'|95618-5|95617-7|95616-9|95615-1|'" />
+
+                    <!-- Loop through all OBX segments globally and filter by code -->
+                    <xsl:for-each select="//OBX[
+                                contains($derivedFromCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+                                and string(OBX.5/OBX.5.1)
+                                and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+                                and not(preceding::OBX[
+                                    normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
+                                ])
+                              ]">
+                        <xsl:variable name="code" select="normalize-space(OBX.3/OBX.3.1)"/>
+                        <xsl:variable name="observationResourceId">
+                          <xsl:call-template name="generateFixedLengthResourceId">
+                          <!-- <xsl:with-param name="prefixString" select="$code"/> -->
+                          <xsl:with-param name="prefixString" select="concat($facilityID, '-', $code)"/>
+                          <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                          </xsl:call-template>
+                        </xsl:variable>
+                        { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
+                        <xsl:if test="position() != last()">,</xsl:if>
+                    </xsl:for-each>
+                  ],
+                </xsl:when>
+
+                <xsl:otherwise>
+                  "valueCodeableConcept": {
+                    "coding": [{
+                      "system": "http://loinc.org",
+                      "code": "<xsl:value-of select='OBX.5/OBX.5.1'/>",
+                      "display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
+                    }]
+                    <xsl:choose>
+                      <xsl:when test="string(OBX.5/OBX.5.9)">
+                        <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>"
+                      </xsl:when>
+                      <xsl:when test="string(OBX.5/OBX.5.2)">
+                        <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
+                      </xsl:when>
+                    </xsl:choose>
+                  },
+                </xsl:otherwise>
+			        </xsl:choose>
               "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
                 "display": "<xsl:value-of select="$patientResourceName"/>"
               }
               <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
-              , "encounter": {
-                  "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-                }
+                , "encounter": {
+                    "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                  }
               </xsl:if>
               <xsl:if test="string(OBX.14/OBX.14.1) or $currentTimestamp">
-				  <xsl:text>,</xsl:text>
-				  "effectiveDateTime": "<xsl:choose>
-					<xsl:when test="string(OBX.14/OBX.14.1)">
-					  <xsl:call-template name='formatDateTime'>
-						<xsl:with-param name='dateTime' select='OBX.14/OBX.14.1'/>
-					  </xsl:call-template>
-					</xsl:when>
-					<xsl:otherwise>
-					  <xsl:value-of select='$currentTimestamp'/>
-					</xsl:otherwise>
-				  </xsl:choose>"
-				</xsl:if>
+				          <xsl:text>,</xsl:text>
+                  "effectiveDateTime": "<xsl:choose>
+                      <xsl:when test="string(OBX.14/OBX.14.1)">
+                        <xsl:call-template name='formatDateTime'>
+                        <xsl:with-param name='dateTime' select='OBX.14/OBX.14.1'/>
+                        </xsl:call-template>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <xsl:value-of select='$currentTimestamp'/>
+                      </xsl:otherwise>
+                  </xsl:choose>"
+              </xsl:if>
               <xsl:if test="string($organizationResourceId)">
-              , "performer": [{
+                , "performer": [{
                             "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
                         }]
               </xsl:if>
-			  <xsl:if test="normalize-space(OBX.8/OBX.8.1)">
-				,"interpretation": [
-					  {
-						"coding": [
-						  {
-							"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-							"code": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.1)'/>",
-							"display": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.2)'/>"
-						  }
-						]
-					  }
-					]
-			</xsl:if>
+
+              <xsl:if test="normalize-space(OBX.8)">
+                ,"interpretation": [
+                    {
+                      "coding": [
+                        {
+                          "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                          "code": "<xsl:value-of select='normalize-space(OBX.8)'/>",
+                          "display": "<xsl:call-template name="mapGrouperObservationInterpretation">
+                                <xsl:with-param name="interpretationCode" select="normalize-space(OBX.8)"/>
+                              </xsl:call-template>"
+                        }
+                      ]
+                    }
+                  ]
+              </xsl:if>
+
             },
             "request": {
               "method": "POST",
@@ -1133,7 +1140,7 @@
           }
       </xsl:if>
     </xsl:if>
-  </xsl:template>
+</xsl:template>
 
   <!-- Organization Template -->
 <xsl:template name="OrganizationFromXON">
@@ -1595,7 +1602,7 @@
     or substring-before(OBR.26,'&amp;') = 'NYSAHCHRSN'
     or substring-before(OBR.26,'&amp;') = 'NYS-AHC-HRSN'
   ]">
-    <!-- Allowed codes -->
+    <!-- Declare allowed LOINC codes -->
     <xsl:variable name="allowedCodes"
       select="'|71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4|'"/>
 
@@ -1611,194 +1618,214 @@
       )"/>
     <xsl:if test="$validChildCount &gt; 0">
 
-    <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
-    <!-- <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/> -->
-	  
-	  <xsl:variable name="grouperObservationResourceId">
-            <xsl:call-template name="generateFixedLengthResourceId">
-              <!-- <xsl:with-param name="prefixString" select="$screeningCode"/> -->
-              <xsl:with-param name="prefixString" select="concat($facilityID, '-', $screeningCode)"/>
-              <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
-            </xsl:call-template>
-          </xsl:variable>
-    
-    <!-- Grouper Observation status : first valid OBX.11 OR OBR.25 -->
-    <xsl:variable name="firstValidObx"
-        select="(
-          following-sibling::OBX[
-            contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
-            and normalize-space(OBX.5/OBX.5.1)
-            and normalize-space(OBX.5/OBX.5.1) != 'UNK'
-            and normalize-space(OBX.11)
-          ]
-        )[1]"/>
-    
-    <xsl:variable name="obxStatus" select="normalize-space($firstValidObx/OBX.11)"/>
-    <xsl:variable name="obrStatus" select="normalize-space(OBR.25)"/>
+        <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
+        <!-- <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/> -->
+        
+        <xsl:variable name="grouperObservationResourceId">
+          <xsl:call-template name="generateFixedLengthResourceId">
+            <xsl:with-param name="prefixString" select="concat($facilityID, '-', $screeningCode)"/>
+            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
+          </xsl:call-template>
+        </xsl:variable>
+        
+        <!-- Grouper Observation status : first valid OBX.11 OR OBR.25 -->
+        <xsl:variable name="firstValidObxStatus"
+            select="(
+              following-sibling::OBX[
+                contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+                and normalize-space(OBX.5/OBX.5.1)
+                and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+                and normalize-space(OBX.11)
+              ]
+            )[1]"/>
+        
+        <xsl:variable name="obxStatus" select="normalize-space($firstValidObxStatus/OBX.11)"/>
+        <xsl:variable name="obrStatus" select="normalize-space(OBR.25)"/>
 
-    {
-      "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>",
-	    "resource": {
-        "resourceType": "Observation",
-        "id": "<xsl:value-of select='$grouperObservationResourceId'/>",
-        "meta": {
-          "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
-          "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
-        },
-        "status": "<xsl:call-template name='getGrouperObservationStatus'>
-                    <xsl:with-param name='obxStatus' select='$obxStatus'/>
-                    <xsl:with-param name='obrStatus' select='$obrStatus'/>
-                  </xsl:call-template>",
-        "code": {
-          "coding": [{
-            <!-- "system": "http://loinc.org", -->
-            "system": "<xsl:choose>
-                          <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
-                          <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
-                        </xsl:choose>",
-            "code": "<xsl:value-of select='$screeningCode'/>",
-            <!-- "display": "<xsl:value-of select='$screeningDisplay'/>" -->
-            "display": "<xsl:call-template name="mapScreeningCodeDisplay">
-                          <xsl:with-param name="screeningCode" select="$screeningCode"/>
-                        </xsl:call-template>"
-          }
-          <xsl:if test="starts-with($screeningCode, 'NYS')">
-            ,{
-              "code": "100698-0",
-              "system": "http://loinc.org",
-              "display": "Social Determinants of Health screening report Document"
-            }
-          </xsl:if>
-          ]
-        },
-        "subject": {
-          "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
-          "display": "<xsl:value-of select='$patientResourceName'/>"
-        },
-        <xsl:if test="string($organizationResourceId)">
-          "performer": [{
-            "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
-          }],
-        </xsl:if>
-		<xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
-              "encounter": {
-                  "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-                },
-              </xsl:if>
-              <xsl:if test="string(OBX.14/OBX.14.1) or $currentTimestamp">
-				  "effectiveDateTime": "<xsl:choose>
-					<xsl:when test="string(OBX.14/OBX.14.1)">
-					  <xsl:call-template name='formatDateTime'>
-						<xsl:with-param name='dateTime' select='OBX.14/OBX.14.1'/>
-					  </xsl:call-template>
-					</xsl:when>
-					<xsl:otherwise>
-					  <xsl:value-of select='$currentTimestamp'/>
-					</xsl:otherwise>
-				  </xsl:choose>"
-				  <xsl:text>,</xsl:text>
-				</xsl:if>
-		<xsl:if test="//OBX.8.1">
-		"interpretation": [
-              {
-                "coding": [
-                  {
-                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                    "code": "<xsl:value-of select='//OBX.8.1'/>",
-                    "display": "<xsl:value-of select='//OBX.8.2'/>"
-                  }
-                ]
+        <!-- First Valid Observation with Interpretation -->
+        <xsl:variable name="firstValidObxInterpretation"
+            select="(
+              following-sibling::OBX[
+                contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+                and normalize-space(OBX.5/OBX.5.1)
+                and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+                and normalize-space(OBX.8)
+              ]
+            )[1]"/>
+        
+        <!-- First Valid Observation with Effective Time -->
+        <xsl:variable name="firstValidObxEffectiveTime"
+            select="(
+              following-sibling::OBX[
+                contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
+                and normalize-space(OBX.5/OBX.5.1)
+                and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+                and normalize-space(OBX.14/OBX.14.1)
+              ]
+            )[1]"/>
+
+        {
+          "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>",
+          "resource": {
+            "resourceType": "Observation",
+            "id": "<xsl:value-of select='$grouperObservationResourceId'/>",
+            "meta": {
+              "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
+              "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
+            },
+            "status": "<xsl:call-template name='getGrouperObservationStatus'>
+                        <xsl:with-param name='obxStatus' select='$obxStatus'/>
+                        <xsl:with-param name='obrStatus' select='$obrStatus'/>
+                      </xsl:call-template>",
+            "code": {
+              "coding": [{
+                "system": "<xsl:choose>
+                              <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+                              <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
+                            </xsl:choose>",
+                "code": "<xsl:value-of select='$screeningCode'/>",
+                "display": "<xsl:call-template name="mapScreeningCodeDisplay">
+                              <xsl:with-param name="screeningCode" select="$screeningCode"/>
+                            </xsl:call-template>"
               }
-            ],
-		</xsl:if>
-        "category": [
-		  {
+              <xsl:if test="starts-with($screeningCode, 'NYS')">
+                ,{
+                  "code": "100698-0",
+                  "system": "http://loinc.org",
+                  "display": "Social Determinants of Health screening report Document"
+                }
+              </xsl:if>
+              ]
+            },
+            "subject": {
+              "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+              "display": "<xsl:value-of select='$patientResourceName'/>"
+            },
+            <xsl:if test="string($organizationResourceId)">
+              "performer": [{
+                "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+              }],
+            </xsl:if>
+            <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
+                  "encounter": {
+                      "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                    },
+            </xsl:if>
+            <xsl:if test="normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1) or $currentTimestamp">
+                  "effectiveDateTime": "<xsl:choose>
+                        <xsl:when test="normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1)">
+                          <xsl:call-template name='formatDateTime'>
+                          <xsl:with-param name='dateTime' select='normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1)'/>
+                          </xsl:call-template>
+                        </xsl:when>
+
+                        <xsl:when test="normalize-space(OBR.7/OBR.7.1)">
+                          <xsl:call-template name='formatDateTime'>
+                          <xsl:with-param name='dateTime' select='normalize-space(OBR.7/OBR.7.1)'/>
+                          </xsl:call-template>
+                        </xsl:when>
+
+                        <xsl:when test="normalize-space(OBR.8/OBR.8.1)">
+                          <xsl:call-template name='formatDateTime'>
+                          <xsl:with-param name='dateTime' select='normalize-space(OBR.8/OBR.8.1)'/>
+                          </xsl:call-template>
+                        </xsl:when>
+
+                        <xsl:otherwise>
+                          <xsl:value-of select='$currentTimestamp'/>
+                        </xsl:otherwise>
+                        </xsl:choose>"
+                  <xsl:text>,</xsl:text>
+            </xsl:if>          
+
+            <xsl:if test="normalize-space($firstValidObxInterpretation/OBX.8)">
+              "interpretation": [
+                  {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                        "code": "<xsl:value-of select='normalize-space($firstValidObxInterpretation/OBX.8)'/>",
+                        "display": "<xsl:call-template name="mapGrouperObservationInterpretation">
+                              <xsl:with-param name="interpretationCode" select="normalize-space($firstValidObxInterpretation/OBX.8)"/>
+                            </xsl:call-template>"
+                      }
+                    ]
+                  }
+                ],
+            </xsl:if>
+
+            "category": [
+              {
                 "coding":
                   <xsl:value-of select='$categoryXml'/>
               },
-          {
-            "coding": [{
-              "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-              "code": "social-history"
-            }]
-          },
-          {
-            "coding": [{
-              "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-              "code": "survey"
-            }]
-          }
-        ],
-        "hasMember": [
-		  <!-- Declare allowed LOINC codes -->
-		  
-		  <!-- Loop through OBX siblings under the current OBR and filter -->
-		  <!-- <xsl:for-each select="following-sibling::OBX[
-								  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
-								  and (normalize-space(OBX.3/OBX.3.1) != '105511-0' and translate(
+              {
+                "coding": [{
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "social-history"
+                }]
+              },
+              {
+                "coding": [{
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "survey"
+                }]
+              }
+            ],
+            "hasMember": [  
+              <!-- Loop through OBX siblings under the current OBR and filter -->
+              <xsl:for-each select="
+                following-sibling::OBX[
+                  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
+
+                  and string(OBX.5/OBX.5.1)
+                  and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+
+                  and string(OBX.3/OBX.3.1)
+                  and normalize-space(OBX.3/OBX.3.1) != 'UNK'
+
+                  and (
+                    normalize-space(OBX.3/OBX.3.1) != '105511-0'
+                    and translate(
                       normalize-space(OBX.3/OBX.3.2),
                       'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
                       'abcdefghijklmnopqrstuvwxyz'
-                  ) != 'ahc-hrsn patient consent')
-								  and contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
-								  and not(preceding-sibling::OBX[
-									  normalize-space(OBX.3/OBX.3.1) = normalize-space(current()/OBX.3/OBX.3.1)
-									  and generate-id(preceding-sibling::OBR[1]) = generate-id(current()/preceding-sibling::OBR[1])
-								  ])
-								]"> -->
-      <xsl:for-each select="
-            following-sibling::OBX[
-              generate-id(preceding-sibling::OBR[1]) = generate-id(current())
+                    ) != 'ahc-hrsn patient consent'
+                  )
 
-              and string(OBX.5/OBX.5.1)
-              and normalize-space(OBX.5/OBX.5.1) != 'UNK'
+                  and contains(
+                    $allowedCodes,
+                    concat('|', normalize-space(OBX.3/OBX.3.1), '|')
+                  )
 
-              and string(OBX.3/OBX.3.1)
-              and normalize-space(OBX.3/OBX.3.1) != 'UNK'
-
-              and (
-                normalize-space(OBX.3/OBX.3.1) != '105511-0'
-                and translate(
-                  normalize-space(OBX.3/OBX.3.2),
-                  'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                  'abcdefghijklmnopqrstuvwxyz'
-                ) != 'ahc-hrsn patient consent'
-              )
-
-              and contains(
-                $allowedCodes,
-                concat('|', normalize-space(OBX.3/OBX.3.1), '|')
-              )
-
-              and not(
-                preceding-sibling::OBX[
-                  normalize-space(OBX.3/OBX.3.1)
-                    = normalize-space(current()/OBX.3/OBX.3.1)
-                  and generate-id(preceding-sibling::OBR[1])
-                    = generate-id(current()/preceding-sibling::OBR[1])
+                  and not(
+                    preceding-sibling::OBX[
+                      normalize-space(OBX.3/OBX.3.1)
+                        = normalize-space(current()/OBX.3/OBX.3.1)
+                      and generate-id(preceding-sibling::OBR[1])
+                        = generate-id(current()/preceding-sibling::OBR[1])
+                    ]
+                  )
                 ]
-              )
+              ">
+                  <xsl:variable name="questionCode" select="normalize-space(OBX.3/OBX.3.1)"/>
+                  <xsl:variable name="observationResourceId">
+                    <xsl:call-template name="generateFixedLengthResourceId">
+                      <xsl:with-param name="prefixString" select="concat($facilityID, '-', $questionCode)"/>
+                      <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                    </xsl:call-template>
+                  </xsl:variable>
+                  { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
+                  <xsl:if test="position() != last()">,</xsl:if>
+              </xsl:for-each>
             ]
-          ">
-			<xsl:variable name="questionCode" select="normalize-space(OBX.3/OBX.3.1)"/>
-			<xsl:variable name="observationResourceId">
-			  <xsl:call-template name="generateFixedLengthResourceId">
-				<!-- <xsl:with-param name="prefixString" select="$questionCode"/> -->
-        <xsl:with-param name="prefixString" select="concat($facilityID, '-', $questionCode)"/>
-				<xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
-			  </xsl:call-template>
-			</xsl:variable>
-			{ "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
-			<xsl:if test="position() != last()">,</xsl:if>
-		  </xsl:for-each>
-		]
-      },
-      "request": {
-        "method": "POST",
-        "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>"
-      }
-    }
-  </xsl:if>
+          },
+          "request": {
+            "method": "POST",
+            "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>"
+          }
+        }
+    </xsl:if>
   </xsl:for-each>
   <!-- </xsl:if> -->
 </xsl:template>
@@ -2307,6 +2334,38 @@
       <!-- default -->
       <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <xsl:template name="mapGrouperObservationInterpretation">
+      <xsl:param name="interpretationCode"/>
+
+      <xsl:choose>
+
+        <xsl:when test="$interpretationCode = 'L'">Low</xsl:when>
+        <xsl:when test="$interpretationCode = 'H'">High</xsl:when>
+        <xsl:when test="$interpretationCode = 'LL'">Critical low</xsl:when>
+        <xsl:when test="$interpretationCode = 'HH'">Critical high</xsl:when>
+        <xsl:when test="$interpretationCode = '&lt;'">Off scale low</xsl:when>
+        <xsl:when test="$interpretationCode = '&gt;'">Off scale high</xsl:when>
+        <xsl:when test="$interpretationCode = 'N'">Normal</xsl:when>
+        <xsl:when test="$interpretationCode = 'A'">Abnormal</xsl:when>
+        <xsl:when test="$interpretationCode = 'AA'">Critical abnormal</xsl:when>
+        <xsl:when test="$interpretationCode = 'U'">Significant change up</xsl:when>
+        <xsl:when test="$interpretationCode = 'D'">Significant change down</xsl:when>
+        <xsl:when test="$interpretationCode = 'B'">Better</xsl:when>
+        <xsl:when test="$interpretationCode = 'W'">Worse</xsl:when>
+        <xsl:when test="$interpretationCode = 'S'">Susceptible</xsl:when>
+        <xsl:when test="$interpretationCode = 'R'">Resistant</xsl:when>
+        <xsl:when test="$interpretationCode = 'I'">Intermediate</xsl:when>
+        <xsl:when test="$interpretationCode = 'MS'">Moderately susceptible</xsl:when>
+        <xsl:when test="$interpretationCode = 'VS'">Very susceptible</xsl:when>
+
+        <xsl:when test="$interpretationCode = 'CAR'">Carrier</xsl:when>
+
+        <!-- Default -->
+        <xsl:otherwise/>
+
+      </xsl:choose>
   </xsl:template>
 
   <xsl:template name="mapScreeningCodeDisplay">
