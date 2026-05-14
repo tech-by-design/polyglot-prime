@@ -2,6 +2,7 @@ package org.techbd.ingest.controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -16,7 +17,6 @@ import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/xds")
@@ -55,7 +55,7 @@ public class XdsRepositoryController extends AbstractMessageSourceProvider {
         byte[] rawBytes = request.getInputStream().readAllBytes();
 
         if (rawBytes == null || rawBytes.length == 0) {
-                    LOG.warn("Empty XDS SOAP request. interactionId={}", interactionId);
+            
 
             LOG.warn("Empty XDS SOAP request. interactionId={}", interactionId);
 

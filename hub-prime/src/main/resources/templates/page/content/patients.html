@@ -64,7 +64,7 @@
         function getScreeningGridData(params) {
             const patientMRN = params.data.patient_mrn;
             const qeName = params.data.qe_name;
-            const orgId = params.data.org_id;
+            const orgId = params.data.primary_org_id;
 
             // Use stored procedure with filtering parameters
             const storedProcParams = {
