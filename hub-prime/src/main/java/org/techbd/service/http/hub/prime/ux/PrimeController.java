@@ -327,7 +327,7 @@ public class PrimeController {
         }
     }
 
-    private int getSafeIntegerValue(Object value) {
+    /*private int getSafeIntegerValue(Object value) {
         if (value == null || value.toString().isEmpty()) {
             return 0;
         }
@@ -337,7 +337,7 @@ public class PrimeController {
             LOG.error("Error parsing integer from value: {}", value, e);
             return 0;
         }
-    }
+    }*/
 
     @GetMapping(value = "/dashboard/stat/csv/most-recent/{tenantId}.{extension}", produces = {
         "application/json", "text/html" })

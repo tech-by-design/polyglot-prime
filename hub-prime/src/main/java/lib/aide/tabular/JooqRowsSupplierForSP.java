@@ -6,10 +6,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.jooq.Condition;
@@ -28,7 +26,6 @@ import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttentionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirPatientScreeningQuestionsAnswers;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
-import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingTechbydesigndispositionDetails;
 
@@ -37,19 +34,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JooqRowsSupplierForSP {
 
     private final DSLContext dslContext;
-    private final String schemaName;
+
     private final String storedProcName;
     private final String paramsJson;
     private final TabularRowsRequestForSP payload;
 
-    private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
     public static final String DATE_TIME_FORMAT_YMDHMS = "yyyy-MM-dd HH:mm:ss";
     public static final String DATE_TIME_FORMAT_MDYHMS = "MM-dd-yyyy HH:mm:ss";
     public static final String DATE_TIME_FORMAT_MDY = "MM-dd-yyyy";
 
     private JooqRowsSupplierForSP(Builder builder) {
         this.dslContext = builder.dslContext;
-        this.schemaName = builder.schemaName;
         this.storedProcName = builder.storedProcName;
         this.paramsJson = builder.paramsJson;
         this.payload = builder.payload;

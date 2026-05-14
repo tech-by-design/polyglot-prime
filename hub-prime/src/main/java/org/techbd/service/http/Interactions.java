@@ -7,16 +7,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
