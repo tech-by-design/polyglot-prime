@@ -1595,13 +1595,9 @@
 
 <!-- Grouper Observation from HL7 OBX Template -->
 <xsl:template name="GrouperObservationFromOBR">
-  <!-- Loop through each OBR (i.e., one screening panel per OBR) -->
-  <xsl:for-each select="//OBR[
-    substring-before(OBR.26,'&amp;') = '96777-8'
-    or substring-before(OBR.26,'&amp;') = '97023-6'
-    or substring-before(OBR.26,'&amp;') = 'NYSAHCHRSN'
-    or substring-before(OBR.26,'&amp;') = 'NYS-AHC-HRSN'
-  ]">
+  <!-- Get first valid OBR with non-empty OBR.26 (Grouper Screening Code) -->
+  <xsl:variable name="grouperOBR" select="(//OBR[normalize-space(substring-before(OBR.26/OBR.26.1,'&amp;')) != ''])[1]"/> 
+  <xsl:if test="$grouperOBR">
     <!-- Declare allowed LOINC codes -->
     <xsl:variable name="allowedCodes"
       select="'|71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4|'"/>
@@ -1609,29 +1605,28 @@
     <!-- Count valid child observations -->
     <xsl:variable name="validChildCount"
       select="count(
-        following-sibling::OBX[
-          generate-id(preceding-sibling::OBR[1]) = generate-id(current())
+        $grouperOBR/following-sibling::OBX[
+          preceding-sibling::OBR[1] = $grouperOBR
           and contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
-          and normalize-space(OBX.5/OBX.5.1)
-          and OBX.5/OBX.5.1 != 'UNK'
+          and normalize-space(OBX.5/OBX.5.1) != ''
+          and normalize-space(OBX.5/OBX.5.1) != 'UNK'
         ]
       )"/>
     <xsl:if test="$validChildCount &gt; 0">
 
-        <xsl:variable name="screeningCode" select="substring-before(OBR.26, '&amp;')"/>
-        <!-- <xsl:variable name="screeningDisplay" select="normalize-space(substring-before(substring-after(OBR.26, '&amp;'), '&amp;'))"/> -->
+        <xsl:variable name="screeningCode" select="substring-before(normalize-space($grouperOBR/OBR.26/OBR.26.1), '&amp;')"/>
         
         <xsl:variable name="grouperObservationResourceId">
-          <xsl:call-template name="generateFixedLengthResourceId">
-            <xsl:with-param name="prefixString" select="concat($facilityID, '-', $screeningCode)"/>
-            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
-          </xsl:call-template>
-        </xsl:variable>
+                <xsl:call-template name="generateFixedLengthResourceId">
+                  <xsl:with-param name="prefixString" select="concat($facilityID, '-', $screeningCode)"/>
+                  <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
+                </xsl:call-template>
+              </xsl:variable>
         
         <!-- Grouper Observation status : first valid OBX.11 OR OBR.25 -->
         <xsl:variable name="firstValidObxStatus"
             select="(
-              following-sibling::OBX[
+              $grouperOBR/following-sibling::OBX[
                 contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
                 and normalize-space(OBX.5/OBX.5.1)
                 and normalize-space(OBX.5/OBX.5.1) != 'UNK'
@@ -1639,13 +1634,13 @@
               ]
             )[1]"/>
         
-        <xsl:variable name="obxStatus" select="normalize-space($firstValidObxStatus/OBX.11)"/>
-        <xsl:variable name="obrStatus" select="normalize-space(OBR.25)"/>
+        <xsl:variable name="obxStatus" select="normalize-space($firstValidObxStatus/OBX.11/OBX.11.1)"/>
+        <xsl:variable name="obrStatus" select="normalize-space($grouperOBR/OBR.25/OBR.25.1)"/>
 
         <!-- First Valid Observation with Interpretation -->
         <xsl:variable name="firstValidObxInterpretation"
             select="(
-              following-sibling::OBX[
+              $grouperOBR/following-sibling::OBX[
                 contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
                 and normalize-space(OBX.5/OBX.5.1)
                 and normalize-space(OBX.5/OBX.5.1) != 'UNK'
@@ -1656,7 +1651,7 @@
         <!-- First Valid Observation with Effective Time -->
         <xsl:variable name="firstValidObxEffectiveTime"
             select="(
-              following-sibling::OBX[
+              $grouperOBR/following-sibling::OBX[
                 contains($allowedCodes, concat('|', normalize-space(OBX.3/OBX.3.1), '|'))
                 and normalize-space(OBX.5/OBX.5.1)
                 and normalize-space(OBX.5/OBX.5.1) != 'UNK'
@@ -1715,19 +1710,19 @@
                   "effectiveDateTime": "<xsl:choose>
                         <xsl:when test="normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1)">
                           <xsl:call-template name='formatDateTime'>
-                          <xsl:with-param name='dateTime' select='normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1)'/>
+                            <xsl:with-param name='dateTime' select='normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1)'/>
                           </xsl:call-template>
                         </xsl:when>
 
-                        <xsl:when test="normalize-space(OBR.7/OBR.7.1)">
+                        <xsl:when test="normalize-space($grouperOBR/OBR.7/OBR.7.1)">
                           <xsl:call-template name='formatDateTime'>
-                          <xsl:with-param name='dateTime' select='normalize-space(OBR.7/OBR.7.1)'/>
+                            <xsl:with-param name='dateTime' select='normalize-space($grouperOBR/OBR.7/OBR.7.1)'/>
                           </xsl:call-template>
                         </xsl:when>
 
-                        <xsl:when test="normalize-space(OBR.8/OBR.8.1)">
+                        <xsl:when test="normalize-space($grouperOBR/OBR.8/OBR.8.1)">
                           <xsl:call-template name='formatDateTime'>
-                          <xsl:with-param name='dateTime' select='normalize-space(OBR.8/OBR.8.1)'/>
+                            <xsl:with-param name='dateTime' select='normalize-space($grouperOBR/OBR.8/OBR.8.1)'/>
                           </xsl:call-template>
                         </xsl:when>
 
@@ -1738,16 +1733,16 @@
                   <xsl:text>,</xsl:text>
             </xsl:if>          
 
-            <xsl:if test="normalize-space($firstValidObxInterpretation/OBX.8)">
+            <xsl:if test="normalize-space($firstValidObxInterpretation/OBX.8/OBX.8.1)">
               "interpretation": [
                   {
                     "coding": [
                       {
                         "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                        "code": "<xsl:value-of select='normalize-space($firstValidObxInterpretation/OBX.8)'/>",
+                        "code": "<xsl:value-of select='normalize-space($firstValidObxInterpretation/OBX.8/OBX.8.1)'/>",
                         "display": "<xsl:call-template name="mapGrouperObservationInterpretation">
-                              <xsl:with-param name="interpretationCode" select="normalize-space($firstValidObxInterpretation/OBX.8)"/>
-                            </xsl:call-template>"
+                                      <xsl:with-param name="interpretationCode" select="normalize-space($firstValidObxInterpretation/OBX.8/OBX.8.1)"/>
+                                    </xsl:call-template>"
                       }
                     ]
                   }
@@ -1756,8 +1751,7 @@
 
             "category": [
               {
-                "coding":
-                  <xsl:value-of select='$categoryXml'/>
+                "coding": <xsl:value-of select='$categoryXml'/>
               },
               {
                 "coding": [{
@@ -1775,22 +1769,23 @@
             "hasMember": [  
               <!-- Loop through OBX siblings under the current OBR and filter -->
               <xsl:for-each select="
-                following-sibling::OBX[
-                  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
+                $grouperOBR/following-sibling::OBX[
+                  preceding-sibling::OBR[1] = $grouperOBR
 
-                  and string(OBX.5/OBX.5.1)
+                  and normalize-space(OBX.5/OBX.5.1) != ''
                   and normalize-space(OBX.5/OBX.5.1) != 'UNK'
 
-                  and string(OBX.3/OBX.3.1)
+                  and normalize-space(OBX.3/OBX.3.1) != ''
                   and normalize-space(OBX.3/OBX.3.1) != 'UNK'
 
-                  and (
-                    normalize-space(OBX.3/OBX.3.1) != '105511-0'
-                    and translate(
-                      normalize-space(OBX.3/OBX.3.2),
-                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                      'abcdefghijklmnopqrstuvwxyz'
-                    ) != 'ahc-hrsn patient consent'
+                  and not(
+                      normalize-space(OBX.3/OBX.3.1) = '105511-0'
+                      or
+                      translate(
+                          normalize-space(OBX.3/OBX.3.2),
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                          'abcdefghijklmnopqrstuvwxyz'
+                      ) = 'ahc-hrsn patient consent'
                   )
 
                   and contains(
@@ -1799,12 +1794,11 @@
                   )
 
                   and not(
-                    preceding-sibling::OBX[
-                      normalize-space(OBX.3/OBX.3.1)
-                        = normalize-space(current()/OBX.3/OBX.3.1)
-                      and generate-id(preceding-sibling::OBR[1])
-                        = generate-id(current()/preceding-sibling::OBR[1])
-                    ]
+                      preceding-sibling::OBX[
+                          preceding-sibling::OBR[1] = $grouperOBR
+                          and normalize-space(OBX.3/OBX.3.1)
+                              = normalize-space(current()/OBX.3/OBX.3.1)
+                      ]
                   )
                 ]
               ">
@@ -1826,8 +1820,7 @@
           }
         }
     </xsl:if>
-  </xsl:for-each>
-  <!-- </xsl:if> -->
+  </xsl:if>
 </xsl:template>
 
 <xsl:template name="formatDateTime">

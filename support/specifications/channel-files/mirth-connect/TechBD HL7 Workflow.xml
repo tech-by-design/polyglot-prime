@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.14</description>
-  <revision>11</revision>
+  <revision>13</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2004,7 +2004,7 @@ try {
     transformer = generateSHA256Id(observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
     // Grouper Observation
-    var selectedObr = null;
+    /*var selectedObr = null;
     var grouperObsXml = &quot;&quot;;
     for each (var obr in hl7Xml.OBR) {		    
 	    var obr26 = obr[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;].toString(); // Get OBR.26.1 value	    
@@ -2025,7 +2025,82 @@ try {
 	    grouperObsXml = hl7Xml.OBR[0].toXMLString();	 // Extract only first OBR segment and Convert OBR XML back to string
     } else {
     	    logger.info(&quot;No OBR Segment found.&quot;);
-    }
+    }*/
+	var grouperObsXml = &quot;&quot;;
+	
+	// Allowed Question Codes
+	var allowedCodes = {
+	    &quot;71802-3&quot;: true,
+	    &quot;96778-6&quot;: true,
+	    &quot;96779-4&quot;: true,
+	    &quot;88122-7&quot;: true,
+	    &quot;88123-5&quot;: true,
+	    &quot;93030-5&quot;: true,
+	    &quot;96780-2&quot;: true,
+	    &quot;96782-8&quot;: true,
+	    &quot;95618-5&quot;: true,
+	    &quot;95617-7&quot;: true,
+	    &quot;95616-9&quot;: true,
+	    &quot;95615-1&quot;: true,
+	    &quot;95614-4&quot;: true
+	};
+	
+	// Get all HL7 child segments in order
+	var segments = hl7Xml.children();	
+	for (var i = 0; i &lt; segments.length(); i++) {	
+	    var segment = segments[i];
+	
+	    // Process only OBR
+	    if (segment.name() == &quot;OBR&quot;) {	
+	        var obr26 = &quot;&quot;;	
+	        if (segment[&quot;OBR.26&quot;] &amp;&amp; segment[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;]) {
+	            obr26 = segment[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;].toString().trim();
+	        }
+	
+	        // Extract screening code
+	        var screeningCode = &quot;&quot;;	
+	        if (obr26.indexOf(&quot;&amp;&quot;) &gt;= 0) {
+	            screeningCode = obr26.split(&quot;&amp;&quot;)[0].trim();
+	        } else {
+	            screeningCode = obr26;
+	        }
+	
+	        // OBR.26 must not be empty
+	        if (screeningCode != &quot;&quot;) {	
+	            var hasValidChildObx = false;
+	
+	            // Check following segments until next OBR
+	            for (var j = i + 1; j &lt; segments.length(); j++) {
+	                var childSegment = segments[j];
+	
+	                // Stop at next OBR
+	                if (childSegment.name() == &quot;OBR&quot;) {
+	                    break;
+	                }
+	
+	                // Process OBX
+	                if (childSegment.name() == &quot;OBX&quot;) {
+	                    var obx31 = childSegment[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();
+	                    var obx51 = childSegment[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString().trim();
+	                    if (
+	                        allowedCodes[obx31] === true &amp;&amp;
+	                        obx51 != &quot;&quot; &amp;&amp;
+	                        obx51 != &quot;UNK&quot;
+	                    ) {
+	                        hasValidChildObx = true;
+	                        break;
+	                    }
+	                }
+	            }
+	
+	            // First valid Grouper OBR
+	            if (hasValidChildObx) {
+	                grouperObsXml = segment.toXMLString();
+	                break;
+	            }
+	        }
+	    }
+	}
     transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
 
 
@@ -2539,7 +2614,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1778741497414</time>
+        <time>1778843716000</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
