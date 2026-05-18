@@ -308,7 +308,7 @@ BEGIN
 	            -- Move to next day start for full-day inclusion
 	            v_end_time := (p_end_time::date + INTERVAL '1 day')::timestamp with time zone;
 	        ELSE
-	            v_end_time := p_end_time::timestamp with time zone;
+	            v_end_time := (p_end_time::timestamp with time zone + INTERVAL '1 millisecond')::timestamp with time zone;
 	        END IF;
 	
 	    EXCEPTION
@@ -387,7 +387,7 @@ BEGIN
                     )
                     OR (
                         v_end_is_date_only = false
-                        AND rq.created_at <= v_end_time
+                        AND rq.created_at < v_end_time
                     )
                 )
             )
