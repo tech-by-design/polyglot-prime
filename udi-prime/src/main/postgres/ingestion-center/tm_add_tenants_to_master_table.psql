@@ -22,4 +22,5 @@ WHERE t.tenant_name IS NOT NULL
         FROM techbd_udi_ingress.tenants tm
         WHERE LOWER(TRIM(tm.tenant_name)) = LOWER(TRIM(t.tenant_name))
     )
-ORDER BY LOWER(TRIM(t.tenant_name));
+ORDER BY LOWER(TRIM(t.tenant_name))
+ON CONFLICT (tenant_name) DO NOTHING;
