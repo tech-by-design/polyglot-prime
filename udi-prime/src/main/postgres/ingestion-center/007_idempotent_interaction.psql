@@ -53,7 +53,10 @@ BEGIN
 		                OR (
 		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
 				            AND fhir.created_at >= start_time
-				            AND fhir.created_at <= end_time
+				            AND fhir.created_at < CASE													    
+												    WHEN end_time = date_trunc('day', end_time) THEN end_time + INTERVAL '1 day' -- If end_time has no time portion
+												    ELSE end_time + INTERVAL '1 millisecond' -- If end_time has time portion
+												END
 		                )
 		            )
 		        )
@@ -131,7 +134,10 @@ BEGIN
 		                OR (
 		                    (start_time IS NOT NULL AND end_time IS NOT NULL)
 				            AND rq.created_at >= start_time
-				            AND rq.created_at <= end_time
+				            AND rq.created_at < CASE													    
+												    WHEN end_time = date_trunc('day', end_time) THEN end_time + INTERVAL '1 day' -- If end_time has no time portion
+												    ELSE end_time + INTERVAL '1 millisecond' -- If end_time has time portion
+												END
 		                )
 		            )
 		        )
