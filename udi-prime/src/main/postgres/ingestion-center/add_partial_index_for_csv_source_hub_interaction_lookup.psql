@@ -1,0 +1,10 @@
+-- Creates a partial index for faster lookup of CSV-based interaction requests
+-- using source_hub_interaction_id and optimized ordering by bundle_id and created_at.
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sat_interaction_fhir_request_csv_only
+ON techbd_udi_ingress.sat_interaction_fhir_request (
+    source_hub_interaction_id,
+    bundle_id,
+    created_at DESC
+)
+WHERE source_type = 'CSV';

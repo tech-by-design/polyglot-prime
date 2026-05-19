@@ -1277,7 +1277,25 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               CREATE INDEX idx_sat_interaction_fhir_request_start_time
                   ON techbd_udi_ingress.sat_interaction_fhir_request (interaction_start_time);
-          END IF;          
+          END IF;   
+          
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'sat_interaction_fhir_request'
+          AND indexname = 'idx_sat_interaction_fhir_request_csv_only'
+    ) THEN
+
+        CREATE INDEX idx_sat_interaction_fhir_request_csv_only
+        ON techbd_udi_ingress.sat_interaction_fhir_request (
+            source_hub_interaction_id,
+            bundle_id,
+            created_at DESC
+        )
+        WHERE source_type = 'CSV';
+
+    END IF;          
 
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
