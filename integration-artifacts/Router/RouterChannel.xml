@@ -1,11 +1,10 @@
 <channel version="26.3.1">
-  <id>520ded48-a0be-4492-8cba-4fad5a227afd</id>
+  <id>099dad05-2e8c-42a5-a500-a509b0dfd31d</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.14
-Increased timeout configuration to 300000 ms for long-running request handling.
-</description>
-  <revision>14</revision>
+  <description>Version: 0.2.15
+Added redirection for replay api.</description>
+  <revision>1</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -164,6 +163,10 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 else if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
 	logger.info(&quot;HL7 validation  RouterChannel &quot;);
+}
+else if (requestedPath == &quot;/replay/&quot; || requestedPath == &quot;/replay&quot;) {
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9005&quot; + requestedPath);	
+	logger.info(&quot;Replay validation  RouterChannel &quot;);
 }
 else{
 	return;
@@ -889,25 +892,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779255534618</time>
+        <time>1779262380519</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>06df9290-6959-4fbc-a8ff-08c06e15feca</id>
-        <name>0_2_14</name>
+        <id>df9d2a9d-a787-4f0e-8e07-b4882ab417bc</id>
+        <name>0_2_15</name>
         <channelIds>
-          <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
+          <string>099dad05-2e8c-42a5-a500-a509b0dfd31d</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
