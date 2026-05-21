@@ -17,9 +17,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundleReplay.xml",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-05-20"
+      "date": "2026-05-21"
     },
     {
       "type": "CCDA",
@@ -108,9 +108,9 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.15",
+      "version": "0.2.16",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-05-20"
+      "date": "2026-05-21"
     },
   {
       "type": "code-templates",
