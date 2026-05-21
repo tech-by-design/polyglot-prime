@@ -76,6 +76,7 @@ public class SecurityConfig {
                         authorize -> authorize
                                 .requestMatchers(Constant.UNAUTHENTICATED_URLS)
                                 .permitAll()
+                                .requestMatchers("/fusionauth/webhook").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2Login(
                         oauth2Login -> oauth2Login

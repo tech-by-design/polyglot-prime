@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +14,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.techbd.component.SessionRegistry;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -20,6 +22,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @Component
 @ConditionalOnProperty(name = "AUTH_PROVIDER", havingValue = "fusionauth", matchIfMissing = true)
@@ -32,6 +35,9 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
     private static final String SUPPORT_EMAIL_DISPLAY = "Tech by Design Support <" + SUPPORT_EMAIL + ">";
 
     private final FusionAuthUsersService fusionAuthUsersService;
+
+    @Autowired
+    private SessionRegistry sessionRegistry;
 
     public FusionAuthUserAuthorizationFilter(final FusionAuthUsersService fusionAuthUsersService) {
         this.fusionAuthUsersService = fusionAuthUsersService;
@@ -85,17 +91,41 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                     //      LOG.info("Role permissions cached in session for role {}: {}", role, permissions);
                     //    }
                         // fusionAuthUsersService.convertToJson(enrichedOAuth2User);
+                                           
+                    String userId = (faUser != null) ? faUser.fusionAuthId() : null;
 
-                        LOG.info("FusionAuth user enriched and set in SecurityContext: {}", faUser.email());
-                    } catch (Exception e) {
-                        LOG.error("Error processing FusionAuth user login", e);
-                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal auth error");
-                        return;
+                    if (userId == null || userId.isBlank()) {
+                        LOG.warn("Skipping session registration: userId is null or empty");
+                    } else {
+                        HttpSession session = request.getSession(false);
+
+                        if (session == null) {
+                            session = request.getSession(true); // create only if needed
+                            LOG.debug("New session created for userId: {}", userId);
+                        }
+
+                        session.setAttribute("USER_ID", userId);
+
+                        // Avoid duplicate registration
+                        Object existingUser = session.getAttribute("USER_ID_REGISTERED");
+                        if (existingUser == null) {
+                            sessionRegistry.addSession(userId, session);
+                            session.setAttribute("USER_ID_REGISTERED", true);
+                            LOG.debug("Session registered for userId: {}", userId);
+                        }
                     }
-                } else {
-                    LOG.debug("User already enriched, skipping enrichment");
+                    LOG.info("FusionAuth user enriched. userId={}, email={}",
+                            faUser != null ? faUser.fusionAuthId() : "NULL",
+                            faUser != null ? faUser.email() : "NULL");
+                } catch (Exception e) {
+                    LOG.error("Error processing FusionAuth user login", e);
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal auth error");
+                    return;
                 }
+            } else {
+                LOG.debug("User already enriched, skipping enrichment");
             }
+        }
 
         // Actuator access check
         if (request.getRequestURI().startsWith("/actuator")) {
