@@ -72,6 +72,7 @@ BEGIN
 	    ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'],
 	    'Function sat_interaction_hl7_request_upserted exists'
 	);
+	RETURN NEXT has_function(schema_name, 'upsert_user_session', ARRAY['text', 'text', 'text', 'timestamp with time zone', 'timestamp with time zone', 'timestamp with time zone', 'text', 'jsonb'], 'Function upsert_user_session exists');
 
 	-- Check existence of required tables   
 	RETURN NEXT has_table(schema_name, 'hub_interaction', 'The table techbd_udi_ingress.hub_interaction should exist.');
@@ -114,7 +115,19 @@ BEGIN
 			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number', 'ig_version', 'tenant_name'],
         'The columns of techbd_udi_ingress.sat_interaction_user should match the expected structure.');
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
-	
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_ui_user', 'The table techbd_udi_ingress.sat_interaction_ui_user should exist.');
+	RETURN NEXT has_pk(schema_name, 'sat_interaction_ui_user', 'The table techbd_udi_ingress.sat_interaction_ui_user should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name,
+        'sat_interaction_ui_user', 
+        'hub_interaction_id', 
+        'The foreign key from sat_interaction_ui_user.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_ui_user',
+        ARRAY['sat_interaction_ui_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
+			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash', 'techbd_version_number', 'ig_version', 'tenant_name'],
+        'The columns of techbd_udi_ingress.sat_interaction_ui_user should match the expected structure.');
+    RETURN NEXT col_not_null(schema_name, 'sat_interaction_ui_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
     RETURN NEXT has_pk(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should have a primary key.');
     RETURN NEXT columns_are(schema_name, 'sat_interaction_flat_file_csv_request',
@@ -223,6 +236,11 @@ BEGIN
 	RETURN NEXT columns_are(schema_name,'sat_interaction_file_exchange',
 		ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_file_exchange should match the expected structure.');
+	
+	RETURN NEXT has_table(schema_name, 'user_sessions', 'The table techbd_udi_ingress.user_sessions should exist.');
+	RETURN NEXT columns_are(schema_name, 'user_sessions', 
+		ARRAY['session_id', 'user_id', 'username', 'session_start_time', 'session_end_time', 'session_expiry_time', 'source', 'updated_at', 'updated_by', 'created_at', 'created_by', 'provenance'], 
+		'The columns of techbd_udi_ingress.user_sessions should match the expected structure.');
 
     /*=================== Testing TABLE COLUMNS  ========================*/
 	RETURN NEXT has_table(schema_name, 'ccda_replay_details', 'The table techbd_udi_ingress.ccda_replay_details should exist.');
@@ -424,6 +442,14 @@ BEGIN
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_user should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_user', 'interaction_start_time', 'timestamp with time zone', 'The column interaction_start_time in techbd_udi_ingress.sat_interaction_user should be of type timestamp with time zone.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_user', 'interaction_end_time', 'timestamp with time zone', 'The column interaction_end_time in techbd_udi_ingress.sat_interaction_user should be of type timestamp with time zone.');
+	
+	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ui_user', 'sat_interaction_ui_user_id', 'The column sat_interaction_ui_user_id in techbd_udi_ingress.sat_interaction_ui_user should be NOT NULL.');
+	RETURN NEXT col_type_is(schema_name, 'sat_interaction_ui_user', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_ui_user should be of type timestamp with time zone.');
+	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ui_user', 'created_by', 'The column created_by in techbd_udi_ingress.sat_interaction_ui_user should be NOT NULL.');
+	RETURN NEXT col_not_null(schema_name, 'sat_interaction_ui_user', 'provenance', 'The column provenance in techbd_udi_ingress.sat_interaction_ui_user should be NOT NULL.');
+	RETURN NEXT col_type_is(schema_name, 'sat_interaction_ui_user', 'interaction_start_time', 'timestamp with time zone', 'The column interaction_start_time in techbd_udi_ingress.sat_interaction_ui_user should be of type timestamp with time zone.');
+	RETURN NEXT col_type_is(schema_name, 'sat_interaction_ui_user', 'interaction_end_time', 'timestamp with time zone', 'The column interaction_end_time in techbd_udi_ingress.sat_interaction_ui_user should be of type timestamp with time zone.');
+	
 	RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'sat_interaction_zip_file_request_id', 'The column sat_interaction_zip_file_request_id in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
 	--RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.sat_interaction_zip_file_request should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.sat_interaction_zip_file_request should be of type timestamp with time zone.');
@@ -602,6 +628,17 @@ BEGIN
 	RETURN NEXT has_index(schema_name, 'sat_interaction_user', 'sat_interaction_user_pkey',
 	    ARRAY['sat_interaction_user_id'],
 	    'sat_interaction_user_pkey should exist on sat_interaction_user_id');
+	
+	RETURN NEXT has_index(schema_name, 'sat_interaction_ui_user', 'idx_sat_interaction_ui_user_hub_id',
+	    ARRAY['hub_interaction_id'],
+	    'idx_sat_interaction_ui_user_hub_id should exist on hub_interaction_id');
+	RETURN NEXT has_index(schema_name, 'sat_interaction_ui_user', 'idx_sat_interaction_ui_user_start_time',
+	    ARRAY['interaction_start_time'],
+	    'idx_sat_interaction_ui_user_start_time should exist on interaction_start_time');
+	RETURN NEXT has_index(schema_name, 'sat_interaction_ui_user', 'sat_interaction_ui_user_pkey',
+	    ARRAY['sat_interaction_ui_user_id'],
+	    'sat_interaction_ui_user_pkey should exist on sat_interaction_ui_user_id');
+
 	RETURN NEXT has_index(schema_name, 'sat_interaction_zip_file_request', 'idx_sat_interaction_zip_file_request_hub_interaction_id',
 	    ARRAY['hub_interaction_id'],
 	    'idx_sat_interaction_zip_file_request_hub_interaction_id should exist on hub_interaction_id');
@@ -660,22 +697,14 @@ BEGIN
                    ),
             'User - Successfully inserted into the table hub_interaction'
 	);
-        
-	RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request hub_intr
-                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
-							AND hub_intr.provenance              = 'user'
-                   ),
-            'User - Successfully inserted into the table sat_interaction_http_request'
-	);
 
    RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_ui_user sat_intr
                             WHERE sat_intr.hub_interaction_id	= v_interaction_id
                             AND sat_intr.uri                    = '/user/'
 							AND sat_intr.provenance             = 'user'
                    ),
-            'User - Successfully inserted into the table sat_interaction_user'
+            'User - Successfully inserted into the table sat_interaction_ui_user'
 	);
 
     /*=================== Testing with FHIR bundle ========================*/
