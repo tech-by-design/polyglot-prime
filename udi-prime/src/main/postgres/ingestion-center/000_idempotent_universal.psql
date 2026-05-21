@@ -254,104 +254,130 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_user_session(
     p_session_id TEXT,
     p_user_id TEXT,
     p_username TEXT,    
-    p_session_start_time TIMESTAMPTZ,
-    p_session_end_time TIMESTAMPTZ,
-    p_session_expiry_time TIMESTAMPTZ,
+    p_session_start_time timestamp with time zone,
+    p_session_end_time timestamp with time zone,
+    p_session_expiry_time timestamp with time zone,
     p_source TEXT,
-    p_provenance JSON
+    p_provenance JSONB
 )
-RETURNS JSON
+RETURNS JSONB
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_result JSON;
-    v_session_id UUID;
+    v_result            JSONB 	:= NULL;
+    v_session_id        TEXT;
+    v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;
+    v_exception_id 		TEXT 	:= gen_random_uuid()::text;
+    --v_tenant_id 	  	TEXT	:= COALESCE(techbd_udi_ingress.get_tenant_details('N/A', CURRENT_USER, CURRENT_TIMESTAMP, 'upsert_user_session') ->> 'tenant_id', '');
+    v_updated_count     INT     := 0;
 BEGIN
-    
-   IF (p_session_id IS NULL OR p_session_id = '') THEN
-        v_session_id := gen_random_uuid();
-   ELSE
-        v_session_id := p_session_id::UUID;
-   END IF; 
-   
-   IF(p_session_id IS NULL OR p_session_id = '') then
-        IF p_user_id IS NULL OR p_username IS NULL THEN
-            RETURN json_build_object('status','error','message','user_id or username is missing');
-        END IF;
-
-        IF p_session_start_time IS NULL THEN
-            RETURN json_build_object('status','error','message','Session_start_time is missing');
-        END IF;
-
-        IF p_session_expiry_time IS NULL THEN
-            RETURN json_build_object('status','error','message','Session_expiry_time is missing');
-        END IF;
-
-        IF p_provenance IS NULL THEN
-            RETURN json_build_object('status','error','message','Provenance is missing');
-        END IF;     
+    /* If existing session_id is active during fresh login and session_end_time is null.It will update session_end_time 
+     * if session expiry is is less than current date time and freshs session will be created. */
+    IF p_session_id IS NOT NULL AND TRIM(p_session_id) <> '' AND p_session_end_time IS NULL THEN 
+            UPDATE techbd_udi_ingress.user_sessions
+            SET session_end_time = COALESCE(session_expiry_time, CURRENT_TIMESTAMP),
+                updated_at = CURRENT_TIMESTAMP,
+                updated_by = p_user_id
+            WHERE session_id = p_session_id::TEXT
+                AND session_end_time IS NULL
+                AND session_expiry_time < CURRENT_TIMESTAMP;
+            
+            GET DIAGNOSTICS v_updated_count = ROW_COUNT;
+        
+            IF v_updated_count > 0 THEN
+                p_session_id := NULL;
+                v_session_id := NULL;
+            END IF;       
     END IF;
-
-    IF p_session_id IS NULL OR p_session_id = '' THEN        
-        INSERT INTO techbd_udi_ingress.user_sessions (
-            session_id,
-            user_id,
-            username,            
-            session_start_time,
-            session_end_time,
-            session_expiry_time,
-            source,
-            provenance,
-            created_at,
-            created_by          
-        )
-        VALUES (
-            v_session_id::TEXT,
-            p_user_id,
-            p_username,            
-            p_session_start_time,
-            p_session_end_time,
-            p_session_expiry_time,
-            p_source,
-            p_provenance,
-            CURRENT_TIMESTAMP,
-            p_user_id            
-        );
-
-        v_result := json_build_object(
-            'status','success',
-            'message','Session created successfully',
-            'session_id', v_session_id::TEXT
-        );
-
+    
+    IF (p_session_id IS NULL OR p_session_id = '') THEN
+            v_session_id := gen_random_uuid();
     ELSE
-       
-        IF p_user_id IS NULL OR p_username IS NULL THEN
-            RETURN json_build_object('status','error','message','user_id or username is missing');
-        END IF;    
-    
-        UPDATE techbd_udi_ingress.user_sessions
-        SET
-            session_end_time    = COALESCE(p_session_end_time, session_end_time),
-            session_expiry_time = COALESCE(p_session_expiry_time, session_expiry_time),
-            updated_at          = CURRENT_TIMESTAMP,
-            updated_by          = p_user_id
-        WHERE session_id = v_session_id::TEXT;
-    
-        v_result := json_build_object(
-            'status','success',
-            'message','Session updated successfully',
-            'session_id', v_session_id
-        );
+            v_session_id := p_session_id::UUID;
+    END IF;   
+
+    IF p_session_id IS NULL OR TRIM(p_session_id) = '' THEN        
+            INSERT INTO techbd_udi_ingress.user_sessions (
+                session_id,
+                user_id,
+                username,            
+                session_start_time,
+                session_end_time,
+                session_expiry_time,
+                source,
+                provenance,
+                created_at,
+                created_by          
+            )
+            VALUES (
+                v_session_id::TEXT,
+                p_user_id,
+                p_username,            
+                p_session_start_time,
+                p_session_end_time,
+                p_session_expiry_time,
+                p_source,
+                p_provenance,
+                CURRENT_TIMESTAMP,
+                p_user_id            
+            );
+
+            v_result := json_build_object(
+                'status','success',
+                'message','Session created successfully',
+                'session_id', v_session_id::TEXT
+            );
+
+    ELSE    
+            UPDATE techbd_udi_ingress.user_sessions
+            SET
+                session_end_time    = COALESCE(p_session_end_time, session_end_time),
+                session_expiry_time = COALESCE(p_session_expiry_time, session_expiry_time),
+                updated_at          = CURRENT_TIMESTAMP,
+                updated_by          = p_user_id
+            WHERE session_id = v_session_id::TEXT;
+        
+            v_result := json_build_object(
+                'status','success',
+                'message','Session updated successfully',
+                'session_id', v_session_id
+            );
     END IF;
 
     RETURN v_result;
 
 EXCEPTION WHEN OTHERS THEN
-    RETURN json_build_object(
+    /*RETURN json_build_object(
         'status','error',
         'message', SQLERRM,
         'code', SQLSTATE
+    );*/
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+            v_error_type = 'SQL';
+	
+	-- Save the log details into table
+	v_result := jsonb_build_object(
+								'status','error',
+                                'message', SQLERRM,
+                                'code', SQLSTATE,
+                                'error_message', v_error_msg,
+                                'user_id', p_user_id
+								);
+
+	v_exception_id := techbd_udi_ingress.register_issue(
+        v_exception_id, 'session', v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, COALESCE(p_user_id, CURRENT_USER), '', v_result, 'N/A', null, null
     );
+   	RETURN v_result;
 END;
 $$;

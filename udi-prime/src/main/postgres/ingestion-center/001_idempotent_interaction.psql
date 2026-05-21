@@ -1218,7 +1218,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_user_details
 AS SELECT created_at,
     hub_interaction_id,
     uri,
-    sat_interaction_user_id,
+    sat_interaction_ui_user_id,
     user_id,
     user_name,
     user_session,
@@ -1226,7 +1226,7 @@ AS SELECT created_at,
     user_role,
     client_ip_address,
     user_agent
-   FROM techbd_udi_ingress.sat_interaction_user sai;
+   FROM techbd_udi_ingress.sat_interaction_ui_user sai;
 
 
 
@@ -6888,27 +6888,8 @@ DECLARE
 	v_elaboration_steps_text 	TEXT[]	:= ARRAY[]::text[]; 
     v_elaboration_steps_jsonb 	JSONB 	:= '[]'::jsonb;
     v_user_id 					TEXT  	:= COALESCE(p_user_id, v_created_by);	
-	v_additional_details		JSONB 	:= jsonb_build_object(
-										    'request', jsonb_build_object(
-										        'User-Agent', p_user_agent,
-										        'remoteAddr', p_client_ip_address,
-										        'X-Observability-Metric-Interaction-Start-Time', p_intr_start_time,
-										        'X-Observability-Metric-Interaction-Finish-Time', p_intr_finish_time
-										    ),
-											'version', p_techbd_version_number,
-											'tenant_id_denorm', v_tenant_id_denorm
-										);
    
 BEGIN 
-	/* This function is designed to handle the registration and upserting of HTTP interaction requests into user anf http interaction tables in the 
-     * techbd_udi_ingress schema. It first attempts to insert a record into the hub_interaction table and handles unique constraint violations 
-     * based on the hub_upsert_behavior flag. It then inserts data into the sat_interaction_http_request table, capturing details such as 
-     * payload, state transitions, and user information. In case of any error, it logs detailed exception information using the 
-     * register_issue function. The function returns a JSONB object, representing either the inserted data or a processed result.
-     * origin : http/sftp
-     * source_type : fhir/hl7/csv/ccda
-     */
-	
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_user_interaction function');  
 	
 	IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
@@ -6984,38 +6965,21 @@ BEGIN
 
 		IF NOT v_return_status THEN
 		    -- Attempt to insert into sat_interaction_http_request
-		    BEGIN		  
-			    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
-		        INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
-		            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
-		            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm, request_source, techbd_version_number, tenant_name, tenant_id
-		        )
-		        VALUES (
-		            gen_random_uuid()::text, p_interaction_id, p_nature, p_content_type, p_payload, p_payload_text, p_from_state, p_to_state, 
-		            p_state_transition_reason, p_elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm, p_request_source, p_techbd_version_number, v_tenant_id_denorm, v_tenant_id
-		        );
-
-		        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Inserted into sat_interaction_http_request');
-		
-		       	--1) Call the function with the defined parameters to upsert user info
+		    BEGIN
+		       	--1. Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(p_interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/')) THEN     		       	
-					PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
-				        p_hub_interaction_id 			=> p_interaction_id,
-				        p_hub_interaction_key			=> p_interaction_key, 
-			            p_nature						=> v_nature_denorm,
-				        p_payload						=> p_payload, 
-				        p_user_id						=> p_user_id, 
-				        p_user_name					=> p_user_name, 
-				        p_user_session				=> p_user_session, 
-				        p_user_role					=> p_user_role,
-				        p_tenant_id					=> v_tenant_id,
-				        p_elaboration					=> p_elaboration,
-				        p_created_at 					=> v_created_at,
-				        p_created_by 					=> v_created_by,
-				        p_provenance 					=> v_provenance,
-						p_additional_details		=> v_additional_details
-			       	); 
-			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into user info');
+                    INSERT INTO techbd_udi_ingress.sat_interaction_ui_user (
+                        sat_interaction_ui_user_id, hub_interaction_id, uri, nature, tenant_id, user_id, user_name, user_session, user_session_hash, 
+                        user_role, client_ip_address, user_agent, elaboration, created_at, created_by, provenance, 
+                        interaction_start_time, interaction_end_time, techbd_version_number, tenant_name
+                    )
+                    VALUES (
+                        gen_random_uuid()::text, p_interaction_id, p_interaction_key, v_nature_denorm, v_tenant_id, p_user_id, p_user_name, p_user_session, md5(p_user_session), 
+                        p_user_role, p_client_ip_address, p_user_agent, p_elaboration, v_created_at, v_created_by, v_provenance,
+                        p_intr_start_time, p_intr_finish_time, p_techbd_version_number, v_tenant_id_denorm
+                    );
+		
+			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into sat_interaction_ui_user');
 					
 					v_return := jsonb_build_object('interaction_id', p_interaction_id);
 				ELSE

@@ -168,6 +168,31 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
   },
 );
 
+const interactionUIUserSat = interactionHub.satelliteTable(
+  "ui_user",
+  {
+    sat_interaction_ui_user_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    uri: textNullable(),
+    nature: textNullable(),
+    tenant_id: textNullable(),
+    user_id: textNullable(),
+    user_name: textNullable(),
+    user_session: textNullable(),
+    user_role: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    interaction_start_time: dateTimeNullable(),
+    interaction_end_time: dateTimeNullable(),
+    elaboration: jsonbNullable(),
+    user_session_hash: textNullable(),
+    techbd_version_number: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
 
 const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
   "fhir_session_diagnostic",
@@ -1108,6 +1133,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionUserRequestSat}
 
+      ${interactionUIUserSat}
+
       ${interactionFhirSessionDiagnosticSat}
       
       ${interactionFhirScreeningInfoSat}
@@ -1266,6 +1293,26 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               CREATE INDEX idx_sat_interaction_user_hub_id
                   ON techbd_udi_ingress.sat_interaction_user (hub_interaction_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ui_user'
+                AND indexname = 'idx_sat_interaction_ui_user_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_ui_user_start_time
+                  ON techbd_udi_ingress.sat_interaction_ui_user (interaction_start_time);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ui_user'
+                AND indexname = 'idx_sat_interaction_ui_user_hub_id'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_ui_user_hub_id
+                  ON techbd_udi_ingress.sat_interaction_ui_user (hub_interaction_id);
           END IF;
 
 
