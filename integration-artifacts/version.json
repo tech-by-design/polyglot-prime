@@ -39,8 +39,8 @@
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
       "version": "0.9.24",
-      "editedby": "jewelbonnie",
-      "date": "2026-05-19"
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-05-22"
     },
     {
       "type": "FLAT FILE",
@@ -125,6 +125,13 @@
       "version": "0.1.0",
       "editedby": "abhiramisanthosh90",
       "date": "2026-04-20"
+    },
+    {
+      "type": "code-templates",
+      "channel": "TechBD Functions.xml",
+      "version": "0.1.0",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-05-22"
     }
   ],
   "transformations": {
