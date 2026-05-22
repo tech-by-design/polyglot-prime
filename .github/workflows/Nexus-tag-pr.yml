@@ -47,9 +47,9 @@ jobs:
 
           case "$ENV" in
             devl)
-              echo "HUB=aws/hub.dev.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "FHIR=aws/nexus-fhir.dev.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "CSV=aws/nexus-csv.dev.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "HUB=aws/hub-ui-dev-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/hub-fhir-dev-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/hub-csv-dev-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
             phiqa)
               echo "HUB=aws/hub.qa.techbd.org/.env" >> $GITHUB_OUTPUT
