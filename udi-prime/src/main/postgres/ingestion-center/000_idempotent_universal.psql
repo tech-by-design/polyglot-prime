@@ -324,7 +324,7 @@ BEGIN
                 p_source,
                 p_provenance,
                 CURRENT_TIMESTAMP,
-                p_user_id            
+                p_username
             );
 
             v_result := json_build_object(
@@ -339,7 +339,7 @@ BEGIN
                 session_end_time    = COALESCE(p_session_end_time, session_end_time),
                 session_expiry_time = COALESCE(p_session_expiry_time, session_expiry_time),
                 updated_at          = CURRENT_TIMESTAMP,
-                updated_by          = p_user_id
+                updated_by          = p_username
             WHERE session_id = v_session_id::TEXT;
         
             v_result := json_build_object(
@@ -372,11 +372,12 @@ EXCEPTION WHEN OTHERS THEN
                                 'message', SQLERRM,
                                 'code', SQLSTATE,
                                 'error_message', v_error_msg,
-                                'user_id', p_user_id
+                                'user_id', p_user_id,
+                                'user_name', p_username
 								);
 
 	v_exception_id := techbd_udi_ingress.register_issue(
-        v_exception_id, 'session', v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, COALESCE(p_user_id, CURRENT_USER), '', v_result, 'N/A', null, null
+        v_exception_id, 'session', v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, COALESCE(p_user_id, p_username, CURRENT_USER), '', v_result, 'N/A', null, null
     );
    	RETURN v_result;
 END;
