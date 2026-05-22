@@ -263,7 +263,7 @@
                   $cleanCode = "W"'>
           <xsl:value-of select='$cleanCode'/>
         </xsl:when>
-        <xsl:otherwise/>
+        <xsl:otherwise>UNK</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
 
