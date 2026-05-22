@@ -556,7 +556,10 @@
       <xsl:if test="string($mappedCode)">
         , "maritalStatus": {
           "coding": [{
-            "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+            "system": "<xsl:choose>
+                        <xsl:when test="$mappedCode = 'UNK'">http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:when>
+                        <xsl:otherwise>http://terminology.hl7.org/CodeSystem/v3-MaritalStatus</xsl:otherwise>
+                      </xsl:choose>",
             "code": "<xsl:value-of select='$mappedCode'/>",
             "display": "<xsl:call-template name='mapMaritalStatus'>
                           <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
