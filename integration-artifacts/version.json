@@ -38,9 +38,9 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.24",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-05-22"
+      "version": "0.9.25",
+      "editedby": "jewelbonnie",
+      "date": "2026-05-25"
     },
     {
       "type": "FLAT FILE",
@@ -52,9 +52,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.39",
+      "version": "0.1.40",
       "editedby": "jewelbonnie",
-      "date": "2026-05-19"
+      "date": "2026-05-25"
     },
     {
       "type": "HL7v2",

@@ -1,18 +1,15 @@
 <channel version="26.3.1">
-  <id>548ec946-51d0-4c8b-a402-78345d8f0242</id>
+  <id>45c0836b-0e92-4861-9e58-16898e1e0835</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.39
-Increased timeout configuration to 300000 ms for long-running request handling.</description>
-  <revision>7</revision>
+  <description>Version: 0.1.40
+Implemented HL7 channel updates to resolve incorrect QE interaction mapping during parallel run initiation caused by DataLake overwrite and enhanced Grouper Observation generation and SHINNY IG interpretation mapping logic.</description>
+  <revision>5</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -41,6 +38,9 @@ Increased timeout configuration to 300000 ms for long-running request handling.<
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -173,6 +173,44 @@ logger.info(logPrefix + &quot;SeverityLevel: &quot; + (severityLevel || &quot;er
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+/********************************************
+    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
+********************************************/
+try {
+    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
+
+    if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+        throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
+    }
+
+    //channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
+    channelMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
+    logger.info(&quot;✔ Datalake API URL loaded from Lookup Manager configuration&quot;);
+
+} catch (e) {
+    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+    throw e;
+}
+/////////////////////////////////////////////////////
+/********************************************
+    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
+    WITH HEADER OVERRIDE SUPPORT
+********************************************/
+
+    // First, check if the header override is provided
+    var headerDataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
+    
+    if (headerDataLakeApiUrl &amp;&amp; String(headerDataLakeApiUrl).trim() !== &quot;&quot;) {
+        // Header provided - use it as override
+        headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
+      
+        channelMap.put(&quot;datalakeApiUrl&quot;, headerDataLakeApiUrl);
+        logger.info(&quot;✔ DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
+    } 
+
+&#xd;
 
 //** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
 if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
@@ -1028,6 +1066,7 @@ function validateOrganizationName(hl7Text) {
 var interactionId = globalMap.get(&apos;interactionId&apos;);
 var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
+
 /**
 * Util function to generate json string wit hstatus and message
 */
@@ -1133,7 +1172,16 @@ function sendDataLedgerSync(payload) {
             <name>step_validate_profile_urls_env_variables</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
-            <script>/**
+            <script>function setBooleanHeaderFlag(headerName, transformer) {
+    var value = channelMap.get(headerName);
+    transformer.setParameter(
+        headerName,
+        (value &amp;&amp; String(value).toLowerCase() === &quot;true&quot;) ? &quot;true&quot; : &quot;false&quot;
+    );
+    return transformer;
+}
+
+/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
 */
 
@@ -1305,30 +1353,10 @@ function set_fhir_resource_profile_urls(transformer) {
 	if (channelMap.get(&apos;OrganizationName&apos;)) {
 		transformer.setParameter(&quot;OrganizationName&quot;, channelMap.get(&apos;OrganizationName&apos;)); // Pass the parameter to XSLT
 	}
-// Set part2 flag
-     var part2DataFlag = channelMap.get(&apos;X-TechBD-Part2&apos;);
-	var flagValue = &quot;false&quot;;
-	if (part2DataFlag &amp;&amp; String(part2DataFlag).toLowerCase() === &quot;true&quot;) {
-	    flagValue = &quot;true&quot;;
-	}	
-	transformer.setParameter(&apos;X-TechBD-Part2&apos;, flagValue);
-
-// Set OMH flag
-var omhFlag = channelMap.get(&apos;X-TechBD-OMH&apos;);
-var omhFlagValue = &quot;false&quot;;
-if (omhFlag &amp;&amp; String(omhFlag).toLowerCase() === &quot;true&quot;) {
-    omhFlagValue = &quot;true&quot;;
-}
-transformer.setParameter(&apos;X-TechBD-OMH&apos;, omhFlagValue);
-
-// Set OPWDD flag
-var opwddFlag = channelMap.get(&apos;X-TechBD-OPWDD&apos;);
-var opwddFlagValue = &quot;false&quot;;
-if (opwddFlag &amp;&amp; String(opwddFlag).toLowerCase() === &quot;true&quot;) {
-    opwddFlagValue = &quot;true&quot;;
-}
-transformer.setParameter(&apos;X-TechBD-OPWDD&apos;, opwddFlagValue);
-return transformer;
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-Part2&apos;, transformer); // Set part2 flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OMH&apos;, transformer);	  // Set OMH flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OPWDD&apos;, transformer); // Set OPWDD flag
+	return transformer;
 }
 
 
@@ -1527,13 +1555,13 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
     if (sourceXml != undefined) { 
     	var xmlDoc = new XML(sourceXml);
         // Get MRN and CIN from channelMap
-        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var mrn = channelMap.get(&apos;patientMRN&apos;) || &quot;&quot;;
         var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
         var combinedText = mrn + cin;
 
         if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
             combinedText += additionalString;
-            logger.info(logPrefix + &quot;Including additionalString in SHA-256: &quot; + additionalString);
+            logger.info(&quot;Including additionalString in SHA-256: &quot; + additionalString);
         }
 
         var resourceText = resourceName + xmlDoc.toString().trim();
@@ -1542,9 +1570,10 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
         // Generate SHA-256 hash
         var sha256Hash = generateSHA256(new java.lang.String(combinedText));
         transformer.setParameter(resourceIdName, sha256Hash);
-        logger.info(logPrefix + resourceIdName + &quot; : &quot; + sha256Hash);
+        channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
+        logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
     } else {
-        logger.error(logPrefix + resourceName + &quot; not found in the XML.&quot;);
+        logger.error(resourceName + &quot; not found in the XML.&quot;);
     }
 
     return transformer;
@@ -1988,20 +2017,189 @@ try {
 
     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+    var hl7Xml = new XML(rawTransformedData);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
+    // Patient
+    var pidXml = hl7Xml.PID.toXMLString(); // Extract only PID segment and Convert PID XML back to string
+    transformer = generateSHA256Id(pidXml, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+    
+    // Consent
+    var consentObxXml = &quot;&quot;;
+    for each (var obx in hl7Xml.OBX) {	
+	    var obx31 = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();	
+	    var obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString().trim().toLowerCase();	
+	    if (obx31 == &quot;105511-0&quot; || obx32 == &quot;ahc-hrsn patient consent&quot;) {	
+	        consentObxXml = obx.toXMLString();
+	        break;
+	    }
+    }	
+    if (consentObxXml == &quot;&quot;) {
+	    logger.info(&quot;No matching consent OBX found.&quot;);
+	
+	    // Use first OBX if available
+	    if (hl7Xml.OBX.length() &gt; 0) {	
+	        consentObxXml = hl7Xml.OBX[0].toXMLString();	
+	    } else {	
+	        logger.info(&quot;No OBX segments present in HL7 message.&quot;);
+	    }
+    }
+    transformer = generateSHA256Id(consentObxXml, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+    // Organization
+    var orc22 = &quot;&quot;;
+    var orc23 = &quot;&quot;;
+    if (hl7Xml.ORC.length() &gt; 0) {
+	    orc22 = hl7Xml.ORC[0][&quot;ORC.22&quot;].toString();	
+	    orc23 = hl7Xml.ORC[0][&quot;ORC.23&quot;].toString();	
+    } else {	
+	    logger.info(&quot;No ORC segment present in HL7 message.&quot;);
+    }
+    var organizationName = (channelMap.get(&apos;OrganizationName&apos;) || &quot;&quot;).trim();
+    if (!organizationName) {organizationName = hl7Xml.MSH[&quot;MSH.6&quot;][&quot;MSH.6.1&quot;].toString().trim(); }
+    var orgKey =
+	        organizationName +
+	        (channelMap.get(&apos;organizationNPI&apos;) || &quot;&quot;) +
+	        (channelMap.get(&apos;organizationTIN&apos;) || &quot;&quot;) +
+	        orc22 +
+        	   orc23;
+    transformer = generateSHA256Id(orgKey, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+    
+    // Encounter
+    var encounterXml = hl7Xml.PV1; // Extract only PV1 segment and Convert PV1 XML back to string
+    var encounterEffectiveTime = encounterXml.PV1[&quot;PV1.44&quot;][&quot;PV1.44.1&quot;].toString() + // Start Time
+      		  			   encounterXml.PV1[&quot;PV1.45&quot;][&quot;PV1.45.1&quot;].toString(); // End Time
+    transformer = generateSHA256Id(encounterXml, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
 
-	transformer = generateSHA256Id(rawTransformedData, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, currentTimestamp);
+    // Sexual Orientation
+    var soXml = &quot;&quot;;
+    for each (var obx in hl7Xml.OBX) {
+	    var code = obx[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString();	
+	    if (code == &quot;76690-7&quot;) {	
+	        soXml = obx.toXMLString();	
+	        break;
+	    }
+    }
+    // Fallback handling
+    if (soXml == &quot;&quot;) {	
+	    logger.info(&quot;No matching Sexual Orientation Segment found.&quot;);
+	    	
+	    // Use first OBX if available
+	    if (hl7Xml.OBX.length() &gt; 0) {	
+	        soXml = hl7Xml.OBX[0].toXMLString();	
+	    } else {	
+	        logger.info(&quot;No OBX segments present in HL7 message.&quot;);
+	    }
+    }
+    transformer = generateSHA256Id(soXml, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+    // Observations
+    var observationsXml = &quot;&quot;;
+    if (hl7Xml.OBX.length() &gt; 0) {
+    		observationsXml = hl7Xml.OBX[0].toXMLString(); // Extract only first OBX segment and Convert OBX XML back to string
+    } else {
+    		logger.info(&quot;No OBX segments present in HL7 message.&quot;);
+    }
+    transformer = generateSHA256Id(observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
-    transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
-
-    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
-
+    // Grouper Observation
+    /*var selectedObr = null;
+    var grouperObsXml = &quot;&quot;;
+    for each (var obr in hl7Xml.OBR) {		    
+	    var obr26 = obr[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;].toString(); // Get OBR.26.1 value	    
+	    var code = obr26.split(&quot;&amp;&quot;)[0];  // Extract code before &amp;	
+	    if (
+	        code == &quot;96777-8&quot; ||
+	        code == &quot;97023-6&quot; ||
+	        code == &quot;NYSAHCHRSN&quot; ||
+	        code == &quot;NYS-AHC-HRSN&quot;
+	    ) {
+	        selectedObr = obr;
+	        break;
+	    }
+    }	
+    if (selectedObr != null) {	
+	    grouperObsXml = selectedObr.toXMLString();
+    } else if (hl7Xml.OBR.length() &gt; 0) {	    
+	    grouperObsXml = hl7Xml.OBR[0].toXMLString();	 // Extract only first OBR segment and Convert OBR XML back to string
+    } else {
+    	    logger.info(&quot;No OBR Segment found.&quot;);
+    }*/
+	var grouperObsXml = &quot;&quot;;
+	
+	// Allowed Question Codes
+	var allowedCodes = {
+	    &quot;71802-3&quot;: true,
+	    &quot;96778-6&quot;: true,
+	    &quot;96779-4&quot;: true,
+	    &quot;88122-7&quot;: true,
+	    &quot;88123-5&quot;: true,
+	    &quot;93030-5&quot;: true,
+	    &quot;96780-2&quot;: true,
+	    &quot;96782-8&quot;: true,
+	    &quot;95618-5&quot;: true,
+	    &quot;95617-7&quot;: true,
+	    &quot;95616-9&quot;: true,
+	    &quot;95615-1&quot;: true,
+	    &quot;95614-4&quot;: true
+	};
+	
+	// Get all HL7 child segments in order
+	var segments = hl7Xml.children();	
+	for (var i = 0; i &lt; segments.length(); i++) {	
+	    var segment = segments[i];
+	
+	    // Process only OBR
+	    if (segment.name() == &quot;OBR&quot;) {	
+	        var obr26 = &quot;&quot;;	
+	        if (segment[&quot;OBR.26&quot;] &amp;&amp; segment[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;]) {
+	            obr26 = segment[&quot;OBR.26&quot;][&quot;OBR.26.1&quot;].toString().trim();
+	        }
+	
+	        // Extract screening code
+	        var screeningCode = &quot;&quot;;	
+	        if (obr26.indexOf(&quot;&amp;&quot;) &gt;= 0) {
+	            screeningCode = obr26.split(&quot;&amp;&quot;)[0].trim();
+	        } else {
+	            screeningCode = obr26;
+	        }
+	
+	        // OBR.26 must not be empty
+	        if (screeningCode != &quot;&quot;) {	
+	            var hasValidChildObx = false;
+	
+	            // Check following segments until next OBR
+	            for (var j = i + 1; j &lt; segments.length(); j++) {
+	                var childSegment = segments[j];
+	
+	                // Stop at next OBR
+	                if (childSegment.name() == &quot;OBR&quot;) {
+	                    break;
+	                }
+	
+	                // Process OBX
+	                if (childSegment.name() == &quot;OBX&quot;) {
+	                    var obx31 = childSegment[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();
+	                    var obx51 = childSegment[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString().trim();
+	                    if (
+	                        allowedCodes[obx31] === true &amp;&amp;
+	                        obx51 != &quot;&quot; &amp;&amp;
+	                        obx51 != &quot;UNK&quot;
+	                    ) {
+	                        hasValidChildObx = true;
+	                        break;
+	                    }
+	                }
+	            }
+	
+	            // First valid Grouper OBR
+	            if (hasValidChildObx) {
+	                grouperObsXml = segment.toXMLString();
+	                break;
+	            }
+	        }
+	    }
+	}
+    transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
 		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
@@ -2028,11 +2226,9 @@ try {
 		    }
 		}
 
-	var sourceXml = connectorMessage.getTransformedData();
-	getConsentResourceStatus(sourceXml);
-	getPatientMRN(sourceXml);
-	getObservationCategoryCodes(transformer, sourceXml);
-	getMultipleAnswersForComponent(transformer, sourceXml);
+	getConsentResourceStatus(rawTransformedData);	
+	getObservationCategoryCodes(transformer, rawTransformedData);
+	getMultipleAnswersForComponent(transformer, rawTransformedData);
     
 
     // Transform
@@ -2044,6 +2240,17 @@ try {
     try {
     			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(logPrefix + &quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(logPrefix + &quot;Cleaned JSON : &quot; + cleanedJsonString);
                logger.info(logPrefix + &quot;testtttttttt&quot; + $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;));
+
+
+	// Store the transformed XML in the channel map
+			var hl7FhirBundle = xmlOutputStream.toString();
+			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);
+			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);
+
+			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object
+			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
+			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+			
 			//Save Converted FHIR
 				logger.info(logPrefix + &quot;FHIR Conversion Save inside Bundle&quot;);
 			     var tenantId = channelMap.get(&apos;tenantId&apos;);
@@ -2703,42 +2910,6 @@ try {
     throw e;
 }
 
-/********************************************
-    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
-********************************************/
-try {
-    var datalakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
-
-    if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
-        throw &quot;Lookup Manager configuration for DataLake API URL returned empty.&quot;;
-    }
-
-    //channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
-    globalMap.put(&quot;datalakeApiUrl&quot;, datalakeApiUrl);
-    logger.info(&quot;✔ Datalake API URL loaded from Lookup Manager configuration&quot;);
-
-} catch (e) {
-    logger.error(&quot;❌ Error fetching Datalake API URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
-    throw e;
-}
-/////////////////////////////////////////////////////
-/********************************************
-    5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
-    WITH HEADER OVERRIDE SUPPORT
-********************************************/
-
-    // First, check if the header override is provided
-    var headerDataLakeApiUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
-    
-    if (headerDataLakeApiUrl &amp;&amp; String(headerDataLakeApiUrl).trim() !== &quot;&quot;) {
-        // Header provided - use it as override
-        headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
-      
-        globalMap.put(&quot;datalakeApiUrl&quot;, headerDataLakeApiUrl);
-        logger.info(&quot;✔ DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
-    } 
-
 
 /********************************************
     7️⃣ FETCH HUB UI URL (Plain text)
@@ -3099,7 +3270,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779247781971</time>
+        <time>1779687807058</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3110,13 +3281,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0b30d130-ff02-4150-80cd-5427c26688df</id>
-        <name>0_1_39</name>
+        <id>690beaab-b90f-473c-9afa-7622bdb56fb6</id>
+        <name>0_1_40</name>
         <channelIds>
-          <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
+          <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
