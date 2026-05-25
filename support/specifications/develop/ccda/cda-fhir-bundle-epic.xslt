@@ -562,9 +562,18 @@
       , "deceasedBoolean": <xsl:value-of select="ccda:patient/sdtc:deceasedInd/@value"/>  
       </xsl:if>
       <xsl:variable name="mappedCode">
-        <xsl:call-template name="mapMaritalStatusCode">
-          <xsl:with-param name="statusCode" select="ccda:patient/ccda:maritalStatusCode/@code"/>
-        </xsl:call-template>
+          <xsl:call-template name="mapMaritalStatusCode">
+              <xsl:with-param name="statusCode">
+                  <xsl:choose>
+                      <xsl:when test="normalize-space(ccda:patient/ccda:maritalStatusCode/@nullFlavor) != ''">
+                          <xsl:value-of select="ccda:patient/ccda:maritalStatusCode/@nullFlavor"/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                          <xsl:value-of select="ccda:patient/ccda:maritalStatusCode/@code"/>
+                      </xsl:otherwise>
+                  </xsl:choose>
+              </xsl:with-param>
+          </xsl:call-template>
       </xsl:variable>
 
       <!-- Output maritalStatus only if mappedCode is non-empty -->
