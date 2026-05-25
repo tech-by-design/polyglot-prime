@@ -1226,7 +1226,8 @@ AS SELECT created_at,
     user_role,
     client_ip_address,
     user_agent
-   FROM techbd_udi_ingress.sat_interaction_ui_user sai;
+   FROM techbd_udi_ingress.sat_interaction_ui_user sai
+   WHERE user_id <> 'N/A'::text;
 
 
 

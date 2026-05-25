@@ -626,8 +626,8 @@
                       </xsl:choose>",
             "code": "<xsl:value-of select="normalize-space($mappedCode)"/>",
             "display": "<xsl:call-template name="mapMaritalStatus">
-              <xsl:with-param name="statusCode" select="$pid16"/>
-            </xsl:call-template>"
+                          <xsl:with-param name="statusCode" select="$pid16"/>
+                        </xsl:call-template>"
           }
         ]
       }
@@ -2106,22 +2106,24 @@
 
 <xsl:template name="mapMaritalStatusCode">
     <xsl:param name="statusCode"/>
-    <xsl:choose>
-      <xsl:when test='$statusCode = "M" or
-                      $statusCode = "S" or
-                      $statusCode = "A" or
-                      $statusCode = "D" or
-                      $statusCode = "I" or
-                      $statusCode = "L" or
-                      $statusCode = "C" or
-                      $statusCode = "P" or
-                      $statusCode = "T" or
-                      $statusCode = "U" or
-                      $statusCode = "W"'>
-        <xsl:value-of select='$statusCode'/>
-      </xsl:when>
-      <xsl:otherwise>UNK</xsl:otherwise>
-    </xsl:choose>
+    <xsl:if test="normalize-space($statusCode) != ''">
+      <xsl:choose>
+        <xsl:when test='$statusCode = "M" or
+                        $statusCode = "S" or
+                        $statusCode = "A" or
+                        $statusCode = "D" or
+                        $statusCode = "I" or
+                        $statusCode = "L" or
+                        $statusCode = "C" or
+                        $statusCode = "P" or
+                        $statusCode = "T" or
+                        $statusCode = "U" or
+                        $statusCode = "W"'>
+          <xsl:value-of select='$statusCode'/>
+        </xsl:when>
+        <xsl:otherwise>UNK</xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="getDataAbsentReasonFhirCode">

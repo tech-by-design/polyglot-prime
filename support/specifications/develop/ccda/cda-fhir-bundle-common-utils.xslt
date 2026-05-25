@@ -243,28 +243,29 @@
 
 <xsl:template name="mapMaritalStatusCode">
     <xsl:param name="statusCode"/>
-            
-    <!-- Convert value to uppercase for case-insensitive matching -->
-    <xsl:variable name="cleanCode"
-        select="translate(normalize-space(string($statusCode)),
-                          'abcdefghijklmnopqrstuvwxyz',
-                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
-    <xsl:choose>
-        <xsl:when test='$cleanCode = "M" or
-                  $cleanCode = "S" or
-                  $cleanCode = "A" or
-                  $cleanCode = "D" or
-                  $cleanCode = "I" or
-                  $cleanCode = "L" or
-                  $cleanCode = "C" or
-                  $cleanCode = "P" or
-                  $cleanCode = "T" or
-                  $cleanCode = "U" or
-                  $cleanCode = "W"'>
-          <xsl:value-of select='$cleanCode'/>
-        </xsl:when>
-        <xsl:otherwise>UNK</xsl:otherwise>
-    </xsl:choose>
+    <xsl:if test="normalize-space($statusCode) != ''">
+      <!-- Convert value to uppercase for case-insensitive matching -->
+      <xsl:variable name="cleanCode"
+          select="translate(normalize-space(string($statusCode)),
+                            'abcdefghijklmnopqrstuvwxyz',
+                            'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
+      <xsl:choose>
+          <xsl:when test='$cleanCode = "M" or
+                    $cleanCode = "S" or
+                    $cleanCode = "A" or
+                    $cleanCode = "D" or
+                    $cleanCode = "I" or
+                    $cleanCode = "L" or
+                    $cleanCode = "C" or
+                    $cleanCode = "P" or
+                    $cleanCode = "T" or
+                    $cleanCode = "U" or
+                    $cleanCode = "W"'>
+            <xsl:value-of select='$cleanCode'/>
+          </xsl:when>
+          <xsl:otherwise>UNK</xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="mapAdministrativeGenderCode">
