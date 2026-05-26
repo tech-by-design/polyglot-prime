@@ -2,11 +2,11 @@ export function deleteRow(schemaName, viewName, primaryKeyColumn, primaryKey) {
     return new Promise((resolve, reject) => {
         if (confirm(`Are you sure you want to delete this row?`)) {
             const url = schemaName ?
-                `/api/ux/tabular/jooq/delete/${schemaName}/${viewName}/${primaryKeyColumn}/${primaryKey}` :
-                `/api/ux/tabular/jooq/delete/${viewName}/${primaryKeyColumn}/${primaryKey}`;
+                `/api/ux/tabular/jooq/update/${schemaName}/${viewName}/${primaryKeyColumn}/${primaryKey}` :
+                `/api/ux/tabular/jooq/update/${viewName}/${primaryKeyColumn}/${primaryKey}`;
 
             fetch(url, {
-                method: 'DELETE',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }

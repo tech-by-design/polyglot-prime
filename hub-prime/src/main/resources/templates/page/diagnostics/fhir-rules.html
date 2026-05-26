@@ -171,7 +171,7 @@
                             editType: 'none',
                         })
                         .withServerSideDatasource(
-                            window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                            window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/active_json_action_rule.json`),
                             (data, valueCols) => {
                                 return valueCols.map(col => ({
                                     headerName: col.displayName,

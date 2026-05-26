@@ -291,7 +291,7 @@ BEGIN
 	RETURN NEXT col_type_is(schema_name, 'json_action_rule', 'created_at', 'timestamp with time zone', 'The column created_at in techbd_udi_ingress.json_action_rule should be of type timestamp with time zone.');
 	RETURN NEXT col_not_null(schema_name, 'json_action_rule', 'created_by', 'The column created_by in techbd_udi_ingress.json_action_rule should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'json_action_rule', 'provenance', 'The column provenance in techbd_udi_ingress.json_action_rule should be NOT NULL.');
-	RETURN NEXT columns_are(schema_name, 'json_action_rule', ARRAY['action_rule_id','namespace','json_path','action','condition','reject_json','modify_json','priority','updated_at','updated_by','last_applied_at','created_at','created_by','provenance','description'], 'The table techbd_udi_ingress.json_action_rule should have the expected column structure.');
+	RETURN NEXT columns_are(schema_name, 'json_action_rule', ARRAY['action_rule_id','namespace','json_path','action','condition','reject_json','modify_json','priority','updated_at','updated_by','last_applied_at','created_at','created_by','provenance','description','is_deleted'], 'The table techbd_udi_ingress.json_action_rule should have the expected column structure.');
 	RETURN NEXT has_table(schema_name, 'ref_code_lookup', 'The table techbd_udi_ingress.ref_code_lookup should exist.');
 	RETURN NEXT col_not_null(schema_name, 'ref_code_lookup', 'ref_code_lookup_id', 'The column ref_code_lookup_id in techbd_udi_ingress.ref_code_lookup should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'ref_code_lookup', 'code_type', 'The column code_type in techbd_udi_ingress.ref_code_lookup should be NOT NULL.');
