@@ -1992,7 +1992,8 @@ BEGIN
     FOR v_current_rule IN 
         SELECT json_path, action, reject_json, modify_json, condition, priority, "namespace" 
         FROM techbd_udi_ingress.json_action_rule 
-        WHERE (namespace = process_json_action_rules.rule_namespace OR process_json_action_rules.rule_namespace IS NULL)
+        WHERE (namespace = process_json_action_rules.rule_namespace OR process_json_action_rules.rule_namespace IS NULL) 
+        AND COALESCE(is_deleted, FALSE) = FALSE
         ORDER BY priority DESC -- Apply rules in order of priority
     LOOP
 		 -- Check if the json_path starts with '$.'
@@ -9181,3 +9182,25 @@ AS $function$
         htt_req.created_at DESC;
 
 $function$;
+
+DROP VIEW IF EXISTS techbd_udi_ingress.active_json_action_rule  CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.active_json_action_rule  AS  
+    SELECT 
+        jar.action_rule_id,
+        jar.namespace,
+        jar.json_path,
+        jar.action,
+        jar.condition,
+        jar.reject_json,
+        jar.modify_json,
+        jar.priority,
+        jar.updated_at,
+        jar.updated_by,
+        jar.last_applied_at,
+        jar.description,
+        jar.created_at,       
+        jar.is_deleted
+    FROM 
+        techbd_udi_ingress.json_action_rule jar
+    WHERE
+        COALESCE(jar.is_deleted, FALSE) = FALSE; 

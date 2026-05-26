@@ -1347,6 +1347,18 @@ const migrateSP = pgSQLa.storedProcedure(
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       ${jsonActionRule}
+
+      -- Add new column is_deleted  
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'json_action_rule'
+              AND column_name = 'is_deleted'
+        ) THEN
+            ALTER TABLE techbd_udi_ingress.json_action_rule
+            ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
+        END IF; 
             
       -- Create action_check constraint
       IF NOT EXISTS (

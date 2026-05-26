@@ -434,33 +434,84 @@ public class TabularRowsController {
         }
     }
 
-    @Operation(summary = "Delete data in a specified table", description = """
-            Delete existing records in the specified table within a schema.
-            The request body should contain the primary key.
-            """)
-    @DeleteMapping(value = {"/api/ux/tabular/jooq/delete/{schemaName}/{tableName}/{columnName}/{primaryKey}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    // @Operation(summary = "Delete data in a specified table", description = """
+    //         Delete existing records in the specified table within a schema.
+    //         The request body should contain the primary key.
+    //         """)
+    // @DeleteMapping(value = {"/api/ux/tabular/jooq/delete/{schemaName}/{tableName}/{columnName}/{primaryKey}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    // @ResponseBody
+    // public ResponseEntity<Map<String, Object>> deleteRow(
+    //         @Parameter(description = "Mandatory path variable to mention schema name.", required = true) final @PathVariable(required = false) String schemaName,
+    //         @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true) final @PathVariable String tableName,
+    //         @Parameter(description = "Mandatory path variable to mention the column name.", required = true) final @PathVariable String columnName,
+    //         @Parameter(description = "Mandatory path variable to mention the column value.", required = true) final @PathVariable String primaryKey) {
+
+    //     // Validate schema and table name
+    //     if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
+    //             || (schemaName != null && !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches())) {
+    //         throw new IllegalArgumentException("Invalid schema or table name.");
+    //     }
+
+    //     try {
+    //         var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
+    //         int deletedRows = primaryDslContext.deleteFrom(typableTable.table())
+    //                 .where(DSL.field(typableTable.column(columnName)).eq(primaryKey))
+    //                 .execute();
+
+    //         if (deletedRows > 0) {
+    //             Map<String, Object> responseBody = new HashMap<>();
+    //             responseBody.put("message", "Record deleted successfully.");
+    //             return ResponseEntity.ok(responseBody);
+    //         } else {
+    //             Map<String, Object> responseBody = new HashMap<>();
+    //             responseBody.put("message", "Record not found.");
+    //             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
+    //         }
+    //     } catch (Exception e) {
+    //         LOG.error("Error deleting row: {}", e.getMessage());
+    //         Map<String, Object> responseBody = new HashMap<>();
+    //         responseBody.put("message", "An error occurred while deleting the data.");
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+    //     }
+    // }
+
+    @Operation(summary = "Soft delete or update a row in a specified table", description = "Updates the row identified by the path parameters, setting is_deleted = true when that column exists.")
+    @PostMapping(value = {"/api/ux/tabular/jooq/update/{schemaName}/{tableName}/{columnName}/{primaryKey}"}, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteRow(
+    public ResponseEntity<Map<String, Object>> updateRow(
             @Parameter(description = "Mandatory path variable to mention schema name.", required = true) final @PathVariable(required = false) String schemaName,
-            @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true) final @PathVariable String tableName,
+            @Parameter(description = "Mandatory path variable to mention the table name.", required = true) final @PathVariable String tableName,
             @Parameter(description = "Mandatory path variable to mention the column name.", required = true) final @PathVariable String columnName,
             @Parameter(description = "Mandatory path variable to mention the column value.", required = true) final @PathVariable String primaryKey) {
 
-        // Validate schema and table name
         if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
                 || (schemaName != null && !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches())) {
             throw new IllegalArgumentException("Invalid schema or table name.");
         }
 
+        if (!"json_action_rule".equals(tableName)) {
+            throw new IllegalArgumentException("Update endpoint only supports the json_action_rule table.");
+        }
+
         try {
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-            int deletedRows = primaryDslContext.deleteFrom(typableTable.table())
+            var updateStep = primaryDslContext.update(typableTable.table())
+                    .set(DSL.field(typableTable.column("is_deleted")), DSL.val(true));
+
+            if (typableTable.column("updated_at") != null) {
+                updateStep = updateStep.set(DSL.field(typableTable.column("updated_at")), OffsetDateTime.now());
+            }
+            if (typableTable.column("updated_by") != null) {
+                updateStep = updateStep.set(DSL.field(typableTable.column("updated_by")), TabularRowsController.class.getName());
+            }
+
+            int updatedRows = updateStep
                     .where(DSL.field(typableTable.column(columnName)).eq(primaryKey))
                     .execute();
 
-            if (deletedRows > 0) {
+            if (updatedRows > 0) {
                 Map<String, Object> responseBody = new HashMap<>();
-                responseBody.put("message", "Record deleted successfully.");
+                responseBody.put("message", "Record updated successfully.");
                 return ResponseEntity.ok(responseBody);
             } else {
                 Map<String, Object> responseBody = new HashMap<>();
@@ -468,9 +519,9 @@ public class TabularRowsController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
             }
         } catch (Exception e) {
-            LOG.error("Error deleting row: {}", e.getMessage());
+            LOG.error("Error updating row: {}", e.getMessage());
             Map<String, Object> responseBody = new HashMap<>();
-            responseBody.put("message", "An error occurred while deleting the data.");
+            responseBody.put("message", "An error occurred while updating the data.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
         }
     }
