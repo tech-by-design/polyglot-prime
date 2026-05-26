@@ -47,7 +47,7 @@ Common error code template function implementation.
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
-        <port>9000</port>
+        <port>9003</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="26.3.1">
         <responseVariable>finalResponse</responseVariable>
