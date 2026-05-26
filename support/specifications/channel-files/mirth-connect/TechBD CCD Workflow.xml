@@ -583,6 +583,30 @@ function extractClinicalDocument(rawXml) {
     }
 }
 
+function buildValidationErrorMessage(baseMessage, e) {
+    var errorMessage = baseMessage;
+
+    if (e.javaException) {
+        errorMessage += &quot; Message: &quot; + e.javaException.getMessage();
+
+        if (typeof e.javaException.getLineNumber === &apos;function&apos;) {
+            errorMessage += &quot; Line: &quot; + e.javaException.getLineNumber();
+        }
+
+        if (typeof e.javaException.getColumnNumber === &apos;function&apos;) {
+            errorMessage += &quot; Column: &quot; + e.javaException.getColumnNumber();
+        }
+        
+    } else if (e.message) {
+        errorMessage += &quot; &quot; + e.message;
+        
+    } else {
+        errorMessage += &quot; Unknown validation error occurred.&quot;;    }
+
+    logger.error(errorMessage);
+    return errorMessage;
+}
+
 function failAndExit(errorMsg, code, severity, interactionId, tenantId, requestedPath) {
     var outcome = getJsonInvalidOperationOutcome(errorMsg, code, severity);
     try {
@@ -2050,8 +2074,9 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         validateAgainstXsd(phiFilteredXml);
         logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
     	} catch (e) {
+    	   var errorMessage = buildValidationErrorMessage(&quot;CCD XML validation failed.&quot;, e);
         failAndExit(
-            &quot;CCD XML validation failed. &quot; + e.message,
+            errorMessage,
             &quot;invalid&quot;, &quot;error&quot;,
             interactionId, tenantId, requestedPath
         );
@@ -2182,8 +2207,9 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
         validateAgainstXsd(phiFilteredXml);
         logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
     } catch (e) {
+    	   var errorMessage = buildValidationErrorMessage(&quot;CCD XML validation failed.&quot;, e);
         failAndExit(
-            &quot;CCD XML validation failed. &quot; + e.message,
+            errorMessage,
             &quot;invalid&quot;, &quot;error&quot;,
             interactionId, tenantId, requestedPath
         );
