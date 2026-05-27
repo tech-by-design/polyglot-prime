@@ -454,9 +454,10 @@ public class SoapForwarderService {
             }
             return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
         } else {
-            // Use the actual server port from the request instead of SERVER_PORT env var
-            // This ensures internal forwarding works correctly in test environments
-            int serverPort = request.getServerPort();
+            String serverPort = System.getenv("SERVER_PORT");
+            if (serverPort == null || serverPort.isBlank()) {
+                serverPort = "8080"; // Spring Boot default
+            }
             return "http://localhost:" + serverPort;
 
         }
