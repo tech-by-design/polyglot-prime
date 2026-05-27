@@ -449,7 +449,7 @@ private List<Object> processScreening(final String groupKey,
                               Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(
                                 tenantId,
                                 null,
-                                null,
+                                
                                 null,
                                 (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL), // Cast to String, // Pass severity level
                                 null,

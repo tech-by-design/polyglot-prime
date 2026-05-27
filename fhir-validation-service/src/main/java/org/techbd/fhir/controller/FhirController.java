@@ -170,7 +170,7 @@ public class FhirController {
                         final String resolvedHealthCheck = firstNonBlank(rawHealthCheckHeader, healthCheck, "false");
                         LOG.debug("FhirController.validateBundle - raw healthCheck header: '{}', bound healthCheck: '{}', resolved healthCheck: '{}'",
                                 rawHealthCheckHeader, healthCheck, resolvedHealthCheck);
-                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
+                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, 
                         requestUriToBeOverridden, null, resolvedHealthCheck, null, null,requestedIgVersion );
                         Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);            
                         LOG.debug("FhirController.validateBundle - sourceType: '{}', groupInteractionId: '{}', masterInteractionId: '{}'", 

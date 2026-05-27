@@ -164,12 +164,13 @@ public class CoreFHIRUtil {
     
    
     public static Map<String, Object> buildHeaderParametersMap(String tenantId, String customDataLakeApi,
-            String dataLakeApiContentType, String requestUriToBeOverridden,
+           // String dataLakeApiContentType, 
+            String requestUriToBeOverridden,
             String validationSeverityLevel, String healthCheck, String correlationId, String provenance, String requestedIgVersion   ) {
         Map<String, Object> headers = new HashMap<>();
         headers.put(Constants.TENANT_ID, tenantId);
         addIfNotEmpty(headers, Constants.CUSTOM_DATA_LAKE_API, customDataLakeApi);
-        addIfNotEmpty(headers, Constants.DATA_LAKE_API_CONTENT_TYPE, dataLakeApiContentType);
+       // addIfNotEmpty(headers, Constants.DATA_LAKE_API_CONTENT_TYPE, dataLakeApiContentType);
         addIfNotEmpty(headers, Constants.OVERRIDE_REQUEST_URI, requestUriToBeOverridden);
         addIfNotEmpty(headers, Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
         addIfNotEmpty(headers, Constants.HEALTH_CHECK, healthCheck);

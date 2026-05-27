@@ -446,7 +446,7 @@ private List<Object> processScreening(final String groupKey,
                               Map<String, Object> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
                                 tenantId,
                                 null,
-                                null,
+                                // null,
                                 null,
                                 (String) requestParameters.get(Constants.VALIDATION_SEVERITY_LEVEL),
                                 null,

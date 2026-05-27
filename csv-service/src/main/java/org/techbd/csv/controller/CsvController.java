@@ -81,7 +81,6 @@ public class CsvController {
     validateTenantId(tenantId);
     Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
-        null,
         null, null, null, null,
         null,null);   
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
@@ -121,7 +120,6 @@ public class CsvController {
     // FHIRUtil.validateBaseFHIRProfileUrl(appConfig.getIgPackages(), baseFHIRURL); //TODO CHECK IF VALID IG PACKAGE
     Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
-        null,
         null, validationSeverityLevel, null, null,
         null,null);    
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
