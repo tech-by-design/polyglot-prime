@@ -1221,7 +1221,6 @@ AS SELECT created_at,
     sat_interaction_ui_user_id,
     user_id,
     user_name,
-    user_session,
     user_session_hash,
     user_role,
     client_ip_address,
@@ -1244,12 +1243,11 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_user_list
 AS SELECT min(created_at) AS created_at,
     min(user_id) AS user_id,
     min(user_name) AS user_name,
-    min(user_role) AS user_role,
-    user_session,
+    min(user_role) AS user_role,    
     user_session_hash
    FROM techbd_udi_ingress.interaction_user_details
-  WHERE user_session IS NOT NULL
-  GROUP BY user_session, user_session_hash;
+  WHERE user_session_hash IS NOT NULL
+  GROUP BY user_session_hash;
 
 /*******************************************************************************************************************************
 Procedure to handle the insertion or update of FHIR interaction data, managing default values and error handling.

@@ -303,7 +303,6 @@ AS
     max(patient_state) AS patient_state,
     max(patient_postal_code) AS patient_postal_code,
     max(patient_language) AS patient_language,
-    max(patient_ssn) AS patient_ssn,
     max(org_id) AS org_id,
     max(created_at) as created_at,
     primary_org_id
