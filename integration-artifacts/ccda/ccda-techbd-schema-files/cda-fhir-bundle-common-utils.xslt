@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.0 -->
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -243,28 +243,29 @@
 
 <xsl:template name="mapMaritalStatusCode">
     <xsl:param name="statusCode"/>
-            
-    <!-- Convert value to uppercase for case-insensitive matching -->
-    <xsl:variable name="cleanCode"
-        select="translate(normalize-space(string($statusCode)),
-                          'abcdefghijklmnopqrstuvwxyz',
-                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
-    <xsl:choose>
-        <xsl:when test='$cleanCode = "M" or
-                  $cleanCode = "S" or
-                  $cleanCode = "A" or
-                  $cleanCode = "D" or
-                  $cleanCode = "I" or
-                  $cleanCode = "L" or
-                  $cleanCode = "C" or
-                  $cleanCode = "P" or
-                  $cleanCode = "T" or
-                  $cleanCode = "U" or
-                  $cleanCode = "W"'>
-          <xsl:value-of select='$cleanCode'/>
-        </xsl:when>
-        <xsl:otherwise/>
-    </xsl:choose>
+    <xsl:if test="normalize-space($statusCode) != ''">
+      <!-- Convert value to uppercase for case-insensitive matching -->
+      <xsl:variable name="cleanCode"
+          select="translate(normalize-space(string($statusCode)),
+                            'abcdefghijklmnopqrstuvwxyz',
+                            'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
+      <xsl:choose>
+          <xsl:when test='$cleanCode = "M" or
+                    $cleanCode = "S" or
+                    $cleanCode = "A" or
+                    $cleanCode = "D" or
+                    $cleanCode = "I" or
+                    $cleanCode = "L" or
+                    $cleanCode = "C" or
+                    $cleanCode = "P" or
+                    $cleanCode = "T" or
+                    $cleanCode = "U" or
+                    $cleanCode = "W"'>
+            <xsl:value-of select='$cleanCode'/>
+          </xsl:when>
+          <xsl:otherwise>UNK</xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="mapAdministrativeGenderCode">
