@@ -28,7 +28,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.NestedExceptionUtils;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -120,8 +119,6 @@ public class FHIRService {
      *
      * @param tenantId The unique identifier for the tenant.
      * @param customDataLakeApi The custom Data Lake API endpoint.
-     * @param dataLakeApiContentType The content type for Data Lake API
-     * requests.
      * @param healthCheck A flag indicating whether this is a health check
      * request.
      * @param isSync A boolean flag to specify if the request is synchronous.
@@ -147,7 +144,7 @@ public class FHIRService {
 			String interactionId = (String)requestParameters.get(Constants.INTERACTION_ID);
 			final String tenantId = (String)requestParameters.get(Constants.TENANT_ID);
 			final String source = (String)requestParameters.get(Constants.SOURCE_TYPE);
-			String dataLakeApiContentType = (String)requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE);
+			//String dataLakeApiContentType = (String)requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE);
 			final String customDataLakeApi = (String)requestParameters.get(Constants.CUSTOM_DATA_LAKE_API);
 			final String healthCheck = (String)requestParameters.get(Constants.HEALTH_CHECK);
 			final String provenance = (String)requestParameters.get(Constants.PROVENANCE);
@@ -194,9 +191,9 @@ public class FHIRService {
             try {
                 validateJson(payload, interactionId);
                 validateBundleProfileUrl(payload, interactionId);
-                if (null == requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE)) {
-                    dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
-                }
+                // if (null == requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE)) {
+                //     dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+                // }
 
                                 final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         source);
@@ -223,7 +220,7 @@ public class FHIRService {
                     LOG.warn(
                             "FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
                             interactionId);
-                    sendToScoringEngine(requestParameters,customDataLakeApi, dataLakeApiContentType,
+                    sendToScoringEngine(requestParameters,customDataLakeApi,
                             tenantId, payload,
                             provenance, null,
                             mtlsStrategy,
@@ -238,7 +235,7 @@ public class FHIRService {
                     LOG.info(
                             "FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
                             interactionId);
-                    sendToScoringEngine(requestParameters, customDataLakeApi, dataLakeApiContentType,
+                    sendToScoringEngine(requestParameters, customDataLakeApi,
                             tenantId, payload,
                             provenance, payloadWithDisposition,
                             mtlsStrategy, interactionId, groupInteractionId,
@@ -620,7 +617,6 @@ public class FHIRService {
 	public void sendToScoringEngine(
 			final Map<String,Object> requestParameters,
 			final String scoringEngineApiURL,
-			final String dataLakeApiContentType,
 			final String tenantId,
 			final String payload,
 			final String provenance,
@@ -668,7 +664,8 @@ public class FHIRService {
 							"###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
 							interactionId);
 					handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,requestParameters,
-							bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+							bundlePayloadWithDisposition, payload,
+							// dataLakeApiContentType,
 							provenance,  
                                                         groupInteractionId,
 							masterInteractionId, sourceType, requestUriToBeOverriden,bundleId,replay);
@@ -677,7 +674,8 @@ public class FHIRService {
 							dataLakeApiBaseURL,
 							requestParameters, bundlePayloadWithDisposition,
 							payload,
-							dataLakeApiContentType, provenance, 
+							//dataLakeApiContentType, 
+							provenance, 
 							mtlsStrategy, groupInteractionId, masterInteractionId,
 							sourceType, requestUriToBeOverriden,bundleId,replay);
 				}
@@ -696,7 +694,8 @@ public class FHIRService {
 
 	public void handleMTlsStrategy(final DefaultDataLakeApiAuthn defaultDatalakeApiAuthn, final String interactionId,
 			final String tenantId, final String dataLakeApiBaseURL, final Map<String,Object> requestParameters,
-			final Map<String, Object> bundlePayloadWithDisposition, final String payload, final String dataLakeApiContentType,
+			final Map<String, Object> bundlePayloadWithDisposition, final String payload,
+			// final String dataLakeApiContentType,
 			final String provenance,  
                         final String mtlsStrategyStr,
 			final String groupInteractionId,
@@ -717,7 +716,8 @@ public class FHIRService {
 				: (String) requestParameters.get(Constants.REQUEST_URI);
 		switch (mTlsStrategy) {
 			case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
-					tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+					tenantId, dataLakeApiBaseURL, 
+					//dataLakeApiContentType,
 					bundlePayloadWithDisposition, provenance,
 					requestURI, 
                                         payload,
@@ -731,18 +731,21 @@ public class FHIRService {
 			case MTLS_RESOURCES ->
 				handleMtlsResources(interactionId, tenantId, 
 						bundlePayloadWithDisposition,payload, provenance, requestParameters,
-						dataLakeApiContentType, dataLakeApiBaseURL,
+						//dataLakeApiContentType, 
+						dataLakeApiBaseURL,
 						defaultDatalakeApiAuthn.mTlsResources(), groupInteractionId,
 						masterInteractionId, sourceType, requestUriToBeOverriden, bundleId,replay);
 			case WITH_API_KEY ->
 				handleApiKeyAuth(interactionId, tenantId, dataLakeApiBaseURL, 
-				requestParameters, bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+				requestParameters, bundlePayloadWithDisposition, payload,
+				// dataLakeApiContentType,
 				provenance, groupInteractionId, masterInteractionId, sourceType, 
 				requestUriToBeOverriden, defaultDatalakeApiAuthn.withApiKeyAuth(), bundleId,replay);
 			default ->
 				handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, 
 						requestParameters,
-						bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+						bundlePayloadWithDisposition, payload,
+						// dataLakeApiContentType,
 						provenance, 
                                                 groupInteractionId,
 						masterInteractionId, sourceType, requestUriToBeOverriden,bundleId,replay);
@@ -751,7 +754,8 @@ public class FHIRService {
 
 	private void handleMtlsResources(final String interactionId, final String tenantId,
 			final Map<String, Object> bundlePayloadWithDisposition,
-			final String payload, final String provenance,final Map<String,Object> requestParameters,final String dataLakeApiContentType,
+			final String payload, final String provenance,final Map<String,Object> requestParameters,
+			//final String dataLakeApiContentType,
 			final String dataLakeApiBaseURL,
 			final MTlsResources mTlsResources, final String groupInteractionId, final String masterInteractionId,
 			final String sourceType, final String requestUriToBeOverriden,final String bundleId,final boolean replay) {
@@ -833,7 +837,7 @@ public class FHIRService {
 					dataLakeApiBaseURL, interactionId, tenantId);
 			final var webClient = WebClient.builder()
 					.baseUrl(dataLakeApiBaseURL)
-					.defaultHeader("Content-Type", dataLakeApiContentType)
+					//.defaultHeader("Content-Type", dataLakeApiContentType)
 					.clientConnector(connector)
 					.build();
 			LOG.debug(
@@ -843,18 +847,19 @@ public class FHIRService {
 					"FHIRService:: handleMtlsResources Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
 							+
 							"with scoring Engine API URL: {} \n" +
-							"dataLakeApiContentType: {} \n" +
+						//	"dataLakeApiContentType: {} \n" +
 							"bundlePayloadWithDisposition: {} \n" +
 							"for interactionID: {} \n" +
 							"tenant Id: {}",
 					dataLakeApiBaseURL,
-					dataLakeApiContentType,
+					//dataLakeApiContentType,
 					bundlePayloadWithDisposition == null ? "Payload is null"
 							: "Payload is not null",
 					interactionId,
 					tenantId);
 			sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
-					dataLakeApiContentType, interactionId,
+					//dataLakeApiContentType,
+					 interactionId,
 					provenance, (String) requestParameters.get(Constants.REQUEST_URI), dataLakeApiBaseURL,
 					groupInteractionId, masterInteractionId, sourceType,bundleId,requestParameters,replay);
 			LOG.debug(
@@ -876,7 +881,8 @@ public class FHIRService {
 
 	private void handleApiKeyAuth(final String interactionId, final String tenantId,
 			final String dataLakeApiBaseURL,final Map<String,Object> requestParameters,
-			final Map<String, Object> bundlePayloadWithDisposition, final String payload, final String dataLakeApiContentType,
+			final Map<String, Object> bundlePayloadWithDisposition, final String payload,
+			// final String dataLakeApiContentType,
 			final String provenance, 
                          final String groupInteractionId,
 			final String masterInteractionId, final String sourceType, final String requestUriToBeOverriden,final WithApiKeyAuth apiKeyAuthDetails,final String bundleId,final boolean replay) {
@@ -897,12 +903,12 @@ public class FHIRService {
 		LOG.debug("FHIRService:: handleNoMtls Build WebClient with MTLS  Disabled -BEGIN \n"
 				+
 				"with scoring Engine API URL: {} \n" +
-				"dataLakeApiContentType: {} \n" +
+			//	"dataLakeApiContentType: {} \n" +
 				"bundlePayloadWithDisposition: {} \n" +
 				"for interactionID: {} \n" +
 				"tenant Id: {}",
 				dataLakeApiBaseURL,
-				dataLakeApiContentType,
+				//dataLakeApiContentType,
 				bundlePayloadWithDisposition == null ? "Payload is null"
 						: "Payload is not null",
 				interactionId,
@@ -917,7 +923,8 @@ public class FHIRService {
 		LOG.debug("FHIRService:: sendPostRequest BEGIN for interaction id: {} tenantid :{} ", interactionId,
 				tenantId);
 		sendPostRequestWithApiKey(webClient, tenantId, bundlePayloadWithDisposition, payload,
-				dataLakeApiContentType, interactionId,
+				//dataLakeApiContentType, 
+				interactionId,
 				provenance,
 				StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
 						: (String) requestParameters.get(Constants.REQUEST_URI),
@@ -928,7 +935,8 @@ public class FHIRService {
 	}
 	private void handleNoMtls(final MTlsStrategy mTlsStrategy, final String interactionId, final String tenantId,
 			final String dataLakeApiBaseURL,final Map<String,Object> requestParameters,
-			final Map<String, Object> bundlePayloadWithDisposition, final String payload, final String dataLakeApiContentType,
+			final Map<String, Object> bundlePayloadWithDisposition, final String payload, 
+			//final String dataLakeApiContentType,
 			final String provenance, 
                          final String groupInteractionId,
 			final String masterInteractionId, final String sourceType, final String requestUriToBeOverriden,final String bundleId,final boolean replay) {
@@ -940,12 +948,12 @@ public class FHIRService {
 		LOG.debug("FHIRService:: handleNoMtls Build WebClient with MTLS  Disabled -BEGIN \n"
 				+
 				"with scoring Engine API URL: {} \n" +
-				"dataLakeApiContentType: {} \n" +
+				//"dataLakeApiContentType: {} \n" +
 				"bundlePayloadWithDisposition: {} \n" +
 				"for interactionID: {} \n" +
 				"tenant Id: {}",
 				dataLakeApiBaseURL,
-				dataLakeApiContentType,
+				//dataLakeApiContentType,
 				bundlePayloadWithDisposition == null ? "Payload is null"
 						: "Payload is not null",
 				interactionId,
@@ -960,7 +968,8 @@ public class FHIRService {
 		LOG.debug("FHIRService:: sendPostRequest BEGIN for interaction id: {} tenantid :{} ", interactionId,
 				tenantId);
 		sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
-				dataLakeApiContentType, interactionId,provenance,
+			//	dataLakeApiContentType, 
+				interactionId,provenance,
 				StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
 						: (String) requestParameters.get(Constants.REQUEST_URI),
 				dataLakeApiBaseURL, groupInteractionId,
@@ -970,7 +979,8 @@ public class FHIRService {
 	}
 
 	private void handleAwsSecrets(final MTlsAwsSecrets mTlsAwsSecrets, final String interactionId, final String tenantId,
-			final String dataLakeApiBaseURL, final String dataLakeApiContentType,
+			final String dataLakeApiBaseURL, 
+			//final String dataLakeApiContentType,
 			final Map<String, Object> bundlePayloadWithDisposition, final String provenance, final String requestURI,
 			 
                         final String payload, final String groupInteractionId,
@@ -1035,19 +1045,19 @@ public class FHIRService {
 					"FHIRService:: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
 							+
 							"with scoring Engine API URL: {} \n" +
-							"dataLakeApiContentType: {} \n" +
+							//"dataLakeApiContentType: {} \n" +
 							"bundlePayloadWithDisposition: {} \n" +
 							"for interactionID: {} \n" +
 							"tenant Id: {}",
 					dataLakeApiBaseURL,
-					dataLakeApiContentType,
+					//dataLakeApiContentType,
 					bundlePayloadWithDisposition == null ? "Payload is null"
 							: "Payload is not null",
 					interactionId,
 					tenantId);
 			final var webClient = WebClient.builder()
 					.baseUrl(dataLakeApiBaseURL)
-					.defaultHeader("Content-Type", dataLakeApiContentType)
+				//	.defaultHeader("Content-Type", dataLakeApiContentType)
 					.clientConnector(connector)
 					.build();
 			LOG.debug(
@@ -1057,7 +1067,8 @@ public class FHIRService {
 					interactionId,
 					tenantId);
 			sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
-					dataLakeApiContentType, interactionId,
+					//dataLakeApiContentType,
+					 interactionId,
 					provenance, requestURI, dataLakeApiBaseURL, groupInteractionId,
 					masterInteractionId, sourceType,bundleId,requestParameters,replay);
 			LOG.debug("FHIRService:: handleAwsSecrets -sendPostRequest END for interaction id: {} tenantid :{} ",
@@ -1325,7 +1336,7 @@ public class FHIRService {
         final String tenantId,
         final Map<String, Object> bundlePayloadWithDisposition,
         final String payload,
-        final String dataLakeApiContentType,
+        //final String dataLakeApiContentType,
         final String interactionId,
         final String provenance,
         final String requestURI, final String scoringEngineApiURL, final String groupInteractionId,
@@ -1344,8 +1355,7 @@ public class FHIRService {
                 .uri("?processingAgent=" + resolveProcessingAgent(tenantId))
                 .body(BodyInserters.fromValue(
                         bundlePayloadWithDisposition != null ? bundlePayloadWithDisposition : payload))
-                .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-                        .orElse(Constants.FHIR_CONTENT_TYPE_HEADER_VALUE))
+                .header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
                 .retrieve()
                 .bodyToMono(String.class)
                 .doFinally(signalType -> {
@@ -1372,7 +1382,7 @@ public class FHIRService {
 			final String tenantId,
 			final Map<String, Object> bundlePayloadWithDisposition,
 			final String payload,
-			final String dataLakeApiContentType,
+			//final String dataLakeApiContentType,
 			final String interactionId,
 			final String provenance,
 			final String requestURI, final String scoringEngineApiURL, final String groupInteractionId,
@@ -1392,9 +1402,8 @@ public class FHIRService {
 					.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
 							? bundlePayloadWithDisposition
 							: payload))
-					.header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-							.orElse(Constants.FHIR_CONTENT_TYPE_HEADER_VALUE))
-					.header(apiKeyAuthDetails.apiKeyHeaderName(),apiClientKey)				
+							.header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
+						.header(apiKeyAuthDetails.apiKeyHeaderName(),apiClientKey)				
 					.retrieve()
 					.bodyToMono(String.class)
 					.doFinally(signalType -> {

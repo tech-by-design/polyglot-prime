@@ -170,11 +170,11 @@ public class FhirController {
                         @Parameter(description = "Optional header to provide elaboration details.", required = false) @RequestHeader(value = "X-TechBD-Elaboration", required = false) String elaboration,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
                         @Parameter(description = "An optional header to provide a UUID that if provided will be used as interaction id.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
-                        @Parameter(description = """
-                                        Optional header to specify the Datalake API content type.
-                                        Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
-                                        If the header is not provided, <code>application/json</code> will be used.
-                                        """, required = false) @RequestHeader(value = Constants.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
+                        // @Parameter(description = """
+                        //                 Optional header to specify the Datalake API content type.
+                        //                 Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
+                        //                 If the header is not provided, <code>application/json</code> will be used.
+                        //                 """, required = false) @RequestHeader(value = Constants.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
                         @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = Constants.HEALTH_CHECK_HEADER, required = false) String healthCheck,
                         @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
 
@@ -215,7 +215,7 @@ public class FhirController {
                                         isSync ? "sync" : "async");
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
-                                        dataLakeApiContentType,
+                                     //   dataLakeApiContentType,
                                         requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
                                         provenance,requestedIgVersion);
                         Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
@@ -296,7 +296,7 @@ public class FhirController {
                                 deleteJSessionCookie(request, response);
                         }
                         request = new CustomRequestWrapper(request, payload);
-                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
+                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, 
                                         null, null, null, null, null,requestedIgVersion );
                         Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);            
                         CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
