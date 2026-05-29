@@ -1,10 +1,10 @@
 <channel version="26.3.1">
-  <id>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</id>
+  <id>6432709e-b815-40a3-91a8-f77570d3273e</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.41
+  <description>Version: 0.1.42
 Refactored Observation resource ID generation logic in the Bridge Link channel to use a compact identifier format, reducing overall character length and improving payload efficiency.</description>
-  <revision>3</revision>
+  <revision>2</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2226,7 +2226,7 @@ try {
 	    }
 	}
     //transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
-	transformer = generateCompactSha256(&quot;observations&quot; + observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+	transformer = generateCompactSha256((channelMap.get(&apos;observations_Resource_ID&apos;) || &apos;&apos;) + grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
 		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
@@ -3297,7 +3297,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779899880386</time>
+        <time>1780051935847</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3308,13 +3308,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>c534c664-979e-4d9a-86cf-62ccdef6ebef</id>
-        <name>0_1_41</name>
+        <id>b4762047-5c0f-4ff0-9f92-f8c4490a3dc7</id>
+        <name>0_1_42</name>
         <channelIds>
-          <string>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</string>
+          <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
