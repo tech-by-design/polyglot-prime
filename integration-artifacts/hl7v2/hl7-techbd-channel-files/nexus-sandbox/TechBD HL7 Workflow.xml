@@ -1,15 +1,18 @@
 <channel version="26.3.1">
-  <id>45c0836b-0e92-4861-9e58-16898e1e0835</id>
+  <id>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.40
-Implemented HL7 channel updates to resolve incorrect QE interaction mapping during parallel run initiation caused by DataLake overwrite and enhanced Grouper Observation generation and SHINNY IG interpretation mapping logic.</description>
-  <revision>5</revision>
+  <description>Version: 0.1.41
+Refactored Observation resource ID generation logic in the Bridge Link channel to use a compact identifier format, reducing overall character length and improving payload efficiency.</description>
+  <revision>3</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -38,9 +41,6 @@ Implemented HL7 channel updates to resolve incorrect QE interaction mapping duri
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -1543,14 +1543,6 @@ function bytesToHex(byteArray) {
     return hexString.toString();
 }
 
-function getPatientMRN(sourceXml){
-	var xmlDoc = new XML(sourceXml);
-	var patientMRN = xmlDoc..PID[&quot;PID.3&quot;][&quot;PID.3.1&quot;].toString().trim();
-	channelMap.put(&apos;patientMRN&apos;, patientMRN);
-	logger.info(logPrefix + &quot;patientMRN: &quot; + patientMRN);
-	
-}
-
 function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, additionalString) {
     if (sourceXml != undefined) { 
     	var xmlDoc = new XML(sourceXml);
@@ -1579,6 +1571,38 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
     return transformer;
 }
 
+function generateCompactSha256(sourceXml, resourceName, resourceIdName, transformer) {
+    if (sourceXml != undefined) { 
+	    var MessageDigest = Packages.java.security.MessageDigest;
+	    var digest = MessageDigest.getInstance(&quot;SHA-256&quot;);
+	
+	    // Raw SHA-256 bytes
+	    var hashBytes = digest.digest(new java.lang.String(sourceXml).getBytes(&quot;UTF-8&quot;));
+	
+	    // Base64 URL-safe encoding
+	    var sha256Hash = Packages.java.util.Base64
+	        .getUrlEncoder()
+	        .withoutPadding()
+	        .encodeToString(hashBytes);
+
+	    // Convert Java String to JavaScript String
+	    sha256Hash = String(sha256Hash).replace(/_/g, &apos;-&apos;);
+	
+	    transformer.setParameter(resourceIdName, sha256Hash);
+	    channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
+	    logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
+    } else {
+	        logger.error(resourceName + &quot; not found.&quot;);
+	    }
+
+    return transformer;
+}
+
+function getPatientMRN(sourceXml){
+	var xmlDoc = new XML(sourceXml);
+	var patientMRN = xmlDoc..PID[&quot;PID.3&quot;][&quot;PID.3.1&quot;].toString().trim();
+	channelMap.put(&apos;patientMRN&apos;, patientMRN);	
+}
 function getMultipleAnswersForComponent(transformer, observations) {
     var xml = new XML(observations);
     var codingArray = [];
@@ -2090,7 +2114,8 @@ try {
 	        logger.info(&quot;No OBX segments present in HL7 message.&quot;);
 	    }
     }
-    transformer = generateSHA256Id(soXml, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+    //transformer = generateSHA256Id(soXml, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+    transformer = generateCompactSha256(&quot;sexualOrientation&quot; + soXml, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
 
     // Observations
     var observationsXml = &quot;&quot;;
@@ -2099,7 +2124,8 @@ try {
     } else {
     		logger.info(&quot;No OBX segments present in HL7 message.&quot;);
     }
-    transformer = generateSHA256Id(observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+    //transformer = generateSHA256Id(observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+    transformer = generateCompactSha256(&quot;observations&quot; + observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
     // Grouper Observation
     /*var selectedObr = null;
@@ -2199,7 +2225,8 @@ try {
 	        }
 	    }
 	}
-    transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
+    //transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
+	transformer = generateCompactSha256(&quot;observations&quot; + observationsXml, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
 		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
@@ -2249,7 +2276,7 @@ try {
 
 			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object
 			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
-			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
+			//logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
 			
 			//Save Converted FHIR
 				logger.info(logPrefix + &quot;FHIR Conversion Save inside Bundle&quot;);
@@ -3270,7 +3297,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779687807058</time>
+        <time>1779899880386</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3281,13 +3308,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>690beaab-b90f-473c-9afa-7622bdb56fb6</id>
-        <name>0_1_40</name>
+        <id>c534c664-979e-4d9a-86cf-62ccdef6ebef</id>
+        <name>0_1_41</name>
         <channelIds>
-          <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
+          <string>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
