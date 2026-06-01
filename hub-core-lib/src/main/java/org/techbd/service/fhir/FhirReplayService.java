@@ -121,7 +121,6 @@ public class FhirReplayService {
                                 MediaType.APPLICATION_JSON_VALUE,
                                 tenant,
                                 null,
-                                provenance,
                                 null,
                                 null,
                                 bundleInteractionId,

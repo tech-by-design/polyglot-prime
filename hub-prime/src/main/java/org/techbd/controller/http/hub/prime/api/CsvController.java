@@ -101,7 +101,7 @@ public class CsvController {
     validateTenantId(tenantId);
     Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
-        null,
+        
         null, null, null, null,
         null,null);   
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
@@ -141,7 +141,7 @@ public class CsvController {
     CoreFHIRUtil.validateBaseFHIRProfileUrl(coreAppConfig, baseFHIRURL);
     Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
     Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
-        null,
+      
         null, validationSeverityLevel, null, null,
         null,null);    
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,

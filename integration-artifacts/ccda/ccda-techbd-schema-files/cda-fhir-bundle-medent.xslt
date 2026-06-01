@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.13 -->
+<!-- Version : 0.1.14 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -547,16 +547,28 @@
       , "deceasedBoolean": <xsl:value-of select="ccda:patient/sdtc:deceasedInd/@value"/>  
       </xsl:if>
       <xsl:variable name="mappedCode">
-        <xsl:call-template name="mapMaritalStatusCode">
-          <xsl:with-param name="statusCode" select="ccda:patient/ccda:maritalStatusCode/@code"/>
-        </xsl:call-template>
+          <xsl:call-template name="mapMaritalStatusCode">
+              <xsl:with-param name="statusCode">
+                  <xsl:choose>
+                      <xsl:when test="normalize-space(ccda:patient/ccda:maritalStatusCode/@nullFlavor) != ''">
+                          <xsl:value-of select="ccda:patient/ccda:maritalStatusCode/@nullFlavor"/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                          <xsl:value-of select="ccda:patient/ccda:maritalStatusCode/@code"/>
+                      </xsl:otherwise>
+                  </xsl:choose>
+              </xsl:with-param>
+          </xsl:call-template>
       </xsl:variable>
 
       <!-- Output maritalStatus only if mappedCode is non-empty -->
       <xsl:if test="string($mappedCode)">
         , "maritalStatus": {
           "coding": [{
-            "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+            "system": "<xsl:choose>
+                        <xsl:when test="$mappedCode = 'UNK'">http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:when>
+                        <xsl:otherwise>http://terminology.hl7.org/CodeSystem/v3-MaritalStatus</xsl:otherwise>
+                      </xsl:choose>",
             "code": "<xsl:value-of select='$mappedCode'/>",
             "display": "<xsl:call-template name='mapMaritalStatus'>
                           <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>

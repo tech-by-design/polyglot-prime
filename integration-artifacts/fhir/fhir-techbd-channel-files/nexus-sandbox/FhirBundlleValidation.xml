@@ -1,54 +1,24 @@
-<channel version="26.3.1">
-  <id>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</id>
+<channel version="26.3.0">
+  <id>67d9f200-4e74-4ce9-b04b-2784ada2f3d8</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.15
-Increased timeout configuration to 300000 ms for long-running request handling.</description>
+  <description>Version: 0.8.16
+Remove DataLake Api Content Type Header</description>
   <revision>4</revision>
-  <sourceConnector version="26.3.1">
+  <sourceConnector version="26.3.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
-  <sslEnabled>false</sslEnabled>
-          <mutualTlsEnabled>true</mutualTlsEnabled>
-          <mutualTlsMigrated>true</mutualTlsMigrated>
-          <clientCertValidationEnabled>true</clientCertValidationEnabled>
-          <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
-          <serverCertValidationEnabled>true</serverCertValidationEnabled>
-          <verifyHostname>false</verifyHostname>
-          <keystorePath/>
-          <keystorePassword/>
-          <certAlias/>
-          <certPassword/>
-          <truststorePath/>
-          <truststorePassword/>
-          <tls13>true</tls13>
-          <tls12>true</tls12>
-          <tls11>false</tls11>
-          <keystoreType/>
-          <truststoreType/>
-          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-          <keystoreUid/>
-          <myCertificateAlias/>
-          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-          <truststoreUid/>
-          <validationMode>pkix</validationMode>
-          <revocationMode>disabled</revocationMode>
-          <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
-          <pinnedLeafPins/>
-          <subjectSanFilterPatterns/>
-        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="26.3.1">
+      <listenerConnectorProperties version="26.3.0">
         <host>0.0.0.0</host>
         <port>9001</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="26.3.1">
+      <sourceConnectorProperties version="26.3.0">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -86,7 +56,7 @@ Increased timeout configuration to 300000 ms for long-running request handling.<
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
           </list>
         </entry>
         <entry>
@@ -111,9 +81,9 @@ Increased timeout configuration to 300000 ms for long-running request handling.<
         </com.mirth.connect.connectors.http.HttpStaticResource>
       </staticResources>
     </properties>
-    <transformer version="26.3.1">
+    <transformer version="26.3.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>lookup_manager</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -346,7 +316,7 @@ function setErrorResponse(statusCode, errorMessage) {
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.0">
           <name>FHIR Validation</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -404,22 +374,22 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="26.3.1">
+    <filter version="26.3.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.1">
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.0">
           <name>Htpp url and method validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -541,43 +511,12 @@ function notFound() {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="26.3.1">
+    <connector version="26.3.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.3.1">
-        <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
-  <sslEnabled>false</sslEnabled>
-            <mutualTlsEnabled>true</mutualTlsEnabled>
-            <mutualTlsMigrated>true</mutualTlsMigrated>
-            <clientCertValidationEnabled>true</clientCertValidationEnabled>
-            <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
-            <serverCertValidationEnabled>true</serverCertValidationEnabled>
-            <verifyHostname>false</verifyHostname>
-            <keystorePath/>
-            <keystorePassword/>
-            <certAlias/>
-            <certPassword/>
-            <truststorePath/>
-            <truststorePassword/>
-            <tls13>true</tls13>
-            <tls12>true</tls12>
-            <tls11>false</tls11>
-            <keystoreType/>
-            <truststoreType/>
-            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
-            <keystoreUid/>
-            <myCertificateAlias/>
-            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
-            <truststoreUid/>
-            <validationMode>pkix</validationMode>
-            <revocationMode>disabled</revocationMode>
-            <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
-            <pinnedLeafPins/>
-            <subjectSanFilterPatterns/>
-          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        </pluginProperties>
-        <destinationConnectorProperties version="26.3.1">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.3.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="26.3.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -618,7 +557,7 @@ function notFound() {
           <entry>
             <string>Access-Control-Allow-Headers</string>
             <list>
-              <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+              <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
             </list>
           </entry>
           <entry>
@@ -729,43 +668,43 @@ function notFound() {
         <charset>UTF-8</charset>
         <socketTimeout>300000</socketTimeout>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.3.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.3.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.3.0">
         <elements/>
       </filter>
       <transportName>HTTP Sender</transportName>
@@ -1001,7 +940,7 @@ return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="26.3.1">
+  <properties version="26.3.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
@@ -1024,7 +963,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="26.3.1">
+    <attachmentProperties version="26.3.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -1039,25 +978,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779209642449</time>
+        <time>1779885623512</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>1</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>e71737a3-3ae5-48ad-9868-a5ed18bee490</id>
-        <name>0_8_15</name>
+        <id>eeda9b69-7376-46a3-a9ef-0877ed58faf1</id>
+        <name>0_8_16</name>
         <channelIds>
-          <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
+          <string>67d9f200-4e74-4ce9-b04b-2784ada2f3d8</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
