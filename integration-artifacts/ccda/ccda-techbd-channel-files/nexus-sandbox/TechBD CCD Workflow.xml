@@ -1,10 +1,10 @@
 <channel version="26.3.1">
-  <id>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</id>
+  <id>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.32
-Resolved race condition issue by replacing globalMap with channelMap for DataLake URL request isolation.</description>
-  <revision>9</revision>
+  <description>Version 0.5.33
+Updated the Observation Grouper logic, addressed invalid marital status handling, enhanced Observation Resource ID generation in the CCDA workflow, and implemented the corresponding XSLT changes.</description>
+  <revision>4</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1430,7 +1430,57 @@ function bytesToHex(byteArray) {
     }
     return hexString.toString();
 }
-///////////////////////////////////////////////////////////////////
+
+function generateSHA256Id(resource, resourceName, resourceIdName, transformer, additionalString) {
+    if (resource != undefined) { 
+        // Get MRN and CIN from channelMap
+        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
+        var combinedText = mrn + cin;
+
+        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
+            combinedText += additionalString;
+        }
+
+        var resourceText = resourceName + resource.toString().trim();
+        combinedText += resourceText;
+
+        // Generate SHA-256 hash
+        var sha256Hash = generateSHA256(new java.lang.String(combinedText));
+        transformer.setParameter(resourceIdName, sha256Hash);
+    } else {
+        logger.error(resourceName + &quot; not found in the XML.&quot;);
+    }
+
+    return transformer;
+}
+
+function generateCompactSha256(sourceXml, resourceName, resourceIdName, transformer) {
+    if (sourceXml != undefined) { 
+	    var MessageDigest = Packages.java.security.MessageDigest;
+	    var digest = MessageDigest.getInstance(&quot;SHA-256&quot;);
+	
+	    // Raw SHA-256 bytes
+	    var hashBytes = digest.digest(new java.lang.String(sourceXml).getBytes(&quot;UTF-8&quot;));
+	
+	    // Base64 URL-safe encoding
+	    var sha256Hash = Packages.java.util.Base64
+	        .getUrlEncoder()
+	        .withoutPadding()
+	        .encodeToString(hashBytes);
+	    // Convert Java String to JavaScript String
+    	    sha256Hash = String(sha256Hash).replace(/_/g, &apos;-&apos;);
+	
+	    transformer.setParameter(resourceIdName, sha256Hash);
+	    channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
+	    logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
+    } else {
+	        logger.error(resourceName + &quot; not found.&quot;);
+	    }
+
+    return transformer;
+}
+
 function getPatientMRN(patientRoles) {
     var extensionAttr = &apos;&apos;;
     var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
@@ -1560,32 +1610,6 @@ function getEncounterEffectiveTime(encounterNodeList, returnFallBackTime) {
     }
 
     return fallbackTime;
-}
-
-function generateSHA256Id(resource, resourceName, resourceIdName, transformer, additionalString) {
-    if (resource != undefined) { 
-        // Get MRN and CIN from channelMap
-        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
-        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
-        var combinedText = mrn + cin;
-
-        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
-            combinedText += additionalString;
-            logger.info(&quot;Including additionalString in SHA-256: &quot; + additionalString);
-        }
-
-        var resourceText = resourceName + resource.toString().trim();
-        combinedText += resourceText;
-
-        // Generate SHA-256 hash
-        var sha256Hash = generateSHA256(new java.lang.String(combinedText));
-        transformer.setParameter(resourceIdName, sha256Hash);
-        logger.info(resourceIdName + &quot; : &quot; + sha256Hash);
-    } else {
-        logger.error(resourceName + &quot; not found in the XML.&quot;);
-    }
-
-    return transformer;
 }
 
 function getCategoryDisplay(code) {
@@ -1869,7 +1893,8 @@ function setResourceIdParameters(transformer) {
                               .*::section.(@ID == &apos;sexualOrientation&apos;)
                               .*::entry
                               .*::observation;
-	transformer = generateSHA256Id(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+
+	transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
 
 	// Extract `encompassingEncounter`
 	try {
@@ -2016,11 +2041,9 @@ function setResourceIdParameters(transformer) {
             &quot;, EffectiveTime: &quot; + finalEffectiveTime);
             
      var combinedText = mrn + cin + grouperScreeningCode + finalEffectiveTime;
-     var sha256Hash = generateSHA256(new java.lang.String(combinedText)); 
-    
-     transformer.setParameter(&apos;grouperObservationResourceSha256Id&apos;, sha256Hash);
-     logger.info(&apos;grouperObservationResourceSha256Id&apos; + &quot; : &quot; + sha256Hash);
      
+     transformer = generateCompactSha256(combinedText, &quot;grouperObservation&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);   
+    
      // Set category xml
      transformer = getObservationCategoryCodes(transformer, sourceXml); //observations
      transformer = getMultipleAnswersForComponent(transformer, sourceXml); //observations
@@ -3278,7 +3301,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779209302080</time>
+        <time>1780308302530</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3289,13 +3312,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>e960d53a-be9f-4a30-844a-8ac7623e202c</id>
-        <name>0_5_32</name>
+        <id>b7fb8150-5fb8-4fed-8f0e-0f2287e39dd3</id>
+        <name>0_5_33</name>
         <channelIds>
-          <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
+          <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
