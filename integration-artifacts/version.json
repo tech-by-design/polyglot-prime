@@ -52,9 +52,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.42",
+      "version": "0.1.43",
       "editedby": "jewelbonnie",
-      "date": "2026-05-29"
+      "date": "2026-06-02"
     },
     {
       "type": "HL7v2",
