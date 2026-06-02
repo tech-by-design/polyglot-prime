@@ -82,7 +82,7 @@
       "channel": "lookup_group_config_export.json",
       "version": "",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-04-14"
+      "date": "2026-06-02"
     },
     {
       "type": "Lookup Manager",
@@ -108,9 +108,9 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.16",
+      "version": "0.2.17",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-05-21"
+      "date": "2026-06-02"
     },
   {
       "type": "code-templates",
