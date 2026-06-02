@@ -158,7 +158,7 @@ public class PatientConverter extends BaseConverter {
             String[] rawCodes = demographicData.getEthnicityCode().split(";");
             List<String> validCodes = Arrays.stream(rawCodes)
                 .map(String::trim)
-                .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)))
+                .filter(code -> !("ASKU".equalsIgnoreCase(code) || "UNK".equalsIgnoreCase(code)|| "asked-declined".equalsIgnoreCase(code)))
                 .collect(Collectors.toList());
 
             if (!validCodes.isEmpty()) {
