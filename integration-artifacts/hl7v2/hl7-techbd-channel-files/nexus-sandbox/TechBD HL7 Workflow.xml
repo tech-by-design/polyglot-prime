@@ -2,17 +2,14 @@
   <id>6432709e-b815-40a3-91a8-f77570d3273e</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.42
-Refactored Observation resource ID generation logic in the Bridge Link channel to use a compact identifier format, reducing overall character length and improving payload efficiency.</description>
-  <revision>2</revision>
+  <description>Version: 0.1.43
+Completed investigation and validation of resource ID generation logic; verified expected behavior and consistency across processing workflows.</description>
+  <revision>5</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -41,6 +38,9 @@ Refactored Observation resource ID generation logic in the Bridge Link channel t
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -2010,6 +2010,7 @@ try {
 
 try {
     var rawTransformedData = connectorMessage.getTransformedData();
+	getPatientMRN(rawTransformedData);
 	logger.info(logPrefix + &quot;Raw HL7 Message (pre-clean): &quot; + rawTransformedData);
 
 
@@ -3297,7 +3298,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1780051935847</time>
+        <time>1780397474992</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3308,8 +3309,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>b4762047-5c0f-4ff0-9f92-f8c4490a3dc7</id>
-        <name>0_1_42</name>
+        <id>3bfdf251-2f4a-441e-99a0-62e81de23049</id>
+        <name>0_1_43</name>
         <channelIds>
           <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
         </channelIds>
