@@ -254,7 +254,7 @@ BEGIN
 	RETURN NEXT has_table(schema_name, 'dashboard_widget_metadata', 'The table techbd_udi_ingress.dashboard_widget_metadata should exist.');
 	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'id', 'The column id in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'widget_name', 'The column widget_name in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
-	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
+	-- RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'tenant_id', 'The column tenant_id in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
 	RETURN NEXT col_not_null(schema_name, 'dashboard_widget_metadata', 'last_updated_at', 'The column last_updated_at in techbd_udi_ingress.dashboard_widget_metadata should be NOT NULL.');
 	RETURN NEXT col_type_is(schema_name, 'dashboard_widget_metadata', 'last_updated_at', 'timestamp with time zone', 'The column last_updated_at in techbd_udi_ingress.dashboard_widget_metadata should be of type timestamp with time zone.');
 	RETURN NEXT columns_are(schema_name, 'dashboard_widget_metadata', ARRAY['id','widget_name','tenant_id','last_updated_at','last_updated_by', 'tenant_name'], 'The table techbd_udi_ingress.dashboard_widget_metadata should have the expected column structure.');

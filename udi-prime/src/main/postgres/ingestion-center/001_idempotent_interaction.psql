@@ -7448,7 +7448,7 @@ BEGIN
             user_req.created_at AS interaction_created_at,
             user_req.created_by AS interaction_created_by,
             user_req.provenance AS interaction_provenance,
-            user_req.sat_interaction_user_id AS sat_interaction_http_request_id,
+            user_req.sat_interaction_ui_user_id AS sat_interaction_http_request_id,
             user_req.nature, 
             user_req.tenant_name AS tenant_id,
             user_req.user_agent,
@@ -7458,7 +7458,7 @@ BEGIN
             user_req.created_at AS request_created_at,
             user_req.created_by AS request_created_by,
             user_req.provenance AS request_provenance
-        FROM techbd_udi_ingress.sat_interaction_user user_req
+        FROM techbd_udi_ingress.sat_interaction_ui_user user_req
         WHERE user_req.uri NOT ILIKE '%/Bundle%' 
           AND user_req.created_at >= TO_DATE(start_date, 'MM-DD-YYYY')
           AND user_req.created_at <  TO_DATE(end_date, 'MM-DD-YYYY') + INTERVAL '1 day';

@@ -823,6 +823,9 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
 // List of dependencies and test dependencies
 const dependencies = [
   //"../migrate_missing_columns_with_lock.psql",
+  "../tm_step_1_rename_tenant_id_column.psql",
+  "../tm_step_2_add_new_tenant_id_column.psql",
+  "../tm_step_3_set_default_for_new_tenant_id_column.psql",
   "../000_idempotent_universal.psql",
   "../001_idempotent_interaction.psql",
   "../002_idempotent_diagnostics.psql",
@@ -1622,76 +1625,6 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${tenant}
-      DO $$
-        DECLARE
-            tbl TEXT;
-            tables TEXT[] := ARRAY[
-                'dashboard_widget_metadata',
-                'sat_csv_fhir_processing_errors',
-                'sat_diagnostic_dataledger_api',
-                'sat_diagnostic_exception',
-                'sat_diagnostic_log',
-                'sat_expectation_http_request',
-                'sat_interaction_ccda_request',
-                'sat_interaction_ccda_validation_errors',
-                'sat_interaction_fhir_request',
-                'sat_interaction_fhir_screening_info',
-                'sat_interaction_fhir_screening_organization',
-                'sat_interaction_fhir_screening_patient',
-                'sat_interaction_fhir_session_diagnostic',
-                'sat_interaction_fhir_validation_issue',
-                'sat_interaction_file_exchange',
-                'sat_interaction_flat_file_csv_request',
-                'sat_interaction_hl7_request',
-                'sat_interaction_hl7_validation_errors',
-                'sat_interaction_http_request',
-                'sat_interaction_user',
-                'sat_interaction_zip_file_request',
-                'users'
-            ];
-        BEGIN
-            FOREACH tbl IN ARRAY tables
-            LOOP
-                -- Rename tenant_id → tenant_name (only if needed)
-                IF EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns
-                    WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name = tbl
-                      AND column_name = 'tenant_id'
-                )
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns
-                    WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name = tbl
-                      AND column_name = 'tenant_name'
-                )
-                THEN
-                    EXECUTE format(
-                        'ALTER TABLE techbd_udi_ingress.%I RENAME COLUMN tenant_id TO tenant_name',
-                        tbl
-                    );
-                END IF;
-
-                -- Add new tenant_id column (only if missing)
-                IF NOT EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns
-                    WHERE table_schema = 'techbd_udi_ingress'
-                      AND table_name = tbl
-                      AND column_name = 'tenant_id'
-                )
-                THEN
-                    EXECUTE format(
-                        'ALTER TABLE techbd_udi_ingress.%I ADD COLUMN tenant_id TEXT NOT NULL DEFAULT ''''',
-                        tbl
-                    );
-                END IF;
-
-            END LOOP;
-        END 
-      $$;
 
       ${userSessions}
       IF NOT EXISTS (
