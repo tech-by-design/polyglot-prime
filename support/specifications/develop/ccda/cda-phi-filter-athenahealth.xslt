@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.1 -->
+<!-- Version : 0.1.2 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:hl7="urn:hl7-org:v3"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -47,40 +47,90 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
-            <!-- Consent details are in Social History section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value (Yes/No)  -->
-            <xsl:variable name="consent" select="
-                hl7:component/hl7:structuredBody/hl7:component
-                /hl7:section[hl7:code[@code='29762-2']]
-                /hl7:entry/hl7:observation/hl7:entryRelationship
-                /hl7:observation[hl7:code/@code = '105511-0']
-            "/>   
+            <!-- Consent details are in Social History section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value (Yes/No)  -->            
+            <xsl:variable name="observationConsent" select="
+                                    hl7:component/hl7:structuredBody/hl7:component
+                                    /hl7:section[hl7:code[@code='29762-2']]
+                                    /hl7:entry/hl7:observation/hl7:entryRelationship
+                                    /hl7:observation[
+                                        hl7:code/@code = '105511-0'
+                                        and
+                                        hl7:value[
+                                            @displayName='Permit' or @displayName='permit'
+                                            or
+                                            @code='LA33-6'
+                                        ]
+                                    ]
+                                "/>
+
+            <xsl:variable name="consentPermitObservation" select="
+                                    hl7:component/hl7:structuredBody/hl7:component
+                                    /hl7:section[hl7:code[@code='29762-2']]
+                                    /hl7:entry/hl7:observation/hl7:entryRelationship
+                                    /hl7:observation[
+                                        hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.86']
+                                        and
+                                        hl7:value[
+                                            ( @displayName='Permit' or @displayName='permit' )
+                                            and
+                                            @xsi:type='CD'
+                                        ]
+                                    ]
+                                "/>
+
+            <xsl:variable name="authorizationConsent" select="
+                                    hl7:authorization/hl7:consent[
+                                        hl7:code[
+                                            @code='59284-0'
+                                            and
+                                            (@displayName='yes' or @displayName='Permit' or @displayName='permit')
+                                        ]
+                                    ]
+                                "/>
+
             <xsl:choose>
-                <xsl:when test="$consent">
-                    <xsl:variable name="consentDisplay">
-                        <xsl:choose>
-                            <!-- <xsl:when test="$consent/hl7:value/@displayName = 'Permit' or $consent/hl7:value/@code = 'LA33-6'">permit</xsl:when> -->
-                            <xsl:when test="$consent/hl7:value/@code = 'LA33-6'">permit</xsl:when>
-                            <xsl:otherwise>deny</xsl:otherwise>
-                        </xsl:choose>
-                    </xsl:variable>
+                <!-- Case 1 or Case 2 : Consent is in Social History section -->
+                <xsl:when test="$observationConsent or $consentPermitObservation">
                     <authorization>
                         <consent>
                             <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
-                            <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-                                <xsl:attribute name="displayName"><xsl:value-of select="$consentDisplay"/></xsl:attribute>
-                            </code>
-                            <xsl:copy-of select="$consent/hl7:statusCode"/>
+                            <code
+                                code="105511-0"
+                                codeSystem="2.16.840.1.113883.6.1"
+                                codeSystemName="LOINC"
+                                displayName="permit"/>
+
+                            <xsl:choose>
+                                <xsl:when test="$observationConsent">
+                                    <xsl:copy-of select="$observationConsent/hl7:statusCode"/>
+                                </xsl:when>
+
+                                <xsl:when test="$consentPermitObservation">
+                                    <xsl:copy-of select="$consentPermitObservation/hl7:statusCode"/>
+                                </xsl:when>
+
+                                <xsl:otherwise>
+                                    <statusCode code="completed"/>
+                                </xsl:otherwise>
+                            </xsl:choose>
                         </consent>
-                    </authorization>
+                    </authorization>                    
                 </xsl:when>
-                <xsl:when test="hl7:authorization/hl7:consent[hl7:code[@code='59284-0']]">
+
+                <!-- Case 3 : Consent is in authorization section -->
+                <xsl:when test="$authorizationConsent">
                     <xsl:copy-of select="hl7:authorization"/>
                 </xsl:when>
+
+                <!-- Default -->
                 <xsl:otherwise>
                     <authorization>
                         <consent>
                             <id root="2.16.840.1.113883.3.933"/>
-                            <code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="deny"/>
+                            <code
+                                code="59284-0"
+                                codeSystem="2.16.840.1.113883.6.1"
+                                displayName="deny"/>
                             <statusCode code="completed"/>
                         </consent>
                     </authorization>
