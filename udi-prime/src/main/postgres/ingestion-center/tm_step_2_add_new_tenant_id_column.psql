@@ -1,0 +1,294 @@
+/* Tenant Master Implementation */
+/* ** STEP 2 ** ADD NEW tenant_id COLUMN */
+/* ------------------------------------- */
+DO $$
+BEGIN
+
+    -- dashboard_widget_metadata
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'dashboard_widget_metadata'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_csv_fhir_processing_errors
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_csv_fhir_processing_errors'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_diagnostic_dataledger_api
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_diagnostic_dataledger_api'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_diagnostic_exception
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_diagnostic_exception'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_diagnostic_log
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_diagnostic_log'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_log
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_expectation_http_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_expectation_http_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_expectation_http_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_ccda_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_ccda_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_ccda_validation_errors
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_ccda_validation_errors'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_screening_info
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_screening_info'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_screening_organization
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_screening_organization'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_screening_patient
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_screening_patient'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_session_diagnostic
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_session_diagnostic'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_fhir_validation_issue
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_fhir_validation_issue'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_file_exchange
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_file_exchange'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_flat_file_csv_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_flat_file_csv_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_hl7_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_hl7_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_hl7_validation_errors
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_hl7_validation_errors'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_http_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_http_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_user
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_user'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_user
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- sat_interaction_zip_file_request
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'sat_interaction_zip_file_request'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+    -- users
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+        AND table_name = 'users'
+        AND column_name = 'tenant_id'
+    )
+    THEN
+        ALTER TABLE techbd_udi_ingress.users
+        ADD COLUMN tenant_id TEXT;
+    END IF;
+
+END
+$$;

@@ -3,9 +3,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.32",
+      "version": "0.8.33",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-05-27"
+      "date": "2026-06-02"
     },
     {
       "type": "FHIR",
@@ -52,9 +52,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.42",
+      "version": "0.1.43",
       "editedby": "jewelbonnie",
-      "date": "2026-05-29"
+      "date": "2026-06-02"
     },
     {
       "type": "HL7v2",
@@ -82,7 +82,7 @@
       "channel": "lookup_group_config_export.json",
       "version": "",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-04-14"
+      "date": "2026-06-02"
     },
     {
       "type": "Lookup Manager",
@@ -108,9 +108,9 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.16",
+      "version": "0.2.17",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-05-21"
+      "date": "2026-06-02"
     },
   {
       "type": "code-templates",

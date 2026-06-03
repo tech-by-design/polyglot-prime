@@ -1,9 +1,9 @@
 <channel version="26.3.0">
-  <id>b006e2f0-1f9c-4f5f-907c-4190696fd00f</id>
+  <id>0f01102b-8ef8-4237-a8c8-0e79c35be41d</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.32
-Remove DataLake Api Content Type Header</description>
+  <description>Version: 0.8.33
+Remove Server Side Request Forgery isssue for DataLake Api Url.</description>
   <revision>4</revision>
   <sourceConnector version="26.3.0">
     <metaDataId>0</metaDataId>
@@ -181,40 +181,75 @@ try {
     var rawHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
     var incomingHeader = rawHeader == null ? &quot;&quot; : String(rawHeader).trim();
 
-    var urlPattern = /^https?:\/\/[^\s]+$/i;
+    // Whitelisted URL from Lookup Manager
+    var allowedUrl = LookupHelper.get(
+        &quot;Config&quot;,
+        &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
+    );
 
-    if (incomingHeader !== &quot;&quot;) { //if  incomingHeader not blank 
+    if (!allowedUrl) {
+        throw &quot;TECHBD_DEFAULT_DATALAKE_API_URL is empty.&quot;;
+    }&#xd;    allowedUrl = String(allowedUrl);
 
-        if (!urlPattern.test(incomingHeader)) {
-            logger.error(&quot;Invalid DataLake API URL in header: &quot; + incomingHeader);
-            datalakeApiUrl = incomingHeader;
-        } else {
-            datalakeApiUrl = incomingHeader;
-            logger.info(&quot;Datalake API URL loaded from request header: &quot; + datalakeApiUrl);
+    // Force both to JavaScript strings
+    allowedUrl = String(allowedUrl).trim();
+    incomingHeader = String(incomingHeader).trim();
+
+   
+
+    if (incomingHeader !== &quot;&quot;) {
+
+        // Compare whitelist URL
+        if (incomingHeader !== allowedUrl) {
+
+            logger.error(
+                &quot;Rejected DataLake API URL. Incoming: &quot; +
+                incomingHeader +
+                &quot;, Allowed: &quot; +
+                allowedUrl
+            );
+
+            setErrorResponse(
+                400,
+                &quot;Invalid X-TechBD-DataLake-API-URL. Only approved DataLake URL is allowed.&quot;
+            );
+
+            throw &quot;SSRF validation failed&quot;;
         }
-    } else { // if incomingHeader is blak
 
-        datalakeApiUrl = LookupHelper.get(
-            &quot;Config&quot;,
-            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
+        datalakeApiUrl = incomingHeader;
+
+        logger.info(
+            &quot;Approved DataLake API URL from header: &quot; +
+            datalakeApiUrl
         );
 
-        if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
-            throw &quot;DataLake API URL retrieved from Lookup Manager is empty.&quot;;
-        }
+    } else {
 
-        datalakeApiUrl = datalakeApiUrl.trim();
-        logger.info(&quot;Header blank → using default DataLake API URL: &quot; + datalakeApiUrl);
+        // Header not supplied -&gt; use configured URL
+        datalakeApiUrl = allowedUrl;
+
+        logger.info(
+            &quot;Header blank, using default DataLake API URL: &quot; +
+            datalakeApiUrl
+        );
     }
 
     channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
 
 } catch (e) {
-    logger.error(&quot;Error fetching Datalake API URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
+
+    logger.error(&quot;Error fetching DataLake API URL: &quot; + e);
+
+    if (String(e) !== &quot;SSRF validation failed&quot;) {
+        setErrorResponse(
+            500,
+            &quot;Failed to load DataLake API URL&quot;
+        );
+    }
+
     throw e;
 }
-
 /********************************************
     6️⃣ FETCH DATA LAKE API KEY (Plain text)
 ********************************************/
@@ -2362,7 +2397,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779885672604</time>
+        <time>1780395825010</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
