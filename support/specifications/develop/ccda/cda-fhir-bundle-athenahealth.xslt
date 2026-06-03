@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.14 -->
+<!-- Version : 0.1.15 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -38,8 +38,6 @@
   <xsl:param name="encounterResourceId"/>
   <xsl:param name="consentResourceId"/>
   <xsl:param name="organizationResourceId"/>
-  <xsl:param name="questionnaireResourceId"/>
-  <xsl:param name="observationResourceSha256Id"/>
   <xsl:param name="sexualOrientationResourceId"/>
   <xsl:param name="questionnaireResponseResourceSha256Id"/>
   <xsl:param name="grouperObservationResourceSha256Id"/> 
@@ -50,6 +48,7 @@
   <xsl:param name="X-TechBD-Part2"/>
   <xsl:param name="X-TechBD-OMH"/>
   <xsl:param name="X-TechBD-OPWDD"/>
+  <xsl:param name="organizationName"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -182,8 +181,8 @@
   </xsl:variable>
   <!-- End of Guthrie logic -->
 
-  <!-- Get Organization name from the first encounter entry -->
-  <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>
+  <!-- Get Organization name Author -->
+  <!-- <xsl:variable name="organizationName" select="/ccda:ClinicalDocument/ccda:author/ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/> -->
 
 
   <xsl:template match="/">
@@ -914,14 +913,9 @@
               </xsl:if>
           ],
         </xsl:if>
-        <xsl:variable name="orgNameRaw">
-          <xsl:choose>
-            <xsl:when test="$organizationName"><xsl:value-of select="$organizationName"/></xsl:when>
-            <xsl:otherwise><xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/></xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
+
         "name": "<xsl:call-template name="string-trim">
-                    <xsl:with-param name="text" select="$orgNameRaw"/>
+                    <xsl:with-param name="text" select="$organizationName"/>
                   </xsl:call-template>"
                   
         <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom[not(@nullFlavor)]">

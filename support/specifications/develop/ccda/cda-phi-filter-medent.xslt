@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.0 -->
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:hl7="urn:hl7-org:v3"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -139,26 +139,6 @@
                                 ]
                             ]"/>
                                         
-                    <!-- <xsl:if test="$observations">
-                        <component>
-                            <section ID="observations">
-                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:templateId"/>
-                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:code"/>
-                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:title"/>
-                                <entry>
-                                    <observation classCode="OBS" moodCode="EVN">
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:templateId"/>
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:id"/>
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:code"/>
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:statusCode"/>
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:effectiveTime"/>
-                                        <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:value"/>
-                                        <xsl:copy-of select="$observations" />
-                                    </observation>
-                                </entry>
-                            </section>
-                        </component>
-                    </xsl:if> -->
                     <xsl:if test="$observations">
                         <component>
                             <section ID="observations">

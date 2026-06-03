@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.2 -->
+<!-- Version : 0.1.3 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:hl7="urn:hl7-org:v3"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -56,7 +56,7 @@
                                         hl7:code/@code = '105511-0'
                                         and
                                         hl7:value[
-                                            @displayName='Permit' or @displayName='permit'
+                                            translate(normalize-space(@displayName), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = 'PERMIT'
                                             or
                                             @code='LA33-6'
                                         ]
@@ -71,7 +71,7 @@
                                         hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.86']
                                         and
                                         hl7:value[
-                                            ( @displayName='Permit' or @displayName='permit' )
+                                            ( translate(normalize-space(@displayName), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = 'PERMIT' )
                                             and
                                             @xsi:type='CD'
                                         ]
@@ -83,7 +83,9 @@
                                         hl7:code[
                                             @code='59284-0'
                                             and
-                                            (@displayName='yes' or @displayName='Permit' or @displayName='permit')
+                                            (translate(normalize-space(@displayName), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = 'YES' 
+                                            or 
+                                            translate(normalize-space(@displayName), 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') = 'PERMIT')
                                         ]
                                     ]
                                 "/>
