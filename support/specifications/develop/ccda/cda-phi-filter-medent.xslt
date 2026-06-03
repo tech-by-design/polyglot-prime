@@ -139,7 +139,7 @@
                                 ]
                             ]"/>
                                         
-                    <xsl:if test="$observations">
+                    <!-- <xsl:if test="$observations">
                         <component>
                             <section ID="observations">
                                 <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:templateId"/>
@@ -156,6 +156,73 @@
                                         <xsl:copy-of select="$observations" />
                                     </observation>
                                 </entry>
+                            </section>
+                        </component>
+                    </xsl:if> -->
+                    <xsl:if test="$observations">
+                        <component>
+                            <section ID="observations">
+
+                                <!-- Copy section-level metadata only once -->
+                                <xsl:copy-of select="
+                                    hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='47519-4']]/hl7:templateId
+                                    | hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='47519-4']]/hl7:code
+                                    | hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='47519-4']]/hl7:title
+                                "/>
+
+                                <!-- Loop through each parent observation -->
+                                <xsl:for-each select="
+                                    hl7:component
+                                    /hl7:structuredBody
+                                    /hl7:component
+                                    /hl7:section[hl7:code[@code='47519-4']]
+                                    /hl7:entry
+                                    /hl7:observation[hl7:code[not(@code='76690-7')]]
+                                ">
+                                    <entry>
+                                        <observation classCode="OBS" moodCode="EVN">
+
+                                            <!-- Copy only current observation data -->
+                                            <xsl:copy-of select="hl7:templateId 
+                                                                | hl7:id 
+                                                                | hl7:code 
+                                                                | hl7:statusCode 
+                                                                | hl7:effectiveTime 
+                                                                | hl7:value"/>
+
+                                            <!-- Copy only valid entryRelationships -->
+                                            <xsl:copy-of select="
+                                                hl7:entryRelationship[
+                                                    hl7:observation[
+                                                        (
+                                                            hl7:code[
+                                                                (@codeSystemName = 'LOINC' or @codeSystemName = 'SNOMED' or @codeSystemName = 'SNOMED CT')
+                                                                and not(@code='UNK') and string-length(@code) > 0
+                                                            ]
+                                                            and (
+                                                                hl7:value/hl7:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
+                                                                or hl7:value/hl7:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'
+                                                                or hl7:value[
+                                                                        not(@code='UNK') 
+                                                                        and string-length(@code) > 0 
+                                                                        and string-length(@nullFlavor)=0
+                                                                    ]
+                                                            )
+                                                        )
+                                                        or
+                                                        (
+                                                            hl7:code[@code='95614-4'] 
+                                                            and string-length(hl7:value/@value) > 0
+                                                        )
+                                                    ]
+                                                ]
+                                            "/>
+
+                                        </observation>
+                                    </entry>
+
+                                </xsl:for-each>
+
                             </section>
                         </component>
                     </xsl:if>

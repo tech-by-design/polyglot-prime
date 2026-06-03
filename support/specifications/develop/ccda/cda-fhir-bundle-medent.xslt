@@ -38,8 +38,6 @@
   <xsl:param name="encounterResourceId"/>
   <xsl:param name="consentResourceId"/>
   <xsl:param name="organizationResourceId"/>
-  <xsl:param name="questionnaireResourceId"/>
-  <xsl:param name="observationResourceSha256Id"/>
   <xsl:param name="sexualOrientationResourceId"/>
   <xsl:param name="questionnaireResponseResourceSha256Id"/>
   <xsl:param name="procedureResourceSha256Id"/>
@@ -1024,7 +1022,7 @@
   </xsl:template>
 
   <!-- Observation Template -->
-  <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship">
+  <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry[1]/ccda:observation/ccda:entryRelationship">
     <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
     <xsl:variable name="allowedCodes" select="' 71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4 '" />
     <!-- Set questionCode -->
@@ -1559,44 +1557,4 @@
       </xsl:for-each>
     </xsl:if>
   </xsl:template>
-
-  <!-- Template to format an address -->
-  <!-- <xsl:template name="format-address">
-      <xsl:param name="addr"/>
-
-      <xsl:variable name="street">
-          <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-              <xsl:value-of select="normalize-space(.)"/>
-              <xsl:if test="position() != last()">, </xsl:if>
-          </xsl:for-each>
-      </xsl:variable>
-
-      <xsl:variable name="city"  select="normalize-space($addr/ccda:city[not(@nullFlavor) and normalize-space(.) != ''])"/>
-      <xsl:variable name="state" select="normalize-space($addr/ccda:state[not(@nullFlavor) and normalize-space(.) != ''])"/>
-      <xsl:variable name="zip"   select="normalize-space($addr/ccda:postalCode[not(@nullFlavor) and normalize-space(.) != ''])"/>
-
-      <xsl:variable name="fullAddress">
-          <xsl:if test="string-length(normalize-space($street)) &gt; 0">
-              <xsl:value-of select="$street"/>
-          </xsl:if>
-
-          <xsl:if test="$city != ''">
-              <xsl:if test="normalize-space($street) != ''">, </xsl:if>
-              <xsl:value-of select="$city"/>
-          </xsl:if>
-
-          <xsl:if test="$state != ''">
-              <xsl:if test="$city != '' or normalize-space($street) != ''">, </xsl:if>
-              <xsl:value-of select="$state"/>
-          </xsl:if>
-
-          <xsl:if test="$zip != ''">
-              <xsl:text> </xsl:text>
-              <xsl:value-of select="$zip"/>
-          </xsl:if>
-      </xsl:variable>
-
-      <xsl:value-of select="normalize-space($fullAddress)"/>
-  </xsl:template> -->
-
 </xsl:stylesheet>
