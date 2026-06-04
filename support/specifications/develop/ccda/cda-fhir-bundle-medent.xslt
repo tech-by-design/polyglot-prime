@@ -1055,7 +1055,7 @@
               </xsl:variable>
 
         <xsl:if test="string($categoryCode)">
-            <xsl:variable name="observationEffectiveTimeBase">
+                <xsl:variable name="observationEffectiveTimeBase">
                     <xsl:choose>
                         <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
                             <xsl:call-template name="formatDateTime">
