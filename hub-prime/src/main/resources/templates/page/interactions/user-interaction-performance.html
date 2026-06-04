@@ -144,9 +144,9 @@
                             headerName: "TechBD  Interaction ID",
                             field: "interaction_id",
                             filter: "agTextColumnFilter",
-                            cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
-                            }, modalAide)
+                            // cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            //     modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
+                            // }, modalAide)
                         },
                         { headerName: "URI", field: "uri", filter: "agTextColumnFilter", flex:2, tooltipField: "uri" },
                         {
