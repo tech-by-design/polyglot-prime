@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.48</description>
-  <revision>20</revision>
+  <description>Version: 0.4.49</description>
+  <revision>32</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -397,15 +397,12 @@ function validateAddrDates(addr, contextTag) {
 			     logger.error(errorMessage);
 			     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
 			     responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMessage, &quot;invalid&quot;)));
-			     //throw errorMessage; // Stop further processing by throwing an exception
-			     ////////throw new Error(errorMessage);
 			     return;
 		      }
 		  }
 		}
      } catch (error) {
         logger.error(&quot;Validation Error: &quot; + error.message);
-        ///////throw new Error(&quot;Validation Error: &quot; + error.message);
         return;
      }
 }
@@ -892,7 +889,6 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 var xmlExtracted = extractClinicalDocument(rawData);
 if (!xmlExtracted || xmlExtracted.trim().length == 0 || xmlExtracted.trim() == &apos;&apos;) {
     errorMessage = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
-    //setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
 
@@ -951,9 +947,6 @@ function getManufacturerModelName(xmlData) {
 			var lowerName = &apos;&apos;;
 			var modelNode = &apos;&apos;;
 			
-			//manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::manufacturerModelName.toString();
-			//manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::softwareName.toString();
-			
 			// To get the ehrVendor name check both manufacturerModelName as well as softwareName -- update done for Greenway
 			var device = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice[0];
 		     if (device) {
@@ -996,15 +989,11 @@ function getManufacturerModelName(xmlData) {
 			channelMap.put(&apos;ehrVendor&apos;, ehrVendor);
 			channelMap.put(&apos;cdaPhiFilter&apos;, cdaPhiFilterXsltPath);
 			channelMap.put(&apos;cdaPhiBundle&apos;, cdaFhirBundleXsltPath);
-			
-			//logger.info(&quot;using cdaPhiFilter: &quot; + channelMap.get(&apos;cdaPhiFilter&apos;));
-			//logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
 
 		} else {
 		    logger.error(&quot;xmlData is undefined or empty.&quot;);
 		}
 	} catch (e) {
-        //logger.warn(&quot;Error parsing manufacturerModelName: &quot; + e);
         var errorMsg;
         if (e instanceof JavaException) {
            errorMsg = &quot;Error parsing manufacturerModelName: &quot; + e.toString();
@@ -1207,14 +1196,12 @@ function getEncounterEffectiveTime(encounterNodeList, returnFallBackTime) {
     // Try to get low/@value
     var lowValue = encounterNode.*::effectiveTime.*::low.@value.toString();
     if (lowValue &amp;&amp; lowValue.length &gt; 0) {
-        //logger.info(&quot;effectiveTime (low): &quot; + lowValue);
         return lowValue;
     }
 
     // Try to get effectiveTime/@value
     var directValue = encounterNode.*::effectiveTime.@value.toString();
     if (directValue &amp;&amp; directValue.length &gt; 0) {
-        //logger.info(&quot;effectiveTime (direct): &quot; + directValue);
         return directValue;
     }
 
@@ -1348,7 +1335,6 @@ function getObservationCategoryCodes(transformer, observations) {
 	categoryXml += &apos;]&apos;;              
 	
 	// set context variable
-	//msg[&apos;categoryXml&apos;] = categoryXml;
 	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
 	return transformer;
 }
@@ -1358,7 +1344,6 @@ function getMultipleAnswersForComponent(transformer, observations) {
         return transformer;
     }
     
-    //var xml = new XML(observations); // Parse the source message as XML    
     var xml;
     try {
         xml = new XML(observations.toString()); // Safely parse the XML
@@ -1445,6 +1430,7 @@ function setResourceIdParameters(transformer) {
 	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
 	var xmlDoc = new XML(sourceXml);
 	default xml namespace = &quot;urn:hl7-org:v3&quot;;
+	var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
 	
 	// Generate Bundle resource Id
 	var ccda_fhir_bundle_id = channelMap.get(&apos;interactionId&apos;);
@@ -1458,7 +1444,6 @@ function setResourceIdParameters(transformer) {
 	
 	// Extract `patientRole`
 	var patientRoles = xmlDoc.*::recordTarget.*::patientRole[0];
-	//getPatientMRN(patientRoles); //This call moved to the step &apos;Validate Mandatory Fields&apos;
 	transformer = generateSHA256Id(patientRoles, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
 	
 	// Extract `consent`
@@ -1467,20 +1452,65 @@ function setResourceIdParameters(transformer) {
 	transformer = generateSHA256Id(consent, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
 	
 	// Extract `author (organization)`
-	var author = xmlDoc.*::author[0];
-	transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+	var author = xmlDoc.*::author[0];	
+	var organizationName = &quot;&quot;;
 
-	// Extract `Questionnaire`
-	var Questionnaire = xmlDoc.*::component
-                              .*::structuredBody
-                              .*::component
-                              .*::section.(@ID != &apos;sexualOrientation&apos;)
-                              .*::entry;
-	transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+	if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Medent&apos;) {	
+	    var encounterOrgName =
+	        xmlDoc.*::component
+	              .*::structuredBody
+	              .*::component
+	              .*::section.(@ID == &apos;encounters&apos;)
+	              .*::entry[0]
+	              .*::encounter
+	              .*::participant.(@typeCode == &apos;LOC&apos;)[0]
+	              .*::participantRole.(@classCode == &apos;SDLOC&apos;)
+	              .*::playingEntity
+	              .*::name[0];	
+	    if (encounterOrgName != undefined &amp;&amp; encounterOrgName.toString().trim() != &quot;&quot;) {	
+	        organizationName = encounterOrgName.toString().trim();
+	
+	    } else {	
+	        var authorOrgName =
+	            xmlDoc.*::author[0]
+	                  .*::assignedAuthor
+	                  .*::representedOrganization
+	                  .*::name[0];	
+	        if (authorOrgName != undefined &amp;&amp; authorOrgName.toString().trim() != &quot;&quot;) {
+	            organizationName = authorOrgName.toString().trim();
+	        }
+	    }
+	
+	} else {	
+	    var authorOrgName =
+	        xmlDoc.*::author[0]
+	              .*::assignedAuthor
+	              .*::representedOrganization
+	              .*::name[0];
+	
+	    if (authorOrgName != undefined &amp;&amp; authorOrgName.toString().trim() != &quot;&quot;) {
+            organizationName = authorOrgName.toString().trim();
+         }
+	}
+	
+	transformer.setParameter(&apos;organizationName&apos;, organizationName);
+	//logger.info(&apos;organizationName : &apos; + organizationName);
+	transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer, organizationName);
+
+	// Extract `Questionnaire` - used only for Generic CCDA files
+	if (ehrVendor != &apos;Medent&apos; &amp;&amp; ehrVendor != &apos;Athenahealth&apos; &amp;&amp; ehrVendor != &apos;Epic&apos;) {
+		var Questionnaire = xmlDoc.*::component
+	                              .*::structuredBody
+	                              .*::component
+	                              .*::section.(@ID != &apos;sexualOrientation&apos;)
+	                              .*::entry;
+		transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+	}
+	
 	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
 	
 	// Extract `observations`
-	try {
+	/*try {
 		var observations = xmlDoc.*::component
 	                         .*::structuredBody
 	                         .*::component
@@ -1493,7 +1523,7 @@ function setResourceIdParameters(transformer) {
 		transformer = generateSHA256Id(observations, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 	} catch (e) {
 	    logger.error(&quot;Error accessing Observations: &quot; + e);
-	}
+	}*/
 	
 	// Extract `sexualOrientation`
 	var sexualOrientation = xmlDoc.*::component
@@ -1565,12 +1595,12 @@ function setResourceIdParameters(transformer) {
 	    logger.error(&quot;Error extracting grouperScreeningEffectiveTime: &quot; + e);
 	}
 
-	if ((channelMap.get(&apos;ehrVendor&apos;) == &apos;Epic&apos; || channelMap.get(&apos;ehrVendor&apos;) == &apos;Athenahealth&apos;)
+	if ((ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Athenahealth&apos;)
 	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
 	
 	    grouperScreeningCode = &apos;100698-0&apos;;
 	
-	} else if ((channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;)
+	} else if ((ehrVendor == &apos;Medent&apos;)
 	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
 	
 	    // Try to extract from CCDA observations
@@ -1682,7 +1712,7 @@ function setResourceIdParameters(transformer) {
 	        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
 	    }
 	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
-		if (!locationSuccess || channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+		if (!locationSuccess || ehrVendor == &apos;Medent&apos;) {
 	        var section = xmlDoc.component.structuredBody.component.section.(@ID == &apos;encounters&apos;);
 	        if (
 	            section &amp;&amp;
@@ -1721,7 +1751,7 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 	if(profileUrl != null) {
 		transformer.setParameter(metaProfileUrlName, profileUrl);
 		channelMap.put(metaProfileUrlName, profileUrl);
-		logger.info(metaProfileUrlName + &quot;: &quot; + profileUrl);
+		//logger.info(metaProfileUrlName + &quot;: &quot; + profileUrl);
 	} else {
 		var errorMessage = urlEnv + &apos; variable is not set&apos;;
 		logger.error(errorMessage);
@@ -1795,20 +1825,16 @@ function getConsentResourceStatus(sourceXml) {
 		
 		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
 		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
+		var xsi = new Namespace(&quot;xsi&quot;, &quot;http://www.w3.org/2001/XMLSchema-instance&quot;);
 	
-//		var consentCode = xmlDoc.*::authorization.*::consent.*::code.@code.toString();
-//		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
-//		    logger.info(&quot;Consent Code: &quot; + consentCode);
-//		    if (consentCode == &quot;59284-0&quot;) {
-//		        consentInfo.status = &quot;provided&quot;;
-//		    }
-//		}
 		// If consent section is there, the consentInfo.status should be &quot;provided&quot;.
 		var consentSection = xmlDoc.*::authorization.*::consent;
 		if (consentSection != null &amp;&amp; consentSection.length() &gt; 0) {
 			consentInfo.status = &quot;provided&quot;;
 		}
 		else {
+			/* For Medent, if both the two cases fail (first authorization section, secon observation with code &quot;105511-0&quot;), 
+			   check the observation that contains consent details without code.code but value.displayname as &quot;Permit&quot; or &quot;Deny&quot;*/
 			// Iterate through all &lt;section&gt; elements
 			for each (var section in xmlDoc..section) {
 			    var sectionCode = section.code.@code.toString();
@@ -1819,10 +1845,21 @@ function getConsentResourceStatus(sourceXml) {
 			            for each (var observation in entry.observation) {
 			                for each (var entryRel in observation.entryRelationship) {
 			                    for each (var nestedObs in entryRel.observation) {
-			                        var obsCode = nestedObs.code.@code.toString();
+			                        var obsCode = nestedObs.code.@code.toString();			                        
 			                        if (obsCode == &quot;105511-0&quot;) {
 			                            consentInfo.status = &quot;provided&quot;;
+			                            logger.info(&quot;consentInfo.status 2: &quot; + consentInfo.status);
 			                            break;
+			                        } else if (ehrVendor == &apos;athenahealth&apos;) {
+			                        	    var obsRoot = nestedObs.templateId.@root.toString().trim();
+			                        	    var obsValueDisplayName = nestedObs.value.@displayName.toString().trim().toLowerCase();
+			                        	    var xsiType = nestedObs.value.@xsi::type.toString();
+				                        if (obsRoot == &apos;2.16.840.1.113883.10.20.22.4.86&apos; 
+				                        		&amp;&amp; (obsValueDisplayName == &quot;permit&quot; || obsValueDisplayName == &quot;deny&quot;) 
+				                        		&amp;&amp; xsiType == &quot;CD&quot;) {
+				                        	   consentInfo.status = &quot;provided&quot;;
+				                            break;
+				                        }
 			                        }
 			                    }
 			                }
@@ -1830,7 +1867,8 @@ function getConsentResourceStatus(sourceXml) {
 			        }
 			    }
 			}
-		}		
+		}
+		
 		// Convert to JSON string (optional, for sending/logging)
 		var consentJsonString = JSON.stringify(consentInfo);
 		channelMap.put(&apos;elaboration&apos;, consentJsonString);
@@ -1918,7 +1956,6 @@ function validateMandatoryFields() {
 		   }
 	
 		   // 5. Patient MRN
-	        //if (!channelMap.get(&apos;Patient-MRN&apos;)) { errors.push(&quot;Patient MRN is mandatory as per FHIR.&quot;); }
 		   var patientMrn = channelMap.get(&apos;Patient-MRN&apos;);
 		   if (patientMrn === null || String(patientMrn).trim() === &quot;&quot;) {
 		   		errors.push(&quot;Patient MRN -&gt; ClinicalDocument.recordTarget.patientRole.id.extension.&quot;);
@@ -2028,7 +2065,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                 &quot;invalid&quot;, &quot;error&quot;,
                 interactionId, tenantId, requestedPath
             );
-            //logger.error(&quot;No XML data received in the request.&quot;);
         }
     	} catch (e) {
         failAndExit(
@@ -2036,7 +2072,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             &quot;invalid&quot;, &quot;error&quot;,
             interactionId, tenantId, requestedPath
         );
-        //logger.error(&quot;XML structure validation failed. &quot; + e.message);
     	}
 
 	// -----------------------------------
@@ -2069,8 +2104,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     	// 4. XSD Validation
     	// -----------------------------------
     	try {
-		//var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(phiFilteredXml));
-		//validator.validate(xmlSource); 
         validateAgainstXsd(phiFilteredXml);
         logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
     	} catch (e) {
@@ -2087,7 +2120,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     	// -----------------------------------
     	var mandatoryErrors = validateMandatoryFields(phiFilteredXml);
      if (mandatoryErrors &amp;&amp; mandatoryErrors.length &gt; 0) {
-        //failAndExit(mandatoryErrors.join(&quot;\n&quot;),
         failAndExit(&quot;The following fields are mandatory as per FHIR. \n\n- &quot; + mandatoryErrors.join(&quot;\n- &quot;),
             &quot;invalid&quot;, &quot;error&quot;,
             interactionId, tenantId, requestedPath
@@ -2163,7 +2195,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
                 &quot;invalid&quot;, &quot;error&quot;,
                 interactionId, tenantId, requestedPath
             );
-            //logger.error(&quot;No XML data received in the request.&quot;);
         }
     } catch (e) {
         failAndExit(
@@ -2171,7 +2202,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
             &quot;invalid&quot;, &quot;error&quot;,
             interactionId, tenantId, requestedPath
         );
-        //logger.error(&quot;XML structure validation failed. &quot; + e.message);
     }
 
     /* -------------------------------------------------
@@ -2696,7 +2726,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779786001708</time>
+        <time>1780486598436</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

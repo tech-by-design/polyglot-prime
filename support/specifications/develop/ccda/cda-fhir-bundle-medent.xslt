@@ -1402,7 +1402,7 @@
             },
             "language": "en",
             "status": "<xsl:call-template name='mapObservationStatus'>
-                          <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                          <xsl:with-param name='statusCode' select='$grouperObs/ccda:statusCode/@code'/>
                         </xsl:call-template>",
             "code": {
               "coding": [
@@ -1434,9 +1434,9 @@
               },
             </xsl:if>
             "effectiveDateTime": "<xsl:choose>
-                                      <xsl:when test='ccda:effectiveTime/@value'>
+                                      <xsl:when test='$grouperObs/ccda:effectiveTime/@value'>
                                         <xsl:call-template name='formatDateTime'>
-                                          <xsl:with-param name='dateTime' select='ccda:effectiveTime/@value'/>
+                                          <xsl:with-param name='dateTime' select='$grouperObs/ccda:effectiveTime/@value'/>
                                         </xsl:call-template>
                                       </xsl:when>
                                       <xsl:when test='$encounterEffectiveTimeValue'>
