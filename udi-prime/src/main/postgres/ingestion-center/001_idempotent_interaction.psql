@@ -6888,6 +6888,11 @@ DECLARE
 	v_elaboration_steps_text 	TEXT[]	:= ARRAY[]::text[]; 
     v_elaboration_steps_jsonb 	JSONB 	:= '[]'::jsonb;
     v_user_id 					TEXT  	:= COALESCE(p_user_id, v_created_by);	
+
+	v_intr_start_time   timestamp with time zone;
+    v_intr_finish_time  timestamp with time zone;
+    v_user_agent        TEXT;
+    v_client_ip_address TEXT;
    
 BEGIN 
 	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '0: In register_user_interaction function');  
@@ -6968,15 +6973,45 @@ BEGIN
 		    BEGIN
 		       	--1. Call the function with the defined parameters to upsert user info
 		       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(p_interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/')) THEN     		       	
-                    INSERT INTO techbd_udi_ingress.sat_interaction_ui_user (
+                    
+					SELECT
+					    (
+					        SELECT h->>'value'
+					        FROM jsonb_array_elements(
+					            COALESCE(
+					                p_payload->'response'->'headers',
+					                '[]'::jsonb
+					            )
+					        ) h
+					        WHERE h->>'name' = 'X-Observability-Metric-Interaction-Start-Time'
+					    ) AS interaction_start_time,
+					
+					    (
+					        SELECT h->>'value'
+					        FROM jsonb_array_elements(
+					            COALESCE(
+					                p_payload->'response'->'headers',
+					                '[]'::jsonb
+					            )
+					        ) h
+					        WHERE h->>'name' = 'X-Observability-Metric-Interaction-Finish-Time'
+					    ) AS interaction_finish_time,
+					
+					    p_payload->'request'->>'userAgent' AS user_agent,
+					    p_payload->'request'->>'clientIpAddress' AS client_ip_address
+					
+					INTO v_intr_start_time, v_intr_finish_time, v_user_agent, v_client_ip_address;
+
+					
+					INSERT INTO techbd_udi_ingress.sat_interaction_ui_user (
                         sat_interaction_ui_user_id, hub_interaction_id, uri, nature, tenant_id, user_id, user_name, user_session, user_session_hash, 
                         user_role, client_ip_address, user_agent, elaboration, created_at, created_by, provenance, 
                         interaction_start_time, interaction_end_time, techbd_version_number, tenant_name
                     )
                     VALUES (
                         gen_random_uuid()::text, p_interaction_id, p_interaction_key, v_nature_denorm, v_tenant_id, p_user_id, p_user_name, p_user_session, md5(p_user_session), 
-                        p_user_role, p_client_ip_address, p_user_agent, p_elaboration, v_created_at, v_created_by, v_provenance,
-                        p_intr_start_time, p_intr_finish_time, p_techbd_version_number, v_tenant_id_denorm
+                        p_user_role, COALESCE(p_client_ip_address, v_client_ip_address), COALESCE(p_user_agent, v_user_agent), p_elaboration, v_created_at, v_created_by, v_provenance,
+                        COALESCE(p_intr_start_time, v_intr_start_time), COALESCE(p_intr_finish_time, v_intr_finish_time), p_techbd_version_number, v_tenant_id_denorm
                     );
 		
 			      	v_elaboration_steps_text := array_append(v_elaboration_steps_text, '4: Inserted into sat_interaction_ui_user');
@@ -7435,7 +7470,6 @@ RETURNS TABLE (
     user_agent TEXT,
     client_ip_address TEXT,
     content_type TEXT,
-    elaboration JSONB, 
     request_created_at TIMESTAMP WITH TIME ZONE,
     request_created_by TEXT,
     request_provenance TEXT 
@@ -7454,7 +7488,6 @@ BEGIN
             user_req.user_agent,
             user_req.client_ip_address,
             'application/json'::text AS content_type,
-            user_req.elaboration, 
             user_req.created_at AS request_created_at,
             user_req.created_by AS request_created_by,
             user_req.provenance AS request_provenance
@@ -8827,9 +8860,9 @@ BEGIN
             req.interaction_start_time AS start_time,
             req.interaction_end_time AS finish_time,
             EXTRACT(EPOCH FROM (req.interaction_end_time - req.interaction_start_time)) * 1000 AS duration_millisecs,
-            req.sat_interaction_user_id AS interaction_http_request_id
+            req.sat_interaction_ui_user_id AS interaction_http_request_id
         FROM 
-            techbd_udi_ingress.sat_interaction_user req
+            techbd_udi_ingress.sat_interaction_ui_user req
             CROSS JOIN date_range dr
         WHERE 
             req.uri NOT ILIKE '%/Bundle%'
