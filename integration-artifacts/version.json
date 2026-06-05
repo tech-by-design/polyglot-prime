@@ -75,7 +75,7 @@
       "channel": "lookup_group_schemafiles_export.json",
       "version": "",
       "editedby": "jewelbonnie",
-      "date": "2026-06-03"
+      "date": "2026-06-05"
     },
     {
       "type": "Lookup Manager",
@@ -101,9 +101,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.34",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-06-04"
+      "version": "0.5.35",
+      "editedby": "jewelbonnie",
+      "date": "2026-06-05"
     },
     {
       "type": "Router",
