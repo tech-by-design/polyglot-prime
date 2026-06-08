@@ -1106,7 +1106,7 @@ const migrateSP = pgSQLa.storedProcedure(
                   hub_interaction_id,
                   organization_id
               );
-          END IF;
+          END IF; 
 
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
