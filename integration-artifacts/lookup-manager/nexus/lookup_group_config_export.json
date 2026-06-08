@@ -1,13 +1,13 @@
 {
   "group" : {
-    "id" : 6,
+    "id" : 19,
     "name" : "Config",
     "description" : "Environment variables needed for CCDA Workflow",
     "version" : "1",
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
-    "createdDate" : "2026-06-08T11:44:24.592+00:00",
-    "updatedDate" : "2026-06-08T11:44:24.592+00:00",
+    "createdDate" : "2026-06-08T15:27:26.618+00:00",
+    "updatedDate" : "2026-06-08T15:27:26.618+00:00",
     "valueType" : "TEXT",
     "statisticsEnabled" : true,
     "extra" : null
@@ -41,7 +41,7 @@
     "PROFILE_URL_SEXUAL_ORIENTATION" : "/StructureDefinition/shinny-observation-sexual-orientation",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
-    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle,615l4odbn9xc7j3uw3vqosslyc43stgi.oastify.com"
+    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle"
   },
-  "exportDate" : "2026-06-08T11:45:44.896+00:00"
+  "exportDate" : "2026-06-08T15:28:52.190+00:00"
 }
