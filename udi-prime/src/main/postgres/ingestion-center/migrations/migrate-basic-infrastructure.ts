@@ -1094,6 +1094,21 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;
 
           IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'idx_sifr_hub_org'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS idx_sifr_hub_org
+              ON techbd_udi_ingress.sat_interaction_fhir_request
+              USING btree (
+                  hub_interaction_id,
+                  organization_id
+              );
+          END IF;          
+
+          IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
               WHERE schemaname = 'techbd_udi_ingress'
                 AND tablename = 'sat_diagnostic_dataledger_api'
