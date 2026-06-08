@@ -1,0 +1,10 @@
+/*
+ * Creates a composite index on hub_interaction_id and organization_id
+ * to improve query performance and avoid duplicate index creation.
+ */
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sifr_hub_org
+ON techbd_udi_ingress.sat_interaction_fhir_request (
+    hub_interaction_id,
+    organization_id
+);
