@@ -3,7 +3,7 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.35",
+      "version": "0.8.36",
       "editedby": "Nikhithaprojects9696",
       "date": "2026-06-08"
     },

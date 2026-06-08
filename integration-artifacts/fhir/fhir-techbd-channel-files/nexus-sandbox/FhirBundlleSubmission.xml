@@ -1,15 +1,45 @@
 <channel version="26.3.1">
-  <id>9f6e70ca-927f-46fd-bace-ea6a87de4ab2</id>
+  <id>ff4672aa-a05f-428f-8427-3ad8033346cd</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.35
-Added logic to support validation against comma-separated whitelist URLs from the lookup configuration.</description>
-  <revision>1</revision>
+  <description>Version: 0.8.36
+Revert pr for correct Datalake Api url validation.</description>
+  <revision>5</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>true</mutualTlsEnabled>
+          <mutualTlsMigrated>true</mutualTlsMigrated>
+          <clientCertValidationEnabled>true</clientCertValidationEnabled>
+          <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
+          <serverCertValidationEnabled>true</serverCertValidationEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>false</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+          <validationMode>pkix</validationMode>
+          <revocationMode>disabled</revocationMode>
+          <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
+          <pinnedLeafPins/>
+          <subjectSanFilterPatterns/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
@@ -176,90 +206,42 @@ try {
     5️⃣ FETCH DEFAULT DATALAKE API URL (Plain text)
 ********************************************/
 try {
-
     var datalakeApiUrl = &quot;&quot;;
+
     var rawHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
     var incomingHeader = rawHeader == null ? &quot;&quot; : String(rawHeader).trim();
 
-    logger.info(&quot;incomingHeader=[&quot; + incomingHeader + &quot;]&quot;);
+    var urlPattern = /^https?:\/\/[^\s]+$/i;
 
-    var allowedUrlsConfig = LookupHelper.get(
-        &quot;Config&quot;,
-        &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
-    );
+    if (incomingHeader !== &quot;&quot;) { // if incomingHeader not blank
 
-    if (!allowedUrlsConfig || String(allowedUrlsConfig).trim() === &quot;&quot;) {
-        throw &quot;TECHBD_DEFAULT_DATALAKE_API_URL is empty.&quot;;
-    }
+        if (!urlPattern.test(incomingHeader)) {
+            logger.error(&quot;Invalid DataLake API URL in header: &quot; + incomingHeader);
+            datalakeApiUrl = incomingHeader;
+        } else {
+            datalakeApiUrl = incomingHeader;
+            logger.info(&quot;Datalake API URL loaded from request header: &quot; + datalakeApiUrl);
+        }
+    } else { // if incomingHeader is blank
 
-    allowedUrlsConfig = String(allowedUrlsConfig).trim();
+        datalakeApiUrl = LookupHelper.get(
+            &quot;Config&quot;,
+            &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;
+        );
 
-    if (incomingHeader !== &quot;&quot;) {
-
-        var allowedUrls = allowedUrlsConfig.split(&quot;,&quot;);
-        var isAllowed = false;
-
-        for (var i = 0; i &lt; allowedUrls.length; i++) {
-
-            var allowedUrl = String(allowedUrls[i]).trim();
-
-            logger.info(
-                &quot;Comparing incoming=[&quot; +
-                incomingHeader +
-                &quot;] with allowed=[&quot; +
-                allowedUrl +
-                &quot;]&quot;
-            );
-
-            if (incomingHeader === allowedUrl) {
-                isAllowed = true;
-                break;
-            }
+        if (!datalakeApiUrl || datalakeApiUrl.trim() === &quot;&quot;) {
+            throw &quot;DataLake API URL retrieved from Lookup Manager is empty.&quot;;
         }
 
-        if (!isAllowed) {
-
-            logger.error(
-                &quot;Rejected DataLake API URL. Incoming: &quot; +
-                incomingHeader +
-                &quot;, Allowed URLs: &quot; +
-                allowedUrlsConfig
-            );
-
-            setErrorResponse(
-                400,
-                &quot;Invalid X-TechBD-DataLake-API-URL. Only approved DataLake URL is allowed.&quot;
-            );
-
-            throw &quot;SSRF validation failed&quot;;
-        }
-
-        datalakeApiUrl = incomingHeader;
-
-    } else {
-
-        // Use first URL from whitelist as default
-        datalakeApiUrl = String(
-            allowedUrlsConfig.split(&quot;,&quot;)[0]
-        ).trim();
+        datalakeApiUrl = datalakeApiUrl.trim();
+        logger.info(&quot;Header blank → using default DataLake API URL: &quot; + datalakeApiUrl);
     }
 
     channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
 
 } catch (e) {
-
-    logger.error(
-        &quot;Error while validating DataLake API URL: &quot; + e
-    );
-
-    if (String(e) !== &quot;SSRF validation failed&quot;) {
-
-        setErrorResponse(
-            500,
-            &quot;Failed to load DataLake API URL&quot;
-        );
-    }
-
+    logger.error(&quot;Error fetching Datalake API URL: &quot; + e);
+    setErrorResponse(500, &quot;Failed to load Datalake API URL&quot;);
     throw e;
 }
 /********************************************
@@ -612,7 +594,38 @@ function notFound() {
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
       <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.3.1">
-        <pluginProperties/>
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>true</mutualTlsEnabled>
+            <mutualTlsMigrated>true</mutualTlsMigrated>
+            <clientCertValidationEnabled>true</clientCertValidationEnabled>
+            <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
+            <serverCertValidationEnabled>true</serverCertValidationEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>false</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+            <validationMode>pkix</validationMode>
+            <revocationMode>disabled</revocationMode>
+            <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
+            <pinnedLeafPins/>
+            <subjectSanFilterPatterns/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
         <destinationConnectorProperties version="26.3.1">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
@@ -2409,14 +2422,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1780915742883</time>
+        <time>1780932049202</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>1</userId>
+      <userId>11</userId>
     </metadata>
   </exportData>
 </channel>
