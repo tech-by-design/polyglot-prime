@@ -3884,7 +3884,7 @@ RETURNS TABLE (
     qe_total_submissions BIGINT,
     techbd_processed BIGINT,
     shinny_datalake_submissions BIGINT,
-    shinny_datalake_submissions_failed BIGINT,
+  --  shinny_datalake_submissions_failed BIGINT,
     valid_bundles BIGINT,
     recently_created_at TIMESTAMPTZ
 ) AS $$
@@ -3949,7 +3949,7 @@ BEGIN
 			COUNT(*) FILTER (WHERE sihr.to_state = 'COMPLETE') AS shinny_datalake_submissions,
 			COUNT(*) FILTER (WHERE sihr.nature = 'Forward HTTP Request') AS valid_bundles_forwarded,
 			COUNT(*) FILTER (WHERE sihr.to_state = 'COMPLETE') AS valid_bundles_completed,
-			COUNT(*) FILTER (WHERE sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True') AS valid_bundles_with_fail_response,
+		--	COUNT(*) FILTER (WHERE sihr.nature = 'Forwarded HTTP Response Error' AND sihr.replay_status IS DISTINCT FROM 'True') AS valid_bundles_with_fail_response,
 			COUNT(*) FILTER (WHERE sihr.nature = 'techByDesignDisposition' AND sihr.techbd_disposition_action = 'discard') AS invalid_bundles,
 			MAX(sihr.created_at) AS recently_created_at
 		FROM per_interaction pi
@@ -3963,7 +3963,7 @@ BEGIN
 		ia.qe_total_submissions,
 		(ia.qe_total_submissions - ia.missing_steps_total) AS techbd_processed,
 		rl.shinny_datalake_submissions,
-		(rl.valid_bundles_forwarded - rl.shinny_datalake_submissions) AS shinny_datalake_submissions_failed,
+		--(rl.valid_bundles_forwarded - rl.shinny_datalake_submissions) AS shinny_datalake_submissions_failed,
 		(ia.qe_total_submissions - ia.missing_steps_total - rl.invalid_bundles) AS valid_bundles,
 		rl.recently_created_at    
 	FROM interaction_agg ia
