@@ -1,85 +1,114 @@
 <codeTemplateLibrary version="26.3.1">
   <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
   <name>TechBD Functions</name>
-  <revision>120</revision>
+  <revision>153</revision>
   <lastModified>
-    <time>1779427049161</time>
+    <time>1780978497557</time>
     <timezone>America/New_York</timezone>
   </lastModified>
   <description></description>
-  <includeNewChannels>false</includeNewChannels>
+  <includeNewChannels>true</includeNewChannels>
   <enabledChannelIds class="sorted-set">
-    <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
-    <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
-    <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
-    <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
-    <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
-  </enabledChannelIds>
-  <disabledChannelIds class="sorted-set">
     <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+    <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
+    <string>12467de6-360c-47c1-83af-09aae915eb8c</string>
+    <string>140795e4-5d41-4769-885b-b815c18bbc62</string>
     <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
     <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
+    <string>19069366-0852-4caa-875c-1c503461f8a1</string>
     <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
     <string>1c406954-d304-4882-b05d-b513d699785b</string>
     <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
+    <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
     <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
     <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
     <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
+    <string>330819e8-5e01-45b0-9d7d-b87048a8813a</string>
     <string>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</string>
     <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
     <string>3acb72be-f9c1-4721-b990-ff0486b038fc</string>
     <string>3bfca654-f2c7-4c5e-bb88-1ab68cd32f44</string>
     <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
     <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
-    <string>4d4a6df4-774e-4cbd-b7aa-4ce0314d8faa</string>
     <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
     <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
+    <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
+    <string>5cf24505-f00b-4002-a769-836686016c37</string>
+    <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
+    <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+    <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
     <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
+    <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
+    <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
+    <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
+    <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
     <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
-    <string>7ffeeda4-e8e9-4534-8cf0-28eb8ce65510</string>
+    <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
+    <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
     <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
+    <string>869c806f-d639-44ea-93d7-9efbe211cc3c</string>
     <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
     <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
-    <string>8af30ec7-ad08-4ac8-9604-3ddd35f6d8b2</string>
+    <string>8be2be72-35cf-44a6-8b6e-5e37bd770672</string>
     <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
+    <string>8ff42419-20be-4845-b40c-77853eb27b35</string>
+    <string>91adead5-81ab-44f2-b3ac-f875a620846c</string>
+    <string>92bad760-5de9-4b86-91f4-33011e68ca43</string>
     <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
     <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
-    <string>9a7e7b61-5745-4e29-a7e1-43a7d61b60ba</string>
     <string>9c85680a-7b06-43fb-9d12-01db1d9c0448</string>
-    <string>9cbcd82b-a20e-4120-9d81-7c6698dfc1dd</string>
     <string>9f99a5c7-84d9-4dc2-aa7f-451096b5bb8b</string>
-    <string>a5b2ab2c-b422-4614-ac3c-c7b0876c8579</string>
+    <string>a0b29ee9-cd50-4228-8de1-c890131f4350</string>
+    <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
+    <string>a9428f62-99b2-4c17-9466-433dfeedb5ad</string>
     <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
     <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
     <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
     <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
+    <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
     <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
+    <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
+    <string>bbf0fb0d-7a57-43c4-b3b0-2e0d257ae92b</string>
     <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
     <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
+    <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
     <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
-    <string>cc1fe1c8-04cd-4b08-9797-0cb34491208b</string>
     <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
     <string>d341dceb-069e-49ab-8efa-c45398145216</string>
+    <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
     <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
     <string>dc1d3367-14d7-4e36-a87e-d208d839fc78</string>
     <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
+    <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
     <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
-    <string>eb2f5490-8909-4216-b65a-5947fb0f359e</string>
     <string>f23e19b0-a0e0-422a-884c-caae6c52ecac</string>
     <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
     <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
+  </enabledChannelIds>
+  <disabledChannelIds class="sorted-set">
+    <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
   </disabledChannelIds>
   <codeTemplates>
     <codeTemplate version="26.3.1">
       <id>030add36-72d6-4bb4-8db4-aa0cc8b906c9</id>
       <name>setErrorResponse</name>
-      <revision>13</revision>
+      <revision>15</revision>
       <lastModified>
-        <time>1777015747588</time>
+        <time>1779700772800</time>
         <timezone>America/New_York</timezone>
       </lastModified>
       <contextSet>
         <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
           <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
@@ -92,9 +121,9 @@
         <code>/**
 	Util function to set error response.
 
-	@param {Any} map - 
 	@param {Any} statusCode - 
 	@param {Any} errorMessage - 
+	@param {Any} map - 
 	@return {Any} 
 */
 function setErrorResponse(statusCode, errorMessage, map) {
@@ -104,6 +133,7 @@ function setErrorResponse(statusCode, errorMessage, map) {
     targetMap.put(&apos;status&apos;, String(statusCode));
     targetMap.put(&apos;responseStatusCode&apos;, statusCode);
     targetMap.put(&apos;fhirResponse&apos;, json);
+    targetMap.put(&apos;finalResponse&apos;, json);
 }
 /**
  Util function to generate json string wit hstatus and message
