@@ -196,37 +196,81 @@ public class S3UploadStep implements MessageProcessingStep {
             Map<String, String> metadata,
             String interactionId) throws IOException {
         try {
+            byte[] fileBytes = file.getBytes();
+            long actualByteLength = fileBytes.length;
+            long declaredSize = file.getSize();
+
+            if (actualByteLength != declaredSize) {
+                LOG.warn("[S3_UPLOAD_STEP]:: Size mismatch detected — declared={} actual={} "
+                        + "fileName={} interactionId={}",
+                        declaredSize, actualByteLength, file.getOriginalFilename(), interactionId);
+            } else {
+                LOG.debug("[S3_UPLOAD_STEP]:: Size check passed — declared={} actual={} "
+                        + "fileName={} interactionId={}",
+                        declaredSize, actualByteLength, file.getOriginalFilename(), interactionId);
+            }
+
             PutObjectRequest.Builder requestBuilder = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
                     .contentType(file.getContentType())
-                    .contentLength(file.getSize());
+                    .contentLength(actualByteLength);
 
             if (metadata != null && !metadata.isEmpty()) {
-                requestBuilder = requestBuilder.metadata(metadata);
+                // S3 user-defined metadata is transmitted as HTTP headers (x-amz-meta-*).
+                // HTTP headers must be ASCII — non-ASCII values (e.g. accented characters
+                // in filenames like César, Verónica) cause the AWS SDK to encode the header
+                // value differently from what was signed, resulting in 403
+                // SignatureDoesNotMatch
+                Map<String, String> sanitizedMetadata = sanitizeMetadata(metadata);
+                requestBuilder = requestBuilder.metadata(sanitizedMetadata);
             }
 
             PutObjectRequest request = requestBuilder.build();
-            PutObjectResponse response = s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            PutObjectResponse response = s3Client.putObject(
+                    request,
+                    RequestBody.fromBytes(fileBytes));
 
-            LOG.debug("[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
+            LOG.debug(
+                    "[S3 Upload] Interaction ID: {} | Endpoint: {} | Bucket: {} | Key: {} | Size: {} bytes | ETag: {}",
                     interactionId,
                     s3Client.serviceClientConfiguration().endpointOverride().orElse(null),
                     bucketName,
                     key,
-                    file.getSize(),
+                    actualByteLength,
                     response.eTag());
 
             return "Uploaded to S3: " + key + " (ETag: " + response.eTag() + ")";
         } catch (SdkException e) {
             LOG.error("[S3 Upload Failed] Interaction ID: {} | Bucket: {} | Key: {} | Error: {}",
-                    interactionId,
-                    bucketName,
-                    key,
-                    e.getMessage(), e);
+                    interactionId, bucketName, key, e.getMessage(), e);
             throw e;
         }
     }
+
+    /**
+     * Sanitizes all metadata values to ASCII.
+     * S3 metadata is sent as HTTP headers which must be ASCII-safe.
+     * Non-ASCII characters (e.g. accented letters in filenames) are decomposed
+     * via NFD normalization and remaining non-ASCII bytes replaced with
+     * underscores.
+     *
+     * @param metadata the raw metadata map
+     * @return a new map with all values sanitized to ASCII
+     */
+    private Map<String, String> sanitizeMetadata(Map<String, String> metadata) {
+        Map<String, String> sanitized = new java.util.HashMap<>();
+        metadata.forEach((k, v) -> sanitized.put(k, sanitizeAscii(v)));
+        return sanitized;
+    }
+
+    private String sanitizeAscii(String value) {
+        if (value == null)
+            return "";
+        String normalized = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD);
+        return normalized.replaceAll("[^\\x00-\\x7F]", "_");
+    }
+
     @Override
     public boolean isEnabledFor(RequestContext context) {
         return context.getMessageSourceType().shouldUploadToS3();
