@@ -1,15 +1,18 @@
 <channel version="26.3.1">
-  <id>6432709e-b815-40a3-91a8-f77570d3273e</id>
+  <id>19069366-0852-4caa-875c-1c503461f8a1</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.43
-Completed investigation and validation of resource ID generation logic; verified expected behavior and consistency across processing workflows.</description>
-  <revision>5</revision>
+  <description>Version: 0.1.44
+Enhanced file upload handling to return an appropriate response when no file is provided</description>
+  <revision>7</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -38,9 +41,6 @@ Completed investigation and validation of resource ID generation logic; verified
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -327,11 +327,20 @@ function createJsonResponse(status, message) {
 
 /**
 * Util function to set error response.
+* Replaced plain responseMap.put with a proper com.mirth.connect.userutil.Response object.
+* When a throw occurs inside the source transformer, Mirth ignores plain responseMap string entries
+* and returns a blank 200. By storing a Response(Status.SENT, body) into finalResponse (the channel
+* responseVariable), Mirth honours our status code and body instead of emitting its auto-error fallback.
 */
 function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    var body = createJsonResponse(statusCode, errorMessage);
+    responseMap.put(&apos;status&apos;, String(statusCode));
     responseMap.put(&apos;message&apos;, errorMessage);
-    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+    var resp = new com.mirth.connect.userutil.Response(
+        com.mirth.connect.userutil.Status.SENT,
+        new java.lang.String(body)
+    );
+    responseMap.put(&apos;finalResponse&apos;, resp);
 }
 
 
@@ -363,7 +372,20 @@ var saveHL7Payload = globalMap.get(&apos;saveHL7Payload&apos;);
 		
 		logger.info(logPrefix + &quot;Parts: &quot; + partMatches.length);
 		logger.info(logPrefix + &quot;Files: &quot; + fileMatches.length);
-		
+
+		//Zero-file guard - catches the no-file-selected case where Postman sends a valid
+		// multipart/form-data Content-Type with a boundary (so the boundary check above passes) but
+		// all file rows are unchecked, leaving filename=&quot; absent from the body. Without this check
+		// the code falls through to the filename regex else-branch which calls setErrorResponse+throw
+		// but Mirth ignores responseMap under a source-transformer throw and returns blank 200.
+		// Catching it here explicitly with the fixed setErrorResponse (Response object) ensures 400.
+		if (fileMatches.length === 0) {
+		    var errorMessage = &quot;Bad Request: No file is selected. Please attach a .hl7 or .txt file.&quot;;
+		    logger.error(logPrefix + errorMessage);
+		    setErrorResponse(400, errorMessage);
+		    throw errorMessage;
+		}
+
 		// if more than one multipart input
 		if (partMatches.length &gt; 1) {
 		    var errorMessage = &quot;Invalid request. Only one file input is allowed.&quot;;
@@ -3298,7 +3320,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1780397474992</time>
+        <time>1781241304476</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3309,15 +3331,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>3bfdf251-2f4a-441e-99a0-62e81de23049</id>
-        <name>0_1_43</name>
+        <id>d03c206e-dab6-4ec1-9556-95c9146cc46c</id>
+        <name>0_1_44</name>
         <channelIds>
-          <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+          <string>19069366-0852-4caa-875c-1c503461f8a1</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>0</green>
-          <blue>0</blue>
+          <red>0</red>
+          <green>255</green>
+          <blue>255</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
