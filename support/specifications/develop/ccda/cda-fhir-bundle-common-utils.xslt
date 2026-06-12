@@ -283,6 +283,35 @@
   </xsl:choose>
 </xsl:template>
 
+<xsl:template name="mapGenderIdentityCodeDisplay">
+  <xsl:param name="genderIdentityCode"/>
+  <xsl:param name="genderIdentityNullFlavor"/>
+
+  <xsl:choose>
+    <xsl:when test="$genderIdentityCode = '446141000124107'">Identifies as female gender</xsl:when>
+    <xsl:when test="$genderIdentityCode = '446151000124109'">Identifies as male gender</xsl:when>
+    <xsl:when test="$genderIdentityCode = '446131000124105'">Identifies as non-binary gender</xsl:when>
+    <xsl:when test="$genderIdentityCode = '407377005'">Female-to-Male (FTM) / Transgender Male / Trans Man</xsl:when>
+    <xsl:when test="$genderIdentityCode = '407376001'">Male-to-Female (MTF) / Transgender Female / Trans Woman</xsl:when>
+    <xsl:when test="$genderIdentityCode = '446131000124102'">Identifies as non-conforming gender</xsl:when>
+    <xsl:otherwise>
+      <!-- If code is not present or doesn't match known values, check nullFlavor -->
+      <xsl:variable name="cleanCode"
+        select="translate(normalize-space(string($genderIdentityNullFlavor)),
+                          'abcdefghijklmnopqrstuvwxyz',
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ')" />
+
+      <xsl:choose>
+        <xsl:when test="$cleanCode = 'ASKU'">Asked But Unknown</xsl:when>
+        <xsl:when test="$cleanCode = 'NASK'">Not Asked</xsl:when>
+        <xsl:when test="$cleanCode = 'OTH'">Other</xsl:when>
+        <xsl:when test="$cleanCode = 'NA'">Not Applicable</xsl:when>
+        <xsl:otherwise>Unknown</xsl:otherwise>
+      </xsl:choose>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 <xsl:template name="mapObservationCategoryCodes">
   <xsl:param name="questionCode"/>
   <xsl:choose>
