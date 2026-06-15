@@ -1,6 +1,9 @@
 name: Nexus Ingestion API - Integration Tests
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
 
 jobs:
