@@ -1,9 +1,12 @@
 name: Nexus Ingestion API - Integration Tests
 
 on:
-  push:
-    tags:
-      - '*'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'nexus-ingestion-api/**'
+      
   workflow_dispatch:
 
 jobs:
