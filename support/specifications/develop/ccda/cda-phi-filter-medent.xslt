@@ -48,7 +48,7 @@
             <xsl:variable name="consent" select="
                 hl7:component/hl7:structuredBody/hl7:component
                 /hl7:section[hl7:code[@code='47519-4']]
-                /hl7:entry/hl7:observation/hl7:entryRelationship
+                /hl7:entry[1]/hl7:observation/hl7:entryRelationship
                 /hl7:observation[hl7:code/@code = '105511-0']
             "/>   
             <xsl:if test="$consent">

@@ -51,7 +51,7 @@
             <xsl:variable name="observationConsent" select="
                                     hl7:component/hl7:structuredBody/hl7:component
                                     /hl7:section[hl7:code[@code='29762-2']]
-                                    /hl7:entry/hl7:observation/hl7:entryRelationship
+                                    /hl7:entry[1]/hl7:observation/hl7:entryRelationship
                                     /hl7:observation[
                                         hl7:code/@code = '105511-0'
                                         and
@@ -66,7 +66,7 @@
             <xsl:variable name="consentPermitObservation" select="
                                     hl7:component/hl7:structuredBody/hl7:component
                                     /hl7:section[hl7:code[@code='29762-2']]
-                                    /hl7:entry/hl7:observation/hl7:entryRelationship
+                                    /hl7:entry[1]/hl7:observation/hl7:entryRelationship
                                     /hl7:observation[
                                         hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.86']
                                         and
