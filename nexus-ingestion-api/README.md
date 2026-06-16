@@ -1,4 +1,4 @@
-# IngestionAPI
+# IngestionAPI 
 
 **IngestionAPI** is a source-agnostic data ingestion service that supports multiple transport protocols including **HTTPS**, **MLLP**, and **SOAP**. It is designed to reliably handle healthcare data payloads and integrate seamlessly with downstream AWS services. It is responsible for receiving data over multiple transport protocols, performing protocol-specific processing, and routing the payload to the appropriate S3 bucket and SQS queue based on configurable rules.
 
