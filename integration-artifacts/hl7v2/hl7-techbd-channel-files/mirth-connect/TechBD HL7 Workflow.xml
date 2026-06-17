@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.15</description>
-  <revision>21</revision>
+  <revision>22</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -122,6 +122,31 @@ if(jdbcPassword != null) {
     throw errorMessage; // Stop further processing by throwing an exception
 }
 
+function getHeaderValues() {
+	var headerJson = JSON.stringify({
+        headers: {
+            interactionId: channelMap.get(&apos;interactionId&apos;),
+            tenantName: channelMap.get(&apos;tenantId&apos;),
+            userAgent : channelMap.get(&apos;userAgent&apos;),
+            SeverityLevel : channelMap.get(&apos;SeverityLevel&apos;), 
+            uri : channelMap.get(&apos;uri&apos;),
+            contextPath : channelMap.get(&apos;contextPath&apos;),
+            CIN : channelMap.get(&apos;patientCIN&apos;),
+            NPI : channelMap.get(&apos;organizationNPI&apos;),
+            TIN : channelMap.get(&apos;organizationTIN&apos;),
+            FacilityID : channelMap.get(&apos;facilityID&apos;),
+            EncounterType : channelMap.get(&apos;encounterType&apos;),
+            Part2 : channelMap.get(&apos;X-TechBD-Part2&apos;),
+            OMH : channelMap.get(&apos;X-TechBD-OMH&apos;),
+            OPWDD : channelMap.get(&apos;X-TechBD-OPWDD&apos;),
+            BaseFHIRURL : channelMap.get(&apos;baseFhirUrl&apos;),
+            ValidationSeverityLevel : channelMap.get(&apos;SeverityLevel&apos;),
+            OrganizationName : channelMap.get(&apos;OrganizationName&apos;)
+        }
+    });
+    return headerJson;
+}
+
 function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation) {
 	var DriverManager = java.sql.DriverManager;
 	var conn = null;
@@ -183,7 +208,11 @@ function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operat
 		}
 					
 		stmt.setNull(8, java.sql.Types.VARCHAR);
-		stmt.setNull(9, java.sql.Types.OTHER);
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(9, toJsonb(getHeaderValues()), java.sql.Types.OTHER);
+		} else {
+			stmt.setNull(9, java.sql.Types.OTHER);
+		}
 		stmt.setNull(10, java.sql.Types.VARCHAR);
 		stmt.setNull(11, java.sql.Types.VARCHAR);
 		stmt.setNull(12, java.sql.Types.VARCHAR);
@@ -196,7 +225,7 @@ function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operat
 		stmt.setNull(19, java.sql.Types.BOOLEAN);
 		stmt.setNull(20, java.sql.Types.VARCHAR);
 		stmt.setNull(21, java.sql.Types.VARCHAR);
-		stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setString(22, channelMap.get(&apos;userAgent&apos;));
 		stmt.setNull(23, java.sql.Types.VARCHAR);
 		stmt.setNull(24, java.sql.Types.VARCHAR);
 		stmt.setNull(25, java.sql.Types.VARCHAR);
@@ -2572,7 +2601,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1779785074710</time>
+        <time>1781520995945</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
