@@ -69,7 +69,8 @@ public class GlobalExceptionHandlerTest {
                     .thenReturn("TRACE-1");
 
             ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadableException(
-                    new org.springframework.http.converter.HttpMessageNotReadableException("bad"));
+            new org.springframework.http.converter.HttpMessageNotReadableException(
+                "bad", mock(org.springframework.http.HttpInputMessage.class)));
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             assertNotNull(response.getBody());

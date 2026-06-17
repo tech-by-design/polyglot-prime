@@ -203,7 +203,7 @@ class DataIngestionControllerTest {
                 mock(HttpServletResponse.class)
         );
 
-        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody()).contains("status");
 
         verify(messageProcessorService)
@@ -242,7 +242,7 @@ class DataIngestionControllerTest {
                 servletRequest,
                 servletResponse);
 
-        assertThat(result.getStatusCodeValue()).isEqualTo(200);
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
         assertThat(result.getBody()).isEqualTo("forwarded");
 
         verify(forwarder).forward(
