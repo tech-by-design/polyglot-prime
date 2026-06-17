@@ -3,16 +3,16 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.36",
+      "version": "0.8.37",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-06-08"
+      "date": "2026-06-17"
     },
     {
       "type": "FHIR",
       "channel": "FhirBundleValidate.xml",
-      "version": "0.8.16",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-06-08"
+      "version": "0.8.17",
+      "editedby": "Nikhithaprojects9696",
+      "date": "2026-06-17"
     },
     {
       "type": "FHIR",
@@ -38,9 +38,9 @@
     {
       "type": "FLAT FILE",
       "channel": "FlatFileCsvBundle.xml",
-      "version": "0.9.26",
+      "version": "0.9.27",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-05-27"
+      "date": "2026-06-17"
     },
     {
       "type": "FLAT FILE",
@@ -52,8 +52,8 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.47",
-      "editedby": "abhiramisanthosh90",
+      "version": "0.1.48",
+      "editedby": "Nikhithaprojects9696",
       "date": "2026-06-17"
     },
     {
@@ -101,9 +101,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.37",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-06-15"
+      "version": "0.5.38",
+      "editedby": "Nikhithaprojects9696",
+      "date": "2026-06-17"
     },
     {
       "type": "Router",
