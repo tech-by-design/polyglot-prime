@@ -1992,7 +1992,7 @@ public class FHIRService {
 							.getStatusCode().value());
 					final var responseHeaders = webClientResponseException
 							.getHeaders()
-							.entrySet()
+							.headerSet()
 							.stream()
 							.collect(Collectors.toMap(
 									Map.Entry::getKey,

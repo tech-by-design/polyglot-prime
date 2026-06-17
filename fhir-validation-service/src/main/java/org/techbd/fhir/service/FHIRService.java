@@ -929,8 +929,8 @@ public class FHIRService {
 					errorMap.put("statusCode", webClientResponseException
 							.getStatusCode().value());
 					final var responseHeaders = webClientResponseException
-							.getHeaders()
-							.entrySet()
+        					.getHeaders()
+							.headerSet()
 							.stream()
 							.collect(Collectors.toMap(
 									Map.Entry::getKey,
