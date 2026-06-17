@@ -455,11 +455,19 @@ public class SoapForwarderService {
             return skipPort ? proto + "://" + host : proto + "://" + host + ":" + port;
         } else {
             String serverPort = System.getenv("SERVER_PORT");
+            String activeProfile = System.getProperty("SPRING_PROFILES_ACTIVE");
+            if (null == activeProfile) {
+                activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+            }
+
+            // HAProxy protocol support
+            if ("test".equals(activeProfile)) {
+                serverPort = String.valueOf(request.getServerPort());
+            }
             if (serverPort == null || serverPort.isBlank()) {
                 serverPort = "8080"; // Spring Boot default
             }
             return "http://localhost:" + serverPort;
-
         }
     }
 
