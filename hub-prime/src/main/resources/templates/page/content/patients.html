@@ -3,6 +3,18 @@
     layout:decorate="~{layout/prime}">
 
 <head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>    
     <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
     <script src="https://www.jsviews.com/download/jsrender.js"></script>
     <script type="module">
@@ -27,26 +39,26 @@
         ];
         const screeningDetailsColDefs = [
             {
-                headerName: "Screening Details",sort: "desc", field: "submitted_date_time", cellRenderer: 'agGroupCellRenderer'
+                headerName: "Screening Details", sort: "desc", field: "submitted_date_time", cellRenderer: 'agGroupCellRenderer'
             }
         ];
         const questionAnswersColumnDefs = [
-            {headerName: "Question Code", field: "question_code", filter: "agTextColumnFilter"},
+            { headerName: "Question Code", field: "question_code", filter: "agTextColumnFilter" },
             {
-                headerName: "Question", field: "question", filter: "agTextColumnFilter",flex:3,tooltipField: 'question'
+                headerName: "Question", field: "question", filter: "agTextColumnFilter", flex: 3, tooltipField: 'question'
                 // valueGetter: (params) => {
                 //     return params.data.question ?? "No observation provided";
                 // }
             },
-            {headerName: "Answer Code", field: "answer_code", filter: "agTextColumnFilter"},
+            { headerName: "Answer Code", field: "answer_code", filter: "agTextColumnFilter" },
             {
-                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",flex:1.5,tooltipField: 'answer'
+                headerName: "Answer", field: "answer", filter: "agTextColumnFilter", flex: 1.5, tooltipField: 'answer'
                 // valueGetter: (params) => {
                 //     return params.data.answer ?? "No value provided";
                 // }
             },
             { headerName: "Data Absent Reason Code", field: "data_absent_reason_code", filter: "agTextColumnFilter" },
-            { headerName: "Data Absent Reason Display", field: "data_absent_reason_display", filter: "agTextColumnFilter" }            
+            { headerName: "Data Absent Reason Display", field: "data_absent_reason_display", filter: "agTextColumnFilter" }
         ];
         const questionAndAnswerCellRenderer = {
             detailGridOptions: {
@@ -110,11 +122,11 @@
                     if (!Array.isArray(rowData)) {
                         if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
                             rowData = rowData.rows;
-                        } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
                             rowData = rowData.data;
                         } else {
                             console.error("Unexpected response format:", response);
-                            rowData = []; 
+                            rowData = [];
                         }
                     }
                     params.successCallback(rowData, rowData.length);
@@ -122,7 +134,7 @@
                 .catch(error => {
                     console.error('Error fetching details data' + error);
                 });
-        }        
+        }
         function getQuestionAndAnswerGridData(params) {
             const patientMRN = params.data.patient_mrn;
             const interactionId = params.data.hub_interaction_id;
@@ -170,11 +182,11 @@
                     if (!Array.isArray(rowData)) {
                         if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
                             rowData = rowData.rows;
-                        } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
                             rowData = rowData.data;
                         } else {
                             console.error("Unexpected response format:", response);
-                            rowData = []; 
+                            rowData = [];
                         }
                     }
                     params.successCallback(rowData, rowData.length);
@@ -189,23 +201,23 @@
         function formatDateToCustomString(dateToBeConverted) {
             if (dateToBeConverted) {
                 if (dateToBeConverted) {
-                let milliseconds = dateToBeConverted;
-                milliseconds = dateToBeConverted * 1000;
-                let date = new Date(milliseconds);
-                let options = {
-                    timeZone: 'America/New_York',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                };
-                let formatter = new Intl.DateTimeFormat('en-US', options);
-                return formatter.format(date);
-            }
-            return '';
+                    let milliseconds = dateToBeConverted;
+                    milliseconds = dateToBeConverted * 1000;
+                    let date = new Date(milliseconds);
+                    let options = {
+                        timeZone: 'America/New_York',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    };
+                    let formatter = new Intl.DateTimeFormat('en-US', options);
+                    return formatter.format(date);
+                }
+                return '';
             }
             return dateToBeConverted;
         }
@@ -258,6 +270,16 @@
 
 <body>
     <div layout:fragment="content">
+        <div class="grid-description">
+            This widget displays patient demographic information collected through screening submissions. It includes
+            details such as Patient MRN, TechBD Tenant ID, First Name, Last Name, Gender, Birth Date, and Language.
+            Users can filter, sort, and search records to quickly locate patient information.
+
+            A drill-down feature is available on the Patient MRN column. Clicking a Patient MRN displays the patient's
+            screening history grouped by screening date and time. Expanding a screening record shows detailed responses,
+            including Question Code, Question, Answer Code, Answer, Data Absent Reason Code, and Data Absent Reason
+            Display, enabling users to review individual screening submissions and responses.
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 

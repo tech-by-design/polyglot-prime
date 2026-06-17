@@ -3,7 +3,18 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-  
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
 
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
@@ -32,7 +43,7 @@
             },
             { headerName: "Answer Code", field: "answer_code", filter: "agTextColumnFilter" },
             {
-                headerName: "Answer", field: "answer", filter: "agTextColumnFilter", flex:1.5,  tooltipField: 'answer'
+                headerName: "Answer", field: "answer", filter: "agTextColumnFilter", flex: 1.5, tooltipField: 'answer'
                 // valueGetter: (params) => {
                 //     return params.data.answer ?? "No value provided";
                 // }
@@ -87,11 +98,11 @@
                     if (!Array.isArray(rowData)) {
                         if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
                             rowData = rowData.rows;
-                        } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        } else if (rowData && rowData.data && Array.isArray(rowData.data)) {
                             rowData = rowData.data;
                         } else {
                             console.error("Unexpected response format:", response);
-                            rowData = []; 
+                            rowData = [];
                         }
                     }
                     params.successCallback(rowData, rowData.length);
@@ -173,6 +184,13 @@
 
 <body>
     <div layout:fragment="content">
+        <div class="grid-description">
+            This widget displays patient screening information submitted through the TechBD platform. It includes
+            details such as TechBD Tenant ID, Patient MRN, First Name, Last Name, Submission Date, Areas of Interest,
+            Total Safety Score, and Survey Date. Users can filter, sort, and search records for easy analysis. A drill-down feature is available on the TechBD Tenant ID column. Clicking a Tenant ID opens detailed
+            screening responses, including Question Code, Question, Answer Code, Answer, Data Absent Reason Code, and
+            Data Absent Reason Display, allowing users to review individual screening results.
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
