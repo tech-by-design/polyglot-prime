@@ -2,7 +2,19 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{layout/prime}">
 
-<head> 
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
 
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
@@ -24,7 +36,7 @@
         const viewName = 'interaction_user_list';
         const viewDetailsName = 'interaction_user_details';
         const userInteractionColumnDefs = [
-            { headerName: "Recorded Time", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded"},
+            { headerName: "Recorded Time", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded" },
             { headerName: "TechBD  Interaction ID", field: "hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "TechBD Interaction ID" },
             { headerName: "URI Accessed", field: "uri", filter: "agTextColumnFilter", headerTooltip: "URI Accessed" },
             { headerName: "User Role", field: "user_role", filter: "agTextColumnFilter", headerTooltip: "User Role" },
@@ -53,10 +65,10 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                  { headerName: "Session Start Time", field: "created_at", sort: "desc", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },                
-                  { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
-                  { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },
-                  ])
+                    { headerName: "Session Start Time", field: "created_at", sort: "desc", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
+                    { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },
+                ])
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
 
@@ -105,6 +117,15 @@
 
 <body>
     <div layout:fragment="content">
+        <div class="grid-description">
+            This widget displays user session activity within the TechBD platform. It includes Session Start Time, User
+            ID, and Username, providing a consolidated view of user login sessions and activity.
+
+            A drill-down feature is available on the Session Start Time column. Clicking a session displays detailed
+            activity recorded during that session, including Recorded Time, TechBD Interaction ID, URI Accessed, User
+            Role, IP Address, and User Agent. This enables administrators to audit user actions, monitor system usage,
+            and investigate session activity.
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>

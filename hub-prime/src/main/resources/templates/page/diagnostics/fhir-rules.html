@@ -1,151 +1,163 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/prime}">
+    layout:decorate="~{layout/prime}">
 
-    <head>
-     
-        <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+<head>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
 
-        <style th:replace="fragments/aggrid-styles :: aggrid-styles"></style>
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
 
-        <script th:inline="javascript" type="module">
-            const schemaName = 'techbd_udi_ingress';
-            const viewName = 'json_action_rule';
-            const primaryKeyColumn = 'action_rule_id';
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
 
-            let agGridInstance = null;
-            let currentRowData = null;
+    <style th:replace="fragments/aggrid-styles :: aggrid-styles"></style>
 
-            import { deleteRow, editRow } from '@presentation/shell/functions.js';
+    <script th:inline="javascript" type="module">
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'json_action_rule';
+        const primaryKeyColumn = 'action_rule_id';
 
-                window.handleDeleteRow = function(primaryKey) {
-                    deleteRow(schemaName, viewName, primaryKeyColumn, primaryKey)
-                        .then(data => {
-                            console.log('Server response:', data);
-                            alert('Row deleted successfully.');
-                            location.reload();
-                        })
-                        .catch(error => {
-                            alert(error.message);
-                        });
-                }
+        let agGridInstance = null;
+        let currentRowData = null;
 
-                // ---Clear JSON Path Error Function---
-                function clearJsonPathError() {
-                    const jsonPathError = document.getElementById('jsonPathError');
-                    if (jsonPathError) {
-                        jsonPathError.textContent = '';
-                        jsonPathError.style.display = 'none';
-                    }
-                }
+        import { deleteRow, editRow } from '@presentation/shell/functions.js';
 
-                window.handleEditRow = function(primaryKey) {
-                    editRow(schemaName, viewName, primaryKeyColumn, primaryKey, agGridInstance.gridOptions.columnDefs)
-                        .then(data => {
-                            currentRowData = data;
+        window.handleDeleteRow = function (primaryKey) {
+            deleteRow(schemaName, viewName, primaryKeyColumn, primaryKey)
+                .then(data => {
+                    console.log('Server response:', data);
+                    alert('Row deleted successfully.');
+                    location.reload();
+                })
+                .catch(error => {
+                    alert(error.message);
+                });
+        }
 
-                            const addNewModal = document.getElementById('addNewModal');
-                            const addNewForm = document.getElementById('addNewForm');
-                            addNewForm.innerHTML = ''; 
-                            const modalHeading = document.getElementById('modalHeading'); 
-                            modalHeading.textContent = 'Edit Rule'; 
+        // ---Clear JSON Path Error Function---
+        function clearJsonPathError() {
+            const jsonPathError = document.getElementById('jsonPathError');
+            if (jsonPathError) {
+                jsonPathError.textContent = '';
+                jsonPathError.style.display = 'none';
+            }
+        }
 
-                            agGridInstance.gridOptions.columnDefs.forEach(colDef => {
-                                if (colDef.editable) {
-                                    const label = document.createElement('label');
-                                    label.htmlFor = colDef.field;
-                                    label.textContent = colDef.headerName + ':';
-                                    addNewForm.appendChild(label);
+        window.handleEditRow = function (primaryKey) {
+            editRow(schemaName, viewName, primaryKeyColumn, primaryKey, agGridInstance.gridOptions.columnDefs)
+                .then(data => {
+                    currentRowData = data;
 
-                                    if (colDef.field === 'action') {
-                                    const select = document.createElement('select');
-                                    select.name = colDef.field;
-                                    select.style = 'display: block; margin-bottom: 10px; width: 100%;';
+                    const addNewModal = document.getElementById('addNewModal');
+                    const addNewForm = document.getElementById('addNewForm');
+                    addNewForm.innerHTML = '';
+                    const modalHeading = document.getElementById('modalHeading');
+                    modalHeading.textContent = 'Edit Rule';
 
-                                    const rejectOption = document.createElement('option');
-                                    rejectOption.value = 'reject';
-                                    rejectOption.text = 'Reject';
-                                    select.appendChild(rejectOption);
+                    agGridInstance.gridOptions.columnDefs.forEach(colDef => {
+                        if (colDef.editable) {
+                            const label = document.createElement('label');
+                            label.htmlFor = colDef.field;
+                            label.textContent = colDef.headerName + ':';
+                            addNewForm.appendChild(label);
 
-                                    const discardOption = document.createElement('option');
-                                    discardOption.value = 'discard';
-                                    discardOption.text = 'Discard';
-                                    select.appendChild(discardOption);
+                            if (colDef.field === 'action') {
+                                const select = document.createElement('select');
+                                select.name = colDef.field;
+                                select.style = 'display: block; margin-bottom: 10px; width: 100%;';
 
-                                    select.value = currentRowData[colDef.field];
+                                const rejectOption = document.createElement('option');
+                                rejectOption.value = 'reject';
+                                rejectOption.text = 'Reject';
+                                select.appendChild(rejectOption);
 
-                                    addNewForm.appendChild(select);
-                                    } else {
-                                    const input = document.createElement('input');
-                                    input.type = 'text';
-                                    input.name = colDef.field;
-                                    input.placeholder = colDef.headerName;
-                                    input.style = 'display: block; margin-bottom: 10px; width: 100%;';
-                                    input.value = currentRowData[colDef.field];
-                                    addNewForm.appendChild(input);
-                                    }
-                                }
-                            });
+                                const discardOption = document.createElement('option');
+                                discardOption.value = 'discard';
+                                discardOption.text = 'Discard';
+                                select.appendChild(discardOption);
 
-                            // ---Clear the error when opening the edit modal---
-                            clearJsonPathError();
+                                select.value = currentRowData[colDef.field];
 
-                            addNewModal.style.display = 'block';
-                        })
-                        .catch(error => {
-                            console.error("Error editing row:", error);
-                            alert("An error occurred while editing the row: " + error.message);
-                        });
-                }
+                                addNewForm.appendChild(select);
+                            } else {
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.name = colDef.field;
+                                input.placeholder = colDef.headerName;
+                                input.style = 'display: block; margin-bottom: 10px; width: 100%;';
+                                input.value = currentRowData[colDef.field];
+                                addNewForm.appendChild(input);
+                            }
+                        }
+                    });
 
-                import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
-                import ModalAide from '@presentation/shell/modal-aide.js';
+                    // ---Clear the error when opening the edit modal---
+                    clearJsonPathError();
 
-                document.addEventListener('DOMContentLoaded', function () {
-                    const modalAide = new ModalAide();
+                    addNewModal.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("Error editing row:", error);
+                    alert("An error occurred while editing the row: " + error.message);
+                });
+        }
 
-                    const columnDefs = [                        
-                        { headerName: "Name Space", field: "namespace", filter: "agTextColumnFilter", editable: true },
-                        { headerName: "Rule Description", field: "description", filter: "agTextColumnFilter", editable: true },
-                        { headerName: "Json Path", field: "json_path", filter: "agTextColumnFilter", editable: true },
-                        {
-                        headerName: "Action",
-                        field: "action",
-                        editable: true,
-                        filter: false,
-                        cellEditor: 'agSelectCellEditor',
-                        cellEditorParams: {
-                            values: ['reject', 'discard']
-                        },
-                        valueFormatter: (params) => {
-                            switch (params.value) {
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+
+            const columnDefs = [
+                { headerName: "Name Space", field: "namespace", filter: "agTextColumnFilter", editable: true },
+                { headerName: "Rule Description", field: "description", filter: "agTextColumnFilter", editable: true },
+                { headerName: "Json Path", field: "json_path", filter: "agTextColumnFilter", editable: true },
+                {
+                    headerName: "Action",
+                    field: "action",
+                    editable: true,
+                    filter: false,
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: {
+                        values: ['reject', 'discard']
+                    },
+                    valueFormatter: (params) => {
+                        switch (params.value) {
                             case 'reject':
                                 return 'Reject';
                             case 'discard':
                                 return 'Discard';
                             default:
                                 return params.value;
-                            }
-                        },
-                        valueParser: (params) => {
-                            switch (params.newValue) {
+                        }
+                    },
+                    valueParser: (params) => {
+                        switch (params.newValue) {
                             case 'Reject':
                                 return 'reject';
                             case 'Discard':
                                 return 'discard';
                             default:
                                 return params.newValue;
-                            }
                         }
-                        },
-                        {
-                            headerName: "Modify",
-                            field: "modify",
-                            filter: false,
-                            sortable: false,
-                            width: 160,
-                            cellRenderer: function(params) {
-                                return `
+                    }
+                },
+                {
+                    headerName: "Modify",
+                    field: "modify",
+                    filter: false,
+                    sortable: false,
+                    width: 160,
+                    cellRenderer: function (params) {
+                        return `
                                     <div style="display: inline-flex; gap: 10px;">
                                         <button class="edit-button" onclick="handleEditRow('${params.data.action_rule_id}')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
@@ -161,249 +173,264 @@
                                             </svg>
                                         </button>
                                     </div>`;
-                            }
+                    }
+                }
+            ];
+
+            agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs(columnDefs)
+                .withGridOptions({
+                    editType: 'none',
+                })
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/active_json_action_rule.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field,
+                            editable: false
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+
+            const addNewButton = document.getElementById('addNewButton');
+            const addNewModal = document.getElementById('addNewModal');
+            const closeModal = document.querySelector('.close');
+            const saveButton = document.getElementById('saveButton');
+            const addNewForm = document.getElementById('addNewForm');
+
+            addNewButton.addEventListener('click', () => {
+                addNewForm.innerHTML = '';
+                const modalHeading = document.getElementById('modalHeading');
+                modalHeading.textContent = 'Add New Rule';
+
+                agGridInstance.gridOptions.columnDefs.forEach(colDef => {
+                    if (colDef.editable) {
+                        const label = document.createElement('label');
+                        label.htmlFor = colDef.field;
+                        label.textContent = colDef.headerName;
+                        addNewForm.appendChild(label);
+
+                        if (colDef.field === 'action') {
+                            const select = document.createElement('select');
+                            select.name = colDef.field;
+                            select.style = 'display: block; margin-bottom: 10px; width: 100%;';
+
+                            const rejectOption = document.createElement('option');
+                            rejectOption.value = 'reject';
+                            rejectOption.text = 'Reject';
+                            select.appendChild(rejectOption);
+
+                            const discardOption = document.createElement('option');
+                            discardOption.value = 'discard';
+                            discardOption.text = 'Discard';
+                            select.appendChild(discardOption);
+
+                            addNewForm.appendChild(select);
+                        } else {
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.name = colDef.field;
+                            input.placeholder = colDef.headerName;
+                            input.style = 'display: block; margin-bottom: 10px; width: 100%;';
+                            addNewForm.appendChild(input);
                         }
-                    ];
+                    }
+                });
 
-                    agGridInstance = new AGGridAideBuilder()
-                        .withColumnDefs(columnDefs)
-                        .withGridOptions({
-                            editType: 'none',
-                        })
-                        .withServerSideDatasource(
-                            window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/active_json_action_rule.json`),
-                            (data, valueCols) => {
-                                return valueCols.map(col => ({
-                                    headerName: col.displayName,
-                                    field: col.field,
-                                    editable: false
-                                }));
-                            },
-                        )
-                        .withModalAide(modalAide)
-                        .withGridDivStyles({ height: "750px", width: "100%" })
-                        .build();
+                // ---Clear the error when opening the add new modal---
+                clearJsonPathError();
 
-                    agGridInstance.init('serverDataGrid');
+                addNewModal.style.display = 'block';
+            });
 
-                    const addNewButton = document.getElementById('addNewButton');
-                    const addNewModal = document.getElementById('addNewModal');
-                    const closeModal = document.querySelector('.close');
-                    const saveButton = document.getElementById('saveButton');
-                    const addNewForm = document.getElementById('addNewForm');
+            closeModal.addEventListener('click', () => {
+                addNewModal.style.display = 'none';
+            });
 
-                    addNewButton.addEventListener('click', () => {
-                        addNewForm.innerHTML = '';
-                        const modalHeading = document.getElementById('modalHeading');
-                        modalHeading.textContent = 'Add New Rule';
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    addNewModal.style.display = 'none';
+                }
+            });
 
-                        agGridInstance.gridOptions.columnDefs.forEach(colDef => {
-                            if (colDef.editable) {
-                                const label = document.createElement('label');
-                                label.htmlFor = colDef.field;
-                                label.textContent = colDef.headerName;
-                                addNewForm.appendChild(label); 
+            function displayJsonPathError(message) {
+                let jsonPathError = document.getElementById('jsonPathError');
+                const jsonPathInput = document.querySelector('input[name="json_path"]');
 
-                                if (colDef.field === 'action') {
-                                    const select = document.createElement('select');
-                                    select.name = colDef.field;
-                                    select.style = 'display: block; margin-bottom: 10px; width: 100%;';
+                if (!jsonPathError) {
+                    jsonPathError = document.createElement('div');
+                    jsonPathError.id = 'jsonPathError';
+                    jsonPathError.style.color = 'red';
 
-                                    const rejectOption = document.createElement('option');
-                                    rejectOption.value = 'reject';
-                                    rejectOption.text = 'Reject';
-                                    select.appendChild(rejectOption);
-
-                                    const discardOption = document.createElement('option');
-                                    discardOption.value = 'discard';
-                                    discardOption.text = 'Discard';
-                                    select.appendChild(discardOption);
-
-                                    addNewForm.appendChild(select);
-                                } else {
-                                    const input = document.createElement('input');
-                                    input.type = 'text';
-                                    input.name = colDef.field;
-                                    input.placeholder = colDef.headerName;
-                                    input.style = 'display: block; margin-bottom: 10px; width: 100%;';
-                                    addNewForm.appendChild(input);
-                                }
-                            }
-                        });
-
-                        // ---Clear the error when opening the add new modal---
-                        clearJsonPathError();
-
-                        addNewModal.style.display = 'block';
-                    });
-
-                    closeModal.addEventListener('click', () => {
-                        addNewModal.style.display = 'none';
-                    });
-
-                    window.addEventListener('keydown', (event) => {
-                        if (event.key === 'Escape') {
-                            addNewModal.style.display = 'none';
-                        }
-                    });
-
-                    function displayJsonPathError(message) {
-                        let jsonPathError = document.getElementById('jsonPathError');
-                        const jsonPathInput = document.querySelector('input[name="json_path"]');
-
-                        if (!jsonPathError) {
-                            jsonPathError = document.createElement('div');
-                            jsonPathError.id = 'jsonPathError';
-                            jsonPathError.style.color = 'red';
-
-                            if (jsonPathInput.parentNode.querySelector('#jsonPathError') != null) {
-                                console.warn("#jsonPathError element not found.");
-                                return;
-                            }
-
-                            jsonPathInput.parentNode.insertBefore(jsonPathError, jsonPathInput.nextSibling);
-
-                            if (!jsonPathInput.parentNode.contains(jsonPathError)) {
-                                const modalContent = document.querySelector('.modal-content'); // Or a more specific selector
-                                if (modalContent) {
-                                    modalContent.appendChild(jsonPathError);
-                                    console.warn("'json_path' input not found. Appending error to modal content.");
-                                } else {
-                                    console.error("Could not find either 'json_path' input or modal content area.");
-                                    return; 
-                                }
-                            }
-                            jsonPathInput.addEventListener('focusout', (event) => {
-                                const current_path = jsonPathInput.value.trim();
-                                if (current_path == null || current_path.isEmpty() ){
-                                    addNewModal.style.display = 'block';
-                                    displayJsonPathError('Json Path is required');
-                                }
-                            })
-                        }
-                        jsonPathError.textContent = message;
-                        jsonPathError.style.display = 'block';
+                    if (jsonPathInput.parentNode.querySelector('#jsonPathError') != null) {
+                        console.warn("#jsonPathError element not found.");
+                        return;
                     }
 
-                    saveButton.addEventListener('click', () => {
-                        const formData = {};
-                        const inputs = addNewForm.querySelectorAll('input, select');
-                        inputs.forEach(input => {
-                            if (input.value.trim() !== '') {
-                                formData[input.name] = input.value;
-                            }
-                        });
+                    jsonPathInput.parentNode.insertBefore(jsonPathError, jsonPathInput.nextSibling);
 
-                        if (Object.keys(formData).length === 0) {
-                            alert("Please fill in at least one field.");
-                            return;
-                        }
-
-                        if (!formData.json_path) {
-                            addNewModal.style.display = 'block';
-                            displayJsonPathError("Json Path is required.");
-                            return;
-                        }
-
-                        addNewModal.style.display = 'none'; // Hide the modal initially
-
-                        let url;
-                        if (currentRowData) {
-                            formData.action_rule_id = currentRowData.action_rule_id;
-                            url = schemaName ?
-                                `/api/ux/tabular/jooq/save/${schemaName}/${viewName}.json` :
-                                `/api/ux/tabular/jooq/save/${viewName}.json`;
+                    if (!jsonPathInput.parentNode.contains(jsonPathError)) {
+                        const modalContent = document.querySelector('.modal-content'); // Or a more specific selector
+                        if (modalContent) {
+                            modalContent.appendChild(jsonPathError);
+                            console.warn("'json_path' input not found. Appending error to modal content.");
                         } else {
-                            url = schemaName ?
-                                `/api/ux/tabular/jooq/save/${schemaName}/${viewName}.json` :
-                                `/api/ux/tabular/jooq/save/${viewName}.json`;
+                            console.error("Could not find either 'json_path' input or modal content area.");
+                            return;
                         }
+                    }
+                    jsonPathInput.addEventListener('focusout', (event) => {
+                        const current_path = jsonPathInput.value.trim();
+                        if (current_path == null || current_path.isEmpty()) {
+                            addNewModal.style.display = 'block';
+                            displayJsonPathError('Json Path is required');
+                        }
+                    })
+                }
+                jsonPathError.textContent = message;
+                jsonPathError.style.display = 'block';
+            }
 
-                        fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(formData)
-                        })
-                        .then(response => {
-                            if (response.url.includes('/?timeout=true')) {
-                                window.location.href = '/?timeout=true';
-                                return null;
-                            }
-                            if (!response.ok) {
-                                return response.json().then(errData => {
-                                    if (errData.message === "Invalid JSON Path.") {
-                                        addNewModal.style.display = 'block';
-                                        displayJsonPathError("Invalid JSON Path.");
-                                        throw new Error("Invalid JSON Path."); 
-                                    } else {
-                                        throw new Error(errData.message || "An error occurred.");
-                                    }
-                                });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Server Response:', data); // Log the successful response
-                            alert(currentRowData ? 'Row updated successfully.' : 'Row added successfully.');
-
-                            // Refresh ag-Grid after successful save/update
-                            if (agGridInstance && agGridInstance.gridOptions.api) {
-                                agGridInstance.gridOptions.api.refreshCells(); // Or refreshInfiniteCache() if using infinite scrolling
-                            } else {
-                                location.reload();
-                            }
-                            currentRowData = null; 
-                        })
-                        .catch(error => {
-                            console.error("Error:", error);
-                            if (error.message !== "Invalid JSON Path.") { // Avoid duplicate alerts
-                                alert("An error occurred: " + (error.message || "Unknown error"));
-                            }
-                        });
-                    }); 
+            saveButton.addEventListener('click', () => {
+                const formData = {};
+                const inputs = addNewForm.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.value.trim() !== '') {
+                        formData[input.name] = input.value;
+                    }
                 });
-        </script>
 
-    </head>
+                if (Object.keys(formData).length === 0) {
+                    alert("Please fill in at least one field.");
+                    return;
+                }
 
-    <body>
-        <div layout:fragment="content">
-            <button class="bg-gray-400 text-white px-6 py-3 rounded-md text-lg font-bold cursor-pointer transition duration-300 ease-in-out hover:bg-gray-500 float-right mb-2" 
-                id="addNewButton">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
-                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
-                </svg>
-            </button>
-        
-            <div id="addNewModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">×</span>
-                    <h1 id="modalHeading" th:text="${currentRowData != null} ? 'Edit Rule' : 'Add New Rule'"></h1>
-                    <form id="addNewForm">
-                        <label for="description">Rule Description</label>
-                        <input type="text" name="description" id="description" placeholder="Rule Description" th:value="${currentRowData?.description}">
-        
-                        <label for="namespace">Name Space</label>
-                        <input type="text" name="namespace" id="namespace" placeholder="Name Space" th:value="${currentRowData?.namespace}">
-        
-                        <label for="json_path">Json Path</label>
-                        <input type="text" name="json_path" id="json_path" placeholder="Json Path" required th:value="${currentRowData?.json_path}">
-                        <div id="jsonPathError"></div>
-        
-                        <label for="action">Action</label>
-                        <select name="action" id="action">
-                            <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
-                            <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
-                        </select>
-                    </form>
-        
-                    <button id="saveButton">Save</button>
-                </div>
+                if (!formData.json_path) {
+                    addNewModal.style.display = 'block';
+                    displayJsonPathError("Json Path is required.");
+                    return;
+                }
+
+                addNewModal.style.display = 'none'; // Hide the modal initially
+
+                let url;
+                if (currentRowData) {
+                    formData.action_rule_id = currentRowData.action_rule_id;
+                    url = schemaName ?
+                        `/api/ux/tabular/jooq/save/${schemaName}/${viewName}.json` :
+                        `/api/ux/tabular/jooq/save/${viewName}.json`;
+                } else {
+                    url = schemaName ?
+                        `/api/ux/tabular/jooq/save/${schemaName}/${viewName}.json` :
+                        `/api/ux/tabular/jooq/save/${viewName}.json`;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(response => {
+                        if (response.url.includes('/?timeout=true')) {
+                            window.location.href = '/?timeout=true';
+                            return null;
+                        }
+                        if (!response.ok) {
+                            return response.json().then(errData => {
+                                if (errData.message === "Invalid JSON Path.") {
+                                    addNewModal.style.display = 'block';
+                                    displayJsonPathError("Invalid JSON Path.");
+                                    throw new Error("Invalid JSON Path.");
+                                } else {
+                                    throw new Error(errData.message || "An error occurred.");
+                                }
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Server Response:', data); // Log the successful response
+                        alert(currentRowData ? 'Row updated successfully.' : 'Row added successfully.');
+
+                        // Refresh ag-Grid after successful save/update
+                        if (agGridInstance && agGridInstance.gridOptions.api) {
+                            agGridInstance.gridOptions.api.refreshCells(); // Or refreshInfiniteCache() if using infinite scrolling
+                        } else {
+                            location.reload();
+                        }
+                        currentRowData = null;
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        if (error.message !== "Invalid JSON Path.") { // Avoid duplicate alerts
+                            alert("An error occurred: " + (error.message || "Unknown error"));
+                        }
+                    });
+            });
+        });
+    </script>
+
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <button
+            class="bg-gray-400 text-white px-6 py-3 rounded-md text-lg font-bold cursor-pointer transition duration-300 ease-in-out hover:bg-gray-500 float-right mb-2"
+            id="addNewButton">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
+                <path
+                    d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z" />
+            </svg>
+        </button>
+
+        <div id="addNewModal" class="modal">
+            <div class="modal-content">
+                <span class="close">×</span>
+                <h1 id="modalHeading" th:text="${currentRowData != null} ? 'Edit Rule' : 'Add New Rule'"></h1>
+                <form id="addNewForm">
+                    <label for="description">Rule Description</label>
+                    <input type="text" name="description" id="description" placeholder="Rule Description"
+                        th:value="${currentRowData?.description}">
+
+                    <label for="namespace">Name Space</label>
+                    <input type="text" name="namespace" id="namespace" placeholder="Name Space"
+                        th:value="${currentRowData?.namespace}">
+
+                    <label for="json_path">Json Path</label>
+                    <input type="text" name="json_path" id="json_path" placeholder="Json Path" required
+                        th:value="${currentRowData?.json_path}">
+                    <div id="jsonPathError"></div>
+
+                    <label for="action">Action</label>
+                    <select name="action" id="action">
+                        <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
+                        <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
+                    </select>
+                </form>
+
+                <button id="saveButton">Save</button>
             </div>
-            <div id="serverDataGrid" class="ag-theme-alpine"></div>
         </div>
-    </body>
-        
+        <div class="grid-description">
+            This widget displays active FHIR validation rules used to validate incoming FHIR resources. It includes
+            details such as Namespace, Rule Description, JSON Path, and Action. Users can filter, sort, and search rules
+            to quickly locate specific validation logic.
+            The page also provides Add, Edit, and Delete capabilities for managing FHIR rules. The (+) <b>Add Rule</b> button
+            allows to create new validation rules, while existing rules can be modified or removed as
+            needed. These rules help enforce data quality and validation requirements during FHIR processing.
+
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
 </html>
