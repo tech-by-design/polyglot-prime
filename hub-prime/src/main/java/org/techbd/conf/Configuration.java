@@ -59,7 +59,7 @@ public class Configuration {
         for (String propertyExpression : propertyExpressions) {
             missingProperties.add(propertyExpression);
             try {
-                final var placeholderHelper = new PropertyPlaceholderHelper("${", "}", ":", true);
+                final var placeholderHelper = new PropertyPlaceholderHelper("${", "}", ":",null, true);
                 final var resolvedPropertyName = placeholderHelper.replacePlaceholders(propertyExpression,
                         environment::getProperty);
                 missingProperties.add(Optional.ofNullable(resolvedPropertyName).orElseThrow());
