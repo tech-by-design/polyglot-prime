@@ -1,15 +1,18 @@
 <channel version="26.3.1">
   <id>94d93cc7-9346-4ed6-81f0-767364a29138</id>
   <nextMetaDataId>12</nextMetaDataId>
-  <name>TechBD CCD Workflow17</name>
-  <description>Version 0.5.38
-Add validation to datalake Api url header for ssrf.</description>
-  <revision>5</revision>
+  <name>TechBD CCD Workflow</name>
+  <description>Version 0.5.39
+Implemented Birth Sex and Gender Identity extensions in the Patient resource, resolved the &quot;CCD XML validation failed&quot; issue</description>
+  <revision>4</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -38,9 +41,6 @@ Add validation to datalake Api url header for ssrf.</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -1813,7 +1813,6 @@ function getMultipleAnswersForComponent(transformer, observations) {
         return transformer;
     }
     
-    //var xml = new XML(observations); // Parse the source message as XML    
     var xml;
     try {
         xml = new XML(observations.toString()); // Safely parse the XML
@@ -1837,7 +1836,11 @@ function getMultipleAnswersForComponent(transformer, observations) {
 		        .entry
 		        .observation
 		        .entryRelationship
-		        .observation.(code.@code == &apos;96778-6&apos;);
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
 	     } else if (ehrVendor == &apos;Epic&apos;) {
 	     	matchingObservations = xml..component
 		        .structuredBody
@@ -1848,14 +1851,22 @@ function getMultipleAnswersForComponent(transformer, observations) {
 		        .entryRelationship
 		        .observation
 		        .entryRelationship
-		        .observation.(code.@code == &apos;96778-6&apos;);
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
 	     } else {
 	     	matchingObservations = xml..component
 		        .structuredBody
 		        .component
 		        .section.(@ID == &apos;observations&apos;)
 		        .entry
-		        .observation.(code.@code == &apos;96778-6&apos;);
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
 	     }
      } catch (err) {
         logger.error(&quot;XPath error while extracting observations: &quot; + err.toString());
@@ -1893,12 +1904,16 @@ function setBooleanHeaderFlag(headerName, transformer) {
     );
     return transformer;
 }
+
+
+
 // Define Namespace Resolver
 function setResourceIdParameters(transformer) {
     	// Parse XML
-	var sourceXml = $(&apos;phi_filtered_ccd&apos;);
+	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
 	var xmlDoc = new XML(sourceXml);
 	default xml namespace = &quot;urn:hl7-org:v3&quot;;
+	var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
 	
 	// Generate Bundle resource Id
 	var ccda_fhir_bundle_id = channelMap.get(&apos;interactionId&apos;);
@@ -1912,7 +1927,6 @@ function setResourceIdParameters(transformer) {
 	
 	// Extract `patientRole`
 	var patientRoles = xmlDoc.*::recordTarget.*::patientRole[0];
-	//getPatientMRN(patientRoles);
 	transformer = generateSHA256Id(patientRoles, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
 	
 	// Extract `consent`
@@ -1923,50 +1937,65 @@ function setResourceIdParameters(transformer) {
 	// Extract `author (organization)`
 	var author = xmlDoc.*::author[0];
 	var organizationName = &quot;&quot;;
-
-	var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+	
 	if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Medent&apos;) {	
-	    var encounterOrgName =
+	    var encounterOrgName = &quot;&quot;;	
+	    var encounterEntries =
 	        xmlDoc.*::component
 	              .*::structuredBody
 	              .*::component
 	              .*::section.(@ID == &apos;encounters&apos;)
-	              .*::entry[0]
-	              .*::encounter
-	              .*::participant.(@typeCode == &apos;LOC&apos;)[0]
-	              .*::participantRole.(@classCode == &apos;SDLOC&apos;)
-	              .*::playingEntity
-	              .*::name[0];	
-	    if (encounterOrgName != undefined &amp;&amp; encounterOrgName.toString().trim() != &quot;&quot;) {	
-	        organizationName = encounterOrgName.toString().trim();
+	              .*::entry;
 	
-	    } else {	
-	        var authorOrgName =
-	            xmlDoc.*::author[0]
+	    if (encounterEntries.length() &gt; 0) {	
+	        encounterOrgName =
+	            encounterEntries[0]
+	                .*::encounter
+	                .*::participant.(@typeCode == &apos;LOC&apos;)
+	                .*::participantRole.(@classCode == &apos;SDLOC&apos;)
+	                .*::playingEntity
+	                .*::name[0];
+	                	
+	        if (encounterOrgName != undefined &amp;&amp;
+	            encounterOrgName.toString().trim() != &quot;&quot;) {	
+	            organizationName = encounterOrgName.toString().trim();
+	        }
+	    }
+	
+	    // Fallback to author organization
+	    if (organizationName == &quot;&quot;) {	
+	        var authorOrgList =
+	            xmlDoc.*::author
 	                  .*::assignedAuthor
 	                  .*::representedOrganization
-	                  .*::name[0];	
-	        if (authorOrgName != undefined &amp;&amp; authorOrgName.toString().trim() != &quot;&quot;) {
-	            organizationName = authorOrgName.toString().trim();
+	                  .*::name;
+	
+	        if (authorOrgList.length() &gt; 0 &amp;&amp;
+	            authorOrgList[0].toString().trim() != &quot;&quot;) {	
+	            organizationName = authorOrgList[0].toString().trim();
 	        }
 	    }
 	
 	} else {	
-	    var authorOrgName =
-	        xmlDoc.*::author[0]
+	    var authorOrgList =
+	        xmlDoc.*::author
 	              .*::assignedAuthor
 	              .*::representedOrganization
-	              .*::name[0];
+	              .*::name;
 	
-	    if (authorOrgName != undefined &amp;&amp; authorOrgName.toString().trim() != &quot;&quot;) {
-            organizationName = authorOrgName.toString().trim();
-         }
+	    if (authorOrgList.length() &gt; 0 &amp;&amp;
+	        authorOrgList[0].toString().trim() != &quot;&quot;) {	
+	        organizationName = authorOrgList[0].toString().trim();
+	    }
 	}
 	
 	transformer.setParameter(&apos;organizationName&apos;, organizationName);
-	//logger.info(&apos;organizationName : &apos; + organizationName);
-	transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer, organizationName);
-
+	logger.info(&apos;organizationName : &apos; + organizationName);
+	
+	if (author != undefined &amp;&amp; author.toString().trim() != &quot;&quot;) {
+	    transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer, organizationName);
+	}
+	
 	// Extract `Questionnaire` - used only for Generic CCDA files
 	if (ehrVendor != &apos;Medent&apos; &amp;&amp; ehrVendor != &apos;Athenahealth&apos; &amp;&amp; ehrVendor != &apos;Epic&apos;) {
 		var Questionnaire = xmlDoc.*::component
@@ -1975,12 +2004,12 @@ function setResourceIdParameters(transformer) {
 	                              .*::section.(@ID != &apos;sexualOrientation&apos;)
 	                              .*::entry;
 		transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
-	}	
+	}
+	
 	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
-
 	
 	// Extract `observations`
-/*	try {
+	/*try {
 		var observations = xmlDoc.*::component
 	                         .*::structuredBody
 	                         .*::component
@@ -2002,7 +2031,7 @@ function setResourceIdParameters(transformer) {
                               .*::section.(@ID == &apos;sexualOrientation&apos;)
                               .*::entry
                               .*::observation;
-
+	//transformer = generateSHA256Id(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
 	transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
 
 	// Extract `encompassingEncounter`
@@ -2061,18 +2090,16 @@ function setResourceIdParameters(transformer) {
 	        }
 	    }
 	
-	    logger.info(&quot;Grouper Screening Effective Time: &quot; + grouperScreeningEffectiveTime);
-	
 	} catch (e) {
 	    logger.error(&quot;Error extracting grouperScreeningEffectiveTime: &quot; + e);
 	}
 
-	if ((channelMap.get(&apos;ehrVendor&apos;) == &apos;Epic&apos; || channelMap.get(&apos;ehrVendor&apos;) == &apos;Athenahealth&apos;)
+	if ((ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Athenahealth&apos;)
 	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
 	
 	    grouperScreeningCode = &apos;100698-0&apos;;
-	    logger.info(&quot;Defaulting grouperScreeningCode to 100698-0 for Epic&quot;);
-	    	} else if ((channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;)
+	
+	} else if ((ehrVendor == &apos;Medent&apos;)
 	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
 	
 	    // Try to extract from CCDA observations
@@ -2088,7 +2115,6 @@ function setResourceIdParameters(transformer) {
 	            for each (var obs in observations) {
 	                if (obs.*::code &amp;&amp; obs.*::code.@code.toString().trim() != &apos;&apos;) {
 	                    grouperScreeningCode = obs.*::code.@code.toString().trim();
-	                    logger.info(&quot;Using screening code from CCDA observation (Medent): &quot; + grouperScreeningCode);
 	                    break;
 	                }
 	            }
@@ -2101,15 +2127,14 @@ function setResourceIdParameters(transformer) {
 	    // Final fallback if still empty (matches XSLT)
 	    if (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;) {
 	        grouperScreeningCode = &apos;96777-8&apos;;
-	        logger.info(&quot;Defaulting grouperScreeningCode to 96777-8 for Medent&quot;);
 	    }
 	} else { // For general CCDA files
 		//grouperScreeningEffectiveTime = &apos;&apos;;
 	}
+	
 	grouperScreeningCode = (grouperScreeningCode || &apos;&apos;).trim();
 	
 	transformer.setParameter(&apos;grouperScreeningCode&apos;, String(grouperScreeningCode));
-	logger.info(&apos;grouperScreeningCode&apos; + &quot; : &quot; + grouperScreeningCode);
 
 	// Get encounter effective time
 	var encounterEffectiveTime = &apos;&apos;;
@@ -2142,17 +2167,14 @@ function setResourceIdParameters(transformer) {
 	
 	if (!finalEffectiveTime || finalEffectiveTime.trim() === &apos;&apos;) {
 	    finalEffectiveTime = encounterEffectiveTime || &apos;&apos;;
-	    logger.info(&quot;Using encounterEffectiveTime as fallback for generating Grouper Resource ID : &quot; + finalEffectiveTime);
 	}
-
-     logger.info(&quot;Hash Inputs → MRN: &quot; + mrn + &quot;, CIN: &quot; + cin +
-            &quot;, Code: &quot; + grouperScreeningCode +
-            &quot;, EffectiveTime: &quot; + finalEffectiveTime);
-            
+           
      var combinedText = mrn + cin + grouperScreeningCode + finalEffectiveTime;
-     
      transformer = generateCompactSha256(combinedText, &quot;grouperObservation&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);   
     
+     //transformer.setParameter(&apos;grouperObservationResourceSha256Id&apos;, encodedSha256Hash);
+     //logger.info(&apos;grouperObservationResourceSha256Id&apos; + &quot; : &quot; + encodedSha256Hash);
+     
      // Set category xml
      transformer = getObservationCategoryCodes(transformer, sourceXml); //observations
      transformer = getMultipleAnswersForComponent(transformer, sourceXml); //observations
@@ -2161,13 +2183,14 @@ function setResourceIdParameters(transformer) {
 	transformer = setBooleanHeaderFlag(&apos;X-TechBD-Part2&apos;, transformer); // Set part2 flag
 	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OMH&apos;, transformer);	  // Set OMH flag
 	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OPWDD&apos;, transformer); // Set OPWDD flag
+
 	// Extract `location`
-     try {
+	try {
 	    var location;
 	    var location_name;
 	    var location_address;
-		var locationSuccess = false;
-		var isValidLocation = function(name, address) {
+	    var locationSuccess = false;
+	    var isValidLocation = function(name, address) {
 					        return (
 					            name != null &amp;&amp; name.toString().trim() !== &apos;&apos; &amp;&amp;
 					            address != null &amp;&amp; address.toString().trim() !== &apos;&apos;
@@ -2181,16 +2204,14 @@ function setResourceIdParameters(transformer) {
 	        xmlDoc.componentOf.encompassingEncounter.location.length() &gt; 0 &amp;&amp;
 	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility &amp;&amp;
 	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location
-	 
 	    ) {
-	        location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
+	    	   location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
 	        location_name = location.name;
 	        location_address = location.addr;
 	        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
 	    }
-	
 	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
-	if (!locationSuccess || channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+		if (!locationSuccess || ehrVendor == &apos;Medent&apos;) {
 	        var section = xmlDoc.component.structuredBody.component.section.(@ID == &apos;encounters&apos;);
 	        if (
 	            section &amp;&amp;
@@ -2205,11 +2226,11 @@ function setResourceIdParameters(transformer) {
 	            location = section.entry[0].encounter.participant[0].participantRole;
 	            location_name = location.playingEntity.name;
 	            location_address = location.addr;
-	        	 if (isValidLocation(location_name, location_address)) { locationSuccess = true; }	        
-	        	 }
+	        	 if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	        }
 	    }
 	
-	     if (locationSuccess &amp;&amp; location) {
+	    if (locationSuccess &amp;&amp; location) {
 	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
 	    } else {
 	        logger.info(&quot;Location not found in the XML.&quot;);
@@ -3477,212 +3498,25 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1781684596665</time>
+        <time>1782101114221</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>11</userId>
+      <userId>10</userId>
     </metadata>
-    <codeTemplateLibraries>
-      <codeTemplateLibrary version="26.3.1">
-        <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
-        <name>TechBD Functions</name>
-        <revision>180</revision>
-        <lastModified>
-          <time>1781678009817</time>
-          <timezone>America/New_York</timezone>
-        </lastModified>
-        <description></description>
-        <includeNewChannels>true</includeNewChannels>
-        <enabledChannelIds class="sorted-set">
-          <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
-          <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
-          <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
-          <string>12467de6-360c-47c1-83af-09aae915eb8c</string>
-          <string>140795e4-5d41-4769-885b-b815c18bbc62</string>
-          <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
-          <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
-          <string>19069366-0852-4caa-875c-1c503461f8a1</string>
-          <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
-          <string>1c406954-d304-4882-b05d-b513d699785b</string>
-          <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
-          <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
-          <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
-          <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
-          <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
-          <string>29d0e04a-e2be-43ad-b814-bfe242963c90</string>
-          <string>2b4ff91f-4f33-48c2-ba05-2f0cdfd1120b</string>
-          <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
-          <string>32ad2913-1c3d-43d8-b5f8-2672f3325557</string>
-          <string>330819e8-5e01-45b0-9d7d-b87048a8813a</string>
-          <string>353f2542-73dd-44df-bb8b-361756233a37</string>
-          <string>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</string>
-          <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
-          <string>39491051-e8fb-4f70-aea5-82ed1a454324</string>
-          <string>3acb72be-f9c1-4721-b990-ff0486b038fc</string>
-          <string>3bc69658-cba9-4fa2-8d32-438ab4660c2a</string>
-          <string>3bfca654-f2c7-4c5e-bb88-1ab68cd32f44</string>
-          <string>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</string>
-          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-          <string>3fabdfd3-3a99-4dec-a769-b9c8e87978d8</string>
-          <string>423ef464-a171-4cb9-ae32-616aca66ea05</string>
-          <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
-          <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
-          <string>4d4a6df4-774e-4cbd-b7aa-4ce0314d8faa</string>
-          <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
-          <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
-          <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
-          <string>5cf24505-f00b-4002-a769-836686016c37</string>
-          <string>60a18eb3-bf79-4c99-9bec-55fe0df4813f</string>
-          <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
-          <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
-          <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
-          <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
-          <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
-          <string>6a2535d6-2995-4464-a455-8bb815ec76bb</string>
-          <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
-          <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
-          <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
-          <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
-          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
-          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
-          <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
-          <string>7ffeeda4-e8e9-4534-8cf0-28eb8ce65510</string>
-          <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
-          <string>869c806f-d639-44ea-93d7-9efbe211cc3c</string>
-          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
-          <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
-          <string>8af30ec7-ad08-4ac8-9604-3ddd35f6d8b2</string>
-          <string>8be2be72-35cf-44a6-8b6e-5e37bd770672</string>
-          <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
-          <string>8ff42419-20be-4845-b40c-77853eb27b35</string>
-          <string>91adead5-81ab-44f2-b3ac-f875a620846c</string>
-          <string>92bad760-5de9-4b86-91f4-33011e68ca43</string>
-          <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
-          <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
-          <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
-          <string>96e9f4cf-2505-4620-b232-542e62dc0a1a</string>
-          <string>9a7e7b61-5745-4e29-a7e1-43a7d61b60ba</string>
-          <string>9c85680a-7b06-43fb-9d12-01db1d9c0448</string>
-          <string>9cbcd82b-a20e-4120-9d81-7c6698dfc1dd</string>
-          <string>9f99a5c7-84d9-4dc2-aa7f-451096b5bb8b</string>
-          <string>a0b29ee9-cd50-4228-8de1-c890131f4350</string>
-          <string>a1a84018-fd6b-4e23-80c8-3bc046c95d4c</string>
-          <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
-          <string>a4d249da-533e-4b9f-917c-3ad75d22767f</string>
-          <string>a5b2ab2c-b422-4614-ac3c-c7b0876c8579</string>
-          <string>a7141bac-fe8d-4df6-81cd-dee54b0d09be</string>
-          <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
-          <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
-          <string>ac361d6f-fc34-44f1-9029-589b680d7a2a</string>
-          <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
-          <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
-          <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
-          <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
-          <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
-          <string>bbf0fb0d-7a57-43c4-b3b0-2e0d257ae92b</string>
-          <string>bbfc8cdc-e671-46da-bae3-75de9ae91b85</string>
-          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
-          <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
-          <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
-          <string>c1f9232a-b3c0-4c95-bf75-8eeaafd92d6f</string>
-          <string>c45aaeca-50e4-4674-8294-8bae37a0e431</string>
-          <string>c50e41d7-9fb2-4899-84f8-38909d092722</string>
-          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
-          <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
-          <string>cc1fe1c8-04cd-4b08-9797-0cb34491208b</string>
-          <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
-          <string>d341dceb-069e-49ab-8efa-c45398145216</string>
-          <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
-          <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
-          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
-          <string>dc1d3367-14d7-4e36-a87e-d208d839fc78</string>
-          <string>dd22c442-ee54-4c80-b221-a2b30b889b79</string>
-          <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
-          <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
-          <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
-          <string>eb2f5490-8909-4216-b65a-5947fb0f359e</string>
-          <string>f23e19b0-a0e0-422a-884c-caae6c52ecac</string>
-          <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
-          <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
-          <string>fa6d8035-8b04-4740-9eb0-4dbb71c69bb6</string>
-          <string>fe3c571f-3ac0-4de6-8de1-c23894f823d4</string>
-          <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
-          <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
-        </enabledChannelIds>
-        <disabledChannelIds class="sorted-set"/>
-        <codeTemplates>
-          <codeTemplate version="26.3.1">
-            <id>030add36-72d6-4bb4-8db4-aa0cc8b906c9</id>
-            <name>setErrorResponse</name>
-            <revision>15</revision>
-            <lastModified>
-              <time>1779700772800</time>
-              <timezone>America/New_York</timezone>
-            </lastModified>
-            <contextSet>
-              <delegate class="sorted-set">
-                <contextType>GLOBAL_DEPLOY</contextType>
-                <contextType>GLOBAL_UNDEPLOY</contextType>
-                <contextType>GLOBAL_PREPROCESSOR</contextType>
-                <contextType>GLOBAL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_DEPLOY</contextType>
-                <contextType>CHANNEL_UNDEPLOY</contextType>
-                <contextType>CHANNEL_PREPROCESSOR</contextType>
-                <contextType>CHANNEL_POSTPROCESSOR</contextType>
-                <contextType>CHANNEL_ATTACHMENT</contextType>
-                <contextType>CHANNEL_BATCH</contextType>
-                <contextType>SOURCE_RECEIVER</contextType>
-                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
-                <contextType>DESTINATION_DISPATCHER</contextType>
-                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
-              </delegate>
-            </contextSet>
-            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
-              <type>FUNCTION</type>
-              <code>/**
-	Util function to set error response.
-
-	@param {Any} statusCode - 
-	@param {Any} errorMessage - 
-	@param {Any} map - 
-	@return {Any} 
-*/
-function setErrorResponse(statusCode, errorMessage, map) {
-    var targetMap = map || responseMap;
-
-    var json = createJsonResponse(statusCode, errorMessage);
-    targetMap.put(&apos;status&apos;, String(statusCode));
-    targetMap.put(&apos;responseStatusCode&apos;, statusCode);
-    targetMap.put(&apos;fhirResponse&apos;, json);
-    targetMap.put(&apos;finalResponse&apos;, json);
-}
-/**
- Util function to generate json string wit hstatus and message
-*/
-function createJsonResponse(status, message) {
-    return JSON.stringify({ status: status, message: message });
-}</code>
-            </properties>
-          </codeTemplate>
-        </codeTemplates>
-      </codeTemplateLibrary>
-    </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>91325355-c2f1-4c20-9f82-a5943c8e1be8</id>
-        <name>0_5_38</name>
+        <id>36ba324f-ec31-40cf-80c8-60b1ec860a56</id>
+        <name>0_5_39</name>
         <channelIds>
           <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
-          <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
-          <green>128</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
