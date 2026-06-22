@@ -108,6 +108,7 @@ public class CsvController {
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
       @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
+      @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String masterInteractionId,
       @RequestHeader(value = "X-TechBD-Data-Ledger-Tracking", required = false, defaultValue = "false")
       boolean dataLedgerTracking,
       @RequestHeader(value = "X-TechBD-Data-Ledger-diagnostics", required = false, defaultValue = "false")
@@ -124,7 +125,12 @@ public class CsvController {
         null,null);    
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UuidUtil.generateUuid());
+    requestDetailsMap.put(
+    Constants.MASTER_INTERACTION_ID,
+    (masterInteractionId == null || masterInteractionId.trim().isEmpty())
+        ? UuidUtil.generateUuid()
+        : masterInteractionId
+    );
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     requestDetailsMap.put(Constants.DATA_LEDGER_TRACKING, dataLedgerTracking);
