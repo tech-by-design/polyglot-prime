@@ -1,0 +1,274 @@
+/* Menu polulation */
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_get_role_menus_with_permissions(int);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.idp_get_role_menus_with_permissions(in_role_id int)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE 
+    result json;
+    is_role_exist bool;
+BEGIN
+    IF in_role_id IS NULL 
+    THEN
+        result := json_build_object(
+            'status', 'error',
+            'message', 'Role name is required. Please provide a valid role name.'
+        );
+        RETURN result;
+    END IF;
+    
+    SELECT 
+        EXISTS(SELECT 1 
+              FROM techbd_udi_ingress.idp_roles
+              WHERE role_id = in_role_id)
+        INTO is_role_exist;
+    
+    IF (NOT is_role_exist)
+    THEN
+        result := json_build_object(
+            'status', 'error',
+            'message', 'The requested role does not exist.'
+        );
+        RETURN result;
+    END IF;
+
+    WITH all_menu_screens_permissions AS (
+    SELECT
+        mnu.mnu_id,
+        mnu.mnu_code,
+        mnu.mnu_name,
+        sc.scr_id,
+        sc.scr_code,
+        sc.scr_name,
+        CASE WHEN rtpn.role_id IS NOT NULL THEN TRUE ELSE FALSE END AS has_permission
+    FROM techbd_udi_ingress.idp_screens sc
+    JOIN techbd_udi_ingress.idp_menu mnu
+        ON sc.mnu_id = mnu.mnu_id
+    LEFT JOIN techbd_udi_ingress.idp_role_tenant_permission rtpn
+        ON rtpn.mnu_id = mnu.mnu_id
+            AND rtpn.scr_id = sc.scr_id
+            AND rtpn.role_id = in_role_id
+    ORDER BY mnu.order_no ASC 
+    )
+    
+    SELECT jsonb_build_object(
+            'status', 'success',
+            'menu_screens', jsonb_agg(row_to_json(all_menu_screens_permissions))
+        )
+    INTO result
+    FROM all_menu_screens_permissions;
+    
+    RETURN result;
+
+END;
+$function$;
+
+/* Login user role permission */
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_get_login_role_permissions(text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.idp_get_login_role_permissions(in_role_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE 
+    result jsonb;
+    is_role_exist bool;
+BEGIN
+    IF in_role_name IS NULL 
+    THEN
+        result := jsonb_build_object(
+            'status', 'error',
+            'message', 'Role name cannot be empty'
+        );
+        RETURN result;
+    END IF;
+    
+    SELECT EXISTS (
+        SELECT 1 
+        FROM techbd_udi_ingress.idp_roles
+        WHERE role_name = in_role_name
+    )
+    INTO is_role_exist;
+    
+    IF (NOT is_role_exist)
+    THEN
+        result := jsonb_build_object(
+            'status', 'error',
+            'message', 'The requested role does not exist.'
+        );
+        RETURN result;
+    END IF;
+
+    WITH login_role_permissions AS (
+        SELECT
+            mnu.mnu_name,
+            sc.scr_name
+        FROM techbd_udi_ingress.idp_screens sc
+        JOIN techbd_udi_ingress.idp_menu mnu
+            ON sc.mnu_id = mnu.mnu_id
+        LEFT JOIN techbd_udi_ingress.idp_role_tenant_permission rtpn
+            ON rtpn.mnu_id = mnu.mnu_id
+               AND rtpn.scr_id = sc.scr_id
+        JOIN techbd_udi_ingress.idp_roles rl 
+            ON rl.role_id = rtpn.role_id 
+        WHERE rl.role_name = in_role_name
+    ),
+    screens_grouped AS (
+        SELECT 
+            mnu_name,
+            jsonb_agg(DISTINCT scr_name ORDER BY scr_name) AS screens
+        FROM login_role_permissions
+        GROUP BY mnu_name
+    )
+    SELECT jsonb_object_agg(mnu_name, screens)
+    INTO result
+    FROM screens_grouped;
+
+    RETURN result;
+
+END;
+$function$;
+
+/* Menu polulation */
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_insert_role_menus_with_permissions(int, jsonb, timestamp, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.idp_insert_role_menus_with_permissions(
+    in_role_id int,
+    data jsonb,
+    created_at timestamp,
+    created_by text
+) 
+RETURNS jsonb
+LANGUAGE plpgsql
+AS $function$
+DECLARE 
+    is_role_exists BOOLEAN;
+    inserted_count INT;
+BEGIN
+    -- Validation 1: check data
+    IF data IS NULL OR jsonb_array_length(data) = 0 THEN
+        RETURN jsonb_build_object(
+            'status', 'error',
+            'message', 'data cannot be empty'
+        );
+    END IF;
+
+    -- Validation 2: check role
+    IF in_role_id IS NULL THEN
+        RETURN jsonb_build_object(
+            'status', 'error',
+            'message', 'Role should be selected'
+        );
+    END IF;
+
+    -- Validation 3: role existence
+    SELECT EXISTS (
+        SELECT 1 FROM techbd_udi_ingress.idp_roles WHERE role_id = in_role_id
+    ) INTO is_role_exists;
+
+    IF is_role_exists THEN
+        -- Step 1: clear old permissions in database table
+        DELETE FROM techbd_udi_ingress.idp_role_tenant_permission
+        WHERE role_id = in_role_id;
+    END IF;
+
+    -- Step 2: bulk insert new permissions
+    INSERT INTO techbd_udi_ingress.idp_role_tenant_permission (role_id, mnu_id, scr_id, created_at, created_by, provenance)
+    SELECT 
+        in_role_id,
+        mnu_id,
+        scr_id,
+        created_at,
+        created_by,
+		'Fusion Auth'
+    FROM jsonb_to_recordset(data)
+        AS mnu(mnu_id int, scr_id int);
+
+    GET DIAGNOSTICS inserted_count = ROW_COUNT;
+
+    -- Return success message
+    RETURN jsonb_build_object(
+        'status', 'success',
+        'inserted_count', inserted_count,
+        'message', 'Menu / Screen role permissions updated successfully'
+    );
+END;
+$function$;
+
+/* Function to insert group/tenant to local database from fusion techbd_udi_ingress (Json Response of fusion techbd_udi_ingress API is passed as input parameter)*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_upsert_tenants_from_json(jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.idp_upsert_tenants_from_json(groups_json jsonb)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    group_item jsonb;
+    ten_code text;
+    ten_name text;
+    ten_desc text;
+BEGIN
+    -- Loop through each group object inside "groups" array
+    FOR group_item IN
+        SELECT * FROM jsonb_array_elements(groups_json->'groups')
+    LOOP
+        -- Extract tenant_id and tenant_name
+        ten_code := group_item->>'id';
+        ten_name := lower(group_item->>'name');
+        --ten_desc := 'ten_' || ten_name;
+		ten_desc := ten_name;
+
+        -- Upsert into tenants table
+        INSERT INTO techbd_udi_ingress.tenants (tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, fusion_auth_group_id)
+        VALUES (gen_random_uuid()::text, ten_name, ten_desc, true, CURRENT_USER, 'Fusion Auth', ten_code)
+        ON CONFLICT (tenant_name) DO UPDATE
+        SET tenant_name = EXCLUDED.tenant_name,
+            tenant_displayname  = EXCLUDED.tenant_displayname,
+            is_active  = true,
+			created_by = CURRENT_USER,
+			created_at = CURRENT_TIMESTAMP;
+    END LOOP;
+END;
+$$;
+
+/* Get roles from fusionauth json response from api*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_save_roles_from(jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.idp_save_roles_from(app_json jsonb)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    rol jsonb;
+BEGIN
+    -- Loop through each role in the JSON array
+    FOR rol IN 
+        SELECT * FROM jsonb_array_elements(app_json -> 'application' -> 'roles')
+    LOOP
+        -- Insert into the roles table
+        INSERT INTO techbd_udi_ingress.idp_roles (role_code, role_name, display_name, description, is_admin, is_active, provenance)
+        VALUES (
+            rol ->> 'id',                     -- Use role ID as role_code
+            rol ->> 'name',                   -- role_name
+            rol ->> 'name',                   -- display_name same as role_name
+            (rol ->> 'isSuperRole')::boolean, -- is_admin
+            true,                             -- is_active
+			'Fusion Auth'					  -- provenance
+        )
+        ON CONFLICT (role_code) DO UPDATE
+        SET 
+            role_name = EXCLUDED.role_name,
+            display_name = EXCLUDED.display_name,
+            is_admin = EXCLUDED.is_admin,
+            is_active = EXCLUDED.is_active,
+			created_at = CURRENT_TIMESTAMP
+			;
+    END LOOP;
+END;
+$$;
+
+DROP VIEW IF EXISTS techbd_udi_ingress.idp_vw_roles;
+CREATE OR REPLACE VIEW techbd_udi_ingress.idp_vw_roles
+AS SELECT 
+      role_id,
+      role_code,
+      display_name AS role_name
+   FROM techbd_udi_ingress.idp_roles
+   WHERE NOT is_admin AND is_active;
+

@@ -1,69 +1,313 @@
 /* Tenant Master Implementation */
 /* ** STEP 3 ** SET DEFAULT value for new tenant_id column */
 /* ------------------------------------------------------- */
+SET lock_timeout = '5s';
+SET statement_timeout = '10min';
 
-ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'dashboard_widget_metadata'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_csv_fhir_processing_errors'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_diagnostic_dataledger_api'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_diagnostic_exception'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_diagnostic_log
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_diagnostic_log'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_diagnostic_log
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_expectation_http_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_expectation_http_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_expectation_http_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_ccda_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_ccda_validation_errors'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_screening_info'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_screening_organization'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_screening_patient'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_session_diagnostic'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_fhir_validation_issue'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_file_exchange'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_flat_file_csv_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_hl7_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_hl7_validation_errors'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_http_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_user
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_user'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_user
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'sat_interaction_zip_file_request'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
 
-ALTER TABLE techbd_udi_ingress.users
-ALTER COLUMN tenant_id SET DEFAULT '';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+          AND table_name = 'users'
+          AND column_name = 'tenant_id'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.users
+        ALTER COLUMN tenant_id SET DEFAULT '';
+    END IF;
+END $$;
