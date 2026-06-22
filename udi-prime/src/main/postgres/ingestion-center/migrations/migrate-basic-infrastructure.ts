@@ -1726,7 +1726,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND table_name = 'tenants'
                 AND column_name = 'fusion_auth_group_id'
       ) THEN
-            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN fusion_auth_group_id TEXT NOT NULL;
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS fusion_auth_group_id TEXT;
       END IF;
 
       ${userSessions}
