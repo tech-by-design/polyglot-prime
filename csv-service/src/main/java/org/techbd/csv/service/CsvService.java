@@ -291,6 +291,13 @@ public class CsvService {
             initRIHR.setPCsvZipFileName(file.getOriginalFilename());
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCsvStatus(state.name());
+            ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();
+                pElaboration.set(
+                "headers",
+                Configuration.objectMapper.valueToTree(requestParameters).path("headers")
+                );
+
+            initRIHR.setPElaboration(pElaboration);
             final InetAddress localHost = InetAddress.getLocalHost();
             final String ipAddress = localHost.getHostAddress();
             initRIHR.setPClientIpAddress(ipAddress);
@@ -562,13 +569,6 @@ public class CsvService {
                     initRIHR.setUri((String) requestParameters.get(org.techbd.csv.config.Constants.REQUEST_URI));
                     initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
                     initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
-                    ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();
-                        pElaboration.set(
-                        "headers",
-                        Configuration.objectMapper.valueToTree(requestParameters).path("headers")
-                        );
-
-                    initRIHR.setPElaboration(pElaboration);
                     initRIHR.setCreatedAt(createdAt);
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
