@@ -9,6 +9,7 @@
 
 import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/data-vault/mod.ts";
 import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
+import { serial } from "./migrate-ddl-stored-routine-interaction.ts";
 // import { pgSQLa } from "../../../../../../../../netspective-labs/sql-aide/pattern/pgdcp/deps.ts";
 
 // deconstructed modules provide convenient access to internal imports
@@ -771,10 +772,11 @@ const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
 
 // For Tenant Master Implementation
 const tenant = SQLa.tableDefinition("tenants", {
-    tenant_id:text(),
+    tenant_id: primaryKey(),
     tenant_name:text(),
     tenant_displayname:textNullable(),
     is_active:boolean().default(true),
+    fusion_auth_group_id:textNullable(),
     ...dvts.housekeeping.columns
   }, {
   isIdempotent: true,
@@ -804,6 +806,81 @@ const userSessions = SQLa.tableDefinition("user_sessions", {
     sqlNS: ingressSchema
 });
 
+//IDP Integration Tables
+const idpRoles = SQLa.tableDefinition("idp_roles", {
+    role_id: serial(),
+    role_code:text(),
+    role_name:text(),
+    display_name:text(),
+    description:textNullable(),
+    is_admin:boolean().default(false),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("role_code"),
+      c.unique("role_id"),
+    ];
+  },
+});
+
+const idpMenu = SQLa.tableDefinition("idp_menu", {
+    mnu_id: serial(),
+    mnu_code:text(),
+    mnu_name:text(),
+    description:text(),
+    order_no:integer(),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("mnu_code"),
+      c.unique("mnu_id"),
+    ];
+  },
+});
+
+const idpScreens = SQLa.tableDefinition("idp_screens", {
+    scr_id: serial(),
+    scr_code:text(),
+    scr_name:text(),
+    description:text(),
+    scr_type:text(),
+    mnu_id: integer(), //idpMenu.references.mnu_id(),
+    order_no:integer(),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("scr_code"),
+      c.unique("scr_id"),
+    ];
+  },
+});
+
+const idpRoleTenantPermission = SQLa.tableDefinition("idp_role_tenant_permission", {
+    permission_id: serial(),
+    role_id: integer(), //idpRoles.references.role_id(),
+    mnu_id: integer(), //idpMenu.references.mnu_id(),
+    scr_id: integer(), //idpScreens.references.scr_id(),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -831,7 +908,9 @@ const dependencies = [
   "../002_idempotent_diagnostics.psql",
   "../003_idempotent_migration.psql",
   "../load_ref_code_lookup.psql", 
+  "../load_idp_master_data.psql",
   "../007_idempotent_interaction.psql",
+  "../008_idempotent_idp_functions.psql",
 ] as const;
 
 const testMigrateDependencies = [
@@ -1640,6 +1719,15 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${tenant}
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'fusion_auth_group_id'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN fusion_auth_group_id TEXT NOT NULL;
+      END IF;
 
       ${userSessions}
       IF NOT EXISTS (
@@ -1695,6 +1783,58 @@ const migrateSP = pgSQLa.storedProcedure(
         CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry
         ON techbd_udi_ingress.user_sessions(session_expiry_time);
       END IF;
+
+      ${idpRoles}
+      DO $$
+      BEGIN
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_roles_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_roles
+              ADD CONSTRAINT idp_roles_pkey PRIMARY KEY (role_id);
+          END IF;
+      END $$;
+      
+      ${idpMenu}
+      DO $$
+      BEGIN
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_menu_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_menu
+              ADD CONSTRAINT idp_menu_pkey PRIMARY KEY (mnu_id);
+          END IF;
+      END $$;      
+      
+      ${idpScreens}
+      DO $$
+      BEGIN
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_screens_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_screens
+              ADD CONSTRAINT idp_screens_pkey PRIMARY KEY (scr_id);
+          END IF;
+      END $$;
+
+      ${idpRoleTenantPermission}
+      DO $$
+      BEGIN
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_role_tenant_permission_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_role_tenant_permission
+              ADD CONSTRAINT idp_role_tenant_permission_pkey PRIMARY KEY (permission_id);
+          END IF;
+      END $$;
 
       ${dependenciesSQL}
 

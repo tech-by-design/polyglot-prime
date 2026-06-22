@@ -1,9 +1,11 @@
 /* Tenant Master Implementation */
 /* ** STEP 1 ** RENAME tenant_id -> tenant_name */
 /* -------------------------------------------- */
+SET lock_timeout = '5s';
+SET statement_timeout = '10min';
+
 DO $$
 BEGIN
-
     -- dashboard_widget_metadata
     IF EXISTS (
         SELECT 1
@@ -23,7 +25,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_csv_fhir_processing_errors
     IF EXISTS (
         SELECT 1
@@ -43,7 +48,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_diagnostic_dataledger_api
     IF EXISTS (
         SELECT 1
@@ -63,7 +71,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_diagnostic_exception
     IF EXISTS (
         SELECT 1
@@ -83,7 +94,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_diagnostic_log
     IF EXISTS (
         SELECT 1
@@ -103,7 +117,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_diagnostic_log
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_expectation_http_request
     IF EXISTS (
         SELECT 1
@@ -123,7 +140,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_expectation_http_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_ccda_request
     IF EXISTS (
         SELECT 1
@@ -143,7 +163,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_ccda_validation_errors
     IF EXISTS (
         SELECT 1
@@ -163,7 +186,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_request
     IF EXISTS (
         SELECT 1
@@ -183,7 +209,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_screening_info
     IF EXISTS (
         SELECT 1
@@ -203,7 +232,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_screening_organization
     IF EXISTS (
         SELECT 1
@@ -223,7 +255,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_screening_patient
     IF EXISTS (
         SELECT 1
@@ -243,7 +278,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_session_diagnostic
     IF EXISTS (
         SELECT 1
@@ -263,7 +301,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_fhir_validation_issue
     IF EXISTS (
         SELECT 1
@@ -283,7 +324,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_file_exchange
     IF EXISTS (
         SELECT 1
@@ -303,7 +347,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_flat_file_csv_request
     IF EXISTS (
         SELECT 1
@@ -323,7 +370,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_hl7_request
     IF EXISTS (
         SELECT 1
@@ -343,7 +393,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_hl7_validation_errors
     IF EXISTS (
         SELECT 1
@@ -363,7 +416,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_http_request
     IF EXISTS (
         SELECT 1
@@ -383,7 +439,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_user
     IF EXISTS (
         SELECT 1
@@ -403,7 +462,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_user
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- sat_interaction_zip_file_request
     IF EXISTS (
         SELECT 1
@@ -423,7 +485,10 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
+END $$;
 
+DO $$
+BEGIN
     -- users
     IF EXISTS (
         SELECT 1
@@ -443,6 +508,4 @@ BEGIN
         ALTER TABLE techbd_udi_ingress.users
         RENAME COLUMN tenant_id TO tenant_name;
     END IF;
-
-END
-$$;
+END $$;

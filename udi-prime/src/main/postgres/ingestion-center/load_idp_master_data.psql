@@ -1,0 +1,89 @@
+/* Menu insertion */
+INSERT INTO techbd_udi_ingress.idp_menu
+(mnu_code, mnu_name, description, order_no, is_active, provenance, created_by)
+VALUES
+('mnu_dashboard', 'Dashboard', 'Dashboard menu', 1, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Content', 'Content', 'Content menu', 2, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_DataQuality', 'Data Quality', 'Data Quality menu', 3, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Interactions', 'Interactions', 'Interactions menu', 4, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Documentation', 'Documentation', 'Documentation menu', 5, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Console', 'Console', 'Console menu', 6, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Settings', 'Settings', 'Settings menu', 7, TRUE, 'Hub UI Menu', CURRENT_USER)
+ON CONFLICT (mnu_code) DO NOTHING;
+
+/* Role insertion */
+INSERT INTO techbd_udi_ingress.idp_roles
+(role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
+VALUES
+('rl_base', 'Base', 'Base', 'Base role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_reporting', 'Reporting', 'Reporting', 'Reporting role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_offshore_dev', 'offshore_dev', 'Offshore Dev', 'offshore_dev role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_qe_tenant', 'qe_tenant', 'QE Admin', 'qe_tenant role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_super_admin', 'super_admin', 'Super Admin', 'super_admin role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_mco_user', 'mco_user', 'MCO User', 'mco_user role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER)
+ON CONFLICT (role_code) DO NOTHING;
+
+/* Tenant insertion */
+INSERT INTO techbd_udi_ingress.tenants
+(tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, fusion_auth_group_id)
+VALUES
+(gen_random_uuid()::text, 'bronx-fusion', 'QE Bronx', TRUE, CURRENT_USER, 'Fusion Auth', '5528f826-1072-46c2-b481-cca52b391e87'),
+(gen_random_uuid()::text, 'grrhio-fusion', 'QE GRRHIO', true, CURRENT_USER, 'Fusion Auth', 'aef7b34f-ad2c-4dbd-815c-78d3cc3848f7'),
+(gen_random_uuid()::text, 'healtheconn-fusion', 'QE HealtheConn', true, CURRENT_USER, 'Fusion Auth', '4e1bd91a-ec76-4c5f-b0d2-d6dbf973d9fd'),
+(gen_random_uuid()::text, 'healthelink-fusion', 'QE HEALTHeLINK', true, CURRENT_USER, 'Fusion Auth', '5772af52-c404-46de-9699-a325acd46274'),
+(gen_random_uuid()::text, 'healthix-fusion', 'QE HEALTHIX', true, CURRENT_USER, 'Fusion Auth', 'bfa74967-ad72-43b3-80d0-407b74260f7e'),
+(gen_random_uuid()::text, 'hixny-fusion', 'QE HixNY', true, CURRENT_USER, 'Fusion Auth', 'd34bda73-c9d8-4b3f-9b77-cc3c736ac7e5'),
+(gen_random_uuid()::text, 'netspective', 'QA/DEV Netspective', true, CURRENT_USER, 'Fusion Auth', '8c678000-0940-4e68-af70-4f3e9ec38290'),
+(gen_random_uuid()::text, 'partner-test', 'QA/DEV partner-test', true, CURRENT_USER, 'Fusion Auth', '67906aaf-1c84-4fcf-a6fb-7bdb979f4361'),
+(gen_random_uuid()::text, 'partner-test-qa', 'QA/DEV partner-test-qa', true, CURRENT_USER, 'Fusion Auth', 'a70df92f-3bb0-41d7-a3b2-cca7e26f288d'),
+(gen_random_uuid()::text, 'qa_nexus_csv', 'QA/DEV qa_nexus_CSV', true, CURRENT_USER, 'Fusion Auth', 'fdd112e4-871d-4c0b-b27e-a67ee3dfb38e'),
+(gen_random_uuid()::text, 'qa_qa_12.4_csv_3', 'QA/DEV qa_qa_12.4_CSV_3', true, CURRENT_USER, 'Fusion Auth', 'cb46df2c-1297-44e7-92cc-d664a5025bd3')
+ON CONFLICT (tenant_name) DO NOTHING;
+
+/* Screen insertion */
+/* 2 insert statement commented due to serial no 35 ot in the menu table. */
+INSERT INTO techbd_udi_ingress.idp_screens
+(scr_code, scr_name, description, scr_type, mnu_id, order_no, is_active, provenance, created_by)
+VALUES
+('wid_Recent_Direct_FHIR_Bundles', 'Recent Direct FHIR Bundles', 'Recent Direct FHIR Bundles widget', 'widget', 1, 1, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Recent_CSV_FHIR_Bundles', 'Recent CSV FHIR Bundles', 'Recent CSV FHIR Bundles widget', 'widget', 1, 2, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Recent_CCDA_FHIR_Bundles', 'Recent CCDA FHIR Bundles', 'Recent CCDA FHIR Bundles widget', 'widget', 1, 3, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Submissions', 'Submissions', 'Submissions widget', 'widget', 1, 4, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Production', 'Production (FHIR)', 'Production (FHIR) widget', 'widget', 1, 5, TRUE, 'Hub UI', CURRENT_USER),
+
+('scr_Screening', 'Screenings', 'Screening screen', 'page', 2, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Patients', 'Patients', 'Patients screen', 'page', 2, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Organizations', 'Organizations', 'Organizations screen', 'page', 2, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Scn', 'SCN', 'SCN Screen', 'page', 2, 4, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Hrsn_Data_Tracker', 'HRSN Data Tracker', 'HRSN Data Tracker screen', 'page', 2, 5, TRUE, 'Hub UI', CURRENT_USER),
+
+('scr_Need_Attention', 'Needs Attention', 'Needs Attention screen', 'page', 3, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_Data_Quality', 'FHIR Data Quality', 'FHIR Data Quality screen', 'page', 3, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CSV_Data_Quality', 'CSV Data Quality', 'CSV Data Quality Screen', 'page', 3, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_IG_Publication_Issues', 'IG Publication Issues', 'IG Publication Issues screen', 'page', 3, 4, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_Rules', 'FHIR Rules', 'FHIR Rules screen', 'page', 3, 5, TRUE, 'Hub UI', CURRENT_USER),
+
+('scr_FHIR_via_HTTPS', 'FHIR via HTTPs', 'FHIR via HTTPs screen', 'page', 4, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_via_HTTPS_FAILED', 'FHIR via HTTPs FAILED', 'FHIR via HTTPs FAILED screen', 'page', 4, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CSV_via_HTTPS', 'CSV via HTTPs', 'CSV via HTTPs screen', 'page', 4, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CCDA_via_HTTPS', 'CCDA via HTTPs', 'CCDA via HTTPs screen', 'page', 4, 4, TRUE, 'Hub UI', CURRENT_USER),
+('scr_HL7V2_via_HTTPS', 'HL7V2 via HTTPs', 'HL7V2 via HTTPs screen', 'page', 4, 5, TRUE, 'Hub UI', CURRENT_USER),
+('scr_HTTP_Interactions', 'HTTP Interactions', 'HTTP Interactions screen', 'page', 4, 6, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Perfomance_overview', 'Performance Overview', 'Performance Overview screen', 'page', 4, 7, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Provenance', 'Provenance', 'Provenance screen', 'page', 4, 8, TRUE, 'Hub UI', CURRENT_USER),
+('scr_User_Sessions', 'User Sessions', 'User Sessions screen', 'page', 4, 9, TRUE, 'Hub UI', CURRENT_USER),
+
+('scr_Tech_By_Design_Hub', 'Tech by Design Hub', 'Tech By Design Hub screen', 'page', 5, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_SHIN_NY_FHIR_IG', 'SHIN-NY FHIR IG', 'SHIN NY FHIR IG screen', 'page', 5, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_OpenAPI_UI', 'OpenAPI UI', 'OpenAPI UI screen', 'page', 5, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Announcements', 'Announcements', 'Announcements screen', 'page', 5, 4, TRUE, 'Hub UI', CURRENT_USER),
+
+('scr_Health_Information', 'Health Information', 'Health Information screen', 'page', 6, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Project', 'Project', 'Project screen', 'page', 6, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Schema', 'Schema', 'Schema Screen', 'page', 6, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_ISLM_Migration', 'ISLM Migration', 'ISLM Migration screen', 'page', 6, 4, TRUE, 'Hub UI', CURRENT_USER)
+
+--('scr_Profile', 'Profile', 'Profile screen', 'page', 35, 5, TRUE, 'Hub UI', CURRENT_USER),
+--('scr_Role', 'Role', 'Role screen', 'page', 35, 6, TRUE, 'Hub UI', CURRENT_USER)
+
+ON CONFLICT (scr_code) DO NOTHING;
