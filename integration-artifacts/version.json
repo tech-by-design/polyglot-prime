@@ -3,16 +3,16 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.37",
+      "version": "0.8.38",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-06-17"
+      "date": "2026-06-22"
     },
     {
       "type": "FHIR",
       "channel": "FhirBundleValidate.xml",
-      "version": "0.8.17",
+      "version": "0.8.18",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-06-17"
+      "date": "2026-06-22"
     },
     {
       "type": "FHIR",
@@ -52,9 +52,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.48",
+      "version": "0.1.49",
       "editedby": "Nikhithaprojects9696",
-      "date": "2026-06-17"
+      "date": "2026-06-22"
     },
     {
       "type": "HL7v2",
