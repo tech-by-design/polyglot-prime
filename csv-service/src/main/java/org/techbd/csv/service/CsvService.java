@@ -45,6 +45,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Service
 public class CsvService {
@@ -561,6 +562,13 @@ public class CsvService {
                     initRIHR.setUri((String) requestParameters.get(org.techbd.csv.config.Constants.REQUEST_URI));
                     initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
                     initRIHR.setStatus(CsvProcessingState.PROCESSING_COMPLETED.name());
+                    ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();
+                        pElaboration.set(
+                        "headers",
+                        Configuration.objectMapper.valueToTree(requestParameters).path("headers")
+                        );
+
+                    initRIHR.setPElaboration(pElaboration);
                     initRIHR.setCreatedAt(createdAt);
                     initRIHR.setCreatedBy(CsvService.class.getName());
                     initRIHR.setPFullOperationOutcome(
