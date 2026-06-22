@@ -84,6 +84,14 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         messageContext.getRequest().writeTo(out);
         String soapXml = out.toString(StandardCharsets.UTF_8);
+        
+        String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
+        
+        if (soapXml == null || soapXml.trim().isEmpty()) {
+            LOG.warn("Empty SOAP request body received for /ws endpoint. interactionId={}", interactionId);
+            throw new IllegalArgumentException("Empty SOAP request body");
+        }
+        
         messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, soapXml);
         // Prefer raw bytes stored on request by the factory (original MIME boundary intact).
         var transportContext = TransportContextHolder.getTransportContext();
@@ -95,7 +103,6 @@ public class WsaHeaderInterceptor implements EndpointInterceptor, SoapEndpointIn
                 return true;
             }
         }
-        String interactionId = (String) messageContext.getProperty(Constants.INTERACTION_ID);
         LOG.info("handleRequest: Captured SOAP request for /ws endpoint. interactionId={}", interactionId);
 
         return true;
