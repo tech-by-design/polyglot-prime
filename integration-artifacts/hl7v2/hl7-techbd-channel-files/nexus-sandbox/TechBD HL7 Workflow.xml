@@ -1,11 +1,11 @@
 <channel version="26.3.1">
-  <id>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</id>
+  <id>cd99cb15-ab6a-414d-87af-a09fa76e0c31</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>
-Version: 0.1.49
-Modified the channel name as required</description>
-  <revision>2</revision>
+Version: 0.1.50
+Removed the extra validation code.</description>
+  <revision>4</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -188,37 +188,7 @@ channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
 var datalakeApiUrl=&quot;&quot;;
  
 var rawHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
-var incomingHeader = rawHeader == null ? &quot;&quot; : String(rawHeader).trim();
- 
-//if (incomingHeader.indexOf(&quot;=&quot;) !== -1) {
-// 
-//	logger.info(&quot;************************&quot;);
-// 
-//    setErrorResponse(
-// 
-//        400,
-// 
-//        &quot;Invalid X-TechBD-DataLake-API-URL&quot;
-// 
-//    );
-// 
-//    throw &quot;SSRF validation failed&quot;;
-// 
-//}&#xd;if (incomingHeader.indexOf(&quot;=&quot;) !== -1) {
-
-
-
-    setErrorResponse(
-
-        400,
-
-        &quot;Invalid X-TechBD-DataLake-API-URL1111111111111111111111111111111111111111&quot;
-
-    );
-
-    throw &quot;SSRF validation failed&quot;;
-
-}&#xd;
+var incomingHeader = rawHeader == null ? &quot;&quot; : String(rawHeader).trim();&#xd;
  
 logger.info(&quot;incomingHeader=[&quot; + incomingHeader + &quot;]&quot;);
 var allowedUrlsConfig = LookupHelper.get(
@@ -3459,7 +3429,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782121870342</time>
+        <time>1782197872648</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3472,9 +3442,9 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>188</revision>
+        <revision>194</revision>
         <lastModified>
-          <time>1781934314652</time>
+          <time>1782191804125</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3482,6 +3452,7 @@ return;</undeployScript>
         <enabledChannelIds class="sorted-set">
           <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
           <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+          <string>0bebf48c-06c3-45e4-b074-5fd7ac3eedb4</string>
           <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
           <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
           <string>101406b4-312a-4517-ab69-686051a91483</string>
@@ -3491,6 +3462,7 @@ return;</undeployScript>
           <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
           <string>19069366-0852-4caa-875c-1c503461f8a1</string>
           <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
+          <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
           <string>1c406954-d304-4882-b05d-b513d699785b</string>
           <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
           <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
@@ -3520,6 +3492,7 @@ return;</undeployScript>
           <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
           <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
           <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
+          <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
           <string>5cf24505-f00b-4002-a769-836686016c37</string>
           <string>60a18eb3-bf79-4c99-9bec-55fe0df4813f</string>
           <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
@@ -3569,6 +3542,7 @@ return;</undeployScript>
           <string>ac75ecb3-2a29-4a75-b056-61895a4ccc0c</string>
           <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
           <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
+          <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
           <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
           <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
           <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
@@ -3583,6 +3557,7 @@ return;</undeployScript>
           <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
           <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
           <string>cc1fe1c8-04cd-4b08-9797-0cb34491208b</string>
+          <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
           <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
           <string>d341dceb-069e-49ab-8efa-c45398145216</string>
           <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
@@ -3599,6 +3574,7 @@ return;</undeployScript>
           <string>f376f9cc-b848-4868-ac1c-e2c011665fc5</string>
           <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
           <string>fa6d8035-8b04-4740-9eb0-4dbb71c69bb6</string>
+          <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
           <string>fe3c571f-3ac0-4de6-8de1-c23894f823d4</string>
           <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
           <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
@@ -3664,14 +3640,14 @@ function createJsonResponse(status, message) {
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>de2d6037-7945-4c14-9c21-c4182fe24c74</id>
-        <name>0_1_49</name>
+        <id>23a96d28-c262-4250-ac8d-3a2677dc78e8</id>
+        <name>0_1_50</name>
         <channelIds>
-          <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
+          <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
-          <green>255</green>
+          <red>128</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
