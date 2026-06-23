@@ -1419,13 +1419,16 @@
                       ],
                     </xsl:when>
                     <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4'"> <!--Total Safety Score-->
-                        "valueCodeableConcept" : {
+                        <!-- "valueCodeableConcept" : {
                           "coding": [{
                             "system": "http://unitsofmeasure.org",
                             "display": "{Number}"
                           }],
                           "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
-                        },
+                        }, -->
+                        "valueQuantity": {
+                              "value": <xsl:value-of select='ccda:observation/ccda:value/@value'/>
+                          },
                         
                         <!-- Gather all filtered observations for derivedFrom -->
                         <xsl:variable name="derivedFromCodes" select="'|95618-5|95617-7|95616-9|95615-1|'" />
