@@ -311,26 +311,26 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                                 switch (data.getQuestionCode()) {
-                                        case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
-                                                if (!data.getAnswerCodeDescription().isEmpty()) {
-                                                        CodeableConcept coding = new CodeableConcept();
-                                                        String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
-                                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
-                                                                        "{Number}"));
-                                                        coding.setText(fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId));
-                                                        observation.setValue(coding);
-                                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                                        CodeableConcept dataAbsentReason = new CodeableConcept();
-                                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
-                                                        dataAbsentReason.addCoding(
-                                                                new Coding()
-                                                                .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                                .setCode(dataAbsentReasonCode)
-                                                                .setDisplay(dataAbsentReasonDisplay));
-                                                        observation.setDataAbsentReason(dataAbsentReason);
-                                                }
-                                        }
+                                        // case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
+                                        //         if (!data.getAnswerCodeDescription().isEmpty()) {
+                                        //                 CodeableConcept coding = new CodeableConcept();
+                                        //                 String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                        //                 coding.addCoding(new Coding("http://unitsofmeasure.org", null,
+                                        //                                 "{Number}"));
+                                        //                 coding.setText(fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId));
+                                        //                 observation.setValue(coding);
+                                        //         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                        //                 CodeableConcept dataAbsentReason = new CodeableConcept();
+                                        //                 String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        //                 String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                        //                 dataAbsentReason.addCoding(
+                                        //                         new Coding()
+                                        //                         .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                        //                         .setCode(dataAbsentReasonCode)
+                                        //                         .setDisplay(dataAbsentReasonDisplay));
+                                        //                 observation.setDataAbsentReason(dataAbsentReason);
+                                        //         }
+                                        // }
                                         case "77594-0" ->  { // Physical Activity
                                                 Quantity quantity = new Quantity();
                                                 String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
@@ -362,6 +362,36 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 quantity.setValue(0.0);
                                                 quantity.setUnit("minutes per week");
                                                 quantity.setSystem("http://unitsofmeasure.org");
+                                                observation.setValue(quantity);
+                                                }
+                                        }
+                                        case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
+                                                Quantity quantity = new Quantity();
+                                                String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                                String codeDescription = fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
+                                                if (codeDescription != null && !codeDescription.isEmpty()) {
+                                                        try{
+                                                        Optional<Double> doubleValue = Optional.of(Double.valueOf(codeDescription));
+                                                                doubleValue.ifPresent(doubleVal -> {
+                                                                quantity.setValue(doubleVal);
+                                                                });
+                                                }catch(NumberFormatException nfe){
+                                                        LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
+                                                        quantity.setValue(0.0);
+                                                }
+                                                observation.setValue(quantity);
+                                                }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+                                                        String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                        dataAbsentReason.addCoding(
+                                                                new Coding()
+                                                                .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                                .setCode(dataAbsentReasonCode)
+                                                                .setDisplay(dataAbsentReasonDisplay));
+                                                        observation.setDataAbsentReason(dataAbsentReason);
+                                                } else {
+                                                quantity.setValue(0.0);
                                                 observation.setValue(quantity);
                                                 }
                                         }
