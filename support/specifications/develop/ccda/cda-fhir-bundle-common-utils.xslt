@@ -569,6 +569,7 @@
       <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
       <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
       <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:when test="$screeningCode = '93025-5'">Protocol for Responding to and Assessing Patients' Assets, Risks, and Experiences [PRAPARE]</xsl:when>
       <xsl:otherwise>
         <xsl:text/>
       </xsl:otherwise>
@@ -579,7 +580,7 @@
     <xsl:param name="screeningCode"/>
     <xsl:choose>
       <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
-      <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0'">http://loinc.org</xsl:when>
+      <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0' or $screeningCode = '93025-5'">http://loinc.org</xsl:when>
       <xsl:otherwise>
         <xsl:text>http://loinc.org</xsl:text>
       </xsl:otherwise>

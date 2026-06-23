@@ -1334,12 +1334,15 @@
 
                 <!-- Total Safety Score 95614-4 -->
                 <xsl:when test="string(ccda:code/@code) = '95614-4'">
-                  "valueCodeableConcept" : {
+                  <!-- "valueCodeableConcept" : {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
                       "display": "{Number}"
                     }],
                     "text": "<xsl:value-of select='ccda:value/@value'/>"
+                  }, -->
+                  "valueQuantity": {
+                      "value": <xsl:value-of select='ccda:value/@value'/>
                   },
 
                   <!-- Gather all filtered observations for derivedFrom -->
