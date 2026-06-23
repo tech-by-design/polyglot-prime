@@ -1038,12 +1038,15 @@
                 </xsl:when>
 
                 <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
-                  "valueCodeableConcept": {
+                  <!-- "valueCodeableConcept": {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
                       "display": "{Number}"
                     }]
                     <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.1'/>"
+                  }, -->
+                  "valueQuantity": {
+                      "value": <xsl:value-of select='OBX.5/OBX.5.1'/>
                   },
                   
                   "derivedFrom": [
@@ -2374,6 +2377,7 @@
       <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
       <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
       <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:when test="$screeningCode = '93025-5'">Protocol for Responding to and Assessing Patients' Assets, Risks, and Experiences [PRAPARE]</xsl:when>   
       <xsl:otherwise>
         <xsl:text/>
       </xsl:otherwise>
