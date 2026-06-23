@@ -464,7 +464,7 @@
             "description": "Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code",
             "constraints": {
               "required": true,
-             "pattern": "^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn)$"
+             "pattern": "^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn|93025-5)$"
             }
           },
           {

@@ -1604,6 +1604,9 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('8e9310c4-64f9-412f-a5fa-10af9cd3be2f','language','zh-HK','Chinese (Hong Kong)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
 	 ('f0538e84-507f-46ad-9d42-112635577a2b','language','zh-SG','Chinese (Singapore)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD'),
 	 ('b8eb7afe-e99e-4c01-970b-960df654487c','language','zh-TW','Chinese (Taiwan)','http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage',NULL,'1.7.3','2026-02-02 09:28:36.899806+00','postgres','TechBD') ON CONFLICT DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+	 ('b0f5a577-4215-4258-ab24-7b38bf577e31','screening_code','93025-5','Protocol for Responding to and Assessing Patients'' Assets, Risks, and Experiences [PRAPARE]','http://loinc.org',NULL,'1.9.2','2026-06-23 11:22:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;	 
  
 
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
