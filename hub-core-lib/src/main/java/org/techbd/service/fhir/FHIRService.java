@@ -426,7 +426,7 @@ public class FHIRService {
 					provenance,
 					Nature.ORIGINAL_FHIR_PAYLOAD.getDescription(),
 					payloadJson,State.NONE.name(),State.ACCEPT_FHIR_BUNDLE.name());
-			rihr.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
+			rihr.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters, "device", Device.createDefault())));
 			if (requestParameters.get(Constants.ELABORATION) != null) {
 				try {
 					JsonNode elaborationNode = Configuration.objectMapper.readTree((String) requestParameters.get(Constants.ELABORATION));
@@ -557,7 +557,7 @@ public class FHIRService {
             LOG.info("headerIgVersion : "+ requestedIgVersion);
 			final var sessionBuilder = engine.session()
 					.withSessionId(UUID.randomUUID().toString())
-					.onDevice(Device.createDefault())
+					//.onDevice(Device.createDefault())
 					.withInteractionId(interactionId)
 					.withPayloads(List.of(payload))
 					.withFhirProfileUrl(CoreFHIRUtil.getBundleProfileUrl())
@@ -586,8 +586,9 @@ public class FHIRService {
 						"isAsync", true,
 						"validationResults", session.getValidationResults(),
 						"statusUrl","/Bundle/$status/"
-								+ interactionId.toString(),
-						"device", session.getDevice()));
+								+ interactionId.toString()
+						//"device", session.getDevice()
+					));
 				if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
 					immediateResult.put("provenance",
 							Configuration.objectMapper.readTree(provenance));

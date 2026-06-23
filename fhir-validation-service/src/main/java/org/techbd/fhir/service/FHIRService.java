@@ -388,6 +388,9 @@ public class FHIRService {
 					provenance,
 					Nature.TECH_BY_DISPOSITION.getDescription(),
 					Configuration.objectMapper.valueToTree(immediateResult),State.ACCEPT_FHIR_BUNDLE.name(),State.DISPOSITION.name());
+			rihr.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree(Map.of(
+					"request", requestParameters,
+					"device", Device.createDefault())));
 			final int i = rihr.execute(jooqCfg);
 			final var end = Instant.now();
 			final JsonNode response = rihr.getReturnValue();
@@ -486,12 +489,11 @@ public class FHIRService {
 								+ appConfig.getOperationOutcomeHelpUrl(),
 						"bundleSessionId", interactionId, // for tracking in
 															// database, etc.
-							Constants.TECHBD_VERSION, appConfig.getVersion(),								
+						Constants.TECHBD_VERSION, appConfig.getVersion(),								
 						"isAsync", true,
 						"validationResults", session.getValidationResults(),
 						"statusUrl","/Bundle/$status/"
-								+ interactionId.toString(),
-						"device", session.getDevice()));
+								+ interactionId.toString()));
 				if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
 					immediateResult.put("provenance",
 							Configuration.objectMapper.readTree(provenance));
