@@ -48,8 +48,9 @@ VALUES
 ('wid_Recent_Direct_FHIR_Bundles', 'Recent Direct FHIR Bundles', 'Recent Direct FHIR Bundles widget', 'widget', 1, 1, TRUE, 'Hub UI', CURRENT_USER),
 ('wid_Recent_CSV_FHIR_Bundles', 'Recent CSV FHIR Bundles', 'Recent CSV FHIR Bundles widget', 'widget', 1, 2, TRUE, 'Hub UI', CURRENT_USER),
 ('wid_Recent_CCDA_FHIR_Bundles', 'Recent CCDA FHIR Bundles', 'Recent CCDA FHIR Bundles widget', 'widget', 1, 3, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Submissions', 'Submissions', 'Submissions widget', 'widget', 1, 4, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Production', 'Production (FHIR)', 'Production (FHIR) widget', 'widget', 1, 5, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Recent_HL7_FHIR_Bundles', 'Recent HL7v2 FHIR Bundles', 'Recent HL7v2 FHIR Bundles widget', 'widget', 1, 4, TRUE, 'Hub UI', CURRENT_USER), /*new */
+('wid_Submissions', 'Submissions', 'Submissions widget', 'widget', 1, 5, TRUE, 'Hub UI', CURRENT_USER),
+('wid_Production', 'Production (FHIR)', 'Production (FHIR) widget', 'widget', 1, 6, TRUE, 'Hub UI', CURRENT_USER),
 
 ('scr_Screening', 'Screenings', 'Screening screen', 'page', 2, 1, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Patients', 'Patients', 'Patients screen', 'page', 2, 2, TRUE, 'Hub UI', CURRENT_USER),
@@ -60,15 +61,17 @@ VALUES
 ('scr_Need_Attention', 'Needs Attention', 'Needs Attention screen', 'page', 3, 1, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_FHIR_Data_Quality', 'FHIR Data Quality', 'FHIR Data Quality screen', 'page', 3, 2, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_CSV_Data_Quality', 'CSV Data Quality', 'CSV Data Quality Screen', 'page', 3, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_IG_Publication_Issues', 'IG Publication Issues', 'IG Publication Issues screen', 'page', 3, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_FHIR_Rules', 'FHIR Rules', 'FHIR Rules screen', 'page', 3, 5, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CCDA_Data_Quality', 'CCDA Data Quality', 'CCDA Data Quality Screen', 'page', 3, 4, TRUE, 'Hub UI', CURRENT_USER),  /*new */
+('scr_HL7_Data_Quality', 'HL7v2 Data Quality', 'HL7v2 Data Quality Screen', 'page', 3, 5, TRUE, 'Hub UI', CURRENT_USER),  /*new */
+('scr_IG_Publication_Issues', 'IG Publication Issues', 'IG Publication Issues screen', 'page', 3, 6, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_Rules', 'FHIR Rules', 'FHIR Rules screen', 'page', 3, 7, TRUE, 'Hub UI', CURRENT_USER),
 
-('scr_FHIR_via_HTTPS', 'FHIR via HTTPs', 'FHIR via HTTPs screen', 'page', 4, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_FHIR_via_HTTPS_FAILED', 'FHIR via HTTPs FAILED', 'FHIR via HTTPs FAILED screen', 'page', 4, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CSV_via_HTTPS', 'CSV via HTTPs', 'CSV via HTTPs screen', 'page', 4, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CCDA_via_HTTPS', 'CCDA via HTTPs', 'CCDA via HTTPs screen', 'page', 4, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_HL7V2_via_HTTPS', 'HL7V2 via HTTPs', 'HL7V2 via HTTPs screen', 'page', 4, 5, TRUE, 'Hub UI', CURRENT_USER),
-('scr_HTTP_Interactions', 'HTTP Interactions', 'HTTP Interactions screen', 'page', 4, 6, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_via_HTTPS', 'FHIR Data', 'FHIR Data screen', 'page', 4, 1, TRUE, 'Hub UI', CURRENT_USER),
+('scr_FHIR_via_HTTPS_FAILED', 'FHIR FAILED Submissions', 'FHIR FAILED Submissions screen', 'page', 4, 2, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CSV_via_HTTPS', 'CSV Submissions', 'CSV Submissions screen', 'page', 4, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_CCDA_via_HTTPS', 'CCDA Submissions', 'CCDA Submissions screen', 'page', 4, 4, TRUE, 'Hub UI', CURRENT_USER),
+('scr_HL7V2_via_HTTPS', 'HL7v2 Submissions', 'HL7v2 Submissions screen', 'page', 4, 5, TRUE, 'Hub UI', CURRENT_USER),
+('scr_HTTP_Interactions', 'Hub Interactions', 'Hub Interactions screen', 'page', 4, 6, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Perfomance_overview', 'Performance Overview', 'Performance Overview screen', 'page', 4, 7, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Provenance', 'Provenance', 'Provenance screen', 'page', 4, 8, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_User_Sessions', 'User Sessions', 'User Sessions screen', 'page', 4, 9, TRUE, 'Hub UI', CURRENT_USER),
@@ -81,7 +84,8 @@ VALUES
 ('scr_Health_Information', 'Health Information', 'Health Information screen', 'page', 6, 1, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Project', 'Project', 'Project screen', 'page', 6, 2, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Schema', 'Schema', 'Schema Screen', 'page', 6, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_ISLM_Migration', 'ISLM Migration', 'ISLM Migration screen', 'page', 6, 4, TRUE, 'Hub UI', CURRENT_USER)
+('scr_ISLM_Migration', 'ISLM Migration', 'ISLM Migration screen', 'page', 6, 4, TRUE, 'Hub UI', CURRENT_USER),
+('scr_pgTAP_Test_Results', 'pgTAP Test Results', 'pgTAP Test Results screen', 'page', 6, 5, TRUE, 'Hub UI', CURRENT_USER)  /*new */
 
 --('scr_Profile', 'Profile', 'Profile screen', 'page', 35, 5, TRUE, 'Hub UI', CURRENT_USER),
 --('scr_Role', 'Role', 'Role screen', 'page', 35, 6, TRUE, 'Hub UI', CURRENT_USER)
