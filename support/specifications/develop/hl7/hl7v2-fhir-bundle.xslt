@@ -1037,7 +1037,7 @@
                   ],
                 </xsl:when>
 
-                <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
+                <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4' and string-length(OBX.5/OBX.5.1) > 0">
                   <!-- "valueCodeableConcept": {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
