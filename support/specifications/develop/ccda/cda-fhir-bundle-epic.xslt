@@ -1444,7 +1444,7 @@
                             }
                       ],
                     </xsl:when>
-                    <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4'"> <!--Total Safety Score-->
+                    <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4' and string(ccda:observation/ccda:value/@value)"> <!--Total Safety Score-->
                         <!-- "valueCodeableConcept" : {
                           "coding": [{
                             "system": "http://unitsofmeasure.org",
