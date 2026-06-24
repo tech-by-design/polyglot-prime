@@ -240,7 +240,6 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                 OrchestrationEngine.OrchestrationSession session = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withSessionId(UuidUtil.generateUuid())
-                                .withTracer(tracer)
                                 .addHapiValidationEngine()
                                 .build();
                 try {
