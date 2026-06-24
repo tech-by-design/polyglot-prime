@@ -40,7 +40,7 @@
             <!-- Add a sample consent section if none exists -->
             <xsl:choose>
                 <xsl:when test="hl7:authorization/hl7:consent">
-                    <xsl:copy-of select="hl7:authorization"/>
+                    <xsl:copy-of select="hl7:authorization[1]"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <authorization>

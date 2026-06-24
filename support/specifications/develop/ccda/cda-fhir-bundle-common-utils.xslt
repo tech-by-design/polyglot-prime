@@ -211,8 +211,8 @@
     </xsl:when>
     <!-- Default: urn:oid fallback -->
     <xsl:otherwise>
-      <xsl:text>urn:oid:</xsl:text>
-      <xsl:value-of select="$oid"/>
+      <!-- <xsl:text>urn:oid:</xsl:text>
+      <xsl:value-of select="$oid"/> -->
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
