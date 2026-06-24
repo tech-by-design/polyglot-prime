@@ -47,7 +47,7 @@
             <!-- Consent -->
             <xsl:choose>
                 <xsl:when test="hl7:authorization/hl7:consent[hl7:code[@code='59284-0']]">
-                    <xsl:copy-of select="hl7:authorization"/>
+                    <xsl:copy-of select="hl7:authorization[1]"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <authorization>

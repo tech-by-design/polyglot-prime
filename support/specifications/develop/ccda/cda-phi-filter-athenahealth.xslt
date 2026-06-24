@@ -121,7 +121,7 @@
 
                 <!-- Case 3 : Consent is in authorization section -->
                 <xsl:when test="$authorizationConsent">
-                    <xsl:copy-of select="hl7:authorization"/>
+                    <xsl:copy-of select="hl7:authorization[1]"/>
                 </xsl:when>
 
                 <!-- Default -->
