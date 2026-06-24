@@ -11,7 +11,6 @@
   - `path` nyher-fhir-ig-example/SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv
   - `schema`
       - `primaryKey` ['PATIENT_MR_ID_VALUE']
-    - `foreignKeys` []
 ### `PATIENT_MR_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
@@ -65,7 +64,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
   - `constraints`:
-    - `pattern` `^\d{5}(-?\d{4})?$`
+    - `pattern` `^\d{5}(-\d{4})?$`
 ### `FACILITY_COUNTY`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.district  & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
@@ -79,7 +78,12 @@
   - `path` nyher-fhir-ig-example/SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv
   - `schema`
       - `primaryKey` ['ENCOUNTER_ID']
-    - `foreignKeys` []
+    - `foreignKeys`
+      - [1]
+        - `fields` ['PATIENT_MR_ID_VALUE']
+        - `reference`
+          - `resource` qe_admin_data
+          - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
@@ -334,7 +338,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn)$`
+    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn|93025-5)$`
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
@@ -520,7 +524,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^\d{5}(-?\d{4})?$`
+    - `pattern` `^\d{5}(-\d{4})?$`
 ### `COUNTY`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').address.district
   - `type` string
