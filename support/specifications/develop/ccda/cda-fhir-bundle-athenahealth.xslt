@@ -1333,7 +1333,7 @@
                 </xsl:when>
 
                 <!-- Total Safety Score 95614-4 -->
-                <xsl:when test="string(ccda:code/@code) = '95614-4'">
+                <xsl:when test="string(ccda:code/@code) = '95614-4' and string-length(ccda:value/@value) > 0">
                   <!-- "valueCodeableConcept" : {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
