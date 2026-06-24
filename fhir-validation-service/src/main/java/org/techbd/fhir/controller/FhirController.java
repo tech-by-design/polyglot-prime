@@ -44,9 +44,6 @@ import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.service.FHIRService;
 import org.techbd.fhir.service.engine.OrchestrationEngine;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -70,8 +67,6 @@ public class FhirController {
         private final DataLedgerApiClient dataLedgerApiClient;
         private final DSLContext primaryDslContext;
         private final FHIRService fhirService;
-        private final Tracer tracer;
-
         public FhirController(final OrchestrationEngine engine,
         final AppConfig appConfig ,final DataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService
         ,@Qualifier("primaryDslContext") final DSLContext primaryDslContext) throws IOException {
@@ -79,7 +74,6 @@ public class FhirController {
                 this.engine = engine;
                 this.fhirService = fhirService;
                 this.dataLedgerApiClient = dataLedgerApiClient;
-                 this.tracer = GlobalOpenTelemetry.get().getTracer("FhirController");
                 this.primaryDslContext = primaryDslContext;
         }
 
@@ -154,46 +148,45 @@ public class FhirController {
                         @Parameter(description = "Optional header to specify data ledger diagnostics.", required = false)@RequestHeader(value = "X-TechBD-Data-Ledger-diagnostics", required = false, defaultValue = "false")
                         boolean dataLedgerDiagnostics,                       
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
-                Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
-                try {
-
-                        if (tenantId == null || tenantId.trim().isEmpty()) {
-                                LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
-                                throw new IllegalArgumentException("Tenant ID must be provided");
-                        }
-
-                        if (Boolean.TRUE.equals(deleteSessionCookie)) {
-                                deleteJSessionCookie(request, response);
-                        }
-                        // request = new CustomRequestWrapper(request, payload);
-                        final String rawHealthCheckHeader = request.getHeader(Constants.HEALTH_CHECK_HEADER);
-                        final String resolvedHealthCheck = firstNonBlank(rawHealthCheckHeader, healthCheck, "false");
-                        LOG.debug("FhirController.validateBundle - raw healthCheck header: '{}', bound healthCheck: '{}', resolved healthCheck: '{}'",
-                                rawHealthCheckHeader, healthCheck, resolvedHealthCheck);
-                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, 
-                        requestUriToBeOverridden, null, resolvedHealthCheck, null, null,requestedIgVersion );
-                        Map <String,Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);            
-                        LOG.debug("FhirController.validateBundle - sourceType: '{}', groupInteractionId: '{}', masterInteractionId: '{}'", 
-                                sourceType, groupInteractionId, masterInteractionId);
-                        CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap, deleteSessionCookie, null, sourceType, groupInteractionId, masterInteractionId, (requestUriToBeOverridden == null || requestUriToBeOverridden.trim().isEmpty()) ? request.getRequestURI() : requestUriToBeOverridden.trim());
-                        if (interactionId != null && !interactionId.trim().isEmpty()) {
-                            requestDetailsMap.put(Constants.INTERACTION_ID, interactionId.trim());
-                        } else {
-                            requestDetailsMap.put(Constants.INTERACTION_ID,UuidUtil.generateUuid());
-                        }                                        
-                        requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
-                        requestDetailsMap.put(Constants.ELABORATION, elaboration);
-                        requestDetailsMap.put(Constants.DATA_LEDGER_TRACKING, dataLedgerTracking);
-                        requestDetailsMap.put(Constants.DATA_LEDGER_DIAGNOSTICS, dataLedgerDiagnostics);
-                        requestDetailsMap.putAll(headers);
-                        requestDetailsMap.put(Constants.HEALTH_CHECK_HEADER, resolvedHealthCheck);
-                        Map<String, Object> responseParameters = new HashMap<>();
-                        final var result = fhirService.processBundle(payload, requestDetailsMap,  responseParameters);
-                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
-                        return result;
-                } finally {
-                        span.end();
+               
+                       if (tenantId == null || tenantId.trim().isEmpty()) {
+                        LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+                        throw new IllegalArgumentException("Tenant ID must be provided");
                 }
+
+                if (Boolean.TRUE.equals(deleteSessionCookie)) {
+                        deleteJSessionCookie(request, response);
+                }
+                // request = new CustomRequestWrapper(request, payload);
+                final String rawHealthCheckHeader = request.getHeader(Constants.HEALTH_CHECK_HEADER);
+                final String resolvedHealthCheck = firstNonBlank(rawHealthCheckHeader, healthCheck, "false");
+                LOG.debug("FhirController.validateBundle - raw healthCheck header: '{}', bound healthCheck: '{}', resolved healthCheck: '{}'",
+                                rawHealthCheckHeader, healthCheck, resolvedHealthCheck);
+                Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+                                requestUriToBeOverridden, null, resolvedHealthCheck, null, null, requestedIgVersion);
+                Map<String, Object> requestDetailsMap = CoreFHIRUtil.extractRequestDetails(request);
+                LOG.debug("FhirController.validateBundle - sourceType: '{}', groupInteractionId: '{}', masterInteractionId: '{}'",
+                                sourceType, groupInteractionId, masterInteractionId);
+                CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap, deleteSessionCookie, null, sourceType,
+                                groupInteractionId, masterInteractionId,
+                                (requestUriToBeOverridden == null || requestUriToBeOverridden.trim().isEmpty())
+                                                ? request.getRequestURI()
+                                                : requestUriToBeOverridden.trim());
+                if (interactionId != null && !interactionId.trim().isEmpty()) {
+                        requestDetailsMap.put(Constants.INTERACTION_ID, interactionId.trim());
+                } else {
+                        requestDetailsMap.put(Constants.INTERACTION_ID, UuidUtil.generateUuid());
+                }
+                requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+                requestDetailsMap.put(Constants.ELABORATION, elaboration);
+                requestDetailsMap.put(Constants.DATA_LEDGER_TRACKING, dataLedgerTracking);
+                requestDetailsMap.put(Constants.DATA_LEDGER_DIAGNOSTICS, dataLedgerDiagnostics);
+                requestDetailsMap.putAll(headers);
+                requestDetailsMap.put(Constants.HEALTH_CHECK_HEADER, resolvedHealthCheck);
+                Map<String, Object> responseParameters = new HashMap<>();
+                final var result = fhirService.processBundle(payload, requestDetailsMap, responseParameters);
+                CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
+                return result;
         }
 
         @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
