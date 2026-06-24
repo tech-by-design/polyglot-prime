@@ -84,7 +84,7 @@
             "name": "FACILITY_ZIP",
             "type": "string",
             "description": "Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text",
-            "constraints": { "pattern": "^\\d{5}(-?\\d{4})?$" }
+            "constraints": { "pattern": "^\\d{5}(-\\d{4})?$" }
           },
           {
             "name": "FACILITY_COUNTY",
@@ -778,7 +778,7 @@
             "description": "Bundle.entry.resource.where(resourceType ='Patient').address.postalCode",
             "constraints": {
               "required": true,
-              "pattern": "^\\d{5}(-?\\d{4})?$"
+              "pattern": "^\\d{5}(-\\d{4})?$"
             }
           },
           {
