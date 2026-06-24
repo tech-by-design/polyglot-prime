@@ -73,9 +73,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.micrometer.common.util.StringUtils;
 import io.netty.handler.ssl.SslContextBuilder;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -98,13 +95,10 @@ public class FHIRService {
 	private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final OrchestrationEngine engine;
 	private final DSLContext primaryDSLContext;
-	private Tracer tracer;
-
 	public FHIRService(CoreAppConfig coreAppConfig, CoreDataLedgerApiClient coreDataLedgerApiClient,OrchestrationEngine engine,
 	@Qualifier("primaryDslContext") final DSLContext primaryDSLContext, AppLogger appLogger) {
 		this.coreAppConfig = coreAppConfig;
 		this.coreDataLedgerApiClient = coreDataLedgerApiClient;
-		this.tracer = GlobalOpenTelemetry.get().getTracer("FHIRService");
 		this.engine = engine;
 		this.primaryDSLContext = primaryDSLContext;
 		LOG = appLogger.getLogger(FHIRService.class);
@@ -138,129 +132,128 @@ public class FHIRService {
     public Object processBundle(final @RequestBody @Nonnull String payload, final Map<String, Object> requestParameters,
             final Map<String, Object> responseParameters)
             throws IOException {
-        final Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
-        try {
-            final var start = Instant.now();
-			String interactionId = (String)requestParameters.get(Constants.INTERACTION_ID);
-			final String tenantId = (String)requestParameters.get(Constants.TENANT_ID);
-			final String source = (String)requestParameters.get(Constants.SOURCE_TYPE);
-			//String dataLakeApiContentType = (String)requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE);
-			final String customDataLakeApi = (String)requestParameters.get(Constants.CUSTOM_DATA_LAKE_API);
-			final String healthCheck = (String)requestParameters.get(Constants.HEALTH_CHECK);
-			final String provenance = (String)requestParameters.get(Constants.PROVENANCE);
-			final String mtlsStrategy = (String)requestParameters.get(Constants.MTLS_STRATEGY);
-			final String groupInteractionId = (String)requestParameters.get(Constants.GROUP_INTERACTION_ID);
-			final String masterInteractionId = (String)requestParameters.get(Constants.MASTER_INTERACTION_ID);
-			final String requestUriToBeOverriden = (String)requestParameters.get(Constants.OVERRIDE_REQUEST_URI);
-			final String coRrelationId = (String)requestParameters.get(Constants.CORRELATION_ID);
-			final String requestUri = (String)requestParameters.get(Constants.REQUEST_URI);
-			if (requestParameters.get(Constants.CORRELATION_ID) != null) {
-				interactionId = (String)requestParameters.get(Constants.CORRELATION_ID);
+        final var start = Instant.now();
+		String interactionId = (String) requestParameters.get(Constants.INTERACTION_ID);
+		final String tenantId = (String) requestParameters.get(Constants.TENANT_ID);
+		final String source = (String) requestParameters.get(Constants.SOURCE_TYPE);
+		// String dataLakeApiContentType =
+		// (String)requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE);
+		final String customDataLakeApi = (String) requestParameters.get(Constants.CUSTOM_DATA_LAKE_API);
+		final String healthCheck = (String) requestParameters.get(Constants.HEALTH_CHECK);
+		final String provenance = (String) requestParameters.get(Constants.PROVENANCE);
+		final String mtlsStrategy = (String) requestParameters.get(Constants.MTLS_STRATEGY);
+		final String groupInteractionId = (String) requestParameters.get(Constants.GROUP_INTERACTION_ID);
+		final String masterInteractionId = (String) requestParameters.get(Constants.MASTER_INTERACTION_ID);
+		final String requestUriToBeOverriden = (String) requestParameters.get(Constants.OVERRIDE_REQUEST_URI);
+		final String coRrelationId = (String) requestParameters.get(Constants.CORRELATION_ID);
+		final String requestUri = (String) requestParameters.get(Constants.REQUEST_URI);
+		if (requestParameters.get(Constants.CORRELATION_ID) != null) {
+			interactionId = (String) requestParameters.get(Constants.CORRELATION_ID);
+		}
+		if (tenantId == null) {
+			throw new IllegalArgumentException("Tenant ID must be provided in the request headers.");
+		}
+		if (null == interactionId) {
+			throw new IllegalArgumentException("Interaction ID must be provided in the request parameters.");
+		}
+		final String bundleId = CoreFHIRUtil.extractBundleId(payload, tenantId);
+		if (!SourceType.CSV.name().equalsIgnoreCase(source)
+				&& !SourceType.CCDA.name().equalsIgnoreCase(source)
+				&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
+			DataLedgerPayload dataLedgerPayload = null;
+			if (StringUtils.isNotEmpty(bundleId)) {
+				dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
+						CoreDataLedgerApiClient.Action.RECEIVED.getValue(),
+						CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
+						bundleId);
+			} else {
+				dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
+						CoreDataLedgerApiClient.Action.RECEIVED.getValue(),
+						CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
+						interactionId);
 			}
-            if (tenantId == null) {
-                throw new IllegalArgumentException("Tenant ID must be provided in the request headers.");
-            }
-            if (null == interactionId) {
-                throw new IllegalArgumentException("Interaction ID must be provided in the request parameters.");
-            }
-				final String bundleId = CoreFHIRUtil.extractBundleId(payload, tenantId);
-			if (!SourceType.CSV.name().equalsIgnoreCase(source)
-					&& !SourceType.CCDA.name().equalsIgnoreCase(source)
-					&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
-				DataLedgerPayload dataLedgerPayload = null;
-				if (StringUtils.isNotEmpty(bundleId)) {
-					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
-							CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
-							bundleId);
-				} else {
-					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
-							CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
-							interactionId);
-				}
-				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
-				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
-						SourceType.FHIR.name(), null);
-			}
-            LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
+			final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
+			coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
+					SourceType.FHIR.name(), null);
+		}
+		LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
+		if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
+			registerOriginalPayload(requestParameters,
+					payload, interactionId, groupInteractionId, masterInteractionId,
+					source, requestUriToBeOverriden, coRrelationId);
+		}
+		Map<String, Object> payloadWithDisposition = null;
+		try {
+			validateJson(payload, interactionId);
+			validateBundleProfileUrl(payload, interactionId);
+			// if (null == requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE)) {
+			// dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+			// }
+
+			final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
+					source);
+			final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
 			if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
-				registerOriginalPayload(requestParameters,
-						payload, interactionId, groupInteractionId, masterInteractionId,
-						source, requestUriToBeOverriden, coRrelationId);
-			}
-			Map<String, Object> payloadWithDisposition = null;			
-            try {
-                validateJson(payload, interactionId);
-                validateBundleProfileUrl(payload, interactionId);
-                // if (null == requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE)) {
-                //     dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
-                // }
-
-                                final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
-                        source);
-                                               final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
-				if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
-					payloadWithDisposition = registerValidationResults(requestParameters,
-							result, interactionId, groupInteractionId, masterInteractionId,
-							source, requestUriToBeOverriden);
-				}
-                if (StringUtils.isNotEmpty(requestUri)
-                        && (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
-                    return result;
-                }
-
-                if ("true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
-                    return result;
-                }
-
-                if (isActionDiscard(payloadWithDisposition)) {
-                    LOG.info("Action discard detected, returning payloadWithDisposition"); // TODO-to be removed
-                    return payloadWithDisposition;
-                }
-                if (null == payloadWithDisposition) {
-                    LOG.warn(
-                            "FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
-                            interactionId);
-                    sendToScoringEngine(requestParameters,customDataLakeApi,
-                            tenantId, payload,
-                            provenance, null,
-                            mtlsStrategy,
-                            interactionId, groupInteractionId, masterInteractionId,
-                            source, requestUriToBeOverriden, coRrelationId,bundleId,false,null);
-                    final Instant end = Instant.now();
-                    final Duration timeElapsed = Duration.between(start, end);
-                    LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-                            interactionId, timeElapsed.toMillis());
-                    return result;
-                } else {
-                    LOG.info(
-                            "FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
-                            interactionId);
-                    sendToScoringEngine(requestParameters, customDataLakeApi,
-                            tenantId, payload,
-                            provenance, payloadWithDisposition,
-                            mtlsStrategy, interactionId, groupInteractionId,
-                            masterInteractionId, source, requestUriToBeOverriden, coRrelationId,bundleId,false,null);
-                    final Instant end = Instant.now();
-                    final Duration timeElapsed = Duration.between(start, end);
-                    LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-                            interactionId, timeElapsed.toMillis());
-                    return payloadWithDisposition;
-                }
-            } catch (final JsonValidationException ex) {
 				payloadWithDisposition = registerValidationResults(requestParameters,
-						buildOperationOutcome(ex, interactionId), interactionId, groupInteractionId, masterInteractionId,
+						result, interactionId, groupInteractionId, masterInteractionId,
 						source, requestUriToBeOverriden);
-                LOG.info("Exception occurred: {} while processing bundle for interaction id :{} ", ex.getMessage(),interactionId); 
-            }
+			}
+			if (StringUtils.isNotEmpty(requestUri)
+					&& (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
+				return result;
+			}
 
-            final Instant end = Instant.now();
-            final Duration timeElapsed = Duration.between(start, end);
-            LOG.info("Bundle processing end for interaction id: {} Time Taken: {} milliseconds", interactionId,
-                    timeElapsed.toMillis());
-            return payloadWithDisposition;
-        } finally {
-            span.end();
-        }
+			if ("true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
+				return result;
+			}
+
+			if (isActionDiscard(payloadWithDisposition)) {
+				LOG.info("Action discard detected, returning payloadWithDisposition"); // TODO-to be removed
+				return payloadWithDisposition;
+			}
+			if (null == payloadWithDisposition) {
+				LOG.warn(
+						"FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
+						interactionId);
+				sendToScoringEngine(requestParameters, customDataLakeApi,
+						tenantId, payload,
+						provenance, null,
+						mtlsStrategy,
+						interactionId, groupInteractionId, masterInteractionId,
+						source, requestUriToBeOverriden, coRrelationId, bundleId, false, null);
+				final Instant end = Instant.now();
+				final Duration timeElapsed = Duration.between(start, end);
+				LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+						interactionId, timeElapsed.toMillis());
+				return result;
+			} else {
+				LOG.info(
+						"FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
+						interactionId);
+				sendToScoringEngine(requestParameters, customDataLakeApi,
+						tenantId, payload,
+						provenance, payloadWithDisposition,
+						mtlsStrategy, interactionId, groupInteractionId,
+						masterInteractionId, source, requestUriToBeOverriden, coRrelationId, bundleId, false, null);
+				final Instant end = Instant.now();
+				final Duration timeElapsed = Duration.between(start, end);
+				LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+						interactionId, timeElapsed.toMillis());
+				return payloadWithDisposition;
+			}
+		} catch (final JsonValidationException ex) {
+			payloadWithDisposition = registerValidationResults(requestParameters,
+					buildOperationOutcome(ex, interactionId), interactionId, groupInteractionId, masterInteractionId,
+					source, requestUriToBeOverriden);
+			LOG.info("Exception occurred: {} while processing bundle for interaction id :{} ", ex.getMessage(),
+					interactionId);
+		}
+
+		final Instant end = Instant.now();
+		final Duration timeElapsed = Duration.between(start, end);
+		LOG.info("Bundle processing end for interaction id: {} Time Taken: {} milliseconds", interactionId,
+				timeElapsed.toMillis());
+		return payloadWithDisposition;
     }
 
 	@SuppressWarnings("unchecked")
@@ -276,52 +269,39 @@ public class FHIRService {
 	}
 
 	public void validateJson(final String jsonString, final String interactionId) {
-		final Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateJson").startSpan();
 		try {
-			try {
-				Configuration.objectMapper.readTree(jsonString);
-			} catch (final Exception e) {
-				throw new JsonValidationException(ErrorCode.INVALID_JSON);
-			}
-		} finally {
-			validateJsonSpan.end();
+			Configuration.objectMapper.readTree(jsonString);
+		} catch (final Exception e) {
+			throw new JsonValidationException(ErrorCode.INVALID_JSON);
 		}
-
 	}
 
 	public void validateBundleProfileUrl(final String jsonString, final String interactionId) {
-		final Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
+		JsonNode rootNode;
 		try {
-			JsonNode rootNode;
-			try {
-				rootNode = Configuration.objectMapper.readTree(jsonString);
-				final JsonNode metaNode = rootNode.path("meta").path("profile");
+			rootNode = Configuration.objectMapper.readTree(jsonString);
+			final JsonNode metaNode = rootNode.path("meta").path("profile");
 
-				final List<String> profileList = Optional.ofNullable(metaNode)
-						.filter(JsonNode::isArray)
-						.map(node -> StreamSupport.stream(node.spliterator(), false)
-								.map(JsonNode::asText)
-								.collect(Collectors.toList()))
-						.orElse(List.of());
+			final List<String> profileList = Optional.ofNullable(metaNode)
+					.filter(JsonNode::isArray)
+					.map(node -> StreamSupport.stream(node.spliterator(), false)
+							.map(JsonNode::asText)
+							.collect(Collectors.toList()))
+					.orElse(List.of());
 
-				if (CollectionUtils.isEmpty(profileList)) {
-					LOG.error("Bundle profile is not provided for interaction id: {}", interactionId);
-					throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
-				}
-
-				final List<String> allowedProfileUrls = CoreFHIRUtil.getAllowedProfileUrls(coreAppConfig);
-				if (profileList.stream().noneMatch(allowedProfileUrls::contains)) {
-					LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
-					throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
-				}
-			} catch (final JsonProcessingException e) {
-				LOG.error("Json Processing exception while extracting profile url for interaction id :{}", e);
+			if (CollectionUtils.isEmpty(profileList)) {
+				LOG.error("Bundle profile is not provided for interaction id: {}", interactionId);
+				throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
 			}
 
-		} finally {
-			validateJsonSpan.end();
+			final List<String> allowedProfileUrls = CoreFHIRUtil.getAllowedProfileUrls(coreAppConfig);
+			if (profileList.stream().noneMatch(allowedProfileUrls::contains)) {
+				LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
+				throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
+			}
+		} catch (final JsonProcessingException e) {
+			LOG.error("Json Processing exception while extracting profile url for interaction id :{}", e);
 		}
-
 	}
 
 	/**
@@ -399,7 +379,6 @@ public class FHIRService {
 			final String sourceType,
 			final String requestUriToBeOverriden,
 			final String coRrelationId) throws IOException {
-		final Span span = tracer.spanBuilder("FHIRService.registerOriginalPayload").startSpan();
 		try {
 			final var jooqCfg = primaryDSLContext.configuration();
 			LOG.info(
@@ -448,8 +427,6 @@ public class FHIRService {
 		} catch (final Exception e) {
 			LOG.error("ERROR:: REGISTER Original Payload for interaction id: {}: {}",
 					interactionId, e.getMessage(), e);
-		} finally {
-			span.end();
 		}
 	}
 
@@ -461,7 +438,6 @@ public class FHIRService {
 			final String masterInteractionId,
 			final String sourceType,
 			final String requestUriToBeOverriden) throws IOException {
-		final Span span = tracer.spanBuilder("FHIRService.registerValidationResults").startSpan();
 		try {
 			final var jooqCfg = primaryDSLContext.configuration();
 			LOG.info("FHIRService REGISTER Validation Results BEGIN  for interaction id: {}",interactionId);
@@ -496,8 +472,6 @@ public class FHIRService {
 			LOG.error("ERROR:: REGISTER Validation Results for interaction id: {}: {}",
 					interactionId, e.getMessage(), e);
 			return null;
-		} finally {
-			span.end();
 		}
 	}
 
@@ -548,69 +522,63 @@ public class FHIRService {
 
 	private Map<String, Object> validate(final Map<String,Object> requestParameters, final String payload,
             final String interactionId, final String provenance, final String sourceType) {
-        final Span span = tracer.spanBuilder("FhirService.validate").startSpan();
+		final var start = Instant.now();
+		LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
+		final var igPackages = coreAppConfig.getIgPackages();
+		var requestedIgVersion = (String) requestParameters.get(Constants.SHIN_NY_IG_VERSION);
+		LOG.info("headerIgVersion : " + requestedIgVersion);
+		final var sessionBuilder = engine.session()
+				.withSessionId(UUID.randomUUID().toString())
+				.onDevice(Device.createDefault())
+				.withInteractionId(interactionId)
+				.withPayloads(List.of(payload))
+				.withFhirProfileUrl(CoreFHIRUtil.getBundleProfileUrl())
+				.withFhirIGPackages(igPackages)
+				.withRequestedIgVersion(requestedIgVersion)
+				.addHapiValidationEngine(); // by default
+		// clearExisting is set to true so engines can be fully supplied through header
+
+		final var session = sessionBuilder.build();
 		try {
-			final var start = Instant.now();
-			LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
-			final var igPackages = coreAppConfig.getIgPackages();
-            var requestedIgVersion = (String) requestParameters.get(Constants.SHIN_NY_IG_VERSION);
-            LOG.info("headerIgVersion : "+ requestedIgVersion);
-			final var sessionBuilder = engine.session()
-					.withSessionId(UUID.randomUUID().toString())
-					.onDevice(Device.createDefault())
-					.withInteractionId(interactionId)
-					.withPayloads(List.of(payload))
-					.withFhirProfileUrl(CoreFHIRUtil.getBundleProfileUrl())
-					.withTracer(tracer)
-					.withFhirIGPackages(igPackages)
-                    .withRequestedIgVersion(requestedIgVersion)
-					.addHapiValidationEngine(); // by default
-					// clearExisting is set to true so engines can be fully supplied through header
-					
-			final var session = sessionBuilder.build();
-			try {
-				engine.orchestrate(session);
-				// TODO: if there are errors that should prevent forwarding, stop here
-				// TODO: need to implement `immediate` (sync) webClient op, right now it's async
-				// only
-				// immediateResult is what's returned to the user while async operation
-				// continues
-				final var immediateResult = new HashMap<>(Map.of(
-						"resourceType", "OperationOutcome",
-						"help",
-						"If you need help understanding how to decipher OperationOutcome please see "
-								+ coreAppConfig.getOperationOutcomeHelpUrl(),
-						"bundleSessionId", interactionId, // for tracking in
-															// database, etc.
-							Constants.TECHBD_VERSION, coreAppConfig.getVersion(),								
-						"isAsync", true,
-						"validationResults", session.getValidationResults(),
-						"statusUrl","/Bundle/$status/"
-								+ interactionId.toString(),
-						"device", session.getDevice()));
-				if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
-					immediateResult.put("provenance",
-							Configuration.objectMapper.readTree(provenance));
-				}
-				
-				return immediateResult; // Return the validation results
-			} catch (final Exception e) {
-				// Log the error and create a failure response
-				LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
-				return Map.of(
-						"resourceType", "OperationOutcome",
-						"interactionId", interactionId,
-						"error", "Validation failed: " + e.getMessage());
-			} finally {
-				// Ensure the session is cleared to avoid memory leaks
-				engine.clear(session);
-				final Instant end = Instant.now();
-				final Duration timeElapsed = Duration.between(start, end);
-				LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
-						interactionId, timeElapsed.toMillis());
+			engine.orchestrate(session);
+			// TODO: if there are errors that should prevent forwarding, stop here
+			// TODO: need to implement `immediate` (sync) webClient op, right now it's async
+			// only
+			// immediateResult is what's returned to the user while async operation
+			// continues
+			final var immediateResult = new HashMap<>(Map.of(
+					"resourceType", "OperationOutcome",
+					"help",
+					"If you need help understanding how to decipher OperationOutcome please see "
+							+ coreAppConfig.getOperationOutcomeHelpUrl(),
+					"bundleSessionId", interactionId, // for tracking in
+														// database, etc.
+					Constants.TECHBD_VERSION, coreAppConfig.getVersion(),
+					"isAsync", true,
+					"validationResults", session.getValidationResults(),
+					"statusUrl", "/Bundle/$status/"
+							+ interactionId.toString(),
+					"device", session.getDevice()));
+			if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
+				immediateResult.put("provenance",
+						Configuration.objectMapper.readTree(provenance));
 			}
+
+			return immediateResult; // Return the validation results
+		} catch (final Exception e) {
+			// Log the error and create a failure response
+			LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
+			return Map.of(
+					"resourceType", "OperationOutcome",
+					"interactionId", interactionId,
+					"error", "Validation failed: " + e.getMessage());
 		} finally {
-			span.end();
+			// Ensure the session is cleared to avoid memory leaks
+			engine.clear(session);
+			final Instant end = Instant.now();
+			final Duration timeElapsed = Duration.between(start, end);
+			LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
+					interactionId, timeElapsed.toMillis());
 		}
 	}
 
@@ -624,71 +592,68 @@ public class FHIRService {
 			final String mtlsStrategy, final String interactionId, final String groupInteractionId,
 			final String masterInteractionId, final String sourceType, final String requestUriToBeOverriden, 
 			final String coRrelationId,final String bundleId,boolean replay,Map<String,Object> replayPayload) {
-		final Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
+		LOG.info("FHIRService:: sendToScoringEngine BEGIN | interactionId: {} | replay mode: {}", interactionId,
+				replay);
+
 		try {
-			LOG.info("FHIRService:: sendToScoringEngine BEGIN | interactionId: {} | replay mode: {}", interactionId, replay);
-
-			try {
-				Map<String, Object> bundlePayloadWithDisposition = null;
-				if (replay) {
-					LOG.debug("FHIRService:: sendToScoringEngine in replay mode, using provided replay payload for interaction id: {}",
+			Map<String, Object> bundlePayloadWithDisposition = null;
+			if (replay) {
+				LOG.debug(
+						"FHIRService:: sendToScoringEngine in replay mode, using provided replay payload for interaction id: {}",
+						interactionId);
+				bundlePayloadWithDisposition = replayPayload;
+			} else {
+				LOG.debug("FHIRService:: sendToScoringEngine includeOperationOutcome : {} interaction id: {}",
+						interactionId);
+				if (null != validationPayloadWithDisposition) { // todo
+																// -revisit
+					LOG.debug(
+							"FHIRService:: sendToScoringEngine Prepare payload with operation outcome interaction id: {}",
 							interactionId);
-					bundlePayloadWithDisposition = replayPayload;
-				} else {
-					LOG.debug("FHIRService:: sendToScoringEngine includeOperationOutcome : {} interaction id: {}",
-							interactionId);
-					if ( null != validationPayloadWithDisposition) { // todo
-																								// -revisit
-						LOG.debug(
-								"FHIRService:: sendToScoringEngine Prepare payload with operation outcome interaction id: {}",
-								interactionId);
-						bundlePayloadWithDisposition = preparePayload(requestParameters,
-								payload,
-								validationPayloadWithDisposition, interactionId);
-					} else {
-						LOG.debug(
-								"FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
-								interactionId);
-						bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
-								new TypeReference<Map<String, Object>>() {
-								});
-					}
-				}
-				final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
-						.filter(s -> !s.isEmpty())
-						.orElse(coreAppConfig.getDefaultDatalakeApiUrl());
-				final var defaultDatalakeApiAuthn = coreAppConfig.getDefaultDataLakeApiAuthn();
-
-				if (null == defaultDatalakeApiAuthn) {
-					LOG.info(
-							"###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
-							interactionId);
-					handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,requestParameters,
-							bundlePayloadWithDisposition, payload,
-							// dataLakeApiContentType,
-							provenance,  
-                                                        groupInteractionId,
-							masterInteractionId, sourceType, requestUriToBeOverriden,bundleId,replay);
-				} else {
-					handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
-							dataLakeApiBaseURL,
-							requestParameters, bundlePayloadWithDisposition,
+					bundlePayloadWithDisposition = preparePayload(requestParameters,
 							payload,
-							//dataLakeApiContentType, 
-							provenance, 
-							mtlsStrategy, groupInteractionId, masterInteractionId,
-							sourceType, requestUriToBeOverriden,bundleId,replay);
+							validationPayloadWithDisposition, interactionId);
+				} else {
+					LOG.debug(
+							"FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
+							interactionId);
+					bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
+							new TypeReference<Map<String, Object>>() {
+							});
 				}
-
-			} catch (
-
-			final Exception e) {
-				handleError(validationPayloadWithDisposition, e,  interactionId);
-			} finally {
-				LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
 			}
+			final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
+					.filter(s -> !s.isEmpty())
+					.orElse(coreAppConfig.getDefaultDatalakeApiUrl());
+			final var defaultDatalakeApiAuthn = coreAppConfig.getDefaultDataLakeApiAuthn();
+
+			if (null == defaultDatalakeApiAuthn) {
+				LOG.info(
+						"###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
+						interactionId);
+				handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL, requestParameters,
+						bundlePayloadWithDisposition, payload,
+						// dataLakeApiContentType,
+						provenance,
+						groupInteractionId,
+						masterInteractionId, sourceType, requestUriToBeOverriden, bundleId, replay);
+			} else {
+				handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
+						dataLakeApiBaseURL,
+						requestParameters, bundlePayloadWithDisposition,
+						payload,
+						// dataLakeApiContentType,
+						provenance,
+						mtlsStrategy, groupInteractionId, masterInteractionId,
+						sourceType, requestUriToBeOverriden, bundleId, replay);
+			}
+
+		} catch (
+
+		final Exception e) {
+			handleError(validationPayloadWithDisposition, e, interactionId);
 		} finally {
-			span.end();
+			LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
 		}
 	}
 
@@ -1342,41 +1307,37 @@ public class FHIRService {
         final String requestURI, final String scoringEngineApiURL, final String groupInteractionId,
         final String masterInteractionId, final String sourceType, final String bundleId,
 		Map<String,Object> requestParameters,boolean replay) {
-    final Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
-    try {
-        LOG.debug(
-                "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
-                interactionId, tenantId);
+      	LOG.debug(
+				"FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
+				interactionId, tenantId);
 		final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
 				CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(),
 				CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
-        // Post request to scoring engine
-        webClient.post()
-                .uri("?processingAgent=" + resolveProcessingAgent(tenantId))
-                .body(BodyInserters.fromValue(
-                        bundlePayloadWithDisposition != null ? bundlePayloadWithDisposition : payload))
-                .header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
-                .retrieve()
-                .bodyToMono(String.class)
-                .doFinally(signalType -> {
-                    final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
-            		coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
-                })
-                .subscribe(response -> {
-                    handleResponse(response, interactionId, requestURI, tenantId,
-                            provenance, scoringEngineApiURL, groupInteractionId,
-                            masterInteractionId, sourceType, requestParameters,replay);
-                }, error -> {
-                    registerStateFailure(scoringEngineApiURL, interactionId, error,
-                            requestURI, tenantId, provenance, groupInteractionId,
-                            masterInteractionId, sourceType, requestParameters,replay);
-                });
+		// Post request to scoring engine
+		webClient.post()
+				.uri("?processingAgent=" + resolveProcessingAgent(tenantId))
+				.body(BodyInserters.fromValue(
+						bundlePayloadWithDisposition != null ? bundlePayloadWithDisposition : payload))
+				.header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
+				.retrieve()
+				.bodyToMono(String.class)
+				.doFinally(signalType -> {
+					final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+					coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, masterInteractionId,
+							groupInteractionId, dataLedgerProvenance, SourceType.FHIR.name(), null);
+				})
+				.subscribe(response -> {
+					handleResponse(response, interactionId, requestURI, tenantId,
+							provenance, scoringEngineApiURL, groupInteractionId,
+							masterInteractionId, sourceType, requestParameters, replay);
+				}, error -> {
+					registerStateFailure(scoringEngineApiURL, interactionId, error,
+							requestURI, tenantId, provenance, groupInteractionId,
+							masterInteractionId, sourceType, requestParameters, replay);
+				});
 
-			LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
-					interactionId, tenantId);
-		} finally {
-			span.end();
-		}
+		LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
+				interactionId, tenantId);
 	}
 	private void sendPostRequestWithApiKey(final WebClient webClient,
 			final String tenantId,
@@ -1388,46 +1349,44 @@ public class FHIRService {
 			final String requestURI, final String scoringEngineApiURL, final String groupInteractionId,
 			final String masterInteractionId, final String sourceType, final WithApiKeyAuth apiKeyAuthDetails,
 			final String bundleId,Map<String,Object> requestParameters,boolean replay) {
-		final Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
-		try {
-			LOG.debug(
-					"FHIRService:: sendPostRequestWithApiKey Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
-					interactionId, tenantId);
-			final String apiClientKey =  AWSUtil.getValue(apiKeyAuthDetails.apiKeySecretName());	
-			LOG.info(
+		LOG.debug(
+				"FHIRService:: sendPostRequestWithApiKey Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
+				interactionId, tenantId);
+		final String apiClientKey = AWSUtil.getValue(apiKeyAuthDetails.apiKeySecretName());
+		LOG.info(
 				"FHIRService:: nyec api client key retrieved  : {} from secret  {} - BEGIN interaction id: {} tenantID :{}",
-				apiClientKey == null ? "Api key is null" : "Api key is not null" ,apiKeyAuthDetails.apiKeySecretName(),interactionId, tenantId);	
-			webClient.post()
-					.uri("?processingAgent=" + tenantId)
-					.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
-							? bundlePayloadWithDisposition
-							: payload))
-							.header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
-						.header(apiKeyAuthDetails.apiKeyHeaderName(),apiClientKey)				
-					.retrieve()
-					.bodyToMono(String.class)
-					.doFinally(signalType -> {
-						final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
-							CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
-								CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
-						final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
-						coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
-					})
-					.subscribe(response -> {
-						handleResponse(response, interactionId, requestURI, tenantId,
-								provenance, scoringEngineApiURL, groupInteractionId,
-								masterInteractionId, sourceType,requestParameters,replay);
-					}, error -> {
-						registerStateFailure(scoringEngineApiURL, interactionId, error,
-								requestURI, tenantId, provenance, groupInteractionId,
-								masterInteractionId, sourceType,requestParameters,replay);
-					});
+				apiClientKey == null ? "Api key is null" : "Api key is not null", apiKeyAuthDetails.apiKeySecretName(),
+				interactionId, tenantId);
+		webClient.post()
+				.uri("?processingAgent=" + tenantId)
+				.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
+						? bundlePayloadWithDisposition
+						: payload))
+				.header("Content-Type", Constants.FHIR_CONTENT_TYPE_HEADER_VALUE)
+				.header(apiKeyAuthDetails.apiKeyHeaderName(), apiClientKey)
+				.retrieve()
+				.bodyToMono(String.class)
+				.doFinally(signalType -> {
+					final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+							CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
+							CoreDataLedgerApiClient.Action.SENT.getValue(),
+							CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
+					final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+					coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, masterInteractionId,
+							groupInteractionId, dataLedgerProvenance, SourceType.FHIR.name(), null);
+				})
+				.subscribe(response -> {
+					handleResponse(response, interactionId, requestURI, tenantId,
+							provenance, scoringEngineApiURL, groupInteractionId,
+							masterInteractionId, sourceType, requestParameters, replay);
+				}, error -> {
+					registerStateFailure(scoringEngineApiURL, interactionId, error,
+							requestURI, tenantId, provenance, groupInteractionId,
+							masterInteractionId, sourceType, requestParameters, replay);
+				});
 
-			LOG.info("FHIRService:: sendPostRequestWithApiKey Post to scoring engine - END interaction id: {} tenantid: {}",
-					interactionId, tenantId);
-		} finally {
-			span.end();
-		}
+		LOG.info("FHIRService:: sendPostRequestWithApiKey Post to scoring engine - END interaction id: {} tenantid: {}",
+				interactionId, tenantId);
 	}
 
 	private void handleResponse(final String response,
@@ -1437,40 +1396,35 @@ public class FHIRService {
 			final String provenance,
 			final String scoringEngineApiURL, final String groupInteractionId, final String masterInteractionId,
 			final String sourceType,Map<String,Object> requestParameters,boolean replay) {
-		final Span span = tracer.spanBuilder("FhirService.handleResponse").startSpan();
+		LOG.debug("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
+
 		try {
-			LOG.debug("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
+			LOG.debug("FHIRService:: handleResponse Response received for :{} interaction id: {}",
+					interactionId, response);
+			final var responseMap = new ObjectMapper().readValue(response,
+					new TypeReference<Map<String, String>>() {
+					});
 
-			try {
-				LOG.debug("FHIRService:: handleResponse Response received for :{} interaction id: {}",
-						interactionId, response);
-				final var responseMap = new ObjectMapper().readValue(response,
-						new TypeReference<Map<String, String>>() {
-						});
-
-				if ("Success".equalsIgnoreCase(responseMap.get("status"))) {
-					LOG.info("FHIRService:: handleResponse SUCCESS for interaction id: {}",
-							interactionId);
-					registerStateComplete(interactionId, requestURI, tenantId, response,
-							provenance, groupInteractionId, masterInteractionId,
-							sourceType,requestParameters,replay);
-				} else {
-					LOG.warn("FHIRService:: handleResponse FAILURE for interaction id: {}",
-							interactionId);
-					registerStateFailed(interactionId, requestURI, tenantId, response,
-							provenance, groupInteractionId, masterInteractionId,
-							sourceType,requestParameters,replay);
-				}
-			} catch (final Exception e) {
-				LOG.error("FHIRService:: handleResponse unexpected error for interaction id : {}, response: {}",
-						interactionId, response, e);
-				registerStateFailed(interactionId, requestURI, tenantId, e.getMessage(),
-						provenance, groupInteractionId, masterInteractionId, sourceType,requestParameters,replay);
+			if ("Success".equalsIgnoreCase(responseMap.get("status"))) {
+				LOG.info("FHIRService:: handleResponse SUCCESS for interaction id: {}",
+						interactionId);
+				registerStateComplete(interactionId, requestURI, tenantId, response,
+						provenance, groupInteractionId, masterInteractionId,
+						sourceType, requestParameters, replay);
+			} else {
+				LOG.warn("FHIRService:: handleResponse FAILURE for interaction id: {}",
+						interactionId);
+				registerStateFailed(interactionId, requestURI, tenantId, response,
+						provenance, groupInteractionId, masterInteractionId,
+						sourceType, requestParameters, replay);
 			}
-			LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
-		} finally {
-			span.end();
+		} catch (final Exception e) {
+			LOG.error("FHIRService:: handleResponse unexpected error for interaction id : {}, response: {}",
+					interactionId, response, e);
+			registerStateFailed(interactionId, requestURI, tenantId, e.getMessage(),
+					provenance, groupInteractionId, masterInteractionId, sourceType, requestParameters, replay);
 		}
+		LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
 	}
 
 	private void handleError(final Map<String, Object> validationPayloadWithDisposition,
@@ -1678,76 +1632,71 @@ public class FHIRService {
 			final String outboundHttpMessage, 
                         final String payload,
 			final String groupInteractionId, final String masterInteractionId, final String sourceType,final boolean replay) {
-		final Span span = tracer.spanBuilder("FHIRService.registerStateForward").startSpan();
+		final var jooqCfg = primaryDSLContext.configuration();
+		LOG.info("{} : BEGIN for interaction id: {} | tenant id: {}",
+				replay ? "FHIR-REPLAY" : "REGISTER State Forward",
+				bundleAsyncInteractionId,
+				tenantId);
+
+		final var forwardedAt = OffsetDateTime.now();
+		final var initRIHR = new RegisterInteractionFhirRequest();
 		try {
-			final var jooqCfg = primaryDSLContext.configuration();
-			LOG.info("{} : BEGIN for interaction id: {} | tenant id: {}",
+			// TODO -check the need of includeIncomingPayloadInDB and add this later if
+			// needed
+			// payloadWithDisposition.put("outboundHttpMessage", outboundHttpMessage);
+			// + "\n" + (includeIncomingPayloadInDB
+			// ? payload
+			// : "The incoming FHIR payload was not stored (to save space).\nThis is not an
+			// error or warning just an FYI - if you'd like to see the incoming FHIR payload
+			// `?include-incoming-payload-in-db=true` to request payload storage for each
+			// request that you'd like to store."));
+			initRIHR.setPInteractionId(bundleAsyncInteractionId);
+			initRIHR.setPGroupHubInteractionId(groupInteractionId);
+			initRIHR.setPSourceHubInteractionId(masterInteractionId);
+			initRIHR.setPInteractionKey(requestURI);
+
+			initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+			initRIHR.setPPayload((JsonNode) Configuration.objectMapper
+					.valueToTree(payloadWithDisposition));
+			if (replay) {
+				initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_REQUEST_REPLAY.getDescription(), "tenant_id",
+								tenantId)));
+				initRIHR.setPFromState(State.FAIL.name());
+				initRIHR.setPToState(State.FORWARD.name());
+			} else {
+				initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARD_HTTP_REQUEST.getDescription(), "tenant_id",
+								tenantId)));
+				initRIHR.setPFromState(State.DISPOSITION.name());
+				initRIHR.setPToState(State.FORWARD.name());
+			}
+			initRIHR.setPSourceType(sourceType);
+			initRIHR.setPCreatedAt(forwardedAt); // don't let DB set this, use app
+			// time
+			initRIHR.setPCreatedBy(FHIRService.class.getName());
+			initRIHR.setPProvenance(buildProvenance(provenance, tenantId, bundleAsyncInteractionId));
+			initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+			final var start = Instant.now();
+			final var execResult = initRIHR.execute(jooqCfg);
+			final var end = Instant.now();
+			final JsonNode response = initRIHR.getReturnValue();
+			final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(response);
+			LOG.info(
+					"{} REGISTER State Forward : END for interaction id: {} tenant id: {}. Time taken: {} milliseconds | payload -> error: {}, interaction_id: {}, hub_nexus_interaction_id: {} | execResult: {}",
 					replay ? "FHIR-REPLAY" : "REGISTER State Forward",
 					bundleAsyncInteractionId,
-					tenantId);
-
-			final var forwardedAt = OffsetDateTime.now();
-			final var initRIHR = new RegisterInteractionFhirRequest();
-			try {
-				// TODO -check the need of includeIncomingPayloadInDB and add this later if
-				// needed
-				// payloadWithDisposition.put("outboundHttpMessage", outboundHttpMessage);
-				// + "\n" + (includeIncomingPayloadInDB
-				// ? payload
-				// : "The incoming FHIR payload was not stored (to save space).\nThis is not an
-				// error or warning just an FYI - if you'd like to see the incoming FHIR payload
-				// `?include-incoming-payload-in-db=true` to request payload storage for each
-				// request that you'd like to store."));
-				initRIHR.setPInteractionId(bundleAsyncInteractionId);
-				initRIHR.setPGroupHubInteractionId(groupInteractionId);
-				initRIHR.setPSourceHubInteractionId(masterInteractionId);
-				initRIHR.setPInteractionKey(requestURI);
-				
-				initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-				initRIHR.setPPayload((JsonNode) Configuration.objectMapper
-						.valueToTree(payloadWithDisposition));
-				if (replay) {
-					initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_REQUEST_REPLAY.getDescription(), "tenant_id",
-									tenantId)));
-					initRIHR.setPFromState(State.FAIL.name());
-					initRIHR.setPToState(State.FORWARD.name());
-				} else {
-					initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARD_HTTP_REQUEST.getDescription(), "tenant_id",
-									tenantId)));
-					initRIHR.setPFromState(State.DISPOSITION.name());
-					initRIHR.setPToState(State.FORWARD.name());
-				}
-				initRIHR.setPSourceType(sourceType);
-				initRIHR.setPCreatedAt(forwardedAt); // don't let DB set this, use app
-				// time
-				initRIHR.setPCreatedBy(FHIRService.class.getName());
-				initRIHR.setPProvenance(buildProvenance(provenance, tenantId, bundleAsyncInteractionId));
-				initRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
-				final var start = Instant.now();
-				final var execResult = initRIHR.execute(jooqCfg);
-				final var end = Instant.now();
-				final JsonNode response = initRIHR.getReturnValue();
-				final Map<String,Object> responseAttributes = CoreFHIRUtil.extractFields(response);
-				LOG.info(
-						"{} REGISTER State Forward : END for interaction id: {} tenant id: {}. Time taken: {} milliseconds | payload -> error: {}, interaction_id: {}, hub_nexus_interaction_id: {} | execResult: {}",
-						replay ? "FHIR-REPLAY" : "REGISTER State Forward",
-						bundleAsyncInteractionId,
-						tenantId,
-						Duration.between(start, end).toMillis(),
-						responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
-						execResult);
-			} catch (final Exception e) {
-				LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
-						+ initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId,
-						tenantId,
-						e);
-			}
-		} finally {
-			span.end();
+					tenantId,
+					Duration.between(start, end).toMillis(),
+					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+					execResult);
+		} catch (final Exception e) {
+			LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
+					+ initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId,
+					tenantId,
+					e);
 		}
 	}
 	
@@ -1769,69 +1718,65 @@ public class FHIRService {
 			final String requestURI, final String tenantId,
 			final String response, final String provenance, final String groupInteractionId, final String masterInteractionId,
 			final String sourceType,Map<String,Object> requestParameters,boolean replay) {
-		final Span span = tracer.spanBuilder("FHIRService.registerStateComplete").startSpan();
+		LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
+				bundleAsyncInteractionId, tenantId);
+		final var forwardRIHR = new RegisterInteractionFhirRequest();
 		try {
-			LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
-					bundleAsyncInteractionId, tenantId);
-			final var forwardRIHR = new RegisterInteractionFhirRequest();
-			try {
-				final var jooqCfg = primaryDSLContext.configuration();
-				if (!replay) {
-					requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
-					forwardRIHR.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
-				}
-				forwardRIHR.setPInteractionId(bundleAsyncInteractionId);
-				forwardRIHR.setPSourceHubInteractionId(masterInteractionId);
-				forwardRIHR.setPGroupHubInteractionId(groupInteractionId);
-				forwardRIHR.setPInteractionKey(requestURI);
-				forwardRIHR.setPContentType(
-						MimeTypeUtils.APPLICATION_JSON_VALUE);
-				try {
-					// expecting a JSON payload from the server
-					forwardRIHR.setPPayload(Configuration.objectMapper
-							.readTree(response));
-				} catch (final JsonProcessingException jpe) {
-					// in case the payload is not JSON store the string
-					forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
-							.valueToTree(response));
-				}
-				if (replay) {
-					forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_REPLAY.getDescription(),
-									"tenant_id", tenantId)));
-				} else {
-					forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE.getDescription(),
-									"tenant_id", tenantId)));
-				}
-				forwardRIHR.setPFromState(State.FORWARD.name());
-				forwardRIHR.setPToState(State.COMPLETE.name());
-				forwardRIHR.setPSourceType(sourceType);
-				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
-				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
-				forwardRIHR.setPProvenance(provenance);
-				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
-				final var start = Instant.now();
-				final var execResult = forwardRIHR.execute(jooqCfg);
-				final var end = Instant.now();
-				final JsonNode responseFromDB = forwardRIHR.getReturnValue();
-				final Map<String,Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
-				LOG.info(
-						"REGISTER State Complete : END for interaction id: {} tenant id: {}. Time Taken: {} milliseconds | payload -> error: {}, interaction_id: {}, hub_nexus_interaction_id: {} | execResult: {}",
-						bundleAsyncInteractionId,
-						tenantId,
-						Duration.between(start, end).toMillis(),
-						responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
-						execResult);
-			} catch (final Exception e) {
-				LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
-						+ forwardRIHR.getName()
-						+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
+			final var jooqCfg = primaryDSLContext.configuration();
+			if (!replay) {
+				requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
+				forwardRIHR.setPAdditionalDetails(
+						(JsonNode) Configuration.objectMapper.valueToTree(Map.of("request", requestParameters)));
 			}
-		} finally {
-			span.end();
+			forwardRIHR.setPInteractionId(bundleAsyncInteractionId);
+			forwardRIHR.setPSourceHubInteractionId(masterInteractionId);
+			forwardRIHR.setPGroupHubInteractionId(groupInteractionId);
+			forwardRIHR.setPInteractionKey(requestURI);
+			forwardRIHR.setPContentType(
+					MimeTypeUtils.APPLICATION_JSON_VALUE);
+			try {
+				// expecting a JSON payload from the server
+				forwardRIHR.setPPayload(Configuration.objectMapper
+						.readTree(response));
+			} catch (final JsonProcessingException jpe) {
+				// in case the payload is not JSON store the string
+				forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
+						.valueToTree(response));
+			}
+			if (replay) {
+				forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_REPLAY.getDescription(),
+								"tenant_id", tenantId)));
+			} else {
+				forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE.getDescription(),
+								"tenant_id", tenantId)));
+			}
+			forwardRIHR.setPFromState(State.FORWARD.name());
+			forwardRIHR.setPToState(State.COMPLETE.name());
+			forwardRIHR.setPSourceType(sourceType);
+			forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
+			forwardRIHR.setPCreatedBy(FHIRService.class.getName());
+			forwardRIHR.setPProvenance(provenance);
+			forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+			final var start = Instant.now();
+			final var execResult = forwardRIHR.execute(jooqCfg);
+			final var end = Instant.now();
+			final JsonNode responseFromDB = forwardRIHR.getReturnValue();
+			final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+			LOG.info(
+					"REGISTER State Complete : END for interaction id: {} tenant id: {}. Time Taken: {} milliseconds | payload -> error: {}, interaction_id: {}, hub_nexus_interaction_id: {} | execResult: {}",
+					bundleAsyncInteractionId,
+					tenantId,
+					Duration.between(start, end).toMillis(),
+					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+					execResult);
+		} catch (final Exception e) {
+			LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
+					+ forwardRIHR.getName()
+					+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
 		}
 	}
 
@@ -1840,78 +1785,74 @@ public class FHIRService {
 			final String requestURI, final String tenantId,
 			final String response, final String provenance, final String groupInteractionId, final String masterInteractionId,
 			final String sourceType,Map<String,Object> requestParameters,boolean replay) {
-		final Span span = tracer.spanBuilder("FHIRService.registerStateFailed").startSpan();
+		final var jooqCfg = primaryDSLContext.configuration();
+		LOG.info("{} ; REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
+				replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+				bundleAsyncInteractionId, tenantId);
+		final var forwardRIHR = new RegisterInteractionFhirRequest();
 		try {
-			final var jooqCfg = primaryDSLContext.configuration();
-			LOG.info("{} ; REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
-					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-					bundleAsyncInteractionId, tenantId);
-			final var forwardRIHR = new RegisterInteractionFhirRequest();
+			if (!replay) {
+				requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
+				forwardRIHR.setPAdditionalDetails(
+						(JsonNode) Configuration.objectMapper.valueToTree(Map.of("request", requestParameters)));
+			}
+			forwardRIHR.setPInteractionId(bundleAsyncInteractionId);
+			forwardRIHR.setPInteractionKey(requestURI);
+			forwardRIHR.setPGroupHubInteractionId(groupInteractionId);
+			forwardRIHR.setPSourceHubInteractionId(masterInteractionId);
+			if (replay) {
+				forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_REPLAY_ERROR.getDescription(),
+								"tenant_id", tenantId)));
+			} else {
+				forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_ERROR.getDescription(),
+								"tenant_id", tenantId)));
+			}
+			forwardRIHR.setPContentType(
+					MimeTypeUtils.APPLICATION_JSON_VALUE);
 			try {
-				if (!replay) {
-					requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
-					forwardRIHR.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
-				}
-				forwardRIHR.setPInteractionId(bundleAsyncInteractionId);
-				forwardRIHR.setPInteractionKey(requestURI);
-				forwardRIHR.setPGroupHubInteractionId(groupInteractionId);
-				forwardRIHR.setPSourceHubInteractionId(masterInteractionId);
-				if (replay) {
-					forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_REPLAY_ERROR.getDescription(),
-									"tenant_id", tenantId)));
-				} else {
-					forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_ERROR.getDescription(),
-									"tenant_id", tenantId)));
-				}
-				forwardRIHR.setPContentType(
-						MimeTypeUtils.APPLICATION_JSON_VALUE);
-				try {
-					// expecting a JSON payload from the server
-					forwardRIHR.setPPayload(Configuration.objectMapper
-							.readTree(response));
-				} catch (final JsonProcessingException jpe) {
-					// in case the payload is not JSON store the string
-					forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
-							.valueToTree(response));
-				}
-				forwardRIHR.setPFromState(State.FORWARD.name());
-				forwardRIHR.setPToState(State.FAIL.name());
-				forwardRIHR.setPSourceType(sourceType);
-				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
-				// set this, use
-				// app time
-				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
-				forwardRIHR.setPProvenance(provenance);
-				forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
-				final var start = Instant.now();
-				final var execResult = forwardRIHR.execute(jooqCfg);
-				final var end = Instant.now();
-                final JsonNode responseFromDB = forwardRIHR.getReturnValue();
-				final Map<String,Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
-				LOG.info(
+				// expecting a JSON payload from the server
+				forwardRIHR.setPPayload(Configuration.objectMapper
+						.readTree(response));
+			} catch (final JsonProcessingException jpe) {
+				// in case the payload is not JSON store the string
+				forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
+						.valueToTree(response));
+			}
+			forwardRIHR.setPFromState(State.FORWARD.name());
+			forwardRIHR.setPToState(State.FAIL.name());
+			forwardRIHR.setPSourceType(sourceType);
+			forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
+			// set this, use
+			// app time
+			forwardRIHR.setPCreatedBy(FHIRService.class.getName());
+			forwardRIHR.setPProvenance(provenance);
+			forwardRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+			final var start = Instant.now();
+			final var execResult = forwardRIHR.execute(jooqCfg);
+			final var end = Instant.now();
+			final JsonNode responseFromDB = forwardRIHR.getReturnValue();
+			final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+			LOG.info(
 					"{} : FHIRService - Time taken: {} milliseconds for DB call to REGISTER State None, Accept, Disposition for interaction id: {}  error: {}, hub_nexus_interaction_id: {}",
 					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
 					Duration.between(start, end).toMillis(),
 					responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
-					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),					
-					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A")
-				);
-				LOG.info(
-						"{} : REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
-								+ execResult,replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-						bundleAsyncInteractionId, tenantId,
-						Duration.between(start, end).toMillis());
-			} catch (final Exception e) {
-				LOG.error("{} : ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
-						+ forwardRIHR.getName()
-						+ " forwardRIHR error", replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-						bundleAsyncInteractionId, tenantId, e);
+					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
+			LOG.info(
+					"{} : REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
+							+ execResult,
+					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+					bundleAsyncInteractionId, tenantId,
+					Duration.between(start, end).toMillis());
+		} catch (final Exception e) {
+			LOG.error("{} : ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
+					+ forwardRIHR.getName()
+					+ " forwardRIHR error", replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+					bundleAsyncInteractionId, tenantId, e);
 
-			}
-		} finally {
-			span.end();
 		}
 	}
 
@@ -1921,122 +1862,118 @@ public class FHIRService {
 			final String requestURI, final String tenantId,
 			final String provenance, final String groupInteractionId, final String masterInteractionId,
 			final String sourceType, Map<String, Object> requestParameters,boolean replay) {
-		final Span span = tracer.spanBuilder("FhirService.registerStateFailure").startSpan();
+		LOG.error(
+				" NYEC_API_CALL_FAILED  {} : Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+				replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+				dataLakeApiBaseURL, bundleAsyncInteractionId, error);
+		final var jooqCfg = primaryDSLContext.configuration();
+		final var errorRIHR = new RegisterInteractionFhirRequest();
 		try {
-			LOG.error(
-					" NYEC_API_CALL_FAILED  {} : Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
-					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-					dataLakeApiBaseURL, bundleAsyncInteractionId, error);
-			final var jooqCfg = primaryDSLContext.configuration();
-			final var errorRIHR = new RegisterInteractionFhirRequest();
-			try {
-				if(!replay) {
-					requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
-					errorRIHR.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
-				}
-				errorRIHR.setPInteractionId(bundleAsyncInteractionId);
-				errorRIHR.setPGroupHubInteractionId(groupInteractionId);
-				errorRIHR.setPSourceHubInteractionId(masterInteractionId);
-				errorRIHR.setPInteractionKey(requestURI);
-				if (replay) {
-					errorRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+			if (!replay) {
+				requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME, Instant.now().toString());
+				errorRIHR.setPAdditionalDetails(
+						(JsonNode) Configuration.objectMapper.valueToTree(Map.of("request", requestParameters)));
+			}
+			errorRIHR.setPInteractionId(bundleAsyncInteractionId);
+			errorRIHR.setPGroupHubInteractionId(groupInteractionId);
+			errorRIHR.setPSourceHubInteractionId(masterInteractionId);
+			errorRIHR.setPInteractionKey(requestURI);
+			if (replay) {
+				errorRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
 						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_REPLAY_ERROR.getDescription(),
 								"tenant_id", tenantId)));
-				} else {
-					errorRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-							Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_ERROR.getDescription(),
-									"tenant_id", tenantId)));
-				}
-				errorRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-				errorRIHR.setPSourceType(sourceType);
-				final var rootCauseThrowable = NestedExceptionUtils
-						.getRootCause(error);
-				final var rootCause = rootCauseThrowable != null
-						? rootCauseThrowable.toString()
-						: "null";
-				final var mostSpecificCause = NestedExceptionUtils
-						.getMostSpecificCause(error).toString();
-				final var errorMap = new HashMap<String, Object>() {
-					{
-						put("dataLakeApiBaseURL", dataLakeApiBaseURL);
-						put("error", error.toString());
-						put("message", error.getMessage());
-						put("rootCause", rootCause);
-						put("mostSpecificCause", mostSpecificCause);
-						put("tenantId", tenantId);
-					}
-				};
-				if (error instanceof final WebClientResponseException webClientResponseException) {
-					final String responseBody = webClientResponseException
-							.getResponseBodyAsString();
-					errorMap.put("responseBody", responseBody);
-					String bundleId = "";
-					final JsonNode rootNode = Configuration.objectMapper
-							.readTree(responseBody);
-					final JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust
-					// this
-					// path
-					// based
-					// on
-					// actual
-					if (!bundleIdNode.isMissingNode()) {
-						bundleId = bundleIdNode.asText();
-					}
-					LOG.error(
-							"{} : Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
-							replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-							dataLakeApiBaseURL,
-							bundleAsyncInteractionId, bundleId,
-							responseBody);
-					errorMap.put("statusCode", webClientResponseException
-							.getStatusCode().value());
-					final var responseHeaders = webClientResponseException
-							.getHeaders()
-							.headerSet()
-							.stream()
-							.collect(Collectors.toMap(
-									Map.Entry::getKey,
-									entry -> String.join(
-											",",
-											entry.getValue())));
-					errorMap.put("headers", responseHeaders);
-					errorMap.put("statusText", webClientResponseException
-							.getStatusText());
-				}
-				errorRIHR.setPPayload((JsonNode) Configuration.objectMapper
-						.valueToTree(errorMap));
-				errorRIHR.setPFromState(State.FORWARD.name());
-				errorRIHR.setPToState(State.FAIL.name());
-				errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
-				errorRIHR.setPCreatedBy(FHIRService.class.getName());
-				errorRIHR.setPProvenance(provenance);
-				errorRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
-				final var start = Instant.now();
-				final var execResult = errorRIHR.execute(jooqCfg);
-				final var end = Instant.now();
-
-				final JsonNode responseFromDB = errorRIHR.getReturnValue();
-				final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
-
-				LOG.info(
-						"{} : Register State Failure - END for interaction id: {} tenant id: {} forwardRIHR execResult: {}. Time Taken: {} milliseconds  error: {}, interaction_id: {}, hub_nexus_interaction_id: {}",
-						replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-						bundleAsyncInteractionId,
-						tenantId,
-						execResult,
-						Duration.between(start, end).toMillis(),
-						responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
-						responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
-			} catch (final Exception e) {
-				LOG.error("{} : ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
-						+ errorRIHR.getName() + " errorRIHR error", replay ? "FHIR-REPLAY" : "REGISTER State Fail",
-						bundleAsyncInteractionId,
-						tenantId,
-						e);
+			} else {
+				errorRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE_ERROR.getDescription(),
+								"tenant_id", tenantId)));
 			}
-		} finally {
-			span.end();
+			errorRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+			errorRIHR.setPSourceType(sourceType);
+			final var rootCauseThrowable = NestedExceptionUtils
+					.getRootCause(error);
+			final var rootCause = rootCauseThrowable != null
+					? rootCauseThrowable.toString()
+					: "null";
+			final var mostSpecificCause = NestedExceptionUtils
+					.getMostSpecificCause(error).toString();
+			final var errorMap = new HashMap<String, Object>() {
+				{
+					put("dataLakeApiBaseURL", dataLakeApiBaseURL);
+					put("error", error.toString());
+					put("message", error.getMessage());
+					put("rootCause", rootCause);
+					put("mostSpecificCause", mostSpecificCause);
+					put("tenantId", tenantId);
+				}
+			};
+			if (error instanceof final WebClientResponseException webClientResponseException) {
+				final String responseBody = webClientResponseException
+						.getResponseBodyAsString();
+				errorMap.put("responseBody", responseBody);
+				String bundleId = "";
+				final JsonNode rootNode = Configuration.objectMapper
+						.readTree(responseBody);
+				final JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust
+				// this
+				// path
+				// based
+				// on
+				// actual
+				if (!bundleIdNode.isMissingNode()) {
+					bundleId = bundleIdNode.asText();
+				}
+				LOG.error(
+						"{} : Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
+						replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+						dataLakeApiBaseURL,
+						bundleAsyncInteractionId, bundleId,
+						responseBody);
+				errorMap.put("statusCode", webClientResponseException
+						.getStatusCode().value());
+				final var responseHeaders = webClientResponseException
+						.getHeaders()
+						.headerSet()
+						.stream()
+						.collect(Collectors.toMap(
+								Map.Entry::getKey,
+								entry -> String.join(
+										",",
+										entry.getValue())));
+				errorMap.put("headers", responseHeaders);
+				errorMap.put("statusText", webClientResponseException
+						.getStatusText());
+			}
+			errorRIHR.setPPayload((JsonNode) Configuration.objectMapper
+					.valueToTree(errorMap));
+			errorRIHR.setPFromState(State.FORWARD.name());
+			errorRIHR.setPToState(State.FAIL.name());
+			errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+			errorRIHR.setPCreatedBy(FHIRService.class.getName());
+			errorRIHR.setPProvenance(provenance);
+			errorRIHR.setPTechbdVersionNumber(coreAppConfig.getVersion());
+			final var start = Instant.now();
+			final var execResult = errorRIHR.execute(jooqCfg);
+			final var end = Instant.now();
+
+			final JsonNode responseFromDB = errorRIHR.getReturnValue();
+			final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
+			LOG.info(
+					"{} : Register State Failure - END for interaction id: {} tenant id: {} forwardRIHR execResult: {}. Time Taken: {} milliseconds  error: {}, interaction_id: {}, hub_nexus_interaction_id: {}",
+					replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+					bundleAsyncInteractionId,
+					tenantId,
+					execResult,
+					Duration.between(start, end).toMillis(),
+					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_INTERACTION_ID, "N/A"),
+					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
+		} catch (final Exception e) {
+			LOG.error("{} : ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
+					+ errorRIHR.getName() + " errorRIHR error", replay ? "FHIR-REPLAY" : "REGISTER State Fail",
+					bundleAsyncInteractionId,
+					tenantId,
+					e);
 		}
 	}
 
