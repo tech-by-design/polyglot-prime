@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.16 -->
+<!-- Version : 0.1.17 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -316,12 +316,49 @@
                         </xsl:otherwise>
                       </xsl:choose>"
         </xsl:if>
-        <xsl:if test="ccda:addr[not(@nullFlavor)]">
+        <!-- List all addresses -->
+        <!-- <xsl:if test="ccda:addr[not(@nullFlavor)]">
             <xsl:call-template name="build-address-array">
               <xsl:with-param name="addresses" select="ccda:addr[not(@nullFlavor)]"/>
               <xsl:with-param name="resource_name" select="'Patient'"/>
             </xsl:call-template>
-        </xsl:if>
+        </xsl:if> -->
+
+        <!-- List the first address that has a valid postal code. If there is no valid postal code then use first valid address. IG 1.9.2 -->        
+        <xsl:choose>
+            <!-- First preference: first address with a valid postal code -->
+            <xsl:when test="ccda:addr[
+                                not(@nullFlavor)
+                                and ccda:postalCode[
+                                    not(@nullFlavor)
+                                    and normalize-space(.) != ''
+                                ]
+                            ]">
+                <xsl:call-template name="build-address-array">
+                    <xsl:with-param
+                        name="addresses"
+                        select="ccda:addr[
+                                    not(@nullFlavor)
+                                    and ccda:postalCode[
+                                        not(@nullFlavor)
+                                        and normalize-space(.) != ''
+                                    ]
+                                ][1]"/>
+                    <xsl:with-param name="resource_name" select="'Patient'"/>
+                </xsl:call-template>
+            </xsl:when>
+
+            <!-- Fallback: first valid address -->
+            <xsl:when test="ccda:addr[not(@nullFlavor)]">
+                <xsl:call-template name="build-address-array">
+                    <xsl:with-param
+                        name="addresses"
+                        select="ccda:addr[not(@nullFlavor)][1]"/>
+                    <xsl:with-param name="resource_name" select="'Patient'"/>
+                </xsl:call-template>
+            </xsl:when>
+        </xsl:choose>
+
         <xsl:if test="ccda:telecom[not(@nullFlavor)]">
             , "telecom": [
                 <xsl:for-each select="ccda:telecom[not(@nullFlavor)]">
@@ -1010,12 +1047,48 @@
                 </xsl:for-each>
             ]
         </xsl:if>
-        <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
+        <!-- List all addresses -->
+        <!-- <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
             <xsl:call-template name="build-address-array">
               <xsl:with-param name="addresses" select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]"/>
               <xsl:with-param name="resource_name" select="'Organization'"/>
             </xsl:call-template>
-        </xsl:if>
+        </xsl:if> -->
+
+        <!-- List the first address that has a valid postal code. If there is no valid postal code then use first valid address. IG 1.9.2 -->        
+        <xsl:choose>
+            <!-- First preference: first address with a valid postal code -->
+            <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[
+                                not(@nullFlavor)
+                                and ccda:postalCode[
+                                    not(@nullFlavor)
+                                    and normalize-space(.) != ''
+                                ]
+                            ]">
+                <xsl:call-template name="build-address-array">
+                    <xsl:with-param
+                        name="addresses"
+                        select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[
+                                    not(@nullFlavor)
+                                    and ccda:postalCode[
+                                        not(@nullFlavor)
+                                        and normalize-space(.) != ''
+                                    ]
+                                ][1]"/>
+                    <xsl:with-param name="resource_name" select="'Organization'"/>
+                </xsl:call-template>
+            </xsl:when>
+
+            <!-- Fallback: first valid address -->
+            <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
+                <xsl:call-template name="build-address-array">
+                    <xsl:with-param
+                        name="addresses"
+                        select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)][1]"/>
+                    <xsl:with-param name="resource_name" select="'Organization'"/>
+                </xsl:call-template>
+            </xsl:when>
+        </xsl:choose>
       },
       "request" : {
         "method" : "POST",
@@ -1333,13 +1406,16 @@
                 </xsl:when>
 
                 <!-- Total Safety Score 95614-4 -->
-                <xsl:when test="string(ccda:code/@code) = '95614-4'">
-                  "valueCodeableConcept" : {
+                <xsl:when test="string(ccda:code/@code) = '95614-4' and string-length(ccda:value/@value) > 0">
+                  <!-- "valueCodeableConcept" : {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
                       "display": "{Number}"
                     }],
                     "text": "<xsl:value-of select='ccda:value/@value'/>"
+                  }, -->
+                  "valueQuantity": {
+                      "value": <xsl:value-of select='ccda:value/@value'/>
                   },
 
                   <!-- Gather all filtered observations for derivedFrom -->
@@ -1407,6 +1483,7 @@
                 </xsl:when>    
 
                 <!-- Default valueCodeableConcept -->
+                <!-- <xsl:otherwise> -->
                 <xsl:when test="string(ccda:value/@code) != 'UNK' and string-length(ccda:value/@code) > 0">
                     "valueCodeableConcept" : {
                       "coding": [{
@@ -1424,6 +1501,7 @@
                       </xsl:choose>
                     },
                 </xsl:when>
+                <!-- </xsl:otherwise> -->
               </xsl:choose>
 
               "subject": {
