@@ -21,7 +21,7 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
 import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 import org.techbd.service.http.hub.prime.route.RoutesTrees;
-
+import org.techbd.service.http.PermissionService;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -41,13 +41,15 @@ public class Presentation {
     private static final String navPrimeTreeName = "prime";
     private final RoutesTree navPrimeTree;
     private final List<HtmlAnchor> navPrimeLinks;
+    private final PermissionService permissionService;
 
     public Presentation(final Environment env, final RoutesTrees routesTrees, final AppConfig appConfig,
-            final SandboxHelpers sboxHelpers) {
+            final SandboxHelpers sboxHelpers ,PermissionService permissionService) {
         this.sandboxConsoleEnabled = env.matchesProfiles("sandbox");
         this.routesTrees = routesTrees;
         this.appConfig = appConfig;
         this.sboxHelpers = sboxHelpers;
+        this.permissionService = permissionService;
 
         navPrimeTree = routesTrees.get(navPrimeTreeName);
         if (navPrimeTree != null) {
@@ -84,9 +86,11 @@ public class Presentation {
         } else {
             authUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
         }
+        List<HtmlAnchor> allowedLinks =
+        permissionService.filterLinksByRole(navPrimeLinks, request);
+        model.addAttribute("navPrime", allowedLinks);
         model.addAttribute("authUser", authUser);
         // active route, siblings, ancestors (breadcrumbs) available for navigation
-        model.addAttribute("navPrime", navPrimeLinks);
         model.addAttribute("navPrimeTree", navPrimeTree);
         registerActiveRoute(model, request);
 
@@ -142,15 +146,19 @@ public class Presentation {
                 .sorted(Comparator.comparing(sibling -> sibling.payload()
                         .flatMap(payload -> payload.siblingOrder())
                         .orElse(Integer.MAX_VALUE)))
-                .map(sibling -> new HtmlAnchor(sibling).intoMap())
+                 .map(sibling -> new HtmlAnchor(sibling))
+                .filter(link -> permissionService.isAllowedForRole(link.text(), request))
+                .map(HtmlAnchor::intoMap)           
                 .collect(Collectors.toList());
 
         final var parentSiblings = activeRoute.parent() != null ? activeRoute.parent().siblings(true).stream()
                 .sorted(Comparator.comparing(sibling -> sibling.payload()
                         .flatMap(payload -> payload.siblingOrder())
                         .orElse(Integer.MAX_VALUE)))
-                .map(sibling -> new HtmlAnchor(sibling).intoMap())
-                .collect(Collectors.toList()) : List.of();
+                        .map(sibling -> new HtmlAnchor(sibling))
+                        .filter(link -> permissionService.isAllowedForRole(link.text() , request))
+                        .map(HtmlAnchor::intoMap)
+                        .collect(Collectors.toList()) : List.of();
 
         model.addAttribute("isHomePage", isHomePage);
         model.addAttribute("activeRoute", activeRoute);

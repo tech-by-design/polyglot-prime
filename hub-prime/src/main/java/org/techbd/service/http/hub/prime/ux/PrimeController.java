@@ -69,7 +69,7 @@ public class PrimeController {
         return primaryDslContext;
     }
     @GetMapping("/home")
-    @RouteMapping(label = "Home", siblingOrder = 0)
+    @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/home", model, request);
     }

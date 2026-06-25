@@ -102,6 +102,7 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                             "login" // GitHub username field
                     );
                 setAuthenticatedUser(request, new AuthenticatedUser(updatedUser, gitHubAuthnUser.orElseThrow()));
+                request.getSession(true).setAttribute("isSuperRole", true);
             }
         }
 

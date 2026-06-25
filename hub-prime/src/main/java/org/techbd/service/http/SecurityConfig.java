@@ -22,7 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
-
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
  
@@ -31,11 +32,17 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
   
     
+   private final RolePermissionInterceptor rolePermissionInterceptor;
+
     @Autowired(required = false)
     private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
 
     @Autowired(required = false)
     private GitHubUserAuthorizationFilter gitHubUserAuthorizationFilter;
+
+    public SecurityConfig(RolePermissionInterceptor rolePermissionInterceptor) {
+        this.rolePermissionInterceptor = rolePermissionInterceptor;
+    }
 
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String apiUrl;
@@ -54,6 +61,7 @@ public class SecurityConfig {
    
     @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
+    
 
     @Bean
     public SecurityFilterChain statelessSecurityFilterChain(final HttpSecurity http) throws Exception {
@@ -75,6 +83,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         authorize -> authorize
                                 .requestMatchers(Constant.UNAUTHENTICATED_URLS)
+                                .permitAll()
+                                .requestMatchers("/access-denied")
                                 .permitAll()
                                 .requestMatchers("/fusionauth/webhook").permitAll()
                                 .anyRequest().authenticated())
@@ -183,15 +193,15 @@ public class SecurityConfig {
     /**
      * Register RolePermissionInterceptor for all MVC requests.
      */
-    // @Bean
-    // public WebMvcConfigurer mvcConfigurer() {
-    //     return new WebMvcConfigurer() {
-    //         @Override
-    //         public void addInterceptors(InterceptorRegistry registry) {
-    //             registry.addInterceptor(rolePermissionInterceptor)
-    //                     .addPathPatterns("/**")
-    //                     .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS);
-    //         }
-    //     };
-    // }
+    @Bean
+    public WebMvcConfigurer mvcConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                registry.addInterceptor(rolePermissionInterceptor)
+                        .addPathPatterns("/**")
+                        .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS);
+            }
+        };
+    }
 }

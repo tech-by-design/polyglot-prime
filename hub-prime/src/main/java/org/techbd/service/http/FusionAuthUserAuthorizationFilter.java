@@ -1,11 +1,12 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,11 +37,11 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
 
     private final FusionAuthUsersService fusionAuthUsersService;
 
-    @Autowired
-    private SessionRegistry sessionRegistry;
+    private final SessionRegistry sessionRegistry;
 
-    public FusionAuthUserAuthorizationFilter(final FusionAuthUsersService fusionAuthUsersService) {
+    public FusionAuthUserAuthorizationFilter(final FusionAuthUsersService fusionAuthUsersService ,SessionRegistry sessionRegistry) {
         this.fusionAuthUsersService = fusionAuthUsersService;
+        this.sessionRegistry = sessionRegistry;
     }
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AuthenticatedUser(OAuth2User principal, FusionAuthUsersService.AuthorizedUser faUser)
@@ -82,15 +83,15 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                                 fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token, oAuth2User, faUser);
 
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
-                    //     if (!faUser.roles().isEmpty()) {
-                    //      String role = faUser.roles().get(0); // take first role
-                    //      Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role);
-                    //      request.getSession().setAttribute("rolePermissions", permissions);
-                    //      request.getSession().setAttribute("userRole", role);
-                    //      request.getSession().setAttribute("isSuperRole", faUser.isSuperRole());
-                    //      LOG.info("Role permissions cached in session for role {}: {}", role, permissions);
-                    //    }
-                        // fusionAuthUsersService.convertToJson(enrichedOAuth2User);
+                        if (!faUser.roles().isEmpty()) {
+                         String role = faUser.roles().get(0); // take first role
+                         Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role);
+                         request.getSession().setAttribute("rolePermissions", permissions);
+                         request.getSession().setAttribute("userRole", role);
+                         request.getSession().setAttribute("isSuperRole", faUser.isSuperRole());
+                         LOG.info("Role permissions cached in session for role {}: {}", role, permissions);
+                       }
+                        fusionAuthUsersService.convertToJson(enrichedOAuth2User);
                                            
                     String userId = (faUser != null) ? faUser.fusionAuthId() : null;
 

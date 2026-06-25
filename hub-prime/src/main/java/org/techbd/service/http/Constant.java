@@ -21,15 +21,47 @@ public class Constant {
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",
             "/docs/api/openapi/**",
+            "/api/permissions/**",
             "/error", "/error/**"
     };
+
+    public static final String[] INTERCEPTOR_EXCLUDED_URLS = {
+        // Auth & OAuth2
+        "/login/**",
+        "/logout/**",
+        "/oauth2/**",
+        "/login/oauth2/code/**",
+        "/oauth2/authorization/**",
+
+        "/",
+        "/public/**",
+
+        "/error",
+        "/error/**",
+
+        "/.well-known/**",
+        "/metadata",
+        "/docs/api/**",
+        "/support/**",
+
+        "/api/permissions/**",
+
+        "/favicon.ico",
+        "/css/**",
+        "/js/**",
+        "/images/**",
+        "/webjars/**",
+        "/fonts/**"
+};
 
     public static final String HOME_PAGE_URL = "/home";
     public static final String LOGIN_PAGE_URL = "/login";
     public static final String SESSIONID_COOKIE = "JSESSIONID";
     public static final String LOGOUT_PAGE_URL = "/";
     public static final String SESSION_TIMEOUT_URL = "/?timeout=true";
-
+    public static final String SUPER_ROLE = "isSuperRole";
+    public static final String ROLE_PERMISSIONS = "rolePermissions";
+    public static final String USER_ROLE = "userRole";
     public static final long HSTS_MAX_AGE = 31536000; // HSTS max age for 1 year
 
     public static final boolean isStatelessApiUrl(String requestUrl) {
