@@ -2,14 +2,17 @@
   <id>576131f3-aa5b-4453-929f-1e07d7534e82</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.19
-Fixed the edge case issue on datalake api url validation.</description>
-  <revision>4</revision>
+  <description>Version: 0.2.20
+Addded the interaction ID initialization logic to use the value from the X-TechBD-Interaction-ID request header when provided. If the header is missing or empty, a new UUID is generated as a fallback.</description>
+  <revision>19</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>true</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -38,9 +41,6 @@ Fixed the edge case issue on datalake api url validation.</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -111,8 +111,18 @@ if (String(mtlsEnabled) !== &apos;true&apos;) {
 if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
 	return;
 }
+var incomingInterationId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
+var interactionId;
+if (incomingInterationId != null &amp;&amp; incomingInterationId.trim() !== &apos;&apos;) {
+    interactionId = incomingInterationId;
+}
+else {
+    interactionId = generateUuid();
+}
+channelMap.put(&quot;interactionId&quot;, interactionId);
+var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
-logger.info(&quot;Request URL inside RouterChannel: &quot; + requestedPath);
+logger.info(logPrefix + &quot;Request URL inside RouterChannel: &quot; + requestedPath);
 
 var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
 channelMap.put(&quot;contentType&quot;, contentType);
@@ -135,7 +145,7 @@ if (isHl7UploadEndpoint &amp;&amp; hasMultipartContentType) {
     var rawBody = connectorMessage.getRawData();
     var hasFilePart = rawBody.indexOf(&apos;filename=&quot;&apos;) !== -1;
      if (!hasFilePart) {
-        logger.error(&quot;[RouterChannel] HL7 zero-file guard triggered.&quot;);
+        logger.error(logPrefix +&quot;[RouterChannel] HL7 zero-file guard triggered.&quot;);
 
         channelMap.put(&quot;routerDirectStatus&quot;, &quot;400&quot;);
         channelMap.put(&quot;routerDirectResponse&quot;, JSON.stringify({
@@ -151,52 +161,55 @@ if (isHl7UploadEndpoint &amp;&amp; hasMultipartContentType) {
           <name>redirection</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
-          <script>if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
+          <script>interactionId = channelMap.get(&quot;interactionId&quot;);
+var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+
+if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 	
-	logger.info(&quot;FHIRBundle submission  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;FHIRBundle submission  RouterChannel &quot;);
 }
 
 else if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001&quot; + requestedPath);
-	logger.info(&quot;FHIRBundle validation  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;FHIRBundle validation  RouterChannel &quot;);
 }
 
 
 else if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
-	logger.info(&quot;CCDA submission  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;CCDA submission  RouterChannel &quot;);
 }
 
 else if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; || requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
-	logger.info(&quot;CCDA validation  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;CCDA validation  RouterChannel &quot;);
 }
 
 
 else if (requestedPath == &quot;/flatfile/csv/Bundle/&quot; || requestedPath == &quot;/flatfile/csv/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
-	logger.info(&quot;CSV FlatFile submission  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;CSV FlatFile submission  RouterChannel &quot;);
 }
 
 else if (requestedPath == &quot;/flatfile/csv/Bundle/$validate/&quot; || requestedPath == &quot;/flatfile/csv/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9004&quot; + requestedPath);
-	logger.info(&quot;CSV FlatFile validation  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;CSV FlatFile validation  RouterChannel &quot;);
 }
 
 else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
-	logger.info(&quot;HL7 submission  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;HL7 submission  RouterChannel &quot;);
 }
 
 
 
 else if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; || requestedPath == &quot;/hl7v2/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9006&quot; + requestedPath);	
-	logger.info(&quot;HL7 validation  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;HL7 validation  RouterChannel &quot;);
 }
 else if (requestedPath == &quot;/Bundle/replay/&quot; || requestedPath == &quot;/Bundle/replay&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9005&quot; + requestedPath);	
-	logger.info(&quot;Replay validation  RouterChannel &quot;);
+	logger.info(logPrefix + &quot;Replay validation  RouterChannel &quot;);
 }
 else{
 	return;
@@ -608,14 +621,15 @@ if(sourceType == &quot;CSV&quot;) { // TODO: Add a dedicated condition to handle
 if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
   return;
 }
-
+interactionId = channelMap.get(&quot;interactionId&quot;);
+var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
 // ======================================================
 // PARSE HEADERS STRING + FORWARD
 // ======================================================
 var headersMap = new java.util.HashMap();
 var headers = $(&apos;headers&apos;);
-logger.info(&quot;HEADERS OBJECT: &quot; + $(&apos;headers&apos;));
+logger.info(logPrefix + &quot;HEADERS OBJECT: &quot; + $(&apos;headers&apos;));
 if (headers != null) {
     var headerStr = String(headers);  // Convert full object to string
     // Remove { and }
@@ -636,6 +650,9 @@ if (headers != null) {
         }
     }
 }
+
+headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
+logger.info(logPrefix + &quot;Added X-TechBD-Interaction-ID to router headers: &quot; + interactionId);
 // Send headers via HTTP Sender
 connectorMap.put(&quot;routerheaders&quot;, headersMap);
 
@@ -730,6 +747,8 @@ return message;</preprocessingScript>
 if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;) {
     return;
 }
+interactionId = channelMap.get(&quot;interactionId&quot;);
+var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
 //Router-level direct error handler.
 // If the zero-file guard set
@@ -744,7 +763,7 @@ if (routerDirectResponse != null &amp;&amp; String(routerDirectResponse).trim() 
     );
     responseMap.put(&apos;d1&apos;, routerResp);
     responseMap.put(&apos;status&apos;, routerDirectStatus);
-    logger.error(&apos;[RouterChannel] PostProcessor: returning router direct response, status=&apos; + routerDirectStatus);
+    logger.error(logPrefix + &apos;[RouterChannel] PostProcessor: returning router direct response, status=&apos; + routerDirectStatus);
     return;
 }
 
@@ -766,7 +785,7 @@ if (String(channelMap.get(&apos;mtlsFilterDisabled&apos;)) === &apos;true&apos;)
     responseMap.put(&apos;d1&apos;, mtlsResp);
     responseMap.put(&apos;status&apos;, &apos;500&apos;);
 
-    logger.error(&apos;PostProcessor: mTLS filter disabled - returning 500&apos;);
+    logger.error(logPrefix + &apos;PostProcessor: mTLS filter disabled - returning 500&apos;);
     return;
 }
 
@@ -776,14 +795,14 @@ if (String(channelMap.get(&apos;mtlsFilterDisabled&apos;)) === &apos;true&apos;)
 var destinationName = &quot;response_operationoutcome&quot;;
 var destinationResponse = responseMap.get(destinationName);
 
-logger.info(&apos;DEBUG#1 | destinationResponse exists: &apos; + (destinationResponse != null));
+logger.info(logPrefix + &apos;DEBUG#1 | destinationResponse exists: &apos; + (destinationResponse != null));
 
 // =========================
 // NO RESPONSE → 502
 // =========================
 if (!destinationResponse) {
 
-    logger.error(&quot;PostProcessor: No response from destination&quot;);
+    logger.error(logPrefix + &quot;PostProcessor: No response from destination&quot;);
 
     var noResponseOutcome = JSON.stringify({
         resourceType: &quot;OperationOutcome&quot;,
@@ -810,8 +829,8 @@ if (!destinationResponse) {
 var responseStatus = String(destinationResponse.getStatus());
 var responseData = String(destinationResponse.getMessage() || &apos;&apos;).trim();
 
-logger.info(&apos;DEBUG#2 | responseStatus: &apos; + responseStatus);
-logger.info(&apos;DEBUG#3 | responseData (first 500): &apos; + responseData.substring(0, 500));
+logger.info(logPrefix + &apos;DEBUG#2 | responseStatus: &apos; + responseStatus);
+logger.info(logPrefix + &apos;DEBUG#3 | responseData (first 500): &apos; + responseData.substring(0, 500));
 
 // =========================
 // ERROR HANDLING
@@ -892,8 +911,6 @@ if (responseStatus === &apos;ERROR&apos;) {
     // ---- PASS THROUGH ERROR (NO WRAP) ----
     if (!isNaN(statusNum) &amp;&amp; statusNum &gt;= 400) {
 
-        logger.info(&apos;DEBUG#6 | Passing downstream error as-is&apos;);
-
         destinationResponse.setMessage(new java.lang.String(responseData));
         destinationResponse.setStatus(com.mirth.connect.userutil.Status.SENT);
 
@@ -901,8 +918,6 @@ if (responseStatus === &apos;ERROR&apos;) {
         return;
     }
 
-    // ---- FALLBACK → 502 ----
-    logger.info(&apos;DEBUG#7 | No valid status → fallback 502&apos;);
 
     var fallbackOutcome = JSON.stringify({
         resourceType: &quot;OperationOutcome&quot;,
@@ -940,7 +955,7 @@ if (responseData === &quot;&quot;) {
         destinationResponse.setMessage(new java.lang.String(emptyOutcome));
         destinationResponse.setStatus(com.mirth.connect.userutil.Status.SENT);
         responseMap.put(&apos;status&apos;, &apos;400&apos;);
-        logger.error(&apos;[RouterChannel] PostProcessor: HL7 empty-response backstop triggered, returning 400&apos;);
+        logger.error(logPrefix + &apos;[RouterChannel] PostProcessor: HL7 empty-response backstop triggered, returning 400&apos;);
         return;
     }
     responseMap.put(&apos;status&apos;, &apos;200&apos;);
@@ -996,6 +1011,11 @@ return;</undeployScript>
         <type>STRING</type>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
+      <metaDataColumn>
+        <name>INTERACTIONID</name>
+        <type>STRING</type>
+        <mappingName>interactionId</mappingName>
+      </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="26.3.1">
       <type>None</type>
@@ -1012,22 +1032,832 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782217837837</time>
+        <time>1782447693397</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>11</userId>
+      <userId>6</userId>
     </metadata>
     <codeTemplateLibraries>
       <codeTemplateLibrary version="26.3.1">
+        <id>0cdea057-69bc-4524-9e5d-a776f18a3350</id>
+        <name>SSL Certificate Validation</name>
+        <revision>163</revision>
+        <lastModified>
+          <time>1782404542351</time>
+          <timezone>America/New_York</timezone>
+        </lastModified>
+        <description>For client cert validation </description>
+        <includeNewChannels>false</includeNewChannels>
+        <enabledChannelIds class="sorted-set">
+          <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
+          <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
+          <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
+          <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
+          <string>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</string>
+          <string>3acb72be-f9c1-4721-b990-ff0486b038fc</string>
+          <string>3bfca654-f2c7-4c5e-bb88-1ab68cd32f44</string>
+          <string>4b8fa9fb-2a77-4639-9e2d-96f927479e45</string>
+          <string>4dd74674-782c-4b6a-8782-11352b7bdcad</string>
+          <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
+          <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
+          <string>57cb9a58-396d-4dbb-8929-9a25bd5d2923</string>
+          <string>5cf24505-f00b-4002-a769-836686016c37</string>
+          <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
+          <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
+          <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
+          <string>72bd86ac-da6b-4788-9afc-c996bddfd508</string>
+          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
+          <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
+          <string>869c806f-d639-44ea-93d7-9efbe211cc3c</string>
+          <string>90c46954-ece6-4dfd-9eba-a9dd63b79b62</string>
+          <string>a5b2ab2c-b422-4614-ac3c-c7b0876c8579</string>
+          <string>d35fc8f4-1ec2-47fb-b886-63e6052221d9</string>
+          <string>edfa461f-e71c-491e-a3cb-e9a2cdb49418</string>
+        </enabledChannelIds>
+        <disabledChannelIds class="sorted-set">
+          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
+          <string>01e37e06-9f21-489b-b10d-61aa52e64352</string>
+          <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+          <string>0bebf48c-06c3-45e4-b074-5fd7ac3eedb4</string>
+          <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
+          <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
+          <string>0f97d63c-b506-4b71-aa83-bfe95b9c08a5</string>
+          <string>10127606-0967-4ced-ae19-1686228f545d</string>
+          <string>101406b4-312a-4517-ab69-686051a91483</string>
+          <string>1152ba78-3231-4a99-8ec3-319c0f69e011</string>
+          <string>12467de6-360c-47c1-83af-09aae915eb8c</string>
+          <string>13c7192c-65b5-424f-b425-59dc744cfac7</string>
+          <string>140795e4-5d41-4769-885b-b815c18bbc62</string>
+          <string>14db49f5-496c-4b12-a5e9-f9b33b30ba94</string>
+          <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
+          <string>19069366-0852-4caa-875c-1c503461f8a1</string>
+          <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
+          <string>1a3e2129-62fc-4fac-95ec-181bf03616ad</string>
+          <string>1b228707-c844-4b09-b9e4-55878038d31f</string>
+          <string>1e3ad8e1-3be1-44d2-b2da-bf5750a353c8</string>
+          <string>1f0f044e-687d-41d6-b19f-9935b8b9936d</string>
+          <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
+          <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
+          <string>29d0e04a-e2be-43ad-b814-bfe242963c90</string>
+          <string>2b4ff91f-4f33-48c2-ba05-2f0cdfd1120b</string>
+          <string>30c99bf7-8d1a-45c6-b391-e2b88b1103ea</string>
+          <string>32ad2913-1c3d-43d8-b5f8-2672f3325557</string>
+          <string>3300d437-9001-4bd1-9ca8-31635d1dc92a</string>
+          <string>330819e8-5e01-45b0-9d7d-b87048a8813a</string>
+          <string>353f2542-73dd-44df-bb8b-361756233a37</string>
+          <string>39491051-e8fb-4f70-aea5-82ed1a454324</string>
+          <string>3bc69658-cba9-4fa2-8d32-438ab4660c2a</string>
+          <string>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</string>
+          <string>3f02fbc3-ac50-40cc-a9bd-6c57a921c920</string>
+          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+          <string>3fabdfd3-3a99-4dec-a769-b9c8e87978d8</string>
+          <string>423ef464-a171-4cb9-ae32-616aca66ea05</string>
+          <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
+          <string>461db608-904d-41c3-a9f5-d1c23a450ce9</string>
+          <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
+          <string>4d14f82e-6781-4b35-9a2d-b5424903d1db</string>
+          <string>4d4a6df4-774e-4cbd-b7aa-4ce0314d8faa</string>
+          <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
+          <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
+          <string>5857b379-7fd2-4000-b627-57b89f33892e</string>
+          <string>58670b9c-5015-4e1b-ba6f-6e025c9b884c</string>
+          <string>5fe06d80-d0e4-473e-89ff-11cc69bbf4bc</string>
+          <string>60a18eb3-bf79-4c99-9bec-55fe0df4813f</string>
+          <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
+          <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+          <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
+          <string>66bd741d-7d06-4fce-84ee-aff81a32606f</string>
+          <string>6a2535d6-2995-4464-a455-8bb815ec76bb</string>
+          <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
+          <string>6d5b9010-726f-44b6-b81a-2bd2c6a17003</string>
+          <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
+          <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
+          <string>734712b9-75bb-4eb5-b31e-0951c9287df3</string>
+          <string>789c27f9-3fbd-4c76-9252-833d4f388d81</string>
+          <string>7b87138a-7964-457e-a1df-e14fffac8163</string>
+          <string>7b875c8b-86e0-410c-8c08-b2cc545bae41</string>
+          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
+          <string>7c9a7dc3-d5f3-4477-9298-4c927e0e0f9f</string>
+          <string>7ffeeda4-e8e9-4534-8cf0-28eb8ce65510</string>
+          <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
+          <string>829b3dbc-9d02-41b4-aa52-e9cbcc0f727b</string>
+          <string>82b69ddf-fe55-4127-8e9a-8af05c09c91e</string>
+          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
+          <string>893ca03e-5b1d-4aa0-9fbe-705d7e0ed910</string>
+          <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
+          <string>8ad98540-6ea5-4008-98f7-7f7769ae5e6b</string>
+          <string>8af30ec7-ad08-4ac8-9604-3ddd35f6d8b2</string>
+          <string>8be2be72-35cf-44a6-8b6e-5e37bd770672</string>
+          <string>8ff42419-20be-4845-b40c-77853eb27b35</string>
+          <string>91adead5-81ab-44f2-b3ac-f875a620846c</string>
+          <string>92bad760-5de9-4b86-91f4-33011e68ca43</string>
+          <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
+          <string>95b0901e-413b-4aca-80b6-6573f91f3554</string>
+          <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
+          <string>95deaa8d-3907-4b7e-bd01-bbf5d507a474</string>
+          <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
+          <string>96e9f4cf-2505-4620-b232-542e62dc0a1a</string>
+          <string>9a7e7b61-5745-4e29-a7e1-43a7d61b60ba</string>
+          <string>9c85680a-7b06-43fb-9d12-01db1d9c0448</string>
+          <string>9cbcd82b-a20e-4120-9d81-7c6698dfc1dd</string>
+          <string>9f99a5c7-84d9-4dc2-aa7f-451096b5bb8b</string>
+          <string>a042f8c0-b45a-491e-aaff-1c30aca5d9b4</string>
+          <string>a0b29ee9-cd50-4228-8de1-c890131f4350</string>
+          <string>a1a84018-fd6b-4e23-80c8-3bc046c95d4c</string>
+          <string>a1baa618-66f4-4c94-8cd9-5a4789641978</string>
+          <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
+          <string>a37c9500-353f-4cec-828a-4b377007e7fa</string>
+          <string>a3ed3ccb-86a4-432f-82b4-e90e10e148db</string>
+          <string>a4742eec-0523-45be-a37e-1f3c03b80f20</string>
+          <string>a498cdfc-84a5-43fd-aad8-2487de0def89</string>
+          <string>a4d249da-533e-4b9f-917c-3ad75d22767f</string>
+          <string>a6980fc6-a738-4a01-9868-79bc098175cb</string>
+          <string>a7141bac-fe8d-4df6-81cd-dee54b0d09be</string>
+          <string>a8a5bdc9-2e87-413f-89d9-856f68cd4963</string>
+          <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
+          <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
+          <string>ac361d6f-fc34-44f1-9029-589b680d7a2a</string>
+          <string>ac75ecb3-2a29-4a75-b056-61895a4ccc0c</string>
+          <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
+          <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
+          <string>b9169e0d-2ec6-4b33-85c8-6fcaf27c4dac</string>
+          <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
+          <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
+          <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
+          <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
+          <string>bbf0fb0d-7a57-43c4-b3b0-2e0d257ae92b</string>
+          <string>bbfc8cdc-e671-46da-bae3-75de9ae91b85</string>
+          <string>bd874ffb-6649-4374-91d8-0506a3bce00c</string>
+          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
+          <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
+          <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
+          <string>c1f9232a-b3c0-4c95-bf75-8eeaafd92d6f</string>
+          <string>c45aaeca-50e4-4674-8294-8bae37a0e431</string>
+          <string>c47fa4ad-025f-4e43-ab13-c4ff4fa59dfe</string>
+          <string>c48e397f-769f-4e14-961f-e34ac1a2df46</string>
+          <string>c50e41d7-9fb2-4899-84f8-38909d092722</string>
+          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
+          <string>c803772f-c1a5-4aee-ac52-f2cddc53c690</string>
+          <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
+          <string>cae36153-f409-4659-a031-fa40ebb8f7da</string>
+          <string>cbf715dc-b53b-47bb-910c-433f58588fd3</string>
+          <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
+          <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
+          <string>d648f6be-8d35-45b4-937e-0041cebcfc4f</string>
+          <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
+          <string>dc1d3367-14d7-4e36-a87e-d208d839fc78</string>
+          <string>dd22c442-ee54-4c80-b221-a2b30b889b79</string>
+          <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
+          <string>e0db16bd-35c7-4cc9-9874-79b6fb154472</string>
+          <string>e34d353e-098a-40f6-bb1a-a938b7f69f35</string>
+          <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
+          <string>e59911f1-dff0-41de-b8ee-89f466f47a15</string>
+          <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
+          <string>eb2f5490-8909-4216-b65a-5947fb0f359e</string>
+          <string>edfea1b1-a0d7-46b3-913a-61b50ddadf1f</string>
+          <string>f23e19b0-a0e0-422a-884c-caae6c52ecac</string>
+          <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
+          <string>f376f9cc-b848-4868-ac1c-e2c011665fc5</string>
+          <string>f4770f98-f7b8-4070-be28-ebd8e3919864</string>
+          <string>f5506019-247f-49cd-af7c-6d275c3a11dd</string>
+          <string>f562abf9-9ef9-48f2-b49f-2c361574f651</string>
+          <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
+          <string>fa6d8035-8b04-4740-9eb0-4dbb71c69bb6</string>
+          <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
+          <string>fbb1665a-1e80-482a-adb5-719687ffabaf</string>
+          <string>fe3c571f-3ac0-4de6-8de1-c23894f823d4</string>
+          <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
+          <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
+        </disabledChannelIds>
+        <codeTemplates>
+          <codeTemplate version="26.3.1">
+            <id>4687d0b0-8884-4ef2-af79-6e39af0c1a07</id>
+            <name>performCertValidation</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775671</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+	Do Client certificate validation using certificate provided in http header coming from AWS Load Balancer
+
+	@param {String} arg1 - arg1 description
+	@return {String} return description
+*/
+function performCertValidation(validationType, truststoreName, allowedPattern){
+	try {
+		// workaround for healthcheck
+		if(sourceMap.get(&quot;uri&quot;) == &quot;/healthcheck&quot;){ 
+			return true;
+		}
+		
+		// Get the certificate header from source connector
+		var certHeader = cleanCertHeader(String(sourceMap.get(&apos;headers&apos;).getHeader(&apos;x-amzn-mtls-clientcert&apos;))); 
+          //logger.info(channelName + &quot; - x-amzn-mtls-clientcert: &quot; + sourceMap.getHeader(&apos;x-amzn-mtls-clientcert&apos;));
+		
+		if (!certHeader) {
+		    logger.error(channelName + &quot; - No client certificate found in header&quot;);
+		    // Reject the message or handle as needed
+		    throw channelName + &quot; - No client certificate found in header&quot;;
+		    return;
+		}
+		
+		// Load your truststore (you already have this code)
+		&#xd;
+		var cfgController = Packages.com.mirth.connect.server.controllers.ControllerFactory.getFactory().createConfigurationController();&#xd;
+		var properties = cfgController.getPropertiesForGroup(&quot;SSL Settings&quot;, null);&#xd;
+		var certManagerProps = new Packages.com.innovarhealthcare.ssl.shared.model.CertificateManagerProperties(properties);
+		
+		var trustStoreName = truststoreName; // Configure this
+		var trustStoreKeyStoreInfo = certManagerProps.getTrustedStoreMap().get(trustStoreName);
+		var truststore = new Packages.java.security.KeyStore.getInstance(trustStoreKeyStoreInfo.getType());
+		var truststoreStream = new java.io.ByteArrayInputStream(trustStoreKeyStoreInfo.getData());
+		truststore.load(truststoreStream, trustStoreKeyStoreInfo.getPassword().toCharArray());
+		
+		//logger.info(&quot;Truststore loaded successfully&quot;);
+		
+		// Validate the certificate chain
+		var validationResult = validateClientCertificate(certHeader, truststore, validationType, allowedPattern);
+		//var validationResult = validateCertificateChain(certHeader, truststore);
+		
+		
+		if (validationResult.success) {
+			logger.info(&quot;Client certificate validated successfully&quot;);
+			logger.info(&quot;Subject: &quot; + validationResult.subject);
+			logger.info(&quot;Serial: &quot; + validationResult.serialNumber);
+		    
+		    // Store validation results in channel map for downstream use
+//		    channelMap.put(&apos;certValidated&apos;, true);
+//		    channelMap.put(&apos;certSubject&apos;, validationResult.subject);
+//		    channelMap.put(&apos;certIssuer&apos;, validationResult.issuer);
+		    
+		    // Continue processing the message
+		    
+		} else {
+		    	logger.error(&quot;Client certificate validation failed: &quot; + validationResult.error);
+		    
+		    	// Store failure information
+			channelMap.put(&apos;certValidated&apos;, false);
+			channelMap.put(&apos;certError&apos;, validationResult.error);
+		    
+		    // Reject the message or send error response
+		    // Example: Return a SOAP fault or HTTP error
+		    //responseMap.put(&apos;errorMessage&apos;, &apos;Certificate validation failed: &apos; + validationResult.error);
+		
+		    return false;
+		}
+		
+		return true;
+	
+	}
+	catch(exp){
+		//logger.error(channelName + &quot; - failed client cert validation - Exception: &quot; + exp);
+		return false;
+		//throw exp; 
+	}
+}
+
+
+
+function cleanCertHeader(urlEncodedCert) {
+    // Manually decode %XX sequences but leave + alone
+    var decoded = &quot;&quot;;
+    
+    for (var i = 0; i &lt; urlEncodedCert.length; i++) {
+        if (urlEncodedCert.charAt(i) === &apos;%&apos; &amp;&amp; i + 2 &lt; urlEncodedCert.length) {
+            var hex = urlEncodedCert.substring(i + 1, i + 3);
+            decoded += String.fromCharCode(parseInt(hex, 16));
+            i += 2;
+        } else {
+            decoded += urlEncodedCert.charAt(i);
+        }
+    }
+    
+    return decoded;
+}
+
+
+
+</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>faa5e18a-4be6-41a9-a859-61a89b8b3cd8</id>
+            <name>simpleValidation</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775584</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Alternative simpler validation - just check if any cert in chain is in truststore
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore
+ * @returns {Object} Validation result
+ */
+function simpleValidation(certChain, truststore) {
+    try {
+        var aliases = truststore.aliases();
+        
+        // Check each certificate in the chain
+        while (aliases.hasMoreElements()) {
+            var alias = aliases.nextElement();
+            var trustedCert = truststore.getCertificate(alias);
+            
+            if (trustedCert == null) {
+                continue;
+            }
+            
+            // Check if any certificate in the chain matches or is issued by a trusted cert
+            for (var i = 0; i &lt; certChain.length; i++) {
+                var cert = certChain[i];
+                
+                // Direct match
+                if (cert.equals(trustedCert)) {
+                    logger.info(&quot;Certificate directly trusted: &quot; + alias);
+                    return {
+                        success: true,
+                        trustedAlias: alias,
+                        matchedCert: cert.getSubjectX500Principal().getName()
+                    };
+                }
+                
+                // Check if issued by trusted cert
+                try {
+                    cert.verify(trustedCert.getPublicKey());
+                    logger.info(&quot;Certificate verified by trusted issuer: &quot; + alias);
+                    return {
+                        success: true,
+                        trustedAlias: alias,
+                        verifiedBy: trustedCert.getSubjectX500Principal().getName()
+                    };
+                } catch (verifyError) {
+                    // Not issued by this trusted cert, continue checking
+                }
+            }
+        }
+        
+        return {
+            success: false,
+            error: &quot;No trusted certificate found in chain&quot;
+        };
+        
+    } catch (e) {
+        logger.error(&quot;Simple validation error: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Validation error: &quot; + e.message
+        };
+    }
+}</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>d42b86cc-5aa2-4679-b7be-934f30c69585</id>
+            <name>updateRequestHeaderSize</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775756</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>GLOBAL_DEPLOY</contextType>
+                <contextType>CHANNEL_DEPLOY</contextType>
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Deploy Script: Increase Jetty Request Header Size
+ * 
+ * Problem: AWS ALB with mTLS forwards the full client certificate chain in HTTP headers
+ * (e.g. X-Amzn-Mtls-Clientcert-Chain). With 2+ intermediate certs, this can exceed
+ * Jetty&apos;s default 8KB (8192 bytes) request header limit, resulting in HTTP 431
+ * &quot;Request Header Fields Too Large&quot; errors.
+ *
+ * Solution: After the channel finishes deploying, this script stops the Jetty connector,
+ * replaces the HttpConnectionFactory with one configured for a larger header size (32KB),
+ * and restarts the connector. This runs in a background thread with a delay to ensure
+ * the channel is fully deployed before modifying the connector.
+ *
+ * Note: There is a brief (~1 second) window during the connector stop/start where the
+ * HTTP listener will not accept connections. This only occurs during channel deployment.
+ *
+ * TODO: This is a workaround. Ideally, requestHeaderSize should be a configurable 
+ * property on the HTTP Listener connector or in DefaultHttpConfiguration.java.
+ */
+function updateRequestHeaderSize() {
+	// Store channelId as a Java String so it survives beyond the deploy script context.
+	// Rhino&apos;s closure doesn&apos;t reliably capture Mirth context variables into background threads.
+	var myChannelId = new java.lang.String(channelId);
+	
+	var thread = new java.lang.Thread(function() {
+	    try {
+	        // Wait for the channel to fully deploy and the Jetty server/connectors to initialize.
+	        // Increase this if the channel hasn&apos;t finished deploying in time.
+	        java.lang.Thread.sleep(5000);
+	
+	        var HttpConnectionFactory = org.eclipse.jetty.server.HttpConnectionFactory;
+	        var donkey = com.mirth.connect.donkey.server.Donkey.getInstance();
+	        var deployedChannel = donkey.getDeployedChannels().get(myChannelId);
+	        var sourceConnector = deployedChannel.getSourceConnector();
+	
+	        // The HttpReceiver exposes the embedded Jetty Server directly via getServer()
+	        var server = sourceConnector.getServer();
+	        var connectors = server.getConnectors();
+	
+	        for (var i = 0; i &lt; connectors.length; i++) {
+	            var connector = connectors[i];
+	
+	            // Must stop the connector before modifying factories (Jetty throws
+	            // IllegalStateException: STARTED if you try to modify a running connector)
+	            connector.stop();
+	
+	            var factories = connector.getConnectionFactories();
+	            var iterator = factories.iterator();
+	            while (iterator.hasNext()) {
+	                var factory = iterator.next();
+	                if (factory instanceof HttpConnectionFactory) {
+	                    // Copy the existing config (preserves SSL settings, send server version, etc.)
+	                    // and override just the request header size
+	                    var oldConfig = factory.getHttpConfiguration();
+	                    var newConfig = new org.eclipse.jetty.server.HttpConfiguration(oldConfig);
+	                    newConfig.setRequestHeaderSize(32768); // 32KB — enough for full mTLS cert chain + other headers
+	
+	                    // Swap out the old factory for one using the new config
+	                    var newFactory = new HttpConnectionFactory(newConfig);
+	                    connector.removeConnectionFactory(factory.getProtocol());
+	                    connector.addConnectionFactory(newFactory);
+	
+	                    logger.info(&quot;Replaced HttpConnectionFactory with requestHeaderSize: &quot; + newConfig.getRequestHeaderSize());
+	                }
+	            }
+	
+	            // Restart the connector with the updated configuration
+	            connector.start();
+	            logger.info(&quot;Connector restarted on port: &quot; + connector.getPort());
+	        }
+	    } catch (e) {
+	        logger.error(&quot;Failed to update requestHeaderSize: &quot; + e);
+	    }
+	});
+	
+	// Daemon thread so it won&apos;t prevent JVM shutdown
+	thread.setDaemon(true);
+	thread.setName(&quot;header-size-fix-&quot; + myChannelId);
+	thread.start();
+}</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>8b602a96-ea28-49d1-a7e3-2093f20b0918</id>
+            <name>validateCertificateChain</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775545</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Validates the certificate chain against the truststore
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore
+ * @returns {Object} Validation result
+ */
+function validateCertificateChain(certChain, truststore) {
+    try {
+        // Create a CertPathValidator
+        var certPathValidator = Packages.java.security.cert.CertPathValidator.getInstance(&quot;PKIX&quot;);
+        
+        // Create a CertPath from the certificate chain
+        var certFactory = Packages.java.security.cert.CertificateFactory.getInstance(&quot;X.509&quot;);
+        var certList = java.util.Arrays.asList(certChain);
+        var certPath = certFactory.generateCertPath(certList);
+        
+        // Create PKIXParameters with the truststore
+        var pkixParams = new Packages.java.security.cert.PKIXParameters(truststore);
+        
+        // Disable revocation checking (enable if you have OCSP/CRL configured)
+        pkixParams.setRevocationEnabled(false);
+        
+        // Validate the certificate path
+        var result = certPathValidator.validate(certPath, pkixParams);
+        
+        //logger.info(&quot;Certificate chain validated successfully&quot;);
+        return {
+            success: true,
+            trustAnchor: result.getTrustAnchor().getTrustedCert().getSubjectX500Principal().getName()
+        };
+        
+    } catch (e) {
+        //logger.error(channelName + &quot; - Certificate chain validation failed: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate chain validation failed: &quot; + e.message
+        };
+    }
+}</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>75020c55-79c3-43f8-907d-89e66a759f47</id>
+            <name>validateCertificateLeaf</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775631</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Validates certificate by checking if it&apos;s directly in the truststore (certificate pinning)
+ * @param {Array} certChain - Array of X509Certificate objects
+ * @param {KeyStore} truststore - The truststore containing leaf certificates
+ * @returns {Object} Validation result
+ */
+function validateCertificateLeaf(certChain, truststore) {
+    try {
+        var clientCert = certChain[0]; // First cert is the client cert
+        
+        // Check if the client certificate is directly in the truststore
+        var aliases = truststore.aliases();
+        
+        while (aliases.hasMoreElements()) {
+            var alias = aliases.nextElement();
+            var trustedCert = truststore.getCertificate(alias);
+            
+            if (trustedCert != null &amp;&amp; clientCert.equals(trustedCert)) {
+               // logger.info(&quot;Certificate matched trusted certificate: &quot; + alias);
+                return {
+                    success: true,
+                    trustedAlias: alias,
+                    matchType: &quot;direct&quot;
+                };
+            }
+        }
+        
+        // No match found
+        return {
+            success: false,
+            error: &quot;Client certificate not found in truststore&quot;
+        };
+        
+    } catch (e) {
+        logger.error(channelName + &quot; - Certificate validation failed: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate validation failed: &quot; + e.message
+        };
+    }
+}</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>85b5e6fa-d4b8-40ff-8f4b-0771888838a0</id>
+            <name>validateCertificateSubject</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775714</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Validates client certificate Subject DN and Subject Alternative Names (SANs) against allowed patterns.
+ * Provides an additional security layer by ensuring certificates match expected organizational identifiers
+ * even if they are signed by a trusted CA.
+ * 
+ * @param {java.security.cert.X509Certificate} clientCert - The client certificate to validate
+ * @param {Object} allowedPatterns - Object containing allowed patterns for matching
+ * @param {Array&lt;String&gt;} [allowedPatterns.subjects] - Array of string patterns to match against Subject DN (e.g., [&quot;CN=*.example.com&quot;, &quot;O=Example Org&quot;])
+ * @param {Array&lt;String&gt;} [allowedPatterns.sans] - Array of string patterns or regex to match against SANs (e.g., [&quot;example.com&quot;, &quot;.*\\.example\\.com&quot;])
+ * @returns {Object} Validation result object
+ * @returns {boolean} returns.success - Whether validation succeeded
+ * @returns {string} [returns.matched] - What was matched: &quot;subject&quot; or &quot;san&quot;
+ * @returns {string} [returns.value] - The actual value that matched
+ * @returns {string} [returns.error] - Error message if validation failed
+ * 
+ * @example
+ * // Allow certificates with specific organizational unit
+ * var patterns = {
+ *     subjects: [&quot;OU=Healthcare&quot;, &quot;O=Hospital System&quot;],
+ *     sans: [&quot;.*\\.hospitalnet\\.org&quot;]
+ * };
+ * var result = validateCertificateSubject(clientCert, patterns);
+ * if (!result.success) {
+ *     logger.error(&quot;Subject validation failed: &quot; + result.error);
+ * }
+ */
+function validateCertificateSubject(clientCert, allowedPatterns) {
+    try {
+        var subject = clientCert.getSubjectX500Principal().getName();
+        
+        // Check Subject DN
+        for each (var pattern in allowedPatterns.subjects || []) {
+            if (subject.contains(pattern)) {
+                return { success: true, matched: &quot;subject&quot;, value: subject };
+            }
+        }
+        
+        // Check SAN (Subject Alternative Names)
+        var sanCollection = clientCert.getSubjectAlternativeNames();
+        if (sanCollection != null) {
+            var sanIterator = sanCollection.iterator();
+            while (sanIterator.hasNext()) {
+                var san = sanIterator.next();
+                var sanType = san.get(0); // 2 = DNS, 1 = email, 6 = URI
+                var sanValue = san.get(1).toString();
+                
+                for each (var pattern in allowedPatterns.sans || []) {
+                    if (sanValue.contains(pattern) || sanValue.matches(pattern)) {
+                        return { success: true, matched: &quot;san&quot;, value: sanValue };
+                    }
+                }
+            }
+        }
+        
+        return {
+            success: false,
+            error: &quot;Certificate subject/SAN does not match allowed patterns&quot;
+        };
+        
+    } catch (e) {
+        return {
+            success: false,
+            error: &quot;Subject validation failed: &quot; + e.message
+        };
+    }
+}</code>
+            </properties>
+          </codeTemplate>
+          <codeTemplate version="26.3.1">
+            <id>d6e2ba53-bc2d-4267-8863-5e2b5a2473fa</id>
+            <name>validateClientCertificate</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844775802</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>/**
+ * Validates the client certificate from the header against the truststore
+ * @param {string} certHeader - The URL-encoded certificate chain from the header
+ * @param {KeyStore} truststore - The loaded truststore
+ * @returns {Object} Validation result with success flag and details
+ */
+function validateClientCertificate(certHeader, truststore, validationType, allowedPatterns) {
+    try {
+       
+        // Step 1: Parse the certificate chain
+        var certFactory = Packages.java.security.cert.CertificateFactory.getInstance(&quot;X.509&quot;);
+        var certStream = new java.io.ByteArrayInputStream(new java.lang.String(certHeader).getBytes(&quot;UTF-8&quot;));
+        var certChain = certFactory.generateCertificates(certStream);
+        
+        if (certChain.isEmpty()) {
+            return {
+                success: false,
+                error: &quot;No certificates found in header&quot;
+            };
+        }
+        
+        //logger.info(&quot;Parsed &quot; + certChain.size() + &quot; certificates from chain&quot;);
+        
+        // Convert to array for easier handling
+        var certArray = certChain.toArray();
+        var clientCert = certArray[0]; // First certificate is the client certificate
+        
+        // Step 3: Validate certificate dates
+        try {
+            clientCert.checkValidity();
+            //logger.info(&quot;Certificate is within valid date range&quot;);
+        } catch (e) {
+            return {
+                success: false,
+                error: &quot;Certificate is expired or not yet valid: &quot; + e.message,
+                subject: clientCert.getSubjectX500Principal().getName()
+            };
+        }
+
+	   // Step 3.5: Validate subject/SAN if patterns provided
+	   if (allowedPatterns != undefined &amp;&amp; allowedPatterns != null) {
+	   	var subjectResult = validateCertificateSubject(clientCert, allowedPatterns);
+		if (!subjectResult.success) {
+		    return subjectResult;
+		}
+	   }
+        
+        // Step 4: Validate against truststore
+        var validationResult = null;
+        if(validationType == &quot;chain&quot;){
+        	validationResult = validateCertificateChain(certArray, truststore);
+        }
+        else {
+        	validationResult = validateCertificateLeaf(certArray, truststore);
+        }
+        if (validationResult.success) {
+            return {
+                success: true,
+                subject: clientCert.getSubjectX500Principal().getName(),
+                issuer: clientCert.getIssuerX500Principal().getName(),
+                serialNumber: clientCert.getSerialNumber().toString(16),
+                notBefore: clientCert.getNotBefore(),
+                notAfter: clientCert.getNotAfter(),
+                chainLength: certArray.length,
+                message: &quot;Certificate validated successfully&quot;
+            };
+        } else {
+            return validationResult;
+        }
+        
+    } catch (e) {
+        //logger.error(channelName + &quot; - Certificate validation error: &quot; + e);
+        return {
+            success: false,
+            error: &quot;Certificate validation failed: &quot; + e.message
+        };
+    }
+}</code>
+            </properties>
+          </codeTemplate>
+        </codeTemplates>
+      </codeTemplateLibrary>
+      <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>195</revision>
+        <revision>197</revision>
         <lastModified>
-          <time>1782210645409</time>
+          <time>1782404518294</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -1069,6 +1899,7 @@ return;</undeployScript>
           <string>3fabdfd3-3a99-4dec-a769-b9c8e87978d8</string>
           <string>423ef464-a171-4cb9-ae32-616aca66ea05</string>
           <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
+          <string>4b8fa9fb-2a77-4639-9e2d-96f927479e45</string>
           <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
           <string>4d4a6df4-774e-4cbd-b7aa-4ce0314d8faa</string>
           <string>4dd74674-782c-4b6a-8782-11352b7bdcad</string>
@@ -1136,6 +1967,7 @@ return;</undeployScript>
           <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
           <string>c1f9232a-b3c0-4c95-bf75-8eeaafd92d6f</string>
           <string>c45aaeca-50e4-4674-8294-8bae37a0e431</string>
+          <string>c47fa4ad-025f-4e43-ab13-c4ff4fa59dfe</string>
           <string>c50e41d7-9fb2-4899-84f8-38909d092722</string>
           <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
           <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
@@ -1221,17 +2053,272 @@ function createJsonResponse(status, message) {
           </codeTemplate>
         </codeTemplates>
       </codeTemplateLibrary>
+      <codeTemplateLibrary version="26.3.1">
+        <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
+        <name>UuidUtil</name>
+        <revision>179</revision>
+        <lastModified>
+          <time>1782404518287</time>
+          <timezone>America/New_York</timezone>
+        </lastModified>
+        <description></description>
+        <includeNewChannels>false</includeNewChannels>
+        <enabledChannelIds class="sorted-set">
+          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
+          <string>0bebf48c-06c3-45e4-b074-5fd7ac3eedb4</string>
+          <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
+          <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
+          <string>0f97d63c-b506-4b71-aa83-bfe95b9c08a5</string>
+          <string>10127606-0967-4ced-ae19-1686228f545d</string>
+          <string>101406b4-312a-4517-ab69-686051a91483</string>
+          <string>1152ba78-3231-4a99-8ec3-319c0f69e011</string>
+          <string>12467de6-360c-47c1-83af-09aae915eb8c</string>
+          <string>140795e4-5d41-4769-885b-b815c18bbc62</string>
+          <string>14db49f5-496c-4b12-a5e9-f9b33b30ba94</string>
+          <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
+          <string>19069366-0852-4caa-875c-1c503461f8a1</string>
+          <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
+          <string>1b228707-c844-4b09-b9e4-55878038d31f</string>
+          <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
+          <string>1e3ad8e1-3be1-44d2-b2da-bf5750a353c8</string>
+          <string>1ec01527-8a44-4184-a05a-2a91c04f37df</string>
+          <string>1f0f044e-687d-41d6-b19f-9935b8b9936d</string>
+          <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
+          <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
+          <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
+          <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
+          <string>29d0e04a-e2be-43ad-b814-bfe242963c90</string>
+          <string>30c99bf7-8d1a-45c6-b391-e2b88b1103ea</string>
+          <string>32a3cbc1-921f-441c-8e68-3bda27e63ee6</string>
+          <string>32ad2913-1c3d-43d8-b5f8-2672f3325557</string>
+          <string>3300d437-9001-4bd1-9ca8-31635d1dc92a</string>
+          <string>330819e8-5e01-45b0-9d7d-b87048a8813a</string>
+          <string>353f2542-73dd-44df-bb8b-361756233a37</string>
+          <string>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</string>
+          <string>39491051-e8fb-4f70-aea5-82ed1a454324</string>
+          <string>3acb72be-f9c1-4721-b990-ff0486b038fc</string>
+          <string>3bc69658-cba9-4fa2-8d32-438ab4660c2a</string>
+          <string>3bfca654-f2c7-4c5e-bb88-1ab68cd32f44</string>
+          <string>3cbc2ace-4a86-4ef9-839a-2aa4feac2ee3</string>
+          <string>3f02fbc3-ac50-40cc-a9bd-6c57a921c920</string>
+          <string>3fabdfd3-3a99-4dec-a769-b9c8e87978d8</string>
+          <string>423ef464-a171-4cb9-ae32-616aca66ea05</string>
+          <string>45c0836b-0e92-4861-9e58-16898e1e0835</string>
+          <string>461db608-904d-41c3-a9f5-d1c23a450ce9</string>
+          <string>48098091-34dc-4d63-b9a9-c6201f0c0fa4</string>
+          <string>4b8fa9fb-2a77-4639-9e2d-96f927479e45</string>
+          <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
+          <string>4d14f82e-6781-4b35-9a2d-b5424903d1db</string>
+          <string>4d4a6df4-774e-4cbd-b7aa-4ce0314d8faa</string>
+          <string>4dd74674-782c-4b6a-8782-11352b7bdcad</string>
+          <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
+          <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
+          <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
+          <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
+          <string>5857b379-7fd2-4000-b627-57b89f33892e</string>
+          <string>58670b9c-5015-4e1b-ba6f-6e025c9b884c</string>
+          <string>5cf24505-f00b-4002-a769-836686016c37</string>
+          <string>5fe06d80-d0e4-473e-89ff-11cc69bbf4bc</string>
+          <string>60a18eb3-bf79-4c99-9bec-55fe0df4813f</string>
+          <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
+          <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+          <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
+          <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
+          <string>66bd741d-7d06-4fce-84ee-aff81a32606f</string>
+          <string>6a2535d6-2995-4464-a455-8bb815ec76bb</string>
+          <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
+          <string>6d5b9010-726f-44b6-b81a-2bd2c6a17003</string>
+          <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
+          <string>6df6b37f-e6df-4648-a7e1-67715a4e3157</string>
+          <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
+          <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
+          <string>734712b9-75bb-4eb5-b31e-0951c9287df3</string>
+          <string>789c27f9-3fbd-4c76-9252-833d4f388d81</string>
+          <string>7b87138a-7964-457e-a1df-e14fffac8163</string>
+          <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
+          <string>7c9a7dc3-d5f3-4477-9298-4c927e0e0f9f</string>
+          <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
+          <string>7ffeeda4-e8e9-4534-8cf0-28eb8ce65510</string>
+          <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
+          <string>829b3dbc-9d02-41b4-aa52-e9cbcc0f727b</string>
+          <string>82b69ddf-fe55-4127-8e9a-8af05c09c91e</string>
+          <string>869c806f-d639-44ea-93d7-9efbe211cc3c</string>
+          <string>893ca03e-5b1d-4aa0-9fbe-705d7e0ed910</string>
+          <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
+          <string>8ad98540-6ea5-4008-98f7-7f7769ae5e6b</string>
+          <string>8af30ec7-ad08-4ac8-9604-3ddd35f6d8b2</string>
+          <string>8be2be72-35cf-44a6-8b6e-5e37bd770672</string>
+          <string>8ff42419-20be-4845-b40c-77853eb27b35</string>
+          <string>91adead5-81ab-44f2-b3ac-f875a620846c</string>
+          <string>92bad760-5de9-4b86-91f4-33011e68ca43</string>
+          <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
+          <string>95deaa8d-3907-4b7e-bd01-bbf5d507a474</string>
+          <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
+          <string>96e9f4cf-2505-4620-b232-542e62dc0a1a</string>
+          <string>9a7e7b61-5745-4e29-a7e1-43a7d61b60ba</string>
+          <string>9c85680a-7b06-43fb-9d12-01db1d9c0448</string>
+          <string>9cbcd82b-a20e-4120-9d81-7c6698dfc1dd</string>
+          <string>9f99a5c7-84d9-4dc2-aa7f-451096b5bb8b</string>
+          <string>a042f8c0-b45a-491e-aaff-1c30aca5d9b4</string>
+          <string>a0b29ee9-cd50-4228-8de1-c890131f4350</string>
+          <string>a1a84018-fd6b-4e23-80c8-3bc046c95d4c</string>
+          <string>a1baa618-66f4-4c94-8cd9-5a4789641978</string>
+          <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
+          <string>a37c9500-353f-4cec-828a-4b377007e7fa</string>
+          <string>a3ed3ccb-86a4-432f-82b4-e90e10e148db</string>
+          <string>a4742eec-0523-45be-a37e-1f3c03b80f20</string>
+          <string>a498cdfc-84a5-43fd-aad8-2487de0def89</string>
+          <string>a4d249da-533e-4b9f-917c-3ad75d22767f</string>
+          <string>a5b2ab2c-b422-4614-ac3c-c7b0876c8579</string>
+          <string>a6980fc6-a738-4a01-9868-79bc098175cb</string>
+          <string>a7141bac-fe8d-4df6-81cd-dee54b0d09be</string>
+          <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
+          <string>ac361d6f-fc34-44f1-9029-589b680d7a2a</string>
+          <string>ac75ecb3-2a29-4a75-b056-61895a4ccc0c</string>
+          <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
+          <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
+          <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
+          <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
+          <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
+          <string>bbf0fb0d-7a57-43c4-b3b0-2e0d257ae92b</string>
+          <string>bbfc8cdc-e671-46da-bae3-75de9ae91b85</string>
+          <string>bd874ffb-6649-4374-91d8-0506a3bce00c</string>
+          <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
+          <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
+          <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
+          <string>c1f9232a-b3c0-4c95-bf75-8eeaafd92d6f</string>
+          <string>c45aaeca-50e4-4674-8294-8bae37a0e431</string>
+          <string>c47fa4ad-025f-4e43-ab13-c4ff4fa59dfe</string>
+          <string>c50e41d7-9fb2-4899-84f8-38909d092722</string>
+          <string>c803772f-c1a5-4aee-ac52-f2cddc53c690</string>
+          <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
+          <string>cae36153-f409-4659-a031-fa40ebb8f7da</string>
+          <string>cbf715dc-b53b-47bb-910c-433f58588fd3</string>
+          <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
+          <string>d341dceb-069e-49ab-8efa-c45398145216</string>
+          <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
+          <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
+          <string>dc1d3367-14d7-4e36-a87e-d208d839fc78</string>
+          <string>dd22c442-ee54-4c80-b221-a2b30b889b79</string>
+          <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
+          <string>e0db16bd-35c7-4cc9-9874-79b6fb154472</string>
+          <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
+          <string>e59911f1-dff0-41de-b8ee-89f466f47a15</string>
+          <string>eb2f5490-8909-4216-b65a-5947fb0f359e</string>
+          <string>edfa461f-e71c-491e-a3cb-e9a2cdb49418</string>
+          <string>edfea1b1-a0d7-46b3-913a-61b50ddadf1f</string>
+          <string>f23e19b0-a0e0-422a-884c-caae6c52ecac</string>
+          <string>f376f9cc-b848-4868-ac1c-e2c011665fc5</string>
+          <string>f4770f98-f7b8-4070-be28-ebd8e3919864</string>
+          <string>f562abf9-9ef9-48f2-b49f-2c361574f651</string>
+          <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
+          <string>fa6d8035-8b04-4740-9eb0-4dbb71c69bb6</string>
+          <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
+          <string>fbb1665a-1e80-482a-adb5-719687ffabaf</string>
+          <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
+          <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
+        </enabledChannelIds>
+        <disabledChannelIds class="sorted-set">
+          <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
+          <string>01fbb835-f605-4376-84eb-9c4affcf159e</string>
+          <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+          <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
+          <string>1c406954-d304-4882-b05d-b513d699785b</string>
+          <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
+          <string>2b4ff91f-4f33-48c2-ba05-2f0cdfd1120b</string>
+          <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
+          <string>3322c442-7c6e-46b4-b6d1-f0cff8c4741d</string>
+          <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
+          <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
+          <string>4c2ba30f-c175-44b4-a740-0297048c7969</string>
+          <string>50e1c70e-7b48-4ed0-be9e-309710a85195</string>
+          <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
+          <string>784f3cf4-180a-4ea3-b519-f12626b33dcc</string>
+          <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
+          <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
+          <string>89118684-3b07-4336-ab6e-c06a1d9c0440</string>
+          <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
+          <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
+          <string>9608b1d8-a780-4093-a7b2-14412f61e0ea</string>
+          <string>a2eede47-0ee3-4345-b6c2-92c07c553950</string>
+          <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
+          <string>ac705673-f0a4-4cc1-aa75-8a92badefe1a</string>
+          <string>b1be1080-160c-42e5-a1fb-b82439b1757e</string>
+          <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
+          <string>bfe53f29-12c4-4575-856b-64c5700f2564</string>
+          <string>c56c8654-6ece-4975-bdad-29ef940c7081</string>
+          <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
+          <string>cd224bbd-4d5c-46b7-99c5-ed3ec89e6d06</string>
+          <string>d3a8414c-8bcd-40c8-b806-5d163a5dbab1</string>
+          <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
+          <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
+          <string>f26f4d16-f640-4f02-b654-3d5ef8f9dc54</string>
+          <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
+          <string>fe3c571f-3ac0-4de6-8de1-c23894f823d4</string>
+        </disabledChannelIds>
+        <codeTemplates>
+          <codeTemplate version="26.3.1">
+            <id>5094a1a4-a8c6-4818-b26f-2a773e673ef3</id>
+            <name>Uuid Generator Instance</name>
+            <revision>1</revision>
+            <lastModified>
+              <time>1776844786916</time>
+              <timezone>America/New_York</timezone>
+            </lastModified>
+            <contextSet>
+              <delegate class="sorted-set">
+                <contextType>GLOBAL_DEPLOY</contextType>
+                <contextType>GLOBAL_UNDEPLOY</contextType>
+                <contextType>GLOBAL_PREPROCESSOR</contextType>
+                <contextType>GLOBAL_POSTPROCESSOR</contextType>
+                <contextType>CHANNEL_DEPLOY</contextType>
+                <contextType>CHANNEL_UNDEPLOY</contextType>
+                <contextType>CHANNEL_PREPROCESSOR</contextType>
+                <contextType>CHANNEL_POSTPROCESSOR</contextType>
+                <contextType>CHANNEL_ATTACHMENT</contextType>
+                <contextType>CHANNEL_BATCH</contextType>
+                <contextType>SOURCE_RECEIVER</contextType>
+                <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+                <contextType>DESTINATION_DISPATCHER</contextType>
+                <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+              </delegate>
+            </contextSet>
+            <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+              <type>FUNCTION</type>
+              <code>function getUuidGenerator() {
+    var generator = globalMap.get(&apos;UUID_GENERATOR&apos;);
+
+    if (generator == null) {
+        var Generators = Packages.com.fasterxml.uuid.Generators;
+        generator = Generators.timeBasedEpochGenerator();
+
+        globalMap.put(&apos;UUID_GENERATOR&apos;, generator);
+        logger.info(&apos;UUID Generator initialized ONCE&apos;);
+    }
+
+    return generator;
+}
+
+function generateUuid() {
+    return getUuidGenerator().generate().toString();
+}</code>
+            </properties>
+          </codeTemplate>
+        </codeTemplates>
+      </codeTemplateLibrary>
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>00c7e4c4-27a4-40f0-8514-dd64b866ce66</id>
-        <name>0_2_19</name>
+        <id>bf8e1bfb-c7d0-441f-b79b-528893ebd74e</id>
+        <name>0_2_20</name>
         <channelIds>
           <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
