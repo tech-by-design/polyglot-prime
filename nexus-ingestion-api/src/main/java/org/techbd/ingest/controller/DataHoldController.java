@@ -25,7 +25,7 @@ import org.techbd.ingest.util.HttpUtil;
 import org.techbd.ingest.util.TemplateLogger;
 import org.techbd.ingest.util.UuidUtil;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
