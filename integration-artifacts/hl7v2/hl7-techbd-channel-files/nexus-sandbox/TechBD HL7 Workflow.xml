@@ -2,17 +2,14 @@
   <id>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.51
-Updated the interaction ID initialization logic to use the value from the X-TechBD-Interaction-ID request header when provided. If the header is missing or empty, a new UUID is generated as a fallback.</description>
-  <revision>8</revision>
+  <description>Version: 0.1.52
+Added missing headers in metadata.</description>
+  <revision>25</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -41,6 +38,9 @@ Updated the interaction ID initialization logic to use the value from the X-Tech
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -124,6 +124,31 @@ if (requestedPath == &quot;/&quot;) {
 	return;
 }
 
+// Retrieve the X-TechBD-Base-FHIR-URL header
+var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+
+    // Retrieve the VALID_URLS environment variable (comma-separated list)
+		var validUrlsEnv = globalMap.get(&quot;MC_VALID_FHIR_URLS&quot;);
+		
+		// Convert VALID_URLS to an array for validation
+		var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+		
+		// Check if the header value is valid
+		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+		    if (validUrls.includes(customBaseFhirUrl)) {
+			   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+		    } else {
+		        // Throw a Bad Request error if the URL is not in the valid list
+				var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
+				logger.error(logPrefix + errorMessage);
+		    }
+		}
+		else {
+			var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);
+	    	     channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
+   		}
+		
+
 // Initialize missing headers array
 var missingHeaders = [];
 
@@ -206,19 +231,6 @@ if (incomingHeader !== &quot;&quot;) {
     for (var i = 0; i &lt; allowedUrls.length; i++) {
  
         var allowedUrl = String(allowedUrls[i]).trim();
-        logger.info(
- 
-            &quot;Comparing incoming=[&quot; +
- 
-            incomingHeader +
- 
-            &quot;] with allowed=[&quot; +
- 
-            allowedUrl +
- 
-            &quot;]&quot;
- 
-        );
         if (incomingHeader === allowedUrl) {
  
             isAllowed = true;
@@ -407,6 +419,7 @@ if (incomingInteractionId != null &amp;&amp; incomingInteractionId.trim() !== &a
     interactionId = generateUuid();
 }
 globalMap.put(&apos;interactionId&apos;, interactionId);
+channelMap.put(&apos;interactionId&apos;, interactionId);
 var logPrefix = &quot;[CHANNEL: &quot; + channelName + &quot;] [INTERACTION ID: &quot; + interactionId + &quot;] &quot;;&#xd;
 
 var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
@@ -506,7 +519,6 @@ if (hl7Data == null || hl7Data.trim() === &quot;&quot;) {
 
 		try{
 			//DB Save Original Payload
-		     logger.info(logPrefix + &quot;DB Save inside Source transformer&quot;);
 		     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 		     channelMap.put(&apos;tenantId&apos;, tenantId);
 		     var interactionId = globalMap.get(&apos;interactionId&apos;);
@@ -574,7 +586,6 @@ function getHeaderValues() {
             interactionId: channelMap.get(&apos;interactionId&apos;),
             tenantName: channelMap.get(&apos;tenantId&apos;),
             userAgent : channelMap.get(&apos;userAgent&apos;),
-            SeverityLevel : channelMap.get(&apos;SeverityLevel&apos;), 
             uri : channelMap.get(&apos;uri&apos;),
             contextPath : channelMap.get(&apos;contextPath&apos;),
             CIN : channelMap.get(&apos;patientCIN&apos;),
@@ -587,7 +598,8 @@ function getHeaderValues() {
             OPWDD : channelMap.get(&apos;X-TechBD-OPWDD&apos;),
             BaseFHIRURL : channelMap.get(&apos;baseFhirUrl&apos;),
             ValidationSeverityLevel : channelMap.get(&apos;SeverityLevel&apos;),
-            OrganizationName : channelMap.get(&apos;OrganizationName&apos;)
+            OrganizationName : channelMap.get(&apos;OrganizationName&apos;),
+            datalakeApiUrl : channelMap.get(&apos;datalakeApiUrl&apos;)
         }
     });
     return headerJson;
@@ -1229,17 +1241,14 @@ function sendDataLedgerSync(payload) {
         var response = httpClient.execute(httpPost);
         try {
             var statusCode = response.getStatusLine().getStatusCode();
-            logger.info(logPrefix + &quot;sendDataLedgerSync response status: &quot; + statusCode);
             var responseBody = EntityUtils.toString(response.getEntity());
 
             if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
-                logger.info(logPrefix + &quot;Data Ledger API Response: &quot; + responseBody);
                 return {
                     statusCode: statusCode,
                     body: responseBody
                 };
             } else {
-                logger.error(logPrefix + &quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
                 throw new Error(&quot;Request failed with status &quot; + statusCode);
             }
         } finally {
@@ -1291,7 +1300,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(baseFhirUrl != null) {
 		transformer.setParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
 		channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
-		logger.info(logPrefix + &quot;baseFhirUrl: &quot; + baseFhirUrl);
 	} else {
 		var errorMessage = &apos;BASE_FHIR_URL variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1302,7 +1310,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(bundleMetaProfileUrl != null) {
 		transformer.setParameter(&quot;bundleMetaProfileUrl&quot;, bundleMetaProfileUrl);
 		channelMap.put(&apos;bundleMetaProfileUrl&apos;, bundleMetaProfileUrl);
-		logger.info(logPrefix + &quot;bundleMetaProfileUrl: &quot; + bundleMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_BUNDLE variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1313,7 +1320,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(patientMetaProfileUrl != null) {
 		transformer.setParameter(&quot;patientMetaProfileUrl&quot;, patientMetaProfileUrl);
 		channelMap.put(&apos;patientMetaProfileUrl&apos;, patientMetaProfileUrl);
-		logger.info(logPrefix + &quot;patientMetaProfileUrl: &quot; + patientMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_PATIENT variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1324,7 +1330,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(encounterMetaProfileUrl != null) {
 		transformer.setParameter(&quot;encounterMetaProfileUrl&quot;, encounterMetaProfileUrl);
 		channelMap.put(&apos;encounterMetaProfileUrl&apos;, encounterMetaProfileUrl);
-		logger.info(logPrefix + &quot;encounterMetaProfileUrl: &quot; + encounterMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_ENCOUNTER variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1335,7 +1340,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(consentMetaProfileUrl != null) {
 		transformer.setParameter(&quot;consentMetaProfileUrl&quot;, consentMetaProfileUrl);
 		channelMap.put(&apos;consentMetaProfileUrl&apos;, consentMetaProfileUrl);
-		logger.info(logPrefix + &quot;consentMetaProfileUrl: &quot; + consentMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_CONSENT variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1346,7 +1350,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(organizationMetaProfileUrl != null) {
 		transformer.setParameter(&quot;organizationMetaProfileUrl&quot;, organizationMetaProfileUrl);
 		channelMap.put(&apos;organizationMetaProfileUrl&apos;, organizationMetaProfileUrl);
-		logger.info(logPrefix + &quot;organizationMetaProfileUrl: &quot; + organizationMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_ORGANIZATION variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1357,7 +1360,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(observationMetaProfileUrl != null) {
 		transformer.setParameter(&quot;observationMetaProfileUrl&quot;, observationMetaProfileUrl);
 		channelMap.put(&apos;observationMetaProfileUrl&apos;, observationMetaProfileUrl);
-		logger.info(logPrefix + &quot;observationMetaProfileUrl: &quot; + observationMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_OBSERVATION variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1368,7 +1370,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(observationSexualOrientationMetaProfileUrl != null) {
 		transformer.setParameter(&quot;observationSexualOrientationMetaProfileUrl&quot;, observationSexualOrientationMetaProfileUrl);
 		channelMap.put(&apos;observationSexualOrientationMetaProfileUrl&apos;, observationSexualOrientationMetaProfileUrl);
-		logger.info(logPrefix + &quot;observationSexualOrientationMetaProfileUrl: &quot; + observationSexualOrientationMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_SEXUAL_ORIENTATION variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1379,7 +1380,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(questionnaireMetaProfileUrl != null) {
 		transformer.setParameter(&quot;questionnaireMetaProfileUrl&quot;, questionnaireMetaProfileUrl);
 		channelMap.put(&apos;questionnaireMetaProfileUrl&apos;, questionnaireMetaProfileUrl);
-		logger.info(logPrefix + &quot;questionnaireMetaProfileUrl: &quot; + questionnaireMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1390,7 +1390,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(questionnaireResponseMetaProfileUrl != null) {
 		transformer.setParameter(&quot;questionnaireResponseMetaProfileUrl&quot;, questionnaireResponseMetaProfileUrl);
 		channelMap.put(&apos;questionnaireResponseMetaProfileUrl&apos;, questionnaireResponseMetaProfileUrl);
-		logger.info(logPrefix + &quot;questionnaireResponseMetaProfileUrl: &quot; + questionnaireResponseMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1401,7 +1400,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(practitionerMetaProfileUrl != null) {
 		transformer.setParameter(&quot;practitionerMetaProfileUrl&quot;, practitionerMetaProfileUrl);
 		channelMap.put(&apos;practitionerMetaProfileUrl&apos;, practitionerMetaProfileUrl);
-		logger.info(logPrefix + &quot;practitionerMetaProfileUrl: &quot; + practitionerMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_PRACTITIONER variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1412,7 +1410,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	if(procedureMetaProfileUrl != null) {
 		transformer.setParameter(&quot;procedureMetaProfileUrl&quot;, procedureMetaProfileUrl);
 		channelMap.put(&apos;procedureMetaProfileUrl&apos;, procedureMetaProfileUrl);
-		logger.info(logPrefix + &quot;procedureMetaProfileUrl: &quot; + procedureMetaProfileUrl);
 	} else {
 		var errorMessage = &apos;PROFILE_URL_PROCEDURE variable is not set&apos;;
 		logger.error(logPrefix + errorMessage);
@@ -1469,7 +1466,6 @@ function getConsentResourceStatus(sourceXml) {
 		        break;
 		    }
 		}
-		logger.info(logPrefix + &quot;Consent Code: &quot; + consentCode);
 		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
 		    logger.info(logPrefix + &quot;Consent Code: &quot; + consentCode);
 		        consentInfo.status = &quot;provided&quot;;
@@ -1603,7 +1599,6 @@ function getObservationCategoryCodes(transformer, observations) {
      var categoryXml = JSON.stringify(categoryJsonArray);
 	
 	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
-	logger.info(logPrefix + &quot;categoryXml : &quot; + categoryXml);
 	return transformer;
 }
 
@@ -1644,7 +1639,6 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
         var sha256Hash = generateSHA256(new java.lang.String(combinedText));
         transformer.setParameter(resourceIdName, sha256Hash);
         channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
-        logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
     } else {
         logger.error(resourceName + &quot; not found in the XML.&quot;);
     }
@@ -1671,7 +1665,6 @@ function generateCompactSha256(sourceXml, resourceName, resourceIdName, transfor
 	
 	    transformer.setParameter(resourceIdName, sha256Hash);
 	    channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
-	    logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
     } else {
 	        logger.error(resourceName + &quot; not found.&quot;);
 	    }
@@ -1734,7 +1727,6 @@ if (requestedPath == &quot;/&quot;) {
 
 		// Extraction from Lookup Manager.
 		var validationSchemaXML = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-validation-schema&quot;);
-		logger.info(&quot;Value from hl7v2-validation-schema: &quot; + validationSchemaXML);
 
 
 if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
@@ -1770,7 +1762,6 @@ try {
 	if (!validationSchemaXML) {
 		   throw new Error(&quot;Validation XML not found in channelMap. Ensure XSLT Transformer step executed before this script.&quot;);
 	}
-	logger.info(&quot;Loaded validation XML from XSLT Transformer step&quot;);
 	var profile = getRequiredSegmentsAndFieldsFromXml(validationSchemaXML);
 
 
@@ -1847,10 +1838,7 @@ try {
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
     responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
-    logger.info(logPrefix + success);
 
-    			// SAVE VALIDATION RESULT
-			logger.info(logPrefix + &quot;DB Validation Save inside Validate&quot;);
 		     var tenantId = channelMap.get(&apos;tenantId&apos;);
 		     logger.info(logPrefix + &quot;successResponse: &quot; + getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
 		     var operation = &quot;saveValidationSuccess&quot;;
@@ -1896,7 +1884,6 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 
 
 	var interactionId = globalMap.get(&apos;interactionId&apos;);
-    logger.info(logPrefix + &quot;InteractionId: &quot; + interactionId);
     var payload = JSON.stringify({
         executedAt: currentTimestampBegin,
         actor: &quot;TechBD&quot;,
@@ -1910,13 +1897,11 @@ else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/
 	// Check if tracking is enabled
 	var trackingEnabled = globalMap.get(&quot;DATA_LEDGER_TRACKING&quot;);
 	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
-	    logger.info(logPrefix + &quot;data ledger api call -BEGIN received&quot;);
 	    try {
 	        sendDataLedgerSync(payload);
 	    } catch (e) {
 	        logger.error(logPrefix + &quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 	    }
-	    logger.info(logPrefix + &quot;data ledger api call -END received&quot;);
 	} else {
 	    logger.info(logPrefix + &quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
 	}
@@ -1950,7 +1935,6 @@ try {
     }
 
     var hl7Body = extractHL7Body(raw);
-    logger.info(logPrefix + &quot;Extracted HL7:\n&quot; + hl7Body);
     if (!hl7Body) {
 	    var msg = &quot;No MSH segment found — invalid HL7 message.&quot;;
 	    responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segment&quot;, interactionId));
@@ -1968,7 +1952,6 @@ try {
 	if (!validationSchemaXML) {
 		   throw new Error(&quot;Validation XML not found in channelMap. Ensure XSLT Transformer step executed before this script.&quot;);
 	}
-	logger.info(&quot;Loaded validation XML from XSLT Transformer step&quot;);
 	var profile = getRequiredSegmentsAndFieldsFromXml(validationSchemaXML);
 
 
@@ -2048,7 +2031,6 @@ try {
     // Step 5: Valid
     var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
     responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;, interactionId));
-    logger.info(logPrefix + success);
 
     // SAVE VALIDATION RESULT
 			logger.info(logPrefix + &quot;DB Validation Save inside Validate&quot;);
@@ -2092,8 +2074,6 @@ try {
 		var xsltString = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;hl7v2-fhir-bundle.xslt&quot;);
 		
 		if (!xsltString) throw new Error(&quot;Missing hl7v2Xslt in channelMap — check the XSLT Transformer step&quot;);
-		
-		logger.info(&quot; Loaded in-memory XSLT from channel variable&quot;);
 		
 		var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
 		var xsltReader = new java.io.StringReader(xsltString);
@@ -2299,28 +2279,7 @@ try {
 	}
     //transformer = generateSHA256Id(grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer, channelMap.get(&apos;observations_Resource_ID&apos;));
 	transformer = generateCompactSha256((channelMap.get(&apos;observations_Resource_ID&apos;) || &apos;&apos;) + grouperObsXml, &quot;groupObservations&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);
-
-    // Retrieve the X-TechBD-Base-FHIR-URL header
-		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-
-    // Retrieve the VALID_URLS environment variable (comma-separated list)
-		var validUrlsEnv = globalMap.get(&quot;MC_VALID_FHIR_URLS&quot;);
-		
-		// Convert VALID_URLS to an array for validation
-		var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
-		
-		// Check if the header value is valid
-		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
-		    if (validUrls.includes(customBaseFhirUrl)) {
-		        // Store valid value in channelMap
-		        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
-			   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
-		    } else {
-		        // Throw a Bad Request error if the URL is not in the valid list
-				var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
-				logger.error(logPrefix + errorMessage);
-		    }
-		}
+     transformer.setParameter(&quot;baseFhirUrl&quot;, channelMap.get(&apos;baseFhirUrl&apos;));
 
 	getConsentResourceStatus(rawTransformedData);	
 	getObservationCategoryCodes(transformer, rawTransformedData);
@@ -2347,7 +2306,6 @@ try {
 			//logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);
 			
 			//Save Converted FHIR
-				logger.info(logPrefix + &quot;FHIR Conversion Save inside Bundle&quot;);
 			     var tenantId = channelMap.get(&apos;tenantId&apos;);
 			     var operation = &quot;saveConversionSuccess&quot;;
 			     var result = saveHL7Payload(
@@ -2963,7 +2921,6 @@ try {
     }
     globalMap.put(&quot;MC_VALID_FHIR_URLS&quot;, validUrlsEnv.trim());
 
-    logger.info(&quot;✔ Tracking flag and valid FHIR URLs loaded from Lookup Manager&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ Failed to load tracking / valid URLs config: &quot; + e);
@@ -2986,8 +2943,6 @@ try {
     hubUiUrl = hubUiUrl.trim();
  
    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
- 
-    logger.info(&quot;✔ HUB UI URL loaded from Lookup Manager configuration: &quot;);
  
 } catch (e) {
     logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
@@ -3364,7 +3319,7 @@ return;</undeployScript>
       <metaDataColumn>
         <name>XTECHBDPART2</name>
         <type>STRING</type>
-        <mappingName>XTechBPart2</mappingName>
+        <mappingName>XTechBDPart2</mappingName>
       </metaDataColumn>
       <metaDataColumn>
         <name>XTECHBDOPWDD</name>
@@ -3380,6 +3335,11 @@ return;</undeployScript>
         <name>INTERACTIONID</name>
         <type>STRING</type>
         <mappingName>interactionId</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>DATALAKEAPIURL</name>
+        <type>STRING</type>
+        <mappingName>datalakeApiUrl</mappingName>
       </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="26.3.1">
@@ -3397,7 +3357,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782446955337</time>
+        <time>1782715370830</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3410,9 +3370,9 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>197</revision>
+        <revision>198</revision>
         <lastModified>
-          <time>1782404518294</time>
+          <time>1782473893301</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3432,6 +3392,7 @@ return;</undeployScript>
           <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
           <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
           <string>1c406954-d304-4882-b05d-b513d699785b</string>
+          <string>1e7e30bc-e5a4-45b0-ba25-96f2d92eb6f0</string>
           <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
           <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
           <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
@@ -3611,9 +3572,9 @@ function createJsonResponse(status, message) {
       <codeTemplateLibrary version="26.3.1">
         <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
         <name>UuidUtil</name>
-        <revision>179</revision>
+        <revision>180</revision>
         <lastModified>
-          <time>1782404518287</time>
+          <time>1782473893293</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3636,6 +3597,7 @@ function createJsonResponse(status, message) {
           <string>1b228707-c844-4b09-b9e4-55878038d31f</string>
           <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
           <string>1e3ad8e1-3be1-44d2-b2da-bf5750a353c8</string>
+          <string>1e7e30bc-e5a4-45b0-ba25-96f2d92eb6f0</string>
           <string>1ec01527-8a44-4184-a05a-2a91c04f37df</string>
           <string>1f0f044e-687d-41d6-b19f-9935b8b9936d</string>
           <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
@@ -3866,8 +3828,8 @@ function generateUuid() {
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>35a99b52-329b-4b98-8a41-00ae7729e3ba</id>
-        <name>0_1_51</name>
+        <id>03ec520c-2091-40ca-9620-621a30442734</id>
+        <name>0_1_52</name>
         <channelIds>
           <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
         </channelIds>
