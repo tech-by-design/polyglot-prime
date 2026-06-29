@@ -78,6 +78,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-health</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
@@ -145,17 +149,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>
-			<version>3.3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.17.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.17.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -213,12 +206,6 @@
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
 			<artifactId>jakarta.persistence-api</artifactId>
-			<version>3.2.0-M2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate.orm</groupId>
-			<artifactId>hibernate-core</artifactId>
-			<version>6.0.0.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.ocpsoft.prettytime</groupId>
@@ -255,19 +242,17 @@
 			<version>1.12.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-yaml</artifactId>
-			<version>2.17.1</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jooq</artifactId>
-			<version>3.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jooq</groupId>
 			<artifactId>jooq-jackson-extensions</artifactId>
-			<version>3.19.16</version>
+			<version>3.21.6</version>
+		</dependency>
+		<dependency>
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
@@ -282,12 +267,12 @@
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
 			<artifactId>htmx-spring-boot</artifactId>
-			<version>3.4.1</version>
+			<version>5.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
 			<artifactId>htmx-spring-boot-thymeleaf</artifactId>
-			<version>3.4.1</version>
+			<version>5.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>
@@ -342,31 +327,10 @@
         	<version>8.2.2</version>
         </dependency>
 		<dependency> 
-            <groupId>io.micrometer</groupId> 
-            <artifactId>micrometer-registry-otlp</artifactId> 
-        </dependency>
-		<dependency> 
-            <groupId>io.opentelemetry</groupId> 
-            <artifactId>opentelemetry-exporter-otlp</artifactId> 
-        </dependency>
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-tracing</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-tracing-bridge-otel</artifactId>
-		</dependency>
-		<dependency> 
 			<groupId>com.squareup.okio</groupId> 
 			<artifactId>okio</artifactId> 
 			<version>3.9.1</version>
 		</dependency> 
-		<dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-			<version>1.46.0</version>
-		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-vfs2</artifactId>

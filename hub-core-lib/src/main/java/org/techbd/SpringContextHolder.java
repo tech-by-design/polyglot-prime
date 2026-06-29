@@ -12,8 +12,7 @@
  *       similar to how Spring Boot handles configuration profiles.</li>
  * </ul>
  * <p>
- * Provides a static method to retrieve beans from the context, and a {@link Tracer} bean
- * that falls back to a default tracer if none is defined in the context.
+ * Provides a static method to retrieve beans from the context.
  * </p>
  */
 package org.techbd;
@@ -26,15 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.techbd.config.AppInitializationConfig;
-
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Tracer;
-
 
 public class SpringContextHolder {
     private static ApplicationContext context;
@@ -78,25 +72,5 @@ public class SpringContextHolder {
 
     public static <T> T getBean(Class<T> clazz) {
         return context.getBean(clazz);
-    }
-
-       @Bean
-    public Tracer tracer(ApplicationContext context) {
-        Tracer tracer = null;
-
-        try {
-            tracer = context.getBean(Tracer.class);
-        } catch (Exception e) {
-            if (tracer == null) {
-                tracer = GlobalOpenTelemetry.getTracer("default-tracer");
-            }
-        }
-
-        // Fallback to the GlobalOpenTelemetry Tracer if not found
-        if (tracer == null) {
-            tracer = GlobalOpenTelemetry.getTracer("default-tracer");
-        }
-        
-        return tracer;
     }
 }
