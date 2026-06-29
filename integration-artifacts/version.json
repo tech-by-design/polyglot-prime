@@ -52,9 +52,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.51",
+      "version": "0.1.52",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-06-26"
+      "date": "2026-06-29"
     },
     {
       "type": "HL7v2",
@@ -101,9 +101,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.40",
+      "version": "0.5.41",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-06-26"
+      "date": "2026-06-29"
     },
     {
       "type": "Router",
