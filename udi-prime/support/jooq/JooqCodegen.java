@@ -51,7 +51,7 @@ public class JooqCodegen {
                                 .withInputSchema(cliArgs.schema())
                                 .withForcedTypes(
                                         new ForcedType()
-                                                .withUserType("com.fasterxml.jackson.databind.JsonNode")
+                                                .withUserType("tools.jackson.databind.JsonNode")
                                                 .withJsonConverter(true)
                                                 .withIncludeTypes("JSON|JSONB")))
                         .withTarget(new Target()
