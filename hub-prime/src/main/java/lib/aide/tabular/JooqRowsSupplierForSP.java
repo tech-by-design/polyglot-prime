@@ -29,7 +29,7 @@ import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingTechbydesigndispositionDetails;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 public class JooqRowsSupplierForSP {
 

@@ -25,8 +25,8 @@ import org.techbd.ingest.integrationtests.base.BaseIntegrationTest;
 import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper;
 import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper.FlowAssertionParams;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 

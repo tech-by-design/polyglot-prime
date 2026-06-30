@@ -3,7 +3,6 @@ package org.techbd.util.fhir;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,10 +21,9 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.config.Interactions.Header;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.JsonNode;
 
 @Component
 public class CoreFHIRUtil {

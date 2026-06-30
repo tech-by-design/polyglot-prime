@@ -51,7 +51,7 @@ import org.techbd.util.TemplateLogger;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.Cookie;

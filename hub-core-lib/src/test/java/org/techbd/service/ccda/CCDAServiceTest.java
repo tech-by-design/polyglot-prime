@@ -16,7 +16,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 class CCDAServiceTest {
 

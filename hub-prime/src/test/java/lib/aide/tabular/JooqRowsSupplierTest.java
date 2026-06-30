@@ -8,7 +8,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 public class JooqRowsSupplierTest {
         static private final ObjectMapper objectMapper = new ObjectMapper();

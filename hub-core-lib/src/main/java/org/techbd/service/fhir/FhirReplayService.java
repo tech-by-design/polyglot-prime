@@ -24,7 +24,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.UpdateFhirReplayStatus;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -309,10 +309,10 @@ public class FhirReplayService {
     public static Map<String, Object> extractFields(JsonNode payload) {
         var result = new HashMap<String, Object>();
 
-        payload.fieldNames().forEachRemaining(field -> {
+        payload.propertyNames().forEach(field -> {
             JsonNode value = payload.get(field);
             if (value.isValueNode()) {
-                result.put(field, value.asText());
+                result.put(field, value.asString());
             } else {
                 result.put(field, value);
             }

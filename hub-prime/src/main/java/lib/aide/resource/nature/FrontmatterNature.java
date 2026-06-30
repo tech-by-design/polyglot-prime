@@ -1,8 +1,8 @@
 package lib.aide.resource.nature;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import lib.aide.resource.Nature;
 
@@ -12,8 +12,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class FrontmatterNature<F> implements Nature {
-    private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final YAMLMapper yamlMapper = new YAMLMapper();
+    private static final JsonMapper jsonMapper = new JsonMapper();
 
     public record Components<F>(String original, Optional<F> frontmatter, String content, List<Exception> exceptions) {
     }

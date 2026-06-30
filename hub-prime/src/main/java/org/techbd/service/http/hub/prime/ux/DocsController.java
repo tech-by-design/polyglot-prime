@@ -23,10 +23,11 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import org.techbd.service.DocResourcesService;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.core.JacksonException;
+
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -84,7 +85,7 @@ public class DocsController {
 
     @GetMapping("/docs/techbd-hub/resource/content/**")
     public ResponseEntity<?> techbdHubResource(final HttpServletRequest request)
-            throws JsonProcessingException, UnsupportedEncodingException {
+            throws JacksonException, UnsupportedEncodingException {
         final var path = URLDecoder.decode(request.getRequestURI().split("/docs/techbd-hub/resource/content/")[1],
                 StandardCharsets.UTF_8.toString());
 
