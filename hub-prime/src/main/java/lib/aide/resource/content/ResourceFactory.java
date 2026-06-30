@@ -11,8 +11,8 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 import lib.aide.paths.PathSuffixes;
 import lib.aide.resource.Nature;

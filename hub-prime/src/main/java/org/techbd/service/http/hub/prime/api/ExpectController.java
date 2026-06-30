@@ -16,7 +16,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

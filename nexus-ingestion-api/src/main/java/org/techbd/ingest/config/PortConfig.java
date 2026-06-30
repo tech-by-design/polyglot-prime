@@ -16,15 +16,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.Getter;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Singleton Spring Boot component to load port configuration from AWS S3 or
@@ -38,7 +37,9 @@ public class PortConfig implements InitializingBean {
     private static final String ENV_KEY = "PORT_CONFIG_S3_KEY";
     private static final String ENV_REGION = "AWS_REGION";
     private static final String ENV_PROFILE = "SPRING_PROFILES_ACTIVE";
-
+    private static final JsonMapper jsonMapper = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
     @Autowired
     private org.springframework.core.env.Environment environment;
 
@@ -115,7 +116,7 @@ public class PortConfig implements InitializingBean {
             var rawJson = new String(bytes.asByteArray(), StandardCharsets.UTF_8);
             parseAndSetConfig(rawJson);
             loaded.set(true);
-        } catch (JsonProcessingException jpe) {
+        } catch (JacksonException jpe) {
             log.error("PortConfig: Failed to parse port config JSON", jpe);
         } catch (SdkException | IOException ex) {
             log.error("PortConfig: Error while reading S3 object s3://{}/{}", bucket, key, ex);
@@ -160,9 +161,7 @@ public class PortConfig implements InitializingBean {
      * Common JSON parsing logic shared by S3 and local loaders.
      */
     private void parseAndSetConfig(String rawJson) throws IOException {
-        var mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        var configList = mapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
+        var configList = jsonMapper.readValue(rawJson, new TypeReference<List<PortEntry>>() {
         });
         portConfigurationList = Optional.ofNullable(configList).orElse(Collections.emptyList());
 

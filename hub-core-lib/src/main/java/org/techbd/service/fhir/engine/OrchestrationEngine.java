@@ -49,11 +49,6 @@ import org.techbd.util.JsonText.JsonTextSerializer;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.parser.LenientErrorHandler;
@@ -61,6 +56,10 @@ import ca.uhn.fhir.validation.FhirValidator;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -401,7 +400,7 @@ public class OrchestrationEngine {
                 List<String> profileList = Optional.ofNullable(metaNode)
                         .filter(JsonNode::isArray)
                         .map(node -> StreamSupport.stream(node.spliterator(), false)
-                                .map(JsonNode::asText)
+                                .map(JsonNode::asString)
                                 .collect(Collectors.toList()))
                         .orElse(List.of());
 
@@ -1062,7 +1061,7 @@ public class OrchestrationEngine {
                                     .add("uaStrategyJson `%s` in withUserAgentValidationStrategy is not a Map"
                                             .formatted(uaStrategyJson));
                         }
-                    } catch (final JsonProcessingException e) {
+                    } catch (final JacksonException e) {
                         uaStrategyJsonIssues
                                 .add("Error parsing uaStrategyJson `%s` in withUserAgentValidationStrategy: %s"
                                         .formatted(uaStrategyJson, e));

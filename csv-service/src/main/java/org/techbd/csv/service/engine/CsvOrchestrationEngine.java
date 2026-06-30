@@ -57,8 +57,8 @@ import org.techbd.csv.service.vfs.VfsIngressConsumer;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import jakarta.validation.constraints.NotNull;
 

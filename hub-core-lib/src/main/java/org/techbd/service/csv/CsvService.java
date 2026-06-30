@@ -41,7 +41,7 @@ import org.techbd.util.SystemDiagnosticsLogger;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 @Service
 public class CsvService {

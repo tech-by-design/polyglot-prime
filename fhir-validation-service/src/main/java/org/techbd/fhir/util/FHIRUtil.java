@@ -21,7 +21,7 @@ import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.config.AppConfig.FhirV4Config;
 import org.techbd.corelib.config.Constants;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;

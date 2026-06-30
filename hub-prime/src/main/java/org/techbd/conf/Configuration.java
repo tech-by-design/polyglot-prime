@@ -11,9 +11,9 @@ import java.util.regex.Pattern;
 import org.springframework.core.env.Environment;
 import org.springframework.util.PropertyPlaceholderHelper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Encapsulates configuration that is common across all Technology by Design

@@ -20,7 +20,7 @@ import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Service class for saving various stages of CCDA bundle processing to the

@@ -31,8 +31,8 @@ import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper.FlowAsse
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;

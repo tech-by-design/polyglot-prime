@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 public class Interactions {
 

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -46,11 +45,6 @@ import org.techbd.udi.auto.jooq.ingress.routines.GetNyecSubmissionFailedBundles;
 import org.techbd.udi.auto.jooq.ingress.routines.GetOperationOutcomeSendToNyec;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionFhirRequest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,6 +54,10 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 
 @Service
 
@@ -237,7 +235,7 @@ public class FHIRService {
 			final List<String> profileList = Optional.ofNullable(metaNode)
 					.filter(JsonNode::isArray)
 					.map(node -> StreamSupport.stream(node.spliterator(), false)
-							.map(JsonNode::asText)
+							.map(JsonNode::asString)
 							.collect(Collectors.toList()))
 					.orElse(List.of());
 
@@ -251,7 +249,7 @@ public class FHIRService {
 				LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
 				throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 			}
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			LOG.error("Json Processing exception while extracting profile url for interaction id :{}", e);
 		}
 	}
@@ -296,9 +294,9 @@ public class FHIRService {
 
 			try {
 				payloadJson = Configuration.objectMapper.readTree(payload);
-			} catch (JsonProcessingException e) {
+			} catch (JacksonException e) {
 				LOG.error("Invalid JSON format. Storing raw payload. Error: {} for interactionID :{}", e.getMessage(), interactionId,e);
-				payloadJson = TextNode.valueOf(payload);
+				payloadJson = StringNode.valueOf(payload);
 			}
 			prepareRequestBase(
 					rihr,
@@ -316,7 +314,7 @@ public class FHIRService {
 				try {
 					JsonNode elaborationNode = Configuration.objectMapper.readTree((String) requestParameters.get(Constants.ELABORATION));
 					rihr.setPElaboration(elaborationNode);
-				} catch (JsonProcessingException e) {
+				} catch (JacksonException e) {
 					LOG.error("Invalid elaboration JSON. Storing as string. Error: {} for interactionID :{}", e.getMessage(), interactionId, e);
 				}
 			}
@@ -717,7 +715,7 @@ public class FHIRService {
 				// expecting a JSON payload from the server
 				forwardRIHR.setPPayload(Configuration.objectMapper
 						.readTree(response));
-			} catch (final JsonProcessingException jpe) {
+			} catch (final JacksonException jpe) {
 				// in case the payload is not JSON store the string
 				forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
 						.valueToTree(response));
@@ -774,7 +772,7 @@ public class FHIRService {
 				// expecting a JSON payload from the server
 				forwardRIHR.setPPayload(Configuration.objectMapper
 						.readTree(response));
-			} catch (final JsonProcessingException jpe) {
+			} catch (final JacksonException jpe) {
 				// in case the payload is not JSON store the string
 				forwardRIHR.setPPayload((JsonNode) Configuration.objectMapper
 						.valueToTree(response));
@@ -1063,7 +1061,7 @@ public class FHIRService {
 			if (responseJson.isArray()) {
 				final List<Map<String, Object>> response = Configuration.objectMapper.convertValue(
 						responseJson,
-						new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+						new tools.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
 						});
 				LOG.info("Successfully retrieved operation outcome array | interactionId={} | bundleId={} | count={}",
 						interactionId, bundleId, response.size());

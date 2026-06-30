@@ -20,9 +20,7 @@ import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import ca.uhn.fhir.rest.annotation.Transaction;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Service class for saving various stages of HL7 message processing to the
@@ -39,11 +37,12 @@ public class HL7Service {
     private final TemplateLogger logger;
     private final CoreAppConfig coreAppConfig;
 
-    public HL7Service(@Qualifier("primaryDslContext") final DSLContext primaryDSLContext, final AppLogger appLogger, final CoreAppConfig coreAppConfig) {
+    public HL7Service(@Qualifier("primaryDslContext") final DSLContext primaryDSLContext, final AppLogger appLogger,
+            final CoreAppConfig coreAppConfig) {
         this.primaryDSLContext = primaryDSLContext;
         this.logger = appLogger.getLogger(HL7Service.class);
         this.coreAppConfig = coreAppConfig;
-    }    
+    }
 
     /**
      * Saves the original HL7 payload along with metadata to the database.
@@ -60,7 +59,8 @@ public class HL7Service {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress) {
         try {
-            logger.info("HL7Service saveOriginalHl7Payload BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
+            logger.info("HL7Service saveOriginalHl7Payload BEGIN with requestURI :{} tenantid :{} interactionId: {}",
+                    requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
                     "nature", Nature.ORIGINAL_HL7_PAYLOAD.getDescription(), // Replace with HL7-specific if applicable
                     "tenant_id", tenantId);
@@ -118,7 +118,8 @@ public class HL7Service {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome, String fileName, String userAgent, String clientIpAddress) {
         try {
-            logger.info("HL7Service saveValidation BEGIN with requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
+            logger.info("HL7Service saveValidation BEGIN with requestURI :{} tenantid :{} interactionId: {}",
+                    requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
                     "nature", Nature.HL7_VALIDATION_RESULT.getDescription(),
                     "tenant_id", tenantId);
@@ -177,7 +178,9 @@ public class HL7Service {
             String tenantId, String requestUri,
             Map<String, Object> bundle, String fileName, String userAgent, String clientIpAddress) {
         try {
-            logger.info("Hl7Service saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
+            logger.info(
+                    "Hl7Service saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}",
+                    requestUri, tenantId, interactionId);
             logger.info("Hl7Service Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
             Map<String, Object> natureMap = Map.of(
                     "nature", Nature.CONVERTED_TO_FHIR.getDescription(),

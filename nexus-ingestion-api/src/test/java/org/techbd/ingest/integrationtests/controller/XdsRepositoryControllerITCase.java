@@ -24,8 +24,8 @@ import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper.FlowAsse
 import static org.techbd.ingest.integrationtests.util.XdsTestFixtures.extractXPath;
 import static org.techbd.ingest.integrationtests.util.XdsTestFixtures.loadFixture;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 

@@ -31,7 +31,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.techbd.conf.Configuration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nonnull;
@@ -432,7 +432,7 @@ public class ArtifactStore {
                     return new DiagnosticPersistence(
                             "strategyJson is neither a Map nor a List: " + parsedJson.getClass().getName());
                 }
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 return new InvalidPersistenceStrategy(strategyJson, e);
             }
         }
@@ -457,7 +457,7 @@ public class ArtifactStore {
             this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance);
             try {
                 this.jsonString = Configuration.objectMapper.writeValueAsString(object);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("Failed to convert object to JSON", e);
             }
         }

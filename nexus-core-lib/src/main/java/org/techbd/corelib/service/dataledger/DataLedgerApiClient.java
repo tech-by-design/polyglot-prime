@@ -22,8 +22,10 @@ import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -54,7 +56,7 @@ public class DataLedgerApiClient {
             String jsonPayload = StringUtils.EMPTY;
             try {
                 jsonPayload = Configuration.objectMapper.writeValueAsString(dataLedgerPayload);
-            } catch (JsonProcessingException ex) {
+            } catch (JacksonException ex) {
                 LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId,
                         ex.getMessage());
                 if (isDiagnosticsEnabled) {
@@ -272,7 +274,7 @@ public class DataLedgerApiClient {
             this.value = value;
         }
 
-        @com.fasterxml.jackson.annotation.JsonValue
+        @JsonValue
         public String getValue() {
             return value;
         }

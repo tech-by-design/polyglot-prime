@@ -10,7 +10,7 @@ import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.util.AppLogger;
 import org.techbd.ingest.util.TemplateLogger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service responsible for resolving the appropriate {@link PortEntry} for a

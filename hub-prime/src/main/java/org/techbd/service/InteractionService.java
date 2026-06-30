@@ -24,7 +24,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import jakarta.servlet.http.HttpServletRequest;
 
