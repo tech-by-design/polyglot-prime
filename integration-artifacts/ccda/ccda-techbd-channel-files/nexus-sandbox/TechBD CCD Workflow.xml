@@ -2,17 +2,14 @@
   <id>94d93cc7-9346-4ed6-81f0-767364a29138</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.41
-Added missing headers in metadata</description>
-  <revision>25</revision>
+  <description>Version 0.5.42
+Fixing base fhir url default value missing issue.</description>
+  <revision>33</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -41,6 +38,9 @@ Added missing headers in metadata</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -797,6 +797,8 @@ function setBaseFhirURL() {
     	channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
     }
 }
+
+
 
 
 function convertCcdaToFhirBundle(phiFilteredXml) {
@@ -2216,7 +2218,7 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 }
 
 function set_fhir_resource_profile_urls(transformer) {
-	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);   
+	//var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);   
 	var bundleMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;); 
 	var patientMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;);
 	var encounterMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;);
@@ -2230,7 +2232,7 @@ function set_fhir_resource_profile_urls(transformer) {
 	var procedureMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;);
 	var locationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_LOCATION&quot;);
 
-	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
+	//transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
 	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
 	transformer = set_profile_url(transformer, patientMetaProfileUrl, &apos;PROFILE_URL_PATIENT&apos;, &apos;patientMetaProfileUrl&apos;);
 	transformer = set_profile_url(transformer, encounterMetaProfileUrl, &apos;PROFILE_URL_ENCOUNTER&apos;, &apos;encounterMetaProfileUrl&apos;);
@@ -3450,7 +3452,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782714929121</time>
+        <time>1782797224580</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3463,9 +3465,9 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>198</revision>
+        <revision>199</revision>
         <lastModified>
-          <time>1782473893301</time>
+          <time>1782724018362</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3582,6 +3584,7 @@ return;</undeployScript>
           <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
           <string>cc1fe1c8-04cd-4b08-9797-0cb34491208b</string>
           <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>cfd65c4c-bdd1-43f5-b665-7ab756b6ee20</string>
           <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
           <string>d341dceb-069e-49ab-8efa-c45398145216</string>
           <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
@@ -3665,9 +3668,9 @@ function createJsonResponse(status, message) {
       <codeTemplateLibrary version="26.3.1">
         <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
         <name>UuidUtil</name>
-        <revision>180</revision>
+        <revision>181</revision>
         <lastModified>
-          <time>1782473893293</time>
+          <time>1782724018354</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3805,6 +3808,7 @@ function createJsonResponse(status, message) {
           <string>cae36153-f409-4659-a031-fa40ebb8f7da</string>
           <string>cbf715dc-b53b-47bb-910c-433f58588fd3</string>
           <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>cfd65c4c-bdd1-43f5-b665-7ab756b6ee20</string>
           <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
           <string>d341dceb-069e-49ab-8efa-c45398145216</string>
           <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
@@ -3921,8 +3925,8 @@ function generateUuid() {
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>52779fc6-4fbc-4731-8ed9-a88a4d76bce5</id>
-        <name>0_5_41</name>
+        <id>bd17a828-323b-4259-b65f-7cd939d23e61</id>
+        <name>0_5_42</name>
         <channelIds>
           <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
         </channelIds>
