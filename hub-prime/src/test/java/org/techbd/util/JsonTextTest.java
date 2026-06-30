@@ -9,8 +9,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 class JsonTextTest {
 
@@ -126,7 +126,7 @@ class JsonTextTest {
 
         List<Exception> exceptions = ((JsonText.JsonObjectResult.InvalidResult) result).exceptions();
         assertThat(exceptions).hasSize(1)
-                .first().isInstanceOf(com.fasterxml.jackson.core.JsonParseException.class);
+                .first().isInstanceOf(tools.jackson.core.JacksonException.class);
     }
 
     @Test
@@ -227,7 +227,7 @@ class JsonTextTest {
     }
 
     @Test
-    void testSerializeValidJson() throws JsonProcessingException {
+    void testSerializeValidJson() throws JacksonException {
         byte[] jsonData = "{\"key\":\"value\"}".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(jsonData);
 
@@ -237,7 +237,7 @@ class JsonTextTest {
     }
 
     @Test
-    void testSerializeInvalidJson() throws JsonProcessingException {
+    void testSerializeInvalidJson() throws JacksonException {
         byte[] stringData = "Hello, World!".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(stringData);
 
@@ -247,7 +247,7 @@ class JsonTextTest {
     }
 
     @Test
-    void testSerializeEmptyJson() throws JsonProcessingException {
+    void testSerializeEmptyJson() throws JacksonException {
         byte[] emptyData = "".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(emptyData);
 
@@ -257,7 +257,7 @@ class JsonTextTest {
     }
 
     @Test
-    void testSerializeNestedJson() throws JsonProcessingException {
+    void testSerializeNestedJson() throws JacksonException {
         byte[] nestedJsonData = "{\"nested\":{\"key\":\"value\"}}".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(nestedJsonData);
 
@@ -267,7 +267,7 @@ class JsonTextTest {
     }
 
     @Test
-    void testSerializeArrayJson() throws JsonProcessingException {
+    void testSerializeArrayJson() throws JacksonException {
         byte[] arrayJsonData = "[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(arrayJsonData);
 

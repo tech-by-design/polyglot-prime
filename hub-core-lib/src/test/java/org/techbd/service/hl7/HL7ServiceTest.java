@@ -16,7 +16,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHl7Request;
 import org.techbd.util.AppLogger;
 import org.techbd.util.TemplateLogger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 class HL7ServiceTest {
 

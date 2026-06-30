@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 
 import lib.aide.paths.PathSuffixes;
 import lib.aide.resource.TextResource;

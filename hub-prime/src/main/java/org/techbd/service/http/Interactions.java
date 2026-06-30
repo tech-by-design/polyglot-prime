@@ -17,7 +17,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

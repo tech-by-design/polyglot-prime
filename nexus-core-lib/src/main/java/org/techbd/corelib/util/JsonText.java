@@ -1,18 +1,18 @@
 package org.techbd.corelib.util;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.techbd.corelib.config.Configuration;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.nimbusds.jose.util.StandardCharset;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 public class JsonText {
     public static final ObjectMapper objectMapper = Configuration.objectMapper;
@@ -186,8 +186,8 @@ public class JsonText {
      * string otherwise.
      * </p>
      * 
-     * @see com.fasterxml.jackson.databind.JsonSerializer
-     * @see com.fasterxml.jackson.databind.annotation.JsonSerialize
+     * @see tools.jackson.databind.JsonSerializer
+     * @see tools.jackson.databind.annotation.JsonSerialize
      */
     public static class ByteArrayToStringOrJsonSerializer extends StdSerializer<byte[]> {
 
@@ -200,7 +200,7 @@ public class JsonText {
         }
 
         @Override
-        public void serialize(byte[] value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        public void serialize(byte[] value, JsonGenerator gen, SerializationContext provider) {
             String stringValue = new String(value, StandardCharset.UTF_8);
 
             try {
@@ -208,7 +208,7 @@ public class JsonText {
 
                 // If we reach here, stringValue is valid JSON
                 gen.writeTree(jsonNode);
-            } catch (JsonParseException e) {
+            } catch (JacksonException e) {
                 // stringValue is not valid JSON, write it as a string
                 gen.writeString(stringValue);
             }
@@ -252,8 +252,8 @@ public class JsonText {
      * otherwise.
      * </p>
      * 
-     * @see com.fasterxml.jackson.databind.JsonSerializer
-     * @see com.fasterxml.jackson.databind.annotation.JsonSerialize
+     * @see tools.jackson.databind.JsonSerializer
+     * @see tools.jackson.databind.annotation.JsonSerialize
      */
     public static class JsonTextSerializer extends StdSerializer<String> {
 
@@ -266,13 +266,13 @@ public class JsonText {
         }
 
         @Override
-        public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        public void serialize(String value, JsonGenerator gen, SerializationContext provider) {
             try {
                 final var jsonNode = objectMapper.readTree(value);
 
                 // If we reach here, stringValue is valid JSON
                 gen.writeTree(jsonNode);
-            } catch (JsonParseException e) {
+            } catch (JacksonException e) {
                 // stringValue is not valid JSON, write it as a string
                 gen.writeString(value);
             }

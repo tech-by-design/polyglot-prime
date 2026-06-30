@@ -49,10 +49,10 @@ import org.techbd.corelib.util.JsonText.JsonTextSerializer;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.fhir.util.FHIRUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -1062,7 +1062,7 @@ public class OrchestrationEngine {
                                     .add("uaStrategyJson `%s` in withUserAgentValidationStrategy is not a Map"
                                             .formatted(uaStrategyJson));
                         }
-                    } catch (final JsonProcessingException e) {
+                    } catch (final JacksonException e) {
                         uaStrategyJsonIssues
                                 .add("Error parsing uaStrategyJson `%s` in withUserAgentValidationStrategy: %s"
                                         .formatted(uaStrategyJson, e));

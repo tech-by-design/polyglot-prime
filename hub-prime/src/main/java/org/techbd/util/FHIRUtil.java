@@ -21,7 +21,7 @@ import org.techbd.config.Constants;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;

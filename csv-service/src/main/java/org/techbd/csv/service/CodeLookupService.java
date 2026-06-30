@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class CodeLookupService {
@@ -135,7 +135,7 @@ public class CodeLookupService {
                 jsonString,
                 new TypeReference<List<Map<String, String>>>() {}
             );
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOG.error("Error parsing JSON codes: {}", e.getMessage());
             return Collections.emptyList();
         } catch (Exception e) {
