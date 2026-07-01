@@ -266,7 +266,7 @@
 		<dependency>
 			<groupId>org.kohsuke</groupId>
 			<artifactId>github-api</artifactId>
-			<version>1.322</version>
+			<version>1.330</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
