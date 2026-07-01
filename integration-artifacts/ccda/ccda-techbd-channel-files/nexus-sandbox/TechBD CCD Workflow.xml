@@ -2,9 +2,9 @@
   <id>94d93cc7-9346-4ed6-81f0-767364a29138</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.40
-Updated the interaction ID initialization logic to use the value from the X-TechBD-Interaction-ID request header when provided. If the header is missing or empty, a new UUID is generated as a fallback.</description>
-  <revision>8</revision>
+  <description>Version 0.5.42
+Fixing base fhir url default value missing issue.</description>
+  <revision>33</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -116,15 +116,12 @@ Updated the interaction ID initialization logic to use the value from the X-Tech
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>var PGobject = Packages.org.postgresql.util.PGobject;
-
-
 function getHeaderValues() {
 	var headerJson = JSON.stringify({
         headers: {
             interactionId: channelMap.get(&apos;interactionId&apos;),
             tenantName: channelMap.get(&apos;tenantId&apos;),
             userAgent : channelMap.get(&apos;userAgent&apos;),
-            SeverityLevel : channelMap.get(&apos;SeverityLevel&apos;), 
             uri : channelMap.get(&apos;uri&apos;),
             contextPath : channelMap.get(&apos;contextPath&apos;),
             CIN : channelMap.get(&apos;patientCIN&apos;),
@@ -137,7 +134,8 @@ function getHeaderValues() {
             OMH : channelMap.get(&apos;X-TechBD-OMH&apos;),
             OPWDD : channelMap.get(&apos;X-TechBD-OPWDD&apos;),
             BaseFHIRURL : channelMap.get(&apos;baseFhirUrl&apos;),
-            ValidationSeverityLevel : channelMap.get(&apos;SeverityLevel&apos;)
+            ValidationSeverityLevel : channelMap.get(&apos;SeverityLevel&apos;),
+            datalakeApiUrl : channelMap.get(&apos;DATALAKE_API_URL&apos;)
         }
     });
     //logger.info(&quot;headerJson: &quot; + headerJson);
@@ -178,21 +176,17 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		var dbPassword = globalMap.get(&apos;jdbcPassword&apos;);
 
 		var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-	     logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
 	     //If any error happens in between, find the ccda source type from the input file
 	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
 		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
 		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
 		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
 		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
-		logger.info(&quot;ccdaAuthoringDevice ================***: &quot; + ccdaAuthoringDevice);
 	}
 	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
 		
 		//Devl
 	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-
-	    logger.info(&quot;Database connection established successfully.&quot;);
 	
 		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
 	    stmt = conn.prepareCall(sql);
@@ -375,11 +369,9 @@ channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerApiKey);
         var response = httpClient.execute(httpPost);
         try {
             var statusCode = response.getStatusLine().getStatusCode();
-            logger.info(&quot;sendDataLedgerSync response status: &quot; + statusCode);
             var responseBody = EntityUtils.toString(response.getEntity());
 
             if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
-                logger.info(&quot;Data Ledger API Response: &quot; + responseBody);
                 return {
                     statusCode: statusCode,
                     body: responseBody
@@ -416,13 +408,11 @@ function saveDataLedgerSync(interactionId) {
 	// Check if tracking is enabled
 	var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
 	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
-	   logger.info(&quot;data ledger api call -BEGIN sent&quot;);
 	   try {
         	sendDataLedgerSync(payload);
 	   } catch (e) {
 	        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 	   }
-	   logger.info(&quot;data ledger api call -END sent&quot;);
 	} else {
 	   logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
 	}
@@ -534,7 +524,6 @@ function extractClinicalDocumentFromRawXML(rawXml) {
 
 function extractBoundaries(rawCcdaXml) {
 	try {
-		logger.info(&quot;rawCcdaXml 1: &quot; + rawCcdaXml);
 		// Remove boundary
 		var rawXml = String(rawCcdaXml)
 				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
@@ -545,7 +534,6 @@ function extractBoundaries(rawCcdaXml) {
 	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
 	        if (match &amp;&amp; match[1]) {
 			    rawXml = match[1];
-			    logger.info(&quot;rawXml 3: &quot; + rawXml);
 		   }
 		   
 	        // Remove trailing boundary (last line starting with --)
@@ -664,7 +652,6 @@ function failAndExit(errorMsg, code, severity, interactionId, tenantId, requeste
     var outcome = getJsonInvalidOperationOutcome(errorMsg, code, severity);
     try {
 		saveCcdaPayload(interactionId, tenantId, requestedPath, outcome, &quot;saveValidationFailed&quot;);
-		logger.info(&quot;Successfully saved validation failure information&quot;);
     } catch (e) {
         	logger.error(&quot;Failed to save validation failure: &quot; + e.message);
     }
@@ -678,16 +665,13 @@ function failAndExit(errorMsg, code, severity, interactionId, tenantId, requeste
 
 function applyPhiFilter(xmlString) {
     var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
-    logger.info(&quot;xsltPath: &quot; + xsltPath);
     
     // ← ADDED: Extract filename from path
     var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
     var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
-    logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
 
     // ← ADDED: Retrieve XSLT content from LookupHelper
     var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
-    logger.info(&quot;Retrieved XSLT from LookupHelper&quot;);
 
     // ← ADDED: Validation check
     if (!xsltContent) {
@@ -714,11 +698,9 @@ function applyPhiFilter(xmlString) {
 
 function validateAgainstXsd(xmlString) {
     var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
-    logger.info(&quot;Using XSD file path: &quot; + xsdFilePath);
     
     // ← ADDED: Extract filename from path
     var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
-    logger.info(&quot;Extracted XSD Lookup Key: &quot; + xsdFileName);
     
     // ← ADDED: Create temp directory for XSD files
     var File = Packages.java.io.File;
@@ -729,10 +711,6 @@ function validateAgainstXsd(xmlString) {
         tempDir.mkdirs();
     }
     
-    logger.info(&quot;Temp XSD folder = &quot; + tempDir.getAbsolutePath());
-    
-    // ← ADDED: Load index.txt to get list of all XSD files
-    logger.info(&quot;=== Loading XSD index from Lookup Manager ===&quot;);
     var rawIndex = LookupHelper.get(&quot;SchemaFiles&quot;, &quot;index.txt&quot;);
     
     // ← ADDED: Normalize rawIndex to string
@@ -762,8 +740,6 @@ function validateAgainstXsd(xmlString) {
             .filter(function(line) { return line.length &gt; 0; });
     }
     
-    logger.info(&quot;Final XSD list: &quot; + JSON.stringify(xsdFiles));
-    
     // ← ADDED: Write each XSD file from LookupHelper to temp directory
     for (var i = 0; i &lt; xsdFiles.length; i++) {
         var name = xsdFiles[i];
@@ -777,8 +753,6 @@ function validateAgainstXsd(xmlString) {
         var fw = new FileWriter(f);
         fw.write(content);
         fw.close();
-        
-        logger.info(&quot;Wrote XSD to temp: &quot; + f.getAbsolutePath());
     }
     
     // ← CHANGED: Build schema from root XSD file in temp directory
@@ -791,7 +765,6 @@ function validateAgainstXsd(xmlString) {
     var validator = schema.newValidator();
     
     // Validate XML (unchanged)
-    logger.info(&quot;Starting XML validation against CDA schema...&quot;);
     validator.validate(
         new javax.xml.transform.stream.StreamSource(
             new java.io.StringReader(xmlString)
@@ -799,17 +772,44 @@ function validateAgainstXsd(xmlString) {
     );
 }
 
+function setBaseFhirURL() {
+    // -----------------------------------
+    // Base FHIR URL handling
+    // -----------------------------------
+    var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);  // Retrieve the X-TechBD-Base-FHIR-URL header
+    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;); // Retrieve the VALID_URLS environment variable (comma-separated list)
+    // Convert VALID_URLS to an array for validation
+    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+    // Check if the header value is valid
+    if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+	    if (validUrls.includes(customBaseFhirUrl)) {
+	        // Store valid value in channelMap
+	        //transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+		   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+	    } else {
+	        // Throw a Bad Request error if the URL is not in the valid list
+			var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
+			logger.error(errorMessage);
+	    }
+    }
+    else{
+    	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);
+    	channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
+    }
+}
+
+
+
+
 function convertCcdaToFhirBundle(phiFilteredXml) {
 
     // -----------------------------------
     // Load the XSLT template
     // -----------------------------------
-    var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
-    logger.info(&quot;xsltPath: &quot; + xsltPath);&#xd;
+    var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);&#xd;
     
     var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
     var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
-    logger.info(&quot;Extracted XSLT Key Name: &quot; + fileName);
 
     var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
     
@@ -828,7 +828,6 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     resolve: function(href, base) {
         // Extract key name from href (e.g. &quot;cda-fhir-bundle-common-utils.xslt&quot; → &quot;cda-fhir-bundle-common-utils&quot;)
         var includedFileName = href.substring(href.lastIndexOf(&apos;/&apos;) + 1).replace(&apos;.xslt&apos;, &apos;&apos;);
-        logger.info(&quot;URIResolver resolving from LookupHelper: &quot; + includedFileName);
 
         var includedContent = LookupHelper.get(&quot;SchemaFiles&quot;, includedFileName);
 
@@ -851,28 +850,7 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
 
     transformer = set_fhir_resource_profile_urls(transformer); // Pass all the profile urls as parameters to XSLT
 
-    // -----------------------------------
-    // Base FHIR URL handling
-    // -----------------------------------
-    var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
-    logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
-    
-    var validUrlsEnv = LookupHelper.get(&quot;Config&quot;, &quot;MC_VALID_FHIR_URLS&quot;);
-    logger.info(&quot;MC_VALID_FHIR_URLS from LookupHelper: &quot; + validUrlsEnv);
-	
-    // Convert VALID_URLS to an array for validation
-    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
-	
-    // Check if the header value is valid
-    if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
-	    if (validUrls.includes(customBaseFhirUrl)) {
-	        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
-		   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
-	    } else {
-			var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
-			logger.error(errorMessage);
-	    }
-    }
+    transformer.setParameter(&quot;baseFhirUrl&quot;, channelMap.get(&apos;baseFhirUrl&apos;));
 
     // -----------------------------------
     // Transform CCDA → FHIR Bundle
@@ -925,8 +903,6 @@ try {
     
     channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
 
-    logger.info(&quot;✔ DataLedger API Key loaded into channelMap :&quot;);
-
 } catch (e) {
     logger.error(&quot;❌ Error processing DataLedger API Config-sensitive group: &quot; + e.message);
 }
@@ -943,7 +919,6 @@ try {
 
     channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
      channelMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
-    logger.info(&quot;✔ FHIR API URL loaded from Lookup Manager configuration&quot;);
 
 } catch (e) {
     logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
@@ -978,8 +953,6 @@ try {
 ********************************************/
 var rawHeader = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-DataLake-API-URL&apos;);
 var incomingHeader = rawHeader == null ? &quot;&quot; : String(rawHeader).trim();
- 
-logger.info(&quot;incomingHeader=[&quot; + incomingHeader + &quot;]&quot;);
 var allowedUrlsConfig = LookupHelper.get(
  
     &quot;Config&quot;,
@@ -1090,8 +1063,6 @@ try {
     channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
     globalMap.put(&quot;DATA_LEDGER_TRACKING&quot;, dataLedgerTracking);
  
-    logger.info(&quot;✔ DataLedger Tracking loaded into channelMap&quot;);
- 
 } catch (e) {
     logger.error(&quot;❌ Error processing DataLedger Lookup Manager(config): &quot; + e.message);
 }
@@ -1104,8 +1075,6 @@ try {
     var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
     
      globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, ledgerUrl);
-
-    logger.info(&quot;✔ DataLedger API URL loaded into channelMap&quot; + ledgerUrl);
 
 } catch (e) {
     logger.error(&quot;❌ Error processing DataLedger API URL from Lookup Manager(config): &quot; + e.message);
@@ -1126,8 +1095,6 @@ try {
     channelMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
     globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
  
-    logger.info(&quot;✔ HUB UI URL loaded from Lookup Manager(config): &quot;);
- 
 } catch (e) {
     logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
     setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
@@ -1139,7 +1106,6 @@ try {
 ********************************************/
 
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-logger.info(&quot;Request URL: &quot; + requestedPath);
 
 if (requestedPath == &quot;/&quot;) {
 	return;
@@ -1176,14 +1142,13 @@ if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|
 // Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
 var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
 channelMap.put(&apos;userAgent&apos;, userAgent);
-logger.info(&quot;User-Agent: &quot; + userAgent);
 
 var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
 channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
-logger.info(&quot;SeverityLevel: &quot; + (severityLevel || &quot;error&quot;));
 
 channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
 channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+setBaseFhirURL();
 
 //** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
 if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
@@ -1192,11 +1157,9 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	
 	//2.NPI
 	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
-	logger.info(&quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
 	
 	//3.TIN
 	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
-	logger.info(&quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
 	
 	// Check if both are missing — only then it&apos;s an error
 	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
@@ -1227,14 +1190,12 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 
 	//7.Part 2 Data Flagging 
 	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);	
-	logger.info(&quot;X-TechBD-Part2: &quot; + part2DataFlag);
 	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
 	    channelMap.put(&apos;XTechBDPart2&apos;, part2DataFlag);
 	}
 	// 8. OMH Flagging
 	var OMHFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OMH&apos;);
-	logger.info(&quot;X-TechBD-OMH: &quot; + OMHFlag);
 	if (OMHFlag &amp;&amp; String(OMHFlag).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-OMH&apos;, OMHFlag);
 	    channelMap.put(&apos;XTechBDOMH&apos;, OMHFlag);
@@ -1242,7 +1203,6 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	
 	// 9. OPWDD Flagging
 	var OPWDDFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OPWDD&apos;);
-	logger.info(&quot;X-TechBD-OPWDD: &quot; + OPWDDFlag);
 	if (OPWDDFlag &amp;&amp; String(OPWDDFlag).trim() !== &quot;&quot;) {
 	    channelMap.put(&apos;X-TechBD-OPWDD&apos;, OPWDDFlag);
 	    channelMap.put(&apos;XTechBDOPWDD&apos;, OPWDDFlag);
@@ -1339,16 +1299,13 @@ var fhirBundleSubmissionApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_F
     } else {
         // 3️⃣ Store real value for later use
         globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
-        logger.info(&quot;FHIR Bundle Submission API URL (from Config): &quot; + fhirBundleSubmissionApiUrl);
     }
 
 // Fetch and check environment variable: MC_CCDA_SCHEMA_FOLDER
 var ccdaSchemaFolder = LookupHelper.get(&quot;Config&quot;, &quot;MC_CCDA_SCHEMA_FOLDER&quot;);
 if (ccdaSchemaFolder != null) {
     channelMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
-    logger.info(&quot;ccdaSchemaFolder: &quot; + ccdaSchemaFolder);
     channelMap.put(&apos;xsdFilePath&apos;, ccdaSchemaFolder + &apos;/CDA.xsd&apos;);
-    logger.info(&quot;using xsdFilePath: &quot; + channelMap.get(&apos;xsdFilePath&apos;));
 } else {
     missingEnvVars.push(&quot;MC_CCDA_SCHEMA_FOLDER is not set&quot;);
 }
@@ -1390,8 +1347,6 @@ function getManufacturerModelName(xmlData) {
 		        var softwareEl = device.*::softwareName[0];
 		        if (softwareEl) {softwareName = softwareEl.toString().trim();}
 		     }
-		     logger.info(&quot;Manufacturer Model Name: &quot; + manufacturerModelName);
-			logger.info(&quot;Software Name: &quot; + softwareName);
 
 			combinedVendorText = (manufacturerModelName + &quot; &quot; + softwareName).trim();
 			if (combinedVendorText.length &gt; 0) {
@@ -1419,13 +1374,10 @@ function getManufacturerModelName(xmlData) {
 				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
 			}
 			
-			logger.info(&quot;ehrVendor: &quot; + ehrVendor);
 			channelMap.put(&apos;ehrVendor&apos;, ehrVendor);
 			channelMap.put(&apos;cdaPhiFilter&apos;, cdaPhiFilterXsltPath);
 			channelMap.put(&apos;cdaPhiBundle&apos;, cdaFhirBundleXsltPath);
 			
-			logger.info(&quot;using cdaPhiFilter: &quot; + channelMap.get(&apos;cdaPhiFilter&apos;));
-			logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
 
 		} else {
 		    logger.error(&quot;xmlData is undefined or empty.&quot;);
@@ -1543,7 +1495,6 @@ function generateCompactSha256(sourceXml, resourceName, resourceIdName, transfor
 	
 	    transformer.setParameter(resourceIdName, sha256Hash);
 	    channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
-	    logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
     } else {
 	        logger.error(resourceName + &quot; not found.&quot;);
 	    }
@@ -2267,7 +2218,7 @@ function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
 }
 
 function set_fhir_resource_profile_urls(transformer) {
-	var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);   
+	//var baseFhirUrl = LookupHelper.get(&quot;Config&quot;, &quot;BASE_FHIR_URL&quot;);   
 	var bundleMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_BUNDLE&quot;); 
 	var patientMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PATIENT&quot;);
 	var encounterMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_ENCOUNTER&quot;);
@@ -2281,7 +2232,7 @@ function set_fhir_resource_profile_urls(transformer) {
 	var procedureMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_PROCEDURE&quot;);
 	var locationMetaProfileUrl = LookupHelper.get(&quot;Config&quot;, &quot;PROFILE_URL_LOCATION&quot;);
 
-	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
+	//transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
 	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
 	transformer = set_profile_url(transformer, patientMetaProfileUrl, &apos;PROFILE_URL_PATIENT&apos;, &apos;patientMetaProfileUrl&apos;);
 	transformer = set_profile_url(transformer, encounterMetaProfileUrl, &apos;PROFILE_URL_ENCOUNTER&apos;, &apos;encounterMetaProfileUrl&apos;);
@@ -2378,7 +2329,6 @@ function getConsentResourceStatus(sourceXml) {
         } else {
            errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;
         }
-        logger.error(errorMsg);
 
         // Failure: Return an OperationOutcome JSON response with validation errors
         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
@@ -2549,7 +2499,6 @@ function validateMandatoryFields() {
 	    errors.push(&quot;Organization name -&gt; &quot; + organizationNameXPath);
 	}
 	
-	logger.info(&quot;Organization Name resolved as: &quot; + organizationName);
 
     // -----------------------------
     // Return OperationOutcome if errors exist
@@ -2568,7 +2517,6 @@ function validateMandatoryFields() {
           <enabled>true</enabled>
           <script>///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-logger.info(&quot;Request URL: &quot; + requestedPath);
 
 channelMap.put(&quot;requestUri&quot;, requestedPath);
 
@@ -2586,7 +2534,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 
     var interactionId = channelMap.get(&apos;interactionId&apos;);
     var tenantId = channelMap.get(&apos;tenantId&apos;);
-    logger.info(&quot;InteractionId: &quot; + interactionId);
 
     // -----------------------------------
     // 1. Parse XML safely
@@ -2712,13 +2659,11 @@ else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/cc
 		var trackingEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_TRACKING&quot;);
 
 		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
-		    logger.info(&quot;data ledger api call -BEGIN received&quot;);
 		    try {
 		        sendDataLedgerSync(payload);
 		    } catch (e) {
 		        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
 		    }
-		    logger.info(&quot;data ledger api call -END received&quot;);
 		} else {
 		    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
 		}
@@ -2875,8 +2820,6 @@ else {
     var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
     // Failure: Return an OperationOutcome JSON response for general errors
     responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
-    
-    logger.info(&quot;Invalid endpoint: &quot; + requestedPath);
     throw new Error(&quot;Invalid endpoint: &quot; + requestedPath);
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
@@ -3488,6 +3431,11 @@ return;</undeployScript>
         <type>STRING</type>
         <mappingName>XTechBDOPWDD</mappingName>
       </metaDataColumn>
+      <metaDataColumn>
+        <name>DATALAKEAPIURL</name>
+        <type>STRING</type>
+        <mappingName>DATALAKE_API_URL</mappingName>
+      </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="26.3.1">
       <type>None</type>
@@ -3504,7 +3452,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782446890553</time>
+        <time>1782797224580</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3517,9 +3465,9 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>197</revision>
+        <revision>199</revision>
         <lastModified>
-          <time>1782404518294</time>
+          <time>1782724018362</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3539,6 +3487,7 @@ return;</undeployScript>
           <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
           <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
           <string>1c406954-d304-4882-b05d-b513d699785b</string>
+          <string>1e7e30bc-e5a4-45b0-ba25-96f2d92eb6f0</string>
           <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
           <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
           <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
@@ -3635,6 +3584,7 @@ return;</undeployScript>
           <string>c9f1cab2-3a34-488a-9a55-6a4b01369ff0</string>
           <string>cc1fe1c8-04cd-4b08-9797-0cb34491208b</string>
           <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>cfd65c4c-bdd1-43f5-b665-7ab756b6ee20</string>
           <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
           <string>d341dceb-069e-49ab-8efa-c45398145216</string>
           <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
@@ -3718,9 +3668,9 @@ function createJsonResponse(status, message) {
       <codeTemplateLibrary version="26.3.1">
         <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
         <name>UuidUtil</name>
-        <revision>179</revision>
+        <revision>181</revision>
         <lastModified>
-          <time>1782404518287</time>
+          <time>1782724018354</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -3743,6 +3693,7 @@ function createJsonResponse(status, message) {
           <string>1b228707-c844-4b09-b9e4-55878038d31f</string>
           <string>1c30cf8f-f3f6-4b39-b02b-f1cab7d52bd5</string>
           <string>1e3ad8e1-3be1-44d2-b2da-bf5750a353c8</string>
+          <string>1e7e30bc-e5a4-45b0-ba25-96f2d92eb6f0</string>
           <string>1ec01527-8a44-4184-a05a-2a91c04f37df</string>
           <string>1f0f044e-687d-41d6-b19f-9935b8b9936d</string>
           <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
@@ -3857,6 +3808,7 @@ function createJsonResponse(status, message) {
           <string>cae36153-f409-4659-a031-fa40ebb8f7da</string>
           <string>cbf715dc-b53b-47bb-910c-433f58588fd3</string>
           <string>cd99cb15-ab6a-414d-87af-a09fa76e0c31</string>
+          <string>cfd65c4c-bdd1-43f5-b665-7ab756b6ee20</string>
           <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
           <string>d341dceb-069e-49ab-8efa-c45398145216</string>
           <string>d5c743d6-4c79-46da-b6be-754973d7a735</string>
@@ -3973,8 +3925,8 @@ function generateUuid() {
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>ac92ee78-ce80-4491-92ba-9c8411b0b266</id>
-        <name>0_5_40</name>
+        <id>bd17a828-323b-4259-b65f-7cd939d23e61</id>
+        <name>0_5_42</name>
         <channelIds>
           <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
         </channelIds>
