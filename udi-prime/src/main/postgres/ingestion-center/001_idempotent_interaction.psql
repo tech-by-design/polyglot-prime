@@ -1448,8 +1448,8 @@ BEGIN
         v_ig_version                := (p_payload->'OperationOutcome'->'validationResults'->0->>'igVersion');        
         v_profile_url               := (p_payload->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
         v_is_bundle_valid           := (p_payload->'OperationOutcome'->'validationResults'->0->>'valid')::BOOLEAN;     
-        v_validation_initiated_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
-        v_validation_completed_at   := to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
+        v_validation_initiated_at   := p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt';
+        v_validation_completed_at   := p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt';
         
         v_techbd_disposition_action := p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
         IF v_techbd_disposition_action = 'discard' THEN
@@ -5970,7 +5970,7 @@ BEGIN
 						);
 					
 						v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Get the techByDesignDisposition json after process_json_action_rules');
-						v_payload = v_disposition_json;
+						v_payload := v_disposition_json;
 				END IF;
 		
 			    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
