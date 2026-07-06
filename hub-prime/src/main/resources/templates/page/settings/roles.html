@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+        }
+
+        .container {
+            /* max-width:1200px; */
+            margin: auto;
+            padding: 20px;
+        }
+
+        /* Role Header */
+        .role-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+        }
+
+        .role-header label {
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .role-header select {
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            min-width: 250px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+        }
+
+        .search-box {
+            width: 320px;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #eef2ff;
+            color: #2563eb;
+        }
+
+        .count-badge {
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Menu Cards */
+        .menu-card {
+            background: white;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #fafafa;
+            cursor: pointer;
+        }
+
+        .menu-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .menu-count {
+            background: #dbeafe;
+            color: #2563eb;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .menu-body {
+            display: none;
+            padding: 10px 20px 20px 44px;
+        }
+
+        .screen-item {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .expand-icon {
+            color: #9ca3af;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-card.active .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .toggle-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+
+        <div class="container">
+
+            <!-- Role Header -->
+            <div class="role-header"
+                style="display: flex; flex-direction: column; gap: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <label style="white-space: nowrap; margin-right: 10px;">Role:</label>
+                        <select id="roleSelect" onchange="onRoleChange()">
+                            <option>Loading roles...</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                        <button class="btn btn-secondary" onclick="selectAllScreens()">Select All</button>
+                        <button class="btn btn-secondary" onclick="clearAllScreens()">Clear All</button>
+                    </div>
+                </div>
+                <div id="roleDescription"
+                    style="font-size: 14px; color: #4b5563; line-height: 1.5; padding-top: 16px; border-top: 1px solid #e5e7eb; margin: 0;">
+
+                </div>
+            </div>
+
+            <div id="menuContainer"></div>
+
+            <!-- Action Bar Bottom -->
+            <div class="toolbar"
+                style="margin-top: 20px; border-radius: 12px; border: 1px solid #e5e7eb; justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="savePermissions()">
+                    Save Changes
+                </button>
+            </div>
+
+        </div>
+
+<th:block layout:fragment="footer-scripts">
+    <script type="module" th:src="@{/js/PermissionsPage.js}"></script>
+</th:block>
+    </div>
+</body>
+
+</html>

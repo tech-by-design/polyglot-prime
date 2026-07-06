@@ -1,64 +1,83 @@
 class PermissionsPage {
-    constructor(roleSelectId, containerId) {
-        this.roleSelect = document.getElementById(roleSelectId);
-        this.container = document.getElementById(containerId);
-        this.selectAllBtn = document.getElementById("select-all");
-        this.deselectAllBtn = document.getElementById("deselect-all");
-        this.saveBtn = document.getElementById("save-permissions");
-
-        this.initEvents();
-        this.loadRoles(); // fetch roles and load permissions for the first role
+    constructor() {
+        this.allRoles = [];
+        this.init();
     }
 
-    initEvents() {
-        this.roleSelect.addEventListener("change", () => {
-            this.loadPermissions(this.roleSelect.value);
-        });
+    init() {
+        this.bindEvents();
 
-        this.selectAllBtn.addEventListener("click", () => this.toggleAll(true));
-        this.deselectAllBtn.addEventListener("click", () => this.toggleAll(false));
-        this.saveBtn.addEventListener("click", () => this.savePermissions());
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => this.loadRoles());
+        } else {
+            this.loadRoles();
+        }
+    }
+
+    bindEvents() {
+        document.addEventListener('change', e => {
+            if (e.target.classList.contains('screen-checkbox')) {
+                this.updateSelectedCount();
+            }
+        });
+    }
+
+    updateRoleDescription() {
+        const select = document.getElementById("roleSelect");
+        const desc = document.getElementById("roleDescription");
+
+        if (!select || !desc) return;
+
+        const selectedRoleId = select.value;
+        const roleObj = this.allRoles.find(r => String(r.role_id) === String(selectedRoleId));
+        const text = roleObj && roleObj.role_description ? roleObj.role_description : "";
+
+        if (text) {
+            desc.style.display = "block";
+            desc.innerText = text;
+        } else {
+            desc.style.display = "none";
+            desc.innerText = "";
+        }
     }
 
     async loadRoles() {
         try {
-           const response = await fetch("/api/getRoles", {
+            const response = await fetch("/api/getRoles", {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
             });
 
             if (!response.ok) throw new Error("Failed to fetch roles");
 
-            const roles = await response.json(); // array of {role_id, role_code, role_name}
+            this.allRoles = await response.json();
 
-            // Clear existing options
-            this.roleSelect.innerHTML = "";
+            const select = document.getElementById("roleSelect");
+            if (!select) return;
 
-            // Add a default option
-            const defaultOpt = document.createElement("option");
-            defaultOpt.textContent = "Select a role";
-            defaultOpt.disabled = true;
-            defaultOpt.selected = true;
-            this.roleSelect.appendChild(defaultOpt);
+            select.innerHTML = "";
 
-            // Populate roles
-            roles.forEach(role => {
+            this.allRoles.forEach(role => {
                 const opt = document.createElement("option");
                 opt.value = role.role_id;
                 opt.textContent = role.role_name;
-                this.roleSelect.appendChild(opt);
+                select.appendChild(opt);
             });
 
-            // Auto-load permissions for the first role
-            if (roles.length > 0) {
-                this.roleSelect.value = roles[0].role_id;
-                this.loadPermissions(roles[0].role_id);
+            if (this.allRoles.length > 0) {
+                select.value = this.allRoles[0].role_id;
+                await this.loadPermissions(this.allRoles[0].role_id);
             }
-
         } catch (error) {
             console.error("Error loading roles:", error);
-            this.roleSelect.innerHTML = `<option disabled>Error loading roles</option>`;
+            this.showToast("Failed to load roles", true);
         }
+    }
+
+    async onRoleChange() {
+        const select = document.getElementById("roleSelect");
+        if (!select) return;
+        await this.loadPermissions(select.value);
     }
 
     async loadPermissions(roleId) {
@@ -68,108 +87,105 @@ class PermissionsPage {
                 headers: { "Content-Type": "application/json" }
             });
 
-            if (!response.ok) throw new Error("Network response was not ok");
+            if (!response.ok) throw new Error("Failed to fetch permissions");
 
             const data = await response.json();
-            this.renderPermissions(data.menu_screens);
+            this.renderMenus(data);
+            this.updateRoleDescription();
         } catch (error) {
             console.error("Error fetching permissions:", error);
-            this.container.innerHTML = `<p class="text-center text-red-500 py-10">Failed to load permissions.</p>`;
+            this.showToast("Failed to load permissions", true);
         }
     }
 
-renderPermissions(menuScreens) {
-    this.container.innerHTML = "";
+    groupMenus(data) {
+        const menuMap = {};
 
-    const grouped = {};
-    menuScreens.forEach(item => {
-        if (!grouped[item.mnu_name]) grouped[item.mnu_name] = [];
-        grouped[item.mnu_name].push(item);
-    });
+        data.menu_screens.forEach(item => {
+            if (!menuMap[item.mnu_id]) {
+                menuMap[item.mnu_id] = {
+                    mnu_id: item.mnu_id,
+                    mnu_name: item.mnu_name,
+                    mnu_code: item.mnu_code,
+                    screens: []
+                };
+            }
 
-    for (const [menuName, screens] of Object.entries(grouped)) {
-        const section = document.createElement("div");
-        section.className = "mb-4";
-
-        // ---- Main menu with checkbox ----
-        const headerLabel = document.createElement("label");
-        headerLabel.className = "flex items-center space-x-3 mb-2 font-semibold";
-
-        const headerCheckbox = document.createElement("input");
-        headerCheckbox.type = "checkbox";
-        headerCheckbox.className = "menu-checkbox";
-
-        const headerText = document.createElement("span");
-        headerText.textContent = menuName;
-
-        headerLabel.appendChild(headerCheckbox);
-        headerLabel.appendChild(headerText);
-        section.appendChild(headerLabel);
-
-        // ---- Submenus ----
-        const subCheckboxes = [];
-        screens.forEach(screen => {
-            const label = document.createElement("label");
-            label.className = "flex items-center space-x-3 mb-1 ml-6";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = (screen.has_permission === true || screen.has_permission === "true");
-            checkbox.dataset.scrId = screen.scr_id;
-            checkbox.dataset.mnuId = screen.mnu_id;
-            checkbox.className = "submenu-checkbox";
-
-            const text = document.createElement("span");
-            text.textContent = screen.scr_name;
-
-            label.appendChild(checkbox);
-            label.appendChild(text);
-            section.appendChild(label);
-
-            subCheckboxes.push(checkbox);
-        });
-
-        // ---- Sync main menu with submenus ----
-        // 1. Clicking main menu affects all submenus
-        headerCheckbox.addEventListener("change", () => {
-            subCheckboxes.forEach(cb => cb.checked = headerCheckbox.checked);
-        });
-
-        // 2. Clicking submenu may update main menu
-        subCheckboxes.forEach(cb => {
-            cb.addEventListener("change", () => {
-                const anyChecked = subCheckboxes.some(sub => sub.checked);
-                if (!anyChecked) {
-                    headerCheckbox.checked = false; // uncheck only if none are selected
-                } else {
-                    headerCheckbox.checked = true; // stays checked even if one submenu is checked
-                }
+            menuMap[item.mnu_id].screens.push({
+                scr_id: item.scr_id,
+                scr_name: item.scr_name,
+                scr_code: item.scr_code,
+                has_permission: item.has_permission
             });
         });
 
-        // 3. Initialize header state when rendering
-        headerCheckbox.checked = subCheckboxes.some(cb => cb.checked);
-
-        this.container.appendChild(section);
+        return Object.values(menuMap);
     }
-}
 
-    toggleAll(state) {
-        const checkboxes = this.container.querySelectorAll("input[type='checkbox']");
-        checkboxes.forEach(cb => cb.checked = state);
+    renderMenus(data) {
+        const menus = this.groupMenus(data);
+        const container = document.getElementById("menuContainer");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        menus.forEach(menu => {
+            const totalScreens = menu.screens.length;
+            const selectedScreens = menu.screens.filter(x => x.has_permission).length;
+            const screensHtml = menu.screens.map(screen => `
+                <div class="screen-item">
+                    <input type="checkbox" class="screen-checkbox" data-screen-id="${screen.scr_id}" data-menu-id="${menu.mnu_id}" ${screen.has_permission ? 'checked' : ''}>
+                    ${screen.scr_name}
+                </div>
+            `).join('');
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="menu-card">
+                    <div class="menu-header" onclick="toggleMenu(this, event)">
+                        <div class="menu-left">
+                            <div class="toggle-area">
+                                <input type="checkbox" onchange="toggleGroup(this)">
+                            </div>
+                            <span class="menu-name">
+                                ${menu.mnu_name}
+                            </span>
+                            <span class="menu-count">
+                                ${selectedScreens} / ${totalScreens} Selected
+                            </span>
+                        </div>
+                        <div class="expand-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="menu-body">
+                        ${screensHtml}
+                    </div>
+                </div>
+            `);
+        });
+
+        this.updateSelectedCount();
     }
 
     async savePermissions() {
-        const roleId = this.roleSelect.value;
-        const checkboxes = this.container.querySelectorAll("input[type='checkbox']");
+        const select = document.getElementById("roleSelect");
+        const roleId = select ? select.value : null;
+        if (!roleId) return;
 
-        const data = Array.from(checkboxes)
-            .filter(cb => cb.dataset.scrId && cb.dataset.mnuId)
-            .map(cb => ({
-            scr_id: cb.dataset.scrId,
-            mnu_id: cb.dataset.mnuId,
+        const checkboxes = document.querySelectorAll(".screen-checkbox");
+        const data = Array.from(checkboxes).map(cb => ({
+            scr_id: parseInt(cb.dataset.screenId),
+            mnu_id: parseInt(cb.dataset.menuId),
             has_permission: cb.checked
         }));
+
+        const hasChecked = data.some(item => item.has_permission);
+        if (!hasChecked) {
+            this.showToast("At least one screen must be selected", true);
+            return;
+        }
 
         try {
             const response = await fetch(`/api/permissions/${roleId}`, {
@@ -178,46 +194,116 @@ renderPermissions(menuScreens) {
                 body: JSON.stringify(data)
             });
 
-            if (!response.ok) throw new Error("Failed to save permissions");
-
-          this.showPopup("Permissions saved successfully!");  
-      } catch (error) {
+            const resData = await response.json().catch(() => ({}));
+            if (!response.ok || resData.status === "error") {
+                throw new Error(resData.message || "Failed to save permissions");
+            }
+            this.showToast("Permissions saved successfully!");
+        } catch (error) {
             console.error("Error saving permissions:", error);
-           this.showPopup("Failed to save permissions", true);
+            this.showToast(error.message || "Failed to save permissions", true);
         }
     }
 
-    showPopup(message, isError = false) {
-    // Remove existing popup if any
-    const oldPopup = document.getElementById("popup-modal");
-    if (oldPopup) oldPopup.remove();
+    showToast(message, isError = false) {
+        const oldToast = document.getElementById("toast-notification");
+        if (oldToast) oldToast.remove();
 
-    // Create overlay
-    const overlay = document.createElement("div");
-    overlay.id = "popup-modal";
-    overlay.className = "fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50";
+        const toast = document.createElement("div");
+        toast.id = "toast-notification";
+        toast.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-y-10 opacity-0 z-50 ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+        toast.innerText = message;
+        document.body.appendChild(toast);
 
-    // Create popup box
-    const box = document.createElement("div");
-    box.className = "bg-white rounded-lg shadow-lg p-6 text-center w-80";
+        setTimeout(() => {
+            toast.classList.remove("translate-y-10", "opacity-0");
+        }, 10);
 
-    const msg = document.createElement("p");
-    msg.textContent = message;
-    msg.className = isError ? "text-red-600 mb-4 font-medium" : "text-green-600 mb-4 font-medium";
+        setTimeout(() => {
+            toast.classList.add("translate-y-10", "opacity-0");
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
 
-    const btn = document.createElement("button");
-    btn.textContent = "OK";
-    btn.className = "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700";
-    btn.addEventListener("click", () => overlay.remove());
+    toggleMenu(header, event) {
+        if (event.target.type === 'checkbox' || event.target.tagName === 'LABEL') {
+            return;
+        }
 
-    box.appendChild(msg);
-    box.appendChild(btn);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
+        const card = header.closest('.menu-card');
+        const body = header.nextElementSibling;
+
+        if (!card || !body) return;
+
+        if (body.style.display === 'block') {
+            body.style.display = 'none';
+            card.classList.remove('active');
+        } else {
+            body.style.display = 'block';
+            card.classList.add('active');
+        }
+    }
+
+    toggleGroup(checkbox) {
+        if (window.event) {
+            window.event.stopPropagation();
+        }
+
+        const header = checkbox.closest('.menu-header');
+        const card = checkbox.closest('.menu-card');
+        const body = header ? header.nextElementSibling : null;
+
+        if (!card || !body) return;
+
+        body.style.display = 'block';
+        card.classList.add('active');
+
+        const children = body.querySelectorAll('.screen-checkbox');
+        children.forEach(c => {
+            c.checked = checkbox.checked;
+        });
+
+        this.updateSelectedCount();
+    }
+
+    selectAllScreens() {
+        document.querySelectorAll('.screen-checkbox').forEach(c => {
+            c.checked = true;
+        });
+        this.updateSelectedCount();
+    }
+
+    clearAllScreens() {
+        document.querySelectorAll('.screen-checkbox').forEach(c => {
+            c.checked = false;
+        });
+        this.updateSelectedCount();
+    }
+
+    updateSelectedCount() {
+        document.querySelectorAll('.menu-card').forEach(menu => {
+            const total = menu.querySelectorAll('.screen-checkbox').length;
+            const selected = menu.querySelectorAll('.screen-checkbox:checked').length;
+
+            const countElement = menu.querySelector('.menu-count');
+            if (countElement) {
+                countElement.innerText = `${selected} / ${total} Selected`;
+            }
+
+            const parentCheckbox = menu.querySelector('.toggle-area input[type="checkbox"]');
+            if (parentCheckbox) {
+                parentCheckbox.checked = selected === total && total > 0;
+                parentCheckbox.indeterminate = selected > 0 && selected < total;
+            }
+        });
+    }
 }
 
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    new PermissionsPage("role-select", "permissions-container");
-});
+const permissionsPage = new PermissionsPage();
+window.permissionsPage = permissionsPage;
+window.toggleMenu = (header, event) => permissionsPage.toggleMenu(header, event);
+window.toggleGroup = (checkbox) => permissionsPage.toggleGroup(checkbox);
+window.selectAllScreens = () => permissionsPage.selectAllScreens();
+window.clearAllScreens = () => permissionsPage.clearAllScreens();
+window.savePermissions = () => permissionsPage.savePermissions();
+window.onRoleChange = () => permissionsPage.onRoleChange();

@@ -28,7 +28,7 @@ public class PermissionService {
         this.dsl = dsl;
     }
 
-    public record Role(Integer role_id, String role_code, String role_name) {
+    public record Role(Integer role_id, String role_code, String role_name ,String role_description) {
     }
 
     public String getRoleMenusWithPermissions(int roleId) {
@@ -50,7 +50,7 @@ public class PermissionService {
     public List<Role> getRoles() {
         try {
             List<Role> roles = dsl
-                    .selectFrom(DSL.table("auth.vw_roles"))
+                    .selectFrom(DSL.table("techbd_udi_ingress.idp_vw_roles"))
                     .fetchInto(Role.class); // jOOQ maps directly to record
 
             LOG.info("Roles fetched: {}", roles);

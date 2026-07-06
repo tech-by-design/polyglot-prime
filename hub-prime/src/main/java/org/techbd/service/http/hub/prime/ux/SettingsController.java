@@ -49,7 +49,7 @@ public class SettingsController {
         if (!Boolean.TRUE.equals(isSuperRole)) {
             return "redirect:/settings/profile";
         }
-        return presentation.populateModel("page/settings/role-permissions", model, request);
+        return presentation.populateModel("page/settings/roles", model, request);
     }
 
 }
