@@ -777,6 +777,7 @@ const tenant = SQLa.tableDefinition("tenants", {
     tenant_displayname:textNullable(),
     is_active:boolean().default(true),
     fusion_auth_group_id:textNullable(),
+    //offshore_access_allowed:boolean().default(true),
     ...dvts.housekeeping.columns
   }, {
   isIdempotent: true,
@@ -815,6 +816,7 @@ const idpRoles = SQLa.tableDefinition("idp_roles", {
     description:textNullable(),
     is_admin:boolean().default(false),
     is_active:boolean().default(true),
+    //apply_tenant_exclusions:boolean().default(false),
     ...dvts.housekeeping.columns
   }, {
   isIdempotent: true,
@@ -1785,8 +1787,6 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ${idpRoles}
-      DO $$
-      BEGIN
           IF NOT EXISTS (
               SELECT 1
               FROM pg_constraint
@@ -1795,11 +1795,8 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.idp_roles
               ADD CONSTRAINT idp_roles_pkey PRIMARY KEY (role_id);
           END IF;
-      END $$;
       
       ${idpMenu}
-      DO $$
-      BEGIN
           IF NOT EXISTS (
               SELECT 1
               FROM pg_constraint
@@ -1808,11 +1805,8 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.idp_menu
               ADD CONSTRAINT idp_menu_pkey PRIMARY KEY (mnu_id);
           END IF;
-      END $$;      
       
       ${idpScreens}
-      DO $$
-      BEGIN
           IF NOT EXISTS (
               SELECT 1
               FROM pg_constraint
@@ -1821,11 +1815,8 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.idp_screens
               ADD CONSTRAINT idp_screens_pkey PRIMARY KEY (scr_id);
           END IF;
-      END $$;
 
       ${idpRoleTenantPermission}
-      DO $$
-      BEGIN
           IF NOT EXISTS (
               SELECT 1
               FROM pg_constraint
@@ -1834,9 +1825,11 @@ const migrateSP = pgSQLa.storedProcedure(
               ALTER TABLE techbd_udi_ingress.idp_role_tenant_permission
               ADD CONSTRAINT idp_role_tenant_permission_pkey PRIMARY KEY (permission_id);
           END IF;
-      END $$;
 
       ${dependenciesSQL}
+
+      /* Call function to create RLS SELECT/INSERT Policies for tables.*/
+      CALL techbd_udi_ingress.configure_rls_policies();
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
       

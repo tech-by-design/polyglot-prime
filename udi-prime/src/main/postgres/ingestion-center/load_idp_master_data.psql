@@ -12,7 +12,7 @@ VALUES
 ON CONFLICT (mnu_code) DO NOTHING;
 
 /* Role insertion */
-INSERT INTO techbd_udi_ingress.idp_roles
+/*INSERT INTO techbd_udi_ingress.idp_roles
 (role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
 VALUES
 ('rl_base', 'Base', 'Base', 'Base role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
@@ -21,6 +21,21 @@ VALUES
 ('rl_qe_tenant', 'qe_tenant', 'QE Admin', 'qe_tenant role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
 ('rl_super_admin', 'super_admin', 'Super Admin', 'super_admin role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
 ('rl_mco_user', 'mco_user', 'MCO User', 'mco_user role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER)
+ON CONFLICT (role_code) DO NOTHING;*/
+
+IF EXISTS (SELECT 1 FROM techbd_udi_ingress.idp_roles WHERE role_code = 'rl_base') THEN
+    TRUNCATE TABLE techbd_udi_ingress.idp_roles RESTART IDENTITY CASCADE;
+END IF;
+
+INSERT INTO techbd_udi_ingress.idp_roles
+(role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
+VALUES
+('rl_1115_user', '1115_User', '1115 User', 'Sees current 1115 screens, auto-filtered by tenant', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_nyec_admin', 'NYeC_Admin', 'NYeC Admin', 'NYeC users, also sees everything but separating the role for future use-cases', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_offshore_admin', 'Offshore_Admin', 'Offshore Admin', 'Sees all 1115 and new MCO screens, excluding defined Tenants (like NYeC, HeL, etc)', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_tenant_admin', 'Tenant_Admin', 'Tenant Admin', 'Sees all 1115 and new MCO screens, auto-filtered by Tenant', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_super_admin', 'Super_Admin', 'Super Admin', 'Tech by Design users, sees everything', TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_mco_user', 'MCO_User', 'MCO User', 'Sees new screens for MCO, auto-filtered by tenant', FALSE, TRUE, 'Fusion Auth', CURRENT_USER)
 ON CONFLICT (role_code) DO NOTHING;
 
 /* Tenant insertion */
@@ -33,6 +48,8 @@ VALUES
 (gen_random_uuid()::text, 'healthelink-fusion', 'QE HEALTHeLINK', true, CURRENT_USER, 'Fusion Auth', '5772af52-c404-46de-9699-a325acd46274'),
 (gen_random_uuid()::text, 'healthix-fusion', 'QE HEALTHIX', true, CURRENT_USER, 'Fusion Auth', 'bfa74967-ad72-43b3-80d0-407b74260f7e'),
 (gen_random_uuid()::text, 'hixny-fusion', 'QE HixNY', true, CURRENT_USER, 'Fusion Auth', 'd34bda73-c9d8-4b3f-9b77-cc3c736ac7e5'),
+(gen_random_uuid()::text, 'netspective-qa', 'QA Netspective', true, CURRENT_USER, 'Fusion Auth', '31f6f067-0aab-2fa7-be40-e6f1f64b59b7'),
+(gen_random_uuid()::text, 'netspective-dev', 'DEV Netspective', true, CURRENT_USER, 'Fusion Auth', '31f6f067-0aab-2fa7-be40-e6f1f64b59b7'),
 (gen_random_uuid()::text, 'netspective', 'QA/DEV Netspective', true, CURRENT_USER, 'Fusion Auth', '8c678000-0940-4e68-af70-4f3e9ec38290'),
 (gen_random_uuid()::text, 'partner-test', 'QA/DEV partner-test', true, CURRENT_USER, 'Fusion Auth', '67906aaf-1c84-4fcf-a6fb-7bdb979f4361'),
 (gen_random_uuid()::text, 'partner-test-qa', 'QA/DEV partner-test-qa', true, CURRENT_USER, 'Fusion Auth', 'a70df92f-3bb0-41d7-a3b2-cca7e26f288d'),
@@ -40,8 +57,11 @@ VALUES
 (gen_random_uuid()::text, 'qa_qa_12.4_csv_3', 'QA/DEV qa_qa_12.4_CSV_3', true, CURRENT_USER, 'Fusion Auth', 'cb46df2c-1297-44e7-92cc-d664a5025bd3')
 ON CONFLICT (tenant_name) DO NOTHING;
 
+/*UPDATE techbd_udi_ingress.idp_roles SET apply_tenant_exclusions = true WHERE role_code = 'rl_offshore_admin';
+UPDATE techbd_udi_ingress.tenants SET offshore_access_allowed = false WHERE tenant_name IN ('bronx-fusion', 'grrhio-fusion', 'healtheconn-fusion', 'healthelink-fusion', 'healthix-fusion', 'hixny-fusion');*/
+
 /* Screen insertion */
-/* 2 insert statement commented due to serial no 35 ot in the menu table. */
+/* 2 insert statement commented due to serial no 35 in the menu table. */
 INSERT INTO techbd_udi_ingress.idp_screens
 (scr_code, scr_name, description, scr_type, mnu_id, order_no, is_active, provenance, created_by)
 VALUES
@@ -72,13 +92,14 @@ VALUES
 ('scr_CCDA_via_HTTPS', 'CCDA Submissions', 'CCDA Submissions screen', 'page', 4, 4, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_HL7V2_via_HTTPS', 'HL7v2 Submissions', 'HL7v2 Submissions screen', 'page', 4, 5, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_HTTP_Interactions', 'Hub Interactions', 'Hub Interactions screen', 'page', 4, 6, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Perfomance_overview', 'Performance Overview', 'Performance Overview screen', 'page', 4, 7, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Provenance', 'Provenance', 'Provenance screen', 'page', 4, 8, TRUE, 'Hub UI', CURRENT_USER),
-('scr_User_Sessions', 'User Sessions', 'User Sessions screen', 'page', 4, 9, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Perfomance_overview_api', 'API Performance Overview', 'API Performance Overview screen', 'page', 4, 7, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Perfomance_overview_ui', 'User Interactions Performance Overview', 'User Interactions Performance Overview screen', 'page', 4, 8, TRUE, 'Hub UI', CURRENT_USER),
+('scr_Provenance', 'Provenance', 'Provenance screen', 'page', 4, 9, TRUE, 'Hub UI', CURRENT_USER),
+('scr_User_Sessions', 'User Sessions', 'User Sessions screen', 'page', 4, 10, TRUE, 'Hub UI', CURRENT_USER),
 
 ('scr_Tech_By_Design_Hub', 'Tech by Design Hub', 'Tech By Design Hub screen', 'page', 5, 1, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_SHIN_NY_FHIR_IG', 'SHIN-NY FHIR IG', 'SHIN NY FHIR IG screen', 'page', 5, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_OpenAPI_UI', 'OpenAPI UI', 'OpenAPI UI screen', 'page', 5, 3, TRUE, 'Hub UI', CURRENT_USER),
+('scr_OpenAPI_UI', 'OpenAPI UI', 'Tech by Design OpenAPI UI screen', 'page', 5, 3, TRUE, 'Hub UI', CURRENT_USER),
 ('scr_Announcements', 'Announcements', 'Announcements screen', 'page', 5, 4, TRUE, 'Hub UI', CURRENT_USER),
 
 ('scr_Health_Information', 'Health Information', 'Health Information screen', 'page', 6, 1, TRUE, 'Hub UI', CURRENT_USER),
@@ -91,3 +112,8 @@ VALUES
 --('scr_Role', 'Role', 'Role screen', 'page', 35, 6, TRUE, 'Hub UI', CURRENT_USER)
 
 ON CONFLICT (scr_code) DO NOTHING;
+
+UPDATE techbd_udi_ingress.idp_screens SET order_no = 9 WHERE scr_code = 'scr_Provenance';
+UPDATE techbd_udi_ingress.idp_screens SET order_no = 10 WHERE scr_code = 'scr_User_Sessions';
+UPDATE techbd_udi_ingress.idp_screens SET description = 'Tech by Design OpenAPI UI screen' WHERE scr_code = 'scr_OpenAPI_UI';
+DELETE FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Perfomance_overview';

@@ -156,7 +156,7 @@ END;
 $function$
 ;
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.get_tenant_details(text, text, timestamp, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_tenant_details(text, text, timestamp with time zone, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_tenant_details(
     p_tenant_name text,
     p_created_by  text DEFAULT NULL,
@@ -169,7 +169,6 @@ AS $$
 DECLARE
     v_result JSON;
     v_tenant_id UUID;
-    v_fusion_auth_group_id TEXT;
 BEGIN
 
    IF (p_tenant_name IS NULL OR TRIM(p_tenant_name) = '') THEN
@@ -186,11 +185,6 @@ BEGIN
    IF v_tenant_id IS NULL THEN
       v_tenant_id := gen_random_uuid();
 
-	  -- For new insetion, group id will be group_id of "Netspective" group.
-	  SELECT COALESCE(fusion_auth_group_id, '8c678000-0940-4e68-af70-4f3e9ec38290') INTO v_fusion_auth_group_id
-	  FROM techbd_udi_ingress.tenants
-	  WHERE tenant_name = 'netspective';
-
       INSERT INTO techbd_udi_ingress.tenants (
           tenant_id,
           tenant_name,
@@ -203,7 +197,7 @@ BEGIN
           v_tenant_id,
           LOWER(p_tenant_name),
           LOWER(p_tenant_name),
-		  v_fusion_auth_group_id,
+		  NULL,
           p_provenance,
           COALESCE(p_created_at, CURRENT_TIMESTAMP),
           p_created_by        

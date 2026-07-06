@@ -1,19 +1,20 @@
 {
   "group" : {
-    "id" : 7,
+    "id" : 19,
     "name" : "Config",
     "description" : "Environment variables needed for CCDA Workflow",
     "version" : "1",
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
-    "createdDate" : "2026-06-16T04:07:15.595+00:00",
-    "updatedDate" : "2026-06-16T04:07:15.595+00:00",
+    "createdDate" : "2026-06-08T15:27:26.618+00:00",
+    "updatedDate" : "2026-06-08T15:27:26.618+00:00",
     "valueType" : "TEXT",
     "statisticsEnabled" : true,
     "extra" : null
   },
   "values" : {
     "ALLOWED_HOSTS" : "1.nexus-txd-sbx.techbd.org",
+    "ALLOWED_ORIGINS" : "https://hub.sandbox.dev.techbd.org",
     "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
     "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "https://nexus.fhir.sandbox.techbd.org",
     "DATA_LEDGER_API_URL" : "https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger",
@@ -43,5 +44,5 @@
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle,615l4odbn9xc7j3uw3vqosslyc43stgi.oastify.com"
   },
-  "exportDate" : "2026-06-16T04:15:41.950+00:00"
+  "exportDate" : "2026-07-03T11:53:04.184+00:00"
 }

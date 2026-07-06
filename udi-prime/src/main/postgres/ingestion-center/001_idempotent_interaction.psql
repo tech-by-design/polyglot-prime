@@ -5970,7 +5970,7 @@ BEGIN
 						);
 					
 						v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Get the techByDesignDisposition json after process_json_action_rules');
-						v_payload = v_disposition_json;
+						v_payload := v_disposition_json;
 				END IF;
 		
 			    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.

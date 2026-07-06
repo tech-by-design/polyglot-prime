@@ -2,8 +2,8 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.50</description>
-  <revision>51</revision>
+  <description>Version: 0.4.51</description>
+  <revision>55</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1561,26 +1561,14 @@ function setResourceIdParameters(transformer) {
 	                              .*::component
 	                              .*::section.(@ID != &apos;sexualOrientation&apos;)
 	                              .*::entry;
-		transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+		if (Questionnaire != null &amp;&amp; Questionnaire.length() &gt; 0) {
+			transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+		} else {
+	         logger.error(&quot;Questionnaire resource not found in the XML.&quot;);
+	     }
 	}
 	
 	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
-	
-	// Extract `observations`
-	/*try {
-		var observations = xmlDoc.*::component
-	                         .*::structuredBody
-	                         .*::component
-	                         .*::section.(@ID == &apos;observations&apos;)
-	                         .*::entry
-	                         .*::observation
-	                         .*::entryRelationship
-	                         .*::observation
-	                         .*::entryRelationship;
-		transformer = generateSHA256Id(observations, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
-	} catch (e) {
-	    logger.error(&quot;Error accessing Observations: &quot; + e);
-	}*/
 	
 	// Extract `sexualOrientation`
 	var sexualOrientation = xmlDoc.*::component
@@ -1588,9 +1576,12 @@ function setResourceIdParameters(transformer) {
                               .*::component
                               .*::section.(@ID == &apos;sexualOrientation&apos;)
                               .*::entry
-                              .*::observation;
-	//transformer = generateSHA256Id(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
-	transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
+                              .*::observation.(code.@code == &apos;76690-7&apos;);
+	if (sexualOrientation != undefined &amp;&amp; sexualOrientation.length() &gt; 0) {
+		transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
+	} else {
+	    	logger.info(&quot;No sexualOrientation section found.&quot;);
+	}
 
 	// Extract `encompassingEncounter`
 	try {
@@ -2782,7 +2773,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1781531308558</time>
+        <time>1782382470895</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
