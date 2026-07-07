@@ -43,7 +43,7 @@ import org.techbd.csv.service.engine.CsvOrchestrationEngine;
 import org.techbd.csv.util.CsvConversionUtil;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
-
+import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -291,7 +291,19 @@ public class CsvService {
             initRIHR.setPCsvZipFileName(file.getOriginalFilename());
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCsvStatus(state.name());
-            ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();
+
+           Object headerObj = requestParameters.get(Constants.HEADERS);
+
+                if (headerObj instanceof Map<?, ?>) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> headers = (Map<String, Object>) headerObj;
+
+                headers.replaceAll((key, value) ->
+                        (value instanceof String && StringUtils.isBlank((String) value))
+                        ? null
+                        : value);
+                }
+            ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();     
                 pElaboration.set(
                 "headers",
                 Configuration.objectMapper.valueToTree(requestParameters).path("headers")

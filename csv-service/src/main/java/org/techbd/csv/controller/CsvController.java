@@ -73,6 +73,7 @@ public class CsvController {
           "When using `immediate=false`, an interim response is returned containing a zipFileInteractionId. " +
           "The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. " +
           "This option is useful for large ZIP files that may otherwise result in timeout issues.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
+       @Parameter(description = "Optional header to specify master interaction ID.", required = false) @RequestHeader(value = "X-TechBD-Interaction-ID", required = false) String masterInteractionId,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
@@ -85,7 +86,12 @@ public class CsvController {
         null,null);   
     CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID,UuidUtil.generateUuid());
+    requestDetailsMap.put(
+    Constants.MASTER_INTERACTION_ID,
+    (masterInteractionId == null || masterInteractionId.trim().isEmpty())
+      ? UuidUtil.generateUuid()
+      : masterInteractionId
+    );
     requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     Map<String, Object> responseParameters = new HashMap<>();
