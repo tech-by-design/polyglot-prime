@@ -53,7 +53,7 @@ import org.techbd.ingest.integrationtests.base.IngestionAssertionHelper.FlowAsse
  *   <li>ZNT absent: falls back to {@code destinationPort} from the PROXY header.</li>
  * </ul>
  */
-class NettyTcpServerITCase extends BaseIntegrationTest {
+class NettyMllpServerITCase extends BaseIntegrationTest {
 
     // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -218,7 +218,7 @@ class NettyTcpServerITCase extends BaseIntegrationTest {
         assertMllpAck(ackBytes, softly, "Port-5555 ZNT HOLD ACK");
 
         assertionHelper().assertHoldFlow(
-                holdFlowParams(hl7, "healthelink_GHC_ORU_SN_ORU",
+                holdFlowParams(hl7, "HEL-QE_identifier_ORU_PUSH",
                         5555, "/outbound", "/outbound", null, queueUrls.get("test.fifo")),
                 softly);
 
@@ -406,7 +406,7 @@ class NettyTcpServerITCase extends BaseIntegrationTest {
      */
     private static String loadHl7Fixture(String filename) throws Exception {
         String path = "org/techbd/ingest/tcp-test-resources/" + filename;
-        try (InputStream is = NettyTcpServerITCase.class.getClassLoader().getResourceAsStream(path)) {
+        try (InputStream is = NettyMllpServerITCase.class.getClassLoader().getResourceAsStream(path)) {
             if (is == null) throw new IllegalStateException("HL7 fixture not found on classpath: " + path);
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }

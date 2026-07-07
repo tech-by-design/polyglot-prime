@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -34,6 +35,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.config.PortConfig;
 import org.techbd.ingest.exceptions.ErrorTraceIdGenerator;
@@ -92,6 +94,8 @@ import ca.uhn.hl7v2.parser.PipeParser;
  * - Message handling with different delimiters
  * - Error handling and NACK generation
  * - Keep-alive timeout resolution
+ * - Fixture-driven ZNT-4 driven facility/QE resolution (appended at the end
+ *   of this class; see {@code extractZntSegmentManually} fixture tests below)
  */
 @ExtendWith(SpringExtension.class)
 @DisplayName("NettyTcpServer Unit Tests")
@@ -486,12 +490,21 @@ public class NettyTcpServerTest {
         when(appConfig.getVersion()).thenReturn("1.0");
     }
 
+    /**
+     * Verifies the PUSH branch of the new ZNT-4-driven logic:
+     * when ZNT-4 (deliveryType) == "PUSH", the facility/QE pair must be read
+     * from ZNT-11 component 4 (USR facility), split on the FIRST ":" —
+     * the QE identifier is the prefix, the remainder is the facility code.
+     *
+     * ZNT-11 here is "^^^QE123:FAC456" → component 4 = "QE123:FAC456"
+     * → qe="QE123", facility="FAC456".
+     */
     @Test
     void testExtractZntSegmentManually_success() throws Exception {
 
         String hl7Message = "MSH|^~\\&|\r" +
                 "PID|1|\r" +
-                "ZNT|1|MSGCODE^X|3|DELIVERY^Y|5|6|7|QE123:FAC456";
+                "ZNT|1|MSGCODE^X|3|PUSH|5|6|7|8|9|10|^^^QE123:FAC456";
 
         RequestContext requestContext = mock(RequestContext.class);
 
@@ -507,7 +520,10 @@ public class NettyTcpServerTest {
                 "INT-1");
 
         assertTrue(result);
-
+        assertEquals("MSGCODE", map.get(org.techbd.ingest.commons.Constants.MESSAGE_CODE));
+        assertEquals("PUSH", map.get(org.techbd.ingest.commons.Constants.DELIVERY_TYPE));
+        assertEquals("FAC456", map.get(org.techbd.ingest.commons.Constants.FACILITY));
+        assertEquals("QE123", map.get(org.techbd.ingest.commons.Constants.QE));
     }
 
     @Test
@@ -529,6 +545,17 @@ public class NettyTcpServerTest {
         assertFalse(result);
     }
 
+    /**
+     * Verifies that a null additionalParameters map on RequestContext is
+     * replaced with a fresh HashMap and set back via setAdditionalParameters.
+     *
+     * <p>
+     * Under the NEW ZNT-4-driven logic, deliveryType="DEL" is NOT "PUSH",
+     * so facility/QE would be read from ZNT-14 component 4 — which does not
+     * exist in this short fixture (only 9 fields). Facility/QE are therefore
+     * expected to be null here; this test's real purpose is the null-map
+     * initialization path, not facility extraction.
+     */
     @SuppressWarnings("unchecked")
     @Test
     void testExtractZntSegmentManually_nullAdditionalParams() throws Exception {
@@ -553,10 +580,17 @@ public class NettyTcpServerTest {
         verify(requestContext).setAdditionalParameters(any(Map.class));
     }
 
+    /**
+     * Verifies the "component present but no separator" edge case for the
+     * NON-PUSH branch: deliveryType="DEL" (not PUSH) routes to ZNT-14
+     * component 4. ZNT-14 = "^^^FACONLY" → component 4 = "FACONLY", which
+     * contains no "." → the entire value is treated as the facility code
+     * and QE remains null.
+     */
     @Test
     void testExtractZntSegmentManually_onlyFacility() throws Exception {
 
-        String hl7Message = "ZNT|1|CODE^A|3|DEL^B|5|6|7|FACONLY";
+        String hl7Message = "ZNT|1|CODE^A|3|DEL|5|6|7|8|9|10|11|12|13|^^^FACONLY";
 
         RequestContext requestContext = mock(RequestContext.class);
 
@@ -572,9 +606,10 @@ public class NettyTcpServerTest {
                 "INT-4");
 
         assertTrue(result);
-
-        // assertEquals("FACONLY", map.get(Constants.FACILITY));
-        // assertNull(map.get(Constants.QE));
+        assertEquals("CODE", map.get(org.techbd.ingest.commons.Constants.MESSAGE_CODE));
+        assertEquals("DEL", map.get(org.techbd.ingest.commons.Constants.DELIVERY_TYPE));
+        assertEquals("FACONLY", map.get(org.techbd.ingest.commons.Constants.FACILITY));
+        assertNull(map.get(org.techbd.ingest.commons.Constants.QE));
     }
 
     @Test
@@ -596,9 +631,12 @@ public class NettyTcpServerTest {
         assertFalse(result);
     }
 
-    // ---------------------------------------------------------
-    // HELPER METHODS
-    // ---------------------------------------------------------
+    /**
+     * Terser-based extraction — PUSH branch. deliveryType comes back as
+     * "PUSH" from "/.ZNT-4-1", so the code must now read "/.ZNT-11-4"
+     * (NOT "/.ZNT-8-1", which the old logic used). "/.ZNT-11-4" is mocked
+     * to "QE123:FAC456" → split on first ":" → qe="QE123", facility="FAC456".
+     */
     @Test
     void testExtractZntSegment_success() throws Exception {
 
@@ -614,8 +652,8 @@ public class NettyTcpServerTest {
 
                     when(mock.getSegment(".ZNT")).thenReturn(segmentMock);
                     when(mock.get("/.ZNT-2-1")).thenReturn("MSGCODE");
-                    when(mock.get("/.ZNT-4-1")).thenReturn("DELIVERY");
-                    when(mock.get("/.ZNT-8-1")).thenReturn("QE123:FAC456");
+                    when(mock.get("/.ZNT-4-1")).thenReturn("PUSH");
+                    when(mock.get("/.ZNT-11-4")).thenReturn("QE123:FAC456");
                 })) {
 
             Method m = getMethod("extractZntSegment",
@@ -627,6 +665,47 @@ public class NettyTcpServerTest {
                     "INT-1");
 
             assertTrue(result);
+            assertEquals("FAC456", map.get(org.techbd.ingest.commons.Constants.FACILITY));
+            assertEquals("QE123", map.get(org.techbd.ingest.commons.Constants.QE));
+        }
+    }
+
+    /**
+     * Terser-based extraction — NON-PUSH branch (supplementary, proves the
+     * "else" path reads "/.ZNT-14-4" and splits on the first "."). Not one
+     * of the supplied fixtures, but needed because none of the real fixtures
+     * contain an actual "." separator to exercise this split.
+     */
+    @Test
+    void testExtractZntSegment_nonPushBranch_readsZnt14() throws Exception {
+
+        Message hapiMsg = mock(Message.class);
+        RequestContext requestContext = mock(RequestContext.class);
+
+        Map<String, String> map = new HashMap<>();
+        when(requestContext.getAdditionalParameters()).thenReturn(map);
+        Segment segmentMock = mock(Segment.class);
+
+        try (MockedConstruction<Terser> mocked = mockConstruction(Terser.class,
+                (mock, context) -> {
+
+                    when(mock.getSegment(".ZNT")).thenReturn(segmentMock);
+                    when(mock.get("/.ZNT-2-1")).thenReturn("ORU");
+                    when(mock.get("/.ZNT-4-1")).thenReturn("PBRD");
+                    when(mock.get("/.ZNT-14-4")).thenReturn("QE999.FACZZZ");
+                })) {
+
+            Method m = getMethod("extractZntSegment",
+                    Message.class, RequestContext.class, String.class);
+
+            boolean result = (boolean) m.invoke(server,
+                    hapiMsg,
+                    requestContext,
+                    "INT-2");
+
+            assertTrue(result);
+            assertEquals("FACZZZ", map.get(org.techbd.ingest.commons.Constants.FACILITY));
+            assertEquals("QE999", map.get(org.techbd.ingest.commons.Constants.QE));
         }
     }
 
@@ -2155,6 +2234,305 @@ public class NettyTcpServerTest {
 
         // Give the background thread a moment to begin startup
         Thread.sleep(300);
+    }
+
+    // =====================================================================
+    // =====================================================================
+    // Fixture-driven unit tests for extractZntSegmentManually covering the
+    // NEW ZNT-4-driven facility/QE resolution logic (merged in from the
+    // former standalone NettyTcpServerZntFixtureExtractionTest class):
+    //
+    // Check ZNT-4 (deliveryType) first
+    //   If "PUSH":
+    //     Check ZNT-11.4 (USR facility) for a "{QE_identifier}:" prefix
+    //   else:
+    //     Check ZNT-14.4 (Delivery Option) for a "{QE_identifier}." prefix
+    //
+    // Each real-world sample given by the business (SN_ADT, PBAD/PBAC,
+    // READMIT, SN_ORU, PBRD, and PUSH) is exercised as its own test so a
+    // regression in any one message type is immediately traceable to a
+    // single failing test rather than a single "extract ZNT" grab-bag test.
+    //
+    // Two of the fixtures (PUSH-with-QE-identifier, PBRD-with-QE-identity)
+    // were supplied specifically to exercise the "component 4 is present"
+    // path — note that neither actually contains the literal separator
+    // character (":" for PUSH, "." for non-PUSH), so per the documented
+    // algorithm the entire component value is treated as the facility code
+    // and QE remains null. Two additional synthetic "positive-match" tests
+    // are included at the bottom to prove the actual colon/dot-splitting
+    // behaviour, since none of the supplied fixtures demonstrate it.
+    // =====================================================================
+    // =====================================================================
+
+    /**
+     * Reflection helper — extractZntSegmentManually is private. Builds on
+     * the same underlying method already exercised elsewhere in this class,
+     * but returns straight from a real HashMap-backed RequestContext so the
+     * fixture assertions can inspect Constants.MESSAGE_CODE / DELIVERY_TYPE
+     * / FACILITY / QE directly.
+     */
+    private boolean invokeExtractZntFixture(String hl7Message, RequestContext ctx, String interactionId)
+            throws Exception {
+        Method m = NettyTcpServer.class.getDeclaredMethod(
+                "extractZntSegmentManually", String.class, RequestContext.class, String.class);
+        m.setAccessible(true);
+        return (boolean) m.invoke(server, hl7Message, ctx, interactionId);
+    }
+
+    /** Builds a mock RequestContext backed by a real, inspectable HashMap. */
+    private RequestContext mockFixtureRequestContext(Map<String, String> backingMap) {
+        RequestContext requestContext = mock(RequestContext.class);
+        when(requestContext.getAdditionalParameters()).thenReturn(backingMap);
+        return requestContext;
+    }
+
+    // =====================================================================
+    // ADT fixtures — deliveryType is NEVER "PUSH" for these, so the
+    // NON-PUSH branch (ZNT-14 component 4) is exercised. In all three ADT
+    // fixtures, ZNT-14 component 4 either doesn't exist or the field
+    // itself is empty, so facility/QE both resolve to null. These tests
+    // primarily prove: (a) messageCode/deliveryType parse correctly from
+    // ZNT-2/ZNT-4 regardless of the branch taken, and (b) the new
+    // ZNT-14-based lookup degrades gracefully to null/null instead of
+    // throwing or picking up stale ZNT-8 data.
+    // =====================================================================
+
+    @Test
+    @DisplayName("6.1A01 SN_ADT: non-PUSH branch, ZNT-14 component 4 absent -> facility/QE null")
+    void snAdt_nonPushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&|EPIC|EGSMC|||||ADT^A01|||2.3.1\n" +
+                "EVN||20160102133621|||167489^Zampitello^Liza|20160102133621\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "CON|1||||||||||||A|20240603140500|20260603140500|\n" +
+                "PD1||||145425^Ingersol^Angela\n" +
+                "NK1|1|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Emergency Contact 1\n" +
+                "NK1|2|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Mother\n" +
+                "PV1||103|ED^^^EGSMC^^^^^^^|ER||| C10^Smith^John^^^^^^EGSMC|||1|||||||||5363788347|||||||||||||||||||||||||20160102133600\n" +
+                "GT1|1|153620341|DeSantis^Stuart^M^||4749 Maple Drive^^Chicago^NC^37789^USA^^^BOULDER|668-202-3982||19890718|F|P/F|MOT|181-48-1624||||Globagy.com|^^^^^USA|||None\n" +
+                "IN1||5200324231|5190155816|KwalSonics Partners|||||||||||1|Cheng^Agnes^Brenda^|Self|19700908|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS|||1***1|||YES||||||||||1484851|148112259||||||STUDENT|F|^^^^^USA|||BOTH\n" +
+                "ZNT||ADT|A01|SN_ADT|ClinicianGroupSN|CohortGroupSN_Name^CohortGroup_SN_Description||healthelink:EGSMC|healthelink:EGSMC^5003637762^healthelink:EGSMC~ healthelink:CHG ^64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-SN-ADT");
+
+        assertTrue(result, "ZNT segment must be found");
+        assertEquals("ADT", map.get(Constants.MESSAGE_CODE));
+        assertEquals("SN_ADT", map.get(Constants.DELIVERY_TYPE));
+        assertNull(map.get(Constants.FACILITY), "ZNT-14 component 4 does not exist for this fixture");
+        assertNull(map.get(Constants.QE));
+    }
+
+    @Test
+    @DisplayName("6.2A03 PBAD (PBAC): non-PUSH branch, ZNT-14 component 4 absent -> facility/QE null")
+    void pbad_nonPushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&|EPIC|EGSMC|||||ADT^A03|||2.3.1\n" +
+                "EVN||20160102133621|||167489^Zampitello^Liza|20160102133621\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "CON|1||||||||||||A|20240603140500|20260603140500|\n" +
+                "PD1||||145425^Ingersol^Angela\n" +
+                "NK1|1|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Emergency Contact 1\n" +
+                "NK1|2|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Mother\n" +
+                "PV1||103|ED^^^EGSMC^^^^^^^|ER||| C10^Smith^John^^^^^^EGSMC|||1|||||||||5363788347|||||||||||||||||||||||||20160102133600|20160108133600\n" +
+                "GT1|1|153620341|DeSantis^Stuart^M^||4749 Maple Drive^^Chicago^NC^37789^USA^^^BOULDER|668-202-3982||19890718|F|P/F|MOT|181-48-1624||||Globagy.com|^^^^^USA|||None\n" +
+                "IN1||5200324231|5190155816|KwalSonics Partners|||||||||||1|Cheng^Agnes^Brenda^|Self|19700908|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS|||1***1|||YES||||||||||1484851|148112259||||||STUDENT|F|^^^^^USA|||BOTH\n" +
+                "ZNT||ADT|A03|PBAC|||C10^SMITH^JOHN^EGSMC^ATT~SMITHJ^SMITH^JOHN^CHG^CON|healthelink:EGSMC|5003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PBAD");
+
+        assertTrue(result);
+        assertEquals("ADT", map.get(Constants.MESSAGE_CODE));
+        assertEquals("PBAC", map.get(Constants.DELIVERY_TYPE));
+        assertNull(map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    @Test
+    @DisplayName("6.1A01 READMIT: non-PUSH branch, ZNT-14 field itself empty -> facility/QE null")
+    void readmit_nonPushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&|EPIC|EGSMC|||||ADT^A01|||2.3.1\n" +
+                "EVN||20160102133621|||167489^Zampitello^Liza|20160102133621\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "CON|1||||||||||||A|20240603140500|20260603140500|\n" +
+                "PD1||||145425^Ingersol^Angela\n" +
+                "NK1|1|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Emergency Contact 1\n" +
+                "NK1|2|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Mother\n" +
+                "PV1||103|ED^^^EGSMC^^^^^^^|ER||| C10^Smith^John^^^^^^EGSMC|||1|||||||||5363788347|||||||||||||||||||||||||20160102133600\n" +
+                "GT1|1|153620341|DeSantis^Stuart^M^||4749 Maple Drive^^Chicago^NC^37789^USA^^^BOULDER|668-202-3982||19890718|F|P/F|MOT|181-48-1624||||Globagy.com|^^^^^USA|||None\n" +
+                "IN1||5200324231|5190155816|KwalSonics Partners|||||||||||1|Cheng^Agnes^Brenda^|Self|19700908|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS|||1***1|||YES||||||||||1484851|148112259||||||STUDENT|F|^^^^^USA|||BOTH\n" +
+                "ZNT||ADT|A01|READMIT|ClinicianGroupREADMIT|CohortGroupREADMIT_Name^CohortGroupREADMIT_Description||healthelink:EGSMC|healthelink:EGSMC|5003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-READMIT");
+
+        assertTrue(result);
+        assertEquals("ADT", map.get(Constants.MESSAGE_CODE));
+        assertEquals("READMIT", map.get(Constants.DELIVERY_TYPE));
+        // Note: this fixture has one extra ZNT field compared to SN_ADT/PBAC,
+        // which shifts ZNT-14 to an empty field entirely (rather than merely
+        // lacking component 4) — still resolves to null via the same
+        // isEmpty() guard in getComponent().
+        assertNull(map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    // =====================================================================
+    // ORU fixtures
+    // =====================================================================
+
+    @Test
+    @DisplayName("6.1R01 SN_ADT/ORU (SN_ORU): non-PUSH branch, ZNT-14 component 4 absent -> null/null")
+    void snOru_nonPushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&||GHC|||||ORU^R01|||2.5|\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|\n" +
+                "ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|\n" +
+                "OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|\n" +
+                "OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|\n" +
+                "ZNT||ORU|R01|SN_ORU|ClinicianGroupSN|CohortGroupSN_Name^CohortGroupSN_Description||healthelink:GHC|healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-SN-ORU");
+
+        assertTrue(result);
+        assertEquals("ORU", map.get(Constants.MESSAGE_CODE));
+        assertEquals("SN_ORU", map.get(Constants.DELIVERY_TYPE));
+        assertNull(map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    @Test
+    @DisplayName("6.2R01 PBRD (base): non-PUSH branch, ZNT-14 component 4 absent -> null/null")
+    void pbrdBase_nonPushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&||GHC|||||ORU^R01|||2.5|\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|\n" +
+                "ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|\n" +
+                "OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|\n" +
+                "OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|\n" +
+                "ZNT||ORU|R01|PBRD|||C10^SMITH^JOHN^EGSMC^ATT~SMITHJ^SMITH^JOHN^CHG^CON|healthelink:GHC|healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PBRD-BASE");
+
+        assertTrue(result);
+        assertEquals("ORU", map.get(Constants.MESSAGE_CODE));
+        assertEquals("PBRD", map.get(Constants.DELIVERY_TYPE));
+        assertNull(map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    @Test
+    @DisplayName("6.3R01 PUSH (base): PUSH branch, ZNT-11 component 4 absent -> null/null")
+    void pushBase_pushBranch_facilityAndQeAreNull() throws Exception {
+        String hl7 = "MSH|^~\\&||GHC|||||ORU^R01|||2.5|\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|\n" +
+                "ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|\n" +
+                "OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|\n" +
+                "OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|\n" +
+                "ZNT||ORU|R01|PUSH|||||healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255|userId^Test^User|979777797^NPI~JSMITHE^CHG|healthelink:CHG|";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PUSH-BASE");
+
+        assertTrue(result);
+        assertEquals("ORU", map.get(Constants.MESSAGE_CODE));
+        assertEquals("PUSH", map.get(Constants.DELIVERY_TYPE));
+        // ZNT-11 = "userId^Test^User" has only 3 components -> component 4 absent
+        assertNull(map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    // =====================================================================
+    // New fixtures with a populated component 4 (but no literal separator
+    // character), demonstrating the "whole value becomes facility" fallback
+    // =====================================================================
+
+    @Test
+    @DisplayName("6.3R01 PUSH + QE identifier: ZNT-11.4 present but has NO ':' -> whole value is facility")
+    void pushWithQeIdentifier_noColonSeparator_wholeValueIsFacility() throws Exception {
+        String hl7 = "MSH|^~\\&||GHC|||||ORU^R01|||2.5|\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|\n" +
+                "ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|\n" +
+                "OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|\n" +
+                "OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|\n" +
+                "ZNT||ORU|R01|PUSH|||||healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255|userId^Test^User^HEL-QE_identifier|979777797^NPI~JSMITHE^CHG|healthelink:CHG|";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PUSH-QE");
+
+        assertTrue(result);
+        assertEquals("ORU", map.get(Constants.MESSAGE_CODE));
+        assertEquals("PUSH", map.get(Constants.DELIVERY_TYPE));
+        // ZNT-11 = "userId^Test^User^HEL-QE_identifier" -> component 4 = "HEL-QE_identifier".
+        // No ":" present, so per spec the whole value becomes the facility code and QE is null.
+        assertEquals("HEL-QE_identifier", map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    @Test
+    @DisplayName("6.2R01 PBRD + QE identity: ZNT-14.4 present but has NO '.' -> whole value is facility")
+    void pbrdWithQeIdentity_noDotSeparator_wholeValueIsFacility() throws Exception {
+        String hl7 = "MSH|^~\\&||GHC|||||ORU^R01|||2.5|\n" +
+                "PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N\n" +
+                "PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|\n" +
+                "ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|\n" +
+                "OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|\n" +
+                "OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|\n" +
+                "ZNT||ORU|R01|PBRD|||C10^SMITH^JOHN^EGSMC^ATT~SMITHJ^SMITH^JOHN^CHG^CON|healthelink:GHC|healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255|^^^11.4QEIdentity|||SubscriptionName^SubscriptionSubject^^HEL-QEidentity";
+
+        Map<String, String> map = new HashMap<>();
+        boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PBRD-QE");
+
+        assertTrue(result);
+        assertEquals("ORU", map.get(Constants.MESSAGE_CODE));
+        assertEquals("PBRD", map.get(Constants.DELIVERY_TYPE));
+        // ZNT-14 = "SubscriptionName^SubscriptionSubject^^HEL-QEidentity" -> component 4 =
+        // "HEL-QEidentity". No "." present, so the whole value becomes the facility code.
+        assertEquals("HEL-QEidentity", map.get(Constants.FACILITY));
+        assertNull(map.get(Constants.QE));
+    }
+
+    // =====================================================================
+    // Supplementary "positive-match" tests (synthetic — not from the
+    // supplied fixtures) proving the actual colon/dot split works, since
+    // none of the real-world samples contain the separator character in
+    // the relevant component.
+    // =====================================================================
+
+    @Nested
+    @DisplayName("Supplementary: proves the QE:facility / QE.facility split itself")
+    class PositiveSeparatorMatchTests {
+
+        @Test
+        @DisplayName("PUSH branch: ZNT-11.4 = 'QE-001:FAC-100' -> qe='QE-001', facility='FAC-100'")
+        void push_colonSeparatedQeAndFacility_splitCorrectly() throws Exception {
+            String hl7 = "ZNT||ORU|R01|PUSH|||||9||^^^QE-001:FAC-100";
+
+            Map<String, String> map = new HashMap<>();
+            boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-PUSH-POSITIVE");
+
+            assertTrue(result);
+            assertEquals("PUSH", map.get(Constants.DELIVERY_TYPE));
+            assertEquals("FAC-100", map.get(Constants.FACILITY));
+            assertEquals("QE-001", map.get(Constants.QE));
+        }
+
+        @Test
+        @DisplayName("Non-PUSH branch: ZNT-14.4 = 'QE-002.FAC-200' -> qe='QE-002', facility='FAC-200'")
+        void nonPush_dotSeparatedQeAndFacility_splitCorrectly() throws Exception {
+            String hl7 = "ZNT||ORU|R01|PBRD||||||||||^^^QE-002.FAC-200";
+
+            Map<String, String> map = new HashMap<>();
+            boolean result = invokeExtractZntFixture(hl7, mockFixtureRequestContext(map), "INT-NONPUSH-POSITIVE");
+
+            assertTrue(result);
+            assertEquals("PBRD", map.get(Constants.DELIVERY_TYPE));
+            assertEquals("FAC-200", map.get(Constants.FACILITY));
+            assertEquals("QE-002", map.get(Constants.QE));
+        }
     }
 
 }

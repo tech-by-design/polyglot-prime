@@ -4,4 +4,4 @@ PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||201
 ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|
 OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|
 OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|
-ZNT||ORU|R01|SN_ORU|ClinicianGroupSN|CohortGroupSN_Name^CohortGroupSN_Description||healthelink:GHC|5003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||
+ZNT||ORU|R01|PUSH|||||healthelink:EGSMC^5003637762^healthelink:EGSMC~healthelink:CHG^64654645^healthelink:CHG|68cc652a10ae317aef21b255|userId^Test^User^HEL-QE_identifier|979777797^NPI~JSMITHE^CHG|healthelink:CHG|

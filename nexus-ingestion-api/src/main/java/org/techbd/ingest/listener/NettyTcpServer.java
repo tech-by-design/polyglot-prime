@@ -1983,21 +1983,49 @@ public class NettyTcpServer implements MessageSourceProvider {
                 }
                 String messageCode = terser.get("/.ZNT-2-1");
                 String deliveryType = terser.get("/.ZNT-4-1");
-                String znt8_1 = terser.get("/.ZNT-8-1");
+
                 String facilityCode = null;
                 String qe = null;
-                if (znt8_1 != null && znt8_1.contains(":")) {
-                    String[] parts = znt8_1.split(":");
-                    qe = parts[0];
-                    facilityCode = parts.length > 1 ? parts[1] : null;
-                } else if (znt8_1 != null) {
-                    facilityCode = znt8_1;
+
+                // -----------------------------------------------------------------
+                // Facility/QE resolution now branches on ZNT-4 (Delivery Type):
+                // - "PUSH" -> read ZNT-11 component 4 (USR facility) and look
+                // for a "{QE_identifier}:" prefix (colon separator)
+                // - otherwise -> read ZNT-14 component 4 (Delivery Option) and look
+                // for a "{QE_identifier}." prefix (dot separator)
+                // -----------------------------------------------------------------
+                if ("PUSH".equalsIgnoreCase(deliveryType)) {
+                    String znt11_4 = terser.get("/.ZNT-11-4");
+                    if (znt11_4 != null && znt11_4.contains(":")) {
+                        // Split only on the first ":" — QE identifier is the prefix,
+                        // remainder (which may itself contain ':') is the facility code.
+                        String[] parts = znt11_4.split(":", 2);
+                        qe = parts[0];
+                        facilityCode = parts.length > 1 ? parts[1] : null;
+                    } else {
+                        // No "{QE}:" prefix present — treat whole value as facility code.
+                        facilityCode = znt11_4;
+                    }
+                } else {
+                    String znt14_4 = terser.get("/.ZNT-14-4");
+                    if (znt14_4 != null && znt14_4.contains(".")) {
+                        // Split only on the first "." — QE identifier is the prefix,
+                        // remainder (which may itself contain '.') is the facility code.
+                        int idx = znt14_4.indexOf(".");
+                        qe = znt14_4.substring(0, idx);
+                        facilityCode = znt14_4.substring(idx + 1);
+                    } else {
+                        // No "{QE}." prefix present — treat whole value as facility code.
+                        facilityCode = znt14_4;
+                    }
                 }
+
                 additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
                 additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
                 additionalDetails.put(Constants.FACILITY, facilityCode);
                 additionalDetails.put(Constants.QE, qe);
-                logger.info("ZNT_SEGMENT_EXTRACTED [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
+                logger.info(
+                        "ZNT_SEGMENT_EXTRACTED [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
                         interactionId, messageCode, deliveryType, facilityCode, qe);
                 return true;
             } else {
@@ -2005,7 +2033,8 @@ public class NettyTcpServer implements MessageSourceProvider {
                 return false;
             }
         } catch (HL7Exception e) {
-            logger.error("ZNT_EXTRACTION_ERROR -- This could be as the ZNT segment is not available [interactionId={}]: Detailed error message {}",
+            logger.error(
+                    "ZNT_EXTRACTION_ERROR -- This could be as the ZNT segment is not available [interactionId={}]: Detailed error message {}",
                     interactionId, e.getMessage());
             return false;
         }
@@ -2025,15 +2054,16 @@ public class NettyTcpServer implements MessageSourceProvider {
                 logger.warn("ZNT_SEGMENT_NOT_FOUND_MANUAL [interactionId={}]", interactionId);
                 return false;
             }
+            // fields[0] == "ZNT" segment name, fields[N] == ZNT-N field value.
             String[] fields = zntLine.split("\\|", -1);
             Map<String, String> additionalDetails = requestContext.getAdditionalParameters();
             if (additionalDetails == null) {
                 additionalDetails = new HashMap<>();
                 requestContext.setAdditionalParameters(additionalDetails);
             }
+
             String messageCode = null;
             String deliveryType = null;
-            String znt8_1 = null;
             if (fields.length > 2 && !fields[2].isEmpty()) {
                 String[] components = fields[2].split("\\^", -1);
                 messageCode = components.length > 0 ? components[0] : null;
@@ -2042,30 +2072,73 @@ public class NettyTcpServer implements MessageSourceProvider {
                 String[] components = fields[4].split("\\^", -1);
                 deliveryType = components.length > 0 ? components[0] : null;
             }
-            if (fields.length > 8 && !fields[8].isEmpty()) {
-                String[] components = fields[8].split("\\^", -1);
-                znt8_1 = components.length > 0 ? components[0] : null;
-            }
+
             String facilityCode = null;
             String qe = null;
-            if (znt8_1 != null && znt8_1.contains(":")) {
-                String[] parts = znt8_1.split(":");
-                qe = parts[0];
-                facilityCode = parts.length > 1 ? parts[1] : null;
-            } else if (znt8_1 != null) {
-                facilityCode = znt8_1;
+
+            // -----------------------------------------------------------------
+            // Facility/QE resolution now branches on ZNT-4 (Delivery Type):
+            // - "PUSH" -> read ZNT-11 component 4 (USR facility) and look
+            // for a "{QE_identifier}:" prefix (colon separator)
+            // - otherwise -> read ZNT-14 component 4 (Delivery Option) and look
+            // for a "{QE_identifier}." prefix (dot separator)
+            // -----------------------------------------------------------------
+            if ("PUSH".equalsIgnoreCase(deliveryType)) {
+                String znt11_4 = getComponent(fields, 11, 4);
+                if (znt11_4 != null && znt11_4.contains(":")) {
+                    // Split only on the first ":" — QE identifier is the prefix,
+                    // remainder is the facility code.
+                    String[] parts = znt11_4.split(":", 2);
+                    qe = parts[0];
+                    facilityCode = parts.length > 1 ? parts[1] : null;
+                } else {
+                    // No "{QE}:" prefix present — treat whole value as facility code.
+                    facilityCode = znt11_4;
+                }
+            } else {
+                String znt14_4 = getComponent(fields, 14, 4);
+                if (znt14_4 != null && znt14_4.contains(".")) {
+                    // Split only on the first "." — QE identifier is the prefix,
+                    // remainder is the facility code.
+                    int idx = znt14_4.indexOf(".");
+                    qe = znt14_4.substring(0, idx);
+                    facilityCode = znt14_4.substring(idx + 1);
+                } else {
+                    // No "{QE}." prefix present — treat whole value as facility code.
+                    facilityCode = znt14_4;
+                }
             }
+
             additionalDetails.put(Constants.MESSAGE_CODE, messageCode);
             additionalDetails.put(Constants.DELIVERY_TYPE, deliveryType);
             additionalDetails.put(Constants.FACILITY, facilityCode);
             additionalDetails.put(Constants.QE, qe);
-            logger.info("ZNT_SEGMENT_EXTRACTED_MANUALLY [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
+            logger.info(
+                    "ZNT_SEGMENT_EXTRACTED_MANUALLY [interactionId={}] messageCode={}, deliveryType={}, facility={}, qe={}",
                     interactionId, messageCode, deliveryType, facilityCode, qe);
             return true;
         } catch (Exception e) {
             logger.error("ZNT_MANUAL_EXTRACTION_ERROR [interactionId={}]: {}", interactionId, e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Extracts a specific component (1-based index) from a specific field (1-based
+     * ZNT-N index, so pass 11 for ZNT-11) within the manually pipe-split ZNT
+     * segment.
+     * Returns null if the field is absent/empty or the component index is out of
+     * range.
+     */
+    private String getComponent(String[] fields, int fieldIndex, int componentIndex) {
+        if (fields.length <= fieldIndex || fields[fieldIndex] == null || fields[fieldIndex].isEmpty()) {
+            return null;
+        }
+        String[] components = fields[fieldIndex].split("\\^", -1);
+        if (components.length >= componentIndex) {
+            return components[componentIndex - 1];
+        }
+        return null;
     }
 
     // -------------------------------------------------------------------------

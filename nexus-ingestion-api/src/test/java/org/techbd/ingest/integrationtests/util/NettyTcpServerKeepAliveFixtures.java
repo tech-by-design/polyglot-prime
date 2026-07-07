@@ -35,14 +35,14 @@ public final class NettyTcpServerKeepAliveFixtures {
      * (derived as {@code GHC_ORU_PBRD} from ZNT-8 suffix, ZNT-2, ZNT-4).
      */
     public static final String HL7_MSG1_ORU = """
-            MSH|^~\\&||GHC|||||ORU^R01|||2.5|
-            PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N
-            PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|
-            ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|
-            OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|
-            OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|
-            ZNT||ORU|R01|PBRD|||C10^SMITH^JOHN^EGSMC^ATT~SMITHJ^SMITH^JOHN^CHG^CON|healthelink:GHC|55003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||
-            """.replace("\n", "\r");
+        MSH|^~\\&||GHC|||||ORU^R01|||2.5|
+        PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N
+        PV1||O|||||C1^Smith^Sid^^^^^^GHC|||||||EO|||||GHC_V1|||||||||||||||||||||||||20111022094500|20111022094500|
+        ORC||GHC-P1|GHC-F1||||^^^201110100910||201110100912|||C1^Smith^Sid^^^^^^GHC|GHC||||||||GHC||||||||LAB|
+        OBR||GHC-P1|GHC-F1|RGL^Random Glucose^L|||201110101214|||||||201110100937||C1^Smith^Sid^^^^^^GHC||||||201110101227|||F|
+        OBX||NM|GLU^GLUCOSE||12.3|mmol/l|70-99||||F|||201110101214|
+        ZNT||ORU|R01|PBRD|||C10^SMITH^JOHN^EGSMC^ATT~SMITHJ^SMITH^JOHN^CHG^CON|healthelink:GHC|55003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||||PBRD_Subscription^Patient Results^ReceivingSystem^QE01.GHC||
+        """.replace("\n", "\r");
 
     /**
      * HL7 message 2: ADT^A01 from EPIC/EGSMC.
@@ -53,18 +53,18 @@ public final class NettyTcpServerKeepAliveFixtures {
      * <br>Expected SQS {@code messageGroupId}: {@code "healthelink_EGSMC_ADT_SN_ADT"}.
      */
     public static final String HL7_MSG2_ADT_A01 = """
-            MSH|^~\\&|EPIC|EGSMC|||||ADT^A01|||2.3.1
-            EVN||20160102133621|||167489^Zampitello^Liza|20160102133621
-            PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N
-            CON|1||||||||||||A|20240603140500|20260603140500|
-            PD1||||145425^Ingersol^Angela
-            NK1|1|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Emergency Contact 1
-            NK1|2|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Mother
-            PV1||103|ED^^^EGSMC^^^^^^^|ER||| C10^Smith^John^^^^^^EGSMC|||1|||||||||5363788347|||||||||||||||||||||||||20160102133600
-            GT1|1|153620341|DeSantis^Stuart^M^||4749 Maple Drive^^Chicago^NC^37789^USA^^^BOULDER|668-202-3982||19890718|F|P/F|MOT|181-48-1624||||Globagy.com|^^^^^USA|||None
-            IN1||5200324231|5190155816|KwalSonics Partners|||||||||||1|Cheng^Agnes^Brenda^|Self|19700908|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS|||1***1|||YES||||||||||1484851|148112259||||||STUDENT|F|^^^^^USA|||BOTH
-            ZNT||ADT|A01|SN_ADT|ClinicianGroupSN|CohortGroupSN_Name^CohortGroup_SN_Description||healthelink:EGSMC|5003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||
-            """.replace("\n", "\r");
+        MSH|^~\\&|EPIC|EGSMC|||||ADT^A01|||2.3.1
+        EVN||20160102133621|||167489^Zampitello^Liza|20160102133621
+        PID||5003637762^^^HEALTHELINK:FACID^MRN|5003637762^^^HEALTHELINK:FACID^MRN ||Cheng^Agnes^Brenda||19700908|F|Cheng^Agnes^^|9|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS||282-839-3300^P^PH||ENG|SINGLE|12|5433165929|185-10-7482|||||||||||N
+        CON|1||||||||||||A|20240603140500|20260603140500|
+        PD1||||145425^Ingersol^Angela
+        NK1|1|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Emergency Contact 1
+        NK1|2|Xavier^Richard^^|Mother|8953 Franklin Blvd^^Tampa^TN^10864^USA|750-923-5821||Mother
+        PV1||103|ED^^^EGSMC^^^^^^^|ER||| C10^Smith^John^^^^^^EGSMC|||1|||||||||5363788347|||||||||||||||||||||||||20160102133600
+        GT1|1|153620341|DeSantis^Stuart^M^||4749 Maple Drive^^Chicago^NC^37789^USA^^^BOULDER|668-202-3982||19890718|F|P/F|MOT|181-48-1624||||Globagy.com|^^^^^USA|||None
+        IN1||5200324231|5190155816|KwalSonics Partners|||||||||||1|Cheng^Agnes^Brenda^|Self|19700908|3695 First Court^^Larchmont^KY^23302^USA^^^DOUGLAS|||1***1|||YES||||||||||1484851|148112259||||||STUDENT|F|^^^^^USA|||BOTH
+        ZNT||ADT|A01|SN_ADT|ClinicianGroupSN|CohortGroupSN_Name^CohortGroup_SN_Description||healthelink:EGSMC|5003637762^healthelink:EGSMC~64654645^healthelink:CHG|68cc652a10ae317aef21b255||||SubscriptionName^SubscriptionSubject^ReceivingSystem^QE01.EGSMC||
+        """.replace("\n", "\r");
 
     // =========================================================================
     // TCP fixtures  — used by NettyTcpServerTcpKeepAliveITCase (port 6555, raw TCP)
@@ -196,22 +196,23 @@ public final class NettyTcpServerKeepAliveFixtures {
     // =========================================================================
     // Expected SQS messageGroupId constants
     // =========================================================================
-
     /**
      * Expected {@code messageGroupId} for {@link #HL7_MSG1_ORU}.
      *
-     * <p>Derived from ZNT-8 ({@code healthelink:GHC} → org=GHC),
-     * ZNT-2 ({@code ORU}), ZNT-4 ({@code PBRD}).
+     * <p>
+     * Derived from ZNT-14.4 ({@code QE01.GHC} → QE=QE01, facility=GHC),
+     * ZNT-2 ({@code ORU}), and ZNT-4 ({@code PBRD}).
      */
-    public static final String GROUP_ID_HL7_MSG1 = "healthelink_GHC_ORU_PBRD";
+    public static final String GROUP_ID_HL7_MSG1 = "QE01_GHC_ORU_PBRD";
 
     /**
      * Expected {@code messageGroupId} for {@link #HL7_MSG2_ADT_A01}.
      *
-     * <p>Derived from ZNT-8 ({@code healthelink:EGSMC} → org=EGSMC),
-     * ZNT-2 ({@code ADT}), ZNT-4 ({@code SN_ADT}).
+     * <p>
+     * Derived from ZNT-14.4 ({@code QE01.EGSMC} → QE=QE01, facility=EGSMC),
+     * ZNT-2 ({@code ADT}), and ZNT-4 ({@code SN_ADT}).
      */
-    public static final String GROUP_ID_HL7_MSG2 = "healthelink_EGSMC_ADT_SN_ADT";
+    public static final String GROUP_ID_HL7_MSG2 = "QE01_EGSMC_ADT_SN_ADT";
 
     /**
      * Expected {@code messageGroupId} for both TCP messages (port 6555).
