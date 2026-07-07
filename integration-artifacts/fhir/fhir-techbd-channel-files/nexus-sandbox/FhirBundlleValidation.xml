@@ -2,14 +2,18 @@
   <id>57b5e566-b5cb-4185-9600-4de0bbf10b84</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleValidation</name>
-  <description>Version: 0.8.20
-Saved custom headers in bridgelink table</description>
-  <revision>12</revision>
+  <description>
+Version: 0.8.21
+Message storage mode changed as development and message content pruning enabled</description>
+  <revision>13</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>true</mutualTlsEnabled>
@@ -40,9 +44,6 @@ Saved custom headers in bridgelink table</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -1000,7 +1001,7 @@ return;</deployScript>
 return;</undeployScript>
   <properties version="26.3.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>METADATA</messageStorageMode>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
     <encryptAttachments>false</encryptAttachments>
     <encryptCustomMetaData>false</encryptCustomMetaData>
@@ -1051,10 +1052,11 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782813130281</time>
+        <time>1783405301488</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
+        <pruneContentDays>7</pruneContentDays>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
@@ -1064,15 +1066,14 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.3.1">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>199</revision>
+        <revision>202</revision>
         <lastModified>
-          <time>1782724018362</time>
+          <time>1783345351428</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
         <includeNewChannels>true</includeNewChannels>
         <enabledChannelIds class="sorted-set">
-          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
           <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
           <string>0bebf48c-06c3-45e4-b074-5fd7ac3eedb4</string>
           <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
@@ -1129,6 +1130,7 @@ return;</undeployScript>
           <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
           <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
           <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
+          <string>7276d188-bdba-4027-8cb7-15bf262c48a1</string>
           <string>789c27f9-3fbd-4c76-9252-833d4f388d81</string>
           <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
           <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
@@ -1164,6 +1166,7 @@ return;</undeployScript>
           <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
           <string>ac361d6f-fc34-44f1-9029-589b680d7a2a</string>
           <string>ac75ecb3-2a29-4a75-b056-61895a4ccc0c</string>
+          <string>adc970c1-2925-4ed9-bdf3-dc9e6a6c0aa6</string>
           <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
           <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
           <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
@@ -1206,7 +1209,9 @@ return;</undeployScript>
           <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
           <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
         </enabledChannelIds>
-        <disabledChannelIds class="sorted-set"/>
+        <disabledChannelIds class="sorted-set">
+          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
+        </disabledChannelIds>
         <codeTemplates>
           <codeTemplate version="26.3.1">
             <id>030add36-72d6-4bb4-8db4-aa0cc8b906c9</id>
@@ -1267,15 +1272,14 @@ function createJsonResponse(status, message) {
       <codeTemplateLibrary version="26.3.1">
         <id>d56d125c-b75a-4803-9038-3a65e9bfbbb5</id>
         <name>UuidUtil</name>
-        <revision>181</revision>
+        <revision>184</revision>
         <lastModified>
-          <time>1782724018354</time>
+          <time>1783345351423</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
         <includeNewChannels>false</includeNewChannels>
         <enabledChannelIds class="sorted-set">
-          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
           <string>0bebf48c-06c3-45e4-b074-5fd7ac3eedb4</string>
           <string>0bf51702-45a6-4f42-adc2-69345112767e</string>
           <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
@@ -1344,6 +1348,7 @@ function createJsonResponse(status, message) {
           <string>6df6b37f-e6df-4648-a7e1-67715a4e3157</string>
           <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
           <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
+          <string>7276d188-bdba-4027-8cb7-15bf262c48a1</string>
           <string>734712b9-75bb-4eb5-b31e-0951c9287df3</string>
           <string>789c27f9-3fbd-4c76-9252-833d4f388d81</string>
           <string>7b87138a-7964-457e-a1df-e14fffac8163</string>
@@ -1387,6 +1392,7 @@ function createJsonResponse(status, message) {
           <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
           <string>ac361d6f-fc34-44f1-9029-589b680d7a2a</string>
           <string>ac75ecb3-2a29-4a75-b056-61895a4ccc0c</string>
+          <string>adc970c1-2925-4ed9-bdf3-dc9e6a6c0aa6</string>
           <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
           <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
           <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
@@ -1433,6 +1439,7 @@ function createJsonResponse(status, message) {
           <string>ffc6ec26-9bda-4da6-b9e5-20912920ab83</string>
         </enabledChannelIds>
         <disabledChannelIds class="sorted-set">
+          <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
           <string>00389d41-c2ce-45c7-a702-353b449b1026</string>
           <string>01fbb835-f605-4376-84eb-9c4affcf159e</string>
           <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
@@ -1524,14 +1531,14 @@ function generateUuid() {
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>9ed58155-d98d-454d-9c80-512aa327bf15</id>
-        <name>0_8_20</name>
+        <id>80d71304-f33e-45b4-aeaa-5f328a4d2e4c</id>
+        <name>0_8_21</name>
         <channelIds>
           <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>255</green>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
