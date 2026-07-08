@@ -24,6 +24,8 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.techbd.service.http.hub.RlsInitializationFilter;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
  
@@ -39,6 +41,8 @@ public class SecurityConfig {
 
     @Autowired(required = false)
     private GitHubUserAuthorizationFilter gitHubUserAuthorizationFilter;
+    @Autowired
+private RlsInitializationFilter rlsInitializationFilter;
 
     public SecurityConfig(RolePermissionInterceptor rolePermissionInterceptor) {
         this.rolePermissionInterceptor = rolePermissionInterceptor;
@@ -118,7 +122,11 @@ public class SecurityConfig {
 
                     if (gitHubUserAuthorizationFilter != null) {
                         http.addFilterAfter(gitHubUserAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
-                    }    
+                    }   
+                    
+                    http.addFilterAfter(
+                           rlsInitializationFilter,
+            FusionAuthUserAuthorizationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
             headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
