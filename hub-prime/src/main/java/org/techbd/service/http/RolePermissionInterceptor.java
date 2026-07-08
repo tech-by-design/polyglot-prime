@@ -47,24 +47,24 @@ public class RolePermissionInterceptor implements HandlerInterceptor {
          * DEBUG - Apply DB Role on every request
          * -------------------------------------------------------
          */
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication instanceof OAuth2AuthenticationToken token
-                && token.getPrincipal() instanceof DefaultOAuth2User user) {
+        // if (authentication instanceof OAuth2AuthenticationToken token
+        //         && token.getPrincipal() instanceof DefaultOAuth2User user) {
 
-            try {
+        //     try {
 
-                fusionAuthUsersService.setRoleFromCurrentUser(user);
+        //         fusionAuthUsersService.setRoleFromCurrentUser(user);
 
-                Integer pid = dsl.fetchOne("select pg_backend_pid()")
-                        .get(0, Integer.class);
+        //         Integer pid = dsl.fetchOne("select pg_backend_pid()")
+        //                 .get(0, Integer.class);
 
-                LOG.info("RLS initialized. PostgreSQL Backend PID = {}", pid);
+        //         LOG.info("RLS initialized. PostgreSQL Backend PID = {}", pid);
 
-            } catch (Exception ex) {
-                LOG.error("Failed to initialize PostgreSQL RLS session", ex);
-            }
-        }
+        //     } catch (Exception ex) {
+        //         LOG.error("Failed to initialize PostgreSQL RLS session", ex);
+        //     }
+        // }
 
         String uri = request.getRequestURI();
         HttpSession session = request.getSession(false);
