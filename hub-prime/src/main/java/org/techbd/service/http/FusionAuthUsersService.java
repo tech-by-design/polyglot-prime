@@ -150,7 +150,7 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
         String jsonAttributes = objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(oAuth2User.getAttributes());
         LOG.info("oAuth2User attributes (JSON):\n{}", jsonAttributes);
-        setRoleBasedOnFusionToken(jsonAttributes);
+        // setRoleBasedOnFusionToken(jsonAttributes);
 
     } catch (Exception e) {
         LOG.error("Failed to serialize attributes to JSON", e);
@@ -231,5 +231,21 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
             throw new RuntimeException("Failed to parse role permissions JSON from DB", e);
         }
     }
+    public void setRoleFromCurrentUser(DefaultOAuth2User user) {
+    try {
+        String tokenJson = objectMapper.writeValueAsString(user.getAttributes());
+
+        setRoleBasedOnFusionToken(tokenJson);
+
+        // Integer pid = dsl.fetchOne("select pg_backend_pid()")
+        //         .get(0, Integer.class);
+
+        // LOG.info("SET ROLE executed on PostgreSQL Backend PID = {}", pid);
+
+    } catch (Exception e) {
+        LOG.error("Failed to set PostgreSQL role from current user", e);
+        throw new RuntimeException(e);
+    }
+}
    
 }

@@ -4,57 +4,109 @@
       layout:decorate="~{layout/prime}">
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Profile</title>
+	
+ 
+
+<style>
+body{
+    margin:0;
+    padding:40px 20px;
+    background:#f5f7fb;
+    font-family:Inter,Arial,sans-serif;
+}
+
+.profile-card{
+    /* max-width:850px; */
+    margin:auto;
+    background:#fff;
+    border:1px solid #e9ecef;
+    border-radius:12px;
+    padding:25px;
+    display:flex;
+    align-items:center;
+    gap:32px;
+}
+
+.profile-image{
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    object-fit:cover;
+    flex-shrink:0;
+}
+
+.profile-details{
+    flex:1;
+}
+
+.profile-details h2{
+    margin:0 0 16px;
+    font-size:26px;
+    font-weight:600;
+    color:#222;
+}
+
+.profile-details p{
+    margin:10px 0;
+    font-size:17px;
+    color:#666;
+    word-break:break-word;
+}
+
+/* Mobile */
+@media (max-width:768px){
+
+    .profile-card{
+        flex-direction:column; 
+        padding:24px;
+        gap:20px;
+    }
+
+    .profile-image{
+        width:110px;
+        height:110px;
+    }
+
+    .profile-details h2{
+        font-size:26px;
+    }
+
+    .profile-details p{
+        font-size:16px;
+    }
+
+}
+</style>
 </head>
 
 <body>
-<div layout:fragment="content" class="p-6 bg-gray-50 min-h-screen">
-    <div class="w-full mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 px-4 md:px-6">User Profile</h1>
+<div layout:fragment="content" class="p-6 bg-gray-50 min-h-screen"> 
+<div class="profile-card">
 
-        <!-- Profile Card -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mx-4 md:mx-6">
-        <div class="flex flex-col sm:flex-row items-center sm:items-start sm:space-x-6 h-[400px]">
-                
-                <!-- Avatar -->
-               <!-- <section class="bg-white rounded-xl shadow-lg p-8 w-full md:w-3/4 lg:w-2/3 xl:w-1/2">  -->
-             <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-                
-                <div class="flex-shrink-0">
-                    <img th:src="${#authentication.principal.attributes['avatar_url']}" 
-                         alt="User Avatar"
-                         class="w-32 h-32 rounded-full border-4 border-white shadow-md object-cover">
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-12 w-full text-center md:text-left">
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-500 uppercase tracking-wider">Name</label>
-                        <p class="mt-1 text-lg font-medium text-gray-800">[[${#authentication.principal.attributes['name']}]]</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-500 uppercase tracking-wider">Email</label>
-                        <p class="mt-1 text-lg font-medium text-gray-800">[[${#authentication.principal.attributes['email']}]]</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-500 uppercase tracking-wider">Role</label>
-                        <p class="mt-1 text-lg font-medium text-gray-800">
-                            [[${#strings.listJoin(#authentication.principal.attributes['role'], ', ')}]]</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-500 uppercase tracking-wider">Tenant</label>
-                        <p class="mt-1 text-lg font-medium text-gray-800">
-                            [[${#strings.listJoin(#authentication.principal.attributes['groupNames'], ', ')}]]
-                        </p>                   
-                  </div>
-                </div>
-            </div>
-        <!-- </section> -->
+     <img th:src="${#authentication.principal.attributes['avatar_url']}" 
+                    class="profile-image" alt="User Avatar">
+
+    <div class="profile-details">
+
+        <h2>[[${#strings.listJoin(#authentication.principal.attributes['name'], ', ')}]]</h2>
+
+        <!-- Show only if email exists -->
+        <p>[[${#authentication.principal.attributes['email']}]]</p>
+
+        <!-- Show only if role exists -->
+        <p>[[${#authentication.principal.attributes['role']}]]</p>
+
+        <!-- Show only if tenant exists -->
+        <p th:unless="${#lists.contains(#authentication.principal.attributes['role'], 'Super_Admin')}">
+            [[${#strings.listJoin(#authentication.principal.attributes['groupNames'], ', ')}]]
+        </p>
 
     </div>
+
+</div>
+ 
 </div>
 </body>
 </html>

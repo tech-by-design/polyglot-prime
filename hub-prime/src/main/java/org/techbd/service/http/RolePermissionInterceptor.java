@@ -1,17 +1,23 @@
 package org.techbd.service.http;
 
+import java.util.Map;
+import java.util.Set;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
-
-import java.util.Map;
-import java.util.Set;
 
 @Component
 public class RolePermissionInterceptor implements HandlerInterceptor {
@@ -21,11 +27,44 @@ public class RolePermissionInterceptor implements HandlerInterceptor {
     @Value("${AUTH_PROVIDER:github}")
     private String authProvider;
 
+    private final FusionAuthUsersService fusionAuthUsersService;
+    private final DSLContext dsl;
+
+    public RolePermissionInterceptor(FusionAuthUsersService fusionAuthUsersService,
+                                     DSLContext dsl) {
+        this.fusionAuthUsersService = fusionAuthUsersService;
+        this.dsl = dsl;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public boolean preHandle(HttpServletRequest request,
             HttpServletResponse response,
             Object handler) throws Exception {
+
+        /*
+         * -------------------------------------------------------
+         * DEBUG - Apply DB Role on every request
+         * -------------------------------------------------------
+         */
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication instanceof OAuth2AuthenticationToken token
+                && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+            try {
+
+                fusionAuthUsersService.setRoleFromCurrentUser(user);
+
+                Integer pid = dsl.fetchOne("select pg_backend_pid()")
+                        .get(0, Integer.class);
+
+                LOG.info("RLS initialized. PostgreSQL Backend PID = {}", pid);
+
+            } catch (Exception ex) {
+                LOG.error("Failed to initialize PostgreSQL RLS session", ex);
+            }
+        }
 
         String uri = request.getRequestURI();
         HttpSession session = request.getSession(false);
