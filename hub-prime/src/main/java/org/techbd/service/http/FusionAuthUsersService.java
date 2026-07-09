@@ -270,5 +270,12 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
         throw new RuntimeException(e);
     }
 }
+
+public void resetDatabaseSession() {
+    dsl.execute("RESET ROLE");
+    dsl.execute("RESET jwt.claims.user_roles");
+    dsl.execute("RESET jwt.claims.admin_roles");
+    dsl.execute("RESET jwt.claims.tenants");
+}
    
 }
