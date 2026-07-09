@@ -1,6 +1,7 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -84,8 +85,10 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
 
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
                         if (!faUser.roles().isEmpty()) {
-                         String role = faUser.roles().get(0); // take first role
-                         Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role);
+                         String role = faUser.roles().get(0);
+                         List<String> teantIds = faUser.groupIds(); // take first role
+                        //  fusionAuthUsersService.setRoleFromCurrentUser(enrichedOAuth2User);
+                         Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role ,teantIds);
                          request.getSession().setAttribute("rolePermissions", permissions);
                          request.getSession().setAttribute("userRole", role);
                          request.getSession().setAttribute("isSuperRole", faUser.isSuperRole());

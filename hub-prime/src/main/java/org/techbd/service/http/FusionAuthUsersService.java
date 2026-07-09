@@ -55,15 +55,16 @@ public class FusionAuthUsersService {
          }
 
     // Records for FusionAuth user authorization structure
-    public record AuthorizedUser(
+        public record AuthorizedUser(
             String fusionAuthId,
             String email,
             String name,
             List<String> roles,
-            List<String> groups,
+            List<String> groupIds,
+            List<String> groupNames,
             Boolean isSuperRole
             ) {
-    }
+        }
    
  public DefaultOAuth2User handleFusionAuthLogin(HttpServletRequest request, OAuth2AuthenticationToken oAuth2Token , DefaultOAuth2User oAuth2User , AuthorizedUser user) {
     
@@ -71,7 +72,8 @@ public class FusionAuthUsersService {
                enrichedAttributes.put("name", user.name());
                enrichedAttributes.put("email", user.email());
                enrichedAttributes.put("login", user.fusionAuthId());
-               enrichedAttributes.put("groupNames", user.groups()); 
+               enrichedAttributes.put("groups", user.groupIds());
+               enrichedAttributes.put("groupNames", user.groupNames()); 
                enrichedAttributes.put("role", user.roles());              
                enrichedAttributes.put("avatar_url", createAvatarUrl(oAuth2User));
                enrichedAttributes.put("authProvider", "fusionauth");
@@ -124,8 +126,7 @@ public class FusionAuthUsersService {
             .toList();
 
     LOG.info("oAuth2User attributes: {}", oAuth2User.getAttributes());
-                // return new AuthorizedUser(userId, email, name, roles, groupNames ,isSuperRole);
-                return new AuthorizedUser(userId, email, name, roles, groupNames , isSuperRole);
+                return new AuthorizedUser(userId, email, name, roles, groupIds, groupNames, isSuperRole);
    } 
  
 
@@ -204,10 +205,32 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     }
 }
 
- public Map<String, Set<String>> getRolePermissions(String roleName) {
-        
-         String sql = "techbd_udi_ingress.idp_get_login_role_permissions(?)::text";
-         String response = dsl.select(
+ public Map<String, Set<String>> getRolePermissions(String roleName ,List<String> tenantIds) {
+         String tenantIdsStr = String.join(",", tenantIds);
+            LOG.info("Fetching permissions for role {} with tenants: {}", roleName, tenantIdsStr);
+           dsl.execute(
+                "SELECT set_config('jwt.claims.tenants', ?, false)",
+                tenantIdsStr
+            );
+
+        // dsl.execute("SET jwt.claims.tenants = '7c5172c4-3033-424e-bd20-ad69650522c2'");
+        String tenant = dsl.fetchOne(
+                "select current_setting('jwt.claims.tenants', true)"
+            ).get(0, String.class);
+
+            LOG.info("Current tenant claim = {}", tenant);
+
+            LOG.info("Backend PID = {}",
+                dsl.fetchOne("select pg_backend_pid()").get(0));
+
+            LOG.info("Current User = {}",
+                dsl.fetchOne("select current_user").get(0));
+
+            LOG.info("Tenant = {}",
+                dsl.fetchOne("select current_setting('jwt.claims.tenants', true)").get(0));
+
+           String sql = "techbd_udi_ingress.idp_get_login_role_permissions(?)::text";
+          String response = dsl.select(
                   DSL.field(sql, String.class, roleName)
          ).fetchOneInto(String.class);
 
