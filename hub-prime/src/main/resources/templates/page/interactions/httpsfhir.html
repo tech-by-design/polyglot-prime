@@ -223,7 +223,15 @@
 
 <body>
     <div layout:fragment="content">
+    
         <div class="grid-description">
+              <div style="display:none; background:#f4f4f4;padding:10px;margin-bottom:10px">
+                <div><b>Writer:</b></div>
+                <pre th:text="${writerInfo}"></pre>
+
+                <div><b>Reader:</b></div>
+                <pre th:text="${readerInfo}"></pre>
+            </div>
             This widget provides an overview of the FHIR interactions, including details on processed requests. It features
             columns such as Request Time, Patient MRN, TechBD Interaction ID, and more.  Additionally, the widget supports filtering and sorting by various
             criteria to enable thorough analysis of the interactions.
@@ -233,5 +241,6 @@
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
+
 
 </html>

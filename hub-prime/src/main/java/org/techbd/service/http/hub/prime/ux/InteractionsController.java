@@ -1,7 +1,10 @@
 package org.techbd.service.http.hub.prime.ux;
 
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +24,21 @@ public class InteractionsController {
 
     private final Presentation presentation;
     private final SftpManager sftpManager;
+    private final DSLContext primaryDslContext;
+    private final DSLContext secondaryDslContext;
 
-    public InteractionsController(final Presentation presentation,
-            final SftpManager sftpManager) {
-        this.presentation = presentation;
-        this.sftpManager = sftpManager;
-    }
+   public InteractionsController(
+        final Presentation presentation,
+        final SftpManager sftpManager,
+        @Qualifier("primaryDslContext") DSLContext primaryDslContext,
+        @Autowired(required = false)
+        @Qualifier("secondaryDslContext") DSLContext secondaryDslContext) {
+
+    this.presentation = presentation;
+    this.sftpManager = sftpManager;
+    this.primaryDslContext = primaryDslContext;
+    this.secondaryDslContext = secondaryDslContext;
+}
 
     @GetMapping("/interactions")
     @RouteMapping(label = "Interactions", siblingOrder = 20)
@@ -37,6 +49,11 @@ public class InteractionsController {
     @GetMapping("/interactions/httpsfhir")
     @RouteMapping(label = "FHIR Data", title = "FHIR Data", siblingOrder = 20)
     public String httpsfhir(final Model model, final HttpServletRequest request) {
+       model.addAttribute("writerInfo",
+            getSessionInfo(primaryDslContext, "WRITER"));
+
+    model.addAttribute("readerInfo",
+            getSessionInfo(secondaryDslContext, "READER"));
         return presentation.populateModel("page/interactions/httpsfhir", model, request);
     }
 
@@ -106,4 +123,25 @@ public class InteractionsController {
     public String user(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/user", model, request);
     }
+    private String getSessionInfo(DSLContext dsl, String name) {
+
+    if (dsl == null) {
+        return name + " : NOT CONFIGURED";
+    }
+
+    var r = dsl.fetchOne("""
+        SELECT
+            current_user,
+            session_user,
+            current_setting('jwt.claims.tenants', true)
+        """);
+
+    return String.format(
+            "%s -> current_user=%s | session_user=%s | tenants=%s",
+            name,
+            r.get(0),
+            r.get(1),
+            r.get(2)
+    );
+}
 }

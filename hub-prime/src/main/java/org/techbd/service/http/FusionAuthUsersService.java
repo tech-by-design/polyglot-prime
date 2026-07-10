@@ -26,6 +26,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -49,10 +51,17 @@ public class FusionAuthUsersService {
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .registerModule(new JavaTimeModule());
          private final DSLContext dsl;
-         public FusionAuthUsersService(DSLContext dsl , WebClient fusionAuthApiClient) {
-            this.dsl = dsl;
-            this.fusionAuthApiClient = fusionAuthApiClient;
-         }
+    private final DSLContext secondaryDsl;
+
+    public FusionAuthUsersService(
+            @Qualifier("primaryDslContext") DSLContext dsl,
+            @Autowired(required = false)
+            @Qualifier("secondaryDslContext") DSLContext secondaryDsl,WebClient fusionAuthApiClient) {
+
+        this.dsl = dsl;
+        this.secondaryDsl = secondaryDsl;
+        this.fusionAuthApiClient = fusionAuthApiClient;
+    }
 
     // Records for FusionAuth user authorization structure
         public record AuthorizedUser(
@@ -151,6 +160,12 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
         String jsonAttributes = objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(oAuth2User.getAttributes());
         LOG.info("oAuth2User attributes (JSON):\n{}", jsonAttributes);
+        // setRole(dsl, jsonAttributes);
+        // //   Set role on reader (if enabled)
+        //     if (secondaryDsl != null) {
+        //         setRole(secondaryDsl, jsonAttributes);
+        //     }
+
         // setRoleBasedOnFusionToken(jsonAttributes);
 
     } catch (Exception e) {
@@ -206,29 +221,28 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
 }
 
  public Map<String, Set<String>> getRolePermissions(String roleName ,List<String> tenantIds) {
-         String tenantIdsStr = String.join(",", tenantIds);
-            LOG.info("Fetching permissions for role {} with tenants: {}", roleName, tenantIdsStr);
-           dsl.execute(
-                "SELECT set_config('jwt.claims.tenants', ?, false)",
-                tenantIdsStr
-            );
-
+        //  String tenantIdsStr = String.join(",", tenantIds);
+        //     LOG.info("Fetching permissions for role {} with tenants: {}", roleName, tenantIdsStr);
+        //    dsl.execute(
+        //         "SELECT set_config('jwt.claims.tenants', ?, false)",
+        //         tenantIdsStr
+        //     );
         // dsl.execute("SET jwt.claims.tenants = '7c5172c4-3033-424e-bd20-ad69650522c2'");
-        String tenant = dsl.fetchOne(
-                "select current_setting('jwt.claims.tenants', true)"
-            ).get(0, String.class);
+        // String tenant = dsl.fetchOne(
+        //         "select current_setting('jwt.claims.tenants', true)"
+        //     ).get(0, String.class);
 
-            LOG.info("Current tenant claim = {}", tenant);
+        //     LOG.info("Current tenant claim = {}", tenant);
 
-            LOG.info("Backend PID = {}",
-                dsl.fetchOne("select pg_backend_pid()").get(0));
+        //     LOG.info("Backend PID = {}",
+        //         dsl.fetchOne("select pg_backend_pid()").get(0));
 
-            LOG.info("Current User = {}",
-                dsl.fetchOne("select current_user").get(0));
+        //     LOG.info("Current User = {}",
+        //         dsl.fetchOne("select current_user").get(0));
 
-            LOG.info("Tenant = {}",
-                dsl.fetchOne("select current_setting('jwt.claims.tenants', true)").get(0));
-
+        //     LOG.info("Tenant = {}",
+        //         dsl.fetchOne("select current_setting('jwt.claims.tenants', true)").get(0));
+            resetDatabaseSession();
            String sql = "techbd_udi_ingress.idp_get_login_role_permissions(?)::text";
           String response = dsl.select(
                   DSL.field(sql, String.class, roleName)
@@ -258,12 +272,12 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     try {
         String tokenJson = objectMapper.writeValueAsString(user.getAttributes());
 
-        setRoleBasedOnFusionToken(tokenJson);
+        setRole(dsl, tokenJson);
 
-        // Integer pid = dsl.fetchOne("select pg_backend_pid()")
-        //         .get(0, Integer.class);
-
-        // LOG.info("SET ROLE executed on PostgreSQL Backend PID = {}", pid);
+            // Set role on reader (if enabled)
+            if (secondaryDsl != null) {
+                setRole(secondaryDsl, tokenJson);
+            }
 
     } catch (Exception e) {
         LOG.error("Failed to set PostgreSQL role from current user", e);
@@ -271,11 +285,26 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     }
 }
 
-public void resetDatabaseSession() {
-    dsl.execute("RESET ROLE");
-    dsl.execute("RESET jwt.claims.user_roles");
-    dsl.execute("RESET jwt.claims.admin_roles");
-    dsl.execute("RESET jwt.claims.tenants");
-}
+  private void setRole(DSLContext dsl, String tokenJson) {
+        dsl.fetch(
+            "SELECT techbd_udi_ingress.set_role_based_on_fusion_token(?::jsonb)",
+            tokenJson
+        );
+    }
+
+  public void resetDatabaseSession() {
+
+        reset(dsl);
+        if (secondaryDsl != null) {
+            reset(secondaryDsl);
+        }
+    }
+    
+    private void reset(DSLContext dsl) {
+        dsl.execute("RESET ROLE");
+        dsl.execute("RESET jwt.claims.user_roles");
+        dsl.execute("RESET jwt.claims.admin_roles");
+        dsl.execute("RESET jwt.claims.tenants");
+    }
    
 }
