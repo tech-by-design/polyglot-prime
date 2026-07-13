@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.HEAD, "/").permitAll()
                         .requestMatchers(HttpMethod.POST, "/Bundles/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/Bundle/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tenants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/Bundle/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/Bundles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/metadata").permitAll()
