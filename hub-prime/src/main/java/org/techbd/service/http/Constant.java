@@ -52,6 +52,9 @@ public class Constant {
         "/js/**",
         "/images/**",
         "/webjars/**",
+        "/Bundles/status/Bundle", "/Bundles/status/Bundle/**",
+        "/ccda/Bundle/**",
+        "/hl7v2/Bundle/**",
         "/fonts/**"
 };
 

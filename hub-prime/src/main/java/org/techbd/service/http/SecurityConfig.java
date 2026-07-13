@@ -208,7 +208,8 @@ public class SecurityConfig {
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(rolePermissionInterceptor)
                         .addPathPatterns("/**")
-                        .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS);
+                        .excludePathPatterns(Constant.INTERCEPTOR_EXCLUDED_URLS)
+                        .excludePathPatterns(Constant.STATELESS_API_URLS);
             }
         };
     }
