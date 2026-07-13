@@ -133,7 +133,7 @@ public class SwaggerConfig {
                 "/Bundles/status/operation-outcome",
                         "/Bundle", "/Bundle/**",
                         "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
-                        "/api/expect/fhir/**")
+                        "/api/expect/fhir/**","/tenants")
                 .addOpenApiCustomizer(openApi -> {
                     // Set custom servers
                     List<Server> servers = new ArrayList<>();

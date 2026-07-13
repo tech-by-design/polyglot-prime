@@ -22,7 +22,8 @@ public class Constant {
             "/docs/api/interactive/**",
             "/docs/api/openapi/**",
             "/api/permissions/**",
-            "/error", "/error/**"
+            "/error", "/error/**",
+            "/tenants"
     };
 
     public static final String[] INTERCEPTOR_EXCLUDED_URLS = {
@@ -45,7 +46,7 @@ public class Constant {
         "/support/**",
 
         "/api/permissions/**",
-
+        "/tenants",
         "/favicon.ico",
         "/css/**",
         "/js/**",

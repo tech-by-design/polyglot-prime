@@ -84,6 +84,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/api/ux/.*",
                                         "^/api/expect/.*",
                                         "^/metadata",
+                                        "^/tenants",
                                         List.of("^/Hl7.*", "POST", "persistReqPayload persistRespPayload"),
                                         List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"),
                                         List.of("^/flatfile.*", "POST", "persistReqPayload persistRespPayload"))
