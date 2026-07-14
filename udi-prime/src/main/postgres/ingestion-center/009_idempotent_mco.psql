@@ -1,0 +1,289 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 16.6
+-- Dumped by pg_dump version 16.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+PERFORM pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: mco_audit; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA IF NOT EXISTS mco_audit;
+
+ALTER SCHEMA mco_audit OWNER TO postgres;
+
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA techbd_udi_ingress;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- Name: mco_mco_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_mco_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_mco_id_seq OWNER TO postgres;
+
+--
+-- Name: mco; Type: TABLE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS mco_audit.mco (
+    mco_guid uuid DEFAULT techbd_udi_ingress.uuid_generate_v4() NOT NULL,
+    mco_id bigint DEFAULT nextval('mco_audit.mco_mco_id_seq'::regclass) NOT NULL,
+    mco_name character varying(255) NOT NULL,
+    description character varying(255),
+    created_on_utc timestamp with time zone,
+    updated_on_utc timestamp with time zone,
+    is_active bit(1),
+    mco_code character varying(255) NOT NULL
+);
+
+
+ALTER TABLE mco_audit.mco OWNER TO postgres;
+
+
+--
+-- Name: mco_error_code_error_code_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_code_error_code_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_error_code_error_code_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_error_logs_error_log_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_logs_error_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_error_logs_error_log_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_error_types_error_type_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_types_error_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_error_types_error_type_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_error_types; Type: TABLE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS mco_audit.mco_error_types (
+    error_type_guid uuid DEFAULT techbd_udi_ingress.uuid_generate_v4() NOT NULL,
+    error_type_id bigint DEFAULT nextval('mco_audit.mco_error_types_error_type_id_seq'::regclass) NOT NULL,
+    error_type_name character varying(255),
+    error_type_description character varying(255),
+    is_active bit(1),
+    created_on_utc timestamp with time zone,
+    updated_on_utc timestamp with time zone
+);
+
+
+ALTER TABLE mco_audit.mco_error_types OWNER TO postgres;
+
+
+--
+-- Name: mco_record_batch_batch_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_batch_batch_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_record_batch_batch_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_record_batch_details_batch_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_batch_details_batch_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_record_batch_details_batch_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_record_details; Type: TABLE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS mco_audit.mco_record_details (
+    batch_details_guid uuid DEFAULT techbd_udi_ingress.uuid_generate_v4() NOT NULL,
+    batch_details_id bigint DEFAULT nextval('mco_audit.mco_record_batch_details_batch_id_seq'::regclass) NOT NULL,
+    current_file_name character varying(255),
+    file_size_in_kb character varying(255),
+    total_records bigint,
+    processed_count bigint,
+    errored_count bigint,
+    qa_completed_time timestamp with time zone,
+    sent_to_datalake_time timestamp with time zone,
+    sent_to_mco_time timestamp with time zone,
+    created_on_utc timestamp with time zone,
+    updated_on_utc timestamp with time zone,
+    is_active bit(1),
+    status character varying(255),
+    batch_id bigint,
+    reporting_month character varying(255),
+    mco_id bigint
+);
+
+
+ALTER TABLE mco_audit.mco_record_details OWNER TO postgres;
+
+--
+-- Name: mco_record_error_logs_error_log_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_error_logs_error_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE mco_audit.mco_record_error_logs_error_log_id_seq OWNER TO postgres;
+
+--
+-- Name: mco_record_error_logs; Type: TABLE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS mco_audit.mco_record_error_logs (
+    error_log_guid uuid DEFAULT techbd_udi_ingress.uuid_generate_v4() NOT NULL,
+    error_log_id bigint DEFAULT nextval('mco_audit.mco_record_error_logs_error_log_id_seq'::regclass) NOT NULL,
+    batch_id bigint,
+    error_json json,
+    created_on_utc timestamp with time zone,
+    updated_on_utc timestamp with time zone,
+    batch_details_id bigint,
+    is_active bit(1),
+    error_type_id bigint
+);
+
+
+ALTER TABLE mco_audit.mco_record_error_logs OWNER TO postgres;
+
+--
+-- Name: mco_records; Type: TABLE; Schema: mco_audit; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS mco_audit.mco_records (
+    batch_guid uuid DEFAULT techbd_udi_ingress.uuid_generate_v4() NOT NULL,
+    batch_id bigint DEFAULT nextval('mco_audit.mco_record_batch_batch_id_seq'::regclass) NOT NULL,
+    root_file_name character varying(255),
+    created_on_utc timestamp with time zone NOT NULL,
+    updated_on_utc timestamp with time zone,
+    total_records bigint,
+    processed_count bigint,
+    errored_count bigint,
+    is_active bit(1),
+    status character varying(255),
+    mco_id bigint,
+    file_size_in_kb character varying(255),
+    resubmitted_count bigint,
+    sent_to_datalake_time timestamp with time zone,
+    qa_completed_time timestamp with time zone,
+    sent_to_mco_time timestamp with time zone,
+    reporting_month character varying(255)
+);
+
+
+ALTER TABLE mco_audit.mco_records OWNER TO postgres;
+
+/*******************************************************************************************
+* Comprehensive view of Mco Source monitoring * 
+******************************************************************************************/
+DROP VIEW IF EXISTS mco_audit.v_source_monitoring CASCADE;
+CREATE OR REPLACE VIEW mco_audit.v_source_monitoring AS
+SELECT
+    mr.batch_id,
+    mr.batch_guid,
+    mr.mco_id,
+    m.mco_name AS mco,
+    CASE
+        WHEN mr.sent_to_mco_time IS NOT NULL THEN 'Sent To MCO'
+        WHEN mr.sent_to_datalake_time IS NOT NULL THEN 'Sent To Data Lake'
+        WHEN mr.qa_completed_time IS NOT NULL THEN 'QA Completed'
+        ELSE 'Received'
+    END AS date_range_type,
+ 
+    CASE
+        WHEN mr.sent_to_mco_time IS NOT NULL THEN mr.sent_to_mco_time
+        WHEN mr.sent_to_datalake_time IS NOT NULL THEN mr.sent_to_datalake_time
+        WHEN mr.qa_completed_time IS NOT NULL THEN mr.qa_completed_time
+        ELSE mr.created_on_utc
+    END AS date_range,
+    m.mco_name,
+    mr.root_file_name,
+    mr.status,
+    mr.created_on_utc,
+    mr.qa_completed_time,
+    mr.sent_to_datalake_time,
+    mr.sent_to_mco_time,
+    mr.reporting_month,
+    mr.file_size_in_kb,
+    mr.total_records,
+    mr.processed_count,
+    mr.errored_count,
+    mr.resubmitted_count
+ 
+FROM mco_audit.mco_records mr
+INNER JOIN mco_audit.mco m
+    ON mr.mco_id = m.mco_id;
