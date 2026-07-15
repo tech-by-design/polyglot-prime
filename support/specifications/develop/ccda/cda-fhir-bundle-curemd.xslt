@@ -1505,7 +1505,22 @@
 
 <!-- Grouper Observation Template -->
   <xsl:template name="GrouperObservation">
-    <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation[ccda:code/@code='96777-8']"/>
+    <!-- <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation[ccda:code/@code='96777-8']"/> -->
+    <xsl:variable name="grouperObs"
+    select="/ccda:ClinicalDocument
+            /ccda:component
+            /ccda:structuredBody
+            /ccda:component
+            /ccda:section[@ID='observations']
+            /ccda:entry
+            /ccda:observation[
+                ccda:code/@code='96777-8'
+                or ccda:code/@code='97023-6'
+                or ccda:code/@code='100698-0'
+                or ccda:code/@code='93025-5'
+                or ccda:code/@code='NYSAHCHRSN'
+                or ccda:code/@code='NYS-AHC-HRSN'
+            ]"/>
     <xsl:variable name="screeningCode">
       <xsl:choose>
         <xsl:when test="string($grouperObs/ccda:code/@code)">
