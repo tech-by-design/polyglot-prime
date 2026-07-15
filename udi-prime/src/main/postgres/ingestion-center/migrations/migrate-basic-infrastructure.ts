@@ -916,7 +916,6 @@ const dependencies = [
   "../load_idp_master_data.psql",
   "../007_idempotent_interaction.psql",
   "../008_idempotent_idp_functions.psql",
-  "../009_idempotent_mco.psql",
 ] as const;
 
 const testMigrateDependencies = [
