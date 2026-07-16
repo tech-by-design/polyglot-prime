@@ -21,9 +21,6 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS mco_audit;
 
-ALTER SCHEMA mco_audit OWNER TO postgres;
-
-
 --
 -- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -49,9 +46,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_mco_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER SEQUENCE mco_audit.mco_mco_id_seq OWNER TO postgres;
-
 --
 -- Name: mco; Type: TABLE; Schema: mco_audit; Owner: postgres
 --
@@ -67,10 +61,6 @@ CREATE TABLE IF NOT EXISTS mco_audit.mco (
     mco_code character varying(255) NOT NULL
 );
 
-
-ALTER TABLE mco_audit.mco OWNER TO postgres;
-
-
 --
 -- Name: mco_error_code_error_code_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -83,8 +73,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_code_error_code_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE mco_audit.mco_error_code_error_code_id_seq OWNER TO postgres;
-
 --
 -- Name: mco_error_logs_error_log_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -96,9 +84,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_logs_error_log_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER SEQUENCE mco_audit.mco_error_logs_error_log_id_seq OWNER TO postgres;
-
 --
 -- Name: mco_error_types_error_type_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -109,9 +94,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_error_types_error_type_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER SEQUENCE mco_audit.mco_error_types_error_type_id_seq OWNER TO postgres;
 
 --
 -- Name: mco_error_types; Type: TABLE; Schema: mco_audit; Owner: postgres
@@ -127,10 +109,6 @@ CREATE TABLE IF NOT EXISTS mco_audit.mco_error_types (
     updated_on_utc timestamp with time zone
 );
 
-
-ALTER TABLE mco_audit.mco_error_types OWNER TO postgres;
-
-
 --
 -- Name: mco_record_batch_batch_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -142,9 +120,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_batch_batch_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER SEQUENCE mco_audit.mco_record_batch_batch_id_seq OWNER TO postgres;
-
 --
 -- Name: mco_record_batch_details_batch_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -155,9 +130,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_batch_details_batch_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER SEQUENCE mco_audit.mco_record_batch_details_batch_id_seq OWNER TO postgres;
 
 --
 -- Name: mco_record_details; Type: TABLE; Schema: mco_audit; Owner: postgres
@@ -183,9 +155,6 @@ CREATE TABLE IF NOT EXISTS mco_audit.mco_record_details (
     mco_id bigint
 );
 
-
-ALTER TABLE mco_audit.mco_record_details OWNER TO postgres;
-
 --
 -- Name: mco_record_error_logs_error_log_id_seq; Type: SEQUENCE; Schema: mco_audit; Owner: postgres
 --
@@ -196,9 +165,6 @@ CREATE SEQUENCE IF NOT EXISTS mco_audit.mco_record_error_logs_error_log_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER SEQUENCE mco_audit.mco_record_error_logs_error_log_id_seq OWNER TO postgres;
 
 --
 -- Name: mco_record_error_logs; Type: TABLE; Schema: mco_audit; Owner: postgres
@@ -215,9 +181,6 @@ CREATE TABLE IF NOT EXISTS mco_audit.mco_record_error_logs (
     is_active bit(1),
     error_type_id bigint
 );
-
-
-ALTER TABLE mco_audit.mco_record_error_logs OWNER TO postgres;
 
 --
 -- Name: mco_records; Type: TABLE; Schema: mco_audit; Owner: postgres
@@ -243,8 +206,6 @@ CREATE TABLE IF NOT EXISTS mco_audit.mco_records (
     reporting_month character varying(255)
 );
 
-
-ALTER TABLE mco_audit.mco_records OWNER TO postgres;
 
 /*******************************************************************************************
 * Comprehensive view of Mco Source monitoring * 
