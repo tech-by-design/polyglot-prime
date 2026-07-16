@@ -292,22 +292,31 @@ public class CsvService {
             initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCsvStatus(state.name());
 
-           Object headerObj = requestParameters.get(Constants.HEADERS);
+            Object headerObj = requestParameters.get(Constants.HEADERS);
+            ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();
 
-                if (headerObj instanceof Map<?, ?>) {
+            if (headerObj instanceof Map<?, ?>) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> headers = (Map<String, Object>) headerObj;
+                Map<String, Object> newHeaders = new java.util.HashMap<>();
 
-                headers.replaceAll((key, value) ->
-                        (value instanceof String && StringUtils.isBlank((String) value))
-                        ? null
-                        : value);
+                for (Map.Entry<String, Object> entry : headers.entrySet()) {
+                    String key = entry.getKey();
+                    Object value = entry.getValue();
+
+                    if (value instanceof String && StringUtils.isBlank((String) value)) {
+                        value = null;
+                    }
+
+                    if ("x-techbd-interaction-id".equalsIgnoreCase(key)) {
+                        key = key.replaceFirst("(?i)interaction-id", "zip-file-interaction-id");
+                    }
+                    newHeaders.put(key, value);
                 }
-            ObjectNode pElaboration = Configuration.objectMapper.createObjectNode();     
-                pElaboration.set(
-                "headers",
-                Configuration.objectMapper.valueToTree(requestParameters).path("headers")
-                );
+                pElaboration.set("headers", Configuration.objectMapper.valueToTree(newHeaders));
+            } else {
+                pElaboration.set("headers", null);
+            }
 
             initRIHR.setPElaboration(pElaboration);
             final InetAddress localHost = InetAddress.getLocalHost();
