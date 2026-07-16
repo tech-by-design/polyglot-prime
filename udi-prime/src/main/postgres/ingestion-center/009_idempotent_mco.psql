@@ -1,0 +1,43 @@
+/*******************************************************************************************
+* Comprehensive view of Mco Source monitoring * 
+******************************************************************************************/
+DROP VIEW IF EXISTS mco_audit.v_source_monitoring CASCADE;
+CREATE OR REPLACE VIEW mco_audit.v_source_monitoring AS
+SELECT
+    mr.batch_id,
+    mr.batch_guid,
+    mr.mco_id,
+    m.mco_code,
+    CASE
+        WHEN mr.sent_to_mco_time IS NOT NULL THEN 'Sent To MCO'
+        WHEN mr.sent_to_datalake_time IS NOT NULL THEN 'Sent To Data Lake'
+        WHEN mr.qa_completed_time IS NOT NULL THEN 'QA Completed'
+        ELSE 'Received'
+    END AS date_range_type,
+ 
+    TO_CHAR(
+    CASE
+        WHEN mr.sent_to_mco_time IS NOT NULL THEN mr.sent_to_mco_time
+        WHEN mr.sent_to_datalake_time IS NOT NULL THEN mr.sent_to_datalake_time
+        WHEN mr.qa_completed_time IS NOT NULL THEN mr.qa_completed_time
+        ELSE mr.created_on_utc
+    END,
+    'DD-MM-YYYY HH24:MI:SS'
+    ) AS date_range,
+    m.mco_name,
+    mr.root_file_name,
+    mr.status,
+    mr.created_on_utc,
+    mr.qa_completed_time,
+    mr.sent_to_datalake_time,
+    mr.sent_to_mco_time,
+    mr.reporting_month,
+    mr.file_size_in_kb,
+    mr.total_records,
+    mr.processed_count,
+    mr.errored_count,
+    mr.resubmitted_count
+ 
+FROM mco_audit.mco_records mr
+INNER JOIN mco_audit.mco m
+    ON mr.mco_id = m.mco_id;
