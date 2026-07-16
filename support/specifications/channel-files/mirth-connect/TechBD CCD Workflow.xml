@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
+  <id>8ac74b49-acb3-48f9-90fa-914cacdbe16f</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
   <description>Version: 0.4.52</description>
-  <revision>60</revision>
+  <revision>61</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1823,18 +1823,19 @@ function setResourceIdParameters(transformer) {
 					        );
 					    };
 	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
-	    if (
-	        xmlDoc.componentOf &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location.length() &gt; 0 &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility
-	    ) {
-	    		var healthCareFacility = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility;
-			if (healthCareFacility.location) {
-			    location = healthCareFacility.location;
-			} else if (healthCareFacility.serviceProviderOrganization) {
-			    location = healthCareFacility.serviceProviderOrganization; //CureMD
+	    var componentOf = xmlDoc.*::componentOf[0];
+		if (
+		    componentOf &amp;&amp;
+		    componentOf.*::encompassingEncounter &amp;&amp;
+		    componentOf.*::encompassingEncounter.*::location &amp;&amp;
+		    componentOf.*::encompassingEncounter.*::location.length() &gt; 0 &amp;&amp;
+		    componentOf.*::encompassingEncounter.*::location[0].*::healthCareFacility
+		) {
+	    		var healthCareFacility = componentOf.*::encompassingEncounter.*::location[0].*::healthCareFacility;
+			if (healthCareFacility.*::location.length() &gt; 0) {
+			    location = healthCareFacility.*::location[0];
+			} else if (healthCareFacility.*::serviceProviderOrganization.length() &gt; 0) {
+			    location = healthCareFacility.*::serviceProviderOrganization[0];//CureMD
 			}
 	    	   //location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
 	        if (location) {
@@ -2354,6 +2355,9 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     try {
         phiFilteredXml = applyPhiFilter(sourceXml);
         channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+
+        //logger.info(&quot;phi_filtered_ccd: &quot; + phiFilteredXml);
+        
     } catch (e) {
         failAndExit(
             &quot;CCD XML PHI filtering failed. &quot; + e.message,
@@ -2858,7 +2862,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1784099528257</time>
+        <time>1784181214173</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
