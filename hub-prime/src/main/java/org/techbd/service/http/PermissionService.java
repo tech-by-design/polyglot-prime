@@ -11,6 +11,7 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 
@@ -20,7 +21,8 @@ import jakarta.servlet.http.HttpSession;
 @Service
 public class PermissionService {
 
-
+    @Value("${AUTH_PROVIDER:github}")
+    private String authProvider;
     private static final Logger LOG = LoggerFactory.getLogger(FusionAuthUsersService.class);
     private final DSLContext dsl;
 
@@ -76,6 +78,12 @@ public class PermissionService {
         if (allLinks == null || allLinks.isEmpty()) {
             return List.of();
         }
+
+        if ("github".equalsIgnoreCase(authProvider)) {
+        return allLinks.stream()
+                        .filter(link -> !"Settings".equals(link.text()))
+                        .collect(Collectors.toList());
+            }
         try {
             HttpSession session = request.getSession(false);
             if (session == null) {
@@ -89,9 +97,6 @@ public class PermissionService {
                         .collect(Collectors.toList());
             }
 
-            // if ("tenant_admin".equalsIgnoreCase(role)) {
-            // return allLinks;
-            // }
             String role = (String) session.getAttribute(Constant.USER_ROLE);
 
             Map<String, Set<String>> allowedMenus = getAllowedMenus(session);
@@ -112,6 +117,10 @@ public class PermissionService {
     }
 
     public boolean isAllowedForRole(String linkText, HttpServletRequest request) {
+
+         if ("github".equalsIgnoreCase(authProvider)) {
+                    return true;
+                }
         if (linkText == null || linkText.isBlank()) {
             return false;
         }
@@ -122,20 +131,8 @@ public class PermissionService {
                 return false;
             }
 
-            // if ("Profile".equals(linkText)) {
+            // if (isSuperRole(session)) {
             //     return true;
-            // }
-
-            // // Roles should be visible only to super role users
-            // if ("Roles".equals(linkText)) {
-            //     return isSuperRole(session);
-            // }
-
-            if (isSuperRole(session)) {
-                return true;
-            }
-            // if ("tenant_admin".equalsIgnoreCase(role)) {
-            // return true;
             // }
             String role = (String) session.getAttribute(Constant.USER_ROLE);
 

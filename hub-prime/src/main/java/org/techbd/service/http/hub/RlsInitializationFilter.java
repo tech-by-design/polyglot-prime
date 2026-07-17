@@ -1,6 +1,7 @@
 package org.techbd.service.http.hub;
 import java.io.IOException;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 100)
+@ConditionalOnProperty(name = "AUTH_PROVIDER", havingValue = "fusionauth")
 public class RlsInitializationFilter extends OncePerRequestFilter {
 
     private final FusionAuthUsersService fusionAuthUsersService;

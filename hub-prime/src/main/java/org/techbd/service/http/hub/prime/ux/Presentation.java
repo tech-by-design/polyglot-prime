@@ -86,8 +86,16 @@ public class Presentation {
         } else {
             authUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
         }
-        List<HtmlAnchor> allowedLinks =
-        permissionService.filterLinksByRole(navPrimeLinks, request);
+             List<HtmlAnchor> allowedLinks;
+        if ("fusionauth".equalsIgnoreCase(authProvider)) {
+            allowedLinks = permissionService.filterLinksByRole(navPrimeLinks, request);
+        } else {
+            // GitHub users should see the original navigation
+             allowedLinks = navPrimeLinks.stream()
+            .filter(link -> !"Settings".equals(link.text()))
+            .toList();        
+        }
+
         model.addAttribute("navPrime", allowedLinks);
         model.addAttribute("authUser", authUser);
         // active route, siblings, ancestors (breadcrumbs) available for navigation

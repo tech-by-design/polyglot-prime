@@ -84,16 +84,28 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                                 fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token, oAuth2User, faUser);
 
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
-                        if (!faUser.roles().isEmpty()) {
-                         String role = faUser.roles().get(0);
-                         List<String> teantIds = faUser.groupIds(); // take first role
-                        //  fusionAuthUsersService.setRoleFromCurrentUser(enrichedOAuth2User);
-                         Map<String, Set<String>> permissions = fusionAuthUsersService.getRolePermissions(role ,teantIds);
-                         request.getSession().setAttribute("rolePermissions", permissions);
-                         request.getSession().setAttribute("userRole", role);
-                         request.getSession().setAttribute("isSuperRole", faUser.isSuperRole());
-                         LOG.info("Role permissions cached in session for role {}: {}", role, permissions);
-                       }
+                       if (!faUser.roles().isEmpty()) {
+                            String role = faUser.roles().get(0);
+                            List<String> tenantIds = faUser.groupIds();
+
+                            // DB decides whether CONFIG pages should be included.
+                            Map<String, Set<String>> permissions =
+                                    fusionAuthUsersService.getRolePermissions(role, tenantIds);
+
+                            HttpSession session = request.getSession();
+
+                            session.setAttribute(Constant.USER_ROLE, role);
+                            session.setAttribute(Constant.SUPER_ROLE, faUser.isSuperRole());
+                            session.setAttribute(Constant.ROLE_PERMISSIONS, permissions);
+                            if(role != null && !role.isBlank() &"Super_Admin".equalsIgnoreCase(role)){ 
+                               session.setAttribute("configAccess", true);                           
+                             }
+                            LOG.info(
+                                    "Cached permissions for role={}, superRole={}, permissions={}",
+                                    role,
+                                    faUser.isSuperRole(),
+                                    permissions);
+                        }
                         fusionAuthUsersService.convertToJson(enrichedOAuth2User);
                                            
                     String userId = (faUser != null) ? faUser.fusionAuthId() : null;

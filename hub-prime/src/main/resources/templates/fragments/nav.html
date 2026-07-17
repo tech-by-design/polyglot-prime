@@ -28,8 +28,8 @@
                     </div>
                     <div id="nav-prime" class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <span><a th:each="navItem: ${navPrime}"  th:if="${navItem.text} != 'Needs Attention' and ${navItem.text} != 'Diagnostic'" th:attr="href=@{${navItem.href.orElse('?')}}"
-                                th:text="${navItem.text}"
+                        <span><a th:each="navItem: ${navPrime}"  th:if="${navItem.text} != 'Needs Attention' and ${navItem.text} != 'Diagnostic' and ${navItem.text} != 'Profile'" th:attr="href=@{${navItem.href.orElse('?')}}"
+                                 th:text="${navItem.text}"
                                 class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Label</a>
                             </span>
                         </div>
@@ -89,6 +89,17 @@
                                         th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth'} ? ${#authentication.principal.attributes['name']} : ${#authentication.principal.attributes['login']}">
                                 </span>
                                 </a>
+                                <form 
+                                    action="/profile"
+                                    method="get">
+                                    <button type="submit"
+                                        class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        role="menuitem"
+                                        tabindex="-1"
+                                        id="user-menu-item-2">
+                                        Profile
+                                    </button>
+                                </form>
                                 <!-- <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-0"><span sec:authentication="principal.attributes['role']" class="font-bold"></span></a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
@@ -97,9 +108,9 @@
                                     id="user-menu-item-0">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-1">Settings</a> -->
-                                 <form th:if="${#authentication.principal.attributes['authProvider'] == 'fusionauth'}"
-                                    action="/settings"
-                                    method="get">
+                                <form th:if="${session.configAccess == true}"
+                                        action="/settings"
+                                        method="get">
                                     <button type="submit"
                                         class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         role="menuitem"

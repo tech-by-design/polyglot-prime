@@ -11,8 +11,7 @@
 
 <style>
 body{
-    margin:0;
-    padding:40px 20px;
+    margin:0; 
     background:#f5f7fb;
     font-family:Inter,Arial,sans-serif;
 }
@@ -83,6 +82,7 @@ body{
 
 <body>
 <div layout:fragment="content" class="p-6 bg-gray-50 min-h-screen"> 
+ <div class="container">
 <div class="profile-card">
 
      <img th:src="${#authentication.principal.attributes['avatar_url']}" 
@@ -91,7 +91,10 @@ body{
     <div class="profile-details">
 
         <h2>[[${#strings.listJoin(#authentication.principal.attributes['name'], ', ')}]]</h2>
-
+        <span th:if="${session.authenticatedUser.principal.attributes['authProvider'] == 'github'}"
+            th:text="${session.authenticatedUser.principal.attributes['login']}">
+        </span>
+ 
         <!-- Show only if email exists -->
         <p>[[${#authentication.principal.attributes['email']}]]</p>
 
@@ -99,14 +102,15 @@ body{
         <p>[[${#authentication.principal.attributes['role']}]]</p>
 
         <!-- Show only if tenant exists -->
-        <p th:unless="${#lists.contains(#authentication.principal.attributes['role'], 'Super_Admin')}">
+        <p th:if="${!(#authentication.principal.attributes['authProvider'] == 'fusionauth'
+                    and #authentication.principal.attributes['isSuperRole'])}">
             [[${#strings.listJoin(#authentication.principal.attributes['groupNames'], ', ')}]]
         </p>
-
     </div>
 
 </div>
  
+</div>
 </div>
 </body>
 </html>

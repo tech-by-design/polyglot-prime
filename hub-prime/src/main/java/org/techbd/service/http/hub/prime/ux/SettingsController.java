@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.techbd.service.http.Constant;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 @Controller
@@ -23,33 +22,33 @@ public class SettingsController {
     @RouteMapping(label = "Settings", siblingOrder = 90)
     @GetMapping("/settings")
     public String docs() {
-        return "redirect:/settings/profile";
+        return "redirect:/settings/role-access-management";
     }
 
-    @RouteMapping(label = "Profile", siblingOrder = 100)
-    @GetMapping("/settings/profile")
-    public String users(final Model model, final HttpServletRequest request) {
+    // @RouteMapping(label = "Profile", siblingOrder = 100)
+    // @GetMapping("/settings/profile")
+    // public String users(final Model model, final HttpServletRequest request) {
 
-        HttpSession session = request.getSession(false);
-        Object sessionUser = session != null ? session.getAttribute("authenticatedUser") : null;
-        model.addAttribute("sessionUser", sessionUser);
+    //     HttpSession session = request.getSession(false);
+    //     Object sessionUser = session != null ? session.getAttribute("authenticatedUser") : null;
+    //     model.addAttribute("sessionUser", sessionUser);
 
-        return presentation.populateModel("page/settings/profile", model, request);
-    }
+    //     return presentation.populateModel("page/settings/profile", model, request);
+    // }
 
-    @RouteMapping(label = "Roles", siblingOrder = 110)
-    @GetMapping("/settings/roles")
+    @RouteMapping(label = "Role Access Management", siblingOrder = 110)
+    @GetMapping("/settings/role-access-management")
     public String rolePermissions(final Model model, final HttpServletRequest request) {
         HttpSession session = request.getSession(false);
 
-        Boolean isSuperRole = session != null
-                ? (Boolean) session.getAttribute(Constant.SUPER_ROLE)
+      Boolean configAccess = session != null
+                ? (Boolean) session.getAttribute("configAccess")
                 : false;
 
-        if (!Boolean.TRUE.equals(isSuperRole)) {
-            return "redirect:/settings/profile";
+        if (!Boolean.TRUE.equals(configAccess)) {
+            return "redirect:/profile/profile";
         }
-        return presentation.populateModel("page/settings/roles", model, request);
+        return presentation.populateModel("page/settings/role-access-management", model, request);
     }
 
 }
