@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,7 +17,6 @@ import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +43,6 @@ public class FusionAuthUsersService {
     @Value("${FUSIONAUTH_API_KEY}")
      private String fusionAuthApiKey;
 
-    private final WebClient fusionAuthApiClient;
 
     private static final Logger LOG = LoggerFactory.getLogger(FusionAuthUsersService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper()
@@ -56,11 +53,10 @@ public class FusionAuthUsersService {
     public FusionAuthUsersService(
             @Qualifier("primaryDslContext") DSLContext dsl,
             @Autowired(required = false)
-            @Qualifier("secondaryDslContext") DSLContext secondaryDsl,WebClient fusionAuthApiClient) {
+            @Qualifier("secondaryDslContext") DSLContext secondaryDsl) {
 
         this.dsl = dsl;
         this.secondaryDsl = secondaryDsl;
-        this.fusionAuthApiClient = fusionAuthApiClient;
     }
 
     // Records for FusionAuth user authorization structure
@@ -69,8 +65,8 @@ public class FusionAuthUsersService {
             String email,
             String name,
             List<String> roles,
-            List<String> groupIds,
-            List<String> groupNames,
+            List<String> tenantIds,
+            List<String> tenantNames,
             Boolean isSuperRole
             ) {
         }
@@ -81,8 +77,8 @@ public class FusionAuthUsersService {
                enrichedAttributes.put("name", user.name());
                enrichedAttributes.put("email", user.email());
                enrichedAttributes.put("login", user.fusionAuthId());
-               enrichedAttributes.put("groups", user.groupIds());
-               enrichedAttributes.put("groupNames", user.groupNames()); 
+               enrichedAttributes.put("tenantIds", user.tenantIds());
+               enrichedAttributes.put("tenantNames", user.tenantNames()); 
                enrichedAttributes.put("role", user.roles());              
                enrichedAttributes.put("avatar_url", createAvatarUrl(oAuth2User));
                enrichedAttributes.put("authProvider", "fusionauth");
@@ -104,6 +100,7 @@ public class FusionAuthUsersService {
        return enrichedOAuth2User;
     } 
     
+    @SuppressWarnings({ "unchecked", "null" })
     public AuthorizedUser extractFusionAuthUser(DefaultOAuth2User oAuth2User) {
     String email = Optional.ofNullable(oAuth2User.getAttribute("email"))
             .map(Object::toString)
@@ -122,23 +119,22 @@ public class FusionAuthUsersService {
             .map(Boolean::parseBoolean)
             .orElse(false);
     
-    @SuppressWarnings("unchecked")
     List<String> roles = Optional.ofNullable((List<String>) oAuth2User.getAttribute("roles"))
             .orElse(List.of());
-     @SuppressWarnings("unchecked")
-    List<String> groupIds = Optional.ofNullable((List<String>) oAuth2User.getAttribute("groups"))
-            .orElse(List.of());
+    List<String> tenantIds =
+        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantIds"))
+                .orElse(List.of());
 
-    List<String> groupNames = groupIds.stream()
-            .map(this::fetchGroupNameById)
-            .filter(Objects::nonNull) // filter out nulls
-            .toList();
+    List<String> tenantNames =
+        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantNames"))
+                .orElse(List.of());
 
     LOG.info("oAuth2User attributes: {}", oAuth2User.getAttributes());
-                return new AuthorizedUser(userId, email, name, roles, groupIds, groupNames, isSuperRole);
+                return new AuthorizedUser(userId, email, name, roles, tenantIds, tenantNames, isSuperRole);
    } 
  
 
+@SuppressWarnings("null")
 public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     String pictureUrl = Optional.ofNullable(oAuth2User.getAttribute("picture"))
             .map(Object::toString)
@@ -173,34 +169,34 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     }
   }
 
-  private String fetchGroupNameById(String groupId) {
-        try {
-            String url = fusionAuthBaseUrl + "/api/group/" + groupId;
-            LOG.info("Fetching FusionAuth group: {}", url);
+//   private String fetchGroupNameById(String groupId) {
+//         try {
+//             String url = fusionAuthBaseUrl + "/api/group/" + groupId;
+//             LOG.info("Fetching FusionAuth group: {}", url);
 
-           FusionAuthGroupResponse response = fusionAuthApiClient
-        .get()
-        .uri(url)
-        .header("Authorization", fusionAuthApiKey)
-        .retrieve()
-        .bodyToMono(FusionAuthGroupResponse.class)
-        .block();
-            if (response != null && response.group != null) {
-                return response.group.name;
-            }
-        } catch (Exception e) {
-            LOG.error("Error fetching FusionAuth group name for groupId: {}", groupId, e);
-        }
-        return null;
-    }
-    public static class FusionAuthGroupResponse {
-        public Group group;
-    }
+//            FusionAuthGroupResponse response = fusionAuthApiClient
+//         .get()
+//         .uri(url)
+//         .header("Authorization", fusionAuthApiKey)
+//         .retrieve()
+//         .bodyToMono(FusionAuthGroupResponse.class)
+//         .block();
+//             if (response != null && response.group != null) {
+//                 return response.group.name;
+//             }
+//         } catch (Exception e) {
+//             LOG.error("Error fetching FusionAuth group name for groupId: {}", groupId, e);
+//         }
+//         return null;
+//     }
+    // public static class FusionAuthGroupResponse {
+    //     public Group group;
+    // }
 
-    public static class Group {
-        public String id;
-        public String name;
-    }
+    // public static class Group {
+    //     public String id;
+    //     public String name;
+    // }
 
       public String setRoleBasedOnFusionToken(String tokenJson) {
     try {
@@ -220,28 +216,9 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     }
 }
 
- public Map<String, Set<String>> getRolePermissions(String roleName ,List<String> tenantIds) {
-        //  String tenantIdsStr = String.join(",", tenantIds);
-        //     LOG.info("Fetching permissions for role {} with tenants: {}", roleName, tenantIdsStr);
-        //    dsl.execute(
-        //         "SELECT set_config('jwt.claims.tenants', ?, false)",
-        //         tenantIdsStr
-        //     );
-        // dsl.execute("SET jwt.claims.tenants = '7c5172c4-3033-424e-bd20-ad69650522c2'");
-        // String tenant = dsl.fetchOne(
-        //         "select current_setting('jwt.claims.tenants', true)"
-        //     ).get(0, String.class);
+ @SuppressWarnings("null")
+public Map<String, Set<String>> getRolePermissions(String roleName) {
 
-        //     LOG.info("Current tenant claim = {}", tenant);
-
-        //     LOG.info("Backend PID = {}",
-        //         dsl.fetchOne("select pg_backend_pid()").get(0));
-
-        //     LOG.info("Current User = {}",
-        //         dsl.fetchOne("select current_user").get(0));
-
-        //     LOG.info("Tenant = {}",
-        //         dsl.fetchOne("select current_setting('jwt.claims.tenants', true)").get(0));
             resetDatabaseSession();
            String sql = "techbd_udi_ingress.idp_get_login_role_permissions(?)::text";
           String response = dsl.select(

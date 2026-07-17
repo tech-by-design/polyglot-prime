@@ -1,7 +1,6 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -86,11 +85,9 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
                        if (!faUser.roles().isEmpty()) {
                             String role = faUser.roles().get(0);
-                            List<String> tenantIds = faUser.groupIds();
-
                             // DB decides whether CONFIG pages should be included.
                             Map<String, Set<String>> permissions =
-                                    fusionAuthUsersService.getRolePermissions(role, tenantIds);
+                                    fusionAuthUsersService.getRolePermissions(role);
 
                             HttpSession session = request.getSession();
 

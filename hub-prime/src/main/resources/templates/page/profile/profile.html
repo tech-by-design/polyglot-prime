@@ -104,7 +104,7 @@ body{
         <!-- Show only if tenant exists -->
         <p th:if="${!(#authentication.principal.attributes['authProvider'] == 'fusionauth'
                     and #authentication.principal.attributes['isSuperRole'])}">
-            [[${#strings.listJoin(#authentication.principal.attributes['groupNames'], ', ')}]]
+            [[${#strings.listJoin(#authentication.principal.attributes['tenantNames'], ', ')}]]
         </p>
     </div>
 
