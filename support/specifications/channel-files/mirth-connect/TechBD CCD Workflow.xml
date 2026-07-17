@@ -1,9 +1,9 @@
 <channel version="4.5.0">
-  <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
+  <id>8ac74b49-acb3-48f9-90fa-914cacdbe16f</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.50</description>
-  <revision>54</revision>
+  <description>Version: 0.4.52</description>
+  <revision>67</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -955,9 +955,20 @@ if (missingEnvVars.length &gt; 0) {
     throw errorMessage;
 }
 
-///////////////////////////////////////////
-// Set path for schema and related files //
-///////////////////////////////////////////
+function isCureMD(xmlDoc) {
+    try {
+        var documentId = xmlDoc.*::id[0];
+        if (documentId &amp;&amp; documentId.@root) {
+            var root = documentId.@root.toString().trim();
+            logger.info(&quot;ClinicalDocument id root: &quot; + root);
+            return (root == &quot;2.16.840.1.113883.3.669&quot; || root.indexOf(&quot;2.16.840.1.113883.3.669.&quot;) === 0);
+        }
+        return false;
+    } catch (e) {
+        logger.warn(&quot;Unable to determine if CCDA is CureMD: &quot; + e);
+        return false;
+    }
+}
 
 /*
 * Util function to get vender identifier details and choose the xslt file according to the vendor
@@ -1008,6 +1019,10 @@ function getManufacturerModelName(xmlData) {
 			    	ehrVendor = &quot;Athenahealth&quot;;
 			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-athenahealth.xslt&quot;;
 				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-athenahealth.xslt&quot;;
+			} else if (isCureMD(xmlDoc)) {
+			    ehrVendor = &quot;CureMD&quot;;
+			    cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-curemd.xslt&quot;;
+			    cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-curemd.xslt&quot;;
 			} else {
 			    	ehrVendor = &quot;Other&quot;;
 			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
@@ -1186,6 +1201,25 @@ function getPatientMRN(patientRoles) {
                 }
             }
 	   }
+	   else if (ehrVendor == &apos;CureMD&apos;) {
+		    // Step 3: If CureMD
+		    for each (var idNode in idNodes) {
+		
+		        var root = idNode.@root.toString().trim();
+		        var ext  = idNode.@extension.toString().trim();
+		
+		        if (
+		            ext !== &quot;&quot; &amp;&amp;
+		            (root == &quot;2.16.840.1.113883.3.669&quot; ||
+		             root.indexOf(&quot;2.16.840.1.113883.3.669.&quot;) === 0) &amp;&amp;
+		            !isSSNFormat(ext)
+		        ) {
+		            extensionAttr = ext;
+		            //logger.info(&quot;Patient MRN (CureMD): &quot; + extensionAttr);
+		            break;
+		        }
+		    }
+	   }
 	   else {
 	   	//fallback to id.extension
 	   	for each (var idNode in idNodes) {
@@ -1300,7 +1334,7 @@ function getObservationCategoryCodes(transformer, observations) {
     var codes;
 
     // Extract all observation code attributes
-    if (ehrVendor == &apos;Medent&apos; || ehrVendor == &apos;Athenahealth&apos;) {
+    if (ehrVendor == &apos;Medent&apos; || ehrVendor == &apos;Athenahealth&apos; || ehrVendor == &apos;CureMD&apos;) {
 	    codes = xml..component
 	                   .structuredBody
 	                   .component
@@ -1388,7 +1422,7 @@ function getMultipleAnswersForComponent(transformer, observations) {
 
     // Extract all observation code attributes
     try {
-	    if (ehrVendor == &apos;Medent&apos; || ehrVendor  == &apos;Athenahealth&apos;) {
+	    if (ehrVendor == &apos;Medent&apos; || ehrVendor  == &apos;Athenahealth&apos; || ehrVendor  == &apos;CureMD&apos;) {
 		    matchingObservations = xml..component
 		        .structuredBody
 		        .component
@@ -1555,7 +1589,7 @@ function setResourceIdParameters(transformer) {
 	}
 	
 	// Extract `Questionnaire` - used only for Generic CCDA files
-	if (ehrVendor != &apos;Medent&apos; &amp;&amp; ehrVendor != &apos;Athenahealth&apos; &amp;&amp; ehrVendor != &apos;Epic&apos;) {
+	if (ehrVendor != &apos;Medent&apos; &amp;&amp; ehrVendor != &apos;Athenahealth&apos; &amp;&amp; ehrVendor != &apos;Epic&apos; &amp;&amp; ehrVendor != &apos;CureMD&apos;) {
 		var Questionnaire = xmlDoc.*::component
 	                              .*::structuredBody
 	                              .*::component
@@ -1571,7 +1605,7 @@ function setResourceIdParameters(transformer) {
 	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
 	
 	// Extract `sexualOrientation`
-	var sexualOrientation = xmlDoc.*::component
+	/*var sexualOrientation = xmlDoc.*::component
                               .*::structuredBody
                               .*::component
                               .*::section.(@ID == &apos;sexualOrientation&apos;)
@@ -1581,8 +1615,28 @@ function setResourceIdParameters(transformer) {
 		transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
 	} else {
 	    	logger.info(&quot;No sexualOrientation section found.&quot;);
+	}*/
+	try {
+	    var sexualOrientation = xmlDoc.*::component
+	                                  .*::structuredBody
+	                                  .*::component
+	                                  .*::section.(@ID == &quot;sexualOrientation&quot;)
+	                                  .*::entry
+	                                  .*::observation.(code.@code == &quot;76690-7&quot;);	
+	    if (sexualOrientation != undefined &amp;&amp; sexualOrientation.length() &gt; 0) {
+	        transformer = generateCompactSha256(
+	            sexualOrientation,
+	            &quot;sexualOrientation&quot;,
+	            &quot;sexualOrientationResourceId&quot;,
+	            transformer
+	        );
+	    } else {
+	        logger.info(&quot;No sexualOrientation section found.&quot;);
+	    }	
+	} catch (e) {
+	    logger.info(&quot;SexualOrientation section not found.&quot;);
 	}
-
+	
 	// Extract `encompassingEncounter`
 	try {
 		var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
@@ -1677,6 +1731,49 @@ function setResourceIdParameters(transformer) {
 	    if (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;) {
 	        grouperScreeningCode = &apos;96777-8&apos;;
 	    }
+	} else if ((ehrVendor == &apos;CureMD&apos;)
+	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+	
+	    // Try to extract from CCDA observations
+	    try {
+	        var observations = xmlDoc.*::component
+	            .*::structuredBody
+	            .*::component
+	            .*::section.(@ID == &apos;observations&apos;)
+	            .*::entry
+	            .*::observation;
+	
+	        // Valid Grouper Screening Codes
+		   var validScreeningCodes = {
+		        &quot;96777-8&quot;: true,
+		        &quot;97023-6&quot;: true,
+		        &quot;100698-0&quot;: true,
+		        &quot;93025-5&quot;: true,
+		        &quot;NYSAHCHRSN&quot;: true,
+		        &quot;NYS-AHC-HRSN&quot;: true
+		   };
+	
+	        if (observations != undefined &amp;&amp; observations.length() &gt; 0) {
+		        for each (var obs in observations) {
+		            if (obs.*::code) {
+		                var code = obs.*::code.@code.toString().trim();
+		
+		                if (validScreeningCodes[code]) {
+		                    grouperScreeningCode = code;
+		                    break;
+		                }
+		            }
+		        }
+		    }
+	
+	    } catch (e) {
+	        logger.error(&quot;Error extracting screening code/effectiveTime for Medent: &quot; + e);
+	    }
+	
+	    // Final fallback if still empty (matches XSLT)
+	    if (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;) {
+	        grouperScreeningCode = &apos;96777-8&apos;;
+	    }
 	} else { // For general CCDA files
 		//grouperScreeningEffectiveTime = &apos;&apos;;
 	}
@@ -1746,19 +1843,30 @@ function setResourceIdParameters(transformer) {
 					        );
 					    };
 	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
-	    if (
-	        xmlDoc.componentOf &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location.length() &gt; 0 &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility &amp;&amp;
-	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location
-	    ) {
-	    	   location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
-	        location_name = location.name;
-	        location_address = location.addr;
-	        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	    var componentOf = new XMLList();
+		if (xmlDoc.*::componentOf.length() &gt; 0) {
+		    componentOf = xmlDoc.*::componentOf[0];
+		}
+		if (
+            componentOf.*::encompassingEncounter.length() &gt; 0 &amp;&amp;
+            componentOf.*::encompassingEncounter[0].*::location.length() &gt; 0 &amp;&amp;
+            componentOf.*::encompassingEncounter[0].*::location[0].*::healthCareFacility.length() &gt; 0
+          ) {
+	    		logger.info(&quot;Found healthCareFacility&quot;);
+	    		var healthCareFacility = componentOf.*::encompassingEncounter.*::location[0].*::healthCareFacility;
+			if (healthCareFacility.*::location.length() &gt; 0) {
+			    location = healthCareFacility.*::location[0];
+			} else if (healthCareFacility.*::serviceProviderOrganization.length() &gt; 0) {
+			    location = healthCareFacility.*::serviceProviderOrganization[0];//CureMD
+			}
+	    	   //location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
+	        if (location) {
+		        location_name = location.name;
+		        location_address = location.addr;
+		        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	        }
 	    }
+	    
 	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
 		if (!locationSuccess || ehrVendor == &apos;Medent&apos;) {
 	        var section = xmlDoc.component.structuredBody.component.section.(@ID == &apos;encounters&apos;);
@@ -1869,7 +1977,7 @@ function getConsentResourceStatus(sourceXml) {
 	    	consentInfo.code = &apos;Consent-Status&apos;;
 	    	consentInfo.status = &quot;TechBD-Generated&quot;;
 	    	var ehrVendor = (channelMap.get(&apos;ehrVendor&apos;) || &apos;&apos;).toLowerCase();
-	    	var ccdaConsentCode = ehrVendor == &apos;athenahealth&apos; ? &apos;29762-2&apos; : &apos;47519-4&apos;;
+	    	var ccdaConsentCode = (ehrVendor == &apos;athenahealth&apos; || ehrVendor == &apos;curemd&apos;) ? &apos;29762-2&apos; : &apos;47519-4&apos;;
 		
 		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
 		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
@@ -1881,7 +1989,7 @@ function getConsentResourceStatus(sourceXml) {
 			consentInfo.status = &quot;provided&quot;;
 		}
 		else {
-			/* For Medent, if both the two cases fail (first authorization section, secon observation with code &quot;105511-0&quot;), 
+			/* For Medent, if both the two cases fail (first authorization section, second observation with code &quot;105511-0&quot;), 
 			   check the observation that contains consent details without code.code but value.displayname as &quot;Permit&quot; or &quot;Deny&quot;*/
 			// Iterate through all &lt;section&gt; elements
 			for each (var section in xmlDoc..section) {
@@ -1896,7 +2004,6 @@ function getConsentResourceStatus(sourceXml) {
 			                        var obsCode = nestedObs.code.@code.toString();			                        
 			                        if (obsCode == &quot;105511-0&quot;) {
 			                            consentInfo.status = &quot;provided&quot;;
-			                            logger.info(&quot;consentInfo.status 2: &quot; + consentInfo.status);
 			                            break;
 			                        } else if (ehrVendor == &apos;athenahealth&apos;) {
 			                        	    var obsRoot = nestedObs.templateId.@root.toString().trim();
@@ -2270,6 +2377,9 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     try {
         phiFilteredXml = applyPhiFilter(sourceXml);
         channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+
+        //logger.info(&quot;phi_filtered_ccd: &quot; + phiFilteredXml);
+        
     } catch (e) {
         failAndExit(
             &quot;CCD XML PHI filtering failed. &quot; + e.message,
@@ -2774,10 +2884,11 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1782374583244</time>
+        <time>1784192850366</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
+        <pruneContentDays>7</pruneContentDays>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
