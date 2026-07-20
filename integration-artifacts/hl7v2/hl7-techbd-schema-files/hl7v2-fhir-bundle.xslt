@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.11 -->
+<!-- Version : 0.2.12 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -306,6 +306,7 @@
         </xsl:if>
 
         <!-- ================= ADDRESS ================= -->        
+        <!-- List all addresses -->
         <xsl:variable name="validAddresses"
             select="//PID.11[
                 normalize-space(PID.11.1) or
@@ -327,6 +328,44 @@
             </xsl:for-each>
           ]
         </xsl:if>
+
+        <!-- List the first address that has a valid postal code. If there is no valid postal code then use first valid address. IG 1.9.2 -->        
+        <!-- <xsl:variable name="addressNode">
+            <xsl:choose>
+                <xsl:when test="//PID.11[normalize-space(PID.11.5)]">
+                    <xsl:copy-of select="//PID.11[normalize-space(PID.11.5)][1]"/>
+                </xsl:when>
+
+                <xsl:when test="//PID.11[
+                                    normalize-space(PID.11.1) or
+                                    normalize-space(PID.11.2) or
+                                    normalize-space(PID.11.3) or
+                                    normalize-space(PID.11.4) or
+                                    normalize-space(PID.11.5) or
+                                    normalize-space(PID.11.6) or
+                                    normalize-space(PID.11.9)
+                                ]">
+                    <xsl:copy-of select="//PID.11[
+                                            normalize-space(PID.11.1) or
+                                            normalize-space(PID.11.2) or
+                                            normalize-space(PID.11.3) or
+                                            normalize-space(PID.11.4) or
+                                            normalize-space(PID.11.5) or
+                                            normalize-space(PID.11.6) or
+                                            normalize-space(PID.11.9)
+                                        ][1]"/>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:variable>
+
+        <xsl:if test="exsl:node-set($addressNode)/PID.11">
+            ,"address":[
+                <xsl:call-template name="buildFhirAddressObject">
+                    <xsl:with-param name="addrNode" select="exsl:node-set($addressNode)/PID.11"/>
+                    <xsl:with-param name="resource_name" select="'Patient'"/>
+                </xsl:call-template>
+            ]
+        </xsl:if> -->
 
         <!-- ================= TELECOM ================= -->
         <xsl:if test="//PID.13[normalize-space(PID.13.1)] or //PID.14[normalize-space(PID.14.1)] or //PID.40[normalize-space(PID.40.1)]">
@@ -735,7 +774,8 @@
               </xsl:if>
 
               <!-- ================= Address ================= -->
-              <xsl:if test="//NK1.4[
+              <!-- List all addresses -->
+              <!-- <xsl:if test="//NK1.4[
                        normalize-space(NK1.4.1)
                     or normalize-space(NK1.4.2)
                     or normalize-space(NK1.4.3)
@@ -751,7 +791,51 @@
                       <xsl:with-param name="resource_name" select="'Patient'"/>
                     </xsl:call-template>
                 </p>
+              </xsl:if> -->
+
+              <!-- List the first address that has a valid postal code. If there is no valid postal code then use first valid address. IG 1.9.2 -->
+              <xsl:variable name="addressNode">
+                  <xsl:choose>
+
+                      <!-- First address having a valid postal code -->
+                      <xsl:when test="//NK1.4[normalize-space(NK1.4.5)]">
+                          <xsl:copy-of select="NK1.4[normalize-space(NK1.4.5)][1]"/>
+                      </xsl:when>
+
+                      <!-- Otherwise first valid address -->
+                      <xsl:when test="//NK1.4[
+                                          normalize-space(NK1.4.1) or
+                                          normalize-space(NK1.4.2) or
+                                          normalize-space(NK1.4.3) or
+                                          normalize-space(NK1.4.4) or
+                                          normalize-space(NK1.4.5) or
+                                          normalize-space(NK1.4.6) or
+                                          normalize-space(NK1.4.9)
+                                      ]">
+                          <xsl:copy-of select="NK1.4[
+                                                  normalize-space(NK1.4.1) or
+                                                  normalize-space(NK1.4.2) or
+                                                  normalize-space(NK1.4.3) or
+                                                  normalize-space(NK1.4.4) or
+                                                  normalize-space(NK1.4.5) or
+                                                  normalize-space(NK1.4.6) or
+                                                  normalize-space(NK1.4.9)
+                                              ][1]"/>
+                      </xsl:when>
+
+                  </xsl:choose>
+              </xsl:variable>
+
+              <xsl:if test="exsl:node-set($addressNode)/NK1.4">
+                  <p>
+                      "address":
+                      <xsl:call-template name="buildFhirAddressObject">
+                          <xsl:with-param name="addrNode" select="exsl:node-set($addressNode)/NK1.4"/>
+                          <xsl:with-param name="resource_name" select="'Patient'"/>
+                      </xsl:call-template>
+                  </p>
               </xsl:if>
+
             </xsl:variable>
 
             <!-- ================= Emit properties safely ================= -->
@@ -1019,13 +1103,16 @@
                   ],
                 </xsl:when>
 
-                <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
-                  "valueCodeableConcept": {
+                <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4' and string-length(OBX.5/OBX.5.1) > 0">
+                  <!-- "valueCodeableConcept": {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
                       "display": "{Number}"
                     }]
                     <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.1'/>"
+                  }, -->
+                  "valueQuantity": {
+                      "value": <xsl:value-of select='OBX.5/OBX.5.1'/>
                   },
                   
                   "derivedFrom": [
@@ -1251,6 +1338,7 @@
           ]
         </xsl:if>
         
+        <!-- List all addresses -->
         <xsl:variable name="validAddresses"
             select="//ORC.22[
                 normalize-space(ORC.22.1) or
@@ -1273,6 +1361,44 @@
           ]
         </xsl:if>
 
+        <!-- List the first address that has a valid postal code. If there is no valid postal code then use first valid address. IG 1.9.2 -->        
+        <!-- <xsl:variable name="addressNode">
+            <xsl:choose>
+                <xsl:when test="//ORC.22[normalize-space(ORC.22.5)]">
+                    <xsl:copy-of select="//ORC.22[normalize-space(ORC.22.5)][1]"/>
+                </xsl:when>
+
+                <xsl:when test="//ORC.22[
+                                    normalize-space(ORC.22.1) or
+                                    normalize-space(ORC.22.2) or
+                                    normalize-space(ORC.22.3) or
+                                    normalize-space(ORC.22.4) or
+                                    normalize-space(ORC.22.5) or
+                                    normalize-space(ORC.22.6) or
+                                    normalize-space(ORC.22.9)
+                                ]">
+                    <xsl:copy-of select="//ORC.22[
+                                            normalize-space(ORC.22.1) or
+                                            normalize-space(ORC.22.2) or
+                                            normalize-space(ORC.22.3) or
+                                            normalize-space(ORC.22.4) or
+                                            normalize-space(ORC.22.5) or
+                                            normalize-space(ORC.22.6) or
+                                            normalize-space(ORC.22.9)
+                                        ][1]"/>
+                </xsl:when>
+            </xsl:choose>
+        </xsl:variable>
+
+        <xsl:if test="exsl:node-set($addressNode)/ORC.22">
+            ,"address":[
+                <xsl:call-template name="buildFhirAddressObject">
+                    <xsl:with-param name="addrNode" select="exsl:node-set($addressNode)/ORC.22"/>
+                    <xsl:with-param name="resource_name" select="'Organization'"/>
+                </xsl:call-template>
+            ]
+        </xsl:if> -->
+  
       },
       "request" : {
         "method" : "POST",
@@ -2356,6 +2482,7 @@
       <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
       <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
       <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:when test="$screeningCode = '93025-5'">Protocol for Responding to and Assessing Patients' Assets, Risks, and Experiences [PRAPARE]</xsl:when>   
       <xsl:otherwise>
         <xsl:text/>
       </xsl:otherwise>

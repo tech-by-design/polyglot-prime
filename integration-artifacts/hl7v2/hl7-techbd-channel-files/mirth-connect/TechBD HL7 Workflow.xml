@@ -2,8 +2,8 @@
   <id>6b056724-d5c4-48ac-84e4-92b9c3768212</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
-  <description>Version: 0.1.15</description>
-  <revision>22</revision>
+  <description>Version: 0.1.16</description>
+  <revision>24</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2601,10 +2601,11 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1781520995945</time>
+        <time>1784527622309</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
+        <pruneContentDays>7</pruneContentDays>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
