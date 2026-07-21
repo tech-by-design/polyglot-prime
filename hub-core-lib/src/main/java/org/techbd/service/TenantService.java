@@ -46,6 +46,7 @@ public class TenantService {
                         final Map<String, Object> tenant = new LinkedHashMap<>();
                         tenant.put("tenantId", r.getPTenantId());
                         tenant.put("tenantName", r.getPTenantName());
+                        tenant.put("tenantType", r.getPTenantType());
                         return tenant;
                     })
                     .collect(Collectors.toList());

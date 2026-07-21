@@ -2,17 +2,14 @@
   <id>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.42
-Implemeted tenant api.</description>
-  <revision>94</revision>
+  <description>Version: 0.8.43
+Added tenant type in tenant api.</description>
+  <revision>95</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>true</mutualTlsEnabled>
@@ -43,6 +40,9 @@ Implemeted tenant api.</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.3.1">
         <host>0.0.0.0</host>
@@ -463,7 +463,8 @@ if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&qu
 
             tenants.push({
                 tenantId: rs.getString(&quot;p_tenant_id&quot;),
-                tenantName: rs.getString(&quot;p_tenant_name&quot;)
+                tenantName: rs.getString(&quot;p_tenant_name&quot;),
+                tenantType: rs.getString(&quot;p_tenant_type&quot;)
             });
 
         }
@@ -2597,7 +2598,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1784542588912</time>
+        <time>1784640877167</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2609,13 +2610,13 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0f617dea-2778-449b-8e1f-50b7a81f90e7</id>
-        <name>0_8_42</name>
+        <id>cb92ea0c-5b39-41ab-8414-14786e11e53f</id>
+        <name>0_8_43</name>
         <channelIds>
           <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
