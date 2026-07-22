@@ -91,9 +91,10 @@ public class Presentation {
             allowedLinks = permissionService.filterLinksByRole(navPrimeLinks, request);
         } else {
             // GitHub users should see the original navigation
-             allowedLinks = navPrimeLinks.stream()
-            .filter(link -> !"Settings".equals(link.text()))
-            .toList();        
+            allowedLinks = navPrimeLinks.stream()
+                    .filter(link -> !"Settings".equals(link.text()))
+                    .filter(link -> !shouldHideNavigationLink(link.text()))
+                    .toList();
         }
 
         model.addAttribute("navPrime", allowedLinks);
@@ -129,6 +130,13 @@ public class Presentation {
         return templateName;
     }
 
+    private boolean shouldHideNavigationLink(final String text) {
+        if (!"github".equalsIgnoreCase(authProvider)) {
+            return false;
+        }
+        return text != null && ("Monitoring".equalsIgnoreCase(text) || "Source Monitoring".equalsIgnoreCase(text));
+    }
+
     protected void registerActiveRoute(final Model model, final HttpServletRequest request) {
         final var activeRouteFound = navPrimeTree.findNode(request.getRequestURI());
         if (activeRouteFound.isEmpty()) {
@@ -156,6 +164,7 @@ public class Presentation {
                         .orElse(Integer.MAX_VALUE)))
                  .map(sibling -> new HtmlAnchor(sibling))
                 .filter(link -> permissionService.isAllowedForRole(link.text(), request))
+                .filter(link -> !shouldHideNavigationLink(link.text()))
                 .map(HtmlAnchor::intoMap)           
                 .collect(Collectors.toList());
 
@@ -165,6 +174,7 @@ public class Presentation {
                         .orElse(Integer.MAX_VALUE)))
                         .map(sibling -> new HtmlAnchor(sibling))
                         .filter(link -> permissionService.isAllowedForRole(link.text() , request))
+                        .filter(link -> !shouldHideNavigationLink(link.text()))
                         .map(HtmlAnchor::intoMap)
                         .collect(Collectors.toList()) : List.of();
 

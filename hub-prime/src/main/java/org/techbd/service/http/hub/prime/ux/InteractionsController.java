@@ -5,10 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.http.PermissionService;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,24 +31,39 @@ public class InteractionsController {
     private final SftpManager sftpManager;
     private final DSLContext primaryDslContext;
     private final DSLContext secondaryDslContext;
-
+    private final PermissionService permissionService; 
    public InteractionsController(
         final Presentation presentation,
         final SftpManager sftpManager,
         @Qualifier("primaryDslContext") DSLContext primaryDslContext,
         @Autowired(required = false)
-        @Qualifier("secondaryDslContext") DSLContext secondaryDslContext) {
+        @Qualifier("secondaryDslContext") DSLContext secondaryDslContext,
+        final PermissionService permissionService) {
 
     this.presentation = presentation;
     this.sftpManager = sftpManager;
     this.primaryDslContext = primaryDslContext;
     this.secondaryDslContext = secondaryDslContext;
+    this.permissionService = permissionService;
 }
 
     @GetMapping("/interactions")
     @RouteMapping(label = "Interactions", siblingOrder = 20)
-    public String observeInteractions() {
-        return "redirect:/interactions/httpsfhir";
+    public String observeInteractions(HttpServletRequest request) {
+    
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication instanceof OAuth2AuthenticationToken token
+            && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+        String authProvider = (String) user.getAttribute("authProvider");
+
+        if ("github".equalsIgnoreCase(authProvider)) {
+            return "redirect:/interactions/httpsfhir";
+        }
+    }
+
+    return "redirect:" +
+            permissionService.getDefaultRoute("/interactions", request);
     }
 
     @GetMapping("/interactions/httpsfhir")
@@ -97,7 +117,19 @@ public class InteractionsController {
     @GetMapping("/interactions/observe")
     @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 90)
     public String osberve(final Model model, final HttpServletRequest request) {
+
+     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+     if (authentication instanceof OAuth2AuthenticationToken token
+            && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+        String authProvider = (String) user.getAttribute("authProvider");
+
+        if ("github".equalsIgnoreCase(authProvider)) {
         return "redirect:/interactions/observe/api-performance";        
+        }
+    }
+    return "redirect:" +
+            permissionService.getDefaultRoute("/interactions/observe", request);
     }
 
     @GetMapping("/interactions/observe/api-performance")

@@ -16,11 +16,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.techbd.service.DocResourcesService;
+import org.techbd.service.http.PermissionService;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,17 +53,31 @@ public class DocsController {
 
     private final Presentation presentation;
     private final DocResourcesService drs;
+    private final PermissionService permissionService;
 
-    public DocsController(final Presentation presentation, final DocResourcesService drs) throws Exception {
+    public DocsController(final Presentation presentation, final DocResourcesService drs, final PermissionService permissionService) throws Exception {
         this.presentation = presentation;
         this.drs = drs;
+        this.permissionService = permissionService;
     }
 
     @RouteMapping(label = "Documentation", siblingOrder = 50)
     @GetMapping("/docs")
-    public String docs() {
-        return "redirect:/docs/swagger-ui/techbd-api";
+    public String docs(HttpServletRequest request) {
+  Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication instanceof OAuth2AuthenticationToken token
+            && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+        String authProvider = (String) user.getAttribute("authProvider");
+
+        if ("github".equalsIgnoreCase(authProvider)) {
+            return "redirect:/docs/swagger-ui/techbd-api";
+        }
     }
+
+    return "redirect:" +
+            permissionService.getDefaultRoute("/docs", request);
+    }    
 
     @RouteMapping(label = "Tech by Design Hub", title = "Business and Technology Documentation", siblingOrder = 0)
     @GetMapping("/docs/techbd-hub")

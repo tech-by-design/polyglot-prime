@@ -5,10 +5,15 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.http.PermissionService;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
@@ -22,11 +27,14 @@ public class DataQualityController {
     private static final Logger LOG = LoggerFactory.getLogger(DataQualityController.class.getName());
 
     private final Presentation presentation;
+    private final PermissionService permissionService;
 
     public DataQualityController(final Presentation presentation,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
-            @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers,
+            final PermissionService permissionService) {
         this.presentation = presentation;
+        this.permissionService = permissionService;
     }
 
     public List<String> getValuesForField(String field) {
@@ -36,10 +44,24 @@ public class DataQualityController {
 
     @GetMapping("/data-quality")
     @RouteMapping(label = "Data Quality", siblingOrder = 10)
-    public String adminDiagnostics() {
-        return "redirect:/data-quality/needs-attention";
-    }
+    public String adminDiagnostics(HttpServletRequest request) {
 
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication instanceof OAuth2AuthenticationToken token
+            && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+        String authProvider = (String) user.getAttribute("authProvider");
+
+        if ("github".equalsIgnoreCase(authProvider)) {
+        return "redirect:/data-quality/needs-attention";
+        }
+     }
+        return "redirect:" +
+           permissionService.getDefaultRoute(
+                "/data-quality",
+                request
+           );
+    }
     @GetMapping("/data-quality/needs-attention")
     @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 5)
     public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {

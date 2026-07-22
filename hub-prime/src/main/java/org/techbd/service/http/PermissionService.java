@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.techbd.service.http.RouteRegistry.RouteInfo;
 import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -99,16 +99,17 @@ public class PermissionService {
 
             String role = (String) session.getAttribute(Constant.USER_ROLE);
 
-            Map<String, Set<String>> allowedMenus = getAllowedMenus(session);
+            Map<String, List<ScreenPermission>> allowedMenus = getAllowedMenus(session);
 
             if (allowedMenus == null || allowedMenus.isEmpty()) {
                 LOG.warn("Role {} has no permissions configured. Returning empty links.", role);
                 return List.of();
             }
-            Set<String> allowedTopMenus = allowedMenus.keySet();
-            return allLinks.stream()
-                    .filter(link -> allowedTopMenus.contains(link.text()))
-                    .collect(Collectors.toList());
+           return allLinks.stream()
+            .filter(link ->
+                    "Dashboard".equals(link.text()) ||
+                    allowedMenus.containsKey(link.text()))
+            .collect(Collectors.toList());
 
         } catch (Exception e) {
             LOG.error("Error while filtering links by role", e);
@@ -116,6 +117,7 @@ public class PermissionService {
         }
     }
 
+    @SuppressWarnings("null")
     public boolean isAllowedForRole(String linkText, HttpServletRequest request) {
 
          if ("github".equalsIgnoreCase(authProvider)) {
@@ -131,19 +133,19 @@ public class PermissionService {
                 return false;
             }
 
-            // if (isSuperRole(session)) {
-            //     return true;
-            // }
             String role = (String) session.getAttribute(Constant.USER_ROLE);
 
-            Map<String, Set<String>> allowedMenus = getAllowedMenus(session);
+            Map<String, List<ScreenPermission>> allowedMenus = getAllowedMenus(session);
 
             if (allowedMenus == null || allowedMenus.isEmpty()) {
                 LOG.warn("Role {} has no permissions configured. Denying access to {}", role, linkText);
                 return false;
             }
-            return allowedMenus.values().stream()
-                    .anyMatch(subMenus -> subMenus.contains(linkText));
+           return allowedMenus.values().stream()
+            .flatMap(List::stream)
+            .anyMatch(permission ->
+                    permission.screen().equals(linkText) ||
+                    permission.children().contains(linkText));
 
         } catch (Exception e) {
             LOG.error("Error while checking access for link {}", linkText, e);
@@ -155,8 +157,21 @@ public class PermissionService {
         return Boolean.TRUE.equals(session.getAttribute(Constant.SUPER_ROLE));
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Set<String>> getAllowedMenus(HttpSession session) {
-        return (Map<String, Set<String>>) session.getAttribute(Constant.ROLE_PERMISSIONS);
+   @SuppressWarnings("unchecked")
+    private Map<String, List<ScreenPermission>> getAllowedMenus(HttpSession session) {
+        return (Map<String, List<ScreenPermission>>) session.getAttribute(Constant.ROLE_PERMISSIONS);
     }
+
+    public String getDefaultRoute(String parentPath, HttpServletRequest request) {
+           
+        List<RouteInfo> routes = RouteRegistry.getChildRoutes(parentPath);
+            for(RouteInfo route : routes) {
+                if(isAllowedForRole(
+                        route.mapping().label(),
+                        request)) {
+                    return route.path();
+                }
+            }
+            return "/home";
+        }
 }

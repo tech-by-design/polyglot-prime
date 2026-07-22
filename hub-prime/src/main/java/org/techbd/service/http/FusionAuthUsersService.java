@@ -4,12 +4,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
@@ -216,8 +213,7 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     }
 }
 
- @SuppressWarnings("null")
-public Map<String, Set<String>> getRolePermissions(String roleName) {
+public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
 
             resetDatabaseSession();
            String sql = "techbd_udi_ingress.idp_get_login_role_permissions(?)::text";
@@ -232,14 +228,8 @@ public Map<String, Set<String>> getRolePermissions(String roleName) {
         }
 
         try {
-            Map<String, List<String>> parsed = objectMapper.readValue(response,
-                    new TypeReference<Map<String, List<String>>>() {});
-
-            return parsed.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> new HashSet<>(e.getValue())
-                    ));
+           return objectMapper.readValue(response,
+                new TypeReference<Map<String, List<ScreenPermission>>>() {} );
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse role permissions JSON from DB", e);

@@ -1,9 +1,9 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +86,7 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                        if (!faUser.roles().isEmpty()) {
                             String role = faUser.roles().get(0);
                             // DB decides whether CONFIG pages should be included.
-                            Map<String, Set<String>> permissions =
+                           Map<String, List<ScreenPermission>> permissions =
                                     fusionAuthUsersService.getRolePermissions(role);
 
                             HttpSession session = request.getSession();

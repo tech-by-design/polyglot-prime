@@ -2,9 +2,14 @@ package org.techbd.service.http.hub.prime.ux;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.techbd.service.http.PermissionService;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,16 +30,31 @@ public class ConsoleController {
             .build();
 
     private final Presentation presentation;
+    private final PermissionService permissionService;
 
-    public ConsoleController(final Presentation presentation) throws Exception {
+    public ConsoleController(final Presentation presentation, final PermissionService permissionService) throws Exception {
         this.presentation = presentation;
+        this.permissionService = permissionService;
     }
 
     @RouteMapping(label = "Console", siblingOrder = 80)
     @GetMapping("/console")
-    public String docs() {
+    public String docs(HttpServletRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication instanceof OAuth2AuthenticationToken token
+            && token.getPrincipal() instanceof DefaultOAuth2User user) {
+
+        String authProvider = (String) user.getAttribute("authProvider");
+
+        if ("github".equalsIgnoreCase(authProvider)) {
         return "redirect:/console/health-info";
+        }
     }
+        return "redirect:" +
+           permissionService.getDefaultRoute(
+                "/console",
+                request
+           );    }
 
      @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 30)
     @GetMapping("/console/health-info")
