@@ -19,6 +19,7 @@ import org.techbd.config.CoreAppConfig;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.FusionAuthUserAuthorizationFilter;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
+import org.techbd.service.http.Interactions;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.AppLogger;
@@ -58,10 +59,12 @@ public class InteractionService {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
                 final var tenant = rre.tenant();
+                String resolvedTenantNames = Optional.ofNullable(tenant)
+                        .map(Interactions.Tenant::tenantId)
+                        .filter(value -> value != null && !value.isBlank())
+                        .orElse("N/A");
+
                 rihr.setPInteractionId(rre.interactionId().toString());
-                rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(
-                        Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
-                                tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 rihr.setPInteractionKey(requestURI);
                 rihr.setPSourceType(SourceType.FHIR.name());
@@ -93,6 +96,11 @@ public class InteractionService {
                             if (faUser != null) {
                                 curUserName = Optional.ofNullable(faUser.name()).orElse("NO_DATA");
                                 userId = Optional.ofNullable(faUser.fusionAuthId()).orElse("NO_DATA");
+                                resolvedTenantNames = Optional.ofNullable(faUser.tenantNames())
+                                        .filter(tenantNames -> !tenantNames.isEmpty())
+                                        .map(tenantNames -> tenantNames.get(0))
+                                        .filter(value -> value != null && !value.isBlank())
+                                        .orElse(resolvedTenantNames);
                             }
 
                             userRole = ((FusionAuthUserAuthorizationFilter.AuthenticatedUser) user)
@@ -124,9 +132,18 @@ public class InteractionService {
                     rihr.setPUserId(userId);
                     rihr.setPUserSession(sessionId);
                     rihr.setPUserRole(userRole);
+                    rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(
+                            Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
+                                    resolvedTenantNames)));
                 } else {
                     LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
                             + saveUserDataToInteractions);
+                }
+
+                if (!saveUserDataToInteractions) {
+                    rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(
+                            Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
+                                    resolvedTenantNames)));
                 }
 
                 rihr.execute(primaryDslContext.configuration());

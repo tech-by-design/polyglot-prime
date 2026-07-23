@@ -235,23 +235,23 @@
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Content</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
                      <li class="mb-4" 
-                              th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Screenings')}">
+                              th:if="${session.isSuperRole or (session.rolePermissions['Content'] != null and #lists.contains(session.rolePermissions['Content'].![screen], 'Screenings'))}">
                              <a href="/content/screenings" class="hover:underline">Screenings</a>
                             </li>
                             <li class="mb-4" 
-                             th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Patients')}">
+                             th:if="${session.isSuperRole or (session.rolePermissions['Content'] != null and #lists.contains(session.rolePermissions['Content'].![screen], 'Patients'))}">
                              <a href="/content/patients" class="hover:underline">Patients</a>
                            </li>
                             <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('Organizations')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Content'] != null and #lists.contains(session.rolePermissions['Content'].![screen], 'Organizations'))}">
                              <a href="/content/organizations" class="hover:underline">Organizations</a>
                              </li> 
                              <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('SCN')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Content'] != null and #lists.contains(session.rolePermissions['Content'].![screen], 'SCN'))}">
                              <a href="/content/scn" class="hover:underline">SCN</a>
                              </li> 
                              <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Content'].contains('HRSN Data Tracker')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Content'] != null and #lists.contains(session.rolePermissions['Content'].![screen], 'HRSN Data Tracker'))}">
                             <a href="/content/hrsn-data-tracker" class="hover:underline">HRSN Data Tracker</a>
                         </li> 
                       </ul>
@@ -264,37 +264,35 @@
                     <ul class="text-gray-500 dark:text-gray-400 font-medium">
 
                         <li class="mb-4"
-                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and session.rolePermissions['Data Quality'].contains('Needs Attention'))}">
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'Needs Attention'))}">
                             <a href="/data-quality/needs-attention" class="hover:underline">Needs Attention</a>
                         </li>
 
                         <li class="mb-4"
-                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and session.rolePermissions['Data Quality'].contains('FHIR Data Quality'))}">
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'FHIR Data Quality'))}">
                             <a href="/data-quality/fhir-validation-issues" class="hover:underline">FHIR Data Quality</a>
                         </li>
 
                         <li class="mb-4"
-                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and session.rolePermissions['Data Quality'].contains('CSV Via HTTPs Data Quality'))}">
-                            <a href="/data-quality/https-via-csv-validations" class="hover:underline">CSV Via HTTPs Data Quality</a>
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'CSV Data Quality'))}">
+                            <a href="/data-quality/https-via-csv-validations" class="hover:underline">CSV Data Quality</a>
                         </li>
-
-                        <!-- Always Visible -->
-                        <li class="mb-4">
+                        <li class="mb-4"
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'CCDA Data Quality'))}">
                             <a href="/data-quality/ccda-validations-issues" class="hover:underline">CCDA Data Quality</a>
                         </li>
-
-                        <!-- Always Visible -->
-                        <li class="mb-4">
+                        <li class="mb-4"
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'HL7v2 Data Quality'))}">
                             <a href="/data-quality/hl7v2-validations-issues" class="hover:underline">HL7v2 Data Quality</a>
                         </li>
 
                         <li class="mb-4"
-                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and session.rolePermissions['Data Quality'].contains('IG Publication Issues'))}">
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'IG Publication Issues'))}">
                             <a href="/data-quality/ig-publication-issues" class="hover:underline">IG Publication Issues</a>
                         </li>
 
                         <li class="mb-4"
-                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and session.rolePermissions['Data Quality'].contains('FHIR Rules'))}">
+                            th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'FHIR Rules'))}">
                             <a href="/data-quality/fhir-rules" class="hover:underline">FHIR Rules</a>
                         </li>
 
@@ -308,47 +306,47 @@
                         <ul class="text-gray-500 dark:text-gray-400 font-medium">
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('FHIR Data')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'FHIR Data'))}">
                                 <a href="/interactions/httpsfhir" class="hover:underline">FHIR Data</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('FHIR Failed Submissions (Data Lake)')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'FHIR Failed Submissions (Data Lake)'))}">
                                 <a href="/interactions/httpsfailed" class="hover:underline">FHIR Failed Submissions (Data Lake)</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('CSV Submissions')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'CSV Submissions'))}">
                                 <a href="/interactions/httpscsv" class="hover:underline">CSV Submissions</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('CCDA Submissions')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'CCDA Submissions'))}">
                                 <a href="/interactions/httpsccda" class="hover:underline">CCDA Submissions</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('HL7v2 Submissions')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'HL7v2 Submissions'))}">
                                 <a href="/interactions/httpshl7v2" class="hover:underline">HL7v2 Submissions</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('HTTP Interactions')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'Hub Interactions'))}">
                                 <a href="/interactions/https" class="hover:underline">Hub Interactions</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('Performance Overview')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'Performance Overview'))}">
                                 <a href="/interactions/observe" class="hover:underline">Performance Overview</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('Provenance')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'Provenance'))}">
                                 <a href="/interactions/provenance" class="hover:underline">Provenance</a>
                             </li>
 
                             <li class="mb-4"
-                                th:if="${session.isSuperRole or session.rolePermissions['Interactions'].contains('User Sessions')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Interactions'] != null and #lists.contains(session.rolePermissions['Interactions'].![screen], 'User Sessions'))}">
                                 <a href="/interactions/user" class="hover:underline">User Sessions</a>
                             </li>
 
@@ -359,19 +357,19 @@
                       <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Documentation</h2>
                       <ul class="text-gray-500 dark:text-gray-400 font-medium">
                           <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('Tech by Design Hub')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Documentation'] != null and #lists.contains(session.rolePermissions['Documentation'].![screen], 'Tech by Design Hub'))}">
                             <a href="/docs/techbd-hub" class="hover:underline">Tech by Design Hub</a>
                           </li>
                           <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('SHIN-NY FHIR IG')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Documentation'] != null and #lists.contains(session.rolePermissions['Documentation'].![screen], 'SHIN-NY FHIR IG'))}">
                              <a href="/docs/shinny-fhir-ig" class="hover:underline">SHIN-NY FHIR IG</a>
                         </li>
                            <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('OpenAPI UI')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Documentation'] != null and #lists.contains(session.rolePermissions['Documentation'].![screen], 'OpenAPI UI'))}">
                             <a href="/docs/swagger-ui" class="hover:underline">OpenAPI UI</a>
                           </li>
                        <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Documentation'].contains('Announcements')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Documentation'] != null and #lists.contains(session.rolePermissions['Documentation'].![screen], 'Announcements'))}">
                              <a href="/docs/announcements" class="hover:underline">Announcements</a>
                       </ul>
                   </div>
@@ -382,19 +380,19 @@
                     <ul class="text-gray-500 dark:text-gray-400 font-medium">
                     
                         <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Health Information')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Console'] != null and #lists.contains(session.rolePermissions['Console'].![screen], 'Health Information'))}">
                              <a href="/console/health-info" class="hover:underline ">Health Information</a>
                         </li>
                         <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Project')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Console'] != null and #lists.contains(session.rolePermissions['Console'].![screen], 'Project'))}">
                              <a href="/console/project" class="hover:underline ">Project</a>
                         </li>
                          <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('Schema')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Console'] != null and #lists.contains(session.rolePermissions['Console'].![screen], 'Schema'))}">
                              <a href="/console/schema" class="hover:underline ">Schema</a>
                         </li>
                          <li class="mb-4" 
-                                th:if="${session.isSuperRole or session.rolePermissions['Console'].contains('ISLM Migration')}">
+                                th:if="${session.isSuperRole or (session.rolePermissions['Console'] != null and #lists.contains(session.rolePermissions['Console'].![screen], 'ISLM Migration'))}">
                               <a href="/console/islm" class="hover:underline ">ISLM Migration</a>
                         </li>
                         </ul>
