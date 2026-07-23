@@ -3,9 +3,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.43",
+      "version": "0.8.44",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-07-21"
+      "date": "2026-07-23"
     },
     {
       "type": "FHIR",
@@ -92,6 +92,13 @@
       "date": "2026-03-02"
     },
     {
+      "type": "Configuration Map",
+      "channel": "configuration_map_export.properties",
+      "version": "",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-07-23"
+    },
+    {
       "type": "AwsSqsFifoQueueListener",
       "channel": "AwsSqsFifoQueueListener.xml",
       "version": "",
@@ -111,6 +118,13 @@
       "version": "0.2.25",
       "editedby": "abhiramisanthosh90",
       "date": "2026-07-20"
+    },
+    {
+      "type": "MCO",
+      "channel": "AmidaCare.xml",
+      "version": "0.1.0",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-07-23"
     },
   {
       "type": "code-templates",

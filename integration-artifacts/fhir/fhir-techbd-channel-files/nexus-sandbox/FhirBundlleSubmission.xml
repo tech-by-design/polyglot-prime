@@ -2,9 +2,10 @@
   <id>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundlleSubmission</name>
-  <description>Version: 0.8.43
-Added tenant type in tenant api.</description>
-  <revision>95</revision>
+  <description>
+Version: 0.8.44
+Fixed jdbc username and password issue.</description>
+  <revision>102</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -447,8 +448,8 @@ if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&qu
 
         conn = DriverManager.getConnection(
             globalMap.get(&quot;jdbcUrl&quot;),
-            globalMap.get(&quot;jdbcUsername&quot;),
-            globalMap.get(&quot;jdbcPassword&quot;)
+            globalMap.get(&quot;JDBC_USERNAME&quot;),
+            globalMap.get(&quot;JDBC_PASSWORD&quot;)
         );
 
         stmt = conn.createStatement();
@@ -2185,7 +2186,6 @@ function toJsonb(value) {&#xd;
     }&#xd;
     &#xd;
     jsonbObj.setValue(value);&#xd;
-    logger.info(&quot;jsonbObj: &quot; + jsonbObj);&#xd;
     return jsonbObj;&#xd;
 }
 
@@ -2598,7 +2598,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1784640877167</time>
+        <time>1784694551819</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2610,8 +2610,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>cb92ea0c-5b39-41ab-8414-14786e11e53f</id>
-        <name>0_8_43</name>
+        <id>8205129f-c796-486f-b8b8-100469ba89c2</id>
+        <name>0_8_44</name>
         <channelIds>
           <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
         </channelIds>
