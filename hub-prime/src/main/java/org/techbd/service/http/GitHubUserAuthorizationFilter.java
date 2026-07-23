@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
@@ -101,6 +102,16 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
                             attributes,
                             "login" // GitHub username field
                     );
+
+                OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+                OAuth2AuthenticationToken updatedAuthentication =
+                        new OAuth2AuthenticationToken(
+                                updatedUser,
+                                updatedUser.getAuthorities(),
+                                oauthToken.getAuthorizedClientRegistrationId());
+
+                SecurityContextHolder.getContext().setAuthentication(updatedAuthentication);
+
                 setAuthenticatedUser(request, new AuthenticatedUser(updatedUser, gitHubAuthnUser.orElseThrow()));
                 request.getSession(true).setAttribute("isSuperRole", true);
             }
