@@ -164,9 +164,14 @@ public class FHIRService {
                 throw new IllegalArgumentException("Interaction ID must be provided in the request parameters.");
             }
 				final String bundleId = CoreFHIRUtil.extractBundleId(payload, tenantId);
-			if (!SourceType.CSV.name().equalsIgnoreCase(source)
+			final boolean skipDataLedger = isDataLedgerSkipped(requestParameters);
+            LOG.info("Historical Replay | interactionId={} | skipDataLedger={}",
+                    interactionId, skipDataLedger);
+			if (!skipDataLedger
+					&& !SourceType.CSV.name().equalsIgnoreCase(source)
 					&& !SourceType.CCDA.name().equalsIgnoreCase(source)
 					&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
+                LOG.info("Historical Replay | RECEIVED Data Ledger ENABLED | interactionId={}", interactionId);
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
 					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
@@ -180,7 +185,9 @@ public class FHIRService {
 				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
 				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
 						SourceType.FHIR.name(), null);
-			}
+			} else {
+                LOG.info("Historical Replay | RECEIVED Data Ledger SKIPPED | interactionId={}", interactionId);
+            }
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
 				registerOriginalPayload(requestParameters,
@@ -262,6 +269,23 @@ public class FHIRService {
             span.end();
         }
     }
+
+	/**
+	 * Determines whether calls to the NYeC Data Ledger should be skipped for this
+	 * request. Driven by the {@code dataLedger} query parameter on the
+	 * historical-replay endpoint (see Issue #3330). Data Ledger calls proceed as
+	 * today (default) unless the parameter is explicitly set to {@code false}.
+	 *
+	 * @param requestParameters the request parameters map
+	 * @return true if Data Ledger calls should be skipped, false otherwise (default)
+	 */
+	public static boolean isDataLedgerSkipped(final Map<String, Object> requestParameters) {
+		if (requestParameters == null) {
+			return false;
+		}
+		final Object dataLedgerFlag = requestParameters.get(Constants.HISTORICAL_REPLAY_DATA_LEDGER);
+		return dataLedgerFlag != null && "false".equalsIgnoreCase(String.valueOf(dataLedgerFlag).trim());
+	}
 
 	@SuppressWarnings("unchecked")
 	public static boolean isActionDiscard(final Map<String, Object> payloadWithDisposition) {
@@ -1348,6 +1372,9 @@ public class FHIRService {
         LOG.debug(
                 "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
                 interactionId, tenantId);
+		final boolean skipDataLedger = isDataLedgerSkipped(requestParameters);
+            LOG.info("Historical Replay | interactionId={} | skipDataLedger={}",
+                    interactionId, skipDataLedger);
 		final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
 				CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(),
 				CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
@@ -1360,8 +1387,10 @@ public class FHIRService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .doFinally(signalType -> {
-                    final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
-            		coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+                    if (!skipDataLedger) {
+                        final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+                        coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+                    }
                 })
                 .subscribe(response -> {
                     handleResponse(response, interactionId, requestURI, tenantId,
@@ -1408,11 +1437,13 @@ public class FHIRService {
 					.retrieve()
 					.bodyToMono(String.class)
 					.doFinally(signalType -> {
-						final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
-							CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
-								CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
-						final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
-						coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+						if (!isDataLedgerSkipped(requestParameters)) {
+							final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+								CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(),
+									CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
+							final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+							coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+						}
 					})
 					.subscribe(response -> {
 						handleResponse(response, interactionId, requestURI, tenantId,
@@ -2038,6 +2069,83 @@ public class FHIRService {
 			}
 		} finally {
 			span.end();
+		}
+	}
+
+	/**
+	 * Filters an OperationOutcome result map based on the {@code ooSize} parameter
+	 * (see Issue #3330).
+	 * <ul>
+	 *   <li>{@code full} (default) → no change; all issues (error, warning, information) returned as-is.</li>
+	 *   <li>{@code lite} → only {@code error}/{@code fatal} severity issues are retained; warnings and info are stripped.</li>
+	 *   <li>{@code none} → returns {@code null}; caller is expected to respond with a bare HTTP 200 and no body.</li>
+	 * </ul>
+	 *
+	 * @param result the OperationOutcome-wrapping result map produced by {@link #processBundle}
+	 * @param ooSize the requested OperationOutcome size: {@code full}, {@code lite}, or {@code none}
+	 * @return the (possibly filtered) result, or {@code null} when {@code ooSize=none}
+	 */
+	@SuppressWarnings("unchecked")
+	public Object applyOoSizeFilter(final Object result, final String ooSize) {
+		final String normalizedOoSize = Optional.ofNullable(ooSize)
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.orElse(Constants.OO_SIZE_FULL);
+
+		if (Constants.OO_SIZE_FULL.equalsIgnoreCase(normalizedOoSize) || result == null) {
+			return result;
+		}
+		if (Constants.OO_SIZE_NONE.equalsIgnoreCase(normalizedOoSize)) {
+			return null;
+		}
+		if (!Constants.OO_SIZE_LITE.equalsIgnoreCase(normalizedOoSize) || !(result instanceof Map)) {
+			return result;
+		}
+
+		// lite: keep only error/fatal issues inside OperationOutcome.validationResults[*].operationOutcome.issue
+		try {
+			final Map<String, Object> root = new HashMap<>((Map<String, Object>) result);
+			final Object ooObj = root.get("OperationOutcome");
+			if (!(ooObj instanceof Map)) {
+				return result;
+			}
+			final Map<String, Object> oo = new HashMap<>((Map<String, Object>) ooObj);
+			final Object vrObj = oo.get("validationResults");
+			if (!(vrObj instanceof List)) {
+				return result;
+			}
+			final List<Object> filteredVr = new ArrayList<>();
+			for (final Object vrItem : (List<?>) vrObj) {
+				if (!(vrItem instanceof Map)) {
+					filteredVr.add(vrItem);
+					continue;
+				}
+				final Map<String, Object> vr = new HashMap<>((Map<String, Object>) vrItem);
+				final Object innerOoObj = vr.get("operationOutcome");
+				if (innerOoObj instanceof Map) {
+					final Map<String, Object> innerOo = new HashMap<>((Map<String, Object>) innerOoObj);
+					final Object issuesObj = innerOo.get("issue");
+					if (issuesObj instanceof List) {
+						final List<Map<String, Object>> errorsOnly = ((List<?>) issuesObj).stream()
+								.filter(Map.class::isInstance)
+								.map(i -> (Map<String, Object>) i)
+								.filter(i -> {
+									final String sev = String.valueOf(i.get("severity"));
+									return "error".equalsIgnoreCase(sev) || "fatal".equalsIgnoreCase(sev);
+								})
+								.collect(Collectors.toList());
+						innerOo.put("issue", errorsOnly);
+					}
+					vr.put("operationOutcome", innerOo);
+				}
+				filteredVr.add(vr);
+			}
+			oo.put("validationResults", filteredVr);
+			root.put("OperationOutcome", oo);
+			return root;
+		} catch (final Exception e) {
+			LOG.warn("applyOoSizeFilter failed, returning original unfiltered result: {}", e.getMessage());
+			return result;
 		}
 	}
 
