@@ -100,4 +100,11 @@ public interface Constants {
     public static final String COOKIES = "cookies";
     public static final String TECHBD_VERSION = "techBdVersion";
     public static final String CLIENT_IP_ADDRESS = "CLIENT_IP_ADDRESS";
+
+    // Constants for historical-replay endpoint 
+    public static final String HISTORICAL_REPLAY_DATA_LEDGER = "historicalReplayDataLedger";
+    public static final String HISTORICAL_REPLAY_OO_SIZE = "historicalReplayOoSize";
+    public static final String OO_SIZE_FULL = "full";
+    public static final String OO_SIZE_LITE = "lite";
+    public static final String OO_SIZE_NONE = "none";
 }

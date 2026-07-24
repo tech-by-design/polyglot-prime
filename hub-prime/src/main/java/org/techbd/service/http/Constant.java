@@ -9,6 +9,7 @@ public class Constant {
             "/Bundle", "/Bundle/**",
             "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
             "/Hl7/v2", "/Hl7/v2/",
+            "/historical-replay/Bundle/**",
             "/api/expect", "/api/expect/**",
             "/Bundles/**"
     };
