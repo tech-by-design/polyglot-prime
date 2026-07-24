@@ -273,7 +273,7 @@ public class FHIRService {
 	/**
 	 * Determines whether calls to the NYeC Data Ledger should be skipped for this
 	 * request. Driven by the {@code dataLedger} query parameter on the
-	 * historical-replay endpoint (see Issue #3330). Data Ledger calls proceed as
+	 * historical-replay endpoint. Data Ledger calls proceed as
 	 * today (default) unless the parameter is explicitly set to {@code false}.
 	 *
 	 * @param requestParameters the request parameters map
@@ -2074,7 +2074,6 @@ public class FHIRService {
 
 	/**
 	 * Filters an OperationOutcome result map based on the {@code ooSize} parameter
-	 * (see Issue #3330).
 	 * <ul>
 	 *   <li>{@code full} (default) → no change; all issues (error, warning, information) returned as-is.</li>
 	 *   <li>{@code lite} → only {@code error}/{@code fatal} severity issues are retained; warnings and info are stripped.</li>
