@@ -13,6 +13,8 @@
     "MC_JDBC_PASSWORD" : "mc_jdbc_password",
     "MC_JDBC_URL" : "mc_jdbc_url",
     "MC_JDBC_USERNAME" : "mc_jdbc_username",
+    "MC_S3_ACCESS_KEY_ID" : "mc_s3_access_key_id",
+    "MC_S3_SECRET_ACCESS_KEY" : "mc_s3_secret_access_key",
     "TECHBD_NYEC_DATALAKE_API_KEY" : "techbd_nyec_datalake_api_key",
     "TECHBD_NYEC_DATALEDGER_API_KEY" : "techbd_nyec_dataledger_api_key"
   },
