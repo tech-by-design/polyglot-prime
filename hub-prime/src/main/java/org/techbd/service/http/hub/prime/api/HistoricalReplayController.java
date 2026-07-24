@@ -40,7 +40,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.annotation.Nonnull;
 
 @Controller
-@Tag(name = "Historical Replay Endpoints", description = "Historical Replay FHIR Endpoints")
+@Tag(name = "Tech by Design Hub Historical Replay Endpoints", description = "Historical Replay FHIR Endpoints")
 public class HistoricalReplayController {
 
     private static final Logger LOG = LoggerFactory.getLogger(HistoricalReplayController.class);

@@ -132,6 +132,7 @@ public class SwaggerConfig {
                 .pathsToMatch("/metadata", "/Bundles/status/nyec-submission-failed",
                 "/Bundles/status/operation-outcome",
                         "/Bundle", "/Bundle/**",
+                        "/historical-replay/Bundle", "/historical-replay/Bundle/**",
                         "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
                         "/api/expect/fhir/**","/tenants")
                 .addOpenApiCustomizer(openApi -> {
