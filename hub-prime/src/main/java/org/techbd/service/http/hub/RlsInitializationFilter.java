@@ -17,6 +17,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,21 +41,16 @@ public class RlsInitializationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            HttpSession session = request.getSession();
+            String selectedTenant =(String) session.getAttribute("activeTenant");
             if (auth instanceof OAuth2AuthenticationToken token
                     && token.getPrincipal() instanceof DefaultOAuth2User user) {
-                fusionAuthUsersService.setRoleFromCurrentUser(user);
+                fusionAuthUsersService.setRoleFromCurrentUser(user,selectedTenant);
             }
             filterChain.doFilter(request, response);
         } catch (Exception e) {
             LOG.error("Error in RLS initialization filter", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error in RLS initialization filter");
         }
-        // finally {
-            // try {
-            //     fusionAuthUsersService.resetDatabaseSession();
-            // } catch (Exception e) {
-            //     LOG.error("Failed to reset PostgreSQL session", e);
-            // }
-        // }
     }
 }

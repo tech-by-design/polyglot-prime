@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.jooq.DSLContext;
-import org.jooq.JSONB;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +35,7 @@ public class FusionAuthUsersService {
 
     @Value("${ORG_TECHBD_SERVICE_HTTP_FUSIONAUTH_BASE_URL}")
     private String fusionAuthBaseUrl;
-
-    @Value("${FUSIONAUTH_API_KEY}")
-     private String fusionAuthApiKey;
-
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(FusionAuthUsersService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .registerModule(new JavaTimeModule());
@@ -64,6 +59,7 @@ public class FusionAuthUsersService {
             List<String> roles,
             List<String> tenantIds,
             List<String> tenantNames,
+            String activeTenant,
             Boolean isSuperRole
             ) {
         }
@@ -79,6 +75,7 @@ public class FusionAuthUsersService {
                enrichedAttributes.put("role", user.roles());              
                enrichedAttributes.put("avatar_url", createAvatarUrl(oAuth2User));
                enrichedAttributes.put("authProvider", "fusionauth");
+               enrichedAttributes.put("activeTenant", user.activeTenant());
 
              
                DefaultOAuth2User enrichedOAuth2User = new DefaultOAuth2User(
@@ -118,27 +115,20 @@ public class FusionAuthUsersService {
     
     List<String> roles = Optional.ofNullable((List<String>) oAuth2User.getAttribute("roles"))
             .orElse(List.of());
-    // List<String> tenantIds =
-    //     Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantIds"))
-    //             .orElse(List.of());
+    List<String> tenantIds =
+        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantIds"))
+                .orElse(List.of());
 
-    // List<String> tenantNames =
-    //     Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantNames"))
-    //             .orElse(List.of());
-      List<String> tenantIds = List.of(
-        "742a1edf-1662-4220-ac0c-b7093dc5db43",
-        "33e471a2-e4b5-4e58-9958-99fd7435766a",
-        "9cce8ca1-89d1-4793-8d9d-8f1bcfe004fd"
-            );
- 
-        List<String> tenantNames = List.of(
-            "netspective",
-            "netspective-dev",
-            "netspective-qa"
-        );    
+    List<String> tenantNames =
+        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantNames"))
+                .orElse(List.of());
+
+    String activeTenant = tenantNames.isEmpty()
+        ? null
+        : tenantNames.get(0);
 
     LOG.info("oAuth2User attributes: {}", oAuth2User.getAttributes());
-                return new AuthorizedUser(userId, email, name, roles, tenantIds, tenantNames, isSuperRole);
+                return new AuthorizedUser(userId, email, name, roles, tenantIds, tenantNames, activeTenant, isSuperRole);
    } 
  
 
@@ -206,23 +196,23 @@ public static String createAvatarUrl(DefaultOAuth2User oAuth2User) {
     //     public String name;
     // }
 
-      public String setRoleBasedOnFusionToken(String tokenJson) {
-    try {
-        // Convert the raw JSON string to jOOQ's JSONB type
-        JSONB jsonbToken = JSONB.valueOf(tokenJson);
+//       public String setRoleBasedOnFusionToken(String tokenJson) {
+//     try {
+//         // Convert the raw JSON string to jOOQ's JSONB type
+//         JSONB jsonbToken = JSONB.valueOf(tokenJson);
 
-        // Call the PostgreSQL function
-        String role = dsl.select(
-                DSL.field("techbd_udi_ingress.set_role_based_on_fusion_token({0})", String.class, jsonbToken)
-        ).fetchOneInto(String.class);
+//         // Call the PostgreSQL function
+//         String role = dsl.select(
+//                 DSL.field("techbd_udi_ingress.set_role_based_on_fusion_token({0})", String.class, jsonbToken)
+//         ).fetchOneInto(String.class);
 
-        LOG.info("Postgres role set via FusionAuth token: {}", role);
-        return role;
-    } catch (Exception e) {
-        LOG.error("Error calling set_role_based_on_fusion_token with token: {}", tokenJson, e);
-        throw e;
-    }
-}
+//         LOG.info("Postgres role set via FusionAuth token: {}", role);
+//         return role;
+//     } catch (Exception e) {
+//         LOG.error("Error calling set_role_based_on_fusion_token with token: {}", tokenJson, e);
+//         throw e;
+//     }
+// }
 
 public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
 
@@ -246,15 +236,20 @@ public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
             throw new RuntimeException("Failed to parse role permissions JSON from DB", e);
         }
     }
-    public void setRoleFromCurrentUser(DefaultOAuth2User user) {
+    public void setRoleFromCurrentUser(DefaultOAuth2User user , String selectedTenant) {
     try {
-        String tokenJson = objectMapper.writeValueAsString(user.getAttributes());
-
-        setRole(dsl, tokenJson);
+          
+       String activeTenant = selectedTenant;
+        if(activeTenant == null){
+            activeTenant = user.getAttribute("activeTenant");
+        }
+        List<String> roles = user.getAttribute("roles");
+        Boolean isSuperRole = user.getAttribute("isSuperRole");
+        setRole(dsl, activeTenant, roles, isSuperRole);
 
             // Set role on reader (if enabled)
             if (secondaryDsl != null) {
-                setRole(secondaryDsl, tokenJson);
+                setRole(secondaryDsl, activeTenant, roles, isSuperRole);
             }
 
     } catch (Exception e) {
@@ -263,12 +258,21 @@ public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
     }
 }
 
-  private void setRole(DSLContext dsl, String tokenJson) {
-        dsl.fetch(
-            "SELECT techbd_udi_ingress.set_role_based_on_fusion_token(?::jsonb)",
-            tokenJson
-        );
-    }
+        private void setRole( DSLContext dsl, String activeTenant, List<String> roles, Boolean isSuperRole){
+
+            dsl.fetch(
+                """
+                SELECT techbd_udi_ingress.set_role_based_on_fusion_token(
+                    ?,
+                    ?::text[],
+                    ?
+                )
+                """,
+                activeTenant,
+                roles.toArray(new String[0]),
+                isSuperRole
+            );
+        }
 
   public void resetDatabaseSession() {
 

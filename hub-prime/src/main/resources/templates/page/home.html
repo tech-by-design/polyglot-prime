@@ -65,7 +65,15 @@
                         <code th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth' ? 
                                         #strings.listJoin(#authentication.principal.attributes['role'], ', ') : 
                                         'admin'}">
-                        </code>.
+                        </code>
+                         <span th:if="${#authentication.principal.attributes['authProvider'] == 'fusionauth'
+                                    and !session.isSuperRole}">
+                            for tenant
+                            <code th:text="${session.activeTenant != null ?
+                                            session.activeTenant :
+                                            #authentication.principal.attributes['activeTenant']}">
+                            </code>
+                        </span>.
                     </div>
                 </div>
       <div sec:authorize="isAnonymous()">
