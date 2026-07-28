@@ -118,13 +118,24 @@ public class FusionAuthUsersService {
     
     List<String> roles = Optional.ofNullable((List<String>) oAuth2User.getAttribute("roles"))
             .orElse(List.of());
-    List<String> tenantIds =
-        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantIds"))
-                .orElse(List.of());
+    // List<String> tenantIds =
+    //     Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantIds"))
+    //             .orElse(List.of());
 
-    List<String> tenantNames =
-        Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantNames"))
-                .orElse(List.of());
+    // List<String> tenantNames =
+    //     Optional.ofNullable((List<String>) oAuth2User.getAttribute("tenantNames"))
+    //             .orElse(List.of());
+      List<String> tenantIds = List.of(
+        "742a1edf-1662-4220-ac0c-b7093dc5db43",
+        "33e471a2-e4b5-4e58-9958-99fd7435766a",
+        "9cce8ca1-89d1-4793-8d9d-8f1bcfe004fd"
+            );
+ 
+        List<String> tenantNames = List.of(
+            "netspective",
+            "netspective-dev",
+            "netspective-qa"
+        );    
 
     LOG.info("oAuth2User attributes: {}", oAuth2User.getAttributes());
                 return new AuthorizedUser(userId, email, name, roles, tenantIds, tenantNames, isSuperRole);

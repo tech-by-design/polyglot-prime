@@ -424,59 +424,61 @@ $procedure$
 ;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.set_role_based_on_fusion_token(jsonb);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.set_role_based_on_fusion_token(token jsonb)
- RETURNS text
- LANGUAGE plpgsql
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.set_role_based_on_fusion_token(text, text[], boolean);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.set_role_based_on_fusion_token(
+    activeTenant text,
+    roles text[],
+    is_admin boolean
+)
+RETURNS text
+LANGUAGE plpgsql
 AS $function$
 DECLARE
     v_user_roles text;
-    v_tenant_ids text;
-    v_is_admin boolean := false;
+    v_tenant_id text;
 BEGIN
-
+    -- Convert role array to comma-separated lowercase string
     SELECT array_to_string(
         ARRAY(
-            SELECT lower(jsonb_array_elements_text(token->'roles'))
+            SELECT lower(trim(r))
+            FROM unnest(roles) AS r
         ),
         ','
     )
     INTO v_user_roles;
 
-    SELECT array_to_string(
-        ARRAY(
-            SELECT t.tenant_id
-            FROM techbd_udi_ingress.tenants t
-            WHERE lower(t.tenant_name) IN (
-                SELECT lower(value)
-                FROM jsonb_array_elements_text(
-                    COALESCE(token->'tenantNames','[]'::jsonb)
-                ) value
-            )
-            AND t.is_active
-           -- LIMIT 1 -- Remove this LIMIT if all the tenants from the token are to be used
-        ),
-        ','
-    )
-    INTO v_tenant_ids;
+    -- Get tenant_id for the supplied tenant name
+    SELECT t.tenant_id
+    INTO v_tenant_id
+    FROM techbd_udi_ingress.tenants t
+    WHERE lower(t.tenant_name) = lower(activeTenant)
+      AND t.is_active
+    LIMIT 1;
 
-    SELECT EXISTS (
-	    SELECT 1
-	    FROM techbd_udi_ingress.idp_roles r
-	    JOIN unnest(string_to_array(v_user_roles, ',')) AS ur(role_name)
-	      ON lower(trim(r.role_name)) = lower(trim(ur.role_name))
-	    WHERE r.is_admin
-	      AND r.is_active
-	)
-	INTO v_is_admin;
+    -- Set session variables
+    PERFORM set_config(
+        'jwt.claims.user_roles',
+        COALESCE(v_user_roles, ''),
+        false
+    );
 
-    PERFORM set_config('jwt.claims.user_roles',coalesce(v_user_roles,''),false);
-    PERFORM set_config('jwt.claims.tenants',coalesce(v_tenant_ids,''),false);
-    PERFORM set_config('jwt.claims.is_admin',v_is_admin::text,false);
+    PERFORM set_config(
+        'jwt.claims.tenants',
+        COALESCE(v_tenant_id, ''),
+        false
+    );
 
-    RETURN v_tenant_ids;
+    PERFORM set_config(
+        'jwt.claims.is_admin',
+        COALESCE(is_admin, false)::text,
+        false
+    );
+
+    RETURN v_tenant_id;
 END;
-$function$
-;
+$function$;
+
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_active_tenants();
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_active_tenants()
