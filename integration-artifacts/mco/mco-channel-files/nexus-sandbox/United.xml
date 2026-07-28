@@ -1,11 +1,9 @@
 <channel version="26.3.1">
-  <id>b028255d-3d33-4562-b1a4-6b81c080013e</id>
+  <id>1771e2fd-3b46-4e64-bbea-0fa03e85671f</id>
   <nextMetaDataId>17</nextMetaDataId>
-  <name>Fidelis</name>
-  <description>Version: 0.1.1
-
-The channel has been implemented using the new schema. The LM/database credentials and the inbound and outbound paths have been updated and corrected.</description>
-  <revision>21</revision>
+  <name>United</name>
+  <description></description>
+  <revision>20</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -60,7 +58,7 @@ The channel has been implemented using the new schema. The LM/database credentia
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID</host>
+      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -94,9 +92,9 @@ The channel has been implemented using the new schema. The LM/database credentia
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>function setMcoInfoInGlobalMap() {
-    globalChannelMap.put(&quot;mco_code&quot;, &quot;FID&quot;);
+    globalChannelMap.put(&quot;mco_code&quot;, &quot;UTD&quot;);
     globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-fidelis&quot;);
+    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-united&quot;);
   }
 
   //Deletes the staged Success_/Error_ S3 objects from a prior run of this file before it is reprocessed.
@@ -105,8 +103,8 @@ The channel has been implemented using the new schema. The LM/database credentia
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
       var bucket = &quot;txd-sbx-mco-sftp-inbound&quot;;
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/FID/mirth_processed/Success_&quot; + filename);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/FID/mirth_processed/Error_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/UTD/mirth_processed/Success_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/UTD/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
     } catch (err) {
       logger.info(&quot;Could not delete staged S3 objects for &quot; + filename + &quot;: &quot; + err);
@@ -121,8 +119,8 @@ The channel has been implemented using the new schema. The LM/database credentia
   //Get DB information 
   var jdbdcDriver = configurationMap.get(&quot;jdbdcDriver&quot;);
   var jbdcUrl = globalMap.get(&quot;jbdcUrl&quot;);
-  var dbName = globalMap.get(&quot;dbName&quot;);
-  var dbPassword = globalMap.get(&quot;dbPassword&quot;);
+var dbName = globalMap.get(&quot;dbName&quot;);
+var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   var dbConn;
   
   //Get error codes from configuration map
@@ -132,10 +130,10 @@ The channel has been implemented using the new schema. The LM/database credentia
   var countyCodes = JSON.parse(configurationMap.get(&quot;countyCode&quot;));
   
   var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
-var reprocessMessage = configurationMap.get(&quot;reprocessableErrors&quot;);
-var errorMessageThrown = JSON.parse(reprocessMessage);
+  var reprocessMessage = configurationMap.get(&quot;reprocessableErrors&quot;);
+  var errorMessageThrown = JSON.parse(reprocessMessage);
   var errorTypes = JSON.parse(errorTypesString);
-var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
+  var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
   
   //Parent try catch block
   try {
@@ -302,31 +300,30 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
     if (shouldSkipAllDestinations == true) {
   var isReprocessable=globalChannelMap.get(&quot;isReprocessable&quot;);
   if($(&quot;batchComplete&quot;) == true &amp;&amp; isReprocessable == true ){
-    logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
       &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
     };
-
-
+  
+  
     // Convert JavaScript object to JSON string
     var jsonString = JSON.stringify(jsonData);
-
+  
     // Create an HTTP client
     var client = org.apache.http.impl.client.HttpClients.createDefault();
-
+  
     // Create an HTTP POST request
     var postRequest = new org.apache.http.client.methods.HttpPost(apiUrl);
-
+  
     // Set the entity with the JSON string (application/json content type)
     var entity = new org.apache.http.entity.StringEntity(jsonString, org.apache.http.entity.ContentType.APPLICATION_JSON);
     postRequest.setEntity(entity);
-
+  
     // Add the Content-Type header
     postRequest.addHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
     var isReprocessable =true;
-
-
+  
+  
     // Execute the HTTP request and get the response
     new Thread(function () {
       try {
@@ -442,7 +439,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
   
       if (currentBatch == 1) {
         try {
-          logger.info(&quot;Member records : &quot; + lines.toString());
+          
           //Get the lines from raw message
           var trimmedLines = msg.toString().trim().split(&quot;\n&quot;);
           //Remove the header line using shift 
@@ -673,6 +670,8 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
                       if (mco_id &amp;&amp; mco_name) {
                         globalChannelMap.put(&quot;mcoId&quot;, mco_id);
                         globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+                        channelMap.put(&quot;mcoId&quot;, mco_id);
+                        channelMap.put(&quot;mcoName&quot;, mco_name);
                       }
                     }
   
@@ -762,7 +761,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
                 globalChannelMap.put(&quot;batch_id&quot;, batch_id);
                 globalChannelMap.put(&quot;batch_details_id&quot;, batch_details_id);
                 channelMap.put(&quot;batch_id&quot;, batch_id);
-            channelMap.put(&quot;batch_details_id&quot;, batch_details_id);
+                channelMap.put(&quot;batch_details_id&quot;, batch_details_id);
               }
             }
           } catch (err) {
@@ -790,7 +789,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
           var mco_name;
   
           var mcoIdResult = dbConn.executeCachedQuery(
-          &quot;select mco_id, mco_name from mco_data.mco where mco_code = ? and is_active = &apos;1&apos; &quot;,
+          &quot;select tenant_id, tenant_name from techbd_udi_ingress.tenants where tenant_short_code = ? and is_active=&apos;1&apos;&quot;,
             [$(&quot;mco_code&quot;)]
           );
           while (mcoIdResult.next()) {
@@ -998,7 +997,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
                 description: errorCodes[&quot;EC013&quot;][&quot;description&quot;],
                       });
                   }
-         /* else if (
+          /*else if (
            ((msgObj[i][&quot;Mbr_FirstName&quot;.toUpperCase()]).toString().toUpperCase())===&quot;NULL&quot;
           ) {
             errorsToAppend.push({
@@ -1205,14 +1204,14 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
             }
   
             // line of Business description -----------------------------------------------------------
-
-            let searchValue = msgObj[i][&quot;MBR_LOB_DESC&quot;].toString()
-            logger.info(searchValue)
   
-           let matchFound = lineOfBusiness.some(
-              item =&gt; item.toString().toLowerCase() === searchValue.toLowerCase()
-            );
-      
+              let searchValue = msgObj[i][&quot;MBR_LOB_DESC&quot;].toString()
+              logger.info(searchValue)
+    
+             let matchFound = lineOfBusiness.some(
+                item =&gt; item.toString().toLowerCase() === searchValue.toLowerCase()
+              );
+        
             if (msgObj[i][&quot;MBR_LOB_DESC&quot;].trim() === &quot;&quot;) {
               errorsToAppend.push({
                 row: rowNumber,
@@ -1220,7 +1219,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
                 description: errorCodes[&quot;EC032&quot;][&quot;description&quot;],
               });
             } else if (
-              !matchFound
+                !matchFound
             ) {
               errorsToAppend.push({
                 row: rowNumber,
@@ -2055,12 +2054,12 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
       }
     }
   } catch (err) {
-// Example JSON data you want to send
-if (errorMessageThrown.includes(err.message)) {
+  // Example JSON data you want to send
+  if (errorMessageThrown.includes(err.message)) {
   logger.info(err.message);
   logger.info(errorMessageThrown);
-// Start the new thread immediately, non-blocking
-
+  // Start the new thread immediately, non-blocking
+  
   globalChannelMap.put(&quot;isReprocessable&quot;, true);
   globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
   globalChannelMap.put(&quot;currentBatch&quot;, currentBatch);
@@ -2070,26 +2069,26 @@ if (errorMessageThrown.includes(err.message)) {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
       &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
     };
-
-
+  
+  
     // Convert JavaScript object to JSON string
     var jsonString = JSON.stringify(jsonData);
-
+  
     // Create an HTTP client
     var client = org.apache.http.impl.client.HttpClients.createDefault();
-
+  
     // Create an HTTP POST request
     var postRequest = new org.apache.http.client.methods.HttpPost(apiUrl);
-
+  
     // Set the entity with the JSON string (application/json content type)
     var entity = new org.apache.http.entity.StringEntity(jsonString, org.apache.http.entity.ContentType.APPLICATION_JSON);
     postRequest.setEntity(entity);
-
+  
     // Add the Content-Type header
     postRequest.addHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
     var isReprocessable =true;
-
-
+  
+  
     // Execute the HTTP request and get the response
     new Thread(function () {
       try {
@@ -2105,19 +2104,19 @@ if (errorMessageThrown.includes(err.message)) {
       }
     }).start();
   }
-
+  
   // **Throw the error immediately** after triggering the API call
   throw new Error(&quot;Error handled by API call. Stopping further processing.&quot;);
-
-
-
-
+  
+  
+  
+  
   // Log the response
-}
-
-
-else {
-try {
+  }
+  
+  
+  else {
+  try {
   if (!dbConn || currentBatch == 1) {
         dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           jdbdcDriver,
@@ -2141,7 +2140,7 @@ try {
           JSON.stringify(err),
           new_batch_details_id,
           errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-          mco_id
+		  mco_id
         ]
       );
       throw err;
@@ -2223,7 +2222,7 @@ try {
           var errorMessagePlan = {}
     errorMessagePlan.code = errorCodes[&quot;EC0100&quot;][&quot;code&quot;],
       errorMessagePlan.description = errorCodes[&quot;EC0100&quot;][&quot;description&quot;]
-
+  
         return false;
   
       }
@@ -2250,16 +2249,16 @@ try {
     errorMessage.code = errorCodes[&quot;EC0100&quot;][&quot;code&quot;],
       errorMessage.description = errorCodes[&quot;EC0100&quot;][&quot;description&quot;]
   return false;  
-
-
-}
-}
-
-function calculateReportingMonth() {
-var startDate = parseInt(configurationMap.get(&quot;startDate&quot;));
-var endDate = parseInt(configurationMap.get(&quot;endDate&quot;));
-
-if (startDate &gt;= endDate) {
+  
+  
+  }
+  }
+  
+  function calculateReportingMonth() {
+  var startDate = parseInt(configurationMap.get(&quot;startDate&quot;));
+  var endDate = parseInt(configurationMap.get(&quot;endDate&quot;));
+  
+  if (startDate &gt;= endDate) {
   if (date &gt;= startDate) {
     if (month != 11) {
       month = month + 1;
@@ -2272,11 +2271,11 @@ if (startDate &gt;= endDate) {
   } else {
     // 	logger.info(&quot;Outside window period&quot;)
   }
-}
-
-var reportingMonth = months[month] + &quot;-&quot; + year;
-reportingMonth = reportingMonth.toString();
-return reportingMonth;
+  }
+  
+  var reportingMonth = months[month] + &quot;-&quot; + year;
+  reportingMonth = reportingMonth.toString();
+  return reportingMonth;
   }
   
   
@@ -2364,9 +2363,9 @@ var i = 0;
 var chunk = &quot;&quot;;
 var line = &quot;&quot;;
 
-globalChannelMap.put(&quot;mco_code&quot;, &quot;FID&quot;);
-globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-fidelis&quot;);
+  globalChannelMap.put(&quot;mco_code&quot;, &quot;UTD&quot;);
+  globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
+  globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-united&quot;);
 
 var isEofFound = globalChannelMap.get(&quot;eofFound&quot;);
 
@@ -2525,7 +2524,7 @@ try {
       ? batch_details_insert.getInt(&quot;batch_details_id&quot;)
       : null;
     var error_log_insert = dbConn.executeUpdate(
-      &quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
+      &quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
       [
         $(&quot;batch_id&quot;),
         JSON.stringify(err),
@@ -2679,7 +2678,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/mirth_processed</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -2750,7 +2749,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
     }
     //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 	  batch_details_insert = dbConn.executeCachedQuery(
-	    &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
+	    &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, mco_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?::bigint) returning batch_details_id&quot;,
 	    [$(&apos;originalFilename&apos;), 0, 0, $(&apos;batch_id&apos;), $(&apos;mcoId&apos;)]
 	  );
 	  var new_batch_details_id = batch_details_insert.next()
@@ -2879,7 +2878,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/mirth_processed</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -2991,7 +2990,7 @@ try {
 				JSON.stringify(err),
         			new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-				$(&apos;mcoId&apos;)
+				 $(&apos;mcoId&apos;)
 			]
 		);
 		throw err;
@@ -3171,7 +3170,12 @@ var fromEmail = configurationMap.get(&quot;smtpFromEmail&quot;);
 
 var batch_id = $(&quot;batch_id&quot;);
 var batch_details_id = $(&quot;batch_details_id&quot;);
+var mcoId = $(&quot;mcoId&quot;);
 
+
+logger.info(&quot;batch_id&quot;+batch_id);
+logger.info(&quot;batch_details_id&quot;+batch_details_id);
+logger.info(&quot;mcqId&quot;+mcoId);
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
 //Since config map store it as string, parse it into json
@@ -3478,7 +3482,7 @@ try {
 		}
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
-			&quot;insert into mco_data.mco_data_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
+			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
 			[$(&quot;originalFilename&quot;), 0, 0, $(&quot;batch_id&quot;), $(&quot;mcoId&quot;)]
 		);
 		var new_batch_details_id = batch_details_insert.next()
@@ -3629,6 +3633,11 @@ var batch_id = $(&quot;batch_id&quot;);
 var batch_details_id = $(&quot;batch_details_id&quot;);
 var mcoId = $(&quot;mcoId&quot;);
 
+
+logger.info(&quot;batch_id&quot;+batch_id);
+logger.info(&quot;batch_details_id&quot;+batch_details_id);
+logger.info(&quot;mcqId&quot;+mcoId);
+
 var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
 
@@ -3693,7 +3702,8 @@ try {
 					JSON.stringify($(&quot;errorJson&quot;)),
 					$(&quot;batch_details_id&quot;),
 					errorTypes[&quot;FIELD_VALIDATION_ERROR&quot;][&quot;error_type_id&quot;],
-					mcoId,
+					$(&apos;mcoId&apos;)
+
 				]
 			);
 		}
@@ -3886,7 +3896,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/esmf/outbound/error</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -4124,7 +4134,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/esmf/outbound/success</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -4521,21 +4531,20 @@ try {
 		}
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
-			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?::bigint) returning batch_details_id&quot;,
+			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
 			[$(&apos;originalFilename&apos;), 0, 0, $(&apos;batch_id&apos;), $(&apos;mcoId&apos;)]
 		);
 		var new_batch_details_id = batch_details_insert.next()
 			? batch_details_insert.getInt(&quot;batch_details_id&quot;)
 			: null;
 		var error_log_insert = dbConn.executeUpdate(
-			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
+			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
 			[
 				$(&quot;batch_id&quot;),
 				JSON.stringify(err),
 				new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
 				$(&apos;mcoId&apos;)
-
 			]
 		);
 		throw err;
@@ -5024,7 +5033,7 @@ try {
 				JSON.stringify(err),
 				new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-				$(&quot;mcoId&quot;)
+				$(&apos;mcoId&apos;)
 			]
 		);
 		throw err;
@@ -5162,7 +5171,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/mco_success</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5300,7 +5309,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/FID/mco_error</host>
+        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/UTD/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5537,7 +5546,7 @@ try {
   if (&quot;EC084&quot; in errorJson) {
     //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
     batch_details_insert = dbConn.executeCachedQuery(
-      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;LAMBDA_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
+      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, mco_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;LAMBDA_INTERNAL_ERROR&apos;, ?::bigint, null, ?::bigint) returning batch_details_id&quot;,
       [fileName, 0, 0, batch_id, mco_id]
     );
     batch_details_id = batch_details_insert.next()
@@ -5600,7 +5609,7 @@ try {
           }),
           batch_details_id,
           errorTypes[&quot;LAMBDA_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-		  mco_id
+		  $(&apos;mcoId&apos;)
         ]
       );
     } catch (err) {
@@ -5609,13 +5618,13 @@ try {
     }
   } else {
     var error_log_insert = dbConn.executeUpdate(
-      &quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
+      &quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
       [
         batch_id,
         JSON.stringify(errorJson),
         batch_details_id,
         errorTypes[&quot;FILE_REJECTION_ERROR&quot;][&quot;error_type_id&quot;],
-		mco_id
+		$(&apos;mcoId&apos;)
       ]
     );
   }
@@ -5929,7 +5938,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785221891845</time>
+        <time>1785235993196</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -5940,18 +5949,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>f4893a11-a7d2-42ab-88d9-6fc75c96048c</id>
-        <name>0_1_1</name>
+        <id>50c6fb5a-3cff-4a64-b709-b672a51d76ab</id>
+        <name>0_1_0</name>
         <channelIds>
-          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+          <string>ac73aee7-e668-4f39-8215-7071db9eae05</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

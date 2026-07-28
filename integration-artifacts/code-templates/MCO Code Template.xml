@@ -1,0 +1,125 @@
+<codeTemplate version="26.3.1">
+  <id>cc51947b-cd99-46d9-8b64-b9bde3636b4c</id>
+  <name>insertLog</name>
+  <revision>2</revision>
+  <lastModified>
+    <time>1785236922282</time>
+    <timezone>America/New_York</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate class="sorted-set">
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {String} arg1 - arg1 description
+	@return {String} return description
+*/
+function insertErrorLog(batchId, batchDetailsId,fileName, mcoId,error,rootFolder,mcoFolder) {
+	try{
+	// TODO: Enter code here
+	logger.info(mcoId)
+var jdbdcDriver = configurationMap.get(&quot;jdbdcDriver&quot;);
+globalMap.put(&quot;jbdcUrl&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;));
+globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;));
+globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
+var jbdcUrl = globalMap.get(&quot;jbdcUrl&quot;);
+var dbName = globalMap.get(&quot;dbName&quot;);
+var dbPassword = globalMap.get(&quot;dbPassword&quot;);
+var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
+var errorTypes = JSON.parse(errorTypesString);
+var dbConn;
+logger.info(&quot;Inside code template&quot;)
+
+dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+        jdbdcDriver,
+        jbdcUrl,
+        dbName,
+        dbPassword
+      );
+      logger. info(&quot;db connection established&quot;)
+
+
+//
+//           if(batchId !=null &amp;&amp; batchDetailsId!=null){
+//           	logger.info(&quot;executing record detail query&quot;)
+//           	logger.info(batchId.toString())
+//           	logger.info(batchDetailsId.toString())
+//            dbConn.executeUpdate(&quot;update mco_audit.mco_records set status = ?, updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,[status,batchId]);
+//            logger.info(&quot;executing record error logs  query&quot;)
+//          var error_log_insert = dbConn.executeUpdate(&quot;insert into mco_audit.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?)&quot;,
+//      [
+//        batchId,
+//        JSON.stringify(error),
+//        batchDetailsId,
+//        errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
+//      ]
+//    );
+//           }
+           
+           	logger.info(&quot;inside else&quot;)
+           	    batch_insert = dbConn.executeCachedQuery(
+                  &quot;insert into mco_data.mco_records(root_file_name, created_on_utc, updated_on_utc, total_records, processed_count, errored_count, is_active, status, tenant_id, file_size_in_kb, resubmitted_count, sent_to_datalake_time, qa_completed_time, sent_to_mco_time, reporting_month) VALUES (?, current_timestamp, current_timestamp, ?, null, null, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?, ?, ?, null, null, null, ?::varchar) returning batch_id&quot;,
+                  [fileName, 0, mcoId, 0, 0, null]
+                );
+                batch_id = batch_insert.next()
+                  ? batch_insert.getInt(&quot;batch_id&quot;)
+                  : null;
+                //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
+                batch_details_insert = dbConn.executeCachedQuery(
+                  &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?, ?::varchar, ?) returning batch_details_id&quot;,
+                  [fileName, 0, 0, batch_id, null, mcoId]
+                );
+                 batch_details_id = batch_details_insert.next()
+                  ? batch_details_insert.getInt(&quot;batch_details_id&quot;)
+                  : null;
+
+                   var error_log_insert = dbConn.executeUpdate(
+      &quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
+      [
+        batch_id,
+        JSON.stringify(error),
+        batch_details_id,
+        errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
+        mcoId
+      ]
+    );
+    logger.info(&quot;completed the entry in error log table&quot;)
+    if(error_log_insert){
+    	
+     var fileNameToDelete = rootFolder +&apos;/internal/&apos; + mcoFolder + &apos;/prod/mirth_inbound&apos; + fileName;
+   
+
+       var fileToBeDeleted = java.io.File(fileNameToDelete);
+        org.apache.commons.io.FileUtils.deleteQuietly(
+                    fileToBeDeleted
+                  );
+    }
+        return true;          
+           
+	}
+	catch(err){
+		throw err;
+	}
+}</code>
+  </properties>
+</codeTemplate>
