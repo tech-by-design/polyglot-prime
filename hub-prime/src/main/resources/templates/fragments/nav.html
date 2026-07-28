@@ -37,13 +37,117 @@
                     </div>
                 </div>
                 <div class="hidden md:block">
-                    <div class="ml-4 mt-2 flex items-center md:ml-6">
-                        <a class="text-gray-300 border border-gray-600 hover:bg-gray-700 hover:text-white rounded-md ml-2 font-semibold md:px-6 px-2 py-1 shadow-none text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 me-2 mb-2" href="https://github.com/tech-by-design/help-desk-non-phi/issues" target="_blank">
+                    <div class="ml-4 flex items-center   md:ml-6">
+                        <a class="h-10 text-gray-300 border border-gray-600 hover:bg-gray-700 hover:text-white rounded-md ml-2 font-semibold md:px-6 px-2 py-1 shadow-none text-sm px-5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 me-2" href="https://github.com/tech-by-design/help-desk-non-phi/issues" target="_blank">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 me-2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                             </svg>
                             Help Desk Issues
-                        </a>                       
+                        </a>  
+                       <div class="relative ml-2"
+                            id="tenantDropdown"
+                            th:if="${!session.isSuperRole and #authentication.principal.attributes['authProvider'] != 'github'}"> 
+                            <button class="inline-flex h-10 items-center justify-between rounded-md border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-300 shadow-none transition hover:bg-gray-700 hover:text-white focus:outline-none dark:focus:ring-[#3b5998]/55" id="tenantBtn" type="button" aria-haspopup="true" aria-expanded="false" style="min-width: 180px;">
+                                <span id="selectedTenant" class="truncate text-left"></span>
+                                <svg class="ml-3 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.38a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <ul class="absolute right-0 top-full z-50 mt-2 hidden min-w-[180px] rounded-md border border-gray-200 bg-white py-1 shadow-lg" id="tenantMenu" role="menu"></ul>
+                        </div>
+                        <script th:inline="javascript">
+                            /*<![CDATA[*/
+                            const tenantNamesFromAuth = /*[[${#authentication.principal.attributes['tenantNames']}]]*/ null;
+                            const sessionActiveTenant = /*[[${session.activeTenant != null ? session.activeTenant : ''}]]*/ '';
+                            const authActiveTenant = /*[[${#authentication.principal.attributes['activeTenant']}]]*/ null;
+                            const initialActiveTenant = sessionActiveTenant || authActiveTenant;
+                            const tenants = tenantNamesFromAuth && tenantNamesFromAuth.length > 0
+                                ? tenantNamesFromAuth
+                                : ['Default Tenant'];
+                            /*]]>*/
+
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const tenantDropdown = document.getElementById('tenantDropdown');
+                                const tenantBtn = document.getElementById('tenantBtn');
+                                const tenantMenu = document.getElementById('tenantMenu');
+                                const selectedTenant = document.getElementById('selectedTenant');
+
+                                if (!tenantDropdown || !tenantBtn || !tenantMenu || !selectedTenant) return;
+
+                                const renderTenants = () => {
+                                    tenantMenu.innerHTML = '';
+
+                                    const defaultTenant = initialActiveTenant && tenants.includes(initialActiveTenant)
+                                        ? initialActiveTenant
+                                        : tenants[0];
+
+                                    selectedTenant.textContent = defaultTenant;
+
+                                    tenants.forEach((tenant) => {
+                                        const item = document.createElement('li');
+                                        const link = document.createElement('button');
+
+                                        link.type = 'button';
+                                        link.textContent = tenant;
+                                        link.className = 'block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100';
+
+                                        if (tenant === defaultTenant) {
+                                            link.classList.add('bg-gray-100');
+                                        }
+
+                                        link.setAttribute('role', 'menuitem');
+
+                                        link.addEventListener('click', async () => {
+                                            selectedTenant.textContent = tenant;
+
+                                            tenantMenu.querySelectorAll('button')
+                                                .forEach(btn => btn.classList.remove('bg-gray-100'));
+
+                                            link.classList.add('bg-gray-100');
+
+                                            tenantMenu.classList.add('hidden');
+
+                                            try {
+                                                await fetch('/tenant/select', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({
+                                                        tenantName: tenant
+                                                    })
+                                                });
+
+                                                window.location.href = '/home';
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        });
+
+                                        item.appendChild(link);
+                                        tenantMenu.appendChild(item);
+                                    });
+                                };
+
+                                tenantBtn.addEventListener('click', function (event) {
+                                    event.stopPropagation();
+                                    tenantMenu.classList.toggle('hidden');
+                                    tenantBtn.setAttribute('aria-expanded', String(!tenantMenu.classList.contains('hidden')));
+                                });
+
+                                document.addEventListener('click', function () {
+                                    tenantMenu.classList.add('hidden');
+                                    tenantBtn.setAttribute('aria-expanded', 'false');
+                                });
+
+                                tenantMenu.addEventListener('click', function (event) {
+                                    event.stopPropagation();
+                                });
+
+                                renderTenants();
+                            });
+                        </script>                     
                         <div class="ml-8 text-gray-400">v<span th:text="${appVersion}"></span></div>
                         <button type="button" id="nav-prime-notification"
                             class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
