@@ -54,9 +54,9 @@
                             field: "error_message",
                             sortable: true,
                             filter: "agTextColumnFilter",
-                            flex: 2,
-                            wrapText: true,
-                            autoHeight: true
+                            width: 100,
+                            tooltipValueGetter: p => p.value,
+                            headerTooltip: "Details of any errors encountered"
                         },
                         {
                             headerName: "Line Number",
