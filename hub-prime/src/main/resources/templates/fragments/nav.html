@@ -212,7 +212,7 @@
                                     id="user-menu-item-0">My Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1"
                                     id="user-menu-item-1">Settings</a> -->
-                                <form th:if="${session.configAccess == true}"
+                                <form th:if="${session.configAccess == true  or #authentication.principal.attributes['authProvider'] == 'github'}"
                                         action="/settings"
                                         method="get">
                                     <button type="submit"
@@ -395,10 +395,10 @@
                             <a href="/data-quality/ig-publication-issues" class="hover:underline">IG Publication Issues</a>
                         </li>
 
-                        <li class="mb-4"
+                        <!-- <li class="mb-4"
                             th:if="${session.isSuperRole == true or (session.rolePermissions['Data Quality'] != null and #lists.contains(session.rolePermissions['Data Quality'].![screen], 'FHIR Rules'))}">
                             <a href="/data-quality/fhir-rules" class="hover:underline">FHIR Rules</a>
-                        </li>
+                        </li> -->
 
                     </ul>
                 </div>

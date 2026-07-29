@@ -4,6 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,36 +23,61 @@ public class SettingsController {
         this.presentation = presentation;
     }
 
-    @RouteMapping(label = "Settings", siblingOrder = 90)
-    @GetMapping("/settings")
-    public String docs() {
-        return "redirect:/settings/role-access-management";
-    }
+        @RouteMapping(label = "Settings", siblingOrder = 90)
+        @GetMapping("/settings")
+        public String settings(HttpServletRequest request) {
 
-    // @RouteMapping(label = "Profile", siblingOrder = 100)
-    // @GetMapping("/settings/profile")
-    // public String users(final Model model, final HttpServletRequest request) {
+            Authentication authentication =
+                    SecurityContextHolder.getContext().getAuthentication();
 
-    //     HttpSession session = request.getSession(false);
-    //     Object sessionUser = session != null ? session.getAttribute("authenticatedUser") : null;
-    //     model.addAttribute("sessionUser", sessionUser);
+            if (authentication instanceof OAuth2AuthenticationToken token
+                    && token.getPrincipal() instanceof DefaultOAuth2User user) {
 
-    //     return presentation.populateModel("page/settings/profile", model, request);
-    // }
+                String authProvider = user.getAttribute("authProvider");
 
-    @RouteMapping(label = "Role Access Management", siblingOrder = 110)
-    @GetMapping("/settings/role-access-management")
-    public String rolePermissions(final Model model, final HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
+                // GitHub users should only see FHIR Rules
+                if ("github".equalsIgnoreCase(authProvider)) {
+                    return "redirect:/settings/fhir-rules";
+                }
+            }
 
-      Boolean configAccess = session != null
-                ? (Boolean) session.getAttribute("configAccess")
-                : false;
+            HttpSession session = request.getSession(false);
 
-        if (!Boolean.TRUE.equals(configAccess)) {
+            Boolean configAccess = session != null
+                    ? (Boolean) session.getAttribute("configAccess")
+                    : false;
+
+            if (Boolean.TRUE.equals(configAccess)) {
+                return "redirect:/settings/role-access-management";
+            }
+
             return "redirect:/profile/profile";
         }
-        return presentation.populateModel("page/settings/role-access-management", model, request);
+
+    @RouteMapping(label = "Role Access Management", siblingOrder = 100)
+    @GetMapping("/settings/role-access-management")
+    public String rolePermissions(final Model model, final HttpServletRequest request) {
+  HttpSession session = request.getSession(false);
+
+    Boolean configAccess = session != null
+            ? (Boolean) session.getAttribute("configAccess")
+            : false;
+
+    if (!Boolean.TRUE.equals(configAccess)) {
+        return "redirect:/settings/fhir-rules";
+    }
+
+    return presentation.populateModel(
+            "page/settings/role-access-management",
+            model,
+            request);
+    }
+
+    @RouteMapping(label = "FHIR Rules", siblingOrder = 110)
+    @GetMapping("/settings/fhir-rules")
+    public String fhirRules(final Model model,
+                            final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
     }
 
 }
