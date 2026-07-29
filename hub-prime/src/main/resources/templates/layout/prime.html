@@ -59,7 +59,7 @@
             <div class="mx-auto max-w-9xl py-2 sm:px-6 lg:px-8">
                 <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
                     <ul th:if="${siblingLinks.size()} > 0" class="flex flex-wrap border-b border-gray-200">
-                        <li th:each="link : ${siblingLinks}" class="mr-2">
+                        <li th:each="link : ${siblingLinks}" th:if="${!(link.text == 'Role Access Management'and #authentication.principal.attributes['authProvider'] == 'github')}"class="mr-2">
                             <a th:href="@{${link.href}}" th:text="${link.text}" th:attr="for=${activeRoutePath}"
                                 th:class="${link.href == activeRoutePath
                                             ? 'inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active' 
