@@ -2,8 +2,8 @@
   <id>85774252-b1b7-4df2-84bc-d2087d3c28f8</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.3
-Path updates.</description>
+  <description>Version: 0.1.4
+Read bucket name from LM.</description>
   <revision>22</revision>
   <sourceConnector version="26.3.1">
     <metaDataId>0</metaDataId>
@@ -59,7 +59,7 @@ Path updates.</description>
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI</host>
+      <host>${s3BucketName}/bridgelink-inbound/AMI</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -103,7 +103,7 @@ Path updates.</description>
   function deleteStagedS3Files(filename) {
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
-      var bucket = &quot;txd-sbx-mco-sftp-inbound&quot;;
+      var bucket = globalMap.get(&quot;s3BucketName&quot;);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/AMI/mirth_processed/Success_&quot; + filename);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/AMI/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
@@ -2703,7 +2703,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -2906,7 +2906,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -3929,7 +3929,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -4170,7 +4170,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5219,7 +5219,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5357,7 +5357,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/AMI/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5947,6 +5947,7 @@ globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;,
 globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
 globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
+globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
 
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
