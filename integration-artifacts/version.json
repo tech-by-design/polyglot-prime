@@ -88,8 +88,8 @@
       "type": "Lookup Manager",
       "channel": "lookup_group_config_sensitive_export.json",
       "version": "",
-      "editedby": "jewelbonnie",
-      "date": "2026-03-02"
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-07-29"
     },
     {
       "type": "Configuration Map",
@@ -121,10 +121,10 @@
     },
     {
       "type": "MCO",
-      "channel": "AmidaCare.xml",
-      "version": "0.1.3",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-07-28"
+      "channel": "Amida Care.xml",
+      "version": "0.1.4",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-07-29"
     },
     {
       "type": "MCO",
