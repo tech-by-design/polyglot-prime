@@ -2,9 +2,9 @@
   <id>a542e427-909f-4963-a374-3a214dcb8bd1</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Wellpoint</name>
-  <description>Version: 0.1.0
-Implemented the channel using the new schema. Updated and corrected the LM/database credentials and the inbound and outbound paths.</description>
-  <revision>13</revision>
+  <description>Version: 0.1.4
+S3 Bucket dynamic implemetation.</description>
+  <revision>16</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +59,7 @@ Implemented the channel using the new schema. Updated and corrected the LM/datab
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB</host>
+      <host>${s3BucketName}/bridgelink-inbound/WHB</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -103,7 +103,7 @@ Implemented the channel using the new schema. Updated and corrected the LM/datab
   function deleteStagedS3Files(filename) {
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
-      var bucket = &quot;txd-sbx-mco-sftp-inbound&quot;;
+      var bucket = globalMap.get(&quot;s3BucketName&quot;);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/WHB/mirth_processed/Success_&quot; + filename);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/WHB/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
@@ -2679,7 +2679,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -2878,7 +2878,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -3884,7 +3884,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -4121,7 +4121,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB-success-receipt/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB-success-receipt/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5157,7 +5157,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5296,7 +5296,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/WHB/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/WHB/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username>${s3AccessKeyId}</username>
@@ -5883,7 +5883,7 @@ globalMap.put(&quot;jbdcUrl&quot;, LookupHelper.get(&quot;Config-sensitive&quot;
 globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;));
 globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
-globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
+globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));&#xd;globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));&#xd;
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
@@ -5926,7 +5926,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785326600254</time>
+        <time>1785416464074</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -7141,21 +7141,32 @@ function getCOVIDConn()
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>50c6fb5a-3cff-4a64-b709-b672a51d76ab</id>
-        <name>0_1_0</name>
+        <id>c8644c42-441f-4976-8fd2-5272f4c64836</id>
+        <name>0_1_4</name>
         <channelIds>
+          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
           <string>48679919-904a-4913-a593-28f19da61615</string>
           <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>ac73aee7-e668-4f39-8215-7071db9eae05</string>
           <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
           <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
