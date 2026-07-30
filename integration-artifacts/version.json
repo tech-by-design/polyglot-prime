@@ -81,7 +81,7 @@
       "type": "Lookup Manager",
       "channel": "lookup_group_config_export.json",
       "version": "",
-      "editedby": "abhiramisanthosh90",
+      "editedby": "anoopvarma-2000-p",
       "date": "2026-07-30"
     },
     {
@@ -122,9 +122,9 @@
     {
       "type": "MCO",
       "channel": "Amida Care.xml",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "editedby": "anoopvarma-2000-p",
-      "date": "2026-07-29"
+      "date": "2026-07-30"
     },
     {
       "type": "MCO",

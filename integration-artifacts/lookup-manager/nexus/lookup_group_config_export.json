@@ -40,6 +40,7 @@
     "PROFILE_URL_QUESTIONNAIRE" : "/StructureDefinition/shinny-questionnaire",
     "PROFILE_URL_QUESTIONNAIRE_RESPONSE" : "/StructureDefinition/shinny-questionnaire-response",
     "PROFILE_URL_SEXUAL_ORIENTATION" : "/StructureDefinition/shinny-observation-sexual-orientation",
+    "ROCHESTER_RHIO_SFTP_KEY_PATH" : "/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
     "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle,615l4odbn9xc7j3uw3vqosslyc43stgi.oastify.com"

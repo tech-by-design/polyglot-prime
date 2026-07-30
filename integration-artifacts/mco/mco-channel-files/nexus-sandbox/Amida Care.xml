@@ -2,9 +2,9 @@
   <id>85774252-b1b7-4df2-84bc-d2087d3c28f8</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.4
-Read bucket name from LM.</description>
-  <revision>25</revision>
+  <description>Version: 0.1.5
+Read Rochester RHIO SFTP key path from LM.</description>
+  <revision>27</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -3232,7 +3232,7 @@ function sftpFileTransfer(
 		if (isSftp) {
 			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
 			var jsch = new JSch();
-			jsch.addIdentity(&quot;/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod&quot;);
+			jsch.addIdentity(globalMap.get(&quot;rochesterRhioSftpKeyPath&quot;));
 			var fileTransferred = false;
 			var session2 = null;
 
@@ -5948,6 +5948,7 @@ globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&qu
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
 globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
+globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
 
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -5991,7 +5992,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785318655746</time>
+        <time>1785403101026</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6002,13 +6003,14 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>c8644c42-441f-4976-8fd2-5272f4c64836</id>
-        <name>0_1_4</name>
+        <id>ee6b67aa-e3f1-420b-b608-87f64a5057e4</id>
+        <name>0_1_5</name>
         <channelIds>
+          <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
           <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
