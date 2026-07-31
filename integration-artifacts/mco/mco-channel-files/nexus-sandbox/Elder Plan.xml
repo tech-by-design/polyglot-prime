@@ -2,9 +2,9 @@
   <id>04a01a97-c021-4f3e-b10d-426838e88ae3</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Elder Plan</name>
-  <description>Version: 0.1.4
-S3 Bucket dynamic implemetation.</description>
-  <revision>23</revision>
+  <description>Version: 0.1.5
+Read Rochester RHIO SFTP key path from LM.</description>
+  <revision>24</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -103,7 +103,7 @@ S3 Bucket dynamic implemetation.</description>
   function deleteStagedS3Files(filename) {
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
-      var bucket = &quot;txd-sbx-mco-sftp-inbound&quot;;
+      var bucket = globalMap.get(&quot;s3BucketName&quot;);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/ELD-success/Success_&quot; + filename);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/ELD-error/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
@@ -3201,7 +3201,7 @@ function sftpFileTransfer(
 		if (isSftp) {
 			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
 			var jsch = new JSch();
-			jsch.addIdentity(&quot;/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod&quot;);
+			jsch.addIdentity(globalMap.get(&quot;rochesterRhioSftpKeyPath&quot;));
 			var fileTransferred = false;
 			var session2 = null;
 
@@ -5890,6 +5890,7 @@ globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&qu
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
 globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
+globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
 
 
 return;</deployScript>
@@ -5934,7 +5935,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785408063699</time>
+        <time>1785473855550</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -5945,25 +5946,17 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>c8644c42-441f-4976-8fd2-5272f4c64836</id>
-        <name>0_1_4</name>
+        <id>ee6b67aa-e3f1-420b-b608-87f64a5057e4</id>
+        <name>0_1_5</name>
         <channelIds>
+          <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
+          <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
-          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
