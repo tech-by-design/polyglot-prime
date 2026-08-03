@@ -78,10 +78,11 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
 
                         FusionAuthUsersService.AuthorizedUser faUser =
                                 fusionAuthUsersService.extractFusionAuthUser(oAuth2User);
-
                         DefaultOAuth2User enrichedOAuth2User =
                                 fusionAuthUsersService.handleFusionAuthLogin(request, oAuth2Token, oAuth2User, faUser);
-
+                       if (!fusionAuthUsersService.validateUserAccess(faUser, response)) {
+                                return;
+                            }
                         setAuthenticatedUser(request, new AuthenticatedUser(enrichedOAuth2User, faUser));
                        if (!faUser.roles().isEmpty()) {
                             String role = faUser.roles().get(0);
@@ -124,6 +125,11 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                         if (existingUser == null) {
                             sessionRegistry.addSession(userId, session);
                             session.setAttribute("USER_ID_REGISTERED", true);
+                            fusionAuthUsersService.registerLoginSession(
+                                        session,
+                                        faUser,
+                                        enrichedOAuth2User
+                                );
                             LOG.debug("Session registered for userId: {}", userId);
                         }
                     }

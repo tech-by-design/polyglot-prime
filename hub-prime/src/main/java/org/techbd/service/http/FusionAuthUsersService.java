@@ -1,7 +1,9 @@
 package org.techbd.service.http;
  
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,12 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import org.techbd.udi.auto.jooq.ingress.routines.UpsertUserSession;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import jakarta.servlet.http.HttpServletRequest;
-
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -287,6 +292,82 @@ public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
         dsl.execute("RESET jwt.claims.user_roles");
         dsl.execute("RESET jwt.claims.admin_roles");
         dsl.execute("RESET jwt.claims.tenants");
+    }
+
+     public boolean validateUserAccess(AuthorizedUser user,
+                                  HttpServletResponse response) throws IOException {
+
+        List<String> roles = Optional.ofNullable(user.roles())
+                .orElse(List.of());
+
+        List<String> tenantNames = Optional.ofNullable(user.tenantNames())
+                .orElse(List.of());
+
+        boolean isSuperRole = Boolean.TRUE.equals(user.isSuperRole());
+
+        if (roles.isEmpty()) {
+            LOG.warn("FusionAuth user {} has no role assigned. Redirecting to logout.",
+                    user.email());
+            response.sendRedirect("/logout");
+            return false;
+        }
+
+        if (!isSuperRole && tenantNames.isEmpty()) {
+            LOG.warn("FusionAuth user {} has no tenant assigned. Redirecting to logout.",
+                    user.email());
+            response.sendRedirect("/logout");
+            return false;
+        }
+
+        return true;
+    }
+
+    public void registerLoginSession(
+                HttpSession session,
+                AuthorizedUser user,
+                DefaultOAuth2User principal) {
+
+            try {
+                UpsertUserSession us = new UpsertUserSession();
+
+                OffsetDateTime now = OffsetDateTime.now();
+
+                // us.setPSessionId(session.getId());
+                us.setPSessionId((String) null);
+                us.setPUserId(user.fusionAuthId());
+                us.setPUsername(user.email());
+
+                us.setPSessionStartTime(now);
+                us.setPSessionEndTime((OffsetDateTime) null);
+                us.setPSessionExpiryTime(now.plusHours(8));
+
+                us.setPSource("FusionAuth");
+
+                JsonNode provenance = objectMapper.valueToTree(
+                    Map.of(
+                        "provider", "fusionauth",
+                        "tenantIds", user.tenantIds(),
+                        "roles", user.roles()
+                    )
+                );
+
+                us.setPProvenance(provenance);
+
+                // Store the complete FusionAuth response/claims
+                JsonNode authResponse = objectMapper.valueToTree(principal.getAttributes());
+
+                us.setPFusionAuthResponse(authResponse);
+
+                us.execute(dsl.configuration());
+
+                JsonNode result = us.getReturnValue();
+
+                LOG.info("User session registered successfully: {}", result);
+            } catch (Exception ex) {
+                LOG.error("Failed to register user session", ex);
+                throw new RuntimeException("Unable to register user session", ex);
+            }
+
     }
    
 }
