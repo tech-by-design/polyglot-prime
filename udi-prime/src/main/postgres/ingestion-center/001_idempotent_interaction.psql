@@ -508,7 +508,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
     sihr.created_at AS interaction_created_at,
     COUNT(*) OVER (PARTITION BY sihr.tenant_id_lower) AS interaction_count
 FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-WHERE sihr.uri IN ('/Bundle', '/Bundle/$validate', '/Bundle/', '/Bundle/$validate/')
+WHERE sihr.uri IN ('/Bundle', '/Bundle/$validate', '/Bundle/', '/Bundle/$validate/','/historical-replay/Bundle','/historical-replay/Bundle/')
 ORDER BY tenant_id_lower, sihr.created_at DESC;
 
 
@@ -555,7 +555,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_submission_summary AS
     FROM 
         techbd_udi_ingress.sat_interaction_fhir_request AS sihr
     WHERE 
-        sihr."uri" = '/Bundle'
+        sihr."uri" IN ('/Bundle', '/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/')
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
 )
 SELECT  
@@ -608,7 +608,7 @@ WITH submission_counts AS (
                 END) AS shinny_datalake_submissions_failed,
             max(sihr.created_at) AS recently_created_at
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND sihr.tenant_name <> 'N/A'::text
+          WHERE (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text, '/historical-replay/Bundle'::text,'/historical-replay/Bundle/'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND sihr.tenant_name <> 'N/A'::text
           GROUP BY sihr.tenant_id_lower
         )
   SELECT 
@@ -757,7 +757,7 @@ from
 where
 	sihr.nature = 'Forwarded HTTP Response Error'
 	and (uri = any (array['/Bundle/',
-	'/Bundle']))
+	'/Bundle','/historical-replay/Bundle','/historical-replay/Bundle/']))
 	and created_at >= (CURRENT_DATE - '7 days'::interval)
 order by
 	created_at desc;
@@ -793,7 +793,7 @@ WITH combined_counts AS (
                 END) AS shinny_datalake_submissions,
             max(sihr.created_at) AS recently_created_at
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])) AND (sihr.tenant_id_lower = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
+          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/'])) AND (sihr.tenant_id_lower = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
           GROUP BY sihr.tenant_id_lower
         )
  SELECT  
@@ -1673,7 +1673,7 @@ BEGIN
 		END IF;
 
     IF (v_return IS NOT NULL) THEN
-        IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/' OR p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN
+        IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/historical-replay/Bundle' OR p_uri='/historical-replay/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/' OR p_uri='/hl7v2/Bundle' OR p_uri='/hl7v2/Bundle/') THEN
             IF(p_nature = 'techByDesignDisposition') THEN
                 CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
                     p_hub_interaction_id, 
@@ -1772,7 +1772,7 @@ BEGIN
         WHERE hub_interaction_id = p_hub_interaction_id AND nature != 'techByDesignDisposition';
         
         --Update ig_version in sat_interaction_user table
-        IF(p_uri='/Bundle' OR p_uri='/Bundle/') THEN
+        IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/historical-replay/Bundle' OR p_uri='/historical-replay/Bundle/') THEN
             UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_hub_interaction_id;
         ELSE
             UPDATE techbd_udi_ingress.sat_interaction_user SET ig_version = v_ig_version WHERE hub_interaction_id = p_source_hub_interaction_id;
@@ -3289,7 +3289,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS
     ON 
         hintr.hub_interaction_id = sihr.hub_interaction_id
     WHERE 
-        sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]) 
+        sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text, '/historical-replay/Bundle'::text,'/historical-replay/Bundle/'::text])
         AND sihr.tenant_id_lower::text IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
     AND sihr.created_at >= (CURRENT_DATE - INTERVAL '1 day')  -- Filter for last 1 day
 GROUP BY 
@@ -3344,7 +3344,7 @@ create or replace view techbd_udi_ingress.fhir_scn_submission as
                 END) AS faield_submissions,
             max(sihr.created_at) AS recently_created_at
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND sihr.tenant_name <> 'N/A'::text
+          WHERE (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text,'/historical-replay/Bundle'::text,'/historical-replay/Bundle/'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND sihr.tenant_name <> 'N/A'::text
           AND sihr.organization_id != ''
          GROUP BY sihr.organization_id
         )
@@ -3406,7 +3406,7 @@ from
 	techbd_udi_ingress.sat_interaction_fhir_request sihr
 where
 	(sihr.uri = any (array['/Bundle/'::text,
-	'/Bundle'::text]))
+	'/Bundle'::text,'/historical-replay/Bundle'::text,'/historical-replay/Bundle/'::text]))
 	and sihr.created_at >= (CURRENT_DATE - '7 days'::interval)
 	and sihr.tenant_name <> 'N/A'::text
     and sihr.organization_id != ''
@@ -3475,7 +3475,7 @@ from
 where
 	sihr.nature = 'Original FHIR Payload'::text
 	and (sihr.uri = any (array['/Bundle/',
-	'/Bundle']))
+	'/Bundle','/historical-replay/Bundle','/historical-replay/Bundle/']))
 	and sihr.created_at >= (CURRENT_DATE - '7 days'::interval)
 	and not exists (
 	select
@@ -3527,7 +3527,7 @@ SELECT
          END) AS count_assessments
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE  
-  uri IN ('/Bundle', '/Bundle/')
+  uri IN ('/Bundle', '/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/')
 and organization_id != ''
  and created_at  >= (CURRENT_DATE - '7 days'::interval)
 GROUP BY 
@@ -3848,7 +3848,7 @@ BEGIN
             max(sihr.created_at)::TIMESTAMP AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])  
+            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/', '/historical-replay/Bundle','/historical-replay/Bundle/'])  
             AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
             AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_name <> 'N/A' 
@@ -3904,7 +3904,8 @@ BEGIN
             '/Bundle', '/Bundle/',
             '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
             '/ccda/Bundle', '/ccda/Bundle/',
-            '/hl7v2/Bundle', '/hl7v2/Bundle/'
+            '/hl7v2/Bundle', '/hl7v2/Bundle/',
+            '/historical-replay/Bundle','/historical-replay/Bundle/'
         ])
     ),
 
@@ -4118,7 +4119,7 @@ BEGIN
             AND created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
 	        AND created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
             AND tenant_id_lower = $3
-            AND uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/''])
+            AND uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/'', ''/historical-replay/Bundle'',''/historical-replay/Bundle/''])
         )
         -- 1. nature = Forwarded HTTP Response Error and to_state = FAIL ===> once got Forwarded HTTP Response Error but no record with to_state as COMPLETE
         SELECT 
@@ -4246,7 +4247,7 @@ BEGIN
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
         AND sihr.nature = 'techByDesignDisposition'
-        AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'])
+        AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
         --AND NOT EXISTS (
@@ -4270,7 +4271,8 @@ BEGIN
               '/Bundle', '/Bundle/',
               '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
               '/ccda/Bundle', '/ccda/Bundle/',
-              '/hl7v2/Bundle', '/hl7v2/Bundle/'
+              '/hl7v2/Bundle', '/hl7v2/Bundle/',
+              '/historical-replay/Bundle','/historical-replay/Bundle/'
           ])
     )
 
@@ -4342,7 +4344,8 @@ BEGIN
               '/Bundle', '/Bundle/',
               '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
               '/ccda/Bundle', '/ccda/Bundle/',
-              '/hl7v2/Bundle', '/hl7v2/Bundle/'
+              '/hl7v2/Bundle', '/hl7v2/Bundle/',
+              '/historical-replay/Bundle','/historical-replay/Bundle/'
           ])
     )
     -- Missing techByDesignDisposition
@@ -4413,7 +4416,7 @@ BEGIN
              FROM 
                 techbd_udi_ingress.sat_interaction_fhir_request sihr
              WHERE 
-                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'',''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/''])
+                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'',''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/'', ''/hl7v2/Bundle'', ''/hl7v2/Bundle/'',''/historical-replay/Bundle'',''/historical-replay/Bundle/''])
 	            AND sihr.created_at >= TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') 
 		        AND sihr.created_at < TO_TIMESTAMP($3::text, ''YYYY-MM-DD'') + INTERVAL ''1 day'' -- Parameters shifted by one
                 AND sihr.tenant_id <> ''N/A''
@@ -4762,7 +4765,7 @@ Results are grouped by key fields and sorted in ascending order.
     COUNT(*) AS count
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE 
-    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/']) 
+    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/', '/historical-replay/Bundle','/historical-replay/Bundle/']) 
     AND htt_req.is_bundle_valid = true  
     AND htt_req.nature = 'Forwarded HTTP Response'
 GROUP BY 
@@ -5908,7 +5911,7 @@ BEGIN
 			NOT IN('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/',
 					'/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/',
 					'/hl7v2/Bundle', '/hl7v2/Bundle/', '/hl7v2/Bundle/$validate', '/hl7v2/Bundle/$validate/',
-					'/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/')) THEN
+					'/Bundle', '/Bundle/', '/historical-replay/Bundle', '/historical-replay/Bundle/', '/Bundle/$validate', '/Bundle/$validate/')) THEN
 		v_return_status := true;
 		v_return := jsonb_build_object('error', 'Not a valid FHIR interaction_key',
 								  'payload', p_payload,
@@ -5970,7 +5973,7 @@ BEGIN
 						);
 					
 						v_elaboration_steps_text := array_append(v_elaboration_steps_text, '5: Get the techByDesignDisposition json after process_json_action_rules');
-						v_payload = v_disposition_json;
+						v_payload := v_disposition_json;
 				END IF;
 		
 			    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
@@ -6000,7 +6003,7 @@ BEGIN
 		       	IF (v_nature_denorm = 'Original FHIR Payload') THEN
 					PERFORM techbd_udi_ingress.upsert_dashboard_widget_metadata(
 					    CASE 
-				            WHEN p_interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/') THEN 'FHIR'
+				            WHEN p_interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/','/historical-replay/Bundle','/historical-replay/Bundle/') THEN 'FHIR'
 				            WHEN p_interaction_key IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/') THEN 'CSV'
 				            WHEN p_interaction_key IN ('/ccda/Bundle', '/ccda/Bundle/') THEN 'CCDA'
 				            WHEN p_interaction_key IN ('/hl7v2/Bundle', '/hl7v2/Bundle/') THEN 'HL7V2'
