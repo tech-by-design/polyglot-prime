@@ -1,17 +1,17 @@
-<channel version="26.3.1">
+<channel version="26.6.0">
   <id>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Excellus</name>
-  <description>Version: 0.1.1
-
-The channel has been implemented using the new schema. The LM/database credentials and the inbound and outbound paths have been updated and corrected.</description>
-  <revision>19</revision>
-  <sourceConnector version="26.3.1">
+  <description>Version: 0.1.5
+S3 Bucket dynamic implementation.
+Channel Map issue fixed.</description>
+  <revision>28</revision>
+  <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.file.FileReceiverProperties" version="26.3.1">
+    <properties class="com.mirth.connect.connectors.file.FileReceiverProperties" version="26.6.0">
       <pluginProperties/>
-      <pollConnectorProperties version="26.3.1">
+      <pollConnectorProperties version="26.6.0">
         <pollingType>INTERVAL</pollingType>
         <pollOnStart>true</pollOnStart>
         <pollingFrequency>60000</pollingFrequency>
@@ -38,7 +38,7 @@ The channel has been implemented using the new schema. The LM/database credentia
           <endingMinute>0</endingMinute>
         </pollConnectorPropertiesAdvanced>
       </pollConnectorProperties>
-      <sourceConnectorProperties version="26.3.1">
+      <sourceConnectorProperties version="26.6.0">
         <responseVariable>None</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>true</processBatch>
@@ -60,14 +60,14 @@ The channel has been implemented using the new schema. The LM/database credentia
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP</host>
+      <host>${s3BucketName}/bridgelink-inbound/EHP</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
       <ignoreDot>true</ignoreDot>
       <anonymous>false</anonymous>
-      <username>${s3AccessKeyId}</username>
-      <password>${s3SecretAccessKey}</password>
+      <username></username>
+      <password></password>
       <timeout>10000</timeout>
       <secure>true</secure>
       <passive>true</passive>
@@ -88,15 +88,15 @@ The channel has been implemented using the new schema. The LM/database credentia
       <binary>false</binary>
       <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
     </properties>
-    <transformer version="26.3.1">
+    <transformer version="26.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>function setMcoInfoInGlobalMap() {
-    globalChannelMap.put(&quot;mco_code&quot;, &quot;EHP&quot;);
-    globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-excellus&quot;);
+    channelMap.put(&quot;mco_code&quot;, &quot;EHP&quot;);
+    channelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
+    channelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-excellus&quot;);
   }
 
   //Deletes the staged Success_/Error_ S3 objects from a prior run of this file before it is reprocessed.
@@ -104,7 +104,7 @@ The channel has been implemented using the new schema. The LM/database credentia
   function deleteStagedS3Files(filename) {
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
-      var bucket = &quot;txd-sbx-mco-sftp-inbound&quot;;
+      var bucket = globalMap.get(&quot;s3BucketName&quot;);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/EHP/mirth_processed/Success_&quot; + filename);
       s3.deleteObject(bucket, &quot;bridgelink-inbound/EHP/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
@@ -161,8 +161,8 @@ The channel has been implemented using the new schema. The LM/database credentia
           mco_name = mcoIdResult.getString(2);
         }
         logger.info(&quot;Mco name : &quot; + mco_name);
-        globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-        globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+        channelMap.put(&quot;mcoId&quot;, mco_id);
+        channelMap.put(&quot;mcoName&quot;, mco_name);
       } catch (err) {
         logger.info(&quot;Could not establish a connection to database&quot;);
         if (dbConn) {
@@ -185,7 +185,7 @@ The channel has been implemented using the new schema. The LM/database credentia
   
       //If the file is a resubmission, store it in global channel map to use it in the destination level
       if (isResubmission != -1) {
-        globalChannelMap.put(&quot;isResubmission&quot;, true);
+        channelMap.put(&quot;isResubmission&quot;, true);
       }
   
       if (filename.toLowerCase().indexOf(&quot;FileRejected_&quot;.toLowerCase()) != -1) {
@@ -194,7 +194,7 @@ The channel has been implemented using the new schema. The LM/database credentia
         var errorLine = content[1];
         var errorCode = errorLine.toString().split(&quot;|&quot;)[3];
         var errorTrace = errorLine.toString().split(&quot;|&quot;)[4];
-        globalChannelMap.put(&quot;invalidFileReason&quot;, [errorCode]);
+        channelMap.put(&quot;invalidFileReason&quot;, [errorCode]);
         channelMap.put(&quot;isLambdaRejection&quot;, true);
         channelMap.put(&quot;lambdaStackTrace&quot;, errorTrace);
       } else {
@@ -280,11 +280,11 @@ The channel has been implemented using the new schema. The LM/database credentia
   
   
         if (failedDueToFormat == true &amp;&amp; failedDueToConvention == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;, &quot;EC002&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;, &quot;EC002&quot;]);
         } else if (failedDueToConvention == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC002&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC002&quot;]);
         } else if (failedDueToFormat == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;]);
         }
       }
   
@@ -297,15 +297,15 @@ The channel has been implemented using the new schema. The LM/database credentia
       throw err;
     }
   
-    var shouldSkipAllDestinations = globalChannelMap.get(&quot;skipAllDestinations&quot;);
+    var shouldSkipAllDestinations = channelMap.get(&quot;skipAllDestinations&quot;);
   
     if (shouldSkipAllDestinations == true) {
-  var isReprocessable=globalChannelMap.get(&quot;isReprocessable&quot;);
+  var isReprocessable=channelMap.get(&quot;isReprocessable&quot;);
   if($(&quot;batchComplete&quot;) == true &amp;&amp; isReprocessable == true ){
     logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
-      &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
+      &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
     };
   
   
@@ -427,10 +427,10 @@ The channel has been implemented using the new schema. The LM/database credentia
           logger.info(&quot;ERROR: Invalid Header&quot;);
           channelMap.put(&quot;fileRejected&quot;, true);
           isAlreadyExistError = true;
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC005&quot;]);
-          globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC005&quot;]);
+          channelMap.put(&quot;isFileAlreadyExist&quot;, true);
         } else {
-          globalChannelMap.put(&quot;isHeaderFound&quot;, true);
+          channelMap.put(&quot;isHeaderFound&quot;, true);
           lines = lines.slice(1);
         }
       }
@@ -449,8 +449,8 @@ The channel has been implemented using the new schema. The LM/database credentia
           trimmedLines.shift();
           //After remvoing header, if the next line itself is EOF, reject the file since there are no records to be processed
           if (trimmedLines &amp;&amp; trimmedLines[0].toString().toLowerCase().trim().equals(&quot;eof&quot;)) {
-            globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
-            globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+            channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
+            channelMap.put(&quot;isFileAlreadyExist&quot;, true);
             channelMap.put(&quot;fileRejected&quot;, true);
             isAlreadyExistError = true;
           }
@@ -492,8 +492,8 @@ The channel has been implemented using the new schema. The LM/database credentia
   
               if (folderNameFromDB == presentFolderName) {
                 if (allowMultipleFiles.equals(&quot;false&quot;)) {
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC082&quot;]);
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC082&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
                 }
@@ -511,7 +511,7 @@ The channel has been implemented using the new schema. The LM/database credentia
   
       //If the file is a resubmission, store it in global channel map to use it in the destination level
       if (isResubmission != -1) {
-        globalChannelMap.put(&quot;isResubmission&quot;, true);
+        channelMap.put(&quot;isResubmission&quot;, true);
       }
   
       var splittedFileName = fileName.split(&quot;_&quot;);
@@ -544,7 +544,7 @@ The channel has been implemented using the new schema. The LM/database credentia
   
       var isResubmissionAlreadyExistError = false;
   
-      if (!globalChannelMap.get(&quot;isFileAlreadyExist&quot;)) {
+      if (!channelMap.get(&quot;isFileAlreadyExist&quot;)) {
         if (currentBatch == 1) {
   
           var months = [&quot;01&quot;, &quot;02&quot;, &quot;03&quot;, &quot;04&quot;, &quot;05&quot;, &quot;06&quot;, &quot;07&quot;, &quot;08&quot;, &quot;09&quot;, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;];
@@ -577,7 +577,7 @@ The channel has been implemented using the new schema. The LM/database credentia
   
           var reportingMonth = months[month] + &apos;-&apos; + year;
           reportingMonth = reportingMonth.toString()
-          globalChannelMap.put(&quot;reportingMonth&quot;,reportingMonth)
+          channelMap.put(&quot;reportingMonth&quot;,reportingMonth)
   
           try {
             //Make DB calls only on the first batch, to check if file already exist or it&apos;s a resubmission. 
@@ -597,8 +597,8 @@ The channel has been implemented using the new schema. The LM/database credentia
                 logger.info(&quot;ERROR: Received an already processed file&quot;);
                 channelMap.put(&quot;fileRejected&quot;, true);
                 isAlreadyExistError = true;
-                globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
+                channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
               }
             }
   
@@ -617,7 +617,7 @@ The channel has been implemented using the new schema. The LM/database credentia
                 var erroredCountFromDb = result.getString(6);
               }
               if (erroredCountFromDb) {
-                globalChannelMap.put(&quot;erroredCountFromDb&quot;, erroredCountFromDb);
+                channelMap.put(&quot;erroredCountFromDb&quot;, erroredCountFromDb);
               }
               //If batch_id is null, the file doesn&apos;t exist. Treat it as a new file
               if (batch_id == null) {
@@ -626,8 +626,8 @@ The channel has been implemented using the new schema. The LM/database credentia
                   logger.info(&quot;ERROR: Received an already processed file&quot;);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
                 } else {
                   //Insert initial entries to the mco_records table 
                   batch_insert = dbConn.executeCachedQuery(
@@ -652,27 +652,27 @@ The channel has been implemented using the new schema. The LM/database credentia
                   logger.info(&quot;ERROR: Received an already processed file&quot;);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
                 }
                 //If it&apos;s not a resubmission file, but the status is inprogress and count is 0. The file might have been errored out due to some technical issues, so clean any processed files
                 else if (isResubmission === -1 &amp;&amp; (statusFromDb == &apos;INPROGRESS&apos; &amp;&amp; totalRecordsFromDb == 0)) {
                   try {
                     if (currentBatch == 1) {
                       logger.info(&apos;Clearing global map&apos;);
-                      globalChannelMap.clear();
+                      channelMap.clear();
                   reportingMonth = calculateReportingMonth();
-                  globalChannelMap.put(&quot;reportingMonth&quot;, reportingMonth)
+                  channelMap.put(&quot;reportingMonth&quot;, reportingMonth)
                       setMcoInfoInGlobalMap();
                       var isResubmission = fileName.indexOf(&quot;RS_&quot;);
   
                       //If the file is a resubmission, store it in global channel map to use it in the destination level
                       if (isResubmission != -1) {
-                        globalChannelMap.put(&quot;isResubmission&quot;, true);
+                        channelMap.put(&quot;isResubmission&quot;, true);
                       }
                       if (mco_id &amp;&amp; mco_name) {
-                        globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-                        globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+                        channelMap.put(&quot;mcoId&quot;, mco_id);
+                        channelMap.put(&quot;mcoName&quot;, mco_name);
                       }
                     }
   
@@ -697,8 +697,8 @@ The channel has been implemented using the new schema. The LM/database credentia
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC086&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC086&quot;]);
                   } else if (
                     isResubmission != -1 &amp;&amp;
                     statusFromDb == &quot;INPROGRESS&quot;
@@ -706,14 +706,14 @@ The channel has been implemented using the new schema. The LM/database credentia
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
                   } else if (reportingMonthFromDb != reportingMonth) {
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC087&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC087&quot;]);
                   } else {
                     channelMap.put(&quot;fileRejected&quot;, false);
                     batch_update = dbConn.executeUpdate(
@@ -759,8 +759,6 @@ The channel has been implemented using the new schema. The LM/database credentia
               }
               //Finally store batch_id and batch_details_id in global channel map for later use for count updates
               if (batch_id &amp;&amp; batch_details_id) {
-                globalChannelMap.put(&quot;batch_id&quot;, batch_id);
-                globalChannelMap.put(&quot;batch_details_id&quot;, batch_details_id);
                 channelMap.put(&quot;batch_id&quot;, batch_id);
                 channelMap.put(&quot;batch_details_id&quot;, batch_details_id);
               }
@@ -799,8 +797,6 @@ The channel has been implemented using the new schema. The LM/database credentia
           }
           logger.info(&quot;Mco name : &quot; + mco_name);
           if (mco_id &amp;&amp; mco_name) {
-            globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-            globalChannelMap.put(&quot;mcoName&quot;, mco_name);
             channelMap.put(&quot;mcoId&quot;, mco_id);
             channelMap.put(&quot;mcoName&quot;, mco_name);
           }
@@ -832,17 +828,15 @@ The channel has been implemented using the new schema. The LM/database credentia
             batchDetailsId
           );
           if (batch_id &amp;&amp; batchDetailsId) {
-            globalChannelMap.put(&quot;batch_id&quot;, batch_id);
-            logger.info(globalChannelMap.get(&quot;batch_id&quot;));
-            globalChannelMap.put(&quot;batch_details_id&quot;, batchDetailsId);
             channelMap.put(&quot;batch_id&quot;, batch_id);
+            logger.info(channelMap.get(&quot;batch_id&quot;));
             channelMap.put(&quot;batch_details_id&quot;, batchDetailsId);
           }
         }
       }
   
       //Variable to check if the file already exist, this will ensure we don&apos;t process remaining batches when the first batch got errored due to already exist error
-      var isFileAlreadyExist = globalChannelMap.get(&quot;isFileAlreadyExist&quot;);
+      var isFileAlreadyExist = channelMap.get(&quot;isFileAlreadyExist&quot;);
   
       //Process the file if there is no already exist error
       if (!isFileAlreadyExist) {
@@ -853,15 +847,15 @@ The channel has been implemented using the new schema. The LM/database credentia
             var data = lines[i].toString().split(&quot;|&quot;);
             if (lines[i].toString().toLowerCase().trim().equals(&quot;eof&quot;)) {
               if (currentBatch == 1 &amp;&amp; i == 0) {
-                globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
-                globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
+                channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                 channelMap.put(&quot;fileRejected&quot;, true);
               } else {
-                globalChannelMap.put(&quot;eofFound&quot;, true);
+                channelMap.put(&quot;eofFound&quot;, true);
               }
               break;
             } else {
-              if (globalChannelMap.get(&quot;eofFound&quot;)) {
+              if (channelMap.get(&quot;eofFound&quot;)) {
               } else {
             var obj = {};
             //Loop over the pre defined header and map the header values with data values from the record
@@ -874,7 +868,7 @@ The channel has been implemented using the new schema. The LM/database credentia
                             if (!header.includes(&quot;MCO_CODE&quot;)) {
                                 header.push(&quot;MCO_CODE&quot;);
                             }
-                var isHeaderFound = globalChannelMap.get(&quot;isHeaderFound&quot;);
+                var isHeaderFound = channelMap.get(&quot;isHeaderFound&quot;);
                 if (
                   header.toString().toLowerCase() ==
                   lines[i].toString().split(&quot;|&quot;).toString().toLowerCase()
@@ -883,8 +877,8 @@ The channel has been implemented using the new schema. The LM/database credentia
                   if (isHeaderFound) {
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC088&quot;]);
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC088&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                     deleteStagedS3Files(filename);
                     //              throw (&quot;Found multiple headers in the file : &quot; + filename)
                   }
@@ -1912,7 +1906,7 @@ The channel has been implemented using the new schema. The LM/database credentia
             }
             //If there are no errors, consider it valid and push to validData array which will be used to send data to the data lake
             else {
-                        var mcoCode = globalChannelMap.get(&quot;mco_code&quot;)
+                        var mcoCode = channelMap.get(&quot;mco_code&quot;)
                         lines[i] = lines[i] + &quot;|&quot; + mcoCode;
               validData.push(lines[i]);
   
@@ -1939,17 +1933,17 @@ The channel has been implemented using the new schema. The LM/database credentia
   
             if ($(&quot;batchComplete&quot;) == true) {
               if (isResubmission != -1) {
-                var recordCount = globalChannelMap.get(&quot;recordsCount&quot;);
+                var recordCount = channelMap.get(&quot;recordsCount&quot;);
                 if ($(&quot;no_of_records&quot;)) {
                 recordCount += $(&quot;no_of_records&quot;);
                 }
   
                 logger.info(
                   &quot;Error count from DB : &quot; +
-                  globalChannelMap.get(&quot;erroredCountFromDb&quot;)
+                  channelMap.get(&quot;erroredCountFromDb&quot;)
                 );
                 logger.info(&quot;Error count : &quot; + recordCount);
-                if (globalChannelMap.get(&quot;erroredCountFromDb&quot;) != recordCount) {
+                if (channelMap.get(&quot;erroredCountFromDb&quot;) != recordCount) {
                   try {
                     dbConn = DatabaseConnectionFactory.createDatabaseConnection(
                       jdbdcDriver,
@@ -1957,7 +1951,7 @@ The channel has been implemented using the new schema. The LM/database credentia
                       dbName,
                       dbPassword
                     );
-                    var batch_id = globalChannelMap.get(&quot;batch_id&quot;);
+                    var batch_id = channelMap.get(&quot;batch_id&quot;);
                     var resubmissionCountFromDb;
                     var resubmissionCountResult = dbConn.executeCachedQuery(
                     &quot;select resubmitted_count from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos;&quot;,
@@ -1983,8 +1977,8 @@ The channel has been implemented using the new schema. The LM/database credentia
   
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC085&quot;]);
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC085&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                   deleteStagedS3Files(filename);
                 }
               }
@@ -2061,14 +2055,14 @@ The channel has been implemented using the new schema. The LM/database credentia
   logger.info(errorMessageThrown);
   // Start the new thread immediately, non-blocking
   
-  globalChannelMap.put(&quot;isReprocessable&quot;, true);
-  globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
-  globalChannelMap.put(&quot;currentBatch&quot;, currentBatch);
+  channelMap.put(&quot;isReprocessable&quot;, true);
+  channelMap.put(&quot;skipAllDestinations&quot;, true);
+  channelMap.put(&quot;currentBatch&quot;, currentBatch);
   if($(&quot;batchComplete&quot;) == true ){
     logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
-      &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
+      &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
     };
   
   
@@ -2149,9 +2143,9 @@ The channel has been implemented using the new schema. The LM/database credentia
       logger.info(err);
       throw err;
     } finally {
-      globalChannelMap.clear();
+      channelMap.clear();
       if ($(&quot;batchComplete&quot;) != true) {
-        globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+        channelMap.put(&quot;skipAllDestinations&quot;, true);
       }
       setMcoInfoInGlobalMap();
       if (dbConn) {
@@ -2208,7 +2202,7 @@ The channel has been implemented using the new schema. The LM/database credentia
           var futureMonth = date.substring(4, 6);
           var futureYear = date.substring(0, 4);
           var futureDate = date.substring(6, 8)
-          var reportingMonth=globalChannelMap.get(&quot;reportingMonth&quot;)
+          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;)
           var monthOfReporting = reportingMonth.substring(0, 2);
           var yearOfReporting = reportingMonth.substring(3, 7);
           const endDateOfReportingMonth = new Date(yearOfReporting, monthOfReporting, 0);
@@ -2234,7 +2228,7 @@ The channel has been implemented using the new schema. The LM/database credentia
           var pastMonth = date.substring(4, 6);
           var pastYear = date.substring(0, 4);
           var pastDate = date.substring(6, 8)
-          var reportingMonth=globalChannelMap.get(&quot;reportingMonth&quot;)
+          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;)
           var monthOfReporting = reportingMonth.substring(0, 2);
           var yearOfReporting = reportingMonth.substring(3, 7);
           const startDateOfReportingMonth = new Date(yearOfReporting, monthOfReporting - 1, 1);
@@ -2356,8 +2350,8 @@ The channel has been implemented using the new schema. The LM/database credentia
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
           <splitType>JavaScript</splitType>
           <batchScript>var maxLines = parseInt(configurationMap.get(&quot;chunkSize&quot;));
 var i = 0;
@@ -2391,14 +2385,14 @@ return chunk != &quot;&quot; ? chunk : null;
 </batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="26.3.1">
+    <filter version="26.6.0">
       <elements/>
     </filter>
     <transportName>File Reader</transportName>
@@ -2407,12 +2401,12 @@ return chunk != &quot;&quot; ? chunk : null;
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>2</metaDataId>
       <name>Original File Writer, Put data in global map</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2448,37 +2442,37 @@ var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
 
 try {
-  var recordCount = globalChannelMap.get(&quot;recordsCount&quot;);
+  var recordCount = channelMap.get(&quot;recordsCount&quot;);
   if ($(&quot;no_of_records&quot;)) {
     recordCount += $(&quot;no_of_records&quot;);
-    globalChannelMap.put(&quot;recordsCount&quot;, recordCount);
+    channelMap.put(&quot;recordsCount&quot;, recordCount);
   }
 
-  var fileSize = globalChannelMap.get(&quot;totalFileSize&quot;);
+  var fileSize = channelMap.get(&quot;totalFileSize&quot;);
   if ($(&quot;file_size&quot;)) {
     fileSize += $(&quot;file_size&quot;);
-    globalChannelMap.put(&quot;totalFileSize&quot;, fileSize);
+    channelMap.put(&quot;totalFileSize&quot;, fileSize);
   }
 
-  var status = globalChannelMap.get(&quot;fileStatus&quot;);
+  var status = channelMap.get(&quot;fileStatus&quot;);
   if ($(&quot;status&quot;)) {
     status = $(&quot;status&quot;);
-    globalChannelMap.put(&quot;fileStatus&quot;, status);
+    channelMap.put(&quot;fileStatus&quot;, status);
   }
 
-  var error = globalChannelMap.get(&quot;totalErrors&quot;);
+  var error = channelMap.get(&quot;totalErrors&quot;);
   if ($(&quot;errorCount&quot;)) {
     error += $(&quot;errorCount&quot;);
-    globalChannelMap.put(&quot;totalErrors&quot;, error);
+    channelMap.put(&quot;totalErrors&quot;, error);
   }
 
-  var process = globalChannelMap.get(&quot;totalProcess&quot;);
+  var process = channelMap.get(&quot;totalProcess&quot;);
   if ($(&quot;processedCount&quot;)) {
     process += $(&quot;processedCount&quot;);
-    globalChannelMap.put(&quot;totalProcess&quot;, process);
+    channelMap.put(&quot;totalProcess&quot;, process);
   }
 
-  var errorJson = globalChannelMap.get(&quot;errorJson&quot;);
+  var errorJson = channelMap.get(&quot;errorJson&quot;);
   var errors = $(&quot;errors&quot;);
 
   if ($(&quot;errors&quot;)) {
@@ -2501,8 +2495,8 @@ try {
     }
 
 
-    globalChannelMap.put(&quot;errorJson&quot;, errorJson);
-    globalChannelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
+    channelMap.put(&quot;errorJson&quot;, errorJson);
+    channelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
   }
 } catch (err) {
 
@@ -2538,9 +2532,9 @@ try {
     logger.info(err);
     throw err;
   } finally {
-    globalChannelMap.clear();
+    channelMap.clear();
     if ($(&apos;batchComplete&apos;) != true) {
-      globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+      channelMap.put(&quot;skipAllDestinations&quot;, true);
     }
     if (dbConn) {
       dbConn.close();
@@ -2549,9 +2543,9 @@ try {
 }
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>false</enabled>
             <script>var recordCount =globalChannelMap.get(&quot;recordsCount&quot;) ;
@@ -2607,37 +2601,37 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements/>
       </filter>
       <transportName>JavaScript Writer</transportName>
@@ -2645,12 +2639,12 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>4</metaDataId>
       <name>Success Data</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2678,11 +2672,11 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -2696,9 +2690,9 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${validContent}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>//Get DB information
@@ -2770,9 +2764,9 @@ channelMap.put(&quot;validContent&quot;, validContent);
     logger.info(err);
     throw err;
   } finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
     if($(&apos;batchComplete&apos;) != true) {
-      globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+      channelMap.put(&quot;skipAllDestinations&quot;, true);
     }
     if (dbConn) {
       dbConn.close();
@@ -2785,39 +2779,39 @@ channelMap.put(&quot;validContent&quot;, validContent);
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2827,7 +2821,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;processedCount&apos;)&quot; does not equal 0</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -2845,12 +2839,12 @@ channelMap.put(&quot;validContent&quot;, validContent);
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>5</metaDataId>
       <name>Error Data</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -2878,11 +2872,11 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -2896,9 +2890,9 @@ channelMap.put(&quot;validContent&quot;, validContent);
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${errorContent}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <name>Generate Error Content</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2998,9 +2992,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
 	if($(&apos;batchComplete&apos;) != true) {
-		globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+		channelMap.put(&quot;skipAllDestinations&quot;, true);
 	}
 		if (dbConn) {
 			dbConn.close();
@@ -3013,39 +3007,39 @@ try {
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;errorCount&apos;)&quot; does not equal 0</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -3055,7 +3049,7 @@ try {
               <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -3066,7 +3060,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -3084,12 +3078,12 @@ try {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>6</metaDataId>
       <name>Stream file to SFTP</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -3128,7 +3122,7 @@ var dbOriginalFileName = &quot;db_&quot; + $(&quot;originalFilename&quot;);
 var successFileName = &quot;Success_&quot; + $(&quot;originalFilename&quot;);
 var errorFileName = &quot;Error_&quot; + $(&quot;originalFilename&quot;);
 
-var thresholdValue = configurationMap.get(&quot;thresholdValue&quot;);
+var thresholdValue = channelMap.get(&quot;thresholdValue&quot;);
 var totalRecords = $(&quot;recordsCount&quot;);
 var errorRecords = $(&quot;totalErrors&quot;);
 var errors = $(&quot;errorJson&quot;);
@@ -3500,7 +3494,7 @@ try {
 	} finally {
 		globalChannelMap.clear();
 		if ($(&quot;batchComplete&quot;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -3515,44 +3509,44 @@ finally {
 
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -3562,7 +3556,7 @@ finally {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -3580,12 +3574,12 @@ finally {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>3</metaDataId>
       <name>DB Calls</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -3768,7 +3762,7 @@ try {
 	} finally {
 		globalChannelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -3787,44 +3781,44 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
 }
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -3834,7 +3828,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -3852,12 +3846,12 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>7</metaDataId>
       <name>Send Rejection Receipt File</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -3885,11 +3879,11 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -3903,9 +3897,9 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${errorReceipt}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>//Get DB information
@@ -3931,7 +3925,7 @@ try {
   //Since config map store it as string, parse it into json
   var errorCodes = JSON.parse(errorCodesString);
 
-  var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+  var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 var errorCodesToAppend = &quot;&quot;;
 var errorDescToAppend = &quot;&quot;;
@@ -3996,9 +3990,9 @@ var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).
     logger.info(err);
     throw err;
   } finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
 	if($(&apos;batchComplete&apos;) != true) {
-		globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+		channelMap.put(&quot;skipAllDestinations&quot;, true);
 	}
     if (dbConn) {
       dbConn.close();
@@ -4011,28 +4005,28 @@ var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var fileResponse=response.getError();
 channelMap.put(&quot;fileResponse&quot;,fileResponse)
-var rootFolder = globalChannelMap.get(&quot;root_sftp_folder&quot;);
-var mcoFolder= globalChannelMap.get(&quot;mco_sftp_folder&quot;);
+var rootFolder = channelMap.get(&quot;root_sftp_folder&quot;);
+var mcoFolder= channelMap.get(&quot;mco_sftp_folder&quot;);
 if(fileResponse!=null){
 	logger.info(response.getMessage())
 	logger.info(fileResponse.toString());
@@ -4047,22 +4041,22 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -4072,7 +4066,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isLambdaRejection&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -4090,12 +4084,12 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>8</metaDataId>
       <name>Send Success Receipt</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -4123,11 +4117,11 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -4141,9 +4135,9 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${successReceipt}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var dbConn;
@@ -4257,9 +4251,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -4276,41 +4270,41 @@ try {
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -4320,7 +4314,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;totalErrors&apos;)&quot; equals 0</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -4331,7 +4325,7 @@ try {
               <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -4342,7 +4336,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isFileSentToDL&apos;)&quot; equals true</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
@@ -4360,12 +4354,12 @@ try {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>10</metaDataId>
       <name>File Rejection Alert</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -4541,9 +4535,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -4553,45 +4547,45 @@ try {
 
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -4601,7 +4595,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isLambdaRejection&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -4612,7 +4606,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;d7&apos;) &amp;&amp; $(&apos;d7&apos;).getStatus() &quot; does not equal Status.ERROR</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -4630,12 +4624,12 @@ try {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>11</metaDataId>
       <name>Success File Alert</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -4771,9 +4765,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -4782,9 +4776,9 @@ try {
 }
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).substring(0, 19);
@@ -4795,39 +4789,39 @@ channelMap.put(&quot;currentTimeStamp&quot;, currentTime);</script>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -4837,7 +4831,7 @@ channelMap.put(&quot;currentTimeStamp&quot;, currentTime);</script>
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;totalErrors&apos;)&quot; equals 0</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -4848,7 +4842,7 @@ channelMap.put(&quot;currentTimeStamp&quot;, currentTime);</script>
               <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -4859,7 +4853,7 @@ channelMap.put(&quot;currentTimeStamp&quot;, currentTime);</script>
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isFileSentToDL&apos;)&quot; equals true</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
@@ -4877,12 +4871,12 @@ channelMap.put(&quot;currentTimeStamp&quot;, currentTime);</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>12</metaDataId>
       <name>File Error Alert</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5030,9 +5024,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -5042,9 +5036,9 @@ try {
 
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).substring(0, 19);
@@ -5056,39 +5050,39 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;totalErrors&apos;)&quot; does not equal 0</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -5098,7 +5092,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
               <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -5109,7 +5103,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -5127,12 +5121,12 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>13</metaDataId>
       <name>Archive Success Receipt</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5160,11 +5154,11 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -5178,44 +5172,47 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${successReceipt}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -5225,7 +5222,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;totalErrors&apos;)&quot; equals 0</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -5236,7 +5233,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
               <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; does not equal true</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -5247,7 +5244,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isFileSentToDL&apos;)&quot; equals true</name>
             <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
@@ -5265,12 +5262,12 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>14</metaDataId>
       <name>Archive Rejection Receipt</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5298,11 +5295,11 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/EHP/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/EHP/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -5316,33 +5313,34 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${errorReceipt}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var fileResponse=response.getError();
 channelMap.put(&quot;fileResponse&quot;,fileResponse)
-var rootFolder = globalChannelMap.get(&quot;root_sftp_folder&quot;);
-var mcoFolder= globalChannelMap.get(&quot;mco_sftp_folder&quot;);
+var rootFolder = channelMap.get(&quot;root_sftp_folder&quot;);
+var mcoFolder= channelMap.get(&quot;mco_sftp_folder&quot;);
 if(fileResponse!=null){
 	logger.info(response.getMessage())
 	logger.info(fileResponse.toString());
@@ -5357,22 +5355,22 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -5382,7 +5380,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;isLambdaRejection&apos;)&quot; does not equal true</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -5393,7 +5391,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;d7&apos;) &amp;&amp; $(&apos;d7&apos;).getStatus()&quot; does not equal Status.ERROR</name>
             <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
@@ -5411,12 +5409,12 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>16</metaDataId>
       <name>File rejection in DB</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5627,44 +5625,45 @@ try {
 }
 </script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;fileRejected&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -5674,7 +5673,7 @@ try {
               <string>true</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;d7&apos;) &amp;&amp; $(&apos;d7&apos;).getStatus()&quot; is not blank</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -5692,12 +5691,12 @@ try {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>9</metaDataId>
       <name>Clear Global Map</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5718,48 +5717,48 @@ try {
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>logger.info(&quot;Clearing global map&quot;)
-globalChannelMap.clear();
-var recordCount =globalChannelMap.get(&quot;recordsCount&quot;) ;
+channelMap.clear();
+var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 logger.info(&quot;Current record count : &quot; + recordCount )</script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.3.1">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
             <name>Accept message if &quot;$(&apos;batchComplete&apos;)&quot; equals true</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -5776,12 +5775,12 @@ logger.info(&quot;Current record count : &quot; + recordCount )</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>15</metaDataId>
       <name>Destination 1</name>
-      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -5829,41 +5828,41 @@ logger.info(&quot;Current record count : &quot; + recordCount )</script>
         <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
         <template>${message.rawData}</template>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements/>
       </filter>
       <transportName>File Writer</transportName>
@@ -5884,11 +5883,12 @@ globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;,
 globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
 globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
+globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="26.3.1">
+  <properties version="26.6.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -5911,7 +5911,7 @@ return;</undeployScript>
         <mappingName>message_type</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="26.3.1">
+    <attachmentProperties version="26.6.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -5926,7 +5926,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785221670101</time>
+        <time>1785755848515</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -5937,18 +5937,28 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>f4893a11-a7d2-42ab-88d9-6fc75c96048c</id>
-        <name>0_1_1</name>
+        <id>ee6b67aa-e3f1-420b-b608-87f64a5057e4</id>
+        <name>0_1_5</name>
         <channelIds>
+          <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
+          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
+          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>ecfec514-7d21-476e-9134-0ef8fd22d93f</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
           <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>48679919-904a-4913-a593-28f19da61615</string>
+          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
