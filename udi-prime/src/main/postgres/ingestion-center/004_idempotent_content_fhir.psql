@@ -41,7 +41,7 @@ AS WITH filtered_resources AS (
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
     WHERE sihr.uri IN (
         '/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
-        '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'
+        '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/', '/historical-replay/Bundle','/historical-replay/Bundle/'
     )
     AND sihr.nature = 'Original FHIR Payload' 
 ),
@@ -144,7 +144,7 @@ select
 from
 	techbd_udi_ingress.sat_interaction_fhir_request sihr
 where
-	sihr.uri in ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/')
+	sihr.uri in ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/')
 	and sihr.nature = 'Original FHIR Payload'::text
 	-- Apply filters if provided
 	and (p_hub_interaction_id is null
@@ -262,7 +262,7 @@ AS  WITH filtered_resources AS (
             sihr.tenant_name AS tenant_id,
             jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/') AND sihr.nature = 'Original FHIR Payload'::text
+          WHERE sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/') AND sihr.nature = 'Original FHIR Payload'::text
         ), filtered_data AS (
          SELECT filtered_resources.hub_interaction_id,
             filtered_resources.tenant_id,
