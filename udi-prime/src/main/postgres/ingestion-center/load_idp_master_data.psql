@@ -116,8 +116,7 @@ WHERE mnu_code  = 'mnu_Settings';
 /* Screen insertion */
 /* 2 insert statement commented due to serial no 35 in the menu table. */
 
-TRUNCATE TABLE techbd_udi_ingress.idp_screens RESTART IDENTITY CASCADE;
-TRUNCATE TABLE techbd_udi_ingress.idp_role_tenant_permission RESTART IDENTITY CASCADE;
+ 
 
  INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
 	 (1,'scr_Source_Monitoring','Source Monitoring','Source Monitoring screen','page',8,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
