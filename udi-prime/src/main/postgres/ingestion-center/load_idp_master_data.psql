@@ -95,68 +95,6 @@ VALUES
 (gen_random_uuid()::text, 'wpn', 'WellPoint of NYS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WPN')
 ON CONFLICT (tenant_name) DO NOTHING;
 
-/* Screen insertion */
-/* 2 insert statement commented due to serial no 35 in the menu table. */
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, mnu_id, order_no, is_active, provenance, created_by)
-VALUES
-('wid_Recent_Direct_FHIR_Bundles', 'Recent Direct FHIR Bundles', 'Recent Direct FHIR Bundles widget', 'widget', 1, 1, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Recent_CSV_FHIR_Bundles', 'Recent CSV FHIR Bundles', 'Recent CSV FHIR Bundles widget', 'widget', 1, 2, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Recent_CCDA_FHIR_Bundles', 'Recent CCDA FHIR Bundles', 'Recent CCDA FHIR Bundles widget', 'widget', 1, 3, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Recent_HL7_FHIR_Bundles', 'Recent HL7v2 FHIR Bundles', 'Recent HL7v2 FHIR Bundles widget', 'widget', 1, 4, TRUE, 'Hub UI', CURRENT_USER), /*new */
-('wid_Submissions', 'Submissions', 'Submissions widget', 'widget', 1, 5, TRUE, 'Hub UI', CURRENT_USER),
-('wid_Production', 'Production (FHIR)', 'Production (FHIR) widget', 'widget', 1, 6, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_Screening', 'Screenings', 'Screening screen', 'page', 2, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Patients', 'Patients', 'Patients screen', 'page', 2, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Organizations', 'Organizations', 'Organizations screen', 'page', 2, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Scn', 'SCN', 'SCN Screen', 'page', 2, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Hrsn_Data_Tracker', 'HRSN Data Tracker', 'HRSN Data Tracker screen', 'page', 2, 5, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_Need_Attention', 'Needs Attention', 'Needs Attention screen', 'page', 3, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_FHIR_Data_Quality', 'FHIR Data Quality', 'FHIR Data Quality screen', 'page', 3, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CSV_Data_Quality', 'CSV Data Quality', 'CSV Data Quality Screen', 'page', 3, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CCDA_Data_Quality', 'CCDA Data Quality', 'CCDA Data Quality Screen', 'page', 3, 4, TRUE, 'Hub UI', CURRENT_USER),  /*new */
-('scr_HL7_Data_Quality', 'HL7v2 Data Quality', 'HL7v2 Data Quality Screen', 'page', 3, 5, TRUE, 'Hub UI', CURRENT_USER),  /*new */
-('scr_IG_Publication_Issues', 'IG Publication Issues', 'IG Publication Issues screen', 'page', 3, 6, TRUE, 'Hub UI', CURRENT_USER),
-('scr_FHIR_Rules', 'FHIR Rules', 'FHIR Rules screen', 'page', 3, 7, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CSV_Issues_Summary', 'CSV Issues Summary', 'CSV Issues Summary screen', 'page', 3, 8, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CSV_Issues', 'CSV Issues', 'CSV Issues screen', 'page', 3, 9, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_FHIR_via_HTTPS', 'FHIR Data', 'FHIR Data screen', 'page', 4, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_FHIR_via_HTTPS_FAILED', 'FHIR FAILED Submissions', 'FHIR FAILED Submissions screen', 'page', 4, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CSV_via_HTTPS', 'CSV Submissions', 'CSV Submissions screen', 'page', 4, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_CCDA_via_HTTPS', 'CCDA Submissions', 'CCDA Submissions screen', 'page', 4, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_HL7V2_via_HTTPS', 'HL7v2 Submissions', 'HL7v2 Submissions screen', 'page', 4, 5, TRUE, 'Hub UI', CURRENT_USER),
-('scr_HTTP_Interactions', 'Hub Interactions', 'Hub Interactions screen', 'page', 4, 6, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Perfomance_overview_api', 'API Performance Overview', 'API Performance Overview screen', 'page', 4, 7, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Perfomance_overview_ui', 'User Interactions Performance Overview', 'User Interactions Performance Overview screen', 'page', 4, 8, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Provenance', 'Provenance', 'Provenance screen', 'page', 4, 9, TRUE, 'Hub UI', CURRENT_USER),
-('scr_User_Sessions', 'User Sessions', 'User Sessions screen', 'page', 4, 10, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_Tech_By_Design_Hub', 'Tech by Design Hub', 'Tech By Design Hub screen', 'page', 5, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_SHIN_NY_FHIR_IG', 'SHIN-NY FHIR IG', 'SHIN NY FHIR IG screen', 'page', 5, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_OpenAPI_UI', 'OpenAPI UI', 'OpenAPI UI screen', 'page', 5, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Announcements', 'Announcements', 'Announcements screen', 'page', 5, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_TechBD_OpenAPI_UI', 'Tech by Design OpenAPI UI', 'Tech by Design OpenAPI UI screen', 'page', 5, 5, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_Health_Information', 'Health Information', 'Health Information screen', 'page', 6, 1, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Project', 'Project', 'Project screen', 'page', 6, 2, TRUE, 'Hub UI', CURRENT_USER),
-('scr_Schema', 'Schema', 'Schema Screen', 'page', 6, 3, TRUE, 'Hub UI', CURRENT_USER),
-('scr_ISLM_Migration', 'ISLM Migration', 'ISLM Migration screen', 'page', 6, 4, TRUE, 'Hub UI', CURRENT_USER),
-('scr_pgTAP_Test_Results', 'pgTAP Test Results', 'pgTAP Test Results screen', 'page', 6, 5, TRUE, 'Hub UI', CURRENT_USER),
-
-('scr_Source_Monitoring', 'Source Monitoring', 'Source Monitoring screen', 'page', 8, 1, TRUE, 'Hub UI', CURRENT_USER)
-
---('scr_Profile', 'Profile', 'Profile screen', 'page', 35, 5, TRUE, 'Hub UI', CURRENT_USER),
---('scr_Role', 'Role', 'Role screen', 'page', 35, 6, TRUE, 'Hub UI', CURRENT_USER)
-
-ON CONFLICT (scr_code) DO NOTHING;
-
-UPDATE techbd_udi_ingress.idp_screens SET order_no = 9 WHERE scr_code = 'scr_Provenance';
-UPDATE techbd_udi_ingress.idp_screens SET order_no = 10 WHERE scr_code = 'scr_User_Sessions';
-UPDATE techbd_udi_ingress.idp_screens SET description = 'OpenAPI UI screen' WHERE scr_code = 'scr_OpenAPI_UI';
-DELETE FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Perfomance_overview';
 
 UPDATE techbd_udi_ingress.tenants SET tenant_short_code = tenant_name WHERE tenant_type = 'QE';
 
@@ -170,98 +108,60 @@ UPDATE techbd_udi_ingress.idp_roles
 SET is_admin = TRUE
 WHERE role_code = 'rl_nyec_admin';
 
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by)
-VALUES 
-('scr_Roles', 'Roles', 'Roles configuration screen', 'page', 'config', 7, 2, TRUE, 'Hub UI', CURRENT_USER)
-ON CONFLICT (scr_code) DO NOTHING;
-
 UPDATE techbd_udi_ingress.idp_menu
 SET mnu_group = 'config'
 WHERE mnu_code  = 'mnu_Settings';
 
-UPDATE techbd_udi_ingress.idp_screens
-SET scr_name = 'Role Access Management'
-WHERE scr_code = 'scr_Roles';
 
-UPDATE techbd_udi_ingress.idp_screens
-SET scr_name = 'FHIR Failed Submissions (Data Lake)'
-WHERE scr_code = 'scr_FHIR_via_HTTPS_FAILED';
+/* Screen insertion */
+/* 2 insert statement commented due to serial no 35 in the menu table. */
 
+TRUNCATE TABLE techbd_udi_ingress.idp_screens RESTART IDENTITY CASCADE;
+TRUNCATE TABLE techbd_udi_ingress.idp_role_tenant_permission RESTART IDENTITY CASCADE;
 
-
-DELETE FROM techbd_udi_ingress.idp_screens
-WHERE scr_code IN (
-    'scr_Perfomance_overview_api',
-    'scr_Perfomance_overview_ui',
-    'scr_TechBD_OpenAPI_UI',
-    'scr_OpenAPI_UI',
-    'wid_Recent_Direct_FHIR_Bundles',
-    'wid_Recent_CSV_FHIR_Bundles',
-    'wid_Recent_CCDA_FHIR_Bundles',
-    'wid_Recent_HL7_FHIR_Bundles',
-    'wid_Submissions',
-    'wid_Production',
-    'scr_FHIR_Rules'
-); 
-
-
--- Parent
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by, parent_scr_id)
-VALUES
-('scr_Performance_Overview', 'Performance Overview', 'Performance Overview screen', 'page', 'data', 4, 7, TRUE, 'Hub UI', CURRENT_USER, NULL)
-ON CONFLICT (scr_code) DO NOTHING;
-
--- Children
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by, parent_scr_id)
-VALUES
-('scr_API', 'API', 'API', 'page', 'data', 4, 1, TRUE, 'Hub UI', CURRENT_USER, (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Performance_Overview')),
-('scr_User_Interactions', 'User Interactions', 'User Interactions screen', 'page', 'data', 4, 2, TRUE, 'Hub UI', CURRENT_USER, (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Performance_Overview'))
-ON CONFLICT (scr_code) DO NOTHING;
-
-
--- Parent
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by)
-VALUES
-('scr_OpenAPI_UI', 'OpenAPI UI', 'OpenAPI UI screen', 'page', 'data', 5, 5, TRUE, 'Hub UI', CURRENT_USER)
-ON CONFLICT (scr_code) DO NOTHING;
-
--- Children
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by, parent_scr_id)
-VALUES
-('scr_Tech_by_Design_OpenAPI_UI', 'Tech by Design OpenAPI UI', 'Tech by Design OpenAPI UI screen', 'page', 'data', 5, 1, TRUE, 'Hub UI', CURRENT_USER,
- (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_OpenAPI_UI'))
-ON CONFLICT (scr_code) DO NOTHING;
-
--- Children
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by, parent_scr_id)
-VALUES
-('scr_TechBD_Processing_Failures', 'Tech by Design – Processing Failures', 'Tech by Design – Processing Failures Screen', 'page', 'data', 3, 1, TRUE, 'Hub UI', CURRENT_USER, (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Need_Attention')),
-('scr_TechBD_Validation_Failures', 'Tech by Design – Validation Failures', 'Tech by Design – Validation Failures screen', 'page', 'data', 3, 2, TRUE, 'Hub UI', CURRENT_USER, (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Need_Attention')),
-('scr_SHINNY_Datalake_Failed_Submissions', 'SHIN-NY Data Lake – Failed Submissions', 'SHIN-NY Data Lake – Failed Submissions screen', 'page', 'data', 3, 3, TRUE, 'Hub UI', CURRENT_USER, (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_Need_Attention'))
-ON CONFLICT (scr_code) DO NOTHING;
-
--- Children
-UPDATE techbd_udi_ingress.idp_screens
-SET 
-parent_scr_id = (SELECT scr_id FROM techbd_udi_ingress.idp_screens WHERE scr_code = 'scr_CSV_Data_Quality')
-where
-scr_code = 'scr_CSV_Issues_Summary' or scr_code = 'scr_CSV_Issues';
-
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by)
-VALUES 
-('scr_Error_Monitoring', 'Error Monitoring', 'Error Monitoring screen', 'page','data', 8, 2, TRUE, 'Hub UI', CURRENT_USER)
-ON CONFLICT (scr_code) DO NOTHING;
-
-
-INSERT INTO techbd_udi_ingress.idp_screens
-(scr_code, scr_name, description, scr_type, scr_group, mnu_id, order_no, is_active, provenance, created_by)
-VALUES 
-('scr_FHIR_Rules', 'FHIR Rules', 'FHIR Rules screen', 'page','config', 7, 3, TRUE, 'Hub UI', CURRENT_USER)
-ON CONFLICT (scr_code) DO NOTHING;
+ INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (1,'scr_Source_Monitoring','Source Monitoring','Source Monitoring screen','page',8,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (2,'scr_Roles','Role Access Management','Roles configuration screen','page',7,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL),
+	 (3,'scr_CSV_via_HTTPS','CSV Submissions','CSV Submissions screen','page',4,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (4,'scr_Screening','Screenings','Screening screen','page',2,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (5,'scr_Patients','Patients','Patients screen','page',2,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (6,'scr_Organizations','Organizations','Organizations screen','page',2,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (7,'scr_Scn','SCN','SCN Screen','page',2,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (8,'scr_Hrsn_Data_Tracker','HRSN Data Tracker','HRSN Data Tracker screen','page',2,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (9,'scr_Need_Attention','Needs Attention','Needs Attention screen','page',3,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (10,'scr_FHIR_Data_Quality','FHIR Data Quality','FHIR Data Quality screen','page',3,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (11,'scr_CSV_Data_Quality','CSV Data Quality','CSV Data Quality Screen','page',3,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (12,'scr_CCDA_Data_Quality','CCDA Data Quality','CCDA Data Quality Screen','page',3,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (13,'scr_HL7_Data_Quality','HL7v2 Data Quality','HL7v2 Data Quality Screen','page',3,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (14,'scr_IG_Publication_Issues','IG Publication Issues','IG Publication Issues screen','page',3,6,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (15,'scr_FHIR_via_HTTPS','FHIR Data','FHIR Data screen','page',4,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (16,'scr_FHIR_via_HTTPS_FAILED','FHIR Failed Submissions (Data Lake)','FHIR FAILED Submissions screen','page',4,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (17,'scr_CCDA_via_HTTPS','CCDA Submissions','CCDA Submissions screen','page',4,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (18,'scr_HL7V2_via_HTTPS','HL7v2 Submissions','HL7v2 Submissions screen','page',4,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (19,'scr_HTTP_Interactions','Hub Interactions','Hub Interactions screen','page',4,6,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (20,'scr_Provenance','Provenance','Provenance screen','page',4,9,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (21,'scr_User_Sessions','User Sessions','User Sessions screen','page',4,10,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (22,'scr_Tech_By_Design_Hub','Tech by Design Hub','Tech By Design Hub screen','page',5,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (23,'scr_SHIN_NY_FHIR_IG','SHIN-NY FHIR IG','SHIN NY FHIR IG screen','page',5,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (24,'scr_Announcements','Announcements','Announcements screen','page',5,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (25,'scr_Health_Information','Health Information','Health Information screen','page',6,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (26,'scr_Project','Project','Project screen','page',6,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (27,'scr_Schema','Schema','Schema Screen','page',6,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (28,'scr_ISLM_Migration','ISLM Migration','ISLM Migration screen','page',6,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (29,'scr_pgTAP_Test_Results','pgTAP Test Results','pgTAP Test Results screen','page',6,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (30,'scr_Performance_Overview','Performance Overview','Performance Overview screen','page',4,7,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (31,'scr_API','API','API','page',4,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',30),
+	 (32,'scr_User_Interactions','User Interactions','User Interactions screen','page',4,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',30),
+	 (33,'scr_CSV_Issues_Summary','CSV Issues Summary','CSV Issues Summary screen','page',3,8,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',11),
+	 (34,'scr_CSV_Issues','CSV Issues','CSV Issues screen','page',3,9,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',11),
+	 (35,'scr_OpenAPI_UI','OpenAPI UI','OpenAPI UI screen','page',5,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (36,'scr_Tech_by_Design_OpenAPI_UI','Tech by Design OpenAPI UI','Tech by Design OpenAPI UI screen','page',5,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',35),
+	 (37,'scr_TechBD_Processing_Failures','Tech by Design – Processing Failures','Tech by Design – Processing Failures Screen','page',3,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (38,'scr_TechBD_Validation_Failures','Tech by Design – Validation Failures','Tech by Design – Validation Failures screen','page',3,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (39,'scr_SHINNY_Datalake_Failed_Submissions','SHIN-NY Data Lake – Failed Submissions','SHIN-NY Data Lake – Failed Submissions screen','page',3,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (40,'scr_Error_Monitoring','Error Monitoring','Error Monitoring screen','page',8,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (41,'scr_FHIR_Rules','FHIR Rules','FHIR Rules screen','page',7,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL) ON CONFLICT (scr_code) DO NOTHING;
