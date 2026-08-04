@@ -2,9 +2,9 @@
   <id>48679919-904a-4913-a593-28f19da61615</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>VNS</name>
-  <description>Version: 0.1.5
-Read Rochester RHIO SFTP key path from LM.</description>
-  <revision>27</revision>
+  <description>Version: 0.1.6
+IAM Role implementation for S3 access.</description>
+  <revision>29</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -65,8 +65,8 @@ Read Rochester RHIO SFTP key path from LM.</description>
       <directoryRecursion>false</directoryRecursion>
       <ignoreDot>true</ignoreDot>
       <anonymous>false</anonymous>
-      <username>${s3AccessKeyId}</username>
-      <password>${s3SecretAccessKey}</password>
+      <username></username>
+      <password></password>
       <timeout>10000</timeout>
       <secure>true</secure>
       <passive>true</passive>
@@ -93,9 +93,9 @@ Read Rochester RHIO SFTP key path from LM.</description>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>function setMcoInfoInGlobalMap() {
-    globalChannelMap.put(&quot;mco_code&quot;, &quot;VNS&quot;);
-    globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-vns&quot;);
+    channelMap.put(&quot;mco_code&quot;, &quot;VNS&quot;);
+    channelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
+    channelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-vns&quot;);
   }
 
   //Deletes the staged Success_/Error_ S3 objects from a prior run of this file before it is reprocessed.
@@ -160,8 +160,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           mco_name = mcoIdResult.getString(2);
         }
         logger.info(&quot;Mco name : &quot; + mco_name);
-        globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-        globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+        channelMap.put(&quot;mcoId&quot;, mco_id);
+        channelMap.put(&quot;mcoName&quot;, mco_name);
       } catch (err) {
         logger.info(&quot;Could not establish a connection to database&quot;);
         if (dbConn) {
@@ -184,7 +184,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
       //If the file is a resubmission, store it in global channel map to use it in the destination level
       if (isResubmission != -1) {
-        globalChannelMap.put(&quot;isResubmission&quot;, true);
+        channelMap.put(&quot;isResubmission&quot;, true);
       }
   
       if (filename.toLowerCase().indexOf(&quot;FileRejected_&quot;.toLowerCase()) != -1) {
@@ -193,7 +193,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
         var errorLine = content[1];
         var errorCode = errorLine.toString().split(&quot;|&quot;)[3];
         var errorTrace = errorLine.toString().split(&quot;|&quot;)[4];
-        globalChannelMap.put(&quot;invalidFileReason&quot;, [errorCode]);
+        channelMap.put(&quot;invalidFileReason&quot;, [errorCode]);
         channelMap.put(&quot;isLambdaRejection&quot;, true);
         channelMap.put(&quot;lambdaStackTrace&quot;, errorTrace);
       } else {
@@ -279,11 +279,11 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
   
         if (failedDueToFormat == true &amp;&amp; failedDueToConvention == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;, &quot;EC002&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;, &quot;EC002&quot;]);
         } else if (failedDueToConvention == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC002&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC002&quot;]);
         } else if (failedDueToFormat == true) {
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;]);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC001&quot;]);
         }
       }
   
@@ -296,15 +296,15 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
       throw err;
     }
   
-    var shouldSkipAllDestinations = globalChannelMap.get(&quot;skipAllDestinations&quot;);
+    var shouldSkipAllDestinations = channelMap.get(&quot;skipAllDestinations&quot;);
   
     if (shouldSkipAllDestinations == true) {
-  var isReprocessable=globalChannelMap.get(&quot;isReprocessable&quot;);
+  var isReprocessable=channelMap.get(&quot;isReprocessable&quot;);
   if($(&quot;batchComplete&quot;) == true &amp;&amp; isReprocessable == true ){
     logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
-      &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
+      &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
     };
   
   
@@ -426,10 +426,10 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           logger.info(&quot;ERROR: Invalid Header&quot;);
           channelMap.put(&quot;fileRejected&quot;, true);
           isAlreadyExistError = true;
-          globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC005&quot;]);
-          globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+          channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC005&quot;]);
+          channelMap.put(&quot;isFileAlreadyExist&quot;, true);
         } else {
-          globalChannelMap.put(&quot;isHeaderFound&quot;, true);
+          channelMap.put(&quot;isHeaderFound&quot;, true);
           lines = lines.slice(1);
         }
       }
@@ -448,8 +448,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           trimmedLines.shift();
           //After remvoing header, if the next line itself is EOF, reject the file since there are no records to be processed
           if (trimmedLines &amp;&amp; trimmedLines[0].toString().toLowerCase().trim().equals(&quot;eof&quot;)) {
-            globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
-            globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+            channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
+            channelMap.put(&quot;isFileAlreadyExist&quot;, true);
             channelMap.put(&quot;fileRejected&quot;, true);
             isAlreadyExistError = true;
           }
@@ -491,8 +491,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
               if (folderNameFromDB == presentFolderName) {
                 if (allowMultipleFiles.equals(&quot;false&quot;)) {
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC082&quot;]);
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC082&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
                 }
@@ -510,7 +510,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
       //If the file is a resubmission, store it in global channel map to use it in the destination level
       if (isResubmission != -1) {
-        globalChannelMap.put(&quot;isResubmission&quot;, true);
+        channelMap.put(&quot;isResubmission&quot;, true);
       }
   
       var splittedFileName = fileName.split(&quot;_&quot;);
@@ -543,7 +543,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
       var isResubmissionAlreadyExistError = false;
   
-      if (!globalChannelMap.get(&quot;isFileAlreadyExist&quot;)) {
+      if (!channelMap.get(&quot;isFileAlreadyExist&quot;)) {
         if (currentBatch == 1) {
   
           var months = [&quot;01&quot;, &quot;02&quot;, &quot;03&quot;, &quot;04&quot;, &quot;05&quot;, &quot;06&quot;, &quot;07&quot;, &quot;08&quot;, &quot;09&quot;, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;];
@@ -576,7 +576,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
           var reportingMonth = months[month] + &apos;-&apos; + year;
           reportingMonth = reportingMonth.toString()
-          globalChannelMap.put(&quot;reportingMonth&quot;,reportingMonth)
+          channelMap.put(&quot;reportingMonth&quot;,reportingMonth)
   
           try {
             //Make DB calls only on the first batch, to check if file already exist or it&apos;s a resubmission. 
@@ -596,8 +596,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 logger.info(&quot;ERROR: Received an already processed file&quot;);
                 channelMap.put(&quot;fileRejected&quot;, true);
                 isAlreadyExistError = true;
-                globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
+                channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
               }
             }
   
@@ -616,7 +616,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 var erroredCountFromDb = result.getString(6);
               }
               if (erroredCountFromDb) {
-                globalChannelMap.put(&quot;erroredCountFromDb&quot;, erroredCountFromDb);
+                channelMap.put(&quot;erroredCountFromDb&quot;, erroredCountFromDb);
               }
               //If batch_id is null, the file doesn&apos;t exist. Treat it as a new file
               if (batch_id == null) {
@@ -625,8 +625,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                   logger.info(&quot;ERROR: Received an already processed file&quot;);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
                 } else {
                   //Insert initial entries to the mco_records table 
                   batch_insert = dbConn.executeCachedQuery(
@@ -651,27 +651,27 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                   logger.info(&quot;ERROR: Received an already processed file&quot;);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC003&quot;]);
                 }
                 //If it&apos;s not a resubmission file, but the status is inprogress and count is 0. The file might have been errored out due to some technical issues, so clean any processed files
                 else if (isResubmission === -1 &amp;&amp; (statusFromDb == &apos;INPROGRESS&apos; &amp;&amp; totalRecordsFromDb == 0)) {
                   try {
                     if (currentBatch == 1) {
                       logger.info(&apos;Clearing global map&apos;);
-                      globalChannelMap.clear();
+                      channelMap.clear();
                   reportingMonth = calculateReportingMonth();
-                  globalChannelMap.put(&quot;reportingMonth&quot;, reportingMonth)
+                  channelMap.put(&quot;reportingMonth&quot;, reportingMonth)
                       setMcoInfoInGlobalMap();
                       var isResubmission = fileName.indexOf(&quot;RS_&quot;);
   
                       //If the file is a resubmission, store it in global channel map to use it in the destination level
                       if (isResubmission != -1) {
-                        globalChannelMap.put(&quot;isResubmission&quot;, true);
+                        channelMap.put(&quot;isResubmission&quot;, true);
                       }
                       if (mco_id &amp;&amp; mco_name) {
-                        globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-                        globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+                        channelMap.put(&quot;mcoId&quot;, mco_id);
+                        channelMap.put(&quot;mcoName&quot;, mco_name);
                       }
                     }
   
@@ -696,8 +696,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC086&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC086&quot;]);
                   } else if (
                     isResubmission != -1 &amp;&amp;
                     statusFromDb == &quot;INPROGRESS&quot;
@@ -705,14 +705,14 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC006&quot;]);
                   } else if (reportingMonthFromDb != reportingMonth) {
                     logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC087&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC087&quot;]);
                   } else {
                     channelMap.put(&quot;fileRejected&quot;, false);
                     batch_update = dbConn.executeUpdate(
@@ -758,8 +758,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
               }
               //Finally store batch_id and batch_details_id in global channel map for later use for count updates
               if (batch_id &amp;&amp; batch_details_id) {
-                globalChannelMap.put(&quot;batch_id&quot;, batch_id);
-                globalChannelMap.put(&quot;batch_details_id&quot;, batch_details_id);&#xd;
+                channelMap.put(&quot;batch_id&quot;, batch_id);
+                channelMap.put(&quot;batch_details_id&quot;, batch_details_id);&#xd;
 &#xd;                channelMap.put(&quot;batch_id&quot;, batch_id);
                 channelMap.put(&quot;batch_details_id&quot;, batch_details_id);&#xd;                              }
             }
@@ -797,8 +797,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           }
           logger.info(&quot;Mco name : &quot; + mco_name);
           if (mco_id &amp;&amp; mco_name) {
-            globalChannelMap.put(&quot;mcoId&quot;, mco_id);
-            globalChannelMap.put(&quot;mcoName&quot;, mco_name);
+            channelMap.put(&quot;mcoId&quot;, mco_id);
+            channelMap.put(&quot;mcoName&quot;, mco_name);
             channelMap.put(&quot;mcoId&quot;, mco_id);
             channelMap.put(&quot;mcoName&quot;, mco_name);
           }
@@ -830,9 +830,9 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             batchDetailsId
           );
           if (batch_id &amp;&amp; batchDetailsId) {
-            globalChannelMap.put(&quot;batch_id&quot;, batch_id);
-            logger.info(globalChannelMap.get(&quot;batch_id&quot;));
-            globalChannelMap.put(&quot;batch_details_id&quot;, batchDetailsId);
+            channelMap.put(&quot;batch_id&quot;, batch_id);
+            logger.info(channelMap.get(&quot;batch_id&quot;));
+            channelMap.put(&quot;batch_details_id&quot;, batchDetailsId);
             channelMap.put(&quot;batch_id&quot;, batch_id);
             channelMap.put(&quot;batch_details_id&quot;, batchDetailsId);
           }
@@ -840,7 +840,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
       }
   
       //Variable to check if the file already exist, this will ensure we don&apos;t process remaining batches when the first batch got errored due to already exist error
-      var isFileAlreadyExist = globalChannelMap.get(&quot;isFileAlreadyExist&quot;);
+      var isFileAlreadyExist = channelMap.get(&quot;isFileAlreadyExist&quot;);
   
       //Process the file if there is no already exist error
       if (!isFileAlreadyExist) {
@@ -851,15 +851,15 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             var data = lines[i].toString().split(&quot;|&quot;);
             if (lines[i].toString().toLowerCase().trim().equals(&quot;eof&quot;)) {
               if (currentBatch == 1 &amp;&amp; i == 0) {
-                globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
-                globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC081&quot;]);
+                channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                 channelMap.put(&quot;fileRejected&quot;, true);
               } else {
-                globalChannelMap.put(&quot;eofFound&quot;, true);
+                channelMap.put(&quot;eofFound&quot;, true);
               }
               break;
             } else {
-              if (globalChannelMap.get(&quot;eofFound&quot;)) {
+              if (channelMap.get(&quot;eofFound&quot;)) {
               } else {
             var obj = {};
             //Loop over the pre defined header and map the header values with data values from the record
@@ -872,7 +872,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                             if (!header.includes(&quot;MCO_CODE&quot;)) {
                                 header.push(&quot;MCO_CODE&quot;);
                             }
-                var isHeaderFound = globalChannelMap.get(&quot;isHeaderFound&quot;);
+                var isHeaderFound = channelMap.get(&quot;isHeaderFound&quot;);
                 if (
                   header.toString().toLowerCase() ==
                   lines[i].toString().split(&quot;|&quot;).toString().toLowerCase()
@@ -881,8 +881,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                   if (isHeaderFound) {
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
-                    globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC088&quot;]);
-                    globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                    channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC088&quot;]);
+                    channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                     deleteStagedS3Files(filename);
                     //              throw (&quot;Found multiple headers in the file : &quot; + filename)
                   }
@@ -1910,7 +1910,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             }
             //If there are no errors, consider it valid and push to validData array which will be used to send data to the data lake
             else {
-                        var mcoCode = globalChannelMap.get(&quot;mco_code&quot;)
+                        var mcoCode = channelMap.get(&quot;mco_code&quot;)
                         lines[i] = lines[i] + &quot;|&quot; + mcoCode;
               validData.push(lines[i]);
   
@@ -1937,17 +1937,17 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
             if ($(&quot;batchComplete&quot;) == true) {
               if (isResubmission != -1) {
-                var recordCount = globalChannelMap.get(&quot;recordsCount&quot;);
+                var recordCount = channelMap.get(&quot;recordsCount&quot;);
                 if ($(&quot;no_of_records&quot;)) {
                 recordCount += $(&quot;no_of_records&quot;);
                 }
   
                 logger.info(
                   &quot;Error count from DB : &quot; +
-                  globalChannelMap.get(&quot;erroredCountFromDb&quot;)
+                  channelMap.get(&quot;erroredCountFromDb&quot;)
                 );
                 logger.info(&quot;Error count : &quot; + recordCount);
-                if (globalChannelMap.get(&quot;erroredCountFromDb&quot;) != recordCount) {
+                if (channelMap.get(&quot;erroredCountFromDb&quot;) != recordCount) {
                   try {
                     dbConn = DatabaseConnectionFactory.createDatabaseConnection(
                       jdbdcDriver,
@@ -1955,7 +1955,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                       dbName,
                       dbPassword
                     );
-                    var batch_id = globalChannelMap.get(&quot;batch_id&quot;);
+                    var batch_id = channelMap.get(&quot;batch_id&quot;);
                     var resubmissionCountFromDb;
                     var resubmissionCountResult = dbConn.executeCachedQuery(
                     &quot;select resubmitted_count from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos;&quot;,
@@ -1981,8 +1981,8 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
-                  globalChannelMap.put(&quot;invalidFileReason&quot;, [&quot;EC085&quot;]);
-                  globalChannelMap.put(&quot;isFileAlreadyExist&quot;, true);
+                  channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC085&quot;]);
+                  channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                   deleteStagedS3Files(filename);
                 }
               }
@@ -2059,14 +2059,14 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   logger.info(errorMessageThrown);
   // Start the new thread immediately, non-blocking
   
-  globalChannelMap.put(&quot;isReprocessable&quot;, true);
-  globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
-  globalChannelMap.put(&quot;currentBatch&quot;, currentBatch);
+  channelMap.put(&quot;isReprocessable&quot;, true);
+  channelMap.put(&quot;skipAllDestinations&quot;, true);
+  channelMap.put(&quot;currentBatch&quot;, currentBatch);
   if($(&quot;batchComplete&quot;) == true ){
     logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
-      &quot;mcoCode&quot;: globalChannelMap.get(&quot;mco_code&quot;)
+      &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
     };
   
   
@@ -2147,9 +2147,9 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
       logger.info(err);
       throw err;
     } finally {
-      globalChannelMap.clear();
+      channelMap.clear();
       if ($(&quot;batchComplete&quot;) != true) {
-        globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+        channelMap.put(&quot;skipAllDestinations&quot;, true);
       }
       setMcoInfoInGlobalMap();
       if (dbConn) {
@@ -2206,7 +2206,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           var futureMonth = date.substring(4, 6);
           var futureYear = date.substring(0, 4);
           var futureDate = date.substring(6, 8)
-          var reportingMonth=globalChannelMap.get(&quot;reportingMonth&quot;)
+          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;)
           var monthOfReporting = reportingMonth.substring(0, 2);
           var yearOfReporting = reportingMonth.substring(3, 7);
           const endDateOfReportingMonth = new Date(yearOfReporting, monthOfReporting, 0);
@@ -2232,7 +2232,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
           var pastMonth = date.substring(4, 6);
           var pastYear = date.substring(0, 4);
           var pastDate = date.substring(6, 8)
-          var reportingMonth=globalChannelMap.get(&quot;reportingMonth&quot;)
+          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;)
           var monthOfReporting = reportingMonth.substring(0, 2);
           var yearOfReporting = reportingMonth.substring(3, 7);
           const startDateOfReportingMonth = new Date(yearOfReporting, monthOfReporting - 1, 1);
@@ -2447,37 +2447,37 @@ var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
 
 try {
-  var recordCount = globalChannelMap.get(&quot;recordsCount&quot;);
+  var recordCount = channelMap.get(&quot;recordsCount&quot;);
   if ($(&quot;no_of_records&quot;)) {
     recordCount += $(&quot;no_of_records&quot;);
-    globalChannelMap.put(&quot;recordsCount&quot;, recordCount);
+    channelMap.put(&quot;recordsCount&quot;, recordCount);
   }
 
-  var fileSize = globalChannelMap.get(&quot;totalFileSize&quot;);
+  var fileSize = channelMap.get(&quot;totalFileSize&quot;);
   if ($(&quot;file_size&quot;)) {
     fileSize += $(&quot;file_size&quot;);
-    globalChannelMap.put(&quot;totalFileSize&quot;, fileSize);
+    channelMap.put(&quot;totalFileSize&quot;, fileSize);
   }
 
-  var status = globalChannelMap.get(&quot;fileStatus&quot;);
+  var status = channelMap.get(&quot;fileStatus&quot;);
   if ($(&quot;status&quot;)) {
     status = $(&quot;status&quot;);
-    globalChannelMap.put(&quot;fileStatus&quot;, status);
+    channelMap.put(&quot;fileStatus&quot;, status);
   }
 
-  var error = globalChannelMap.get(&quot;totalErrors&quot;);
+  var error = channelMap.get(&quot;totalErrors&quot;);
   if ($(&quot;errorCount&quot;)) {
     error += $(&quot;errorCount&quot;);
-    globalChannelMap.put(&quot;totalErrors&quot;, error);
+    channelMap.put(&quot;totalErrors&quot;, error);
   }
 
-  var process = globalChannelMap.get(&quot;totalProcess&quot;);
+  var process = channelMap.get(&quot;totalProcess&quot;);
   if ($(&quot;processedCount&quot;)) {
     process += $(&quot;processedCount&quot;);
-    globalChannelMap.put(&quot;totalProcess&quot;, process);
+    channelMap.put(&quot;totalProcess&quot;, process);
   }
 
-  var errorJson = globalChannelMap.get(&quot;errorJson&quot;);
+  var errorJson = channelMap.get(&quot;errorJson&quot;);
   var errors = $(&quot;errors&quot;);
 
   if ($(&quot;errors&quot;)) {
@@ -2500,8 +2500,8 @@ try {
     }
 
 
-    globalChannelMap.put(&quot;errorJson&quot;, errorJson);
-    globalChannelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
+    channelMap.put(&quot;errorJson&quot;, errorJson);
+    channelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
   }
 } catch (err) {
 
@@ -2537,9 +2537,9 @@ try {
     logger.info(err);
     throw err;
   } finally {
-    globalChannelMap.clear();
+    channelMap.clear();
     if ($(&apos;batchComplete&apos;) != true) {
-      globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+      channelMap.put(&quot;skipAllDestinations&quot;, true);
     }
     if (dbConn) {
       dbConn.close();
@@ -2553,37 +2553,37 @@ try {
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>false</enabled>
-            <script>var recordCount =globalChannelMap.get(&quot;recordsCount&quot;) ;
+            <script>var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 recordCount+=$(&apos;no_of_records&apos;);
-globalChannelMap.put(&apos;recordsCount&apos;,recordCount);
+channelMap.put(&apos;recordsCount&apos;,recordCount);
 
-var fileSize= globalChannelMap.get(&quot;totalFileSize&quot;);
+var fileSize= channelMap.get(&quot;totalFileSize&quot;);
 fileSize+=$(&apos;file_size&apos;);
-globalChannelMap.put(&quot;totalFileSize&quot;,fileSize);
+channelMap.put(&quot;totalFileSize&quot;,fileSize);
 
 
-var status =globalChannelMap.get(&quot;fileStatus&quot;);
+var status =channelMap.get(&quot;fileStatus&quot;);
 status=$(&apos;status&apos;)
-globalChannelMap.put(&quot;fileStatus&quot;,status);
+channelMap.put(&quot;fileStatus&quot;,status);
 
 
-var error=globalChannelMap.get(&quot;totalErrors&quot;);
+var error=channelMap.get(&quot;totalErrors&quot;);
 error+=$(&apos;errorCount&apos;);
-globalChannelMap.put(&quot;totalErrors&quot;,error);
+channelMap.put(&quot;totalErrors&quot;,error);
 
 
 
-var process=globalChannelMap.get(&quot;totalProcess&quot;);
+var process=channelMap.get(&quot;totalProcess&quot;);
 process+=$(&apos;processedCount&apos;);
-globalChannelMap.put(&quot;totalProcess&quot;,process);
+channelMap.put(&quot;totalProcess&quot;,process);
 
 
 
-var errorJson=globalChannelMap.get(&quot;errorJson&quot;);
+var errorJson=channelMap.get(&quot;errorJson&quot;);
 var errors= $(&apos;errors&apos;);
 var finalArray=Object.assign({},errors,errorJson);
-globalChannelMap.put(&quot;errorJson&quot;,finalArray);
-globalChannelMap.put(&quot;errorJsonString&quot;, JSON.stringify(finalArray));
+channelMap.put(&quot;errorJson&quot;,finalArray);
+channelMap.put(&quot;errorJsonString&quot;, JSON.stringify(finalArray));
 
 
 var rawData = msg.toString().trim().split(&apos;\n&apos;);
@@ -2680,8 +2680,8 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
         <host>${s3BucketName}/bridgelink-inbound/VNS/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -2769,9 +2769,9 @@ channelMap.put(&quot;validContent&quot;, validContent);
     logger.info(err);
     throw err;
   } finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
     if($(&apos;batchComplete&apos;) != true) {
-      globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+      channelMap.put(&quot;skipAllDestinations&quot;, true);
     }
     if (dbConn) {
       dbConn.close();
@@ -2880,8 +2880,8 @@ channelMap.put(&quot;validContent&quot;, validContent);
         <host>${s3BucketName}/bridgelink-inbound/VNS/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -2997,9 +2997,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
 	if($(&apos;batchComplete&apos;) != true) {
-		globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+		channelMap.put(&quot;skipAllDestinations&quot;, true);
 	}
 		if (dbConn) {
 			dbConn.close();
@@ -3499,9 +3499,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&quot;batchComplete&quot;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -3767,9 +3767,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -3889,8 +3889,8 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
         <host>${s3BucketName}/bridgelink-inbound/VNS/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -3932,7 +3932,7 @@ try {
   //Since config map store it as string, parse it into json
   var errorCodes = JSON.parse(errorCodesString);
 
-  var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+  var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 var errorCodesToAppend = &quot;&quot;;
 var errorDescToAppend = &quot;&quot;;
@@ -3996,9 +3996,9 @@ var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).
     logger.info(err);
     throw err;
   } finally {
-  	globalChannelMap.clear();
+  	channelMap.clear();
 	if($(&apos;batchComplete&apos;) != true) {
-		globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+		channelMap.put(&quot;skipAllDestinations&quot;, true);
 	}
     if (dbConn) {
       dbConn.close();
@@ -4031,8 +4031,8 @@ var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).
             <enabled>true</enabled>
             <script>var fileResponse=response.getError();
 channelMap.put(&quot;fileResponse&quot;,fileResponse)
-var rootFolder = globalChannelMap.get(&quot;root_sftp_folder&quot;);
-var mcoFolder= globalChannelMap.get(&quot;mco_sftp_folder&quot;);
+var rootFolder = channelMap.get(&quot;root_sftp_folder&quot;);
+var mcoFolder= channelMap.get(&quot;mco_sftp_folder&quot;);
 if(fileResponse!=null){
 	logger.info(response.getMessage())
 	logger.info(fileResponse.toString());
@@ -4126,8 +4126,8 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
         <host>${s3BucketName}/bridgelink-inbound/VNS/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -4257,9 +4257,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -4542,9 +4542,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -4773,9 +4773,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -5033,9 +5033,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -5166,8 +5166,8 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
         <host>${s3BucketName}/bridgelink-inbound/VNS/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -5304,8 +5304,8 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
         <host>${s3BucketName}/bridgelink-inbound/VNS/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
-        <username>${s3AccessKeyId}</username>
-        <password>${s3SecretAccessKey}</password>
+        <username></username>
+        <password></password>
         <timeout>10000</timeout>
         <keepConnectionOpen>true</keepConnectionOpen>
         <maxIdleTime>0</maxIdleTime>
@@ -5344,8 +5344,8 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
             <enabled>true</enabled>
             <script>var fileResponse=response.getError();
 channelMap.put(&quot;fileResponse&quot;,fileResponse)
-var rootFolder = globalChannelMap.get(&quot;root_sftp_folder&quot;);
-var mcoFolder= globalChannelMap.get(&quot;mco_sftp_folder&quot;);
+var rootFolder = channelMap.get(&quot;root_sftp_folder&quot;);
+var mcoFolder= channelMap.get(&quot;mco_sftp_folder&quot;);
 if(fileResponse!=null){
 	logger.info(response.getMessage())
 	logger.info(fileResponse.toString());
@@ -5461,7 +5461,7 @@ var batch_id;
 var batch_details_id;
 var fileName = $(&quot;originalFilename&quot;);
 var errorJson = {};
-var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
@@ -5722,8 +5722,8 @@ try {
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>logger.info(&quot;Clearing global map&quot;)
-globalChannelMap.clear();
-var recordCount =globalChannelMap.get(&quot;recordsCount&quot;) ;
+channelMap.clear();
+var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 logger.info(&quot;Current record count : &quot; + recordCount )</script>
       </properties>
       <transformer version="26.6.0">
@@ -5932,7 +5932,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785492975227</time>
+        <time>1785839734132</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -7147,24 +7147,28 @@ function getCOVIDConn()
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>ee6b67aa-e3f1-420b-b608-87f64a5057e4</id>
-        <name>0_1_5</name>
+        <id>68649f46-df5a-4930-b034-11a4f00d1f2d</id>
+        <name>0_1_6</name>
         <channelIds>
-          <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
           <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
-          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
           <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
           <string>48679919-904a-4913-a593-28f19da61615</string>
+          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+          <string>d9d04758-a40e-40ab-a7e8-0a3cc3245144</string>
           <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
           <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
