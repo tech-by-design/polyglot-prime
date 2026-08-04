@@ -3,7 +3,7 @@ org:
     baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
     defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
     dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-    dataLedgerTracking: true
+    dataLedgerTracking: false
     dataLedgerDiagnostics: true
     dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
     defaultDataLakeApiAuthn:
