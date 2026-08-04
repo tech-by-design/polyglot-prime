@@ -1425,6 +1425,23 @@
                                                 <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
                                             </xsl:call-template>
                                         </xsl:when>
+                                        <xsl:when test="ccda:effectiveTime/ccda:low/@value">
+                                            <xsl:call-template name="formatDateTime">
+                                                <xsl:with-param name="dateTime" select="ccda:effectiveTime/ccda:low/@value"/>
+                                            </xsl:call-template>
+                                        </xsl:when>
+
+                                        <xsl:when test="string-length(normalize-space($grouperObs/ccda:effectiveTime/@value)) > 0">
+                                            <xsl:call-template name="formatDateTime">
+                                                <xsl:with-param name="dateTime" select="$grouperObs/ccda:effectiveTime/@value"/>
+                                            </xsl:call-template>
+                                        </xsl:when>
+                                        <xsl:when test="string-length(normalize-space($grouperObs/ccda:effectiveTime/ccda:low/@value)) > 0">
+                                            <xsl:call-template name="formatDateTime">
+                                                <xsl:with-param name="dateTime" select="$grouperObs/ccda:effectiveTime/ccda:low/@value"/>
+                                            </xsl:call-template>
+                                        </xsl:when>
+
                                         <xsl:when test="$encounterEffectiveTimeValue">
                                             <xsl:value-of select="$encounterEffectiveTimeValue"/>
                                         </xsl:when>
@@ -1705,6 +1722,18 @@
                                 <xsl:with-param name="dateTime" select="ccda:effectiveTime/ccda:low/@value"/>
                             </xsl:call-template>
                         </xsl:when>
+
+                        <xsl:when test='$grouperObs/ccda:effectiveTime/@value'>
+                          <xsl:call-template name='formatDateTime'>
+                            <xsl:with-param name='dateTime' select='$grouperObs/ccda:effectiveTime/@value'/>
+                          </xsl:call-template>
+                        </xsl:when>
+                        <xsl:when test='$grouperObs/ccda:effectiveTime/ccda:low/@value'>
+                          <xsl:call-template name='formatDateTime'>
+                            <xsl:with-param name='dateTime' select='$grouperObs/ccda:effectiveTime/ccda:low/@value'/>
+                          </xsl:call-template>
+                        </xsl:when>
+
                         <xsl:when test="$encounterEffectiveTimeValue">
                             <xsl:value-of select="$encounterEffectiveTimeValue"/>
                         </xsl:when>
