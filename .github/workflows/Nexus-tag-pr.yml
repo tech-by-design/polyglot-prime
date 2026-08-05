@@ -9,7 +9,7 @@ on:
         type: choice
         options:
           - devl
-          - phiqa
+          - uat
           - prd
 
       tag:
@@ -51,10 +51,10 @@ jobs:
               echo "FHIR=aws/hub-fhir-dev-techbd.org/.env" >> $GITHUB_OUTPUT
               echo "CSV=aws/hub-csv-dev-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
-            phiqa)
-              echo "HUB=aws/hub.qa.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "FHIR=aws/hub.fhir.qa.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "CSV=aws/hub.csv.qa.techbd.org/.env" >> $GITHUB_OUTPUT
+            uat)
+              echo "HUB=aws/hub-ui-uat-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/hub-fhir-uat-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/hub-csv-uat-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
             prd)
               echo "HUB=aws/hub.prd.techbd.org/.env" >> $GITHUB_OUTPUT
