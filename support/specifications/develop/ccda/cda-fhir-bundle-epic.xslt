@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.16 -->
+<!-- Version : 0.1.17 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -1520,8 +1520,7 @@
                             </xsl:for-each>
                           ],
                         </xsl:if>
-                    </xsl:when>    
-                    <!-- <xsl:otherwise> -->
+                    </xsl:when>
                     <xsl:when test="string(ccda:observation/ccda:value/@code) != 'UNK' and string-length(ccda:observation/ccda:value/@code) > 0">
                         "valueCodeableConcept" : {
                           "coding": [{
@@ -1539,7 +1538,6 @@
                           </xsl:choose>
                         },
                     </xsl:when>
-                    <!-- </xsl:otherwise> -->
                   </xsl:choose>
                   "subject": {
                     "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",

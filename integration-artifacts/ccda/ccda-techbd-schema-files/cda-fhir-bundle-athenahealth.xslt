@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.16 -->
+<!-- Version : 0.1.17 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -1333,13 +1333,16 @@
                 </xsl:when>
 
                 <!-- Total Safety Score 95614-4 -->
-                <xsl:when test="string(ccda:code/@code) = '95614-4'">
-                  "valueCodeableConcept" : {
+                <xsl:when test="string(ccda:code/@code) = '95614-4' and string-length(ccda:value/@value) > 0">
+                  <!-- "valueCodeableConcept" : {
                     "coding": [{
                       "system": "http://unitsofmeasure.org",
                       "display": "{Number}"
                     }],
                     "text": "<xsl:value-of select='ccda:value/@value'/>"
+                  }, -->
+                  "valueQuantity": {
+                      "value": <xsl:value-of select='ccda:value/@value'/>
                   },
 
                   <!-- Gather all filtered observations for derivedFrom -->
