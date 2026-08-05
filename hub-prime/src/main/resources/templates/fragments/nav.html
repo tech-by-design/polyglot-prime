@@ -373,6 +373,7 @@
                         </ul>
                     </div>
                     <div>
+                    <div th:if="${session.isSuperRole or session.rolePermissions['Content'] != null}">
                         <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">
                             Data Quality
                         </h2>
