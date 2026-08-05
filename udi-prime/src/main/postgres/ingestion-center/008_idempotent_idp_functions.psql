@@ -487,7 +487,9 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_active_tenants()
 AS $function$ 
 BEGIN
     RETURN QUERY
-    SELECT tenant_id, tenant_name, tenant_type
+    SELECT tenant_id, 
+        tenant_displayname AS tenant_name, 
+        tenant_type
     FROM techbd_udi_ingress.tenants
     WHERE is_active = true
 ORDER BY tenant_name ASC;

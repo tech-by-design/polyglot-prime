@@ -205,7 +205,7 @@ BEGIN
       ) VALUES (
           v_tenant_id,
           LOWER(p_tenant_name),
-          LOWER(p_tenant_name),
+          p_tenant_name,
           LOWER(p_tenant_name),
 		  NULL,
           p_provenance,
