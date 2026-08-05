@@ -2335,7 +2335,7 @@
       <xsl:if test="string($addrUseRaw)">
           <xsl:choose>
             <xsl:when test="$addrUseRaw='B' or $addrUseRaw='O' or $addrUseRaw='S' or $addrUseRaw='SH' or $addrUseRaw='RH' or $addrUseRaw='TM'">work</xsl:when>
-            <xsl:when test="$addrUseRaw='F' or $addrUseRaw='H' or $addrUseRaw='M' or $addrUseRaw='P' or $addrUseRaw='BDL'">home</xsl:when>
+            <!-- <xsl:when test="$addrUseRaw='F' or $addrUseRaw='H' or $addrUseRaw='M' or $addrUseRaw='P' or $addrUseRaw='BDL'">home</xsl:when> -->
             <!-- <xsl:when test="$addrUseRaw='BI'">billing</xsl:when> -->
             <xsl:when test="$addrUseRaw='C' or $addrUseRaw='V'">temp</xsl:when>
             <xsl:when test="$addrUseRaw='BA'">old</xsl:when>
