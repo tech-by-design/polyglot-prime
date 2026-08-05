@@ -746,6 +746,8 @@ const tenant = SQLa.tableDefinition("tenants", {
     tenant_short_code:textNullable(),
     elaboration:jsonbNullable(),
     description:textNullable(),
+    updated_at: dateTimeNullable(),
+    updated_by: textNullable(),
     ...dvts.housekeeping.columns
   }, {
   isIdempotent: true,
@@ -1842,6 +1844,26 @@ const migrateSP = pgSQLa.storedProcedure(
                 AND column_name = 'description'
       ) THEN
             ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS description TEXT;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'updated_at'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'updated_by'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS updated_by TEXT;
       END IF;
 
       ${userSessions}
