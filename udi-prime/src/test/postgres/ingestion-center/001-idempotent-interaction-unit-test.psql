@@ -1503,6 +1503,9 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
 	            'Successfully inserted exception details into the table sat_diagnostic_exception or sat_diagnostic_log'
 	        ); 
     END IF;
+
+	PERFORM techbd_udi_assurance.test_json_action_rule_upsert('techbd_udi_ingress'::text);
+	PERFORM techbd_udi_assurance.test_idp_functions('techbd_udi_ingress'::text);
 END;
 $function$
 ;
@@ -1570,21 +1573,9 @@ BEGIN
     END IF;
 
     -- Check existence of required functions     
-    RETURN NEXT has_function(
-        schema_name,
-        'json_action_rule_upserted',
-        ARRAY['text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'integer', 'text', 'text', 'text'],
-        'Function json_action_rule_upserted exists'
-    ); 
-   
-    RETURN NEXT has_function(
-        schema_name,
-        'register_issue',
-        ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'],
-        'Function register_issue exists'
-    );
+	RETURN NEXT has_function(schema_name, 'json_action_rule_upserted', ARRAY['text','text','text','text','jsonb','jsonb','jsonb','integer','text','text','text','text'], 'Function json_action_rule_upserted exists');
+	RETURN NEXT has_function(schema_name, 'process_json_action_rules', ARRAY['jsonb','text','text','text','text'], 'Function process_json_action_rules exists');
 
-	
     SELECT techbd_udi_ingress.json_action_rule_upserted(
     	action_rule_id	=> NULL,
     	namespace		=> v_namespace, 
@@ -1594,6 +1585,7 @@ BEGIN
     	reject_json		=> v_reject_json, 
     	modify_json		=> v_modify_json, 
     	priority		=> v_priority, 
+		description		=> '',
     	updated_by		=> v_updated_by, 
     	created_by		=> v_created_by, 
     	provenance		=> v_provenance
@@ -1615,6 +1607,7 @@ BEGIN
     	reject_json		=> v_reject_json, 
     	modify_json		=> v_modify_json, 
     	priority		=> v_priority, 
+		description    => '',
     	updated_by		=> v_updated_by, 
     	created_by		=> v_created_by, 
     	provenance		=> v_provenance
@@ -1634,6 +1627,7 @@ BEGIN
     	reject_json		=> v_reject_json, 
     	modify_json		=> v_modify_json, 
     	priority		=> v_priority, 
+		description    => '',
     	updated_by		=> v_updated_by, 
     	created_by		=> v_created_by, 
     	provenance		=> '{"Key" : "exception"}' 
@@ -1656,6 +1650,75 @@ BEGIN
                    ),
             'Successfully inserted exception details into the table sat_diagnostic_exception'
         );  
+END;
+$function$
+;
+
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_idp_functions(text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_idp_functions(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE    
+    
+BEGIN
+	/**
+	* The function techbd_udi_assurance.test_idp_functions is designed to perform unit tests on the
+	* IDP related tables and functions in the techbd_udi_ingress schema. It validates the existence of key functions,
+	* checks the correctness of insert and update operations, and tests the handling of exceptions. The function returns
+	* detailed messages regarding the success or failure of each test, including checking the insertion of records into the
+	* tables and verifying exception handling by checking logs in diagnostic tables.
+	*/
+
+	RETURN NEXT has_table(schema_name, 'idp_roles', 'The table techbd_udi_ingress.idp_roles should exist.');
+	RETURN NEXT has_table(schema_name, 'idp_menu', 'The table techbd_udi_ingress.idp_menu should exist.');
+	RETURN NEXT has_table(schema_name, 'idp_screens', 'The table techbd_udi_ingress.idp_screens should exist.');
+	RETURN NEXT has_table(schema_name, 'idp_role_tenant_permission', 'The table techbd_udi_ingress.idp_role_tenant_permission should exist.');
+	RETURN NEXT has_table(schema_name, 'tenants', 'The table techbd_udi_ingress.tenants should exist.');
+	RETURN NEXT has_table(schema_name, 'user_sessions', 'The table techbd_udi_ingress.user_sessions should exist.');
+
+	RETURN NEXT has_pk(schema_name, 'idp_roles', 'The table techbd_udi_ingress.idp_roles should have a primary key.');
+	RETURN NEXT has_pk(schema_name, 'idp_menu', 'The table techbd_udi_ingress.idp_menu should have a primary key.');
+	RETURN NEXT has_pk(schema_name, 'idp_screens', 'The table techbd_udi_ingress.idp_screens should have a primary key.');
+	RETURN NEXT has_pk(schema_name, 'idp_role_tenant_permission', 'The table techbd_udi_ingress.idp_role_tenant_permission should have a primary key.');
+	RETURN NEXT has_pk(schema_name, 'tenants', 'The table techbd_udi_ingress.tenants should have a primary key.');
+	RETURN NEXT has_pk(schema_name, 'user_sessions', 'The table techbd_udi_ingress.user_sessions should have a primary key.');
+
+	RETURN NEXT col_is_unique(schema_name, 'idp_roles', 'role_code', 'idp_roles.role_code should be unique.');
+	RETURN NEXT col_is_unique(schema_name, 'idp_menu', 'mnu_code', 'idp_menu.mnu_code should be unique.');
+	RETURN NEXT col_is_unique(schema_name, 'idp_screens', 'scr_code', 'idp_screens.scr_code should be unique.');
+	RETURN NEXT col_is_unique(schema_name, 'tenants', 'tenant_name', 'tenants.tenant_name should be unique.');
+
+	RETURN NEXT has_index(schema_name, 'user_sessions', 'idx_active_user_session', ARRAY['user_id'], 'idx_active_user_session should exist.');
+	RETURN NEXT has_index(schema_name, 'user_sessions', 'idx_user_sessions_expiry', ARRAY['session_expiry_time'], 'idx_user_sessions_expiry should exist.');
+
+	RETURN NEXT has_check(schema_name, 'user_sessions', 'chk_expiry_after_start');
+	RETURN NEXT has_check(schema_name, 'user_sessions', 'chk_session_time_valid');
+
+	RETURN NEXT has_function(schema_name, 'get_active_tenants', ARRAY[]::text[], 'Function get_active_tenants exists');
+	RETURN NEXT has_function(schema_name, 'get_tenant_details', ARRAY['text','text','timestamp with time zone','text'], 'Function get_tenant_details exists');
+	RETURN NEXT has_function(schema_name, 'idp_get_login_role_permissions', ARRAY['text'], 'Function idp_get_login_role_permissions exists');
+	RETURN NEXT has_function(schema_name, 'idp_get_role_menus_with_permissions', ARRAY['integer'], 'Function idp_get_role_menus_with_permissions exists');
+	RETURN NEXT has_function(schema_name, 'idp_insert_role_menus_with_permissions', ARRAY['integer','jsonb','timestamp without time zone','text'], 'Function idp_insert_role_menus_with_permissions exists');
+	RETURN NEXT has_function(schema_name, 'idp_save_roles_from', ARRAY['jsonb'], 'Function idp_save_roles_from exists');
+	RETURN NEXT has_function(schema_name, 'idp_upsert_tenants_from_json', ARRAY['jsonb'], 'Function idp_upsert_tenants_from_json exists');
+	RETURN NEXT has_function(schema_name, 'set_role_based_on_fusion_token', ARRAY['text','text[]','boolean'], 'Function set_role_based_on_fusion_token exists');
+	RETURN NEXT has_function(schema_name, 'upsert_user_session', ARRAY['text','text','text','timestamp with time zone','timestamp with time zone','timestamp with time zone','text','jsonb','jsonb'], 'Function upsert_user_session exists');
+
+	RETURN NEXT ok(
+		EXISTS (
+			SELECT 1
+			FROM pg_proc p
+			JOIN pg_namespace n
+				ON n.oid = p.pronamespace
+			WHERE n.nspname = 'techbd_udi_ingress'
+			AND p.proname = 'configure_rls_policies'
+			AND p.prokind = 'p'
+		),
+		'Procedure configure_rls_policies exists'
+	);
+    
 END;
 $function$
 ;
