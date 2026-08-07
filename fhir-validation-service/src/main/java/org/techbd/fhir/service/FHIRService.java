@@ -144,9 +144,13 @@ public class FHIRService {
             }
 				final String bundleId = FHIRUtil.extractBundleId(payload, tenantId);
 			final boolean isHealthCheck = healthCheck != null && "true".equalsIgnoreCase(healthCheck.trim());
-			if (!isHealthCheck && !SourceType.CSV.name().equalsIgnoreCase(source)
+			final boolean skipDataLedger = isDataLedgerSkipped(requestParameters);
+			LOG.info("Historical Replay | interactionId={} | skipDataLedger={}", interactionId, skipDataLedger);
+			if (!isHealthCheck && !skipDataLedger
+					&& !SourceType.CSV.name().equalsIgnoreCase(source)
 					&& !SourceType.CCDA.name().equalsIgnoreCase(source)
 					&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
+				LOG.info("Historical Replay | RECEIVED Data Ledger ENABLED | interactionId={}", interactionId);
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
 					dataLedgerPayload = DataLedgerPayload.create(DataLedgerApiClient.Actor.TECHBD.getValue(),
@@ -158,8 +162,13 @@ public class FHIRService {
 							interactionId);
 				}
 				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
+				final boolean tracking = Boolean.TRUE.equals(requestParameters.get(Constants.DATA_LEDGER_TRACKING));
+				final boolean diagnostics = Boolean.TRUE.equals(requestParameters.get(Constants.DATA_LEDGER_DIAGNOSTICS));
 				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
-				SourceType.FHIR.name(), null, (boolean) requestParameters.get(Constants.DATA_LEDGER_TRACKING), (boolean) requestParameters.get(Constants.DATA_LEDGER_DIAGNOSTICS));
+						SourceType.FHIR.name(), null, tracking, diagnostics);
+			} else {
+				LOG.info("Historical Replay | RECEIVED Data Ledger SKIPPED | interactionId={} | isHealthCheck={} | skipDataLedger={}",
+						interactionId, isHealthCheck, skipDataLedger);
 			}
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
             
@@ -217,6 +226,23 @@ public class FHIRService {
         }
     }
 
+	/**
+	 * Determines whether calls to the NYeC Data Ledger should be skipped for this
+	 * request. Driven by the {@code dataLedger} query parameter on the
+	 * historical-replay endpoint. Data Ledger calls proceed as
+	 * today (default) unless the parameter is explicitly set to {@code false}.
+	 *
+	 * @param requestParameters the request parameters map
+	 * @return true if Data Ledger calls should be skipped, false otherwise (default)
+	 */
+	public static boolean isDataLedgerSkipped(final Map<String, Object> requestParameters) {
+		if (requestParameters == null) {
+			return false;
+		}
+		final Object dataLedgerFlag = requestParameters.get(Constants.HISTORICAL_REPLAY_DATA_LEDGER);
+		return dataLedgerFlag != null && "false".equalsIgnoreCase(String.valueOf(dataLedgerFlag).trim());
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static boolean isActionDiscard(final Map<String, Object> payloadWithDisposition) {
 		return Optional.ofNullable(payloadWithDisposition)
@@ -1041,6 +1067,82 @@ public class FHIRService {
 
 		public String getAction() {
 			return action;
+		}
+	}
+
+	/**
+	 * Filters an OperationOutcome result map based on the {@code ooSize} parameter
+	 * <ul>
+	 *   <li>{@code full} (default) → no change; all issues (error, warning, information) returned as-is.</li>
+	 *   <li>{@code lite} → only {@code error}/{@code fatal} severity issues are retained; warnings and info are stripped.</li>
+	 *   <li>{@code none} → returns {@code null}; caller is expected to respond with a bare HTTP 200 and no body.</li>
+	 * </ul>
+	 *
+	 * @param result the OperationOutcome-wrapping result map produced by {@link #processBundle}
+	 * @param ooSize the requested OperationOutcome size: {@code full}, {@code lite}, or {@code none}
+	 * @return the (possibly filtered) result, or {@code null} when {@code ooSize=none}
+	 */
+	@SuppressWarnings("unchecked")
+	public Object applyOoSizeFilter(final Object result, final String ooSize) {
+		final String normalizedOoSize = Optional.ofNullable(ooSize)
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.orElse(Constants.OO_SIZE_FULL);
+
+		if (Constants.OO_SIZE_FULL.equalsIgnoreCase(normalizedOoSize) || result == null) {
+			return result;
+		}
+		if (Constants.OO_SIZE_NONE.equalsIgnoreCase(normalizedOoSize)) {
+			return null;
+		}
+		if (!Constants.OO_SIZE_LITE.equalsIgnoreCase(normalizedOoSize) || !(result instanceof Map)) {
+			return result;
+		}
+
+		// lite: keep only error/fatal issues inside OperationOutcome.validationResults[*].operationOutcome.issue
+		try {
+			final Map<String, Object> root = new HashMap<>((Map<String, Object>) result);
+			final Object ooObj = root.get("OperationOutcome");
+			if (!(ooObj instanceof Map)) {
+				return result;
+			}
+			final Map<String, Object> oo = new HashMap<>((Map<String, Object>) ooObj);
+			final Object vrObj = oo.get("validationResults");
+			if (!(vrObj instanceof List)) {
+				return result;
+			}
+			final List<Object> filteredVr = new ArrayList<>();
+			for (final Object vrItem : (List<?>) vrObj) {
+				if (!(vrItem instanceof Map)) {
+					filteredVr.add(vrItem);
+					continue;
+				}
+				final Map<String, Object> vr = new HashMap<>((Map<String, Object>) vrItem);
+				final Object innerOoObj = vr.get("operationOutcome");
+				if (innerOoObj instanceof Map) {
+					final Map<String, Object> innerOo = new HashMap<>((Map<String, Object>) innerOoObj);
+					final Object issuesObj = innerOo.get("issue");
+					if (issuesObj instanceof List) {
+						final List<Map<String, Object>> errorsOnly = ((List<?>) issuesObj).stream()
+								.filter(Map.class::isInstance)
+								.map(i -> (Map<String, Object>) i)
+								.filter(i -> {
+									final String sev = String.valueOf(i.get("severity"));
+									return "error".equalsIgnoreCase(sev) || "fatal".equalsIgnoreCase(sev);
+								})
+								.collect(Collectors.toList());
+						innerOo.put("issue", errorsOnly);
+					}
+					vr.put("operationOutcome", innerOo);
+				}
+				filteredVr.add(vr);
+			}
+			oo.put("validationResults", filteredVr);
+			root.put("OperationOutcome", oo);
+			return root;
+		} catch (final Exception e) {
+			LOG.warn("applyOoSizeFilter failed, returning original unfiltered result: {}", e.getMessage());
+			return result;
 		}
 	}
 

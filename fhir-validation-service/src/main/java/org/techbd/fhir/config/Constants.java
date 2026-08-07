@@ -100,4 +100,13 @@ public interface Constants {
     public static final String TECHBD_VERSION = "techBdVersion";
     public static final String DATA_LEDGER_TRACKING = "dataLedgerTracking";
     public static final String DATA_LEDGER_DIAGNOSTICS = "dataLedgerDiagnostics";
+
+// Constants for historical-replay endpoint 
+    public static final String HISTORICAL_REPLAY_DATA_LEDGER = "historicalReplayDataLedger";
+    public static final String HISTORICAL_REPLAY_OO_SIZE = "historicalReplayOoSize";
+    public static final String OO_SIZE_FULL = "full";
+    public static final String OO_SIZE_LITE = "lite";
+    public static final String OO_SIZE_NONE = "none";
+
+
 }

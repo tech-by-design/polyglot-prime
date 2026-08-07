@@ -7,6 +7,7 @@ public class Constant {
     /** Stateless URLs */
     public static final String[] STATELESS_API_URLS = {
             "/Bundle", "/Bundle/**",
+            "/historical-replay/Bundle/**",
             "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
             "/Hl7/v2", "/Hl7/v2/",
             "/api/expect", "/api/expect/**"
