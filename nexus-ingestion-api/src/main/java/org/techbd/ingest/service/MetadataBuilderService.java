@@ -126,6 +126,7 @@ public class MetadataBuilderService {
             message.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
         }
         message.put("messageGroupId", context.getMessageGroupId());
+        message.put("originalQueue", context.getQueueUrl());
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());
         }
