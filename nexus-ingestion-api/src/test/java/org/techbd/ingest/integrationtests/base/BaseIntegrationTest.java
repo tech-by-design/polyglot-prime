@@ -124,8 +124,8 @@ public abstract class BaseIntegrationTest {
                 registry.add("PORT_CONFIG_S3_BUCKET", () -> PORT_CONFIG_BUCKET);
                 registry.add("PORT_CONFIG_S3_KEY", () -> PORT_CONFIG_KEY);
                 registry.add("AWS_REGION", localStack::getRegion);
-                registry.add("SPRING_PROFILES_ACTIVE", () -> "test");
-
+                registry.add("spring.profiles.active", () -> "test");
+                System.setProperty("SPRING_PROFILES_ACTIVE", "test");
                 System.setProperty("aws.accessKeyId", localStack.getAccessKey());
                 System.setProperty("aws.secretAccessKey", localStack.getSecretKey());
         }
