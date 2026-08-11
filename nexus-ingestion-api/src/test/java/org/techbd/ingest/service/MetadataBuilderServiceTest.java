@@ -136,7 +136,8 @@ public class MetadataBuilderServiceTest {
                 .containsEntry("s3ObjectId", "objectKey")
                 .containsEntry("s3DataObjectPath", "s3://bucket/file.txt")
                 .containsEntry("requestUrl", "/upload")
-                .containsEntry("timestamp", "1716899999999");
+                .containsEntry("timestamp", "1716899999999")
+                .containsEntry("originalQueue", context.getQueueUrl());
 
         assertThat(message).doesNotContainKey("s3Response");
     }
