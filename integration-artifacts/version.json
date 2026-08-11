@@ -16,6 +16,13 @@
     },
     {
       "type": "FHIR",
+      "channel": "FhirBundleHistoricalReplay.xml",
+      "version": "0.1.0",
+      "editedby": "jewelbonnie",
+      "date": "2026-08-11"
+    },
+    {
+      "type": "FHIR",
       "channel": "FhirBundleReplay.xml",
       "version": "0.1.5",
       "editedby": "Nikhithaprojects9696",
@@ -115,9 +122,9 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.25",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-07-20"
+      "version": "0.2.26",
+      "editedby": "jewelbonnie",
+      "date": "2026-08-11"
     },
     {
       "type": "MCO",
