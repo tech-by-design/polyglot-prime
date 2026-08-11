@@ -17,17 +17,6 @@ VALUES
 ON CONFLICT (mnu_code) DO NOTHING;
 
 /* Role insertion */
-/*INSERT INTO techbd_udi_ingress.idp_roles
-(role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
-VALUES
-('rl_base', 'Base', 'Base', 'Base role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_reporting', 'Reporting', 'Reporting', 'Reporting role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_offshore_dev', 'offshore_dev', 'Offshore Dev', 'offshore_dev role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_qe_tenant', 'qe_tenant', 'QE Admin', 'qe_tenant role', FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_super_admin', 'super_admin', 'Super Admin', 'super_admin role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_mco_user', 'mco_user', 'MCO User', 'mco_user role', TRUE, TRUE, 'Fusion Auth', CURRENT_USER)
-ON CONFLICT (role_code) DO NOTHING;*/
-
 IF EXISTS (SELECT 1 FROM techbd_udi_ingress.idp_roles WHERE role_code = 'rl_base') THEN
     TRUNCATE TABLE techbd_udi_ingress.idp_roles RESTART IDENTITY CASCADE;
 END IF;
@@ -35,13 +24,24 @@ END IF;
 INSERT INTO techbd_udi_ingress.idp_roles
 (role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
 VALUES
-('rl_1115_user', '1115_User', '1115 User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_nyec_admin', 'NYeC_Admin', 'NYeC Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_offshore_admin', 'Offshore_Admin', 'Offshore Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_tenant_admin', 'Tenant_Admin', 'Tenant Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_super_admin', 'Super_Admin', 'Super Admin', NULL, TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
-('rl_mco_user', 'MCO_User', 'MCO User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER)
+('rl_1115_user', '1115 User', '1115 User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_nyec_admin', 'NYeC Admin', 'NYeC Admin', NULL, TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_offshore_admin', 'Offshore Admin', 'Offshore Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_tenant_admin', 'Tenant Admin', 'Tenant Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_super_admin', 'Super Admin', 'Super Admin', NULL, TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_mco_user', 'MCO User', 'MCO User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER)
 ON CONFLICT (role_code) DO NOTHING;
+
+UPDATE techbd_udi_ingress.idp_roles
+SET role_name = REPLACE(role_name, '_', ' ')
+WHERE role_code IN (
+    'rl_1115_user',
+    'rl_nyec_admin',
+    'rl_offshore_admin',
+    'rl_tenant_admin',
+    'rl_super_admin',
+    'rl_mco_user'
+);
 
 /* Tenant insertion - QE*/
 INSERT INTO techbd_udi_ingress.tenants
