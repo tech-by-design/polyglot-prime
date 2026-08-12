@@ -2,12 +2,12 @@
   <id>e17a4c92-8f3d-4b6a-9c21-5d7f0a2b6e44</id>
   <nextMetaDataId>7</nextMetaDataId>
   <name>FhirBundleHistoricalReplay</name>
-  <description>Version: 1.0.0
-Historical Replay endpoint (port 8002), base path /historical-replay/Bundle. Validates FHIR bundles against the current IG version, same as FhirBundlleSubmission, but adds two optional query parameters:
+  <description>Version: 0.1.1
+Historical Replay endpoint (port 9007), base path /historical-replay/Bundle. Validates FHIR bundles against the current IG version, same as FhirBundlleSubmission, but adds two optional query parameters:
 - dataLedger=true|false (default true): &quot;true&quot;/omitted behaves exactly as today (sends to NYeC Data Ledger, subject to DATA_LEDGER_TRACKING config); &quot;false&quot; skips the Data Ledger call entirely.
 - ooSize=full|lite|none (default full): &quot;full&quot; returns the complete OperationOutcome (errors, warnings, info) exactly as today; &quot;lite&quot; returns an OperationOutcome containing only fatal/error issues; &quot;none&quot; returns a plain HTTP 200 acknowledgement with no OperationOutcome body.
 Everything else (secrets/config lookups, FHIR validation forward, DataLake forward, DB registration, Data Ledger payload shape) is unchanged from FhirBundlleSubmission.</description>
-  <revision>14</revision>
+  <revision>20</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -49,7 +49,7 @@ Everything else (secrets/config lookups, FHIR validation forward, DataLake forwa
       </pluginProperties>
       <listenerConnectorProperties version="26.6.0">
         <host>0.0.0.0</host>
-        <port>8002</port>
+        <port>9007</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="26.6.0">
         <responseVariable>finalResponse</responseVariable>
@@ -2752,7 +2752,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1786379095904</time>
+        <time>1786526375015</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2761,5 +2761,21 @@ return;</undeployScript>
       </pruningSettings>
       <userId>10</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>f4893a11-a7d2-42ab-88d9-6fc75c96048c</id>
+        <name>0_1_1</name>
+        <channelIds>
+          <string>48b99efd-7a7d-4ec3-b145-d3bb0a990992</string>
+          <string>e17a4c92-8f3d-4b6a-9c21-5d7f0a2b6e44</string>
+        </channelIds>
+        <backgroundColor>
+          <red>128</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
