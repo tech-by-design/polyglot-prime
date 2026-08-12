@@ -1,7 +1,9 @@
 name: FHIR Server Compile
 on:
   push:
-    branches: [ "main" ]
+    branches:
+    - main
+    - 0.1181.0-hotfix
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
