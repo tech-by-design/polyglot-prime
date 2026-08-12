@@ -64,7 +64,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
   - `constraints`:
-    - `pattern` `^\d{5}(-\d{4})?$`
+    - `pattern` `^\d{5}(-?\d{4})?$`
 ### `FACILITY_COUNTY`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.district  & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
@@ -524,7 +524,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^\d{5}(-\d{4})?$`
+    - `pattern` `^\d{5}(-?\d{4})?$`
 ### `COUNTY`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').address.district
   - `type` string
