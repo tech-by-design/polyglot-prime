@@ -95,7 +95,7 @@ public class FusionAuthUserAuthorizationFilter extends OncePerRequestFilter {
                             session.setAttribute(Constant.USER_ROLE, role);
                             session.setAttribute(Constant.SUPER_ROLE, faUser.isSuperRole());
                             session.setAttribute(Constant.ROLE_PERMISSIONS, permissions);
-                            if(role != null && !role.isBlank() &"Super_Admin".equalsIgnoreCase(role)){ 
+                            if(role != null && !role.isBlank() && "Super Admin".equalsIgnoreCase(role)){ 
                                session.setAttribute("configAccess", true);                           
                              }
                             LOG.info(

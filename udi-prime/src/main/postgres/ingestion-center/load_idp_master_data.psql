@@ -52,8 +52,7 @@ VALUES
 (gen_random_uuid()::text, 'netspective', 'QA/DEV Netspective', true, CURRENT_USER, 'Fusion Auth', '8c678000-0940-4e68-af70-4f3e9ec38290'),
 (gen_random_uuid()::text, 'partner-test', 'QA/DEV partner-test', true, CURRENT_USER, 'Fusion Auth', '67906aaf-1c84-4fcf-a6fb-7bdb979f4361'),
 (gen_random_uuid()::text, 'partner-test-qa', 'QA/DEV partner-test-qa', true, CURRENT_USER, 'Fusion Auth', 'a70df92f-3bb0-41d7-a3b2-cca7e26f288d'),
-(gen_random_uuid()::text, 'qa_nexus_csv', 'QA/DEV qa_nexus_CSV', true, CURRENT_USER, 'Fusion Auth', 'fdd112e4-871d-4c0b-b27e-a67ee3dfb38e'),
-(gen_random_uuid()::text, 'qa_qa_12.4_csv_3', 'QA/DEV qa_qa_12.4_CSV_3', true, CURRENT_USER, 'Fusion Auth', 'cb46df2c-1297-44e7-92cc-d664a5025bd3')
+(gen_random_uuid()::text, 'qa_nexus_csv', 'QA/DEV qa_nexus_CSV', true, CURRENT_USER, 'Fusion Auth', 'fdd112e4-871d-4c0b-b27e-a67ee3dfb38e')
 ON CONFLICT (tenant_name) DO NOTHING;
 
 DELETE FROM techbd_udi_ingress.tenants
@@ -63,7 +62,26 @@ WHERE tenant_name IN (
     'healtheconn-fusion',
     'healthelink-fusion',
     'healthix-fusion',
-    'hixny-fusion'
+    'hixny-fusion',
+	'qa_qa_12.4_csv_3'
+);
+
+UPDATE techbd_udi_ingress.tenants
+SET tenant_displayname = CASE tenant_name
+    WHEN 'netspective-qa' THEN 'QA Netspective'
+    WHEN 'netspective-dev' THEN 'DEV Netspective'
+    WHEN 'netspective' THEN 'QA/DEV Netspective'
+    WHEN 'partner-test' THEN 'QA/DEV partner-test'
+    WHEN 'partner-test-qa' THEN 'QA/DEV partner-test-qa'
+    WHEN 'qa_nexus_csv' THEN 'QA/DEV qa_nexus_CSV'
+END
+WHERE tenant_name IN (
+    'netspective-qa',
+    'netspective-dev',
+    'netspective',
+    'partner-test',
+    'partner-test-qa',
+    'qa_nexus_csv'
 );
 
 /* Tenant insertion - MCO*/
