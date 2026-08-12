@@ -203,6 +203,17 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
         void testValidateTestShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
                 validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
         }
+        @Test
+        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateTestShinnyIG_PRAPAREALLAHCScreeningExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-PRAPAREALLAHCScreeningExample.json");
+        }
+
+        @Test
+        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateTestShinnyIG_PRAPAREANDAHCScreeningExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-PRAPAREANDAHCScreeningExample.json");
+        }
                 
 
         private void validateFile(String filePath) throws IOException {
