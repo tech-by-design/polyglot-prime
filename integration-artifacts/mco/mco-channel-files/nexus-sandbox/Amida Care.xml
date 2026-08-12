@@ -2,9 +2,9 @@
   <id>85774252-b1b7-4df2-84bc-d2087d3c28f8</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.6
-Channel Map issue fixed.</description>
-  <revision>40</revision>
+  <description>Version: 0.1.7
+Db insertion to mco_record table in file rejection.</description>
+  <revision>81</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +59,7 @@ Channel Map issue fixed.</description>
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>txd-sbx-mco-sftp-inbound/bridgelink-inbound/AMI</host>
+      <host>${s3BucketName}/bridgelink-inbound/AMI</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -159,7 +159,6 @@ Channel Map issue fixed.</description>
           mco_id = mcoIdResult.getString(1);
           mco_name = mcoIdResult.getString(2);
         }
-        logger.info(&quot;Mco name : &quot; + mco_name);
         channelMap.put(&quot;mcoId&quot;, mco_id);
         channelMap.put(&quot;mcoName&quot;, mco_name);
       } catch (err) {
@@ -198,8 +197,6 @@ Channel Map issue fixed.</description>
         channelMap.put(&quot;lambdaStackTrace&quot;, errorTrace);
       } else {
         var isInvalidFile = false;
-  
-  
         var failedDueToFormat = false;
         var failedDueToConvention = false;
   
@@ -301,7 +298,6 @@ Channel Map issue fixed.</description>
     if (shouldSkipAllDestinations == true) {
   var isReprocessable=channelMap.get(&quot;isReprocessable&quot;);
   if($(&quot;batchComplete&quot;) == true &amp;&amp; isReprocessable == true ){
-    logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
       &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
@@ -330,11 +326,9 @@ Channel Map issue fixed.</description>
     new Thread(function () {
       try {
         // Make the API request in a separate thread to prevent blocking the main thread
-     logger.info(&quot;Waiting before executing reprocess http call&quot;);
     Thread.sleep(3000); // Delay in milliseconds (3000 ms = 3 seconds)
     
     // Make the API request after the delay
-    logger.info(&quot;executing reprocess http call&quot;);
         client.execute(postRequest);
       } catch (apiErr) {
         logger.error(&quot;API request failed: &quot; + apiErr.message);
@@ -423,7 +417,6 @@ Channel Map issue fixed.</description>
           firstLine.length &lt;= 1 ||
           firstLine.toString().toLowerCase() != header.toString().toLowerCase()
         ) {
-          logger.info(&quot;ERROR: Invalid Header&quot;);
           channelMap.put(&quot;fileRejected&quot;, true);
           isAlreadyExistError = true;
           channelMap.put(&quot;invalidFileReason&quot;, [&quot;EC005&quot;]);
@@ -441,7 +434,6 @@ Channel Map issue fixed.</description>
   
       if (currentBatch == 1) {
         try {
-          logger.info(&quot;Member records : &quot; + lines.toString());
           //Get the lines from raw message
           var trimmedLines = msg.toString().trim().split(&quot;\n&quot;);
           //Remove the header line using shift 
@@ -593,7 +585,6 @@ Channel Map issue fixed.</description>
   
               if (batchIdForResubmissionFile != null) {
                 isResubmissionAlreadyExistError = true;
-                logger.info(&quot;ERROR: Received an already processed file&quot;);
                 channelMap.put(&quot;fileRejected&quot;, true);
                 isAlreadyExistError = true;
                 channelMap.put(&quot;isFileAlreadyExist&quot;, true);
@@ -620,10 +611,8 @@ Channel Map issue fixed.</description>
               }
               //If batch_id is null, the file doesn&apos;t exist. Treat it as a new file
               if (batch_id == null) {
-              	logger.info(&quot;Generated batch_id null stmt = &quot; + batch_id);
                 //If the file has RS_ but the original file not found, reject the file
-                if (isResubmission != -1) {
-                  logger.info(&quot;ERROR: Received an already processed file&quot;);
+                if (isResubmission != -1) {;
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
                   channelMap.put(&quot;isFileAlreadyExist&quot;, true);
@@ -634,14 +623,10 @@ Channel Map issue fixed.</description>
                     &quot;insert into mco_data.mco_records(root_file_name, created_on_utc, updated_on_utc, total_records, processed_count, errored_count, is_active, status, tenant_id, file_size_in_kb, resubmitted_count, sent_to_datalake_time, qa_completed_time, sent_to_mco_time, reporting_month) VALUES (?, current_timestamp, current_timestamp, ?, null, null, &apos;1&apos;, &apos;INPROGRESS&apos;, ?, ?, ?, null, null, null, ?::varchar) returning batch_id&quot;,
                     [fileName, 0, mco_id, 0, 0, reportingMonth]
                   );
-                  logger.info(&quot;Before batch_insert.next()&quot;);
 
 					batch_id = batch_insert.next()
 					    ? batch_insert.getLong(&quot;batch_id&quot;)
 					    : null;
-					
-					logger.info(&quot;After batch_insert.next()&quot;);
-					logger.info(&quot;batch_id = &quot; + batch_id);
                   //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
                   batch_details_insert = dbConn.executeCachedQuery(
                     &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;INPROGRESS&apos;, ?, ?::varchar, ?) returning batch_details_id&quot;,
@@ -654,7 +639,6 @@ Channel Map issue fixed.</description>
               } else {
                 //If it&apos;s not a resubmission file, but the file is already present in the DB, it should be a file level rejection
                 if (isResubmission === -1 &amp;&amp; (statusFromDb != &apos;INPROGRESS&apos; &amp;&amp; totalRecordsFromDb != 0)) {
-                  logger.info(&quot;ERROR: Received an already processed file&quot;);
                   channelMap.put(&quot;fileRejected&quot;, true);
                   isAlreadyExistError = true;
                   channelMap.put(&quot;isFileAlreadyExist&quot;, true);
@@ -695,11 +679,8 @@ Channel Map issue fixed.</description>
                 }
                 //If it&apos;s a resubmission file, update the resubmission count for the file in the DB
                 else {
-                  logger.info(reportingMonthFromDb + &quot; : &quot; + reportingMonth);
-                  logger.info(reportingMonthFromDb != reportingMonth);
                   //If it&apos;s a resubmission file, but the original file already is fully processed, reject the resubmission file
                   if (isResubmission != -1 &amp;&amp; statusFromDb == &quot;FULLY_PROCESSED&quot;) {
-                    logger.info(&quot;ERROR: Received an already processed file&quot;);
                     channelMap.put(&quot;fileRejected&quot;, true);
                     isAlreadyExistError = true;
                     channelMap.put(&quot;isFileAlreadyExist&quot;, true);
@@ -800,7 +781,6 @@ Channel Map issue fixed.</description>
             mco_id = mcoIdResult.getString(1);
             mco_name = mcoIdResult.getString(2);
           }
-          logger.info(&quot;Mco name : &quot; + mco_name);
           if (mco_id &amp;&amp; mco_name) {
             channelMap.put(&quot;mcoId&quot;, mco_id);
             channelMap.put(&quot;mcoName&quot;, mco_name);
@@ -861,6 +841,7 @@ Channel Map issue fixed.</description>
             } else {
               if (channelMap.get(&quot;eofFound&quot;)) {
               } else {
+                
             var obj = {};
             //Loop over the pre defined header and map the header values with data values from the record
             for (var j = 0; j &lt; header.length; j++) {
@@ -897,6 +878,8 @@ Channel Map issue fixed.</description>
           channelMap.put(&quot;msgObj&quot;, JSON.stringify(msgObj));
   
           var errorMessages = [];
+
+          
   
           for (var i = 0; i &lt; msgObj.length; i++) {
             //Get current row number with respect to the actual file level instead of the batch level
@@ -1891,7 +1874,6 @@ Channel Map issue fixed.</description>
                 }
                 //If the error code exists in the error obj already, just push row numbers
                 else {
-                  logger.info(&quot;errors : &quot; + JSON.stringify(errors));
                   errors[errorsToAppend[k][&quot;code&quot;]][&quot;rows&quot;].push(rowNumber);
                 }
   
@@ -1916,6 +1898,8 @@ Channel Map issue fixed.</description>
   
             }
           }
+
+        
   
           if (msgObj &amp;&amp; msgObj.length &gt; 0) {
             channelMap.put(&quot;header&quot;, header.toString().replace(/,/g, &quot;|&quot;));
@@ -1929,7 +1913,6 @@ Channel Map issue fixed.</description>
             channelMap.put(&quot;errors&quot;, errors);
             channelMap.put(&quot;errorData&quot;, errorMessages); //Actual lines
             channelMap.put(&quot;validData&quot;, validData);
-            logger.info(&quot;Error Code Json : &quot; + errorMessages.toString());
   
             //For Database Inserts/Updates
             channelMap.put(&quot;errorCount&quot;, Object.keys(errorMessages).length);
@@ -1941,12 +1924,6 @@ Channel Map issue fixed.</description>
                 if ($(&quot;no_of_records&quot;)) {
                 recordCount += $(&quot;no_of_records&quot;);
                 }
-  
-                logger.info(
-                  &quot;Error count from DB : &quot; +
-                  channelMap.get(&quot;erroredCountFromDb&quot;)
-                );
-                logger.info(&quot;Error count : &quot; + recordCount);
                 if (channelMap.get(&quot;erroredCountFromDb&quot;) != recordCount) {
                   try {
                     dbConn = DatabaseConnectionFactory.createDatabaseConnection(
@@ -2007,7 +1984,6 @@ Channel Map issue fixed.</description>
       }
       //If file already exist, don&apos;t process anything. But do not clear global channel map yet since we should stop processing until all batches are skipped
       else if (isFileAlreadyExist == true &amp;&amp; currentBatch == 1) {
-        logger.info(&quot;First Batch : &quot; + isFileAlreadyExist);
         destinationSet.remove(2); //Remove original file destination
         destinationSet.remove(3); //Remove DB Calls destination
         destinationSet.remove(4); //Remove success destination
@@ -2020,8 +1996,6 @@ Channel Map issue fixed.</description>
       }
       //If this is the last batch, clear global channel map so that next set of files can process with a fresh state
       else if (isFileAlreadyExist == true &amp;&amp; $(&quot;batchComplete&quot;) == true) {
-        logger.info(&quot;End of the batch, hence allow clearing global channel map&quot;);
-        logger.info(&quot;last batch&quot; + isFileAlreadyExist);
         destinationSet.remove(2); //Remove original file destination
         destinationSet.remove(3); //Remove DB Calls destination
         destinationSet.remove(4); //Remove success destination
@@ -2055,15 +2029,12 @@ Channel Map issue fixed.</description>
   } catch (err) {
   // Example JSON data you want to send
   if (errorMessageThrown.includes(err.message)) {
-  logger.info(err.message);
-  logger.info(errorMessageThrown);
   // Start the new thread immediately, non-blocking
   
   channelMap.put(&quot;isReprocessable&quot;, true);
   channelMap.put(&quot;skipAllDestinations&quot;, true);
   channelMap.put(&quot;currentBatch&quot;, currentBatch);
   if($(&quot;batchComplete&quot;) == true ){
-    logger.info(&quot;inside if&quot;)
     var jsonData = {
       &quot;fileName&quot;: $(&quot;originalFilename&quot;),
       &quot;mcoCode&quot;: channelMap.get(&quot;mco_code&quot;)
@@ -2106,11 +2077,6 @@ Channel Map issue fixed.</description>
   
   // **Throw the error immediately** after triggering the API call
   throw new Error(&quot;Error handled by API call. Stopping further processing.&quot;);
-  
-  
-  
-  
-  // Log the response
   }
   
   
@@ -2129,8 +2095,7 @@ Channel Map issue fixed.</description>
       if (typeof fileName === &quot;undefined&quot;) { fileName = $(&quot;originalFilename&quot;); }
       if (typeof batch_id === &quot;undefined&quot;) { batch_id = null; }
       if (typeof mco_id === &quot;undefined&quot;) { mco_id = null; }
-      logger.info(&quot;============== INSERTING INTO mco_record_details 1 ==============&quot;);
-	logger.info(&quot;batch_id           : &quot; + batch_id);
+    
       //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
       batch_details_insert = dbConn.executeCachedQuery(
         &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?, null, ?) returning batch_details_id&quot;,
@@ -2165,6 +2130,38 @@ Channel Map issue fixed.</description>
       }
     }
   }
+  
+
+  if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;)) { 
+    var fileName = $(&quot;originalFilename&quot;);
+    var reportingMonth = java.lang.String.valueOf(calculateReportingMonthNew());
+     try {
+        if (!dbConn) {
+          dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+            jdbdcDriver,
+            jbdcUrl,
+            dbName,
+            dbPassword
+          );
+        }
+      }catch (err) {
+          logger.info(err);
+          throw err;
+      }
+          batch_insert = dbConn.executeCachedQuery(
+                          &quot;insert into mco_data.mco_records(root_file_name, created_on_utc, updated_on_utc, total_records, processed_count, errored_count, is_active, status, tenant_id, file_size_in_kb, resubmitted_count, sent_to_datalake_time, qa_completed_time, sent_to_mco_time, reporting_month) VALUES (?, current_timestamp, current_timestamp, ?, null, null, &apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) returning batch_id&quot;,
+                          [fileName, 0, mco_id, 0, 0, reportingMonth]
+                        );
+
+                batch_id = batch_insert.next()
+                    ? batch_insert.getLong(&quot;batch_id&quot;)
+                    : null;
+                    channelMap.put(&quot;batch_id&quot;, batch_id);
+     }
+       
+        
+
+ 
   
   //DOB Validation
   function dateValidCheck(dateString) {
@@ -2239,7 +2236,7 @@ Channel Map issue fixed.</description>
           var pastMonth = date.substring(4, 6);
           var pastYear = date.substring(0, 4);
           var pastDate = date.substring(6, 8)
-          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;)
+          var reportingMonth=channelMap.get(&quot;reportingMonth&quot;);
           var monthOfReporting = reportingMonth.substring(0, 2);
           var yearOfReporting = reportingMonth.substring(3, 7);
           const startDateOfReportingMonth = new Date(yearOfReporting, monthOfReporting - 1, 1);
@@ -2354,7 +2351,49 @@ Channel Map issue fixed.</description>
   
     var folderName = months[month] + &quot;-&quot; + year;
     return folderName;
-  }</script>
+  }
+
+
+  function calculateReportingMonthNew() {
+
+    var currentDate = new Date();
+
+    var day = currentDate.getDate();
+    var month = currentDate.getMonth() + 1; // 1-12
+    var year = currentDate.getFullYear();
+
+    var startDate = parseInt(configurationMap.get(&quot;startDate&quot;));
+    var endDate = parseInt(configurationMap.get(&quot;endDate&quot;));
+
+    // Handle reporting window
+    if (startDate &gt;= endDate) {
+
+        if (day &gt;= startDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+
+    } else {
+
+        if (day &gt; endDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+    }
+
+    // Format month as 2 digits (01, 02, ..., 12)
+    var reportingMonth = (&quot;0&quot; + month).slice(-2) + &quot;-&quot; + year;
+
+    return reportingMonth;
+}</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
@@ -2486,6 +2525,7 @@ try {
     error += Number($(&quot;errorCount&quot;));
   }
   channelMap.put(&quot;totalErrors&quot;, error);
+  logger.info(&quot;total erros in first destination&quot;+error);
 
   var process = channelMap.get(&quot;totalProcess&quot;);
   if (process === null || process === undefined) { process = 0; }
@@ -3822,7 +3862,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
 	logger.info((totalRecords * limit) / 100 &lt;= errorRecords);
 	return (totalRecords * limit) / 100 &lt;= errorRecords;
 }
-</script>
+logger.info(&quot;errors in db calls destin&quot;+errorRecords);</script>
       </properties>
       <transformer version="26.6.0">
         <elements/>
@@ -3968,7 +4008,9 @@ try {
   //Since config map store it as string, parse it into json
   var errorCodes = JSON.parse(errorCodesString);
 
-  var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+  var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
+
+  logger.info(&quot;invalidFileReason&quot;+rejectionReason);
 
 var errorCodesToAppend = &quot;&quot;;
 var errorDescToAppend = &quot;&quot;;
@@ -3985,6 +4027,8 @@ if(rejectionReason) {
 		}
 		
 	} 
+	 logger.info(&quot;errorCodesToAppend&quot;+errorCodesToAppend);
+	  logger.info(&quot;errorDescToAppend&quot;+errorDescToAppend);
 }
 
 var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).substring(0, 19);
@@ -4012,6 +4056,7 @@ var currentTime = new Date().toISOString().replace(&quot;T&quot;,&quot; &quot;).
     }
     //$(&apos;batch_id&apos;)/$(&apos;mcoId&apos;) resolve to &quot;&quot; (not null) when unset, which fails the ?::bigint cast below
     var mirthBatchId = $(&quot;batch_id&quot;) || null;
+    logger.info(&quot;batch_id inside  send rejection receipt&quot;+mirthBatchId);
     var mirthMcoId = $(&quot;mcoId&quot;) || null;
     //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 	  batch_details_insert = dbConn.executeCachedQuery(
@@ -4279,7 +4324,7 @@ try {
 		var mirthMcoId = $(&quot;mcoId&quot;) || null;
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
-			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, teant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
+			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
 			[$(&apos;originalFilename&apos;), 0, 0, mirthBatchId, mirthMcoId]
 		);
 		var new_batch_details_id = batch_details_insert.next()
@@ -4547,10 +4592,35 @@ try {
 
     ccEmails = ccEmailList.join(&quot;,&quot;);
 	}
+try {
+    var smtpConn = SMTPConnection(
+        smtpHostname,
+        smtpPort,
+        0,
+        true,
+        &quot;TLS&quot;,
+        smtpUsername,
+        smtpPassword,
+        fromEmail
+    );
 
 
-	var smtpConn = SMTPConnection(smtpHostname, smtpPort, 0, true, &quot;TLS&quot;, smtpUsername, smtpPassword, fromEmail);
-	smtpConn.send(toEmails, ccEmails, fromEmail, subject, body, &quot;UTF-8&quot;);
+    smtpConn.send(toEmails, ccEmails, fromEmail, subject, body, &quot;UTF-8&quot;);
+
+    logger.info(&quot;Email sent successfully&quot;);
+
+} catch (e) {
+    logger.error(&quot;Email Error: &quot; + e);
+
+    if (e.javaException) {
+        logger.error(&quot;Java Exception: &quot; + e.javaException);
+    }
+
+    throw e;
+}
+
+	//var smtpConn = SMTPConnection(smtpHostname, smtpPort, 0, true, &quot;TLS&quot;, smtpUsername, smtpPassword, fromEmail);
+	//smtpConn.send(toEmails, ccEmails, fromEmail, subject, body, &quot;UTF-8&quot;);
 } catch (err) {
 	try {
 		if (!dbConn) {
@@ -4564,6 +4634,7 @@ try {
 		//$(&apos;batch_id&apos;)/$(&apos;mcoId&apos;) resolve to &quot;&quot; (not null) when unset, which fails the ?::bigint cast below
 		var mirthBatchId = $(&quot;batch_id&quot;) || null;
 		var mirthMcoId = $(&quot;mcoId&quot;) || null;
+		logger.info(&quot;batch_id inside file rejection alert&quot;+mirthBatchId);
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
 			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
@@ -4724,6 +4795,7 @@ var errorTypes = JSON.parse(errorTypesString);
 
 var emailList = JSON.parse(configurationMap.get(&quot;emailList&quot;));
 var isInternal = configurationMap.get(&quot;isTesting&quot;);
+
 
 try {
 	var currentTime = new Date().toISOString().replace(&quot;T&quot;, &quot; &quot;).substring(0, 19);
@@ -5587,6 +5659,7 @@ try {
     [rootFilename]
   );
   batch_id = batch_select.next() ? batch_select.getInt(&quot;batch_id&quot;) : null;
+  logger.info(&quot;batch_id inside file rejection db&quot;+batch_id);
   if (&quot;EC084&quot; in errorJson) {
     //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
     batch_details_insert = dbConn.executeCachedQuery(
@@ -5990,7 +6063,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785754446617</time>
+        <time>1786530792063</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6001,10 +6074,33 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>68649f46-df5a-4930-b034-11a4f00d1f2d</id>
-        <name>0_1_6</name>
+        <id>f19aaa8f-3a0f-4a2e-9eb6-07ff62e65400</id>
+        <name>0_1_7</name>
         <channelIds>
           <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
+          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
+          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+          <string>ba498658-d7f7-4850-b7ba-abba1037906a</string>
+          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+          <string>6b103978-ecba-4c09-9626-3157dc6f3b67</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>48679919-904a-4913-a593-28f19da61615</string>
+          <string>5eaccb1c-1964-470d-bc40-f2955590c068</string>
+          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
