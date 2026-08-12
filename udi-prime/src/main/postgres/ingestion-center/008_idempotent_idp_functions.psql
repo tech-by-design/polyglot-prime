@@ -452,7 +452,7 @@ BEGIN
     SELECT t.tenant_id
     INTO v_tenant_id
     FROM techbd_udi_ingress.tenants t
-    WHERE lower(t.tenant_name) = lower(activeTenant)
+    WHERE lower(t.tenant_displayname) = lower(activeTenant)
       AND t.is_active
     LIMIT 1;
 
