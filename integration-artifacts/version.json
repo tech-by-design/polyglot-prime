@@ -2,17 +2,17 @@
   "channels": [
     {
       "type": "FHIR",
-      "channel": "FhirBundlleSubmission.xml",
-      "version": "0.8.44",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-07-23"
+      "channel": "FhirBundleSubmission.xml",
+      "version": "0.8.45",
+      "editedby": "jewelbonnie",
+      "date": "2026-08-13"
     },
     {
       "type": "FHIR",
       "channel": "FhirBundleValidate.xml",
-      "version": "0.8.21",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-07-07"
+      "version": "0.8.22",
+      "editedby": "jewelbonnie",
+      "date": "2026-08-13"
     },
     {
       "type": "FHIR",
@@ -24,9 +24,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundleReplay.xml",
-      "version": "0.1.5",
-      "editedby": "Nikhithaprojects9696",
-      "date": "2026-07-21"
+      "version": "0.1.6",
+      "editedby": "jewelbonnie",
+      "date": "2026-08-13"
     },
     {
       "type": "CCDA",
