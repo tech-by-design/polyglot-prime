@@ -1,17 +1,18 @@
-<channel version="26.3.1">
+<channel version="26.6.0">
   <id>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>FhirBundlleSubmission</name>
+  <name>FhirBundleSubmission</name>
   <description>
-Version: 0.8.44
-Fixed jdbc username and password issue.</description>
-  <revision>102</revision>
-  <sourceConnector version="26.3.1">
+
+Version 0.8.45
+Restored the channel naming conventions to ensure consistency with the standard naming structure.</description>
+  <revision>110</revision>
+  <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.3.1">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.6.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>true</mutualTlsEnabled>
           <mutualTlsMigrated>true</mutualTlsMigrated>
@@ -41,15 +42,15 @@ Fixed jdbc username and password issue.</description>
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.3.1">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.6.0">
   <authType>NONE</authType>
         </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="26.3.1">
+      <listenerConnectorProperties version="26.6.0">
         <host>0.0.0.0</host>
         <port>9003</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="26.3.1">
+      <sourceConnectorProperties version="26.6.0">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -112,9 +113,9 @@ Fixed jdbc username and password issue.</description>
         </com.mirth.connect.connectors.http.HttpStaticResource>
       </staticResources>
     </properties>
-    <transformer version="26.3.1">
+    <transformer version="26.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
           <name>lookup_manager</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -420,7 +421,7 @@ try {
     DONE
 ********************************************/</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
           <name>FHIR Validation</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -522,22 +523,22 @@ responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="26.3.1">
+    <filter version="26.6.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.1">
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
           <name>Http url and method validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -680,12 +681,12 @@ function notFound() {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.6.0">
         <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.3.1">
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
   <sslEnabled>false</sslEnabled>
             <mutualTlsEnabled>true</mutualTlsEnabled>
             <mutualTlsMigrated>true</mutualTlsMigrated>
@@ -716,7 +717,7 @@ function notFound() {
             <subjectSanFilterPatterns/>
           </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         </pluginProperties>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -892,45 +893,45 @@ function notFound() {
         <charset>UTF-8</charset>
         <socketTimeout>300000</socketTimeout>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.1">
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
             <name>rediection</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -944,12 +945,12 @@ return path != &quot;/tenants&quot;;</script>
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.3.1">
+    <connector version="26.6.0">
       <metaDataId>3</metaDataId>
       <name>dest_datalake</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.3.1">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.3.1">
+        <destinationConnectorProperties version="26.6.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -1137,9 +1138,9 @@ channelMap.put(&quot;datalake_response_message&quot;, dataLakeErrorMessage);
 
 return;</script>
       </properties>
-      <transformer version="26.3.1">
+      <transformer version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.3.1">
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <name>destination_datalake</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -1647,39 +1648,39 @@ function iterableToArrayStr(col) {&#xd;
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.3.1">
+      <responseTransformer version="26.6.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.3.1">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.3.1">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.3.1">
+      <filter version="26.6.0">
         <elements>
-          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.3.1">
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
             <name>redirection</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -2505,7 +2506,7 @@ return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="26.3.1">
+  <properties version="26.6.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
@@ -2583,7 +2584,7 @@ return;</undeployScript>
         <mappingName>validationSeverityLevel</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="26.3.1">
+    <attachmentProperties version="26.6.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -2598,7 +2599,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1784694551819</time>
+        <time>1786595218574</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2606,12 +2607,12 @@ return;</undeployScript>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>8205129f-c796-486f-b8b8-100469ba89c2</id>
-        <name>0_8_44</name>
+        <id>0f5624ef-7756-4c22-b366-85079b53e6be</id>
+        <name>0_8_45</name>
         <channelIds>
           <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
         </channelIds>
