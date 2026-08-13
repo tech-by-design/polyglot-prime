@@ -1,7 +1,7 @@
 {
   "group" : {
     "id" : 5,
-    "name" : "Config-Sensitive",
+    "name" : "Config-sensitive",
     "description" : "Placeholder Template for Configuration-Sensitive Group",
     "version" : "1",
     "cacheSize" : 1000,
