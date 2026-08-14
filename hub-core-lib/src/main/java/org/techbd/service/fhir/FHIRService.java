@@ -163,15 +163,14 @@ public class FHIRService {
             if (null == interactionId) {
                 throw new IllegalArgumentException("Interaction ID must be provided in the request parameters.");
             }
-				final String bundleId = CoreFHIRUtil.extractBundleId(payload, tenantId);
+			final String bundleId = CoreFHIRUtil.extractBundleId(payload, tenantId);
 			final boolean skipDataLedger = isDataLedgerSkipped(requestParameters);
-            LOG.info("Historical Replay | interactionId={} | skipDataLedger={}",
-                    interactionId, skipDataLedger);
+            LOG.info("Send to DataLedger  | interactionId={} | skipDataLedger={} | source={} | requestUri={}",
+                    interactionId, skipDataLedger, source, requestUri);
 			if (!skipDataLedger
 					&& !SourceType.CSV.name().equalsIgnoreCase(source)
 					&& !SourceType.CCDA.name().equalsIgnoreCase(source)
 					&& !SourceType.HL7V2.name().equalsIgnoreCase(source)) {
-                LOG.info("Historical Replay | RECEIVED Data Ledger ENABLED | interactionId={}", interactionId);
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
 					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
@@ -186,7 +185,7 @@ public class FHIRService {
 				coreDataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
 						SourceType.FHIR.name(), null);
 			} else {
-                LOG.info("Historical Replay | RECEIVED Data Ledger SKIPPED | interactionId={}", interactionId);
+                LOG.info("Send to DataLedger  | RECEIVED Data Ledger SKIPPED | interactionId={}", interactionId);
             }
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
@@ -1369,12 +1368,10 @@ public class FHIRService {
 		Map<String,Object> requestParameters,boolean replay) {
     final Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
     try {
-        LOG.debug(
-                "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
-                interactionId, tenantId);
 		final boolean skipDataLedger = isDataLedgerSkipped(requestParameters);
-            LOG.info("Historical Replay | interactionId={} | skipDataLedger={}",
-                    interactionId, skipDataLedger);
+        LOG.info(
+                "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{} skipDataLedger={}",
+                interactionId, tenantId,skipDataLedger);
 		final DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
 				CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(),
 				CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
