@@ -95,7 +95,9 @@ public class QueueResolverImpl implements PortConfigAttributeResolver {
         String overrideQueue = findHeader.apply(headers, "X-TechBd-Queue-Name");
         if (overrideQueue != null && !overrideQueue.isBlank()) {
             try {
-                // Try to resolve the queue via SQS API
+            // Record the raw queue name on the RequestContext so other
+            // components can access the original client-provided value.
+            context.setQueueName(overrideQueue);
                 GetQueueUrlResponse resp = sqsClient.getQueueUrl(
                         GetQueueUrlRequest.builder().queueName(overrideQueue).build());
                 String resolvedQueueUrl = resp.queueUrl();

@@ -126,7 +126,11 @@ public class MetadataBuilderService {
             message.put("fullS3AcknowledgementPath", context.getFullS3AckMessagePath());
         }
         message.put("messageGroupId", context.getMessageGroupId());
-        message.put("originalQueue", context.getQueueUrl());
+        // Prefer the client-provided queue name when available, otherwise fall back to the resolved queue URL
+        String originalQueue = (context.getQueueName() != null && !context.getQueueName().isBlank())
+            ? context.getQueueName()
+            : context.getQueueUrl();
+        message.put("originalQueue", originalQueue);
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());
         }
