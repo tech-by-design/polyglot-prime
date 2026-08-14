@@ -62,6 +62,7 @@ public class RequestContext {
     private String techBdIngestionApiVersion;
     private Map<String,String> additionalParameters;
     private String queueUrl;
+    private String queueName;
     private String sourceId;
     private String msgType;
     private boolean ingestionFailed;
