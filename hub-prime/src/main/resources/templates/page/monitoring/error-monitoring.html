@@ -18,7 +18,7 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = "mco_data";
-        const viewName = "v_error_monitoring";
+        const viewName = "get_error_monitoring";
 
         document.addEventListener("DOMContentLoaded", function () {
             const modalAide = new ModalAide();
@@ -37,12 +37,6 @@
                             sortable: true,
                             filter: "agTextColumnFilter"
                         },
-                        // {
-                        //     headerName: "Batch GUID",
-                        //     field: "batch_guid",
-                        //     sortable: true,
-                        //     filter: "agTextColumnFilter"
-                        // },
                         {
                             headerName: "File Name",
                             field: "root_file_name",

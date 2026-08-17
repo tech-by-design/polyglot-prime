@@ -14,36 +14,13 @@ ON CONFLICT (error_type_name) DO NOTHING;
 * Comprehensive view of Mco Source monitoring * 
 ******************************************************************************************/
 DROP VIEW IF EXISTS mco_data.v_source_monitoring CASCADE;
-CREATE OR REPLACE VIEW mco_data.v_source_monitoring 
+DROP VIEW IF EXISTS mco_data.get_source_monitoring CASCADE;
+CREATE OR REPLACE VIEW mco_data.get_source_monitoring 
 WITH (security_invoker = true) AS
 SELECT
     mr.batch_id,
-    mr.batch_guid,
     mr.tenant_id,
     m.tenant_short_code AS mco_code,
-    CASE
-        WHEN mr.sent_to_mco_time IS NOT NULL THEN 'Sent To MCO'
-        WHEN mr.sent_to_datalake_time IS NOT NULL THEN 'Sent To Data Lake'
-        WHEN mr.qa_completed_time IS NOT NULL THEN 'QA Completed'
-        ELSE 'Received'
-    END AS date_range_type,
- 
-    /*TO_CHAR(
-    CASE
-        WHEN mr.sent_to_mco_time IS NOT NULL THEN mr.sent_to_mco_time
-        WHEN mr.sent_to_datalake_time IS NOT NULL THEN mr.sent_to_datalake_time
-        WHEN mr.qa_completed_time IS NOT NULL THEN mr.qa_completed_time
-        ELSE mr.created_on_utc
-    END,
-    'DD-MM-YYYY HH24:MI:SS'
-    ) AS date_range,*/
-    CASE
-        WHEN mr.sent_to_mco_time IS NOT NULL THEN mr.sent_to_mco_time
-        WHEN mr.sent_to_datalake_time IS NOT NULL THEN mr.sent_to_datalake_time
-        WHEN mr.qa_completed_time IS NOT NULL THEN mr.qa_completed_time
-        ELSE mr.created_on_utc
-    END AS date_range,
-    
     m.tenant_displayname AS mco_name,
     mr.root_file_name,
     mr.status,
@@ -55,22 +32,24 @@ SELECT
         to_date(mr.reporting_month, 'MM-YYYY'),
         'FMMonth YYYY'
     ) AS reporting_month,
-    mr.file_size_in_kb,
     mr.total_records,
     mr.processed_count,
     mr.errored_count,
-    mr.resubmitted_count
- 
+    mr.resubmitted_count,
+    mr.updated_on_utc 
 FROM mco_data.mco_records mr
 INNER JOIN techbd_udi_ingress.tenants m
-    ON mr.tenant_id = m.tenant_id;
+    ON mr.tenant_id = m.tenant_id
+order BY    
+mr.created_on_utc DESC;    
 
 
 /*******************************************************************************************
 * Comprehensive view of Mco Error monitoring * 
 ******************************************************************************************/
 drop view if exists mco_data.v_error_monitoring cascade;
-create or replace view mco_data.v_error_monitoring 
+drop view if exists mco_data.get_error_monitoring cascade;
+create or replace view mco_data.get_error_monitoring 
 WITH (security_invoker = true) AS
  select
 	mrel.batch_id,
@@ -118,3 +97,190 @@ SELECT
     batch_id::text AS batch_id
 FROM mco_data.mco_record_details 
 ORDER BY created_on_utc DESC;    
+
+/*** MCO Summary Metric ***/
+
+drop function if exists mco_data.get_mco_dashboard_metrics(text);
+
+create or replace function mco_data.get_mco_dashboard_metrics(p_reporting_month text default null)
+returns table (
+    selected_reporting_month text,
+    recent_reporting_month text,
+    is_selected boolean,
+    total_mco bigint,
+    total_files_received bigint,
+    inprogress bigint,
+    fully_processed bigint,
+    errored bigint,
+    records_received bigint,
+    records_processed bigint,
+    records_with_errors bigint
+)
+language plpgsql
+as $function$
+
+declare
+    v_selected_month text;
+
+v_recent_month text;
+
+begin
+
+    /*
+     * Get the latest reporting month from the database.
+     */
+        select
+        mr.reporting_month
+        into
+        v_recent_month
+    from
+        mco_data.mco_records as mr
+    where
+        mr.reporting_month is not null
+    order by
+        TO_DATE(mr.reporting_month, 'MM-YYYY') desc
+    limit 1;
+
+    /*
+    * If reporting month is passed, use it.
+    * Otherwise, use the latest reporting month.
+    */
+    if p_reporting_month is not null
+and trim(p_reporting_month) <> '' then
+
+        v_selected_month := trim(p_reporting_month);
+else
+
+        v_selected_month := v_recent_month;
+end if;
+
+    /*
+    * Return dashboard data for the selected reporting month.
+    */
+    return QUERY
+
+    select
+	v_selected_month as selected_reporting_month,
+	v_recent_month as recent_reporting_month,
+	true as is_selected,
+	COUNT(distinct mr.tenant_id) as total_mco,
+	COUNT(*) as total_files_received,
+	COUNT(*) filter (
+where
+	mr.status = 'INPROGRESS'
+        ) as inprogress,
+	COUNT(*) filter (
+where
+	mr.status = 'FULLY_PROCESSED'
+        ) as fully_processed,
+	COUNT(*) filter (
+where
+	mr.status = 'ERRORED'
+        ) as errored,
+	coalesce(
+            SUM(mr.total_records),
+            0
+        )::bigint as records_received,
+	coalesce(
+            SUM(mr.processed_count),
+            0
+        )::bigint as records_processed,
+	coalesce(
+            SUM(mr.errored_count),
+            0
+        )::bigint as records_with_errors
+from
+	mco_data.mco_records as mr
+where
+	mr.reporting_month = v_selected_month
+group by
+	mr.reporting_month;
+end;
+$function$;
+
+
+/**** Most Recent MCO Transactions ****/
+
+DROP VIEW IF EXISTS mco_data.mco_most_recent_transactions CASCADE;
+CREATE OR REPLACE VIEW mco_data.mco_most_recent_transactions 
+WITH (security_invoker = true) AS 
+SELECT
+    tenant_displayname,
+    created_on_utc,
+    relative_time
+FROM (
+    SELECT DISTINCT ON (mr.tenant_id)
+        t.tenant_displayname,
+        mr.created_on_utc,
+        CASE
+            WHEN age(current_timestamp, mr.created_on_utc) < interval '1 minute'
+                THEN 'Just now'
+            WHEN age(current_timestamp, mr.created_on_utc) < interval '1 hour'
+                THEN EXTRACT(MINUTE FROM age(current_timestamp, mr.created_on_utc))::int
+                     || ' minutes ago'
+            WHEN age(current_timestamp, mr.created_on_utc) < interval '1 day'
+                THEN EXTRACT(HOUR FROM age(current_timestamp, mr.created_on_utc))::int
+                     || ' hours ago'
+            WHEN age(current_timestamp, mr.created_on_utc) < interval '1 month'
+                THEN EXTRACT(DAY FROM age(current_timestamp, mr.created_on_utc))::int
+                     || ' days ago'
+            WHEN age(current_timestamp, mr.created_on_utc) < interval '1 year'
+                THEN EXTRACT(MONTH FROM age(current_timestamp, mr.created_on_utc))::int
+                     || ' months ago'
+            ELSE
+                EXTRACT(YEAR FROM age(current_timestamp, mr.created_on_utc))::int
+                     || ' years ago'
+        END AS relative_time
+    FROM mco_data.mco_records mr
+    JOIN techbd_udi_ingress.tenants t
+        ON mr.tenant_id = t.tenant_id
+    WHERE mr.created_on_utc IS NOT NULL
+    ORDER BY mr.tenant_id, mr.created_on_utc DESC
+) latest
+ORDER BY created_on_utc DESC;
+
+
+
+-- View-based approach for fetching error logs by batch details ID
+DROP VIEW IF EXISTS mco_data.v_mco_error_logs CASCADE;
+DROP VIEW IF EXISTS mco_data.get_mco_error_logs CASCADE;
+
+CREATE OR REPLACE VIEW mco_data.get_mco_error_logs
+WITH (security_invoker = true) AS
+SELECT
+    mrel.batch_id,
+    mrel.batch_details_id,
+    mrel.created_on_utc,
+    mrel.error_json
+FROM mco_data.mco_record_error_logs mrel
+ORDER BY mrel.created_on_utc DESC;
+
+
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_error_logs(text);
+
+CREATE OR REPLACE FUNCTION mco_data.get_mco_error_logs(
+    p_batch_details_id text
+)
+RETURNS TABLE (
+    batch_id text,
+    created_on_utc timestamptz,
+    error_json jsonb,
+    error_type_name text
+)
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT
+        mrel.batch_id::text,
+        mrel.created_on_utc,
+        mrel.error_json,
+        mrt.error_type_name
+    FROM mco_data.mco_record_error_logs mrel
+    JOIN mco_data.mco_error_types mrt ON
+    mrel.error_type_id = mrt.error_type_id 
+    WHERE mrel.batch_details_id = p_batch_details_id::integer
+    ORDER BY mrel.created_on_utc DESC;
+END;
+$function$;

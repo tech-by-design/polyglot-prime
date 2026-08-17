@@ -515,3 +515,102 @@ BEGIN
     RETURN 'SUCCESS';
 END;
 $function$;
+
+/************************************************************************
+--The `v_active_tenants` view provides a centralized list of all active tenants.
+--It includes the tenant ID, name, display name, and creation date.
+***********************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.active_tenants CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.active_tenants AS
+SELECT
+    tenant_id,
+    tenant_name,
+    tenant_displayname, 
+    tenant_short_code
+FROM techbd_udi_ingress.tenants
+WHERE is_active = TRUE
+ORDER BY tenant_displayname ASC;
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.qe_most_recent_transactions CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.qe_most_recent_transactions
+WITH (security_invoker = true) AS
+WITH latest AS (
+    SELECT
+        t.tenant_displayname,
+        MAX(dwm.last_updated_at) FILTER (WHERE dwm.widget_name = 'FHIR')  AS fhir,
+        MAX(dwm.last_updated_at) FILTER (WHERE dwm.widget_name = 'CSV')   AS csv,
+        MAX(dwm.last_updated_at) FILTER (WHERE dwm.widget_name = 'CCDA')  AS ccda,
+        MAX(dwm.last_updated_at) FILTER (WHERE dwm.widget_name = 'HL7V2') AS hl7v2
+    FROM techbd_udi_ingress.dashboard_widget_metadata dwm
+    JOIN techbd_udi_ingress.tenants t
+        ON dwm.tenant_id = t.tenant_id
+    WHERE dwm.widget_name IN ('FHIR', 'CSV', 'CCDA', 'HL7V2')
+    GROUP BY t.tenant_id, t.tenant_displayname
+)
+SELECT
+    tenant_displayname,
+
+    CASE
+        WHEN fhir IS NULL THEN '-'
+        WHEN age(current_timestamp, fhir) < interval '1 minute'
+            THEN 'Just now'
+        WHEN age(current_timestamp, fhir) < interval '1 hour'
+            THEN EXTRACT(MINUTE FROM age(current_timestamp, fhir))::int || ' minutes ago'
+        WHEN age(current_timestamp, fhir) < interval '1 day'
+            THEN EXTRACT(HOUR FROM age(current_timestamp, fhir))::int || ' hours ago'
+        WHEN age(current_timestamp, fhir) < interval '1 month'
+            THEN EXTRACT(DAY FROM age(current_timestamp, fhir))::int || ' days ago'
+        WHEN age(current_timestamp, fhir) < interval '1 year'
+            THEN EXTRACT(MONTH FROM age(current_timestamp, fhir))::int || ' months ago'
+        ELSE EXTRACT(YEAR FROM age(current_timestamp, fhir))::int || ' years ago'
+    END AS fhir,
+
+    CASE
+        WHEN csv IS NULL THEN '-'
+        WHEN age(current_timestamp, csv) < interval '1 minute'
+            THEN 'Just now'
+        WHEN age(current_timestamp, csv) < interval '1 hour'
+            THEN EXTRACT(MINUTE FROM age(current_timestamp, csv))::int || ' minutes ago'
+        WHEN age(current_timestamp, csv) < interval '1 day'
+            THEN EXTRACT(HOUR FROM age(current_timestamp, csv))::int || ' hours ago'
+        WHEN age(current_timestamp, csv) < interval '1 month'
+            THEN EXTRACT(DAY FROM age(current_timestamp, csv))::int || ' days ago'
+        WHEN age(current_timestamp, csv) < interval '1 year'
+            THEN EXTRACT(MONTH FROM age(current_timestamp, csv))::int || ' months ago'
+        ELSE EXTRACT(YEAR FROM age(current_timestamp, csv))::int || ' years ago'
+    END AS csv,
+
+    CASE
+        WHEN ccda IS NULL THEN '-'
+        WHEN age(current_timestamp, ccda) < interval '1 minute'
+            THEN 'Just now'
+        WHEN age(current_timestamp, ccda) < interval '1 hour'
+            THEN EXTRACT(MINUTE FROM age(current_timestamp, ccda))::int || ' minutes ago'
+        WHEN age(current_timestamp, ccda) < interval '1 day'
+            THEN EXTRACT(HOUR FROM age(current_timestamp, ccda))::int || ' hours ago'
+        WHEN age(current_timestamp, ccda) < interval '1 month'
+            THEN EXTRACT(DAY FROM age(current_timestamp, ccda))::int || ' days ago'
+        WHEN age(current_timestamp, ccda) < interval '1 year'
+            THEN EXTRACT(MONTH FROM age(current_timestamp, ccda))::int || ' months ago'
+        ELSE EXTRACT(YEAR FROM age(current_timestamp, ccda))::int || ' years ago'
+    END AS ccda,
+
+    CASE
+        WHEN hl7v2 IS NULL THEN '-'
+        WHEN age(current_timestamp, hl7v2) < interval '1 minute'
+            THEN 'Just now'
+        WHEN age(current_timestamp, hl7v2) < interval '1 hour'
+            THEN EXTRACT(MINUTE FROM age(current_timestamp, hl7v2))::int || ' minutes ago'
+        WHEN age(current_timestamp, hl7v2) < interval '1 day'
+            THEN EXTRACT(HOUR FROM age(current_timestamp, hl7v2))::int || ' hours ago'
+        WHEN age(current_timestamp, hl7v2) < interval '1 month'
+            THEN EXTRACT(DAY FROM age(current_timestamp, hl7v2))::int || ' days ago'
+        WHEN age(current_timestamp, hl7v2) < interval '1 year'
+            THEN EXTRACT(MONTH FROM age(current_timestamp, hl7v2))::int || ' months ago'
+        ELSE EXTRACT(YEAR FROM age(current_timestamp, hl7v2))::int || ' years ago'
+    END AS hl7v2
+
+FROM latest
+ORDER BY GREATEST(fhir, csv, ccda, hl7v2) DESC NULLS LAST;
