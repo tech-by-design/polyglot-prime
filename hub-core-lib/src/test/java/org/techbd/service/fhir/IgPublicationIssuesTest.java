@@ -109,10 +109,21 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
 
         @Test
         @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateShinnyIG_PRAPAREALLAHCScreeningExamplefile() throws IOException {
+                validateFile("shinny-examples/Bundle-PRAPAREALLAHCScreeningExample.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
+        void testValidateShinnyIG_PRAPAREANDAHCScreeningExampleFile() throws IOException {
+                validateFile("shinny-examples/Bundle-PRAPAREANDAHCScreeningExample.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse OPWDD ExampleFile")
         void testValidateShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
                 validateFile("shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
         }
-
         @Test
         @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse ExampleFile")
         void testValidateTestShinnyIG_AHCHRSNScreeningResponseExampleFile() throws IOException {
