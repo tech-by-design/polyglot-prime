@@ -111,7 +111,8 @@ VALUES
 (gen_random_uuid()::text, 'vic', 'VillageCare', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VIC'),
 (gen_random_uuid()::text, 'vns', 'VNS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VNS'),
 (gen_random_uuid()::text, 'whb', 'Wellpoint/Highmark BCBS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WHB'),
-(gen_random_uuid()::text, 'wpn', 'WellPoint of NYS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WPN')
+(gen_random_uuid()::text, 'wpn', 'WellPoint of NYS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WPN'),
+(gen_random_uuid()::text, 'txd', 'TxD', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'TXD')
 ON CONFLICT (tenant_name) DO NOTHING;
 
 
