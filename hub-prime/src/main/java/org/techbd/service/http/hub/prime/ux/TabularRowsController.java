@@ -526,6 +526,67 @@ public class TabularRowsController {
         }
     }
 
+    @Operation(summary = "Update tenant display name", description = "Updates the tenant_displayname for a tenant record.")
+    @PostMapping(value = "/api/ux/tabular/jooq/update/{schemaName}/{tableName}/tenant_displayname/{tenantId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateTenantDisplayName(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true) final @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention the table name.", required = true) final @PathVariable String tableName,
+            @Parameter(description = "Mandatory path variable to mention the tenant identifier.", required = true) final @PathVariable String tenantId,
+            @RequestBody final Map<String, Object> payload) {
+
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches()
+                || (schemaName != null && !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches())) {
+            throw new IllegalArgumentException("Invalid schema or table name.");
+        }
+
+        if (!"tenants".equals(tableName)) {
+            throw new IllegalArgumentException("Update endpoint only supports the tenants table.");
+        }
+
+        String tenantDisplayName = payload == null ? null : payload.getOrDefault("tenant_displayname", payload.get("display_name")) != null
+                ? payload.getOrDefault("tenant_displayname", payload.get("display_name")).toString().trim()
+                : null;
+
+        if (tenantDisplayName == null) {
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("message", "tenant_displayname is required.");
+            return ResponseEntity.badRequest().body(responseBody);
+        }
+
+        try {
+            var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
+            var updateStep = primaryDslContext.update(typableTable.table())
+                    .set(DSL.field(typableTable.column("tenant_displayname")), DSL.val(tenantDisplayName));
+
+            if (typableTable.column("updated_at") != null) {
+                updateStep = updateStep.set(DSL.field(typableTable.column("updated_at")), OffsetDateTime.now());
+            }
+            if (typableTable.column("updated_by") != null) {
+                updateStep = updateStep.set(DSL.field(typableTable.column("updated_by")), TabularRowsController.class.getName());
+            }
+
+            int updatedRows = updateStep
+                    .where(DSL.field(typableTable.column("tenant_id")).eq(tenantId))
+                    .execute();
+
+            if (updatedRows > 0) {
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("message", "Tenant display name updated successfully.");
+                return ResponseEntity.ok(responseBody);
+            } else {
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("message", "Tenant not found.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
+            }
+        } catch (Exception e) {
+            LOG.error("Error updating tenant display name: {}", e.getMessage());
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("message", "An error occurred while updating the tenant display name.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+        }
+    }
+
     @Operation(summary = "Download file from a table by ID", description = "Downloads a file and its name from the specified table and column.")
     @GetMapping(value = "/api/ux/tabular/jooq/download/{schemaName}/{tableName}/{fileContentColName}/{idColumn}/{id}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @ResponseBody
