@@ -12,483 +12,386 @@
             text-indent: -1.5rem;
         }
     </style>
-    <!-- <script type="module">
-        import { Helpers } from '@presentation/shell/helpers.js';
-        document.addEventListener('DOMContentLoaded', async function () {
-            const helpers = new Helpers();
-            // Inject the date range into the HTML
-            helpers.injectDateRangeText('dashboard-date-range', 'Submissions from {startDate} to {endDate}');
-        });
-    </script> -->
+ 
 </head>
 
 <body class="bg-gray-100">
-    <div layout:fragment="content" class="flex flex-col items-center justify-center p-4 w-full max-w-9xl">
-        <img src="/tech-by-design_full-color.svg" class="mb-4 h-auto max-w-xs" />
-        <div class="prose bg-white p-8 w-full max-w-6xl h-[510px]">
-            <h1 class="text-3xl font-bold mb-4 text-center">Welcome to Tech by Design Collaboration Hub</h1>
-            <p class="mb-4 text-center">The central place where New York's finest healthcare institutions can
-                collaborate, share, and manage HIE datasets and other assets.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <ul class="list-disc list-inside pl-8">
-                    <li class="mb-2 hanging-indent">The Hub connects HIE data submitters, data consumers, and IT teams.
-                        <a th:href="@{/interactions}">Explore FHIR and flat file submissions.</a>
-                    </li>
-                    <li class="mb-2 hanging-indent">We're an <em></em>open by default</em> community that welcomes
-                        contributions across the HIE ecosystem. <a href="https://github.com/tech-by-design">Explore our
-                            GitHub projects.</a></li>
-                </ul>
-                <ul class="list-disc list-inside pl-8">
-                    <li class="mb-2 hanging-indent">We help ensure high-quality data submissions and usage. <a
-                            th:href="@{/data-quality}">Explore FHIR and flat file validations.</a></li>
-                    <li class="mb-2 hanging-indent">The Hub encourages sharing of documentation and code. <a
-                            th:href="@{/docs/techbd-hub}">Read the docs</a> and <a th:href="@{/docs/swagger-ui}">Explore
-                            our APIs</a>.</li>
-                </ul>
-                <ul class="list-disc list-inside pl-8">
-                    <li class="mb-2 hanging-indent">The Hub efficiently oversees multiple HIE-related projects.</li>
-                    <li class="hanging-indent">We facilitate data analysis and insights for business analysts and
-                        stakeholders.</li>
-                </ul>
+<!-- <div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-7xl mx-auto gap-8"> -->
+<div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-9xl mx-auto gap-8">
+
+    <!-- MCO Summary Metrics Section -->
+    <section class="relative w-full">
+        <div id="metrics-loader" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+            <div class="flex items-center gap-3 p-4 bg-white/90 rounded-lg border border-gray-200 shadow-sm">
+                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span class="text-sm font-semibold text-gray-700">Loading MCO summary metrics...</span>
             </div>
         </div>
-                <div sec:authorize="isAuthenticated()" 
-                    class="flex justify-center items-center h-full text-center">
-                    <div>
-                        You're logged in as 
-                        <span class="font-bold"
-                            th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth' ? 
-                                        #authentication.principal.attributes['name'] : 
-                                        #authentication.principal.attributes['login']}">
-                        </span>
-                        with role 
-                        <code th:text="${#authentication.principal.attributes['authProvider'] == 'fusionauth' ? 
-                                        #strings.listJoin(#authentication.principal.attributes['role'], ', ') : 
-                                        'admin'}">
-                        </code>
-                         <span th:if="${#authentication.principal.attributes['authProvider'] == 'fusionauth'
-                                    and !session.isSuperRole}">
-                            for tenant
-                            <code th:text="${session.activeTenant != null ?
-                                            session.activeTenant :
-                                            #authentication.principal.attributes['activeTenant']}">
-                            </code>
-                        </span>.
-                    </div>
-                </div>
-      <div sec:authorize="isAnonymous()">
-            <div>You're not logged in so you only have guest privileges.</div>
-        </div>
-
-        <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl"
-         th:if="${(#authentication.principal.attributes['authProvider'] == 'fusionauth'
-                    and #authentication.principal.attributes['isSuperRole']) or (#authentication.principal.attributes['authProvider'] == 'github')}">
-            <div class="text-center font-bold">Recent Direct FHIR Bundles</div>
-            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/fhir/most-recent/healthelink.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HealtheConnections', @{/dashboard/stat/fhir/most-recent/hecdcs.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/fhir/most-recent/healthix.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/fhir/most-recent/grrhio.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/fhir/most-recent/hixny.html})}">
-                </div>
-            </dl>
-        </div>
-
-        <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl"
-         th:if="${(#authentication.principal.attributes['authProvider'] == 'fusionauth'
-                    and #authentication.principal.attributes['isSuperRole']) or (#authentication.principal.attributes['authProvider'] == 'github')}">
-            <div class="text-center font-bold">Recent CSV FHIR Bundles</div>
-            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/csv/most-recent/healthelink.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HealtheConnections', @{/dashboard/stat/csv/most-recent/hecdcs.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/csv/most-recent/healthix.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/csv/most-recent/grrhio.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/csv/most-recent/hixny.html})}">
-                </div>
-            </dl>
-        </div>        
-
-         <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl"
-          th:if="${(#authentication.principal.attributes['authProvider'] == 'fusionauth'
-                    and #authentication.principal.attributes['isSuperRole']) or (#authentication.principal.attributes['authProvider'] == 'github')}">
-            <div class="text-center font-bold">Recent CCDA FHIR Bundles</div>
-            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/ccda/most-recent/healthelink.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HealtheConnections', @{/dashboard/stat/ccda/most-recent/hecdcs.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/ccda/most-recent/healthix.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/ccda/most-recent/grrhio.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/ccda/most-recent/hixny.html})}">
-                </div>
-            </dl>
-        </div>  
-
-         <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl"
-          th:if="${(#authentication.principal.attributes['authProvider'] == 'fusionauth'
-                    and #authentication.principal.attributes['isSuperRole']) or (#authentication.principal.attributes['authProvider'] == 'github')}">
-            <div class="text-center font-bold">Recent HL7v2 FHIR Bundles</div>
-            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/hl7v2/most-recent/healthelink.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HealtheConnections', @{/dashboard/stat/hl7v2/most-recent/hecdcs.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/hl7v2/most-recent/healthix.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/hl7v2/most-recent/grrhio.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/hl7v2/most-recent/hixny.html})}">
-                </div>
-            </dl>
-        </div>         
-
-        <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
-            <div th:replace="fragments/interactions :: serverTextStat"></div>
-        </div>
-        <div class="mt-12 w-full grid grid-cols-2 gap-8">
-            <div>
-                <h3 class="text-xl font-bold mb-4">FHIR Submission Summary</h3>
-                <pre class=" bg-white p-4 rounded-lg shadow-md">
-                    <dl id="pie-chart" class=" pie-chart-item  flex justify-center items-center pt-12"> 
-                    </dl>
-                </pre>
-
+        <!-- Header with Title on Left & Filter on Right -->
+        <div class="flex justify-between items-center w-full mb-4">
+            <h2 class="text-xl font-bold text-gray-800">MCO Summary Metric</h2>
+            
+            <!-- Month Filter Dropdown (Right Aligned) -->
+            <div class="flex items-center gap-2">
+                <label for="mco-month-filter" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Filter Period:</label>
+                <select id="mco-month-filter"
+                        th:attr="data-recent-reporting-month=${recentReportingMonth}, data-selected-reporting-month=${selectedReportingMonth}"
+                        class="mt-[2px] mr-[2px] w-40 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
+                </select>
             </div>
-        </div> -->
-
-        <div class="mt-12 w-full grid grid-cols-1 gap-8">
-          <!--  <div>
-                <h3 class="text-xl font-bold mb-4" id="dashboard-date-range"></h3>
-
-                <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
-                <div id="mermaid-diagram"></div>
-            </div> -->
-            <!-- <div>
-                <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
-                    sequenceDiagram
-                        participant CrossroadsSCN as Crossroads SCN
-                        participant QE as QE
-                        participant Tech by Design as Tech by Design
-                        participant ScoringEngine as Scoring Engine
-                        participant SHINNY as SHIN-NY Data Lake
-                        participant MDW as MDW
-                                    
-                        CrossroadsSCN ->> QE: Send Test JSON
-                        QE ->> Tech by Design: Proxy FHIR JSON
-                        Tech by Design ->> Tech by Design: Validate and Store FHIR JSON
-                        Tech by Design ->> ScoringEngine: Proxy Validated FHIR JSON
-                        ScoringEngine ->> SHINNY: Submit only 50% to Data lake
-                        SHINNY ->> MDW: Submit to MDW
-                </pre>
-            </div> -->
-            <!-- <div>
-                <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md"> 
-                sequenceDiagram
-                    participant RC as RC
-                    participant SCN as SCN
-                    participant QE as QE
-                    participant RHHIO as RHHIO
-                    participant Tech by Design as Tech by Design
-                    participant SHINNY as SHIN-NY Data Lake
-                    participant MDW as MDW
-                    participant MCO as MCO 
-                
-                    critical Quasi-synchronous submission
-                        RC ->> SCN: Ready prepares "Happy Path"<br>test case (easy to understand)
-                        SCN ->> QE: Send Test JSON
-                        QE ->> Tech by Design: Proxy FHIR JSON
-                        Tech by Design ->> Tech by Design: Validate and Store FHIR JSON
-                        Tech by Design ->> SHINNY: Proxy Validated FHIR<br>JSON to to Data lake
-                        SHINNY ->> MDW: Submit HRSN to MDW
-                        SHINNY ->> QE: Screening Files (daily)
-                        QE ->> SCN: Screening Files (daily)
-                    end
-                
-                    critical MDW prepares and sends content
-                        MDW ->> SHINNY: Medicaid Eligibility File (MEF)
-                        SHINNY ->> QE: MEF
-                        SCN ->> QE: SCN Picks it<br>up asynchronously
-                    end
-                
-                    critical MCO prepares and sends content
-                        MCO ->> RHHIO: Enhanced Services<br>Member File (ESMF)
-                        RHHIO ->> SHINNY: ESMF
-                        SHINNY ->> MDW: ESMF
-                        SHINNY ->> QE: ESMF
-                        SCN ->> QE: SCN Picks it<br>up asynchronously
-                    end
-                </pre>
-            </div> -->
         </div>
 
-        <!-- <div class="mt-12 w-full grid grid-cols-2 gap-8">
-            <div>
-                <h3 class="text-xl font-bold mb-4">Synthetic Testing (flat files)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
-                    sequenceDiagram
-                        participant TODO as TODO
-                </pre>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- MCOs Card -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-gray-500 mb-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <span id="metric-mcos" class="text-3xl font-extrabold text-gray-900" th:text="${metrics?.total_mco ?: 0}">0</span>
+                </div>
+                <span class="text-sm font-semibold text-gray-600">MCOs</span>
             </div>
-            <div>
-                <h3 class="text-xl font-bold mb-4">Production (flat files)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
-                    sequenceDiagram
-                        participant TODO as TODO
-                </pre>
+
+            <!-- Files In Progress Card -->
+            <div class="bg-amber-100/70 p-5 rounded-lg border border-amber-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-amber-700 mb-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span id="metric-in-progress" class="text-3xl font-extrabold text-amber-900" th:text="${metrics?.inprogress ?: 0}">0</span>
+                </div>
+                <span class="text-sm font-semibold text-amber-800">Files In Progress</span>
             </div>
-        </div> -->
 
+            <!-- Files Processed Card -->
+            <div class="bg-emerald-100/70 p-5 rounded-lg border border-emerald-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-emerald-700 mb-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="metric-processed" class="text-3xl font-extrabold text-emerald-900" th:text="${metrics?.fully_processed ?: 0}">0</span>
+                </div>
+                <span class="text-sm font-semibold text-emerald-800">Files Processed</span>
+            </div>
 
-        <script th:inline="javascript">
-            /*<![CDATA[*/
-        //     document.addEventListener('DOMContentLoaded', async function () {
+            <!-- Files with Errors Card -->
+            <div class="bg-rose-100/70 p-5 rounded-lg border border-rose-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-rose-700 mb-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span id="metric-errors" class="text-3xl font-extrabold text-rose-900" th:text="${metrics?.errored ?: 0}">0</span>
+                </div>
+                <span class="text-sm font-semibold text-rose-800">Files with Errors</span>
+            </div>
 
-        //         const loader = document.getElementById('loader');
-        //         const mermaidDiagram = document.getElementById('mermaid-diagram');
+            <!-- Files Received Card -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                <span id="metric-files-received" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.total_files_received ?: 0}">0</span>
+                <span class="text-sm font-semibold text-gray-600">Files Received</span>
+            </div>
 
-        //         try {
-        //             // Show loader
-        //             loader.style.display = 'block';
-        //             mermaidDiagram.style.display = 'none';
+            <!-- Records Received Card -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                <span id="metric-records-received" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.records_received ?: 0}">0</span>
+                <span class="text-sm font-semibold text-gray-600">Records Received</span>
+            </div>
 
-        //             const response = await fetch('/dashboard/stat/fhir/mermaid');
-        //             if (!response.ok) {
-        //                 throw new Error('Network response was not ok');
-        //             }
-        //             const data = await response.json();
-        //             // console.log('Fetched data:', data);
+            <!-- Records Processed Card -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                <span id="metric-records-processed" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.records_processed ?: 0}">0</span>
+                <span class="text-sm font-semibold text-gray-600">Records Processed</span>
+            </div>
 
-        //             // Helper function to safely find a count by label
-        //             const getCountByLabel = (label) => {
-        //                 const item = data.find(item => item.label === label);
-        //                 if (item) {
-        //                     return item.count;
-        //                 } else {
-        //                     console.warn(`Label "${label}" not found in data`);
-        //                     return 0; // or any default value you prefer
-        //                 }
-        //             };
+            <!-- Records with Errors Card -->
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                <span id="metric-records-errors" class="text-3xl font-extrabold text-rose-600 mb-2" th:text="${metrics?.records_with_errors ?: 0}">0</span>
+                <span class="text-sm font-semibold text-rose-700">Records with Errors</span>
+            </div>
 
-        //             // Extract counts using the helper function 
-        //             const healthelink = getCountByLabel('healthelink_total_submissions');
-        //             const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
-        //             const healthix = getCountByLabel('healthix_total_submissions');
-        //             const grrhio = getCountByLabel('grrhio_total_submissions');
-        //             const hixny = getCountByLabel('hixny_total_submissions');
-        //             const healthelink_shinny_datalake_submissions = getCountByLabel('healthelink_shinny_datalake_submissions');
-        //             const healtheconnections_shinny_datalake_submissions = getCountByLabel('healtheconnections_shinny_datalake_submissions');
-        //             const healthix_shinny_datalake_submissions = getCountByLabel('healthix_shinny_datalake_submissions');
-        //             const grrhio_shinny_datalake_submissions = getCountByLabel('grrhio_shinny_datalake_submissions');
-        //             const hixny_shinny_datalake_submissions = getCountByLabel('hixny_shinny_datalake_submissions');
+        </div>
+    </section>
 
-        //             // Construct Mermaid diagram code with fetched data
-        //             const mermaidCode = `
-        //     sequenceDiagram 
-        //         participant QE as QE
-        //         participant Tech by Design as Tech by Design
-        //         participant SHIN-NY Data Lake as SHIN-NY Data Lake 
+    <!-- WIDGET 1: MCO Transactions Widget (Visible to MCO & Admin roles) -->
+    <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800">Most Recent MCO Transactions</h2>
+            <!-- <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200">MCO Overview</span> -->
+        </div>
+        
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+                <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
+                    <tr>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">MCO</th>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">Activity Time</th>
+                    </tr>
+                </thead>
+                <tbody id="mco-table-body" class="divide-y divide-gray-200 font-medium">
+                    <tr id="mco-table-loading" class="bg-gray-50">
+                        <td colspan="2" class="py-4 px-6">
+                            <div class="flex items-center justify-center gap-2 text-gray-600">
+                                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span class="text-sm font-medium">Loading recent transactions...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-        //         QE ->> Tech by Design: HEALTHeLINK Proxy FHIR JSON (${healthelink})
-        //         QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
-        //         QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
-        //         QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
-        //         QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
-        //         Tech by Design ->> SHIN-NY Data Lake: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_shinny_datalake_submissions})
-        //         Tech by Design ->> SHIN-NY Data Lake: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_shinny_datalake_submissions})
-        //         Tech by Design ->> SHIN-NY Data Lake: Healthix Proxy Validated FHIR JSON (${healthix_shinny_datalake_submissions})
-        //         Tech by Design ->> SHIN-NY Data Lake: Rochester Proxy Validated FHIR JSON (${grrhio_shinny_datalake_submissions})
-        //         Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions}) 
-        // `;
+<!-- WIDGET 2: Technical Interface Transactions Widget (Visible to Tech & Admin roles) -->
+    <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800">Most Recent QE Transactions</h2>
+            <!-- <span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md border border-gray-200">Technical Data</span> -->
+        </div>
+        
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+                <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
+                    <tr>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">Tenant</th>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">FHIR</th>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">CSV</th>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">CCDA</th>
+                        <th scope="col" class="py-3.5 px-6 bg-gray-50">HL7v2</th>
+                    </tr>
+                </thead>
+                <tbody id="qe-table-body" class="divide-y divide-gray-200 font-medium">
+                    <tr id="qe-table-loading" class="bg-gray-50">
+                        <td colspan="5" class="py-4 px-6">
+                            <div class="flex items-center justify-center gap-2 text-gray-600">
+                                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span class="text-sm font-medium">Loading recent transactions...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-        //             // Inject the Mermaid code into the HTML
-        //             mermaidDiagram.innerHTML = `<pre class="mermaid bg-white p-4 rounded-lg shadow-md">${mermaidCode}</pre>`;
+    <!-- Client-side script -->
+    <script>
+        // Client-side dashboard helper functions
+       const tenantData = [
+            { tenant: "HEALTHeLINK", fhir: "4 minutes ago", csv: "3 seconds ago", ccea: "0 seconds ago", hl7v2: "10 seconds ago" },
+            { tenant: "HECDCS", fhir: "2 minutes ago", csv: "3 seconds ago", ccea: "0 seconds ago", hl7v2: "10 seconds ago" },
+            { tenant: "NYeC", fhir: "2 minutes ago", csv: "8 hours ago", ccea: "0 seconds ago", hl7v2: "2 weeks ago" },
+            { tenant: "HealtheConnections", fhir: "8 hours ago", csv: "2 weeks ago", ccea: "10 seconds ago", hl7v2: "1 month ago" },
+            { tenant: "Rochester RHIO", fhir: "2 minutes ago", csv: "8 hours ago", ccea: "10 seconds ago", hl7v2: "2 days ago" },
+            { tenant: "HixNY", fhir: "4 months ago", csv: "2 weeks ago", ccea: "1 month ago", hl7v2: "8 hours ago" }
+        ];
 
-        //             // Initialize Mermaid after setting the diagram code
-        //             mermaid.contentLoaded();
+        function formatMonth(month) {
+            const [monthPart, yearPart] = month.split('-');
+            return `${monthPart}-${yearPart}`;
+        }
 
-        //             // Wait for Mermaid to render and then add click event listeners
-        //             setTimeout(function () { 
-        //                 const { todayFormatted, pastDateFormatted } =  getDateRange(7);
-        //                 addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-        //                 addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-        //                 addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-        //                 addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-        //                 addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
-        //             }, 500);
+        function getPreviousMonths(currentMonth, count) {
+            const [monthPart, yearPart] = currentMonth.split('-').map(Number);
+            const months = [];
+            let year = yearPart;
+            let month = monthPart;
+            for (let i = 0; i < count; i++) {
+                month -= 1;
+                if (month < 1) {
+                    month = 12;
+                    year -= 1;
+                }
+                months.push(`${String(month).padStart(2, '0')}-${year}`);
+            }
+            return months;
+        }
 
-        //         } catch (error) {
-        //             console.error('Error fetching data:', error);
-        //         } finally {
-        //             // Hide loader and show diagram
-        //             loader.style.display = 'none';
-        //             mermaidDiagram.style.display = 'block';
-        //         }
+        function updateMetrics(metrics) {
+            document.getElementById('metric-mcos').textContent = metrics.total_mco ?? 0;
+            document.getElementById('metric-in-progress').textContent = metrics.inprogress ?? 0;
+            document.getElementById('metric-processed').textContent = metrics.fully_processed ?? 0;
+            document.getElementById('metric-errors').textContent = metrics.errored ?? 0;
+            document.getElementById('metric-files-received').textContent = metrics.total_files_received ?? 0;
+            document.getElementById('metric-records-received').textContent = metrics.records_received ?? 0;
+            document.getElementById('metric-records-processed').textContent = metrics.records_processed ?? 0;
+            document.getElementById('metric-records-errors').textContent = metrics.records_with_errors ?? 0;
+        }
 
-        //     });
-            // Optional: Use JavaScript to fetch data dynamically if needed
-            async function fetchRecentData() {
+        function renderTables(data) {
+            // Reserved for future use if needed
+        }
+
+        function renderMcoTable(data) {
+            // Render Most Recent MCO Transactions from server data
+            const rows = data && data.length > 0
+                ? data.map(item => `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
+                        <td class="py-4 px-6 text-gray-600">${item.relative_time ?? 'N/A'}</td>
+                    </tr>
+                `).join('')
+                : `
+                    <tr class="bg-gray-50">
+                        <td colspan="2" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td>
+                    </tr>
+                `;
+            document.getElementById('mco-table-body').innerHTML = rows;
+        }
+
+        function renderQeTable(data) {
+            // Render Most Recent QE Transactions from server data
+            const rows = data && data.length > 0
+                ? data.map(item => `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
+                        <td class="py-4 px-6 text-gray-600">${item.fhir ?? '-'}</td>
+                        <td class="py-4 px-6 text-gray-600">${item.csv ?? '-'}</td>
+                        <td class="py-4 px-6 text-gray-600">${item.ccda ?? '-'}</td>
+                        <td class="py-4 px-6 text-gray-600">${item.hl7v2 ?? '-'}</td>
+                    </tr>
+                `).join('')
+                : `
+                    <tr class="bg-gray-50">
+                        <td colspan="5" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td>
+                    </tr>
+                `;
+            document.getElementById('qe-table-body').innerHTML = rows;
+        }
+
+        async function loadDashboardMetrics(reportingMonth) {
+            showMetricsLoader();
+            const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
+            if (reportingMonth) {
+                url.searchParams.set('reportingMonth', reportingMonth);
+            }
+
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.error('Failed to load MCO dashboard metrics', response.statusText);
+                return null;
+            }
+
+            return response.json();
+        }
+
+            async function loadMostRecentMcoTransactions() {
+                const url = new URL('/api/dashboard/mco/most-recent', window.location.origin);
                 try {
-                    const response = await fetch(`/dashboard/stat/fhir/fhir-submission-summary`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    const resp = await fetch(url.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) {
+                        console.error('Failed to load most recent MCO transactions', resp.statusText);
+                        return [];
                     }
-                    const data = await response.text();
-                    document.getElementById('dashboard-container').innerHTML = data;
-                    const pieChartData = [
-                        {
-                            count: document.getElementById("totalSubmissionsP") ? document.getElementById("totalSubmissionsP").textContent : 0,
-                            label: "Total Submissions"
-                        },
-                        {
-                            count: document.getElementById("pendingSubmissionsP") ? document.getElementById("pendingSubmissionsP").textContent : 0,
-                            label: "Pending Submissions"
-                        },
-                        {
-                            count: document.getElementById("acceptedSubmissionsP") ? document.getElementById("acceptedSubmissionsP").textContent : 0,
-                            label: "Accepted Submissions"
-                        },
-                        {
-                            count: document.getElementById("rejectedSubmissionsP") ? document.getElementById("rejectedSubmissionsP").textContent : 0,
-                            label: "Rejected Submissions"
-                        }
-                    ];
-                    createPieChart(pieChartData);
-                } catch (error) {
-                    console.error('Error fetching recent data:', error);
+                    return resp.json();
+                } catch (e) {
+                    console.error('Error loading MCO transactions', e);
+                    return [];
                 }
             }
 
-
-            // Function to replace text with a link
-            // Function to add a click event to specific text elements in the diagram
-            function addClickEvent(text, url) {
-                const elements = document.querySelectorAll('text');
-                elements.forEach(el => {
-                    if (el.innerHTML.includes(text)) {
-                        el.style.cursor = 'pointer';
-                        el.style.fill = 'blue';
-                        el.style.textDecoration = 'underline';
-                        el.addEventListener('click', () => {
-                            window.location.href = url;  // Redirect to the URL in the same window
-                        });
+            async function loadMostRecentQeTransactions() {
+                const url = new URL('/api/dashboard/qe/most-recent', window.location.origin);
+                try {
+                    const resp = await fetch(url.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) {
+                        console.error('Failed to load most recent QE transactions', resp.statusText);
+                        return [];
                     }
-                });
+                    return resp.json();
+                } catch (e) {
+                    console.error('Error loading QE transactions', e);
+                    return [];
+                }
             }
-            function getDateRange(daysAgo = 7) {
-                let today = new Date();
-                let pastDate = new Date(today);
-                pastDate.setDate(today.getDate() - daysAgo);
 
-                return {
-                    todayFormatted: formatDate(today),
-                    pastDateFormatted: formatDate(pastDate),
-                };
-            }
-            function formatDate(date) {
-                let day = String(date.getDate()).padStart(2, '0');
-                let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-                let year = date.getFullYear();
+        function formatMonthLabel(month) {
+            const [monthPart, yearPart] = month.split('-').map(Number);
+            return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
+                new Date(yearPart, monthPart - 1)
+            );
+        }
 
-                return `${month}-${day}-${year}`;
+        function populateMonthDropdown(recentMonth, selectedMonth) {
+            const monthSelect = document.getElementById('mco-month-filter');
+            monthSelect.innerHTML = '';
+
+            if (!recentMonth) {
+                return;
             }
-                    // Example usage on page load or user interaction
-            // window.onload = function () {
-            //     fetchRecentData(); // Fetch data for the last 7 days
+
+            const months = [recentMonth, ...getPreviousMonths(recentMonth, 2)];
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = formatMonthLabel(month);
+                if (selectedMonth && selectedMonth === month) {
+                    option.selected = true;
+                } else if (!selectedMonth && index === 0) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            });
+        }
+
+        function showMetricsLoader() {
+            document.getElementById('metrics-loader').classList.remove('hidden');
+        }
+
+        function hideMetricsLoader() {
+            document.getElementById('metrics-loader').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            renderTables(tenantData);
+
+            // Load dynamic Most Recent MCO Transactions
+            const mcoData = await loadMostRecentMcoTransactions();
+            if (mcoData && Array.isArray(mcoData)) {
+                renderMcoTable(mcoData);
+            }
+
+            // Load dynamic Most Recent QE Transactions
+            const qeData = await loadMostRecentQeTransactions();
+            if (qeData && Array.isArray(qeData)) {
+                renderQeTable(qeData);
+            }
+
+            const monthSelect = document.getElementById('mco-month-filter');
+            const recentReportingMonth = monthSelect.dataset.recentReportingMonth;
+            const selectedReportingMonth = monthSelect.dataset.selectedReportingMonth || recentReportingMonth;
+
+            populateMonthDropdown(recentReportingMonth, selectedReportingMonth);
+
+            // Already initiate call from controller          
+            // const metrics = await loadDashboardMetrics(selectedReportingMonth);
+            // if (metrics) {
+            //     updateMetrics(metrics);
             // }
-            function createPieChart(interactions) {
-                const width = 500;  // Further increase width
-                const height = 500;  // Further increase height
-                const radius = Math.min(width, height) / 2;
+            // hideMetricsLoader();
 
-                const color = d3.scaleOrdinal()
-                    .domain(interactions.map(d => d.label))
-                    .range(d3.schemeCategory10);
+            monthSelect.addEventListener('change', async (e) => {
+                const selectedValue = e.target.value;
+                showMetricsLoader();
+                const metrics = await loadDashboardMetrics(selectedValue);
+                if (metrics) {
+                    updateMetrics(metrics);
+                }
+                hideMetricsLoader();
+            });
+        });
+    </script>
 
-                const pie = d3.pie()
-                    .value(d => d.count);
-
-                const arc = d3.arc()
-                    .innerRadius(0)
-                    .outerRadius(radius);
-
-                const svg = d3.select("#pie-chart")
-                    .append("svg")
-                    .attr("class", " align-middle w-[70%] mt-[-45px]")  // Add Tailwind classes for width and height
-                    .attr("viewBox", `0 0 ${width + 300} ${height}`)  // Further increase width to make room for the legend
-                    .append("g")
-                    .attr("transform", `translate(${width / 2},${height / 2})`);
-
-                svg.selectAll("path")
-                    .data(pie(interactions))
-                    .enter().append("path")
-                    .attr("fill", d => color(d.data.label))
-                    .attr("d", arc)
-                    .append("title")
-                    .text(d => `${d.data.label}: ${d.data.count}`);
-
-                // Add legend
-                const legend = svg.append("g")
-                    .attr("transform", `translate(${radius + 50}, -${height / 2})`);  // Move legend further to the right
-
-                const legendRectSize = 20;  // Increase legend rectangle size
-                const legendSpacing = 8;    // Increase legend spacing
-
-                const legendItems = legend.selectAll('.legend-item')
-                    .data(interactions)
-                    .enter()
-                    .append('g')
-                    .attr('class', 'legend-item')
-                    .attr('transform', (d, i) => `translate(0, ${i * (legendRectSize + legendSpacing)})`);
-
-                legendItems.append('rect')
-                    .attr('width', legendRectSize)
-                    .attr('height', legendRectSize)
-                    .attr('fill', d => color(d.label))
-                    .attr('stroke', d => color(d.label));
-
-                legendItems.append('text')
-                    .attr('x', legendRectSize + legendSpacing)
-                    .attr('y', legendRectSize - legendSpacing)
-                    .style('font-size', '14px')  // Increase font size
-                    .style('font-family', 'sans-serif')  // Optional: set font family
-                    .text(d => d.label)
-                    .attr('dy', '0.35em');  // Adjust text vertical alignment
-            }
-            /*]]>*/
-        </script>
-    </div>
+</div>
 
 </body>
 

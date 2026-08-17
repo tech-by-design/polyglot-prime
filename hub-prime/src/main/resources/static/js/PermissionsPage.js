@@ -200,8 +200,8 @@ class PermissionsPage {
                             data-screen-id="${screen.scr_id}"
                             data-menu-id="${screen.mnu_id}"
                             data-parent-screen-id="${screen.parent_scr_id || ''}"
-                            ${screen.has_permission || forceChecked ? 'checked' : ''}
-                            ${forceChecked ? 'disabled' : ''}>
+                            ${screen.has_permission ? 'checked' : ''} 
+                            >
                         ${screen.scr_name}
                     </div>
                     ${childrenHtml}
@@ -232,8 +232,7 @@ class PermissionsPage {
                         <div class="menu-left">
                             <div class="toggle-area">
                                 <input type="checkbox"
-                               onchange="toggleGroup(this)"
-                               ${isDashboardMenu ? "checked disabled" : ""}>
+                               onchange="toggleGroup(this)" >
                             </div>
                             <span class="menu-name">
                                 ${menu.mnu_name}
