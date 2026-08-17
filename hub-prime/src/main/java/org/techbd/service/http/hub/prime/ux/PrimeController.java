@@ -14,13 +14,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -45,12 +46,10 @@ public class PrimeController {
     private DSLContext readerDslContext;
 
     private final Presentation presentation;
-    private final SftpManager sftpManager;
 
     public PrimeController(final Presentation presentation,@Qualifier("primaryDslContext") DSLContext primaryDslContext,
             final SftpManager sftpManager) {
         this.presentation = presentation;
-        this.sftpManager = sftpManager;
         this.primaryDslContext = primaryDslContext;   
     }
 
@@ -71,7 +70,53 @@ public class PrimeController {
     @GetMapping("/home")
     @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
+        try {
+            final var metrics = getMcoDashboardMetrics(null);
+            model.addAttribute("metrics", metrics);
+            model.addAttribute("selectedReportingMonth", metrics.getOrDefault("selected_reporting_month", ""));
+            model.addAttribute("recentReportingMonth", metrics.getOrDefault("recent_reporting_month", ""));
+        } catch (Exception e) {
+            LOG.error("Error loading MCO dashboard metrics for home page", e);
+        }
         return presentation.populateModel("page/home", model, request);
+    }
+
+    @GetMapping("/api/dashboard/mco/metrics")
+    public ResponseEntity<Map<String, Object>> getMcoDashboardMetricsEndpoint(
+            @RequestParam(required = false, name = "reportingMonth") String reportingMonth) {
+        try {
+            Map<String, Object> metrics = getMcoDashboardMetrics(reportingMonth);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(metrics);
+        } catch (Exception e) {
+            LOG.error("Error retrieving MCO dashboard metrics", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Unable to load MCO dashboard metrics"));
+        }
+    }
+
+    private Map<String, Object> getMcoDashboardMetrics(String reportingMonth) {
+        if (reportingMonth != null && reportingMonth.isBlank()) {
+            reportingMonth = null;
+        }
+        final var result = getDsl().fetch(
+                "select * from mco_data.get_mco_dashboard_metrics(?)",
+                reportingMonth)
+                .intoMaps();
+
+        if (result.isEmpty()) {
+            return Map.ofEntries(
+                    Map.entry("selected_reporting_month", reportingMonth == null ? "" : reportingMonth),
+                    Map.entry("recent_reporting_month", ""),
+                    Map.entry("is_selected", false),
+                    Map.entry("total_mco", 0L),
+                    Map.entry("total_files_received", 0L),
+                    Map.entry("inprogress", 0L),
+                    Map.entry("fully_processed", 0L),
+                    Map.entry("errored", 0L),
+                    Map.entry("records_received", 0L),
+                    Map.entry("records_processed", 0L),
+                    Map.entry("records_with_errors", 0L));
+        }
+        return result.get(0);
     }
 
     @GetMapping("/")
@@ -85,13 +130,6 @@ public class PrimeController {
        response.sendRedirect("/oauth2/authorization/" + authProvider.toLowerCase());
     }
 
-    @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
-    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
-            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
-    public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
-        LOG.info("emptying tenant-sftp-egress-content (on demand)");
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
-    }
 
     @GetMapping(value = "/dashboard/stat/fhir/most-recent/{tenantId}.{extension}", produces = {
             "application/json", "text/html" })
@@ -239,255 +277,40 @@ public class PrimeController {
         return "fragments/interactions :: serverTextStat";
     }
 
-    // @GetMapping(value = "/dashboard/stat/fhir/mermaid")
-    // public ResponseEntity<List<InteractionData>> fetchFHIRSMermaidDiagram(Model model) {
-    //     String schemaName = "techbd_udi_ingress";
-    //     String viewName = "fhir_needs_attention_dashbaord";
+    @GetMapping(value = "/api/dashboard/mco/most-recent", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Map<String, Object>>> getMcoMostRecentTransactions() {
+        try {
+            final String schemaName = "mco_data";
+            final String viewName = "mco_most_recent_transactions";
 
-    //     // Initialize list to hold the results
-    //     List<InteractionData> interactions = new ArrayList<>();
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                    viewName);
+            List<Map<String, Object>> rows = getDsl().selectFrom(typableTable.table()).fetch().intoMaps();
 
-    //     final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
-
-    //     // Query the view and fetch the results
-    //     List<Map<String, Object>> fhirSubmission = udiReaderConfig.dsl().selectFrom(typableTable.table())
-    //             .fetch()
-    //             .intoMaps(); 
-    //     // Check if data is available
-    //     if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
-    //         Map<String, Object> data = fhirSubmission.get(0); 
-
-    //         // Populate the list with data 
-    //         interactions.add(new InteractionData("healthelink_total_submissions",
-    //                 getSafeIntegerValue(data.get("healthelink_total_submissions"))));
-    //         interactions.add(new InteractionData("healtheconnections_total_submissions",
-    //                 getSafeIntegerValue(data.get("healtheconnections_total_submissions"))));
-    //         interactions.add(new InteractionData("healthix_total_submissions",
-    //                 getSafeIntegerValue(data.get("healthix_total_submissions"))));
-    //         interactions.add(new InteractionData("grrhio_total_submissions",
-    //                 getSafeIntegerValue(data.get("grrhio_total_submissions"))));
-    //         interactions.add(new InteractionData("hixny_total_submissions",
-    //                 getSafeIntegerValue(data.get("hixny_total_submissions"))));
-
-    //         interactions.add(new InteractionData("healthelink_shinny_datalake_submissions",
-    //                 getSafeIntegerValue(data.get("healthelink_shinny_datalake_submissions"))));
-    //         interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions",
-    //                 getSafeIntegerValue(data.get("healtheconnections_shinny_datalake_submissions"))));                    
-    //         interactions.add(new InteractionData("healthix_shinny_datalake_submissions",
-    //                 getSafeIntegerValue(data.get("healthix_shinny_datalake_submissions"))));
-    //         interactions.add(new InteractionData("grrhio_shinny_datalake_submissions",
-    //                 getSafeIntegerValue(data.get("grrhio_shinny_datalake_submissions"))));
-    //         interactions.add(new InteractionData("hixny_shinny_datalake_submissions",
-    //                 getSafeIntegerValue(data.get("hixny_shinny_datalake_submissions"))));        
-    //     } else {
-    //         // Default values if no data found 
-    //         interactions.add(new InteractionData("healthelink_total_submissions", 0));
-    //         interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
-    //         interactions.add(new InteractionData("healthix_total_submissions", 0));
-    //         interactions.add(new InteractionData("grrhio_total_submissions", 0));
-    //         interactions.add(new InteractionData("hixny_total_submissions", 0));
-
-    //         interactions.add(new InteractionData("healthelink_shinny_datalake_submissions", 0));
-    //         interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions", 0));
-    //         interactions.add(new InteractionData("healthix_shinny_datalake_submissions", 0));
-    //         interactions.add(new InteractionData("grrhio_shinny_datalake_submissions", 0));
-    //         interactions.add(new InteractionData("hixny_shinny_datalake_submissions", 0));
-
-    //     }
-
-    //     // Return the data with HTTP status OK
-    //     return ResponseEntity.ok().body(interactions);
-    // }
-
-    public class InteractionData {
-        private String label;
-        private int count;
-
-        // Constructor
-        public InteractionData(String label, int count) {
-            this.label = label;
-            this.count = count;
-        }
-
-        // Getters and Setters
-        public String getLabel() {
-            return label;
-        }
-
-        public void setLabel(String label) {
-            this.label = label;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public void setCount(int count) {
-            this.count = count;
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(rows);
+        } catch (Exception e) {
+            LOG.error("Error fetching MCO most recent transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
         }
     }
 
-    /*private int getSafeIntegerValue(Object value) {
-        if (value == null || value.toString().isEmpty()) {
-            return 0;
-        }
+    @GetMapping(value = "/api/dashboard/qe/most-recent", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Map<String, Object>>> getQeMostRecentTransactions() {
         try {
-            return Integer.parseInt(value.toString());
-        } catch (NumberFormatException e) {
-            LOG.error("Error parsing integer from value: {}", value, e);
-            return 0;
+            final String schemaName = "techbd_udi_ingress";
+            final String viewName = "qe_most_recent_transactions";
+
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                    viewName);
+            List<Map<String, Object>> rows = getDsl().selectFrom(typableTable.table()).fetch().intoMaps();
+
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(rows);
+        } catch (Exception e) {
+            LOG.error("Error fetching QE most recent transactions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
         }
-    }*/
-
-    @GetMapping(value = "/dashboard/stat/csv/most-recent/{tenantId}.{extension}", produces = {
-        "application/json", "text/html" })
-    public ResponseEntity<?> CSVviaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_widget_new";
-
-        // Fetch the result using the dynamically determined table and column; if
-        // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())  
-               .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
-                         .and(typableTable.column("widget_name").cast(String.class).eq("CSV"))
-                       )
-                .fetch()
-                .intoMaps();
-
-        if (recentInteractions != null && recentInteractions.size() > 0) {
-
-            String mre = recentInteractions.get(0).get("last_updated_at").toString();
-
-            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
-
-            String formattedTime = getrecentInteractioString(mre);
-
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() > 0
-                                ? "<span title=\"Most recent %s \">%s</span>".formatted(                                       
-                                        convertToEST(mre),
-                                        formattedTime)
-                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
-
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }    
+    }
 
 
-    @GetMapping(value = "/dashboard/stat/ccda/most-recent/{tenantId}.{extension}", produces = {
-        "application/json", "text/html" })
-    public ResponseEntity<?> CCDAviaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_widget_new";
 
-        // Fetch the result using the dynamically determined table and column; if
-        // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
-                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
-                         .and(typableTable.column("widget_name").cast(String.class).eq("CCDA"))
-                       )
-                .fetch()
-                .intoMaps();
-
-        if (recentInteractions != null && recentInteractions.size() > 0) {
-
-            String mre = recentInteractions.get(0).get("last_updated_at").toString();
-
-            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
-
-            String formattedTime = getrecentInteractioString(mre);
-
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() > 0
-                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
-                                        convertToEST(mre),
-                                        formattedTime)
-                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
-
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }        
-
-    @GetMapping(value = "/dashboard/stat/hl7v2/most-recent/{tenantId}.{extension}", produces = {
-        "application/json", "text/html" })
-    public ResponseEntity<?> HL7V2viaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_widget_new";
-
-        // Fetch the result using the dynamically determined table and column; if
-        // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
-                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
-                         .and(typableTable.column("widget_name").cast(String.class).eq("HL7V2"))
-                       )
-                .fetch()
-                .intoMaps();
-
-        if (recentInteractions != null && recentInteractions.size() > 0) {
-
-            String mre = recentInteractions.get(0).get("last_updated_at").toString();
-
-            //String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
-
-            String formattedTime = getrecentInteractioString(mre);
-
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() > 0
-                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
-                                        convertToEST(mre),
-                                        formattedTime)
-                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
-
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }        
-    
 }

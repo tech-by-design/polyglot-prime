@@ -410,7 +410,8 @@
                 setTenantLoading(true);
 
                 try {
-                    const response = await fetch('http://localhost:8080/api/tenants/active');
+                    const apiUrl = window.shell.serverSideUrl(`/api/tenants/active`);
+                    const response = await fetch(apiUrl);
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status}`);
                     }
