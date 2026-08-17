@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <style>
+        .tenant-page-container {
+            padding: 24px 32px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #0f172a;
+        }
+
+        /* Main Section Card */
+        .tenant-card-main {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .tenant-card {
+            background: #ffffff;
+            padding: 32px;
+            max-width: 900px;
+        }
+
+        .page-title-heading {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 24px 0;
+        }
+
+        /* Form Grid Layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 2;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .tenant-page-container .form-control {
+            width: 100%;
+            padding: 10px 38px 10px 14px;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: #0f172a;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-control[readonly] {
+            background-color: #f8fafc;
+            color: #64748b;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+
+        select.form-control {
+            padding-right: 14px;
+            cursor: pointer;
+        }
+
+        .field-icon {
+            position: absolute;
+            right: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-interactive {
+            color: #2563eb;
+            cursor: pointer;
+        }
+
+        .badge-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        /* Tenant Combobox */
+        .tenant-combobox {
+            position: relative;
+            width: 100%;
+        }
+
+        .tenant-select-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: left;
+            cursor: pointer;
+            padding-right: 14px;
+        }
+
+        .tenant-select-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .tenant-select-arrow {
+            color: #475569;
+            margin-left: 12px;
+            flex-shrink: 0;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .tenant-select-button[aria-expanded="true"] .tenant-select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .tenant-options {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            max-height: 240px;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .tenant-options.open {
+            display: block;
+        }
+
+        .tenant-option {
+            min-height: 24px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #0f172a;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .tenant-option:hover,
+        .tenant-option.selected {
+            background-color: #f1f5f9;
+        }
+
+        .tenant-option.selected {
+            font-weight: 600;
+        }
+
+        .tenant-options::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tenant-options::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        .tenant-options::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Initial-load spinner */
+        .tenant-loader {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tenant-loader-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: tenantSpin 0.7s linear infinite;
+        }
+
+        @keyframes tenantSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tenant-error {
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #dc2626;
+        }
+
+        .save-loader {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-loader-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: tenantSpin 0.7s linear infinite;
+        }
+
+        /* Buttons */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: 1px solid #2563eb;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+
+        .btn-primary:disabled {
+            background-color: #93c5fd;
+            border-color: #93c5fd;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+
+        <div class="tenant-page-container">
+
+            <!-- Main Content Box -->
+            <div class="tenant-card-main">
+                <div class="tenant-card">
+                    <h2 class="page-title-heading">Tenant Management</h2>
+
+                    <form id="tenantForm" onsubmit="handleSave(event)">
+
+                        <div class="form-grid">
+                            <!-- Row 1: Select Tenant Dropdown (Full Width) -->
+                            <div class="form-group full-width">
+                                <label class="form-label" for="tenantSelect">Select Tenant</label>
+                                <div class="tenant-combobox">
+                                    <button type="button" id="tenantSelect"
+                                        class="form-control tenant-select-button"
+                                        aria-haspopup="listbox"
+                                        aria-expanded="false">
+                                        <span id="selectedTenantText">Loading tenants...</span>
+                                        <span class="tenant-select-arrow">▾</span>
+                                    </button>
+
+                                    <div id="tenantOptions"
+                                        class="tenant-options"
+                                        role="listbox"
+                                        aria-labelledby="tenantSelect">
+                                        <!-- Options populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Editable Tenant Display Name -->
+                            <div class="form-group">
+                                <label class="form-label" for="displayName">Tenant Display Name</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="displayName" class="form-control"
+                                        placeholder="Enter display name" oninput="checkDirtyState()">
+                                    <span class="field-icon icon-interactive" title="Editable field">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Read-only System Name -->
+                            <div class="form-group">
+                                <label class="form-label">Tenant Name</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="tenantName" class="form-control" readonly>
+                                    <!-- <span class="field-icon" title="Read-only">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    </span> -->
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Read-only Tenant ID with Copy Icon -->
+                            <div class="form-group">
+                                <label class="form-label">Tenant ID</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="tenantId" class="form-control badge-code" readonly>
+                                    <span class="field-icon icon-interactive" onclick="copyTenantId()"
+                                        title="Copy Tenant ID">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Read-only Short Code -->
+                            <div class="form-group">
+                                <label class="form-label">Short Code</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="shortCode" class="form-control badge-code" readonly>
+                                    <!-- <span class="field-icon" title="Read-only">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    </span> -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-row">
+                            <button type="submit" id="saveBtn" class="btn btn-primary" disabled>Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let tenantsList = [];
+            let currentTenantIndex = 0;
+
+            const tenantSelectEl = document.getElementById('tenantSelect');
+            const selectedTenantTextEl = document.getElementById('selectedTenantText');
+            const tenantOptionsEl = document.getElementById('tenantOptions');
+            const displayNameEl = document.getElementById('displayName');
+            const tenantNameEl = document.getElementById('tenantName');
+            const tenantIdEl = document.getElementById('tenantId');
+            const shortCodeEl = document.getElementById('shortCode');
+            const saveBtnEl = document.getElementById('saveBtn');
+            const saveBtnDefaultText = saveBtnEl.textContent;
+            const schemaName = 'techbd_udi_ingress';
+
+            async function fetchAndPopulateTenants() {
+                setTenantLoading(true);
+
+                try {
+                    const response = await fetch('http://localhost:8080/api/tenants/active');
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    tenantsList = data.map(item => ({
+                        tenantId: item.tenant_id,
+                        displayName: item.tenant_displayname || item.tenant_name,
+                        tenantName: item.tenant_name,
+                        shortCode: item.tenant_short_code,
+                        createdAt: item.created_at
+                    }));
+
+                    tenantOptionsEl.innerHTML = '';
+
+                    if (tenantsList.length === 0) {
+                        selectedTenantTextEl.textContent = 'No active tenants available';
+                        tenantSelectEl.disabled = true;
+                        return;
+                    }
+
+                    tenantsList.forEach((tenant, idx) => {
+                        const option = document.createElement('div');
+                        option.className = 'tenant-option';
+                        option.setAttribute('role', 'option');
+                        option.dataset.index = idx;
+                        option.dataset.value = tenant.tenantId;
+                        option.textContent = tenant.displayName;
+
+                        option.addEventListener('click', () => {
+                            selectTenant(idx);
+                        });
+
+                        tenantOptionsEl.appendChild(option);
+                    });
+
+                    tenantSelectEl.disabled = false;
+                    selectTenant(0);
+                } catch (error) {
+                    console.error('Failed to fetch active tenants:', error);
+                    selectedTenantTextEl.textContent = 'Failed to load tenants';
+                    tenantSelectEl.disabled = true;
+                    tenantOptionsEl.innerHTML =
+                        '<div class="tenant-error">Failed to load tenants. Please try again.</div>';
+                } finally {
+                    setTenantLoading(false);
+                }
+            }
+
+            function setTenantLoading(isLoading) {
+                if (isLoading) {
+                    tenantSelectEl.disabled = true;
+                    selectedTenantTextEl.innerHTML =
+                        '<span class="tenant-loader"><span class="tenant-loader-spinner"></span>Loading tenants...</span>';
+                }
+            }
+
+            function selectTenant(index) {
+                if (!tenantsList[index]) return;
+
+                loadTenantDetails(index);
+
+                selectedTenantTextEl.textContent = tenantsList[index].displayName;
+
+                tenantOptionsEl.querySelectorAll('.tenant-option').forEach((option, optionIndex) => {
+                    const selected = optionIndex === index;
+                    option.classList.toggle('selected', selected);
+                    option.setAttribute('aria-selected', selected ? 'true' : 'false');
+                });
+
+                closeTenantDropdown();
+            }
+
+            function openTenantDropdown() {
+                if (tenantSelectEl.disabled || tenantsList.length === 0) return;
+
+                tenantOptionsEl.classList.add('open');
+                tenantSelectEl.setAttribute('aria-expanded', 'true');
+            }
+
+            function closeTenantDropdown() {
+                tenantOptionsEl.classList.remove('open');
+                tenantSelectEl.setAttribute('aria-expanded', 'false');
+            }
+
+            tenantSelectEl.addEventListener('click', (event) => {
+                event.stopPropagation();
+
+                if (tenantOptionsEl.classList.contains('open')) {
+                    closeTenantDropdown();
+                } else {
+                    openTenantDropdown();
+                }
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!event.target.closest('.tenant-combobox')) {
+                    closeTenantDropdown();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeTenantDropdown();
+                }
+            });
+
+            function loadTenantDetails(index) {
+                if (!tenantsList[index]) return;
+                currentTenantIndex = index;
+                const tenant = tenantsList[index];
+                displayNameEl.value = tenant.displayName;
+                tenantNameEl.value = tenant.tenantName;
+                tenantIdEl.value = tenant.tenantId;
+                shortCodeEl.value = tenant.shortCode;
+                saveBtnEl.disabled = true;
+            }
+
+            function checkDirtyState() {
+                if (!tenantsList[currentTenantIndex]) return;
+                const originalName = tenantsList[currentTenantIndex].displayName;
+                saveBtnEl.disabled = (displayNameEl.value.trim() === originalName);
+            }
+
+            function setSaveLoading(isLoading) {
+                if (isLoading) {
+                    saveBtnEl.disabled = true;
+                    saveBtnEl.innerHTML =
+                        '<span class="save-loader"><span class="save-loader-spinner"></span>Saving...</span>';
+                } else {
+                    saveBtnEl.innerHTML = saveBtnDefaultText;
+                }
+            }
+
+            async function handleSave(event) {
+                event.preventDefault();
+                if (!tenantsList[currentTenantIndex]) return;
+
+                const tenantId = tenantsList[currentTenantIndex].tenantId;
+                const newDisplayName = displayNameEl.value.trim();
+                const oldDisplayName = tenantsList[currentTenantIndex].displayName;
+
+                if (newDisplayName.length === 0) {
+                    showToast('Tenant display name cannot be empty.', true);
+                    displayNameEl.value = oldDisplayName;
+                    return;
+                }
+
+                if (newDisplayName === oldDisplayName) {
+                    saveBtnEl.disabled = true;
+                    return;
+                }
+
+                const updateUrl = window.shell.serverSideUrl(
+                    `/api/ux/tabular/jooq/update/${schemaName}/tenants/tenant_displayname/${encodeURIComponent(tenantId)}`
+                );
+
+                try {
+                    setSaveLoading(true);
+
+                    const response = await fetch(updateUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ tenant_displayname: newDisplayName })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.message || 'Unable to update tenant display name.');
+                    }
+
+                    tenantsList[currentTenantIndex].displayName = newDisplayName;
+                    setSaveLoading(false);
+                    saveBtnEl.disabled = true;
+                    showToast(`Tenant display name updated successfully to "${newDisplayName}"`);
+                    window.location.reload();
+                } catch (error) {
+                    setSaveLoading(false);
+                    console.error('Error updating tenant display name:', error);
+                    showToast('Failed to save tenant display name. Please try again.', true);
+                    displayNameEl.value = oldDisplayName;
+                }
+            }
+
+            function showToast(message, isError = false) {
+                const oldToast = document.getElementById('toast-notification');
+                if (oldToast) oldToast.remove();
+
+                const toast = document.createElement('div');
+                toast.id = 'toast-notification';
+                toast.className = `fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all duration-300 transform translate-y-10 opacity-0 z-50 ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+                toast.innerText = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-10', 'opacity-0');
+                }, 10);
+
+                setTimeout(() => {
+                    toast.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            function resetForm() {
+                loadTenantDetails(currentTenantIndex);
+            }
+
+            function copyTenantId() {
+                navigator.clipboard.writeText(tenantIdEl.value);
+            }
+
+            document.addEventListener('DOMContentLoaded', fetchAndPopulateTenants);
+        </script>
+    </div>
+</body>
+
+</html>

@@ -264,33 +264,7 @@
         const schemaName = "mco_data";
         const viewName = "get_source_monitoring";
         const DetailViewName = "v_source_monitoring_details";
-
-        // Dummy Data - Field Validation / File Rejection Errors
-        const dummyValidationErrors = [
-            { errorCode: "ERR_101", description: "Invalid MCO Code format in record header", rowNumber: 14 },
-            { errorCode: "ERR_204", description: "Missing mandatory field: Member ID", rowNumber: 42 },
-            { errorCode: "ERR_305", description: "Date format mismatch (Expected YYYY-MM-DD)", rowNumber: 89 },
-            { errorCode: "ERR_102", description: "Duplicate transaction identifier detected", rowNumber: 105 },
-            { errorCode: "ERR_401", description: "Amount value out of allowed range", rowNumber: 150 },
-            { errorCode: "ERR_502", description: "Invalid status code supplied", rowNumber: 201 },
-            { errorCode: "ERR_108", description: "Invalid Zip Code length", rowNumber: 245 },
-            { errorCode: "ERR_210", description: "Provider NPI not found in registry", rowNumber: 312 },
-            { errorCode: "ERR_315", description: "Coverage start date is after end date", rowNumber: 380 },
-            { errorCode: "ERR_112", description: "Special characters found in Name field", rowNumber: 410 },
-            { errorCode: "ERR_505", description: "Batch ID mismatch with file manifest", rowNumber: 492 },
-            { errorCode: "ERR_220", description: "Diagnosis code does not match ICD-10 format", rowNumber: 530 },
-            { errorCode: "ERR_104", description: "Empty row detected in data payload", rowNumber: 588 },
-            { errorCode: "ERR_330", description: "Claim amount exceeds maximum policy limit", rowNumber: 620 },
-            { errorCode: "ERR_412", description: "Unrecognized currency code format", rowNumber: 715 }
-        ];
-
-        // Dummy Data - Mirth Internal Errors
-        const dummyMirthErrors = [
-            { lineNumber: 12, description: "NullPointerException in Mirth transformer script", fileName: "mco_feed_2026_01.csv" },
-            { lineNumber: 85, description: "Connection timeout to outbound HL7 destination", fileName: "batch_mco_data.xml" },
-            { lineNumber: 140, description: "Failed to parse JSON payload at token position 4", fileName: "encounter_payload.json" }
-        ];
-
+ 
         // Global State tracking active error dataset and status context
         let currentActiveErrors = [];
         let currentStatusType = "";
