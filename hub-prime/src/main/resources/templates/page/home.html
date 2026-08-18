@@ -12,387 +12,388 @@
             text-indent: -1.5rem;
         }
     </style>
- 
 </head>
 
 <body class="bg-gray-100">
-<!-- <div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-7xl mx-auto gap-8"> -->
-<div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-9xl mx-auto gap-8">
-
-    <!-- MCO Summary Metrics Section -->
-    <section class="relative w-full">
-        <div id="metrics-loader" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
-            <div class="flex items-center gap-3 p-4 bg-white/90 rounded-lg border border-gray-200 shadow-sm">
-                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                <span class="text-sm font-semibold text-gray-700">Loading MCO summary metrics...</span>
+    <div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-9xl mx-auto gap-8">
+ 
+        <!-- MCO Summary Metrics Section -->
+        <section class="relative w-full" th:if="${(
+                #authentication.principal.attributes['authProvider'] == 'fusionauth'
+                and #authentication.principal.attributes['isSuperRole']
+            )
+            or (
+                #authentication.principal.attributes['authProvider'] == 'fusionauth'
+                and session.rolePermissions != null
+                and session.rolePermissions['Dashboard'] != null
+                and #lists.size(session.rolePermissions['Dashboard'].?[screen == 'MCO Summary Metric']) > 0
+            )}">
+            <div id="metrics-loader"
+                class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+                <div class="flex items-center gap-3 p-4 bg-white/90 rounded-lg border border-gray-200 shadow-sm">
+                    <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-gray-700">Loading MCO summary metrics...</span>
+                </div>
             </div>
-        </div>
-        <!-- Header with Title on Left & Filter on Right -->
-        <div class="flex justify-between items-center w-full mb-4">
-            <h2 class="text-xl font-bold text-gray-800">MCO Summary Metric</h2>
-            
-            <!-- Month Filter Dropdown (Right Aligned) -->
-            <div class="flex items-center gap-2">
-                <label for="mco-month-filter" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Filter Period:</label>
-                <select id="mco-month-filter"
+
+            <div class="flex justify-between items-center w-full mb-4">
+                <h2 class="text-xl font-bold text-gray-800">MCO Summary Metric</h2>
+
+                <div class="flex items-center gap-2">
+                    <label for="mco-month-filter" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Filter
+                        Period:</label>
+                    <select id="mco-month-filter"
                         th:attr="data-recent-reporting-month=${recentReportingMonth}, data-selected-reporting-month=${selectedReportingMonth}"
                         class="mt-[2px] mr-[2px] w-40 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
-                </select>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
-            <!-- MCOs Card -->
-            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between text-gray-500 mb-2">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            <span id="metric-mcos" class="text-3xl font-extrabold text-gray-900" th:text="${metrics?.total_mco ?: 0}">0</span>
+                    </select>
                 </div>
-                <span class="text-sm font-semibold text-gray-600">MCOs</span>
             </div>
 
-            <!-- Files In Progress Card -->
-            <div class="bg-amber-100/70 p-5 rounded-lg border border-amber-200 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between text-amber-700 mb-2">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span id="metric-in-progress" class="text-3xl font-extrabold text-amber-900" th:text="${metrics?.inprogress ?: 0}">0</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- MCOs Card -->
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-gray-500 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        <span id="metric-mcos" class="text-3xl font-extrabold text-gray-900"
+                            th:text="${metrics?.total_mco ?: 0}">0</span>
+                    </div>
+                    <span class="text-sm font-semibold text-gray-600">MCOs</span>
                 </div>
-                <span class="text-sm font-semibold text-amber-800">Files In Progress</span>
-            </div>
 
-            <!-- Files Processed Card -->
-            <div class="bg-emerald-100/70 p-5 rounded-lg border border-emerald-200 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between text-emerald-700 mb-2">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span id="metric-processed" class="text-3xl font-extrabold text-emerald-900" th:text="${metrics?.fully_processed ?: 0}">0</span>
+                <!-- Files In Progress Card -->
+                <div
+                    class="bg-amber-100/70 p-5 rounded-lg border border-amber-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-amber-700 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        <span id="metric-in-progress" class="text-3xl font-extrabold text-amber-900"
+                            th:text="${metrics?.inprogress ?: 0}">0</span>
+                    </div>
+                    <span class="text-sm font-semibold text-amber-800">Files In Progress</span>
                 </div>
-                <span class="text-sm font-semibold text-emerald-800">Files Processed</span>
-            </div>
 
-            <!-- Files with Errors Card -->
-            <div class="bg-rose-100/70 p-5 rounded-lg border border-rose-200 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between text-rose-700 mb-2">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    <span id="metric-errors" class="text-3xl font-extrabold text-rose-900" th:text="${metrics?.errored ?: 0}">0</span>
+                <!-- Files Processed Card -->
+                <div
+                    class="bg-emerald-100/70 p-5 rounded-lg border border-emerald-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-emerald-700 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span id="metric-processed" class="text-3xl font-extrabold text-emerald-900"
+                            th:text="${metrics?.fully_processed ?: 0}">0</span>
+                    </div>
+                    <span class="text-sm font-semibold text-emerald-800">Files Processed</span>
                 </div>
-                <span class="text-sm font-semibold text-rose-800">Files with Errors</span>
+
+                <!-- Files with Errors Card -->
+                <div
+                    class="bg-rose-100/70 p-5 rounded-lg border border-rose-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-rose-700 mb-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <span id="metric-errors" class="text-3xl font-extrabold text-rose-900"
+                            th:text="${metrics?.errored ?: 0}">0</span>
+                    </div>
+                    <span class="text-sm font-semibold text-rose-800">Files with Errors</span>
+                </div>
+
+                <!-- Files Received Card -->
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <span id="metric-files-received" class="text-3xl font-extrabold text-gray-900 mb-2"
+                        th:text="${metrics?.total_files_received ?: 0}">0</span>
+                    <span class="text-sm font-semibold text-gray-600">Files Received</span>
+                </div>
+
+                <!-- Records Received Card -->
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <span id="metric-records-received" class="text-3xl font-extrabold text-gray-900 mb-2"
+                        th:text="${metrics?.records_received ?: 0}">0</span>
+                    <span class="text-sm font-semibold text-gray-600">Records Received</span>
+                </div>
+
+                <!-- Records Processed Card -->
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <span id="metric-records-processed" class="text-3xl font-extrabold text-gray-900 mb-2"
+                        th:text="${metrics?.records_processed ?: 0}">0</span>
+                    <span class="text-sm font-semibold text-gray-600">Records Processed</span>
+                </div>
+
+                <!-- Records with Errors Card -->
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <span id="metric-records-errors" class="text-3xl font-extrabold text-rose-600 mb-2"
+                        th:text="${metrics?.records_with_errors ?: 0}">0</span>
+                    <span class="text-sm font-semibold text-rose-700">Records with Errors</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- WIDGET 1: MCO Transactions Widget -->
+        <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" th:if="${(
+        #authentication.principal.attributes['authProvider'] == 'fusionauth'
+        and  #authentication.principal.attributes['isSuperRole']
+    )
+    or (
+        #authentication.principal.attributes['authProvider'] == 'fusionauth'
+        and session.rolePermissions != null
+        and session.rolePermissions['Dashboard'] != null
+        and #lists.size(session.rolePermissions['Dashboard'].?[screen == 'Most Recent MCO Transactions']) > 0
+    )}">
+            <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">Most Recent MCO Transactions</h2>
             </div>
 
-            <!-- Files Received Card -->
-            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span id="metric-files-received" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.total_files_received ?: 0}">0</span>
-                <span class="text-sm font-semibold text-gray-600">Files Received</span>
+            <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table class="w-full text-left text-sm text-gray-700">
+                    <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">MCO</th>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">Activity Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mco-table-body" class="divide-y divide-gray-200 font-medium">
+                        <tr id="mco-table-loading" class="bg-gray-50">
+                            <td colspan="2" class="py-4 px-6">
+                                <div class="flex items-center justify-center gap-2 text-gray-600">
+                                    <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium">Loading recent transactions...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- WIDGET 2: Technical Interface Transactions Widget -->
+        <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden" th:if="${(
+        #authentication.principal.attributes['authProvider'] == 'fusionauth'
+        and #authentication.principal.attributes['isSuperRole']
+    )
+    or (
+        #authentication.principal.attributes['authProvider'] == 'fusionauth'
+        and session.rolePermissions != null
+        and session.rolePermissions['Dashboard'] != null
+        and #lists.size(session.rolePermissions['Dashboard'].?[screen == 'Most Recent QE Transactions']) > 0
+    )}">
+            <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">Most Recent QE Transactions</h2>
             </div>
 
-            <!-- Records Received Card -->
-            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span id="metric-records-received" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.records_received ?: 0}">0</span>
-                <span class="text-sm font-semibold text-gray-600">Records Received</span>
+            <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table class="w-full text-left text-sm text-gray-700">
+                    <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">Tenant</th>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">FHIR</th>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">CSV</th>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">CCDA</th>
+                            <th scope="col" class="py-3.5 px-6 bg-gray-50">HL7v2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="qe-table-body" class="divide-y divide-gray-200 font-medium">
+                        <tr id="qe-table-loading" class="bg-gray-50">
+                            <td colspan="5" class="py-4 px-6">
+                                <div class="flex items-center justify-center gap-2 text-gray-600">
+                                    <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium">Loading recent transactions...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+        </section>
 
-            <!-- Records Processed Card -->
-            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span id="metric-records-processed" class="text-3xl font-extrabold text-gray-900 mb-2" th:text="${metrics?.records_processed ?: 0}">0</span>
-                <span class="text-sm font-semibold text-gray-600">Records Processed</span>
-            </div>
 
-            <!-- Records with Errors Card -->
-            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
-                <span id="metric-records-errors" class="text-3xl font-extrabold text-rose-600 mb-2" th:text="${metrics?.records_with_errors ?: 0}">0</span>
-                <span class="text-sm font-semibold text-rose-700">Records with Errors</span>
-            </div>
 
-        </div>
-    </section>
-
-    <!-- WIDGET 1: MCO Transactions Widget (Visible to MCO & Admin roles) -->
-    <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-800">Most Recent MCO Transactions</h2>
-            <!-- <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200">MCO Overview</span> -->
-        </div>
-        
-        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-            <table class="w-full text-left text-sm text-gray-700">
-                <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
-                    <tr>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">MCO</th>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">Activity Time</th>
-                    </tr>
-                </thead>
-                <tbody id="mco-table-body" class="divide-y divide-gray-200 font-medium">
-                    <tr id="mco-table-loading" class="bg-gray-50">
-                        <td colspan="2" class="py-4 px-6">
-                            <div class="flex items-center justify-center gap-2 text-gray-600">
-                                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                </svg>
-                                <span class="text-sm font-medium">Loading recent transactions...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-<!-- WIDGET 2: Technical Interface Transactions Widget (Visible to Tech & Admin roles) -->
-    <section class="w-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-800">Most Recent QE Transactions</h2>
-            <!-- <span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md border border-gray-200">Technical Data</span> -->
-        </div>
-        
-        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-            <table class="w-full text-left text-sm text-gray-700">
-                <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-900 sticky top-0">
-                    <tr>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">Tenant</th>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">FHIR</th>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">CSV</th>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">CCDA</th>
-                        <th scope="col" class="py-3.5 px-6 bg-gray-50">HL7v2</th>
-                    </tr>
-                </thead>
-                <tbody id="qe-table-body" class="divide-y divide-gray-200 font-medium">
-                    <tr id="qe-table-loading" class="bg-gray-50">
-                        <td colspan="5" class="py-4 px-6">
-                            <div class="flex items-center justify-center gap-2 text-gray-600">
-                                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                </svg>
-                                <span class="text-sm font-medium">Loading recent transactions...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Client-side script -->
-    <script>
-        // Client-side dashboard helper functions
-       const tenantData = [
-            { tenant: "HEALTHeLINK", fhir: "4 minutes ago", csv: "3 seconds ago", ccea: "0 seconds ago", hl7v2: "10 seconds ago" },
-            { tenant: "HECDCS", fhir: "2 minutes ago", csv: "3 seconds ago", ccea: "0 seconds ago", hl7v2: "10 seconds ago" },
-            { tenant: "NYeC", fhir: "2 minutes ago", csv: "8 hours ago", ccea: "0 seconds ago", hl7v2: "2 weeks ago" },
-            { tenant: "HealtheConnections", fhir: "8 hours ago", csv: "2 weeks ago", ccea: "10 seconds ago", hl7v2: "1 month ago" },
-            { tenant: "Rochester RHIO", fhir: "2 minutes ago", csv: "8 hours ago", ccea: "10 seconds ago", hl7v2: "2 days ago" },
-            { tenant: "HixNY", fhir: "4 months ago", csv: "2 weeks ago", ccea: "1 month ago", hl7v2: "8 hours ago" }
-        ];
-
-        function formatMonth(month) {
-            const [monthPart, yearPart] = month.split('-');
-            return `${monthPart}-${yearPart}`;
-        }
-
-        function getPreviousMonths(currentMonth, count) {
-            const [monthPart, yearPart] = currentMonth.split('-').map(Number);
-            const months = [];
-            let year = yearPart;
-            let month = monthPart;
-            for (let i = 0; i < count; i++) {
-                month -= 1;
-                if (month < 1) {
-                    month = 12;
-                    year -= 1;
-                }
-                months.push(`${String(month).padStart(2, '0')}-${year}`);
-            }
-            return months;
-        }
-
-        function updateMetrics(metrics) {
-            document.getElementById('metric-mcos').textContent = metrics.total_mco ?? 0;
-            document.getElementById('metric-in-progress').textContent = metrics.inprogress ?? 0;
-            document.getElementById('metric-processed').textContent = metrics.fully_processed ?? 0;
-            document.getElementById('metric-errors').textContent = metrics.errored ?? 0;
-            document.getElementById('metric-files-received').textContent = metrics.total_files_received ?? 0;
-            document.getElementById('metric-records-received').textContent = metrics.records_received ?? 0;
-            document.getElementById('metric-records-processed').textContent = metrics.records_processed ?? 0;
-            document.getElementById('metric-records-errors').textContent = metrics.records_with_errors ?? 0;
-        }
-
-        function renderTables(data) {
-            // Reserved for future use if needed
-        }
-
-        function renderMcoTable(data) {
-            // Render Most Recent MCO Transactions from server data
-            const rows = data && data.length > 0
-                ? data.map(item => `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
-                        <td class="py-4 px-6 text-gray-600">${item.relative_time ?? 'N/A'}</td>
-                    </tr>
-                `).join('')
-                : `
-                    <tr class="bg-gray-50">
-                        <td colspan="2" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td>
-                    </tr>
-                `;
-            document.getElementById('mco-table-body').innerHTML = rows;
-        }
-
-        function renderQeTable(data) {
-            // Render Most Recent QE Transactions from server data
-            const rows = data && data.length > 0
-                ? data.map(item => `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
-                        <td class="py-4 px-6 text-gray-600">${item.fhir ?? '-'}</td>
-                        <td class="py-4 px-6 text-gray-600">${item.csv ?? '-'}</td>
-                        <td class="py-4 px-6 text-gray-600">${item.ccda ?? '-'}</td>
-                        <td class="py-4 px-6 text-gray-600">${item.hl7v2 ?? '-'}</td>
-                    </tr>
-                `).join('')
-                : `
-                    <tr class="bg-gray-50">
-                        <td colspan="5" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td>
-                    </tr>
-                `;
-            document.getElementById('qe-table-body').innerHTML = rows;
-        }
-
-        async function loadDashboardMetrics(reportingMonth) {
-            showMetricsLoader();
-            const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
-            if (reportingMonth) {
-                url.searchParams.set('reportingMonth', reportingMonth);
-            }
-
-            const response = await fetch(url.toString(), {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                console.error('Failed to load MCO dashboard metrics', response.statusText);
-                return null;
-            }
-
-            return response.json();
-        }
-
-            async function loadMostRecentMcoTransactions() {
-                const url = new URL('/api/dashboard/mco/most-recent', window.location.origin);
-                try {
-                    const resp = await fetch(url.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
-                    if (!resp.ok) {
-                        console.error('Failed to load most recent MCO transactions', resp.statusText);
-                        return [];
+    </div>
+    <th:block layout:fragment="footer-scripts">
+        <!-- Client-side script -->
+        <script>
+            // Helper Utilities
+            function getPreviousMonths(currentMonth, count) {
+                const [monthPart, yearPart] = currentMonth.split('-').map(Number);
+                const months = [];
+                let year = yearPart;
+                let month = monthPart;
+                for (let i = 0; i < count; i++) {
+                    month -= 1;
+                    if (month < 1) {
+                        month = 12;
+                        year -= 1;
                     }
-                    return resp.json();
+                    months.push(`${String(month).padStart(2, '0')}-${year}`);
+                }
+                return months;
+            }
+
+            function formatMonthLabel(month) {
+                const [monthPart, yearPart] = month.split('-').map(Number);
+                return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
+                    new Date(yearPart, monthPart - 1)
+                );
+            }
+
+            function showMetricsLoader() {
+                const loader = document.getElementById('metrics-loader');
+                if (loader) loader.classList.remove('hidden');
+            }
+
+            function hideMetricsLoader() {
+                const loader = document.getElementById('metrics-loader');
+                if (loader) loader.classList.add('hidden');
+            }
+
+            function updateMetrics(metrics) {
+                const elements = {
+                    'metric-mcos': metrics.total_mco,
+                    'metric-in-progress': metrics.inprogress,
+                    'metric-processed': metrics.fully_processed,
+                    'metric-errors': metrics.errored,
+                    'metric-files-received': metrics.total_files_received,
+                    'metric-records-received': metrics.records_received,
+                    'metric-records-processed': metrics.records_processed,
+                    'metric-records-errors': metrics.records_with_errors
+                };
+
+                Object.keys(elements).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = elements[id] ?? 0;
+                });
+            }
+
+            // API Handlers
+            async function loadDashboardMetrics(reportingMonth) {
+                showMetricsLoader();
+                const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
+                if (reportingMonth) url.searchParams.set('reportingMonth', reportingMonth);
+
+                try {
+                    const response = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) return null;
+                    return await response.json();
+                } catch (e) {
+                    console.error('Error fetching metrics', e);
+                    return null;
+                }
+            }
+
+            async function initMcoMetricsSection() {
+                const monthSelect = document.getElementById('mco-month-filter');
+                if (!monthSelect) return; // Exit gracefully if user lacks permissions
+
+                const recentReportingMonth = monthSelect.dataset.recentReportingMonth;
+                const selectedReportingMonth = monthSelect.dataset.selectedReportingMonth || recentReportingMonth;
+
+                if (recentReportingMonth) {
+                    monthSelect.innerHTML = '';
+                    const months = [recentReportingMonth, ...getPreviousMonths(recentReportingMonth, 2)];
+                    months.forEach((month, index) => {
+                        const option = document.createElement('option');
+                        option.value = month;
+                        option.textContent = formatMonthLabel(month);
+                        if (selectedReportingMonth === month || (!selectedReportingMonth && index === 0)) {
+                            option.selected = true;
+                        }
+                        monthSelect.appendChild(option);
+                    });
+                }
+
+                monthSelect.addEventListener('change', async (e) => {
+                    const metrics = await loadDashboardMetrics(e.target.value);
+                    if (metrics) updateMetrics(metrics);
+                    hideMetricsLoader();
+                });
+            }
+
+            async function initMcoTransactionsSection() {
+                const tbody = document.getElementById('mco-table-body');
+                if (!tbody) return; // Exit gracefully if section hidden
+
+                try {
+                    const resp = await fetch('/api/dashboard/mco/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) throw new Error(resp.statusText);
+                    const data = await resp.json();
+
+                    tbody.innerHTML = (data && data.length > 0)
+                        ? data.map(item => `
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
+                                <td class="py-4 px-6 text-gray-600">${item.relative_time ?? 'N/A'}</td>
+                            </tr>
+                        `).join('')
+                        : `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
                 } catch (e) {
                     console.error('Error loading MCO transactions', e);
-                    return [];
+                    tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
                 }
             }
 
-            async function loadMostRecentQeTransactions() {
-                const url = new URL('/api/dashboard/qe/most-recent', window.location.origin);
+            async function initQeTransactionsSection() {
+                const tbody = document.getElementById('qe-table-body');
+                if (!tbody) return; // Exit gracefully if section hidden
+
                 try {
-                    const resp = await fetch(url.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
-                    if (!resp.ok) {
-                        console.error('Failed to load most recent QE transactions', resp.statusText);
-                        return [];
-                    }
-                    return resp.json();
+                    const resp = await fetch('/api/dashboard/qe/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) throw new Error(resp.statusText);
+                    const data = await resp.json();
+
+                    tbody.innerHTML = (data && data.length > 0)
+                        ? data.map(item => `
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
+                                <td class="py-4 px-6 text-gray-600">${item.fhir ?? '-'}</td>
+                                <td class="py-4 px-6 text-gray-600">${item.csv ?? '-'}</td>
+                                <td class="py-4 px-6 text-gray-600">${item.ccda ?? '-'}</td>
+                                <td class="py-4 px-6 text-gray-600">${item.hl7v2 ?? '-'}</td>
+                            </tr>
+                        `).join('')
+                        : `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
                 } catch (e) {
                     console.error('Error loading QE transactions', e);
-                    return [];
+                    tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
                 }
             }
 
-        function formatMonthLabel(month) {
-            const [monthPart, yearPart] = month.split('-').map(Number);
-            return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
-                new Date(yearPart, monthPart - 1)
-            );
-        }
-
-        function populateMonthDropdown(recentMonth, selectedMonth) {
-            const monthSelect = document.getElementById('mco-month-filter');
-            monthSelect.innerHTML = '';
-
-            if (!recentMonth) {
-                return;
-            }
-
-            const months = [recentMonth, ...getPreviousMonths(recentMonth, 2)];
-            months.forEach((month, index) => {
-                const option = document.createElement('option');
-                option.value = month;
-                option.textContent = formatMonthLabel(month);
-                if (selectedMonth && selectedMonth === month) {
-                    option.selected = true;
-                } else if (!selectedMonth && index === 0) {
-                    option.selected = true;
-                }
-                monthSelect.appendChild(option);
+            // Main Initializer
+            document.addEventListener('DOMContentLoaded', () => {
+                initMcoMetricsSection();
+                initMcoTransactionsSection();
+                initQeTransactionsSection();
             });
-        }
-
-        function showMetricsLoader() {
-            document.getElementById('metrics-loader').classList.remove('hidden');
-        }
-
-        function hideMetricsLoader() {
-            document.getElementById('metrics-loader').classList.add('hidden');
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-
-            renderTables(tenantData);
-
-            // Load dynamic Most Recent MCO Transactions
-            const mcoData = await loadMostRecentMcoTransactions();
-            if (mcoData && Array.isArray(mcoData)) {
-                renderMcoTable(mcoData);
-            }
-
-            // Load dynamic Most Recent QE Transactions
-            const qeData = await loadMostRecentQeTransactions();
-            if (qeData && Array.isArray(qeData)) {
-                renderQeTable(qeData);
-            }
-
-            const monthSelect = document.getElementById('mco-month-filter');
-            const recentReportingMonth = monthSelect.dataset.recentReportingMonth;
-            const selectedReportingMonth = monthSelect.dataset.selectedReportingMonth || recentReportingMonth;
-
-            populateMonthDropdown(recentReportingMonth, selectedReportingMonth);
-
-            // Already initiate call from controller          
-            // const metrics = await loadDashboardMetrics(selectedReportingMonth);
-            // if (metrics) {
-            //     updateMetrics(metrics);
-            // }
-            // hideMetricsLoader();
-
-            monthSelect.addEventListener('change', async (e) => {
-                const selectedValue = e.target.value;
-                showMetricsLoader();
-                const metrics = await loadDashboardMetrics(selectedValue);
-                if (metrics) {
-                    updateMetrics(metrics);
-                }
-                hideMetricsLoader();
-            });
-        });
-    </script>
-
-</div>
-
+        </script>
+    </th:block>
 </body>
 
 </html>
