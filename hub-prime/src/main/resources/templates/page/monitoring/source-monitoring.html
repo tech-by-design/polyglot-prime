@@ -361,7 +361,7 @@
                 if (!errorTableBody || !errorTableHead) return;
 
                 // Dynamically update headers based on status
-                if (statusType === 'MIRTH_INTERNAL_ERROR' || statusType === 'FILE_REJECTED') {
+                if (statusType === 'MIRTH_INTERNAL_ERROR') {
                     errorTableHead.innerHTML = `
                         <tr>
                             <th>Line Number</th>
@@ -389,7 +389,7 @@
                 // Populate row cells dynamically
                 data.forEach(item => {
                     const tr = document.createElement("tr");
-                    if (statusType === 'MIRTH_INTERNAL_ERROR' || statusType === 'FILE_REJECTED') {
+                    if (statusType === 'MIRTH_INTERNAL_ERROR') {
                         tr.innerHTML = `
                             <td><strong>${item.lineNumber}</strong></td>
                             <td>${item.description}</td>
@@ -527,7 +527,7 @@
                             return;
                         }
 
-                        const isMirthError = statusType === 'MIRTH_INTERNAL_ERROR' || statusType === 'FILE_REJECTED';
+                        const isMirthError = statusType === 'MIRTH_INTERNAL_ERROR';
 
                         if (errorJson.message || errorJson.fileName || errorJson.lineNumber !== undefined) {
                             addErrorRow({
