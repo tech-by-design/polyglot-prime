@@ -2,9 +2,10 @@
   <id>2440a65b-486b-4f03-8972-8bace78287d3</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Wellpoint NYS</name>
-  <description>Version: 0.1.6
-IAM Role implementation for S3 access.</description>
-  <revision>22</revision>
+  <description>Version: 0.1.8
+Db insertion to mco_record table in file rejection.
+Replace MCO_CODE with sftpUsers in S3 </description>
+  <revision>33</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +60,7 @@ IAM Role implementation for S3 access.</description>
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>${s3BucketName}/bridgelink-inbound/WPN</host>
+      <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -104,8 +105,8 @@ IAM Role implementation for S3 access.</description>
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
       var bucket = globalMap.get(&quot;s3BucketName&quot;);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/WPN/mirth_processed/Success_&quot; + filename);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/WPN/mirth_processed/Error_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-wellpoint_ny/mirth_processed/Success_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-wellpoint_ny/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
     } catch (err) {
       logger.info(&quot;Could not delete staged S3 objects for &quot; + filename + &quot;: &quot; + err);
@@ -855,6 +856,7 @@ IAM Role implementation for S3 access.</description>
                 channelMap.put(&quot;fileRejected&quot;, true);
               } else {
                 channelMap.put(&quot;eofFound&quot;, true);
+                globalChannelMap.put(&quot;eofFound&quot;, true);
               }
               break;
             } else {
@@ -2158,6 +2160,91 @@ IAM Role implementation for S3 access.</description>
     }
   }
   
+ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;) &amp;&amp;
+    $(&quot;originalFilename&quot;).indexOf(&quot;RS_&quot;) == -1) {
+ 
+    var fileName = $(&quot;originalFilename&quot;);
+    var reportingMonth = String(calculateReportingMonthNew());
+ 
+    var rejectDbConn = null;
+    var batch_insert = null;
+ 
+    try {
+ 
+        rejectDbConn = DatabaseConnectionFactory.createDatabaseConnection(
+            jdbdcDriver,
+            jbdcUrl,
+            dbName,
+            dbPassword
+        );
+ 
+        batch_insert = rejectDbConn.executeCachedQuery(
+            &quot;INSERT INTO mco_data.mco_records &quot; +
+            &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
+            &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
+            &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
+            &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
+            &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
+            &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
+            &quot;RETURNING batch_id&quot;,
+            [
+                fileName,
+                0,
+                mco_id,
+                0,
+                0,
+                reportingMonth
+            ]
+        );
+ 
+        if (batch_insert.next()) {
+            var rejectedBatchId = batch_insert.getLong(&quot;batch_id&quot;);
+ 
+            channelMap.put(&quot;batch_id&quot;, rejectedBatchId);
+ 
+            logger.info(
+                &quot;FILE_REJECTED: Created mco_records entry. batch_id=&quot; +
+                rejectedBatchId +
+                &quot;, file=&quot; +
+                fileName
+            );
+        } else {
+            throw new Error(
+                &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+            );
+        }
+ 
+    } catch (err) {
+ 
+        logger.error(
+            &quot;FILE_REJECTED: Failed to insert mco_records entry for file &quot; +
+            fileName +
+            &quot;. Error: &quot; +
+            err
+        );
+ 
+        throw err;
+ 
+    } finally {
+ 
+        if (batch_insert) {
+            try {
+                batch_insert.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close batch_insert: &quot; + e);
+            }
+        }
+ 
+        if (rejectDbConn) {
+            try {
+                rejectDbConn.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close rejectDbConn: &quot; + e);
+            }
+        }
+    }
+}
+  
   //DOB Validation
   function dateValidCheck(dateString) {
       // Regex to validate the format: YYYYMMDD
@@ -2346,7 +2433,48 @@ IAM Role implementation for S3 access.</description>
   
     var folderName = months[month] + &quot;-&quot; + year;
     return folderName;
-  }</script>
+  }
+
+  function calculateReportingMonthNew() {
+
+    var currentDate = new Date();
+
+    var day = currentDate.getDate();
+    var month = currentDate.getMonth() + 1; // 1-12
+    var year = currentDate.getFullYear();
+
+    var startDate = parseInt(configurationMap.get(&quot;startDate&quot;));
+    var endDate = parseInt(configurationMap.get(&quot;endDate&quot;));
+
+    // Handle reporting window
+    if (startDate &gt;= endDate) {
+
+        if (day &gt;= startDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+
+    } else {
+
+        if (day &gt; endDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+    }
+
+    // Format month as 2 digits (01, 02, ..., 12)
+    var reportingMonth = (&quot;0&quot; + month).slice(-2) + &quot;-&quot; + year;
+
+    return reportingMonth;
+}</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
@@ -2676,7 +2804,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -2876,7 +3004,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -3884,7 +4012,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4122,7 +4250,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5159,7 +5287,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5298,7 +5426,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WPN/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_ny/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5720,6 +5848,7 @@ try {
         </destinationConnectorProperties>
         <script>logger.info(&quot;Clearing global map&quot;)
 channelMap.clear();
+globalChannelMap.clear();
 var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 logger.info(&quot;Current record count : &quot; + recordCount )</script>
       </properties>
@@ -5874,6 +6003,8 @@ logger.info(&quot;Current record count : &quot; + recordCount )</script>
     </connector>
   </destinationConnectors>
   <preprocessingScript>// Modify the message variable below to pre process data
+
+globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
 return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
@@ -5887,7 +6018,7 @@ globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&qu
 globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
 globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
-globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
+
 
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -5931,7 +6062,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785835644802</time>
+        <time>1787062253541</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -5940,5 +6071,40 @@ return;</undeployScript>
       </pruningSettings>
       <userId>10</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>8271d3a3-9fb6-4296-ab30-d71649861794</id>
+        <name>0_1_8</name>
+        <channelIds>
+          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
+          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+          <string>48679919-904a-4913-a593-28f19da61615</string>
+          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>255</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
