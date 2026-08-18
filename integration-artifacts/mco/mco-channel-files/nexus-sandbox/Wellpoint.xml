@@ -2,9 +2,10 @@
   <id>a542e427-909f-4963-a374-3a214dcb8bd1</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Wellpoint</name>
-  <description>Version: 0.1.6
-IAM Role implementation for S3 access.</description>
-  <revision>20</revision>
+  <description>Version: 0.1.8
+Db insertion to mco_record table in file rejection.
+Replace MCO_CODE with sftpUsers in S3 </description>
+  <revision>33</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +60,7 @@ IAM Role implementation for S3 access.</description>
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>${s3BucketName}/bridgelink-inbound/WHB</host>
+      <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -104,8 +105,8 @@ IAM Role implementation for S3 access.</description>
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
       var bucket = globalMap.get(&quot;s3BucketName&quot;);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/WHB/mirth_processed/Success_&quot; + filename);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/WHB/mirth_processed/Error_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-wellpoint_highmark/mirth_processed/Success_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-wellpoint_highmark/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
     } catch (err) {
       logger.info(&quot;Could not delete staged S3 objects for &quot; + filename + &quot;: &quot; + err);
@@ -857,7 +858,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 channelMap.put(&quot;isFileAlreadyExist&quot;, true);
                 channelMap.put(&quot;fileRejected&quot;, true);
               } else {
-                channelMap.put(&quot;eofFound&quot;, true);
+                channelMap.put(&quot;eofFound&quot;, true);&#xd;                globalChannelMap.put(&quot;eofFound&quot;, true);
               }
               break;
             } else {
@@ -2160,6 +2161,93 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
       }
     }
   }
+
+  if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;)&amp;&amp;
+    $(&quot;originalFilename&quot;).indexOf(&quot;RS_&quot;) == -1) {
+ 
+    var fileName = $(&quot;originalFilename&quot;);
+    var reportingMonth = String(calculateReportingMonthNew());
+ 
+    var rejectDbConn = null;
+    var batch_insert = null;
+ 
+    try {
+ 
+        rejectDbConn = DatabaseConnectionFactory.createDatabaseConnection(
+            jdbdcDriver,
+            jbdcUrl,
+            dbName,
+            dbPassword
+        );
+ 
+        batch_insert = rejectDbConn.executeCachedQuery(
+            &quot;INSERT INTO mco_data.mco_records &quot; +
+            &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
+            &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
+            &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
+            &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
+            &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
+            &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
+            &quot;RETURNING batch_id&quot;,
+            [
+                fileName,
+                0,
+                mco_id,
+                0,
+                0,
+                reportingMonth
+            ]
+        );
+ 
+        if (batch_insert.next()) {
+            var rejectedBatchId = batch_insert.getLong(&quot;batch_id&quot;);
+ 
+            channelMap.put(&quot;batch_id&quot;, rejectedBatchId);
+ 
+            logger.info(
+                &quot;FILE_REJECTED: Created mco_records entry. batch_id=&quot; +
+                rejectedBatchId +
+                &quot;, file=&quot; +
+                fileName
+            );
+        } else {
+            throw new Error(
+                &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+            );
+        }
+ 
+    } catch (err) {
+ 
+        logger.error(
+            &quot;FILE_REJECTED: Failed to insert mco_records entry for file &quot; +
+            fileName +
+            &quot;. Error: &quot; +
+            err
+        );
+ 
+        throw err;
+ 
+    } finally {
+ 
+        if (batch_insert) {
+            try {
+                batch_insert.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close batch_insert: &quot; + e);
+            }
+        }
+ 
+        if (rejectDbConn) {
+            try {
+                rejectDbConn.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close rejectDbConn: &quot; + e);
+            }
+        }
+    }
+}
+
+  
   
   //DOB Validation
   function dateValidCheck(dateString) {
@@ -2349,7 +2437,48 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
   
     var folderName = months[month] + &quot;-&quot; + year;
     return folderName;
-  }</script>
+  }
+
+  function calculateReportingMonthNew() {
+
+    var currentDate = new Date();
+
+    var day = currentDate.getDate();
+    var month = currentDate.getMonth() + 1; // 1-12
+    var year = currentDate.getFullYear();
+
+    var startDate = parseInt(configurationMap.get(&quot;startDate&quot;));
+    var endDate = parseInt(configurationMap.get(&quot;endDate&quot;));
+
+    // Handle reporting window
+    if (startDate &gt;= endDate) {
+
+        if (day &gt;= startDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+
+    } else {
+
+        if (day &gt; endDate) {
+            month++;
+
+            if (month &gt; 12) {
+                month = 1;
+                year++;
+            }
+        }
+    }
+
+    // Format month as 2 digits (01, 02, ..., 12)
+    var reportingMonth = (&quot;0&quot; + month).slice(-2) + &quot;-&quot; + year;
+
+    return reportingMonth;
+}</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
@@ -2679,7 +2808,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -2878,7 +3007,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -3884,7 +4013,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4121,7 +4250,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB-success-receipt/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5157,7 +5286,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5296,7 +5425,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/WHB/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-wellpoint_highmark/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5897,7 +6026,7 @@ return;</undeployScript>
     <encryptCustomMetaData>false</encryptCustomMetaData>
     <removeContentOnCompletion>true</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
-    <removeAttachmentsOnCompletion>true</removeAttachmentsOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
     <initialState>STARTED</initialState>
     <storeAttachments>true</storeAttachments>
     <metaDataColumns>
@@ -5927,7 +6056,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1785840136498</time>
+        <time>1787062655767</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -5940,9 +6069,9 @@ return;</undeployScript>
       <codeTemplateLibrary version="26.6.0">
         <id>0cd40c5b-c413-416b-8b22-427edd99fee5</id>
         <name>MCO Code Template</name>
-        <revision>27</revision>
+        <revision>32</revision>
         <lastModified>
-          <time>1784697670137</time>
+          <time>1786972626129</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -5955,6 +6084,7 @@ return;</undeployScript>
           <string>1dc4e9e7-e94c-4df3-a848-bd3173b77d37</string>
           <string>211c8ee4-3884-4ef1-b4f4-752edd1bbae5</string>
           <string>2463945b-58a7-4a85-90df-52ecabf88e1d</string>
+          <string>26262799-770a-42b4-9ada-f0c833f99a68</string>
           <string>29d0e04a-e2be-43ad-b814-bfe242963c90</string>
           <string>31a9afa3-a2e6-41dd-83c5-f04c5d0b3fca</string>
           <string>39be4d41-96bc-4dfb-917e-608813f6f8df</string>
@@ -5962,8 +6092,10 @@ return;</undeployScript>
           <string>47000d83-d1ed-40ca-804a-eca1a3cca8b1</string>
           <string>4e10b5e3-1436-4033-b98c-9aeb6aedd7fa</string>
           <string>5db3c021-b67c-4d7d-a0aa-1260337ac31d</string>
+          <string>5eaccb1c-1964-470d-bc40-f2955590c068</string>
           <string>6222414d-9da8-4671-b884-1bedb51011ce</string>
           <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+          <string>64e5f7eb-88e6-4377-a2d7-a1b44f952aa3</string>
           <string>67d90ecb-3486-4fb7-b41b-28041b3be63d</string>
           <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
           <string>70f5ce7c-8a03-438b-92b8-c35fb664e0b8</string>
@@ -5973,6 +6105,7 @@ return;</undeployScript>
           <string>7e9a8fc6-c6a3-4ce3-8bfc-958f597d0f01</string>
           <string>7f2828c1-cb43-4b3f-b9ca-f29729cdc9ce</string>
           <string>7f5d432d-de46-4df8-ae28-4d06de969c2a</string>
+          <string>7fb788bb-85e0-4545-8aa1-cb2a30c484df</string>
           <string>860f4760-3ed6-4d83-ae66-e01266e84fea</string>
           <string>8624283c-3e5c-4ed0-84d0-d08ee6ca50da</string>
           <string>938a9a0e-ce31-4a7a-bcbb-bc0067c7aaab</string>
@@ -5997,6 +6130,7 @@ return;</undeployScript>
           <string>d6b38603-b60e-48d1-a361-c98d89de353d</string>
           <string>dc35474a-ed99-4e64-9a5e-b27cdc9704a1</string>
           <string>dd40e862-3143-457e-b229-4affb13edab6</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
           <string>e9b8968f-46a8-40c1-b23b-6ef44bdc01f1</string>
           <string>f439fc0f-5e1b-43ea-a8df-96bf220aa8d6</string>
           <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
@@ -6134,9 +6268,9 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
       <codeTemplateLibrary version="26.6.0">
         <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
         <name>TechBD Functions</name>
-        <revision>227</revision>
+        <revision>233</revision>
         <lastModified>
-          <time>1784697670197</time>
+          <time>1786972626153</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description></description>
@@ -6163,6 +6297,7 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
           <string>2154b64c-8539-4320-86f4-8a0b9b706ad0</string>
           <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
+          <string>26262799-770a-42b4-9ada-f0c833f99a68</string>
           <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
           <string>29d0e04a-e2be-43ad-b814-bfe242963c90</string>
           <string>2b4ff91f-4f33-48c2-ba05-2f0cdfd1120b</string>
@@ -6193,9 +6328,11 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
           <string>5a76c462-e015-4756-a7a5-9715f9a8bec9</string>
           <string>5cf24505-f00b-4002-a769-836686016c37</string>
+          <string>5eaccb1c-1964-470d-bc40-f2955590c068</string>
           <string>60a18eb3-bf79-4c99-9bec-55fe0df4813f</string>
           <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
           <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
+          <string>64e5f7eb-88e6-4377-a2d7-a1b44f952aa3</string>
           <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
           <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
           <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
@@ -6203,6 +6340,7 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
           <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
           <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
+          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>71d75aee-a90e-4800-86cd-ec4d4ff8ba0c</string>
           <string>7276d188-bdba-4027-8cb7-15bf262c48a1</string>
           <string>789c27f9-3fbd-4c76-9252-833d4f388d81</string>
@@ -6210,6 +6348,7 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
           <string>7e9a8fc6-c6a3-4ce3-8bfc-958f597d0f01</string>
           <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
+          <string>7fb788bb-85e0-4545-8aa1-cb2a30c484df</string>
           <string>7ffeeda4-e8e9-4534-8cf0-28eb8ce65510</string>
           <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
           <string>829b3dbc-9d02-41b4-aa52-e9cbcc0f727b</string>
@@ -6281,6 +6420,7 @@ dbConn = DatabaseConnectionFactory.createDatabaseConnection(
           <string>dd22c442-ee54-4c80-b221-a2b30b889b79</string>
           <string>dd40e862-3143-457e-b229-4affb13edab6</string>
           <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
           <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
           <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
           <string>eb2f5490-8909-4216-b65a-5947fb0f359e</string>
@@ -6358,9 +6498,9 @@ function createJsonResponse(status, message) {
       <codeTemplateLibrary version="26.6.0">
         <id>a7794f94-7442-43ca-8cbb-1b1b55692c0c</id>
         <name>checkContactTypes</name>
-        <revision>27</revision>
+        <revision>32</revision>
         <lastModified>
-          <time>1784697670154</time>
+          <time>1786972626138</time>
           <timezone>America/New_York</timezone>
         </lastModified>
         <description>This library was added upon migration to version 3.3.0. It includes all pre-existing
@@ -6480,6 +6620,7 @@ necessarily including all code templates on all channels all the time.</descript
           <string>25194204-3f0a-469a-bc7b-5782274b3ed1</string>
           <string>257e73fc-c4d7-4fa3-9c87-0339db8a4dd1</string>
           <string>260c0404-e83e-40aa-b7af-8f403302fed9</string>
+          <string>26262799-770a-42b4-9ada-f0c833f99a68</string>
           <string>26ac7a01-9ef6-4ec8-ae28-a5d87b3b2bbc</string>
           <string>26c42766-9ec4-4068-b8bc-3a1e3d249dfa</string>
           <string>26e647b1-fc1a-43a7-a487-1052872acccd</string>
@@ -6640,6 +6781,7 @@ necessarily including all code templates on all channels all the time.</descript
           <string>5ceffbc2-24c7-4a4e-bdd7-18beaeff022d</string>
           <string>5e18e52e-5fc7-4401-98f2-ccdf7bc3b640</string>
           <string>5e268b7f-93a8-4650-b0b8-8f472f134a4f</string>
+          <string>5eaccb1c-1964-470d-bc40-f2955590c068</string>
           <string>5f2208f4-614e-4d80-82ba-72ff7e746040</string>
           <string>5f2a2135-1791-4b4a-85cb-2d3d8ca415e1</string>
           <string>5f3ef47c-07a8-4784-95bb-897d41423fed</string>
@@ -6664,6 +6806,7 @@ necessarily including all code templates on all channels all the time.</descript
           <string>647ab8f5-132c-49d4-b5f4-94624a98bef2</string>
           <string>649b8dab-10b8-46b8-a566-adbb9d6c1ff7</string>
           <string>64c75b7b-2b6b-42b4-9e6f-75577bc1e8af</string>
+          <string>64e5f7eb-88e6-4377-a2d7-a1b44f952aa3</string>
           <string>651c0096-8fc8-44a4-af8d-5966211beb20</string>
           <string>65dc0d7d-71cf-4e97-8a5b-96c6024ca0c0</string>
           <string>65f60b31-4c17-4990-9ef3-c15b961bb4b5</string>
@@ -6736,6 +6879,7 @@ necessarily including all code templates on all channels all the time.</descript
           <string>7e9a8fc6-c6a3-4ce3-8bfc-958f597d0f01</string>
           <string>7f2828c1-cb43-4b3f-b9ca-f29729cdc9ce</string>
           <string>7f5d432d-de46-4df8-ae28-4d06de969c2a</string>
+          <string>7fb788bb-85e0-4545-8aa1-cb2a30c484df</string>
           <string>7fbb7028-957e-4897-a222-bbbb0a481e51</string>
           <string>7fffc0d9-d132-4ae1-87f9-242b3d72d1e1</string>
           <string>80579a49-4b48-454b-a43b-b49919aa7bb5</string>
@@ -6999,6 +7143,7 @@ necessarily including all code templates on all channels all the time.</descript
           <string>e040491c-d7f8-4981-aef7-0771dc13ec88</string>
           <string>e0b16e56-df8a-4135-8e23-ba83f04e6e6f</string>
           <string>e0faceae-85ea-489c-9745-6b9f1f3e11a6</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
           <string>e27029ed-6f3c-4ed0-84bd-aac935119f20</string>
           <string>e2cbf280-cb69-4f8e-9b92-0640e9b46087</string>
           <string>e2deb770-4366-4a9f-b6c9-78f6ec8625e7</string>
@@ -7142,32 +7287,34 @@ function getCOVIDConn()
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>68649f46-df5a-4930-b034-11a4f00d1f2d</id>
-        <name>0_1_6</name>
+        <id>8271d3a3-9fb6-4296-ab30-d71649861794</id>
+        <name>0_1_8</name>
         <channelIds>
-          <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
           <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
           <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
           <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
           <string>48679919-904a-4913-a593-28f19da61615</string>
           <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>d9d04758-a40e-40ab-a7e8-0a3cc3245144</string>
           <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
           <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
           <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
