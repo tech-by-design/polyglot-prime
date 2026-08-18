@@ -136,44 +136,44 @@
     {
       "type": "MCO",
       "channel": "Excellus.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
       "channel": "Fidelis.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
       "channel": "Metroplus.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
       "channel": "Molina.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
       "channel": "MVP.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
       "channel": "Hamaspik.xml",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-04"
+      "date": "2026-08-18"
     },
     {
       "type": "MCO",
@@ -274,7 +274,7 @@
       "version": "0.1.7",
       "editedby": "anoopvarma-2000-p",
       "date": "2026-08-17"
-    }
+    },
   {
       "type": "code-templates",
       "channel": "SSL Certificate Validation.xml",
