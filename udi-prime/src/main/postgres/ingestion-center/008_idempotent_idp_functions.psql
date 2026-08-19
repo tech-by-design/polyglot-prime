@@ -527,7 +527,8 @@ SELECT
     tenant_id,
     tenant_name,
     tenant_displayname, 
-    tenant_short_code
+    tenant_short_code,
+    tenant_type
 FROM techbd_udi_ingress.tenants
 WHERE is_active = TRUE
 ORDER BY tenant_displayname ASC;

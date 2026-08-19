@@ -327,7 +327,7 @@
                             </div>
 
                             <!-- Row 2: Editable Tenant Display Name -->
-                            <div class="form-group">
+                            <div class="form-group full-width">
                                 <label class="form-label" for="displayName">Tenant Display Name</label>
                                 <div class="input-wrapper">
                                     <input type="text" id="displayName" class="form-control"
@@ -341,18 +341,26 @@
                                 </div>
                             </div>
 
-                            <!-- Row 2: Read-only System Name -->
+                            <!-- Row 3: Read-only Tenant Name -->
                             <div class="form-group">
                                 <label class="form-label">Tenant Name</label>
                                 <div class="input-wrapper">
                                     <input type="text" id="tenantName" class="form-control" readonly>
+                 
+                                </div>
+                            </div>
+                        <!-- Row 3: Read-only Tenant Type -->
+                         <div class="form-group">
+                                <label class="form-label">Tenant Type</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="tenantType" class="form-control" readonly>
                                     <!-- <span class="field-icon" title="Read-only">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                     </span> -->
                                 </div>
-                            </div>
+                            </div>                            
 
-                            <!-- Row 3: Read-only Tenant ID with Copy Icon -->
+                            <!-- Row 4: Read-only Tenant ID with Copy Icon -->
                             <div class="form-group">
                                 <label class="form-label">Tenant ID</label>
                                 <div class="input-wrapper">
@@ -368,7 +376,7 @@
                                 </div>
                             </div>
 
-                            <!-- Row 3: Read-only Short Code -->
+                            <!-- Row 5: Read-only Short Code -->
                             <div class="form-group">
                                 <label class="form-label">Short Code</label>
                                 <div class="input-wrapper">
@@ -400,6 +408,7 @@
             const tenantOptionsEl = document.getElementById('tenantOptions');
             const displayNameEl = document.getElementById('displayName');
             const tenantNameEl = document.getElementById('tenantName');
+            const tenantTypeEl = document.getElementById('tenantType');
             const tenantIdEl = document.getElementById('tenantId');
             const shortCodeEl = document.getElementById('shortCode');
             const saveBtnEl = document.getElementById('saveBtn');
@@ -422,6 +431,7 @@
                         tenantId: item.tenant_id,
                         displayName: item.tenant_displayname || item.tenant_name,
                         tenantName: item.tenant_name,
+                        tenantType: item.tenant_type,
                         shortCode: item.tenant_short_code,
                         createdAt: item.created_at
                     }));
@@ -526,6 +536,7 @@
                 const tenant = tenantsList[index];
                 displayNameEl.value = tenant.displayName;
                 tenantNameEl.value = tenant.tenantName;
+                tenantTypeEl.value = tenant.tenantType;
                 tenantIdEl.value = tenant.tenantId;
                 shortCodeEl.value = tenant.shortCode;
                 saveBtnEl.disabled = true;
