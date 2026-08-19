@@ -44,7 +44,7 @@
             <div class="flex justify-between items-center w-full mb-4">
                 <h2 class="text-xl font-bold text-gray-800">MCO Summary Metric</h2>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2" id="mco-month-filter-container">
                     <label for="mco-month-filter" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Filter
                         Period:</label>
                     <select id="mco-month-filter"
@@ -311,10 +311,24 @@
 
             async function initMcoMetricsSection() {
                 const monthSelect = document.getElementById('mco-month-filter');
+                const filterContainer = document.getElementById('mco-month-filter-container');
                 if (!monthSelect) return; // Exit gracefully if user lacks permissions
 
                 const recentReportingMonth = monthSelect.dataset.recentReportingMonth;
                 const selectedReportingMonth = monthSelect.dataset.selectedReportingMonth || recentReportingMonth;
+
+                // Hide filter if there is no reporting month
+                if (!recentReportingMonth) {
+                    if (filterContainer) {
+                        filterContainer.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                // Show filter when a value exists
+                if (filterContainer) {
+                    filterContainer.classList.remove('hidden');
+                }                
 
                 if (recentReportingMonth) {
                     monthSelect.innerHTML = '';
