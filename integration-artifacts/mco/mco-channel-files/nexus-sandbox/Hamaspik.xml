@@ -5,7 +5,7 @@
   <description>Version: 0.1.8
 Db insertion to mco_record table in file rejection.
 Replace MCO_CODE with sftpUsers in S3 </description>
-  <revision>38</revision>
+  <revision>43</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -93,7 +93,8 @@ Replace MCO_CODE with sftpUsers in S3 </description>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <script>function setMcoInfoInGlobalMap() {
+          <script>logger.info(&quot;source started&quot;);
+function setMcoInfoInGlobalMap() {
     channelMap.put(&quot;mco_code&quot;, &quot;HAM&quot;);
     channelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
     channelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-hamaspik&quot;);
@@ -2434,6 +2435,7 @@ var line = &quot;&quot;;
 var isEofFound = globalChannelMap.get(&quot;eofFound&quot;);
 
 if (isEofFound) {
+	logger.info(&quot;file is not processing&quot;);
   return null;
 } else {
   while ((line = reader.readLine()) != null) {
@@ -2604,7 +2606,7 @@ try {
   } finally {
     channelMap.clear();
     if ($(&apos;batchComplete&apos;) != true) {
-      globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+      channelMap.put(&quot;skipAllDestinations&quot;, true);
     }
     if (dbConn) {
       dbConn.close();
@@ -3995,7 +3997,7 @@ try {
   //Since config map store it as string, parse it into json
   var errorCodes = JSON.parse(errorCodesString);
 
-  var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+  var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 var errorCodesToAppend = &quot;&quot;;
 var errorDescToAppend = &quot;&quot;;
@@ -5992,7 +5994,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1787065991333</time>
+        <time>1787135337144</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6010,6 +6012,7 @@ return;</undeployScript>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
           <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>

@@ -5,7 +5,7 @@
   <description>Version: 0.1.8
 Db insertion to mco_record table in file rejection.
 Replace MCO_CODE with sftpUsers in S3 </description>
-  <revision>47</revision>
+  <revision>50</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2570,37 +2570,37 @@ var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
 
 try {
-  var recordCount = globalChannelMap.get(&quot;recordsCount&quot;);
+  var recordCount = channelMap.get(&quot;recordsCount&quot;);
   if ($(&quot;no_of_records&quot;)) {
     recordCount += $(&quot;no_of_records&quot;);
-    globalChannelMap.put(&quot;recordsCount&quot;, recordCount);
+    channelMap.put(&quot;recordsCount&quot;, recordCount);
   }
 
-  var fileSize = globalChannelMap.get(&quot;totalFileSize&quot;);
+  var fileSize = channelMap.get(&quot;totalFileSize&quot;);
   if ($(&quot;file_size&quot;)) {
     fileSize += $(&quot;file_size&quot;);
-    globalChannelMap.put(&quot;totalFileSize&quot;, fileSize);
+    channelMap.put(&quot;totalFileSize&quot;, fileSize);
   }
 
-  var status = globalChannelMap.get(&quot;fileStatus&quot;);
+  var status = channelMap.get(&quot;fileStatus&quot;);
   if ($(&quot;status&quot;)) {
     status = $(&quot;status&quot;);
-    globalChannelMap.put(&quot;fileStatus&quot;, status);
+    channelMap.put(&quot;fileStatus&quot;, status);
   }
 
-  var error = globalChannelMap.get(&quot;totalErrors&quot;);
+  var error = channelMap.get(&quot;totalErrors&quot;);
   if ($(&quot;errorCount&quot;)) {
     error += $(&quot;errorCount&quot;);
-    globalChannelMap.put(&quot;totalErrors&quot;, error);
+    channelMap.put(&quot;totalErrors&quot;, error);
   }
 
-  var process = globalChannelMap.get(&quot;totalProcess&quot;);
+  var process = channelMap.get(&quot;totalProcess&quot;);
   if ($(&quot;processedCount&quot;)) {
     process += $(&quot;processedCount&quot;);
-    globalChannelMap.put(&quot;totalProcess&quot;, process);
+    channelMap.put(&quot;totalProcess&quot;, process);
   }
 
-  var errorJson = globalChannelMap.get(&quot;errorJson&quot;);
+  var errorJson = channelMap.get(&quot;errorJson&quot;);
   var errors = $(&quot;errors&quot;);
 
   if ($(&quot;errors&quot;)) {
@@ -2623,8 +2623,8 @@ try {
     }
 
 
-    globalChannelMap.put(&quot;errorJson&quot;, errorJson);
-    globalChannelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
+    channelMap.put(&quot;errorJson&quot;, errorJson);
+    channelMap.put(&quot;errorJsonString&quot;, JSON.stringify(errorJson));
   }
 } catch (err) {
 
@@ -2676,37 +2676,37 @@ try {
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
             <sequenceNumber>0</sequenceNumber>
             <enabled>false</enabled>
-            <script>var recordCount =globalChannelMap.get(&quot;recordsCount&quot;) ;
+            <script>var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 recordCount+=$(&apos;no_of_records&apos;);
-globalChannelMap.put(&apos;recordsCount&apos;,recordCount);
+channelMap.put(&apos;recordsCount&apos;,recordCount);
 
-var fileSize= globalChannelMap.get(&quot;totalFileSize&quot;);
+var fileSize= channelMap.get(&quot;totalFileSize&quot;);
 fileSize+=$(&apos;file_size&apos;);
-globalChannelMap.put(&quot;totalFileSize&quot;,fileSize);
+channelMap.put(&quot;totalFileSize&quot;,fileSize);
 
 
-var status =globalChannelMap.get(&quot;fileStatus&quot;);
+var status =channelMap.get(&quot;fileStatus&quot;);
 status=$(&apos;status&apos;)
-globalChannelMap.put(&quot;fileStatus&quot;,status);
+channelMap.put(&quot;fileStatus&quot;,status);
 
 
-var error=globalChannelMap.get(&quot;totalErrors&quot;);
+var error=channelMap.get(&quot;totalErrors&quot;);
 error+=$(&apos;errorCount&apos;);
-globalChannelMap.put(&quot;totalErrors&quot;,error);
+channelMap.put(&quot;totalErrors&quot;,error);
 
 
 
-var process=globalChannelMap.get(&quot;totalProcess&quot;);
+var process=channelMap.get(&quot;totalProcess&quot;);
 process+=$(&apos;processedCount&apos;);
-globalChannelMap.put(&quot;totalProcess&quot;,process);
+channelMap.put(&quot;totalProcess&quot;,process);
 
 
 
-var errorJson=globalChannelMap.get(&quot;errorJson&quot;);
+var errorJson=channelMap.get(&quot;errorJson&quot;);
 var errors= $(&apos;errors&apos;);
 var finalArray=Object.assign({},errors,errorJson);
-globalChannelMap.put(&quot;errorJson&quot;,finalArray);
-globalChannelMap.put(&quot;errorJsonString&quot;, JSON.stringify(finalArray));
+channelMap.put(&quot;errorJson&quot;,finalArray);
+channelMap.put(&quot;errorJsonString&quot;, JSON.stringify(finalArray));
 
 
 var rawData = msg.toString().trim().split(&apos;\n&apos;);
@@ -4379,9 +4379,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		globalChannelMap.clear();
+		channelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			channelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -5582,7 +5582,7 @@ var batch_id;
 var batch_details_id;
 var fileName = $(&quot;originalFilename&quot;);
 var errorJson = {};
-var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
@@ -6055,7 +6055,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1787066422703</time>
+        <time>1787135387509</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6073,6 +6073,7 @@ return;</undeployScript>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
           <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
