@@ -5,7 +5,7 @@
   <description>Version: 0.1.8
 Db insertion to mco_record table in file rejection.
 Replace MCO_CODE with sftpUsers in S3 </description>
-  <revision>47</revision>
+  <revision>48</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -788,7 +788,7 @@ var apiUrl = configurationMap.get(&quot;reprocessUrl&quot;)
           var mco_name;
   
           var mcoIdResult = dbConn.executeCachedQuery(
-          &quot;select mco_id, mco_name from mco_data.mco where mco_code = ? and is_active = &apos;1&apos; &quot;,
+          &quot;select tenant_id, tenant_name from techbd_udi_ingress.tenants where tenant_short_code = ? and is_active = &apos;1&apos; &quot;,
             [$(&quot;mco_code&quot;)]
           );
           while (mcoIdResult.next()) {
@@ -6054,7 +6054,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1787135318030</time>
+        <time>1787139816811</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
