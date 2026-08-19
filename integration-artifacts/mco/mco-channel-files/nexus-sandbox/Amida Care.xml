@@ -1,10 +1,11 @@
 <channel version="26.6.0">
-  <id>85774252-b1b7-4df2-84bc-d2087d3c28f8</id>
+  <id>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.7
-Db insertion to mco_record table in file rejection.</description>
-  <revision>81</revision>
+  <description>Version: 0.1.8
+Db insertion to mco_record table in file rejection.
+Replace MCO_CODE with sftpUsers in S3 </description>
+  <revision>12</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +60,7 @@ Db insertion to mco_record table in file rejection.</description>
         <region>us-east-1</region>
         <customHeaders class="linked-hash-map"/>
       </schemeProperties>
-      <host>${s3BucketName}/bridgelink-inbound/AMI</host>
+      <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care</host>
       <fileFilter>*</fileFilter>
       <regex>false</regex>
       <directoryRecursion>false</directoryRecursion>
@@ -104,8 +105,8 @@ Db insertion to mco_record table in file rejection.</description>
     try {
       var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&quot;us-east-1&quot;).build();
       var bucket = globalMap.get(&quot;s3BucketName&quot;);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/AMI/mirth_processed/Success_&quot; + filename);
-      s3.deleteObject(bucket, &quot;bridgelink-inbound/AMI/mirth_processed/Error_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-amida_care/mirth_processed/Success_&quot; + filename);
+      s3.deleteObject(bucket, &quot;bridgelink-inbound/mco-sftp-amida_care/mirth_processed/Error_&quot; + filename);
       logger.info(&quot;Deleted staged S3 success/error objects for &quot; + filename);
     } catch (err) {
       logger.info(&quot;Could not delete staged S3 objects for &quot; + filename + &quot;: &quot; + err);
@@ -836,6 +837,7 @@ Db insertion to mco_record table in file rejection.</description>
                 channelMap.put(&quot;fileRejected&quot;, true);
               } else {
                 channelMap.put(&quot;eofFound&quot;, true);
+                globalChannelMap.put(&quot;eofFound&quot;, true);
               }
               break;
             } else {
@@ -2132,32 +2134,90 @@ Db insertion to mco_record table in file rejection.</description>
   }
   
 
-  if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;)) { 
+  if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;) &amp;&amp;
+    $(&quot;originalFilename&quot;).indexOf(&quot;RS_&quot;) == -1) {
+ 
     var fileName = $(&quot;originalFilename&quot;);
-    var reportingMonth = java.lang.String.valueOf(calculateReportingMonthNew());
-     try {
-        if (!dbConn) {
-          dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    var reportingMonth = String(calculateReportingMonthNew());
+ 
+    var rejectDbConn = null;
+    var batch_insert = null;
+ 
+    try {
+ 
+        rejectDbConn = DatabaseConnectionFactory.createDatabaseConnection(
             jdbdcDriver,
             jbdcUrl,
             dbName,
             dbPassword
-          );
+        );
+ 
+        batch_insert = rejectDbConn.executeCachedQuery(
+            &quot;INSERT INTO mco_data.mco_records &quot; +
+            &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
+            &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
+            &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
+            &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
+            &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
+            &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
+            &quot;RETURNING batch_id&quot;,
+            [
+                fileName,
+                0,
+                mco_id,
+                0,
+                0,
+                reportingMonth
+            ]
+        );
+ 
+        if (batch_insert.next()) {
+            var rejectedBatchId = batch_insert.getLong(&quot;batch_id&quot;);
+ 
+            channelMap.put(&quot;batch_id&quot;, rejectedBatchId);
+ 
+            logger.info(
+                &quot;FILE_REJECTED: Created mco_records entry. batch_id=&quot; +
+                rejectedBatchId +
+                &quot;, file=&quot; +
+                fileName
+            );
+        } else {
+            throw new Error(
+                &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+            );
         }
-      }catch (err) {
-          logger.info(err);
-          throw err;
-      }
-          batch_insert = dbConn.executeCachedQuery(
-                          &quot;insert into mco_data.mco_records(root_file_name, created_on_utc, updated_on_utc, total_records, processed_count, errored_count, is_active, status, tenant_id, file_size_in_kb, resubmitted_count, sent_to_datalake_time, qa_completed_time, sent_to_mco_time, reporting_month) VALUES (?, current_timestamp, current_timestamp, ?, null, null, &apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) returning batch_id&quot;,
-                          [fileName, 0, mco_id, 0, 0, reportingMonth]
-                        );
-
-                batch_id = batch_insert.next()
-                    ? batch_insert.getLong(&quot;batch_id&quot;)
-                    : null;
-                    channelMap.put(&quot;batch_id&quot;, batch_id);
-     }
+ 
+    } catch (err) {
+ 
+        logger.error(
+            &quot;FILE_REJECTED: Failed to insert mco_records entry for file &quot; +
+            fileName +
+            &quot;. Error: &quot; +
+            err
+        );
+ 
+        throw err;
+ 
+    } finally {
+ 
+        if (batch_insert) {
+            try {
+                batch_insert.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close batch_insert: &quot; + e);
+            }
+        }
+ 
+        if (rejectDbConn) {
+            try {
+                rejectDbConn.close();
+            } catch (e) {
+                logger.warn(&quot;Unable to close rejectDbConn: &quot; + e);
+            }
+        }
+    }
+}
        
         
 
@@ -2736,7 +2796,7 @@ channelMap.put(&quot;RawData&quot;, rawData);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/mirth_processed</host>
         <outputPattern>Success_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -2939,7 +2999,7 @@ channelMap.put(&quot;validContent&quot;, validContent);
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/mirth_processed</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/mirth_processed</host>
         <outputPattern>Error_${originalFilename}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -3041,7 +3101,7 @@ try {
    var mirthMcoId = $(&quot;mcoId&quot;) || null;
    //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 	  batch_details_insert = dbConn.executeCachedQuery(
-	    &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?:) returning batch_details_id&quot;,
+	    &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
 	    [$(&apos;originalFilename&apos;), 0, 0, mirthBatchId, mirthMcoId]
 	  );
 	  var new_batch_details_id = batch_details_insert.next()
@@ -3274,10 +3334,10 @@ function sftpFileTransfer(
 				destinationServerName,
 				destinationPort
 			);
-
-			//      if (destinationPassword) {
-			//      session2.setPassword(destinationPassword);
-			//    }
+			
+//			if (destinationPassword) {
+//			    session2.setPassword(destinationPassword);
+//		       }
 
 			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
 
@@ -3692,21 +3752,12 @@ var smtpUsername = configurationMap.get(&quot;smtpUsername&quot;);
 var smtpPassword = configurationMap.get(&quot;smtpPassword&quot;);
 var fromEmail = configurationMap.get(&quot;smtpFromEmail&quot;);
 
-
-//batch_id/$(&apos;batch_details_id&apos;) resolve to &quot;&quot; (not null) when unset, which fails downstream ? casts
+//$(&apos;batch_id&apos;)/$(&apos;batch_details_id&apos;) resolve to &quot;&quot; (not null) when unset, which fails downstream ?::bigint casts
 var batch_id = $(&quot;batch_id&quot;) || null;
 var batch_details_id = $(&quot;batch_details_id&quot;) || null;
-var mcoId = $(&quot;mcoId&quot;) || null;
-
-logger.info(&quot;batch_id = [&quot; + batch_id + &quot;]&quot;);
-logger.info(&quot;batch_details_id = [&quot; + batch_details_id + &quot;]&quot;);
-logger.info(&quot;batch_id = [&quot; + batch_id + &quot;]&quot;);
-logger.info(&quot;$(&apos;batch_details_id&apos;) = [&quot; + $(&quot;batch_details_id&quot;) + &quot;]&quot;);
-logger.info(&quot;mcoId = [&quot; + mcoId + &quot;]&quot;);
 
 var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
-
 
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
@@ -3737,7 +3788,7 @@ try {
 		);
 		if (!$(&quot;isResubmission&quot;)) {
 			var batch_update = dbConn.executeUpdate(
-				&quot;update mco_data.mco_records set status = ?, qa_completed_time = current_timestamp,processed_count=?,errored_count=?,total_records=?,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_id = ?&quot;,
+				&quot;update mco_data.mco_records set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					status,
 					$(&quot;totalProcess&quot;),
@@ -3750,7 +3801,7 @@ try {
 		}
 
 		var batch_details_update = dbConn.executeUpdate(
-			&quot;update mco_data.mco_record_details set status = ?, qa_completed_time = current_timestamp,processed_count=?,errored_count=?,total_records=?,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_details_id = ?&quot;,
+			&quot;update mco_data.mco_record_details set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_details_id = ?::bigint&quot;,
 			[
 				status,
 				$(&quot;totalProcess&quot;),
@@ -3763,19 +3814,19 @@ try {
 
 		if ($(&quot;totalErrors&quot;) &amp;&amp; $(&quot;totalErrors&quot;) != 0) {
 			var error_log_insert = dbConn.executeUpdate(
-				&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?, ?::json, current_timestamp, current_timestamp, ?, &apos;1&apos;, ?,?)&quot;,
+				&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
 				[
 					batch_id,
 					JSON.stringify($(&quot;errorJson&quot;)),
 					batch_details_id,
 					errorTypes[&quot;FIELD_VALIDATION_ERROR&quot;][&quot;error_type_id&quot;],
-					mcoId,
+					$(&quot;mcoId&quot;)
 				]
 			);
 		}
 
 		var last_error_count = dbConn.executeCachedQuery(
-      &quot;select errored_count from mco_data.mco_record_details where batch_details_id = ? and status != &apos;FILE_REJECTED&apos; and is_active = &apos;1&apos; &quot;,
+      &quot;select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and status != &apos;FILE_REJECTED&apos; and is_active = &apos;1&apos; &quot;,
 			[batch_details_id]
 		);
 		while (last_error_count.next()) {
@@ -3784,7 +3835,7 @@ try {
 
 		if (status == &apos;ERRORED&apos; &amp;&amp; $(&quot;isResubmission&quot;)) {
 			var batch_update = dbConn.executeUpdate(
-        &quot;update mco_data.mco_records set processed_count = ((select total_records from mco_data.mco_records where batch_id = ? and is_active = &apos;1&apos;)-(select errored_count from mco_data.mco_record_details where batch_details_id = ? and is_active = &apos;1&apos;)), errored_count = ?, qa_completed_time = current_timestamp where batch_id = ?&quot;,
+        &quot;update mco_data.mco_records set processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos;)-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?::bigint, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					batch_id,
 					batch_details_id,
@@ -3795,7 +3846,7 @@ try {
 		}
 		else {
 			var batch_update = dbConn.executeUpdate(
-        &quot;update mco_data.mco_records set status=?, processed_count = ((select total_records from mco_data.mco_records where batch_id = ? and is_active = &apos;1&apos; )-(select errored_count from mco_data.mco_record_details where batch_details_id = ? and is_active = &apos;1&apos;)), errored_count = ?, qa_completed_time = current_timestamp where batch_id = ?&quot;,
+        &quot;update mco_data.mco_records set status=?, processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos; )-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?::bigint, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					status,
 					batch_id,
@@ -3822,20 +3873,20 @@ try {
 		}
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
-			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?, null, ?) returning batch_details_id&quot;,
-			[$(&apos;originalFilename&apos;), 0, 0, batch_id, mcoId]
+			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
+			[$(&apos;originalFilename&apos;), 0, 0, $(&apos;batch_id&apos;), $(&apos;mcoId&apos;)]
 		);
 		var new_batch_details_id = batch_details_insert.next()
 			? batch_details_insert.getInt(&quot;batch_details_id&quot;)
 			: null;
 		var error_log_insert = dbConn.executeUpdate(
-			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?, ?::json, current_timestamp, current_timestamp, ?, &apos;1&apos;, ?,?)&quot;,
+			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
 			[
-				batch_id,
+				$(&quot;batch_id&quot;),
 				JSON.stringify(err),
 				new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-        mcoId,
+				$(&quot;mcoId&quot;)
 			]
 		);
 		throw err;
@@ -3862,7 +3913,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
 	logger.info((totalRecords * limit) / 100 &lt;= errorRecords);
 	return (totalRecords * limit) / 100 &lt;= errorRecords;
 }
-logger.info(&quot;errors in db calls destin&quot;+errorRecords);</script>
+</script>
       </properties>
       <transformer version="26.6.0">
         <elements/>
@@ -3962,7 +4013,7 @@ logger.info(&quot;errors in db calls destin&quot;+errorRecords);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/esmf/outbound/error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4208,7 +4259,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/esmf/outbound/success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5284,7 +5335,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/mco_success</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/mco_success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5425,7 +5476,7 @@ channelMap.put(&quot;errorSubject&quot;,errorSubject);</script>
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/AMI/mco_error</host>
+        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/mco_error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -5847,6 +5898,7 @@ try {
         </destinationConnectorProperties>
         <script>logger.info(&quot;Clearing global map&quot;)
 channelMap.clear();
+globalChannelMap.clear();
 var recordCount =channelMap.get(&quot;recordsCount&quot;) ;
 logger.info(&quot;Current record count : &quot; + recordCount )</script>
       </properties>
@@ -6063,7 +6115,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1786530792063</time>
+        <time>1787135249912</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6074,27 +6126,25 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>f19aaa8f-3a0f-4a2e-9eb6-07ff62e65400</id>
-        <name>0_1_7</name>
+        <id>8271d3a3-9fb6-4296-ab30-d71649861794</id>
+        <name>0_1_8</name>
         <channelIds>
-          <string>85774252-b1b7-4df2-84bc-d2087d3c28f8</string>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-          <string>ba498658-d7f7-4850-b7ba-abba1037906a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
-          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
           <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
           <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
           <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-          <string>6b103978-ecba-4c09-9626-3157dc6f3b67</string>
           <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
           <string>48679919-904a-4913-a593-28f19da61615</string>
-          <string>5eaccb1c-1964-470d-bc40-f2955590c068</string>
           <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
           <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
           <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
@@ -6104,7 +6154,7 @@ return;</undeployScript>
         </channelIds>
         <backgroundColor>
           <red>255</red>
-          <green>0</green>
+          <green>255</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
