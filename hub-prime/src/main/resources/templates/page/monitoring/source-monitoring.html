@@ -63,7 +63,7 @@
 
         /* --- Modal Cards & Borders --- */
         .info-modal-card {
-            width: min(600px, 90%);
+            width: min(700px, 90%);
             background: #F1F8F6;
             /* Modal Body Background: Very light mint green */
             border: 1px solid #E0E0E0;
@@ -317,6 +317,14 @@
                 const row = params?.data || {};
 
                 sourceMonitoringInfoContent.innerHTML = `
+ 
+                  
+                    <div class="info-modal-row">                    
+                        <span class="info-modal-label">File Name</span>
+                        <span class="info-modal-value font-mono text-xs text-blue-700 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-md font-medium">
+                        ${row.root_file_name}
+                        </span> 
+                    </div>
                     <div class="info-modal-row">
                         <span class="info-modal-label">Resubmitted Count</span>
                         <span class="info-modal-value">${row.resubmitted_count ?? 0}</span>
@@ -840,8 +848,8 @@
                     accordionContent.classList.toggle("hidden");
                     toggleButton.textContent =
                         accordionContent.classList.contains("hidden")
-                            ? "▶ Click here to view the column descriptions"
-                            : "▼ Hide column descriptions";
+                            ? "? Click here to view the column descriptions"
+                            : "? Hide column descriptions";
                 });
             }
 
@@ -869,7 +877,7 @@
                 <button id="accordionToggle"
                     class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
 
-                    ▶ Click here to view the column descriptions
+                    ? Click here to view the column descriptions
 
                 </button>
 
