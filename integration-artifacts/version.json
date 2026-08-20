@@ -129,51 +129,51 @@
     {
       "type": "MCO",
       "channel": "Amida Care.xml",
-      "version": "0.1.7",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-12"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "Excellus.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-18"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "Fidelis.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-19"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "Metroplus.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-18"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "Molina.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-19"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "MVP.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-18"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
       "channel": "Hamaspik.xml",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-08-18"
+      "date": "2026-08-20"
     },
     {
       "type": "MCO",
@@ -271,9 +271,9 @@
     {
       "type": "MCO",
       "channel": "TxD.xml",
-      "version": "0.1.7",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2026-08-17"
+      "version": "0.1.9",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-08-20"
     },
   {
       "type": "code-templates",
