@@ -6874,7 +6874,8 @@ DECLARE
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'USER');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
 	v_nature_denorm   	TEXT 		:= trim(COALESCE(p_nature->>'nature', ''));
-   	v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
+   	-- v_tenant_id_denorm 	TEXT		:= trim(COALESCE(p_nature->>'tenant_id', ''));
+    v_tenant_id_denorm 	TEXT		:= (SELECT tenant_name FROM techbd_udi_ingress.tenants WHERE lower(tenant_displayname) = lower(trim(COALESCE(p_nature->>'tenant_id', ''))));
 	v_tenant_id 	  	TEXT		:= COALESCE(techbd_udi_ingress.get_tenant_details(v_tenant_id_denorm, v_created_by, v_created_at, 'register_user_interaction') ->> 'tenant_id', '');
    
    	v_from_state				TEXT;
