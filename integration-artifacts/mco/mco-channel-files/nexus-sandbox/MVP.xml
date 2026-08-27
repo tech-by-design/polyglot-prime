@@ -4,7 +4,7 @@
   <name>MVP</name>
   <description>Version: 0.1.9
 SFTP implemetation</description>
-  <revision>56</revision>
+  <revision>57</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -6012,8 +6012,6 @@ return;</postprocessingScript>
 globalMap.put(&quot;jbdcUrl&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;));
 globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;));
 globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
-//globalMap.put(&quot;s3AccessKeyId&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_ACCESS_KEY_ID&quot;));
-//globalMap.put(&quot;s3SecretAccessKey&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_SECRET_ACCESS_KEY&quot;));
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
 globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
 return;</deployScript>
@@ -6058,14 +6056,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1787631096517</time>
+        <time>1787806242303</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
@@ -6079,6 +6077,7 @@ return;</undeployScript>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
           <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+          <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
           <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
