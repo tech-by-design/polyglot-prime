@@ -1608,7 +1608,16 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('b0f5a577-4215-4258-ab24-7b38bf577e31','screening_code','93025-5','Protocol for Responding to and Assessing Patients'' Assets, Risks, and Experiences [PRAPARE]','http://loinc.org',NULL,'1.9.2','2026-06-23 11:22:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;	 
  
+-- Update system_value for the relevant screening codes
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
+WHERE code_type = 'screening_code'
+  AND code IN ('NA', 'NYSAHCHRSN');
 
+DELETE FROM techbd_udi_ingress.ref_code_lookup
+WHERE code_type = 'screening_code'
+  AND code = 'NYS-AHC-HRSN';
+  
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
 
 /*
