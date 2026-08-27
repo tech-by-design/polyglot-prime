@@ -119,7 +119,7 @@ public class PostPopulateSupport {
                                     ConceptReaderUtils.getValueSetConcepts_wCode(
                                             referenceCodesPath.concat("hcpcs.psv")))
                             .setSystem(
-                                    "https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"));
+                                    "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"));
 
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
