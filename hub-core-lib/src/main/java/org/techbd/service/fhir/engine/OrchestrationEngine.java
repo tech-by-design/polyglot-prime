@@ -28,6 +28,7 @@ import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.RemoteTerminologyServiceValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
@@ -404,6 +405,11 @@ public class OrchestrationEngine {
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
+
+                RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(fhirContext);
+                remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
+                supportChain.addValidationSupport(remoteTermSvc);
+
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);
                 postPopulateSupport.update(supportChain,profileBaseUrl);
@@ -507,8 +513,8 @@ public class OrchestrationEngine {
                     if (headerIgVersion != null) {
                         LOG.info("requested IG Version : " + headerIgVersion);
                         Map<String, String> basePackages = Map.of(
-                                "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0",
-                                "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0",
+                                "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated",
+                                "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0",
                                 "uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
                         
                         String profileBaseUrl = profileUrl;
