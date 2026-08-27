@@ -34,8 +34,8 @@ org:
             ig-version: 1.9.4
         base-packages:
         # Base packages for external dependencies 
-          us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
-          sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
+          us-core: ig-packages/fhir-v4/us-core/stu-7.0.0-updated
+          sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0
           uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
     validation-severity-level: error  # Possible values: fatal, error, warning, information
     structureDefinitionsUrls:

@@ -27,6 +27,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.RemoteTerminologyServiceValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
@@ -41,6 +42,7 @@ import org.techbd.fhir.config.AppConfig;
 import org.techbd.fhir.config.AppConfig.FhirV4Config;
 import org.techbd.fhir.exceptions.ErrorCode;
 import org.techbd.fhir.exceptions.JsonValidationException;
+import org.techbd.fhir.service.engine.OrchestrationEngine.OrchestrationSession;
 import org.techbd.fhir.service.validation.FhirBundleValidator;
 import org.techbd.fhir.service.validation.PostPopulateSupport;
 import org.techbd.fhir.service.validation.PrePopulateSupport;
@@ -403,6 +405,11 @@ public class OrchestrationEngine {
                 final var prePopulateSupport = new PrePopulateSupport(tracer, appLogger);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
+
+                RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(fhirContext);
+                remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
+                supportChain.addValidationSupport(remoteTermSvc);
+                
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);
@@ -507,8 +514,8 @@ public class OrchestrationEngine {
                     if (headerIgVersion != null) {
                         LOG.info("requested IG Version : " + headerIgVersion);
                         Map<String, String> basePackages = Map.of(
-                                "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0",
-                                "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0",
+                                "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated",
+                                "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0",
                                 "uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
                         
                         String profileBaseUrl = profileUrl;

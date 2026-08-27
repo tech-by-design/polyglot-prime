@@ -66,8 +66,8 @@ public abstract class BaseIgValidationTest {
 
         // Base packages for external dependencies
         Map<String, String> basePackages = new HashMap<>();
-        basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
-        basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
+        basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated");
+        basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0");
         basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
 
         // Shinny Packages
