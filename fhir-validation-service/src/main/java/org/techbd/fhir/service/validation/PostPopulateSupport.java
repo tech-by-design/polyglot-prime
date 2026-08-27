@@ -48,7 +48,7 @@ public class PostPopulateSupport {
                 loinc_valueSet.getCompose().addInclude(new ValueSet.ConceptSetComponent()
                         .setConcept(ConceptReaderUtils
                                 .getValueSetConcepts_wCode(referenceCodesPath.concat("custom-system-code.psv")))
-                        .setSystem(profileBaseUrl + "/CodeSystem/NYS-HRSN-Questionnaire"));
+                        .setSystem(profileBaseUrl +  "/CodeSystem/NYSHRSNQuestionnaire"));
             } finally {
                 loinc_valueSet = null;
             }
