@@ -24,8 +24,11 @@ public class Constant {
             "/docs/api/openapi/**",
             "/api/permissions/**",
             "/error", "/error/**",
-            "/tenants"
-    };
+                "/tenants",
+                "/permission-denied",
+                "/tech-by-design_hub_reverse_small.png",
+                "/tech-by-design_full-color.svg"
+            };
 
     public static final String[] INTERCEPTOR_EXCLUDED_URLS = {
         // Auth & OAuth2
@@ -40,6 +43,9 @@ public class Constant {
 
         "/error",
         "/error/**",
+        "/permission-denied",
+        "/tech-by-design_hub_reverse_small.png",
+        "/tech-by-design_full-color.svg",
 
         "/.well-known/**",
         "/metadata",
@@ -75,5 +81,10 @@ public class Constant {
         }
         return Arrays.stream(STATELESS_API_URLS)
                 .anyMatch(requestUrl::contains);
+    }
+
+    public static final boolean isLogoAsset(String requestUrl) {
+        return "/tech-by-design_hub_reverse_small.png".equals(requestUrl)
+                || "/tech-by-design_full-color.svg".equals(requestUrl);
     }
 }
