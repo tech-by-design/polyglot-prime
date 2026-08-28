@@ -42,7 +42,7 @@
             <xsl:copy-of select="hl7:author"/>
             <xsl:copy-of select="hl7:custodian"/>
             <xsl:copy-of select="hl7:legalAuthenticator"/>
-            <xsl:copy-of select="hl7:documentationOf"/>
+            <!-- <xsl:copy-of select="hl7:documentationOf"/> -->
 
             <!-- Consent -->
             <xsl:choose>
