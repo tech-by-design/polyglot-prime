@@ -338,7 +338,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn|93025-5)$`
+    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|93025-5)$`
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
@@ -349,7 +349,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\.html|http://shinny\.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire)$`
+    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystemnyshrsnquestionnaire\.html|http://shinny\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$`
 ### `QUESTION_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
