@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/prime}">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Permission</title>
+    <style> 
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content" class="p-6 bg-gray-50 min-h-screen"> 
+    <div class="container mx-auto max-w-5xl">
+        
+        <!-- Main Card Block -->
+        <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm flex flex-col md:flex-row items-center gap-8 mt-10">
+            
+            <!-- Grayscale Lock Graphic -->
+            <div class="flex-shrink-0">
+                <svg class="w-32 h-32 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+
+            <!-- Content Message -->
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Page Access Restricted</h2>
+                <p class="text-gray-600" th:text="${permissionDeniedMessage}">You do not have permission to view this page. Please contact an administrator.</p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

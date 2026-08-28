@@ -34,11 +34,16 @@ public class RolePermissionInterceptor implements HandlerInterceptor {
             }
             
         String uri = request.getRequestURI();
+
+        if (Constant.isLogoAsset(uri)) {
+            return true;
+        }
+
         HttpSession session = request.getSession(false);
 
         if (session == null) {
             LOG.warn("No session found, blocking access to {}", uri);
-            response.sendRedirect("/login");
+            response.sendRedirect("/permission-denied?reason=no-active-session");
             return false;
         }
         Boolean isSuperRole = (Boolean) session.getAttribute(Constant.SUPER_ROLE);
@@ -66,7 +71,7 @@ public class RolePermissionInterceptor implements HandlerInterceptor {
         }
         if (rolePermissions == null || rolePermissions.isEmpty()) {
             LOG.warn("Role {} has no permissions, blocking access to {}", role, uri);
-            response.sendRedirect("/logout");
+            response.sendRedirect("/permission-denied?reason=no-permissions");
             return false;
         }
 
