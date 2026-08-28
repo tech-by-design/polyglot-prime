@@ -680,8 +680,13 @@
     <xsl:param name="resource_name"/>
     {
       <!-- Pre-calculate trimmed values -->
+
+      <!-- Single source of truth for which streetAddressLine nodes are usable -->
+      <xsl:variable name="validLines"
+        select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']"/>
+
       <xsl:variable name="street">
-        <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
+        <xsl:for-each select="$validLines">
           <xsl:variable name="line">
             <xsl:call-template name="string-trim">
               <xsl:with-param name="text" select="."/>
@@ -762,19 +767,19 @@
             </xsl:choose>
           </xsl:otherwise>
         </xsl:choose>"
-        <xsl:if test="string($formattedAddress) or $addr/ccda:streetAddressLine or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
+        <xsl:if test="string($formattedAddress) or $validLines or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
 
       <!-- text -->
       <xsl:if test="string($formattedAddress)">
         "text": "<xsl:value-of select="$formattedAddress"/>"
-        <xsl:if test="$addr/ccda:streetAddressLine or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
+        <xsl:if test="$validLines or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
 
       <!-- line -->
-      <xsl:if test="$addr/ccda:streetAddressLine[not(@nullFlavor)]">
+      <xsl:if test="$validLines">
         "line": [
-          <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor)]">
+          <xsl:for-each select="$validLines">
             "<xsl:call-template name="string-trim">
                 <xsl:with-param name="text" select="."/>
               </xsl:call-template>"
