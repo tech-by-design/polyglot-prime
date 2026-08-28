@@ -306,16 +306,16 @@ public Map<String, List<ScreenPermission>> getRolePermissions(String roleName) {
         boolean isSuperRole = Boolean.TRUE.equals(user.isSuperRole());
 
         if (roles.isEmpty()) {
-            LOG.warn("FusionAuth user {} has no role assigned. Redirecting to logout.",
+            LOG.warn("FusionAuth user {} has no role assigned. Redirecting to permission denied.",
                     user.email());
-            response.sendRedirect("/logout");
+            response.sendRedirect("/permission-denied?reason=no-role");
             return false;
         }
 
         if (!isSuperRole && tenantNames.isEmpty()) {
-            LOG.warn("FusionAuth user {} has no tenant assigned. Redirecting to logout.",
+            LOG.warn("FusionAuth user {} has no tenant assigned. Redirecting to permission denied.",
                     user.email());
-            response.sendRedirect("/logout");
+            response.sendRedirect("/permission-denied?reason=no-tenant");
             return false;
         }
 

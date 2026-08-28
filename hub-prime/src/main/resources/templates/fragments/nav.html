@@ -30,7 +30,7 @@
                     <div id="nav-prime" class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
                             <span><a th:each="navItem: ${navPrime}"
-                                    th:if="${navItem.text} != 'Needs Attention' and ${navItem.text} != 'Diagnostic' and ${navItem.text} != 'Profile' and ${navItem.text} != 'Settings'"
+                                    th:if="${navItem.text} != 'Needs Attention' and ${navItem.text} != 'Diagnostic' and ${navItem.text} != 'Profile' and ${navItem.text} != 'Settings' and ${navItem.text} != 'Permission Denied'"
                                     th:attr="href=@{${navItem.href.orElse('?')}}" th:text="${navItem.text}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Label</a>
                             </span>
@@ -50,7 +50,7 @@
                             Help Desk Issues
                         </a>
                         <div class="relative ml-2" id="tenantDropdown"
-                           th:if="${!session.isSuperRole and #authentication.principal.attributes['authProvider'] != 'github'}"> 
+                           th:if="${session.isSuperRole != true and #authentication.principal.attributes['authProvider'] != 'github'}"> 
 
                             <button
                                 class="inline-flex h-10 items-center justify-between rounded-md border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-300 shadow-none transition hover:bg-gray-700 hover:text-white focus:outline-none dark:focus:ring-[#3b5998]/55"
