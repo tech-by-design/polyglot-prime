@@ -4633,21 +4633,21 @@ try {
 	var body;
 
 	if ($(&apos;isResubmission&apos;) == true) {
-		subject = &quot;GRRHIO Alert: ESMF Resubmission File Rejected&quot;;
+		subject = &quot;TechBD Alert: ESMF Resubmission File Rejected&quot;;
 		body = $(&quot;mcoName&quot;) +
 			&quot;: This is an automated notification that your resubmitted ESMF file &quot; +
 			$(&quot;originalFilename&quot;) +
 			&quot; has been rejected. A File Rejection response file with details of the rejection has been posted in the SFTP /esmf/outbound/error folder.&quot; +
 			&quot;\n\n\n&quot; +
-			&quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at support@grrhio.org&quot;;
+			&quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at help@techbd.org&quot;;
 	} else {
-		subject = &quot;GRRHIO Alert: Submitted Monthly ESMF File Rejected&quot;;
+		subject = &quot;TechBD Alert: Submitted Monthly ESMF File Rejected&quot;;
 		body = $(&quot;mcoName&quot;) +
 			&quot;: This is an automated notification that your submitted Monthly ESMF file &quot; +
 			$(&quot;originalFilename&quot;) +
 			&quot; has been rejected. A File Rejection response file with details of the rejection has been posted in the SFTP /esmf/outbound/error folder.&quot; +
 			&quot;\n\n\n&quot; +
-			&quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at support@grrhio.org&quot;;
+			&quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at help@techbd.org&quot;;
 	}
 
 	var toEmails = &quot;&quot;;
@@ -4889,8 +4889,8 @@ try {
 	var folderName = months[month] + &quot;-&quot; + year;
 	channelMap.put(&quot;folderName&quot;, folderName);
 
-	var subject = &quot;GRRHIO Alert: Monthly ESMF File Successfully Processed&quot;
-	var body = $(&apos;mcoName&apos;) + &quot;: This is an automated notification to confirm that your monthly ESMF submitted file &quot; + $(&quot;originalFilename&quot;) + &quot; for the reporting month &quot; + $(&quot;folderName&quot;) + &quot; has been successfully processed. No further action is required at your end.&quot; + &quot;\n\n\n&quot; + &quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at support@grrhio.org&quot;;
+	var subject = &quot;TechBD Alert: Monthly ESMF File Successfully Processed&quot;
+	var body = $(&apos;mcoName&apos;) + &quot;: This is an automated notification to confirm that your monthly ESMF submitted file &quot; + $(&quot;originalFilename&quot;) + &quot; for the reporting month &quot; + $(&quot;folderName&quot;) + &quot; has been successfully processed. No further action is required at your end.&quot; + &quot;\n\n\n&quot; + &quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at help@techbd.org&quot;;
 	var toEmails = &quot;&quot;;
 	var ccEmails = &quot;&quot;;
 
@@ -5146,9 +5146,9 @@ try {
 	channelMap.put(&quot;folderName&quot;, folderName)
 
 
-	var subject = &quot;GRRHIO Alert: Error found in Monthly ESMF File&quot;
+	var subject = &quot;TechBD Alert: Error found in Monthly ESMF File&quot;
 	var body = $(&quot;mcoName&quot;) + &quot;: This is an automated notification informing you that the errors has been found in the partial member records of your submitted Monthly ESMF file &quot;
-		+ $(&quot;originalFilename&quot;) + &quot; for the reporting month &quot; + $(&quot;folderName&quot;) + &quot;. An error response file with the details of the erroneous records has been posted in the SFTP /esmf/outbound/error folder. Please correct the errors and resubmit before the due date.&quot; + &quot;\n\n\n&quot; + &quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at support@grrhio.org&quot;;
+		+ $(&quot;originalFilename&quot;) + &quot; for the reporting month &quot; + $(&quot;folderName&quot;) + &quot;. An error response file with the details of the erroneous records has been posted in the SFTP /esmf/outbound/error folder. Please correct the errors and resubmit before the due date.&quot; + &quot;\n\n\n&quot; + &quot;Please do not reply to this email. For any questions, reach out through the support channels or email us at help@techbd.org&quot;;
 
 	var toEmails = &quot;&quot;;
 	var ccEmails = &quot;&quot;;
