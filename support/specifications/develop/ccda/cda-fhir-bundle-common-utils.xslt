@@ -680,25 +680,27 @@
     <xsl:param name="resource_name"/>
     {
       <!-- Pre-calculate trimmed values -->
-
       <!-- Single source of truth for which streetAddressLine nodes are usable -->
       <xsl:variable name="validLines"
-        select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']"/>
+        select="$addr/ccda:streetAddressLine[
+                  not(@nullFlavor)
+                  and string-length(normalize-space(.)) &gt; 0
+                ]"/>
 
-      <xsl:variable name="street">
+      <xsl:variable name="street_lines">
         <xsl:for-each select="$validLines">
-          <xsl:variable name="line">
-            <xsl:call-template name="string-trim">
-              <xsl:with-param name="text" select="."/>
-            </xsl:call-template>
-          </xsl:variable>
-
-          <xsl:if test="string($line)">
-            <xsl:value-of select="$line"/>
-            <xsl:if test="position()!=last()">, </xsl:if>
-          </xsl:if>
+          <xsl:value-of select="normalize-space(.)"/>
+          <xsl:text>, </xsl:text>
         </xsl:for-each>
       </xsl:variable>
+
+      <!-- Remove the final ", " -->
+      <xsl:variable name="street"
+        select="substring(
+                  $street_lines,
+                  1,
+                  string-length($street_lines) - 2
+                )"/>
 
       <xsl:variable name="city">
         <xsl:call-template name="string-trim">
@@ -779,12 +781,13 @@
       <!-- line -->
       <xsl:if test="$validLines">
         "line": [
-          <xsl:for-each select="$validLines">
+          "<xsl:value-of select="$street"/>"
+          <!-- <xsl:for-each select="$validLines">
             "<xsl:call-template name="string-trim">
                 <xsl:with-param name="text" select="."/>
               </xsl:call-template>"
             <xsl:if test="position()!=last()">,</xsl:if>
-          </xsl:for-each>
+          </xsl:for-each> -->
         ]
         <xsl:if test="string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
