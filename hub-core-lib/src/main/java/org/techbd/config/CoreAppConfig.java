@@ -43,7 +43,17 @@ public class CoreAppConfig {
     @Getter
     @Setter
     public static class FhirV4Config {
-        private Map<String, Map<String, String>> shinnyPackages;
+        //private Map<String, Map<String, String>> shinnyPackages;
+        private Map<String, ShinnyPackageConfig> shinnyPackages;
+        private Map<String, String> basePackages;
+    }
+
+    @Getter
+    @Setter
+    public static class ShinnyPackageConfig {
+        private String profileBaseUrl;
+        private String packagePath;
+        private String igVersion;
         private Map<String, String> basePackages;
     }
 

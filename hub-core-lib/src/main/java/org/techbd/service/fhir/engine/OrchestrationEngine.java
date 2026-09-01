@@ -40,6 +40,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.config.Configuration;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
+import org.techbd.config.CoreAppConfig.ShinnyPackageConfig;
 import org.techbd.exceptions.ErrorCode;
 import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.fhir.validation.FhirBundleValidator;
@@ -321,29 +322,42 @@ public class OrchestrationEngine {
 
                 if (igPackages != null && igPackages.containsKey("fhir-v4")) {
                     FhirV4Config fhirV4Config = igPackages.get("fhir-v4");
-                    Map<String, Map<String, String>> shinNyPackages = fhirV4Config.getShinnyPackages();
+                    Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
                     LOG.info("Number of SHIN-NY IG Packages to be loaded :{} for interactionId :{} ",
-                            null == shinNyPackages ? 0 : shinNyPackages.size(), interactionId);
-                    Map<String, String> basePackages = fhirV4Config.getBasePackages();
-                    LOG.info("Number of Base Packages to be loaded :{} interactionId :{} ",
-                            null == basePackages ? 0 : basePackages.size(), interactionId);
-                    for (Map<String, String> igPackageMap : shinNyPackages.values()) {
-                        String packagePath = igPackageMap.get("package-path");
-                        String profileBaseUrl = igPackageMap.get("profile-base-url");
-                        String igVersion = igPackageMap.get("ig-version");
+                            shinNyPackages == null ? 0 : shinNyPackages.size(), interactionId);
+                    Map<String, String> defaultBasePackages = fhirV4Config.getBasePackages();
+                    LOG.info("Number of Default Base Packages to be loaded :{} interactionId :{} ",
+                            defaultBasePackages == null ? 0 : defaultBasePackages.size(), interactionId);
+                    if (shinNyPackages != null) {
+                        for (ShinnyPackageConfig igPackage : shinNyPackages.values()) {
+                            if (igPackage == null) {
+                                continue;
+                            }
+                            String packagePath = igPackage.getPackagePath();
+                            String profileBaseUrl = igPackage.getProfileBaseUrl();
+                            String igVersion = igPackage.getIgVersion();
 
-                        LOG.info("Creating FhirBundleValidator for package: {} interactionId :{}", packagePath,
-                                interactionId);
+                            Map<String, String> basePackages = igPackage.getBasePackages() != null
+                                    ? igPackage.getBasePackages()
+                                    : defaultBasePackages;
+                            LOG.info("Creating FhirBundleValidator for package: {} interactionId :{}", packagePath,
+                                    interactionId);
 
-                        FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
-                                .fhirContext(FhirContext.forR4())
-                                .fhirValidator(initializeFhirValidator(packagePath, basePackages,profileBaseUrl)) // Pass igPackageMap
-                                                                                                   // directly
-                                .baseFHIRUrl(profileBaseUrl)
-                                .packagePath(packagePath)
-                                .igVersion(igVersion)
-                                .build();
-                        fhirBundleValidators.add(bundleValidator);
+                            FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
+                                    .fhirContext(FhirContext.forR4())
+                                    .fhirValidator(initializeFhirValidator(packagePath, basePackages, profileBaseUrl)) // Pass
+                                                                                                                       // igPackageMap
+                                    // directly
+                                    .baseFHIRUrl(profileBaseUrl)
+                                    .packagePath(packagePath)
+                                    .igVersion(igVersion)
+                                    .build();
+                            fhirBundleValidators.add(bundleValidator);
+                            LOG.info("Creating validator: package={}, igVersion={}, basePackages={}",
+                                    packagePath,
+                                    igVersion,
+                                    basePackages);
+                        }
                     }
                 } else {
                     LOG.warn("No SHIN-NY IG Packages found in igPackages for interaction id :{}", interactionId);
@@ -405,10 +419,15 @@ public class OrchestrationEngine {
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
-
-                RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(fhirContext);
-                remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
-                supportChain.addValidationSupport(remoteTermSvc);
+                
+                boolean isTestProfile = profileBaseUrl != null
+                        && profileBaseUrl.toLowerCase().contains("test");
+                if (isTestProfile) {
+                    RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(
+                            fhirContext);
+                    remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
+                    supportChain.addValidationSupport(remoteTermSvc);
+                }
 
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);
@@ -426,7 +445,7 @@ public class OrchestrationEngine {
             }
         }
 
-        private String extractProfileUrl(String jsonString) {
+         private String extractProfileUrl(String jsonString) {
             try {
                 JsonNode rootNode = Configuration.objectMapper.readTree(jsonString);
                 JsonNode metaNode = rootNode.path("meta").path("profile");
@@ -497,6 +516,10 @@ public class OrchestrationEngine {
                     FhirBundleValidator bundleValidator;
                     String shinNyPackagePath = null;
                     var headerIgVersion = requestedIgVersion;
+                    FhirV4Config fhirV4Config = igPackages.get("fhir-v4");
+                    Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
+                    Map<String, String> defaultBasePackages = fhirV4Config.getBasePackages();
+                    ShinnyPackageConfig matchingPackage = null;
 
                     if (headerIgVersion != null) {
                         if (profileUrl != null && profileUrl.toLowerCase().contains("test")) {
@@ -511,11 +534,24 @@ public class OrchestrationEngine {
                     }
 
                     if (headerIgVersion != null) {
-                        LOG.info("requested IG Version : " + headerIgVersion);
-                        Map<String, String> basePackages = Map.of(
-                                "us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated",
-                                "sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0",
-                                "uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
+                        LOG.info("requested IG Version : {}", headerIgVersion);
+                        if (shinNyPackages != null) {
+                            for (ShinnyPackageConfig igPackage : shinNyPackages.values()) {
+
+                                if (igPackage != null
+                                        && shinNyPackagePath != null
+                                        && shinNyPackagePath.equals(igPackage.getPackagePath())) {
+
+                                    matchingPackage = igPackage;
+                                    break;
+                                }
+                            }
+                        }
+
+                        Map<String, String> basePackages = matchingPackage != null
+                                && matchingPackage.getBasePackages() != null
+                                        ? matchingPackage.getBasePackages()
+                                        : defaultBasePackages;
                         
                         String profileBaseUrl = profileUrl;
                         if (profileUrl != null) {
