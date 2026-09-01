@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.3 -->
+<!-- Version : 0.1.4 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -680,18 +680,19 @@
     <xsl:param name="resource_name"/>
     {
       <!-- Pre-calculate trimmed values -->
-      <xsl:variable name="street">
-        <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor) and normalize-space(.) != '']">
-          <xsl:variable name="line">
-            <xsl:call-template name="string-trim">
-              <xsl:with-param name="text" select="."/>
-            </xsl:call-template>
-          </xsl:variable>
+      <!-- Single source of truth for which streetAddressLine nodes are usable -->
+      <xsl:variable name="validLines"
+        select="$addr/ccda:streetAddressLine[
+                  not(@nullFlavor)
+                  and string-length(normalize-space(.)) &gt; 0
+                ]"/>
 
-          <xsl:if test="string($line)">
-            <xsl:value-of select="$line"/>
-            <xsl:if test="position()!=last()">, </xsl:if>
-          </xsl:if>
+      <xsl:variable name="street_lines">
+        <xsl:for-each select="$validLines">
+          <xsl:call-template name="string-trim">
+                <xsl:with-param name="text" select="."/>
+              </xsl:call-template>
+          <xsl:text>, </xsl:text>
         </xsl:for-each>
       </xsl:variable>
 
@@ -779,7 +780,24 @@
                 <xsl:with-param name="text" select="."/>
               </xsl:call-template>"
             <xsl:if test="position()!=last()">,</xsl:if>
-          </xsl:for-each>
+          </xsl:for-each> -->
+          "<xsl:variable name="streets">
+            <xsl:for-each select="$validLines">
+              <xsl:call-template name="string-trim">
+                <xsl:with-param name="text" select="."/>
+              </xsl:call-template>
+              <xsl:text>", "</xsl:text>
+            </xsl:for-each>
+          </xsl:variable>
+
+          <!-- Remove the final ", " -->
+          <xsl:variable name="street_line"
+            select="substring(
+                      $streets,
+                      1,
+                      string-length($streets) - 4
+                    )"/>
+          <xsl:value-of select="$street_line"/>"
         ]
         <xsl:if test="string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
