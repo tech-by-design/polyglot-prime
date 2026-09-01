@@ -303,7 +303,7 @@ public class OrchestrationEngine {
             this.engineConstructedAt = Instant.now();
             this.observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
-                            .formatted("8.2.2", fhirContext.getVersion().getVersion().getFhirVersionString()),
+                            .formatted("8.10.1", fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt, engineConstructedAt);
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;
@@ -345,7 +345,7 @@ public class OrchestrationEngine {
 
                             FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
                                     .fhirContext(FhirContext.forR4())
-                                    .fhirValidator(initializeFhirValidator(packagePath, basePackages, profileBaseUrl)) // Pass
+                                    .fhirValidator(initializeFhirValidator(packagePath, basePackages, profileBaseUrl, igVersion)) // Pass
                                                                                                                        // igPackageMap
                                     // directly
                                     .baseFHIRUrl(profileBaseUrl)
@@ -367,7 +367,7 @@ public class OrchestrationEngine {
             }
         }
 
-        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages, String profileBaseUrl) {
+        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages, String profileBaseUrl , String igVersion) {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
             try {
                 LOG.info("Initializing FHIR Validator for package: {} inteactionId :{} ", shinNyPackagePath,
@@ -421,7 +421,19 @@ public class OrchestrationEngine {
 
                 boolean isTestProfile = profileBaseUrl != null
                         && profileBaseUrl.toLowerCase().contains("test");
-                if (isTestProfile) {
+
+                boolean isIg2OrLater = false;
+                if (igVersion != null) {
+                    try {
+                        String[] versionParts = igVersion.split("\\.");
+                        int major = Integer.parseInt(versionParts[0]);
+                        isIg2OrLater = major >= 2;
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        LOG.warn("Unable to parse IG version: {}", igVersion);
+                    }
+                }
+
+                if (isTestProfile && isIg2OrLater) {
                     RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(
                             fhirContext);
                     remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
@@ -562,7 +574,7 @@ public class OrchestrationEngine {
                         }                                
                         bundleValidator = FhirBundleValidator.builder()
                                 .fhirContext(FhirContext.forR4())
-                                .fhirValidator(initializeFhirValidator(shinNyPackagePath, basePackages, profileBaseUrl))
+                                .fhirValidator(initializeFhirValidator(shinNyPackagePath, basePackages, profileBaseUrl, headerIgVersion))
                                 .baseFHIRUrl(profileBaseUrl)
                                 .packagePath(shinNyPackagePath)
                                 .igVersion(headerIgVersion)
