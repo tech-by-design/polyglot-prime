@@ -781,13 +781,27 @@
       <!-- line -->
       <xsl:if test="$validLines">
         "line": [
-          "<xsl:value-of select="$street"/>"
           <!-- <xsl:for-each select="$validLines">
             "<xsl:call-template name="string-trim">
                 <xsl:with-param name="text" select="."/>
               </xsl:call-template>"
             <xsl:if test="position()!=last()">,</xsl:if>
           </xsl:for-each> -->
+          "<xsl:variable name="streets">
+            <xsl:for-each select="$validLines">
+              <xsl:value-of select="normalize-space(.)"/>
+              <xsl:text>", "</xsl:text>
+            </xsl:for-each>
+          </xsl:variable>
+
+          <!-- Remove the final ", " -->
+          <xsl:variable name="street_line"
+            select="substring(
+                      $streets,
+                      1,
+                      string-length($streets) - 4
+                    )"/>
+          <xsl:value-of select="$street_line"/>"
         ]
         <xsl:if test="string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
