@@ -37,25 +37,40 @@ public class PostPopulateSupport {
         LOG.info("PrePopulateSupport:addObservationLoincCodes  -BEGIN");
         Span span = tracer.spanBuilder("PostPopulateSupport.addObservationLoincCodes").startSpan();
         try {
-            ValueSet loinc_valueSet = (ValueSet) validationSupportChain
+            ValueSet loincValueSet = (ValueSet) validationSupportChain
                     .fetchValueSet("http://hl7.org/fhir/ValueSet/observation-codes");
-            try {
-                loinc_valueSet.getCompose().addInclude(new ValueSet.ConceptSetComponent()
-                        .setConcept(
-                                ConceptReaderUtils.getValueSetConcepts_wCode(referenceCodesPath.concat("loinc.psv")))
-                        .setSystem("http://loinc.org"));
+            if (loincValueSet != null) {
+                // LOINC codes
+                loincValueSet.getCompose().addInclude(
+                        new ValueSet.ConceptSetComponent()
+                                .setConcept(
+                                        ConceptReaderUtils.getValueSetConcepts_wCode(
+                                                referenceCodesPath.concat("loinc.psv")))
+                                .setSystem("http://loinc.org"));
 
-                loinc_valueSet.getCompose().addInclude(new ValueSet.ConceptSetComponent()
-                        .setConcept(ConceptReaderUtils
-                                .getValueSetConcepts_wCode(referenceCodesPath.concat("custom-system-code.psv")))
-                        .setSystem(profileBaseUrl +  "/CodeSystem/NYSHRSNQuestionnaire"));
-            } finally {
-                loinc_valueSet = null;
+                // New CodeSystem URL
+                loincValueSet.getCompose().addInclude(
+                        new ValueSet.ConceptSetComponent()
+                                .setConcept(
+                                        ConceptReaderUtils.getValueSetConcepts_wCode(
+                                                referenceCodesPath.concat("custom-system-code.psv")))
+                                .setSystem(
+                                        profileBaseUrl +
+                                                "/CodeSystem/NYSHRSNQuestionnaire"));
+                // Old CodeSystem URL - backward compatibility
+                loincValueSet.getCompose().addInclude(
+                        new ValueSet.ConceptSetComponent()
+                                .setConcept(
+                                        ConceptReaderUtils.getValueSetConcepts_wCode(
+                                                referenceCodesPath.concat("custom-system-code.psv")))
+                                .setSystem(
+                                        profileBaseUrl +
+                                                "/CodeSystem/NYS-HRSN-Questionnaire"));
             }
         } finally {
             span.end();
         }
-        LOG.info("PrePopulateSupport:addObservationLoincCodes  -BEGIN");
+        LOG.info("PrePopulateSupport:addObservationLoincCodes - END");
     }
 
     private void addUsCoreSurveyCodes(
@@ -68,6 +83,7 @@ public class PostPopulateSupport {
 
         if (surveyValueSet != null) {
 
+            // LOINC codes
             surveyValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(
@@ -75,6 +91,7 @@ public class PostPopulateSupport {
                                             referenceCodesPath.concat("loinc.psv")))
                             .setSystem("http://loinc.org"));
 
+            // New CodeSystem URL
             surveyValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(
@@ -83,6 +100,16 @@ public class PostPopulateSupport {
                             .setSystem(
                                     profileBaseUrl +
                                             "/CodeSystem/NYSHRSNQuestionnaire"));
+
+            // Old CodeSystem URL - backward compatibility
+            surveyValueSet.getCompose().addInclude(
+                    new ValueSet.ConceptSetComponent()
+                            .setConcept(
+                                    ConceptReaderUtils.getValueSetConcepts_wCode(
+                                            referenceCodesPath.concat("custom-system-code.psv")))
+                            .setSystem(
+                                    profileBaseUrl +
+                                            "/CodeSystem/NYS-HRSN-Questionnaire"));
         }
     }
 

@@ -70,12 +70,18 @@ public class CoreFHIRUtil {
 
         if (appConfig.getIgPackages() != null && appConfig.getIgPackages().containsKey("fhir-v4")) {
             FhirV4Config fhirV4Config = appConfig.getIgPackages().get("fhir-v4");
-            Map<String, Map<String, String>> shinNyPackages = fhirV4Config.getShinnyPackages();
+            Map<String, CoreAppConfig.ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
 
-            for (Map<String, String> igPackage : shinNyPackages.values()) {
-                String profileBaseUrl = igPackage.getOrDefault("profile-base-url", "");
-                String packageFhirProfileUrl = getProfileUrl(profileBaseUrl, BUNDLE);
-                allowedProfileUrls.add(packageFhirProfileUrl);
+            if (shinNyPackages != null) {
+                for (CoreAppConfig.ShinnyPackageConfig igPackage : shinNyPackages.values()) {
+                    if (igPackage != null
+                            && igPackage.getProfileBaseUrl() != null) {
+                        String packageFhirProfileUrl = getProfileUrl(
+                                igPackage.getProfileBaseUrl(),
+                                BUNDLE);
+                        allowedProfileUrls.add(packageFhirProfileUrl);
+                    }
+                }
             }
         }
         return allowedProfileUrls;

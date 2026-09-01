@@ -19,6 +19,11 @@ org:
           test-shinny-v2-0-0:
             profile-base-url: http://test.shinny.org/us/ny/hrsn
             package-path: ig-packages/shin-ny-ig/test-shinny/v2.0.0
+            base-packages:
+             # Base packages for external dependencies 
+              us-core: ig-packages/fhir-v4/us-core/stu-7.0.0-updated
+              sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0
+              uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
             # NOTE: When updating this IG version:
             # 1. Update BaseIgValidationTest.getIgPackages()
             # 2. Download latest examples to hub-core-lib/src/test/resources/org/techbd/ig-examples/test-shinny-examples
@@ -34,8 +39,8 @@ org:
             ig-version: 1.9.4
         base-packages:
         # Base packages for external dependencies 
-          us-core: ig-packages/fhir-v4/us-core/stu-7.0.0-updated
-          sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0
+          us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
+          sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
           uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
     validation-severity-level: error  # Possible values: fatal, error, warning, information
     structureDefinitionsUrls:
