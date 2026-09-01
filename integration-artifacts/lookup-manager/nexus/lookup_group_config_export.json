@@ -2,7 +2,7 @@
   "group" : {
     "id" : 19,
     "name" : "Config",
-    "description" : "Environment variables needed for CCDA Workflow",
+    "description" : "Configuration variables for TechBD workflows and services",
     "version" : "1",
     "cacheSize" : 1000,
     "cachePolicy" : "LRU",
@@ -13,15 +13,15 @@
     "extra" : null
   },
   "values" : {
-    "ALLOWED_HOSTS" : "1.nexus-txd-sbx.techbd.org",
-    "ALLOWED_ORIGINS" : "https://hub.sandbox.dev.techbd.org",
+    "ALLOWED_HOSTS" : "allowed_hosts",
+    "ALLOWED_ORIGINS" : "allowed_origins",
     "BASE_FHIR_URL" : "http://test.shinny.org/us/ny/hrsn",
-    "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "https://nexus.fhir.sandbox.techbd.org",
+    "BL_FHIR_BUNDLE_VALIDATION_API_URL" : "bl_fhir_bundle_validation_api_url",
     "DATA_LEDGER_API_URL" : "https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger",
     "DATA_LEDGER_DIAGNOSTICS" : "false",
     "DATA_LEDGER_TRACKING" : "false",
     "HL7_XSLT_PATH" : "/opt/bridgelink/hl7-techbd-schema-files",
-    "HUB_UI_URL" : "https://hub.sandbox.dev.techbd.org",
+    "HUB_UI_URL" : "hub_ui_url",
     "MC_CCDA_SCHEMA_FOLDER" : "/opt/bridgelink/ccda-techbd-schema-files/",
     "MC_FHIR_BUNDLE_SUBMISSION_API_URL" : "http://localhost:9003/Bundle",
     "MC_VALID_FHIR_URLS" : "http://shinny.org/us/ny/hrsn,http://test.shinny.org/us/ny/hrsn",
@@ -40,9 +40,9 @@
     "PROFILE_URL_QUESTIONNAIRE" : "/StructureDefinition/shinny-questionnaire",
     "PROFILE_URL_QUESTIONNAIRE_RESPONSE" : "/StructureDefinition/shinny-questionnaire-response",
     "PROFILE_URL_SEXUAL_ORIENTATION" : "/StructureDefinition/shinny-observation-sexual-orientation",
-    "ROCHESTER_RHIO_SFTP_KEY_PATH" : "/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod",
+    "ROCHESTER_RHIO_SFTP_KEY_PATH" : "rochester_rhio_sftp_key_path",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
-    "TECHBD_CSV_SERVICE_API_URL" : "https://nexus.csv.sandbox.techbd.org",
+    "TECHBD_CSV_SERVICE_API_URL" : "techbd_csv_service_api_url",
     "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle,615l4odbn9xc7j3uw3vqosslyc43stgi.oastify.com"
   },
   "exportDate" : "2026-07-03T11:53:04.184+00:00"
