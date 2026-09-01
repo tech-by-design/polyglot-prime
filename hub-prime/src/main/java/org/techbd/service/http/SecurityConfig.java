@@ -28,13 +28,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
- 
+import jakarta.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Configuration
 @Profile("!localopen")
 public class SecurityConfig {
-  
+   
+    private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class);
     
-   private final RolePermissionInterceptor rolePermissionInterceptor;
+    private final RolePermissionInterceptor rolePermissionInterceptor;
 
     @Autowired(required = false)
     private FusionAuthUserAuthorizationFilter fusionAuthAuthorizationFilter;
@@ -110,10 +115,17 @@ public class SecurityConfig {
                             sessionManagement
                                     .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
                                     .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
-                        } else if ("fusionauth".equalsIgnoreCase(authProvider)) {
-                            sessionManagement
-                                    .invalidSessionUrl(fusionAuthLogoutUUrl())  // Use custom logout handler for FusionAuth
-                                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+                        }  else if ("fusionauth".equalsIgnoreCase(authProvider)) {
+                                final String invalidSessionUrl =
+                                        Constant.LOGIN_PAGE_URL + "?sessionExpired=true";
+                                LOG.info(
+                                        "Configuring session management for FusionAuth. " +
+                                        "Invalid session URL: {}",
+                                        invalidSessionUrl
+                                );
+                                sessionManagement
+                                        .invalidSessionUrl(invalidSessionUrl)
+                                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
                         }
                     });
                   if (fusionAuthAuthorizationFilter != null) {
@@ -181,14 +193,67 @@ public class SecurityConfig {
             response.sendRedirect(targetUrl);
         }
     }
-
+ 
         @Bean
         public LogoutSuccessHandler customLogoutSuccessHandler() {
+
             return (request, response, authentication) -> {
+
+                HttpSession session = request.getSession(false);
+
+                LOG.warn(
+                        "LOGOUT HANDLER INVOKED. " +
+                        "URI={}, method={}, sessionExists={}, sessionId={}, " +
+                        "authentication={}, authenticated={}",
+                        request.getRequestURI(),
+                        request.getMethod(),
+                        session != null,
+                        session != null ? session.getId() : "NO_SESSION",
+                        authentication != null
+                                ? authentication.getName()
+                                : "NO_AUTHENTICATION",
+                        authentication != null
+                                && authentication.isAuthenticated()
+                );
+
                 if (authentication != null) {
-                    new SecurityContextLogoutHandler().logout(request, response, authentication);
+
+                    LOG.info(
+                            "Clearing SecurityContext for authenticated user: {}",
+                            authentication.getName()
+                    );
+
+                    new SecurityContextLogoutHandler()
+                            .logout(request, response, authentication);
+                } else {
+
+                    LOG.info(
+                            "Logout handler invoked without authenticated user."
+                    );
                 }
-                response.sendRedirect(fusionAuthLogoutUUrl());
+
+                if (logoutRedirectUrl == null
+                        || logoutRedirectUrl.isBlank()) {
+
+                    LOG.warn(
+                            "FusionAuth logout redirect URL is missing. " +
+                            "Redirecting to application login page."
+                    );
+
+                    response.sendRedirect(
+                            Constant.LOGIN_PAGE_URL
+                    );
+
+                    return;
+                }
+
+                String logoutUrl = fusionAuthLogoutUUrl();
+
+                LOG.info(
+                        "Redirecting user to FusionAuth logout endpoint."
+                );
+
+                response.sendRedirect(logoutUrl);
             };
         }
 
