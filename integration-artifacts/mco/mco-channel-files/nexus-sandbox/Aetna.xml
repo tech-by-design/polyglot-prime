@@ -2,9 +2,9 @@
   <id>cd812443-81f7-4523-8d16-1d7af162ca3c</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Aetna</name>
-  <description>Version: 0.1.9
-SFTP implementation</description>
-  <revision>83</revision>
+  <description>Version: 0.1.10
+Lambda file rejection db insertion.</description>
+  <revision>7</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2184,6 +2184,11 @@ logger.info(&quot;batch_id=[&quot; + batch_id + &quot;]&quot;);
  
     var fileName = $(&quot;originalFilename&quot;);
     var reportingMonth = String(calculateReportingMonthNew());
+    var rootFileName = fileName; 
+    if (rootFileName.toLowerCase().indexOf(&quot;filerejected_&quot;) === 0) 
+    {
+    	rootFileName = rootFileName.substring(&quot;FileRejected_&quot;.length); 
+    	}
  
     var rejectDbConn = null;
     var batch_insert = null;
@@ -2207,7 +2212,7 @@ logger.info(&quot;batch_id=[&quot; + batch_id + &quot;]&quot;);
             &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
             &quot;RETURNING batch_id&quot;,
             [
-                fileName,
+                rootFileName,
                 0,
                 mco_id,
                 0,
@@ -5872,11 +5877,11 @@ try {
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
-            <name>Accept message if &quot;$(&apos;d7&apos;) &amp;&amp; $(&apos;d7&apos;).getStatus()&quot; is not blank</name>
+            <name>Accept message if &quot;$(&apos;d7&apos;).getStatus()&quot; does not equal Status.ERROR</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
             <operator>AND</operator>
-            <field>$(&apos;d7&apos;) &amp;&amp; $(&apos;d7&apos;).getStatus()</field>
+            <field>$(&apos;d7&apos;).getStatus()</field>
             <condition>NOT_EQUAL</condition>
             <values>
               <string>Status.ERROR</string>
@@ -6125,9 +6130,9 @@ return;</undeployScript>
   </properties>
   <exportData>
     <metadata>
-      <enabled>false</enabled>
+      <enabled>true</enabled>
       <lastModified>
-        <time>1787806449403</time>
+        <time>1788348424578</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6139,31 +6144,30 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>75bfe4aa-da9e-4a5b-99ee-780377b3a0ae</id>
-        <name>0_1_9</name>
+        <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
+        <name>0_1_10</name>
         <channelIds>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
           <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
           <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
           <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
           <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
           <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
           <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
           <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
           <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
           <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
           <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
           <string>48679919-904a-4913-a593-28f19da61615</string>
-          <string>9afb2407-02bc-4d0b-9862-a39a4bc50d7e</string>
           <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
           <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
           <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
           <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-          <string>de86eea0-82cf-41ff-81b4-cf013ab8b4bc</string>
           <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
           <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
