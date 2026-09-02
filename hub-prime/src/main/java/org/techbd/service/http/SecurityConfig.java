@@ -198,9 +198,7 @@ public class SecurityConfig {
         public LogoutSuccessHandler customLogoutSuccessHandler() {
 
             return (request, response, authentication) -> {
-
                 HttpSession session = request.getSession(false);
-
                 LOG.warn(
                         "LOGOUT HANDLER INVOKED. " +
                         "URI={}, method={}, sessionExists={}, sessionId={}, " +
@@ -215,44 +213,26 @@ public class SecurityConfig {
                         authentication != null
                                 && authentication.isAuthenticated()
                 );
-
                 if (authentication != null) {
-
-                    LOG.info(
-                            "Clearing SecurityContext for authenticated user: {}",
-                            authentication.getName()
+                    LOG.info( "Clearing SecurityContext for authenticated user: {}",
+                         authentication.getName()
                     );
-
                     new SecurityContextLogoutHandler()
                             .logout(request, response, authentication);
                 } else {
-
-                    LOG.info(
-                            "Logout handler invoked without authenticated user."
-                    );
+                    LOG.info("Logout handler invoked without authenticated user.");
                 }
-
                 if (logoutRedirectUrl == null
                         || logoutRedirectUrl.isBlank()) {
-
                     LOG.warn(
                             "FusionAuth logout redirect URL is missing. " +
                             "Redirecting to application login page."
                     );
-
-                    response.sendRedirect(
-                            Constant.LOGIN_PAGE_URL
-                    );
-
+                    response.sendRedirect(Constant.LOGIN_PAGE_URL);
                     return;
                 }
-
                 String logoutUrl = fusionAuthLogoutUUrl();
-
-                LOG.info(
-                        "Redirecting user to FusionAuth logout endpoint."
-                );
-
+                LOG.info( "Redirecting user to FusionAuth logout endpoint.");
                 response.sendRedirect(logoutUrl);
             };
         }
