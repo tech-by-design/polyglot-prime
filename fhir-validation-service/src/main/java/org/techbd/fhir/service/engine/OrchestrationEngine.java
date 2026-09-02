@@ -428,12 +428,16 @@ public class OrchestrationEngine {
                         String[] versionParts = igVersion.split("\\.");
                         int major = Integer.parseInt(versionParts[0]);
                         isIg2OrLater = major >= 2;
-                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    } catch (NumberFormatException e) {
                         LOG.warn("Unable to parse IG version: {}", igVersion);
                     }
                 }
 
-                if (isTestProfile && isIg2OrLater) {
+                boolean isNewTestUsCorePackage = basePackages != null
+                        && "ig-packages/fhir-v4/us-core/stu-7.0.0-updated"
+                                .equals(basePackages.get("us-core"));
+
+                if (isTestProfile && (isIg2OrLater || isNewTestUsCorePackage)) {
                     RemoteTerminologyServiceValidationSupport remoteTermSvc = new RemoteTerminologyServiceValidationSupport(
                             fhirContext);
                     remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
