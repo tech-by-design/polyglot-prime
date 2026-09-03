@@ -42,8 +42,10 @@ export class AGGridAide {
      */
     init(gridDivId) {
         const gridDiv = document.querySelector(`#${gridDivId}`);
-        agGrid.createGrid(gridDiv, this.gridOptions);
+        const gridApi = agGrid.createGrid(gridDiv, this.gridOptions);
         Object.assign(gridDiv.style, this.gridDivStyles);
+        this.gridApi = gridApi;
+        return gridApi;
     }
 
     /**

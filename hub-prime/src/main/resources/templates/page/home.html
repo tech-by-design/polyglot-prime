@@ -16,7 +16,7 @@
 
 <body class="bg-gray-100">
     <div layout:fragment="content" class="flex flex-col items-center justify-start p-6 w-full max-w-9xl mx-auto gap-8">
- 
+
         <!-- MCO Summary Metrics Section -->
         <section class="relative w-full" th:if="${(
                 #authentication.principal.attributes['authProvider'] == 'fusionauth'
@@ -41,16 +41,99 @@
                 </div>
             </div>
 
-            <div class="flex justify-between items-center w-full mb-4">
-                <h2 class="text-xl font-bold text-gray-800">MCO Summary Metric</h2>
+            <!-- Top Header & Time Period Filter Bar -->
+            <div class="flex flex-wrap justify-between items-center gap-4 w-full mb-4 relative">
+                <!-- Requirement 1: Left Side - Dynamic Active MCO Name -->
+                <h2 class="text-xl font-bold text-gray-800">
+                    <span
+                        th:text="${session.activeTenant != null and session.activeTenant != '' ? session.activeTenant : (#authentication.principal.attributes['activeTenant'] != null and #authentication.principal.attributes['activeTenant'] != '' ? #authentication.principal.attributes['activeTenant'] : 'MCO Summary Metric')}">
+                        MCO Summary Metric
+                    </span>
+                </h2>
 
-                <div class="flex items-center gap-2" id="mco-month-filter-container">
-                    <label for="mco-month-filter" class="text-sm font-semibold text-gray-600 whitespace-nowrap">Filter
-                        Period:</label>
-                    <select id="mco-month-filter"
-                        th:attr="data-recent-reporting-month=${recentReportingMonth}, data-selected-reporting-month=${selectedReportingMonth}"
-                        class="mt-[2px] mr-[2px] w-40 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
-                    </select>
+                <!-- Requirement 2 & 5: Top-Right Controls -->
+                <div class="flex flex-wrap items-center gap-3 relative" id="mco-time-period-container">
+                    <!-- Select Time Period Dropdown -->
+                    <div class="flex items-center gap-2 pt-1 pr-1">
+                        <label for="mco-time-period-select"
+                            class="text-sm font-semibold text-gray-600 whitespace-nowrap">Select Time Period</label>
+                            <!-- Info Icon Tooltip (Overflow/Scroll Safe) -->
+                            <div class="relative inline-flex items-center group">
+                                <button type="button" class="text-gray-400 hover:text-blue-600 focus:outline-none p-1"
+                                    aria-label="Reporting Month Information">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <div
+                                    class="absolute right-0 top-full mt-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none whitespace-normal">
+                                    The reporting month is dynamically set based on the submission window (20th of previous month to 4th of current month).
+                                </div>
+                            </div>
+                        <select id="mco-time-period-select"
+                             
+                            class="w-auto min-w-0 pr-10 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
+                            <option value="ALL">All</option>
+                            <option value="LAST_3_MONTHS" selected>Last 3 Months</option>
+                            <option value="CUSTOM">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="reset-custom-range-btn"
+                        class="hidden inline-flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label="Reset custom date range" title="Reset custom range">
+                        <svg class="w-5 h-5 text-[cornflowerblue]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h5M20 20v-5h-5M5.05 9A7.5 7.5 0 0117.8 5.2L20 7M4 17l2.2 1.8A7.5 7.5 0 0018.95 15">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <!-- Custom Range Text Display Box (Visible when Custom Range is active) -->
+                    <div id="custom-range-display"
+                        class="hidden flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-1.5 cursor-pointer shadow-sm hover:border-blue-500"
+                        onclick="toggleMonthPickerModal(true)">
+                        <span id="range-text-display" class="text-xs font-semibold text-blue-700">Select Date
+                            Range</span>
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+
+
+
+                    <!-- Custom Range Dual-Year Side-by-Side Month Picker Modal -->
+                    <div id="month-picker-modal"
+                        class="hidden absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-9 p-4 w-[520px]">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                            <button type="button" id="prev-year-btn"
+                                class="p-1 hover:bg-gray-100 rounded text-gray-600 font-bold">&laquo;</button>
+                            <div class="flex gap-32 font-bold text-gray-700 text-sm">
+                                <span id="left-year-label">2025</span>
+                                <span id="right-year-label">2026</span>
+                            </div>
+                            <button type="button" id="next-year-btn"
+                                class="p-1 hover:bg-gray-100 rounded text-gray-600 font-bold">&raquo;</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6 mb-4">
+                            <div class="grid grid-cols-3 gap-2" id="left-year-months"></div>
+                            <div class="grid grid-cols-3 gap-2" id="right-year-months"></div>
+                        </div>
+
+                        <div class="flex justify-end gap-2 border-t border-gray-100 pt-3">
+                            <button type="button" onclick="toggleMonthPickerModal(false)"
+                                class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                            <button type="button" id="apply-range-btn"
+                                class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm">Apply
+                                Range</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -232,159 +315,416 @@
             </div>
         </section>
 
-
-
     </div>
+
     <th:block layout:fragment="footer-scripts">
-        <!-- Client-side script -->
-        <script>
-            // Helper Utilities
-            function getPreviousMonths(currentMonth, count) {
-                const [monthPart, yearPart] = currentMonth.split('-').map(Number);
-                const months = [];
-                let year = yearPart;
-                let month = monthPart;
-                for (let i = 0; i < count; i++) {
-                    month -= 1;
-                    if (month < 1) {
-                        month = 12;
-                        year -= 1;
+        <script th:inline="javascript">
+            // IIFE to isolate scope and prevent global redeclaration errors
+            (function () {
+                // Tenant Evaluation Logic
+                const sessionActiveTenant = /*[[${session.activeTenant != null ? session.activeTenant : ''}]]*/ '';
+                const authActiveTenant = /*[[${#authentication.principal.attributes['activeTenant']}]]*/ null;
+                const initialActiveTenant = sessionActiveTenant || authActiveTenant || '';
+
+                // 1. Dynamic Year Initialization (Sets to Last Year by Default)
+                let pickerLeftYear = new Date().getFullYear() - 1;
+                let selectedStart = null;
+                let selectedEnd = null;
+                let appliedStart = null;
+                let appliedEnd = null;
+                let previousSelectedValue = 'LAST_3_MONTHS';
+                let lastCommittedSelectedValue = 'LAST_3_MONTHS';
+
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+                //showMetricsLoader();
+
+                // Utility Functions
+                function getPreviousMonths(currentMonth, count) {
+                    if (!currentMonth) return [];
+                    const [monthPart, yearPart] = currentMonth.split('-').map(Number);
+                    const months = [];
+                    let year = yearPart;
+                    let month = monthPart;
+                    for (let i = 0; i < count; i++) {
+                        month -= 1;
+                        if (month < 1) {
+                            month = 12;
+                            year -= 1;
+                        }
+                        months.push(`${String(month).padStart(2, '0')}-${year}`);
                     }
-                    months.push(`${String(month).padStart(2, '0')}-${year}`);
+                    return months;
                 }
-                return months;
-            }
 
-            function formatMonthLabel(month) {
-                const [monthPart, yearPart] = month.split('-').map(Number);
-                return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
-                    new Date(yearPart, monthPart - 1)
-                );
-            }
+                function showMetricsLoader() {
+                    const loader = document.getElementById('metrics-loader');
+                    if (loader) loader.classList.remove('hidden');
+                }
 
-            function showMetricsLoader() {
-                const loader = document.getElementById('metrics-loader');
-                if (loader) loader.classList.remove('hidden');
-            }
+                function hideMetricsLoader() {
+                    const loader = document.getElementById('metrics-loader');
+                    if (loader) loader.classList.add('hidden');
+                }
 
-            function hideMetricsLoader() {
-                const loader = document.getElementById('metrics-loader');
-                if (loader) loader.classList.add('hidden');
-            }
+                function updateMetrics(metrics) {
+                    const elements = {
+                        'metric-mcos': metrics.total_mco,
+                        'metric-in-progress': metrics.inprogress,
+                        'metric-processed': metrics.fully_processed,
+                        'metric-errors': metrics.errored,
+                        'metric-files-received': metrics.total_files_received,
+                        'metric-records-received': metrics.records_received,
+                        'metric-records-processed': metrics.records_processed,
+                        'metric-records-errors': metrics.records_with_errors
+                    };
 
-            function updateMetrics(metrics) {
-                const elements = {
-                    'metric-mcos': metrics.total_mco,
-                    'metric-in-progress': metrics.inprogress,
-                    'metric-processed': metrics.fully_processed,
-                    'metric-errors': metrics.errored,
-                    'metric-files-received': metrics.total_files_received,
-                    'metric-records-received': metrics.records_received,
-                    'metric-records-processed': metrics.records_processed,
-                    'metric-records-errors': metrics.records_with_errors
+                    Object.keys(elements).forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = elements[id] ?? 0;
+                    });
+                }
+ 
+                // Global function assignment for modal visibility toggle
+                window.toggleMonthPickerModal = function (show) {
+                    const modal = document.getElementById('month-picker-modal');
+                    if (!modal) return;
+
+                    if (show) {
+                        selectedStart = appliedStart ? { ...appliedStart } : null;
+                        selectedEnd = appliedEnd ? { ...appliedEnd } : null;
+                        modal.classList.remove('hidden');
+                    } else {
+                        const periodSelect = document.getElementById('mco-time-period-select');
+                        if (periodSelect && periodSelect.value === 'CUSTOM') {
+                            selectedStart = appliedStart ? { ...appliedStart } : null;
+                            selectedEnd = appliedEnd ? { ...appliedEnd } : null;
+                            periodSelect.value = previousSelectedValue;
+                            lastCommittedSelectedValue = previousSelectedValue;
+                        }
+                        modal.classList.add('hidden');
+                    }
                 };
 
-                Object.keys(elements).forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = elements[id] ?? 0;
-                });
-            }
+                // Dual Month Picker Modal Rendering
+                function renderMonthPicker() {
+                    const leftLabel = document.getElementById('left-year-label');
+                    const rightLabel = document.getElementById('right-year-label');
+                    if (!leftLabel || !rightLabel) return;
 
-            // API Handlers
-            async function loadDashboardMetrics(reportingMonth) {
-                showMetricsLoader();
-                const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
-                if (reportingMonth) url.searchParams.set('reportingMonth', reportingMonth);
+                    leftLabel.textContent = pickerLeftYear;
+                    rightLabel.textContent = pickerLeftYear + 1;
 
-                try {
-                    const response = await fetch(url.toString(), {
-                        method: 'GET',
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    if (!response.ok) return null;
-                    return await response.json();
-                } catch (e) {
-                    console.error('Error fetching metrics', e);
-                    return null;
-                }
-            }
-
-            async function initMcoMetricsSection() {
-                const monthSelect = document.getElementById('mco-month-filter');
-                const filterContainer = document.getElementById('mco-month-filter-container');
-                if (!monthSelect) return; // Exit gracefully if user lacks permissions
-
-                const recentReportingMonth = monthSelect.dataset.recentReportingMonth;
-                const selectedReportingMonth = monthSelect.dataset.selectedReportingMonth || recentReportingMonth;
-
-                // Hide filter if there is no reporting month
-                if (!recentReportingMonth) {
-                    if (filterContainer) {
-                        filterContainer.classList.add('hidden');
-                    }
-                    return;
+                    renderYearGrid('left-year-months', pickerLeftYear);
+                    renderYearGrid('right-year-months', pickerLeftYear + 1);
                 }
 
-                // Show filter when a value exists
-                if (filterContainer) {
-                    filterContainer.classList.remove('hidden');
-                }                
+                function renderYearGrid(containerId, year) {
+                    const container = document.getElementById(containerId);
+                    if (!container) return;
+                    container.innerHTML = '';
 
-                if (recentReportingMonth) {
-                    monthSelect.innerHTML = '';
-                    const months = [recentReportingMonth, ...getPreviousMonths(recentReportingMonth, 2)];
-                    months.forEach((month, index) => {
-                        const option = document.createElement('option');
-                        option.value = month;
-                        option.textContent = formatMonthLabel(month);
-                        if (selectedReportingMonth === month || (!selectedReportingMonth && index === 0)) {
-                            option.selected = true;
+                    monthNames.forEach((name, idx) => {
+                        const monthNum = idx + 1;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = `py-2 text-xs font-semibold rounded-md transition-all text-center border`;
+
+                        const isStart = selectedStart && selectedStart.year === year && selectedStart.month === monthNum;
+                        const isEnd = selectedEnd && selectedEnd.year === year && selectedEnd.month === monthNum;
+
+                        let isInRange = false;
+                        if (selectedStart && selectedEnd) {
+                            const currentVal = year * 12 + monthNum;
+                            const startVal = selectedStart.year * 12 + selectedStart.month;
+                            const endVal = selectedEnd.year * 12 + selectedEnd.month;
+                            isInRange = currentVal >= startVal && currentVal <= endVal;
                         }
-                        monthSelect.appendChild(option);
+
+                        if (isStart || isEnd) {
+                            btn.className += ' bg-blue-600 text-white border-blue-600 font-bold';
+                        } else if (isInRange) {
+                            btn.className += ' bg-blue-100 text-blue-900 border-blue-200';
+                        } else {
+                            btn.className += ' bg-white text-gray-700 border-gray-100 hover:bg-gray-50';
+                        }
+
+                        btn.textContent = name;
+                        btn.onclick = () => handleMonthClick(year, monthNum);
+                        container.appendChild(btn);
                     });
                 }
 
-                monthSelect.addEventListener('change', async (e) => {
-                    const metrics = await loadDashboardMetrics(e.target.value);
-                    if (metrics) updateMetrics(metrics);
-                    hideMetricsLoader();
-                });
-            }
+                function handleMonthClick(year, month) {
+                    const clickedVal = year * 12 + month;
 
-            async function initMcoTransactionsSection() {
-                const tbody = document.getElementById('mco-table-body');
-                if (!tbody) return; // Exit gracefully if section hidden
-
-                try {
-                    const resp = await fetch('/api/dashboard/mco/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
-                    if (!resp.ok) throw new Error(resp.statusText);
-                    const data = await resp.json();
-
-                    tbody.innerHTML = (data && data.length > 0)
-                        ? data.map(item => `
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
-                                <td class="py-4 px-6 text-gray-600">${item.relative_time ?? 'N/A'}</td>
-                            </tr>
-                        `).join('')
-                        : `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
-                } catch (e) {
-                    console.error('Error loading MCO transactions', e);
-                    tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
+                    if (!selectedStart || (selectedStart && selectedEnd)) {
+                        selectedStart = { year, month };
+                        selectedEnd = null;
+                    } else if (selectedStart && !selectedEnd) {
+                        const startVal = selectedStart.year * 12 + selectedStart.month;
+                        if (clickedVal < startVal) {
+                            selectedEnd = { ...selectedStart };
+                            selectedStart = { year, month };
+                        } else {
+                            selectedEnd = { year, month };
+                        }
+                    }
+                    renderMonthPicker();
                 }
-            }
 
-            async function initQeTransactionsSection() {
-                const tbody = document.getElementById('qe-table-body');
-                if (!tbody) return; // Exit gracefully if section hidden
+                // Database Function Metrics Call
+                async function loadDashboardMetrics(p_start_reporting_month = null, p_end_reporting_month = null) {
+                    showMetricsLoader();
+                    const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
 
-                try {
-                    const resp = await fetch('/api/dashboard/qe/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
-                    if (!resp.ok) throw new Error(resp.statusText);
-                    const data = await resp.json();
+                    if (p_start_reporting_month) url.searchParams.set('p_start_reporting_month', p_start_reporting_month);
+                    if (p_end_reporting_month) url.searchParams.set('p_end_reporting_month', p_end_reporting_month);
 
-                    tbody.innerHTML = (data && data.length > 0)
-                        ? data.map(item => `
+                    try {
+                        const response = await fetch(url.toString(), {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!response.ok) return null;
+                        return await response.json();
+                    } catch (e) {
+                        console.error('Error fetching metrics', e);
+                        return null;
+                    } finally {
+                        hideMetricsLoader();
+                    }
+                }
+
+                function initTimePeriodSelector() {
+                    const periodSelect = document.getElementById('mco-time-period-select');
+                    const customDisplay = document.getElementById('custom-range-display');
+                    const resetButton = document.getElementById('reset-custom-range-btn');
+                    if (!periodSelect) return;
+                    
+
+                    function setResetButtonVisible(visible) {
+                        if (resetButton) resetButton.classList.toggle('hidden', !visible);
+                    }
+
+                    function closePickerWithoutApplying() {
+                        setResetButtonVisible(previousSelectedValue === 'CUSTOM' && appliedStart && appliedEnd);
+                        window.toggleMonthPickerModal(false);
+                    }
+
+                    function getDefaultReportingMonth() {
+                        const today = new Date();
+                        const day = today.getDate();
+
+                        let year = today.getFullYear();
+                        let month = today.getMonth(); // 0-based
+
+                        // 5th–19th → previous month
+                        if (day >= 5 && day <= 19) {
+                            month--;
+
+                            if (month < 0) {
+                                month = 11;
+                                year--;
+                            }
+                        }
+
+                        return `${String(month + 1).padStart(2, '0')}-${year}`;
+                    }
+
+                    //if not getting recentReportingMonth from query then getDefaultReportingMonth
+                   // const recentReportingMonth =  periodSelect.dataset.recentReportingMonth?.trim() || getDefaultReportingMonth();
+                    const recentReportingMonth =  getDefaultReportingMonth();
+
+                    const prevBtn = document.getElementById('prev-year-btn');
+                    const nextBtn = document.getElementById('next-year-btn');
+                    if (prevBtn) prevBtn.onclick = () => { pickerLeftYear--; renderMonthPicker(); };
+                    if (nextBtn) nextBtn.onclick = () => { pickerLeftYear++; renderMonthPicker(); };
+
+                    periodSelect.addEventListener('change', async (e) => {
+                        const val = e.target.value;
+                        if (val === 'CUSTOM') {
+                            previousSelectedValue = lastCommittedSelectedValue;
+                            if (customDisplay) customDisplay.classList.add('hidden');
+                            window.toggleMonthPickerModal(true);
+                            renderMonthPicker();
+                        } else {
+                            if (customDisplay) customDisplay.classList.add('hidden');
+                            window.toggleMonthPickerModal(false);
+
+                        // --- NEW: Reset the Custom Range Option Text ---
+                            const customOption = periodSelect.querySelector('option[value="CUSTOM"]');
+                            if (customOption) {
+                                customOption.textContent = 'Custom Range';
+                            }
+                            // ----------------------------------------------
+
+                             // 1. Reset stored custom selection states (Matches what reset button does)
+                            appliedStart = null;
+                            appliedEnd = null;
+                            selectedStart = null;
+                            selectedEnd = null;
+                            e.target.blur();
+                            
+                            // Force explicit recalculation of width for selected preset option
+                            // if(val != 'CUSTOM')
+                            //  {
+                            //     periodSelect.classList.remove('w-auto');
+                            //      periodSelect.classList.add('w-auto', 'min-w-0', 'pr-20'); 
+                            //  }
+                             
+                            let p_start = null;
+                            let p_end = null;
+
+                            if (val === 'LAST_3_MONTHS' && recentReportingMonth) {
+                                p_end = recentReportingMonth;
+                                const prev = getPreviousMonths(recentReportingMonth, 2);
+                                p_start = prev[prev.length - 1];
+                            }
+
+                            const metrics = await loadDashboardMetrics(p_start, p_end);
+                            if (metrics) updateMetrics(metrics);
+                            lastCommittedSelectedValue = val;
+                            setResetButtonVisible(false);
+                        }
+                    });
+
+                    const applyBtn = document.getElementById('apply-range-btn');
+                    if (applyBtn) {
+                        applyBtn.onclick = async () => {
+                            if (!selectedStart || !selectedEnd) {
+                                alert("Please select both a start and end month.");
+                                return;
+                            }
+
+                            const p_start = `${String(selectedStart.month).padStart(2, '0')}-${selectedStart.year}`;
+                            const p_end = `${String(selectedEnd.month).padStart(2, '0')}-${selectedEnd.year}`;
+
+                            appliedStart = { ...selectedStart };
+                            appliedEnd = { ...selectedEnd };
+                            lastCommittedSelectedValue = 'CUSTOM';
+                            setResetButtonVisible(true);
+
+                            // --- NEW: Dynamic Option Formatting & Selection ---
+                            const startLabel = `${monthNames[selectedStart.month - 1]} ${selectedStart.year}`;
+                            const endLabel = `${monthNames[selectedEnd.month - 1]} ${selectedEnd.year}`;
+                            const customText = `Custom Range ${startLabel} - ${endLabel}`;
+
+                            let customOption = periodSelect.querySelector('option[value="CUSTOM"]');
+                            if (customOption) {
+                                customOption.textContent = customText;
+                            } else {
+                                customOption = document.createElement('option');
+                                customOption.value = 'CUSTOM';
+                                customOption.textContent = customText;
+                                periodSelect.appendChild(customOption);
+                            }
+                            periodSelect.value = 'CUSTOM';
+                            // ---------------------------------------------------                            
+
+                            const modal = document.getElementById('month-picker-modal');
+                            if (modal) modal.classList.add('hidden');
+
+                            const metrics = await loadDashboardMetrics(p_start, p_end);
+                            if (metrics) updateMetrics(metrics);
+
+                            //window.toggleMonthPickerModal(false);
+                        };
+                    }
+
+                    const cancelButton = document.querySelector('#month-picker-modal button[onclick*="toggleMonthPickerModal(false)"]');
+                    if (cancelButton) cancelButton.onclick = closePickerWithoutApplying;
+
+                    if (resetButton) {
+                        resetButton.onclick = async () => {
+                            appliedStart = null;
+                            appliedEnd = null;
+                            selectedStart = null;
+                            selectedEnd = null;
+                            previousSelectedValue = 'LAST_3_MONTHS';
+                            lastCommittedSelectedValue = 'LAST_3_MONTHS';
+
+                            // --- NEW: Reset Custom Option Text ---
+                            const customOption = periodSelect.querySelector('option[value="CUSTOM"]');
+                            if (customOption) {
+                                customOption.textContent = 'Custom Range';
+                            }
+                            // --------------------------------------                            
+
+                            periodSelect.value = 'LAST_3_MONTHS';
+                            setResetButtonVisible(false);
+
+                            let p_start = null;
+                            let p_end = null;
+                            if (recentReportingMonth) {
+                                p_end = recentReportingMonth;
+                                const prev = getPreviousMonths(recentReportingMonth, 2);
+                                p_start = prev[prev.length - 1];
+                            }
+                            const metrics = await loadDashboardMetrics(p_start, p_end);
+                            if (metrics) updateMetrics(metrics);
+                        };
+                    }
+
+                    // document.addEventListener('click', (event) => {
+                    //     const modal = document.getElementById('month-picker-modal');
+                    //     if (!modal || modal.classList.contains('hidden') || modal.contains(event.target)
+                    //         || event.target === periodSelect) return;
+                    //     closePickerWithoutApplying();
+                    // });
+
+                    // Initial Load execution
+                    // if (recentReportingMonth) {
+                    //     const p_end = recentReportingMonth;
+                    //     const prev = getPreviousMonths(recentReportingMonth, 2);
+                    //     const p_start = prev[prev.length - 1];
+                    //     // loadDashboardMetrics(p_start, p_end).then(metrics => {
+                    //     //     if (metrics) updateMetrics(metrics);
+                    //     // });
+                    // } else {
+                    //     // loadDashboardMetrics().then(metrics => {
+                    //     //     if (metrics) updateMetrics(metrics);
+                    //     // });
+                    // }
+
+                    setResetButtonVisible(false);
+                    renderMonthPicker();
+                }
+
+                async function initMcoTransactionsSection() {
+                    const tbody = document.getElementById('mco-table-body');
+                    if (!tbody) return;
+
+                    try {
+                        const resp = await fetch('/api/dashboard/mco/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
+                        if (!resp.ok) throw new Error(resp.statusText);
+                        const data = await resp.json();
+
+                        tbody.innerHTML = (data && data.length > 0)
+                            ? data.map(item => `
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
+                                    <td class="py-4 px-6 text-gray-600">${item.relative_time ?? 'N/A'}</td>
+                                </tr>
+                            `).join('')
+                            : `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
+                    } catch (e) {
+                        console.error('Error loading MCO transactions', e);
+                        tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="2" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
+                    }
+                }
+
+                async function initQeTransactionsSection() {
+                    const tbody = document.getElementById('qe-table-body');
+                    if (!tbody) return;
+
+                    try {
+                        const resp = await fetch('/api/dashboard/qe/most-recent', { method: 'GET', headers: { 'Accept': 'application/json' } });
+                        if (!resp.ok) throw new Error(resp.statusText);
+                        const data = await resp.json();
+
+                        tbody.innerHTML = (data && data.length > 0)
+                            ? data.map(item => `
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="py-4 px-6 font-bold text-gray-900">${item.tenant_displayname ?? 'N/A'}</td>
                                 <td class="py-4 px-6 text-gray-600">${item.fhir ?? '-'}</td>
@@ -393,19 +733,26 @@
                                 <td class="py-4 px-6 text-gray-600">${item.hl7v2 ?? '-'}</td>
                             </tr>
                         `).join('')
-                        : `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
-                } catch (e) {
-                    console.error('Error loading QE transactions', e);
-                    tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
+                            : `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-gray-500">No recent transactions found.</td></tr>`;
+                    } catch (e) {
+                        console.error('Error loading QE transactions', e);
+                        tbody.innerHTML = `<tr class="bg-gray-50"><td colspan="5" class="py-4 px-6 text-center text-rose-500">Failed to load data.</td></tr>`;
+                    }
                 }
-            }
 
-            // Main Initializer
-            document.addEventListener('DOMContentLoaded', () => {
-                initMcoMetricsSection();
-                initMcoTransactionsSection();
-                initQeTransactionsSection();
-            });
+                // Initializer Execution
+                function initDashboard() {
+                    initTimePeriodSelector();
+                    initMcoTransactionsSection();
+                    initQeTransactionsSection();
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initDashboard);
+                } else {
+                    initDashboard();
+                }
+            })();
         </script>
     </th:block>
 </body>

@@ -1,10 +1,9 @@
 package org.techbd.service.http.hub.prime.ux;
 
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -20,13 +19,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
-
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,10 +43,11 @@ public class PrimeController {
 
     private final Presentation presentation;
 
-    public PrimeController(final Presentation presentation,@Qualifier("primaryDslContext") DSLContext primaryDslContext,
+    public PrimeController(final Presentation presentation,
+            @Qualifier("primaryDslContext") DSLContext primaryDslContext,
             final SftpManager sftpManager) {
         this.presentation = presentation;
-        this.primaryDslContext = primaryDslContext;   
+        this.primaryDslContext = primaryDslContext;
     }
 
     @Autowired(required = false)
@@ -58,7 +55,7 @@ public class PrimeController {
         LOG.info("READER INSTANCE CONFIGURED SUCCESSFULLY!!");
         this.readerDslContext = readerDslContext;
     }
-    
+
     private DSLContext getDsl() {
         if (readerDslContext != null) {
             // LOG.info("READER INSTANCE - Exceuting Query");
@@ -67,45 +64,79 @@ public class PrimeController {
         // LOG.info("WRITER INSTANCE - Exceuting Query");
         return primaryDslContext;
     }
+
     @GetMapping("/home")
     @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
         try {
-            final var metrics = getMcoDashboardMetrics(null);
-            model.addAttribute("metrics", metrics);
-            model.addAttribute("selectedReportingMonth", metrics.getOrDefault("selected_reporting_month", ""));
-            model.addAttribute("recentReportingMonth", metrics.getOrDefault("recent_reporting_month", ""));
+            final YearMonth defaultReportingMonth = getDefaultReportingMonth();
+            final String endReportingMonth = formatReportingMonth(defaultReportingMonth);
+            final String startReportingMonth = formatReportingMonth(defaultReportingMonth.minusMonths(2));
+            // defulat last 3 month initially
+            final var metrics = getMcoDashboardMetrics(startReportingMonth, endReportingMonth);
+
+            model.addAttribute("metrics", metrics); 
+
         } catch (Exception e) {
             LOG.error("Error loading MCO dashboard metrics for home page", e);
         }
         return presentation.populateModel("page/home", model, request);
     }
 
+    /**
+     * Determines the default reporting month based on the reporting window.
+     *
+     * 20th - 4th  : Current month
+     * 5th  - 19th : Previous month
+     */
+    private YearMonth getDefaultReportingMonth() {
+        final LocalDate today = LocalDate.now();
+        final int dayOfMonth = today.getDayOfMonth();
+
+        if (dayOfMonth >= 5 && dayOfMonth <= 19) {
+            return YearMonth.from(today).minusMonths(1);
+        }
+
+        return YearMonth.from(today);
+    }
+
+    /**
+     * Formats reporting month as MM-yyyy.
+     */
+    private String formatReportingMonth(final YearMonth month) {
+        return month.format(DateTimeFormatter.ofPattern("MM-yyyy"));
+    }
+
     @GetMapping("/api/dashboard/mco/metrics")
     public ResponseEntity<Map<String, Object>> getMcoDashboardMetricsEndpoint(
-            @RequestParam(required = false, name = "reportingMonth") String reportingMonth) {
+            @RequestParam(required = false, name = "p_start_reporting_month") String pStartReportingMonth,
+            @RequestParam(required = false, name = "p_end_reporting_month") String pEndReportingMonth) {
         try {
-            Map<String, Object> metrics = getMcoDashboardMetrics(reportingMonth);
+            Map<String, Object> metrics = getMcoDashboardMetrics(pStartReportingMonth, pEndReportingMonth);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(metrics);
         } catch (Exception e) {
             LOG.error("Error retrieving MCO dashboard metrics", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Unable to load MCO dashboard metrics"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unable to load MCO dashboard metrics"));
         }
     }
 
-    private Map<String, Object> getMcoDashboardMetrics(String reportingMonth) {
-        if (reportingMonth != null && reportingMonth.isBlank()) {
-            reportingMonth = null;
-        }
+    private Map<String, Object> getMcoDashboardMetrics(String startReportingMonth, String endReportingMonth) {
+        final String startParam = (startReportingMonth != null && !startReportingMonth.isBlank())
+                ? startReportingMonth.trim()
+                : null;
+        final String endParam = (endReportingMonth != null && !endReportingMonth.isBlank()) ? endReportingMonth.trim()
+                : null;
+
         final var result = getDsl().fetch(
-                "select * from mco_data.get_mco_dashboard_metrics(?)",
-                reportingMonth)
+                "select * from mco_data.get_mco_dashboard_metrics1(?, ?)",
+                startParam,
+                endParam)
                 .intoMaps();
 
         if (result.isEmpty()) {
             return Map.ofEntries(
-                    Map.entry("selected_reporting_month", reportingMonth == null ? "" : reportingMonth),
-                    Map.entry("recent_reporting_month", ""),
+                    Map.entry("selected_reporting_month", ""), 
                     Map.entry("is_selected", false),
                     Map.entry("total_mco", 0L),
                     Map.entry("total_files_received", 0L),
@@ -127,154 +158,7 @@ public class PrimeController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-       response.sendRedirect("/oauth2/authorization/" + authProvider.toLowerCase());
-    }
-
-
-    @GetMapping(value = "/dashboard/stat/fhir/most-recent/{tenantId}.{extension}", produces = {
-            "application/json", "text/html" })
-    public ResponseEntity<?> handleFHRequest(@PathVariable String tenantId, @PathVariable String extension) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "interaction_recent_widget_new";
-
-        // Fetch the result using the dynamically determined table and column; if
-        // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-        List<Map<String, Object>> recentInteractions = getDsl().selectFrom(typableTable.table())
-                 //.where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase())) 
-                 .where( typableTable.column("tenant_id").cast(String.class).eq(tenantId)
-                         .and(typableTable.column("widget_name").cast(String.class).eq("FHIR"))
-                       )
-                .fetch()
-                .intoMaps();
-
-        if (recentInteractions != null && recentInteractions.size() > 0) {
-
-            String mre = recentInteractions.get(0).get("last_updated_at").toString();
-
-            //  String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
-
-            String formattedTime = getrecentInteractioString(mre);
-
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() > 0
-                                ? "<span title=\"Most recent %s \">%s</span>".formatted( 
-                                        convertToEST(mre),
-                                        formattedTime)
-                                : "<span title=\"No data found in %s\">??</span>".formatted(tenantId));
-
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        }
-    }
-
-    private String getrecentInteractioString(String mreTime) {
-
-        // Parse mre to ZonedDateTime
-        ZonedDateTime mre = ZonedDateTime.parse(mreTime);
-
-        // Get the current time
-        ZonedDateTime now = ZonedDateTime.now();
-
-        // Calculate the difference in seconds
-        long secondsElapsed = ChronoUnit.SECONDS.between(mre, now);
-
-        // Define ranges in seconds for different time intervals
-        long[] rangesInSeconds = {
-                3600 * 24 * 365, // years
-                3600 * 24 * 30, // months
-                3600 * 24 * 7, // weeks
-                3600 * 24, // days
-                3600, // hours
-                60 // minutes
-        };
-
-        // Corresponding labels for each range
-        String[] rangeLabels = {
-                "year",
-                "month",
-                "week",
-                "day",
-                "hour",
-                "minute"
-        };
-
-        // Formatter for displaying relative time
-        String formattedTime = null;
-        for (int i = 0; i < rangesInSeconds.length; i++) {
-            if (Math.abs(secondsElapsed) >= rangesInSeconds[i]) {
-                long delta = Math.round((double) secondsElapsed / rangesInSeconds[i]);
-                formattedTime = delta + " " + rangeLabels[i] + (delta != 1 ? "s" : "") + " ago";
-                break;
-            }
-        }
-
-        // Handle seconds if within the minute range
-        if (formattedTime == null) {
-            formattedTime = Math.abs(secondsElapsed) + " second" + (Math.abs(secondsElapsed) != 1 ? "s" : "")
-                    + " ago";
-        }
-
-        return formattedTime;
-
-    }
-
-    private String convertToEST(String inputTime) {
-        // Parse the input time string to a ZonedDateTime
-        ZonedDateTime inputDateTime = ZonedDateTime.parse(inputTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-
-        // Convert the ZonedDateTime to the EST time zone
-        ZonedDateTime estDateTime = inputDateTime.withZoneSameInstant(ZoneId.of("America/New_York"));
-
-        // Format the ZonedDateTime to a string in the desired format
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return estDateTime.format(formatter);
-    }
-
-    @GetMapping(value = "/dashboard/stat/fhir/fhir-submission-summary", produces = "text/html")
-    public String fetchFHIRsubmissionSummary(Model model) {
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "fhir_submission_summary";
-        final String defaultValue = "0";
-        String totalSubmissions = defaultValue;
-        String pendingSubmissions = defaultValue;
-        String acceptedSubmissions = defaultValue;
-        String rejectedSubmissions = defaultValue;
-        try {
-            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                    viewName);
-            List<Map<String, Object>> fhirSubmission = getDsl().selectFrom(typableTable.table())
-                    .fetch()
-                    .intoMaps();
-            if (CollectionUtils.isNotEmpty(fhirSubmission)) {
-                Map<String, Object> data = fhirSubmission.get(0);
-                totalSubmissions = data.getOrDefault("total_submissions", defaultValue).toString();
-                pendingSubmissions = data.getOrDefault("pending_submissions", defaultValue).toString();
-                acceptedSubmissions = data.getOrDefault("accepted_submissions", defaultValue).toString();
-                rejectedSubmissions = data.getOrDefault("rejected_submissions", defaultValue).toString();
-            }
-        } catch (Exception e) {
-            LOG.error("Error fetching FHIR interactions", e);
-        }
-        model.addAttribute("totalSubmissions", totalSubmissions);
-        model.addAttribute("pendingSubmissions", pendingSubmissions);
-        model.addAttribute("acceptedSubmissions", acceptedSubmissions);
-        model.addAttribute("rejectedSubmissions", rejectedSubmissions);
-        return "fragments/interactions :: serverTextStat";
+        response.sendRedirect("/oauth2/authorization/" + authProvider.toLowerCase());
     }
 
     @GetMapping(value = "/api/dashboard/mco/most-recent", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -311,6 +195,4 @@ public class PrimeController {
         }
     }
 
-
-
-}
+}  

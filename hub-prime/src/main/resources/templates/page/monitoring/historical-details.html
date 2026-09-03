@@ -3,9 +3,6 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Source Monitoring</title>
-    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
     <style>
         .grid-description {
             font-size: 14px;
@@ -255,45 +252,172 @@
             color: #333333;
             font-size: 14px;
         }
+
+        /* --- Scoped Month Picker Modal Styles --- */
+        #month-picker-modal {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        #month-picker-modal .month-picker-btn {
+            padding: 8px 4px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid #E5E7EB;
+            background: #ffffff;
+            color: #4B5563;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        #month-picker-modal .month-picker-btn:hover {
+            background-color: #F9FAFB;
+            color: #111827;
+            border-color: #D1D5DB;
+        }
+
+        #month-picker-modal .month-picker-btn.month-picker-selected {
+            background-color: #00897b !important;
+            color: #ffffff !important;
+            border-color: #00897b !important;
+            font-weight: bold;
+        }
+
+        #month-picker-modal .month-picker-btn.month-picker-in-range {
+            background-color: #E0F2F1 !important;
+            color: #004d40 !important;
+            border-color: #B2DFDB !important;
+        }
+
+        #month-picker-modal .month-picker-btn.month-picker-range-start {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        #month-picker-modal .month-picker-btn.month-picker-range-end {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        #month-picker-modal #prev-year-btn,
+        #month-picker-modal #next-year-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #4B5563;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        #month-picker-modal #prev-year-btn:hover,
+        #month-picker-modal #next-year-btn:hover {
+            background-color: #F3F4F6;
+            color: #111827;
+        }
     </style>
 
-    <script type="module">
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
 
-        import { AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = "mco_data";
-        const viewName = "get_source_monitoring";
-        const DetailViewName = "v_source_monitoring_details";
- 
+        const viewName = "get_mco_historical_details";
+        const DetailViewName = "get_source_monitoring";
+        const DetailSubViewName = "v_source_monitoring_details";
+        const monthsNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        let currentBaseYear = new Date().getFullYear() - 1;
+        let selectedStart = null;
+        let selectedEnd = null;
+
         // Global State tracking active error dataset and status context
         let currentActiveErrors = [];
         let currentStatusType = "";
 
         document.addEventListener("DOMContentLoaded", function () {
-
             // Source Info Modal DOM Elements
             const sourceMonitoringInfoModal = document.getElementById("sourceMonitoringInfoModal");
             const sourceMonitoringInfoContent = document.getElementById("sourceMonitoringInfoContent");
             const closeSourceMonitoringInfoModalButton = document.getElementById("closeSourceMonitoringInfoModal");
+            const detailHistory = [
+                {
+                    headerName: "File Name",
+                    field: "root_file_name",
+                    cellRenderer: 'agGroupCellRenderer',
+                    sortable: true,
+                    filter: "agTextColumnFilter"
+                },
+                {
+                    headerName: "Received Month",
+                    field: "reporting_month",
+                    sortable: true,
+                    filter: "agTextColumnFilter"
+                },
+                {
+                    headerName: "Total Records",
+                    field: "total_records",
+                    sortable: true,
+                    filter: "agNumberColumnFilter"
+                },
 
-            // Error Details Modal DOM Elements
-            const errorDetailsModal = document.getElementById("errorDetailsModal");
-            const closeErrorDetailsModalButton = document.getElementById("closeErrorDetailsModal");
-            const errorSearchInput = document.getElementById("errorSearchInput");
-            const errorTableHead = document.getElementById("errorTableHead");
-            const errorTableBody = document.getElementById("errorTableBody");
-            const errorModalFileNameValue = document.getElementById("errorModalFileNameValue");
-            const errorModalErrorTypeValue = document.getElementById("errorModalErrorTypeValue");
+                {
+                    headerName: "Number of Processed",
+                    field: "processed_count",
+                    sortable: true,
+                    filter: "agNumberColumnFilter"
+                },
 
-            function updateErrorModalMeta(fileName, errorTypeName) {
-                if (errorModalFileNameValue) {
-                    errorModalFileNameValue.textContent = fileName || "N/A";
+                {
+                    headerName: "Number of Errors",
+                    field: "errored_count",
+                    sortable: true,
+                    filter: "agNumberColumnFilter"
+                },
+
+                {
+                    headerName: "Status",
+                    field: "status",
+                    sortable: true,
+                    filter: "agTextColumnFilter"
+                },
+                {
+                    headerName: "",
+                    field: "info",
+                    sortable: false,
+                    filter: false,
+                    suppressMenu: true,
+                    minWidth: 80,
+                    maxWidth: 80,
+                    cellRenderer: params => {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "info-button";
+                        button.title = "View more information";
+                        button.setAttribute("aria-label", "View More Details");
+
+                        button.innerHTML = `
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                `;
+
+                        button.addEventListener("click", (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openSourceMonitoringInfo(params);
+                        });
+
+                        return button;
+                    }
                 }
-                if (errorModalErrorTypeValue) {
-                    errorModalErrorTypeValue.textContent = errorTypeName || "N/A";
-                }
-            }
-
+            ];
+            // Info Modal Handler
             function formatInfoValue(value) {
                 if (value === null || value === undefined || value === "") {
                     return "N/A";
@@ -306,8 +430,6 @@
 
                 return value;
             }
-
-            // Info Modal Handler
             function openSourceMonitoringInfo(params) {
                 if (!sourceMonitoringInfoModal || !sourceMonitoringInfoContent) {
                     console.warn("Source monitoring info modal not initialized.");
@@ -346,7 +468,6 @@
                 sourceMonitoringInfoModal.classList.add("visible");
                 sourceMonitoringInfoModal.setAttribute("aria-hidden", "false");
             }
-
             function closeSourceMonitoringInfoModal() {
                 sourceMonitoringInfoModal.classList.remove("visible");
                 sourceMonitoringInfoModal.setAttribute("aria-hidden", "true");
@@ -362,6 +483,24 @@
                         closeSourceMonitoringInfoModal();
                     }
                 });
+            }
+
+            // Error Details Modal DOM Elements
+            const errorDetailsModal = document.getElementById("errorDetailsModal");
+            const closeErrorDetailsModalButton = document.getElementById("closeErrorDetailsModal");
+            const errorSearchInput = document.getElementById("errorSearchInput");
+            const errorTableHead = document.getElementById("errorTableHead");
+            const errorTableBody = document.getElementById("errorTableBody");
+            const errorModalFileNameValue = document.getElementById("errorModalFileNameValue");
+            const errorModalErrorTypeValue = document.getElementById("errorModalErrorTypeValue");
+
+            function updateErrorModalMeta(fileName, errorTypeName) {
+                if (errorModalFileNameValue) {
+                    errorModalFileNameValue.textContent = fileName || "N/A";
+                }
+                if (errorModalErrorTypeValue) {
+                    errorModalErrorTypeValue.textContent = errorTypeName || "N/A";
+                }
             }
 
             // --- Error Details Modal Dynamic Renderer ---
@@ -563,8 +702,8 @@
 
                             const rows = Array.isArray(value.rows) ? value.rows : [];
                             const rowNumber = rows.length > 0
-                            ? rows.join(', ')
-                            : (value.rowNumber ?? '');
+                                ? rows.join(', ')
+                                : (value.rowNumber ?? '');
                             const description = value.description ?? value.message ?? '';
                             if (description || rowNumber || key) {
                                 addErrorRow({
@@ -638,13 +777,14 @@
                 });
             }
 
-            function getDetailSourceMonitoringData(params) {
+            // --- Level 3 Nested Detail Grid Definition ---
+            function getDetailSubHistoricalData(params) {
                 const batch_id = params.data.batch_id;
-                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/batch_id/${batch_id}.json`))
+                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailSubViewName}/batch_id/${batch_id}.json`))
                     .then(response => {
                         if (response.url.includes('/?timeout=true')) {
-                            window.location.href = '/?timeout=true'; // Redirect to login page
-                            return null; // Prevent further processing of the response
+                            window.location.href = '/?timeout=true';
+                            return null;
                         }
                         return response.json();
                     })
@@ -652,13 +792,11 @@
                         params.successCallback(response);
                     })
                     .catch(error => {
-                        console.error('Error fetching details data' + error);
+                        console.error('Error fetching sub-details data' + error);
                     });
             }
 
-            // --- Updated Detail Grid Definition with Conditional Action Icon ---
-
-            const detailSourceMonitoring = [
+            const detailSubHistoricalData = [
                 {
                     headerName: "Status",
                     field: "status",
@@ -722,128 +860,375 @@
                 }
             ];
 
+            function getDetailHistoryData(params) {
+                const mco_name = params.data.mco_name;
+                const { start, end } = getSelectedHistoricalRange();
+                const url = new URL('/api/monitoring/mco/historical-records', window.location.origin);
+                url.searchParams.set('mco_name', mco_name);
+                if (start) url.searchParams.set('start_reporting_month', start);
+                if (end) url.searchParams.set('end_reporting_month', end);
+
+                fetch(window.shell.serverSideUrl(url.pathname + url.search))
+                    .then(response => {
+                        if (response.url.includes('/?timeout=true')) {
+                            window.location.href = '/?timeout=true'; // Redirect to login page
+                            return null; // Prevent further processing of the response
+                        }
+                        return response.json();
+                    })
+                    .then(response => {
+                        params.successCallback(response);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching details data' + error);
+                    });
+            }
+
+
+            let activeHistoricalPeriod = "LAST_3_MONTHS";
+            let activeHistoricalStart = null;
+            let activeHistoricalEnd = null;
+            let selectedHistoricalStart = null;
+            let selectedHistoricalEnd = null;
+            let currentHistoricalBaseYear = new Date().getFullYear() - 1;
+
+            const modalAide = new ModalAide();
+
             const agGridInstance =
                 new AGGridAideBuilder()
-
                     .withColumnDefs([
-                        {
-                            headerName: "MCO Code",
-                            field: "mco_code",
-                            sortable: true,
-                            filter: "agTextColumnFilter"
-                        },
-                        {
-                            headerName: "Source Name",
-                            field: "mco_name",
-                            sortable: true,
-                            filter: "agTextColumnFilter"
-                        },
-                        {
-                            headerName: "File Name",
-                            field: "root_file_name",
-                            cellRenderer: 'agGroupCellRenderer',
-                            sortable: true,
-                            filter: "agTextColumnFilter"
-                        },
-                        {
-                            headerName: "Received Month",
-                            field: "reporting_month",
-                            sortable: true,
-                            filter: "agTextColumnFilter"
-                        },
-                        {
-                            headerName: "Total Records",
-                            field: "total_records",
-                            sortable: true,
-                            filter: "agNumberColumnFilter"
-                        },
-
-                        {
-                            headerName: "Number of Processed",
-                            field: "processed_count",
-                            sortable: true,
-                            filter: "agNumberColumnFilter"
-                        },
-
-                        {
-                            headerName: "Number of Errors",
-                            field: "errored_count",
-                            sortable: true,
-                            filter: "agNumberColumnFilter"
-                        },
-
-                        {
-                            headerName: "Status",
-                            field: "status",
-                            sortable: true,
-                            filter: "agTextColumnFilter"
-                        },
-                        {
-                            headerName: "",
-                            field: "info",
-                            sortable: false,
-                            filter: false,
-                            suppressMenu: true,
-                            minWidth: 80,
-                            maxWidth: 80,
-                            cellRenderer: params => {
-                                const button = document.createElement("button");
-                                button.type = "button";
-                                button.className = "info-button";
-                                button.title = "View more information";
-                                button.setAttribute("aria-label", "View More Details");
-
-                                button.innerHTML = `
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                `;
-
-                                button.addEventListener("click", (event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    openSourceMonitoringInfo(params);
-                                });
-
-                                return button;
-                            }
-                        }
-
+                        { headerName: "MCO Name", field: "mco_name", sortable: true, filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+                        { headerName: "Total Files Received", field: "total_files_received", sortable: true, filter: "agNumberColumnFilter" },
+                        { headerName: "Files Processed", field: "files_processed", sortable: true, filter: "agNumberColumnFilter" },
+                        { headerName: "Files Partially Processed", field: "files_partially_processed", sortable: true, filter: "agNumberColumnFilter" },
+                        { headerName: "Files Errored", field: "files_errored", sortable: true, filter: "agNumberColumnFilter" }
                     ])
-
-                    .withServerSideDatasource(
-                        window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
-                        (data, valueCols) => {
-                            return valueCols.map(col => ({
-                                headerName: col.displayName,
-                                field: col.field
-                            }));
-                        }
-                    )
+                    .withGridOptions({
+                        serverSideDatasource: createHistoricalDetailsDatasource()
+                    })
                     .withMasterDetail(true)
                     .withDetailCellRendererParams({
                         detailGridOptions: {
-                            columnDefs: detailSourceMonitoring,
+                            columnDefs: detailHistory,
                             defaultColDef: {
                                 flex: 1
+                            },
+                            masterDetail: true,
+                            detailRowAutoHeight: true,
+
+                            // First detail grid height
+                            detailRowHeight: 500,
+
+                            detailCellRendererParams: {
+                                detailGridOptions: {
+                                    columnDefs: detailSubHistoricalData,
+                                    defaultColDef: {
+                                        flex: 1
+                                    },
+
+                                    // Nested detail grid height
+                                    domLayout: 'autoHeight'
+                                },
+
+                                getDetailRowData: params => {
+                                    getDetailSubHistoricalData(params);
+                                }
                             }
                         },
+
+                        // First detail row height
+                        detailRowHeight: 500,
+
                         getDetailRowData: params => {
-                            getDetailSourceMonitoringData(params);
+                            getDetailHistoryData(params);
                         }
                     })
-                    .withDetailRowAutoHeight(false)
-                    .withGridDivStyles({ height: "750px", width: "100%" })
+                    .withModalAide(modalAide)
+                    .withGridDivStyles({
+                        height: "850px",
+                        width: "100%"
+                    })
                     .build();
 
-            agGridInstance.init("serverDataGrid");
+            const historicalGridApi = agGridInstance.init('serverDataGrid');
 
-            // Accordion Logic
+            const selectDropdown = document.getElementById("mco-time-period-select");
+            const customOption = document.getElementById("custom-option");
+            const modal = document.getElementById("month-picker-modal");
+            const resetHistoricalRangeBtn = document.getElementById("reset-custom-range-btn");
+            const applyRangeBtn = document.getElementById("apply-range-btn");
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            function toReportingMonth(monthIndex, year) {
+                return `${String(monthIndex + 1).padStart(2, '0')}-${year}`;
+            }
+
+            function getDefaultReportingMonth() {
+                const today = new Date();
+                const dayOfMonth = today.getDate();
+                const year = today.getFullYear();
+                const monthIndex = today.getMonth();
+
+                if (dayOfMonth >= 5 && dayOfMonth <= 19) {
+                    const previousMonth = new Date(year, monthIndex - 1, 1);
+                    return `${String(previousMonth.getMonth() + 1).padStart(2, '0')}-${previousMonth.getFullYear()}`;
+                }
+
+                return `${String(monthIndex + 1).padStart(2, '0')}-${year}`;
+            }
+
+            function getPreviousMonths(currentMonth, count) {
+                if (!currentMonth) return [];
+                const [monthPart, yearPart] = currentMonth.split('-').map(Number);
+                const months = [];
+                let year = yearPart;
+                let month = monthPart;
+                for (let i = 0; i < count; i++) {
+                    month -= 1;
+                    if (month < 1) {
+                        month = 12;
+                        year -= 1;
+                    }
+                    months.push(`${String(month).padStart(2, '0')}-${year}`);
+                }
+                return months;
+            }
+
+            function getLastThreeMonthsRange() {
+                const endMonth = getDefaultReportingMonth();
+                const previousMonths = getPreviousMonths(endMonth, 2);
+                const startMonth = previousMonths[previousMonths.length - 1];
+                return { start: startMonth, end: endMonth };
+            }
+
+            function buildHistoricalDetailsQueryString() {
+                const { start, end } = getSelectedHistoricalRange();
+                const url = new URL('/api/monitoring/mco/historical-details', window.location.origin);
+                if (start) url.searchParams.set('p_start_reporting_month', start);
+                if (end) url.searchParams.set('p_end_reporting_month', end);
+                return url.toString();
+            }
+
+            function getSelectedHistoricalRange() {
+                if (activeHistoricalPeriod === 'ALL') {
+                    return { start: null, end: null };
+                }
+                if (activeHistoricalPeriod === 'CUSTOM') {
+                    return {
+                        start: activeHistoricalStart ? toReportingMonth(activeHistoricalStart.month - 1, activeHistoricalStart.year) : null,
+                        end: activeHistoricalEnd ? toReportingMonth(activeHistoricalEnd.month - 1, activeHistoricalEnd.year) : null
+                    };
+                }
+                const lastThree = getLastThreeMonthsRange();
+                return { start: lastThree.start, end: lastThree.end };
+            }
+
+            function updateCustomRangeDisplay() {
+                if (customOption) {
+                    if (activeHistoricalPeriod === 'CUSTOM' && activeHistoricalStart && activeHistoricalEnd) {
+                        const startLabel = `${monthNames[activeHistoricalStart.month - 1]} ${activeHistoricalStart.year}`;
+                        const endLabel = `${monthNames[activeHistoricalEnd.month - 1]} ${activeHistoricalEnd.year}`;
+                        customOption.textContent = `Custom Range - ${startLabel} - ${endLabel}`;
+                    } else {
+                        customOption.textContent = 'Custom Range';
+                    }
+                }
+            }
+
+            function refreshHistoricalGrid() {
+                if (!historicalGridApi) {
+                    return;
+                }
+                historicalGridApi.setGridOption('serverSideDatasource', createHistoricalDetailsDatasource());
+            }
+
+            function createHistoricalDetailsDatasource() {
+                return {
+                    getRows: async (params) => {
+                        const url = buildHistoricalDetailsQueryString();
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'GET',
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            const data = await response.json();
+                            params.success({
+                                rowData: Array.isArray(data) ? data : [],
+                                rowCount: Array.isArray(data) ? data.length : 0
+                            });
+                        } catch (error) {
+                            console.error('Error fetching historical details', error);
+                            params.success({ rowData: [], rowCount: 0 });
+                        }
+                    }
+                };
+            }
+
+            function setPeriodButtonState() {
+                if (resetHistoricalRangeBtn) {
+                    const showReset = activeHistoricalPeriod === 'CUSTOM' && activeHistoricalStart && activeHistoricalEnd;
+                    resetHistoricalRangeBtn.classList.toggle('hidden', !showReset);
+                }
+            }
+
+            function cancelCustomRangeSelection() {
+                selectedHistoricalStart = activeHistoricalStart ? { ...activeHistoricalStart } : null;
+                selectedHistoricalEnd = activeHistoricalEnd ? { ...activeHistoricalEnd } : null;
+                selectDropdown.value = activeHistoricalPeriod;
+                toggleMonthPickerModal(false);
+            }
+
+            function renderCalendar() {
+                if (!document.getElementById("left-year-label") || !document.getElementById("right-year-label")) {
+                    return;
+                }
+                document.getElementById("left-year-label").textContent = currentHistoricalBaseYear;
+                document.getElementById("right-year-label").textContent = currentHistoricalBaseYear + 1;
+                renderYearGrid("left-year-months", currentHistoricalBaseYear);
+                renderYearGrid("right-year-months", currentHistoricalBaseYear + 1);
+            }
+
+            function renderYearGrid(containerId, year) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = "";
+
+                monthNames.forEach((name, monthIndex) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "py-2 text-xs font-semibold rounded-md transition-all text-center border";
+                    btn.textContent = name;
+
+                    const clickedDate = { year, month: monthIndex + 1 };
+                    const isSelectedStart = selectedHistoricalStart && selectedHistoricalStart.year === year && selectedHistoricalStart.month === (monthIndex + 1);
+                    const isSelectedEnd = selectedHistoricalEnd && selectedHistoricalEnd.year === year && selectedHistoricalEnd.month === (monthIndex + 1);
+
+                    if (isSelectedStart || isSelectedEnd) {
+                        btn.className += " bg-blue-600 text-white border-blue-600 font-bold";
+                    } else if (selectedHistoricalStart && selectedHistoricalEnd) {
+                        const selectedValue = year * 12 + (monthIndex + 1);
+                        const startValue = selectedHistoricalStart.year * 12 + selectedHistoricalStart.month;
+                        const endValue = selectedHistoricalEnd.year * 12 + selectedHistoricalEnd.month;
+                        if (selectedValue >= Math.min(startValue, endValue) && selectedValue <= Math.max(startValue, endValue)) {
+                            btn.className += " bg-blue-100 text-blue-900 border-blue-200";
+                        } else {
+                            btn.className += " bg-white text-gray-700 border-gray-100 hover:bg-gray-50";
+                        }
+                    } else {
+                        btn.className += " bg-white text-gray-700 border-gray-100 hover:bg-gray-50";
+                    }
+
+                    btn.addEventListener("click", function () {
+                        if (!selectedHistoricalStart || (selectedHistoricalStart && selectedHistoricalEnd)) {
+                            selectedHistoricalStart = clickedDate;
+                            selectedHistoricalEnd = null;
+                        } else if (selectedHistoricalStart && !selectedHistoricalEnd) {
+                            const clickedValue = year * 12 + (monthIndex + 1);
+                            const startValue = selectedHistoricalStart.year * 12 + selectedHistoricalStart.month;
+                            if (clickedValue < startValue) {
+                                selectedHistoricalEnd = { ...selectedHistoricalStart };
+                                selectedHistoricalStart = clickedDate;
+                            } else {
+                                selectedHistoricalEnd = clickedDate;
+                            }
+                        }
+                        renderCalendar();
+                    });
+
+                    container.appendChild(btn);
+                });
+            }
+
+            function setSelectedPeriod(period) {
+                activeHistoricalPeriod = period;
+                if (period === 'CUSTOM') {
+                    selectedHistoricalStart = activeHistoricalStart ? { ...activeHistoricalStart } : selectedHistoricalStart;
+                    selectedHistoricalEnd = activeHistoricalEnd ? { ...activeHistoricalEnd } : selectedHistoricalEnd;
+                } else {
+                    selectedHistoricalStart = null;
+                    selectedHistoricalEnd = null;
+                    activeHistoricalStart = null;
+                    activeHistoricalEnd = null;
+                    updateCustomRangeDisplay();
+                }
+                setPeriodButtonState();
+            }
+
+            window.toggleMonthPickerModal = function (show) {
+                if (modal) {
+                    modal.classList.toggle("hidden", !show);
+                    if (show) renderCalendar();
+                }
+            };
+
+            selectDropdown.addEventListener("change", function () {
+                const value = this.value;
+                if (value === "CUSTOM") {
+                    selectedHistoricalStart = activeHistoricalStart ? { ...activeHistoricalStart } : selectedHistoricalStart;
+                    selectedHistoricalEnd = activeHistoricalEnd ? { ...activeHistoricalEnd } : selectedHistoricalEnd;
+                    toggleMonthPickerModal(true);
+                } else {
+                    toggleMonthPickerModal(false);
+                    setSelectedPeriod(value);
+                    refreshHistoricalGrid();
+                }
+            });
+
+            // selectDropdown.addEventListener("click", function () {
+            //     if (this.value === "CUSTOM" && modal?.classList.contains("hidden")) {
+            //         selectedHistoricalStart = activeHistoricalStart ? { ...activeHistoricalStart } : null;
+            //         selectedHistoricalEnd = activeHistoricalEnd ? { ...activeHistoricalEnd } : null;
+            //         toggleMonthPickerModal(true);
+            //     }
+            // });
+
+            document.getElementById("prev-year-btn").addEventListener("click", function () {
+                currentHistoricalBaseYear--;
+                renderCalendar();
+            });
+
+            document.getElementById("next-year-btn").addEventListener("click", function () {
+                currentHistoricalBaseYear++;
+                renderCalendar();
+            });
+
+            applyRangeBtn.addEventListener("click", function () {
+                if (!selectedHistoricalStart || !selectedHistoricalEnd) {
+                    alert("Please select both a start and end month.");
+                    return;
+                }
+                activeHistoricalStart = { ...selectedHistoricalStart };
+                activeHistoricalEnd = { ...selectedHistoricalEnd };
+                activeHistoricalPeriod = 'CUSTOM';
+                selectDropdown.value = 'CUSTOM';
+                updateCustomRangeDisplay();
+                setPeriodButtonState();
+                toggleMonthPickerModal(false);
+                refreshHistoricalGrid();
+            });
+
+            document.getElementById("cancel-range-btn").addEventListener("click", cancelCustomRangeSelection);
+
+            resetHistoricalRangeBtn.addEventListener("click", function () {
+                selectDropdown.value = 'LAST_3_MONTHS';
+                activeHistoricalPeriod = 'LAST_3_MONTHS';
+                activeHistoricalStart = null;
+                activeHistoricalEnd = null;
+                selectedHistoricalStart = null;
+                selectedHistoricalEnd = null;
+                customOption.textContent = 'Custom Range';
+                toggleMonthPickerModal(false);
+                refreshHistoricalGrid();
+                updateCustomRangeDisplay();
+                setPeriodButtonState();
+            });
+
             const toggleButton = document.getElementById("accordionToggle");
             const accordionContent = document.getElementById("accordionContent");
-
             if (toggleButton && accordionContent) {
                 toggleButton.addEventListener("click", function () {
                     accordionContent.classList.toggle("hidden");
@@ -854,65 +1239,97 @@
                 });
             }
 
+            updateCustomRangeDisplay();
+            setPeriodButtonState();
+            renderCalendar();
         });
-
     </script>
-
 </head>
 
 <body>
-
     <div layout:fragment="content">
-
-        <div class="grid-description">
-
-            <div class="text-base leading-relaxed text-sm">
-
+        <!-- Grid Description Area -->
+        <div class="grid-description mb-2">
+            <div class=" leading-relaxed text-sm">
                 <p class="mb-2">
-                    This page provides a consolidated view of all source files received
-                    from MCOs. Each row represents a processed file and displays
-                    processing statistics such as total records, processed records,
-                    error count and current processing status.
+                    This page provides a timeline view of file transmission history by year and month. Each row displays
+                    details such as the file name, status, total records, records with errors, records processed,
+                    resubmission count, and last updated time. Users can view additional details using the Eye button or
+                    view error information for errored and partially processed files.
                 </p>
+            </div>
+        </div>
 
-                <button id="accordionToggle"
-                    class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
-
-                    ▶ Click here to view the column descriptions
-
-                </button>
-
-                <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200">
-
-                    <p>
-                        <strong>MCO Code:</strong> Unique identifier for the Managed Care Organization.<br><br>
-                        <strong>Source Name:</strong> Name of the MCO that submitted the file.<br><br>
-                        <strong>File Name:</strong> Original uploaded file name.<br><br>
-                        <strong>Received Month:</strong> Month and year when the file was received.<br><br>
-                        <strong>Total Records:</strong> Total number of records contained in the file.<br><br>
-                        <strong>Number of Processed:</strong> Number of successfully processed records.<br><br>
-                        <strong>Number of Errors:</strong> Number of failed records.<br><br>
-                        <strong>Status:</strong> Current processing status.<br><br>
-
-                    </p>
-
+        <div class="flex justify-end items-center mb-3 pr-4">
+            <div class="relative flex items-center gap-3" id="mco-time-period-container">
+                <div class="flex items-center gap-2 pt-1 pr-1">
+                    <label for="mco-time-period-select"
+                        class="text-sm font-semibold text-gray-600 whitespace-nowrap">Select Time Period</label>
+                    <div class="relative inline-flex items-center group">
+                        <button type="button" class="text-gray-400 hover:text-blue-600 focus:outline-none p-1"
+                            aria-label="Reporting Month Information">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div
+                            class="absolute right-0 top-full mt-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none whitespace-normal">
+                            The reporting month is dynamically set based on the submission window (20th of previous
+                            month to 4th of current month).
+                        </div>
+                    </div>
+                    <select id="mco-time-period-select"
+                        class="w-auto min-w-0 pr-10 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
+                        <option value="ALL">All</option>
+                        <option value="LAST_3_MONTHS" selected>Last 3 Months</option>
+                        <option value="CUSTOM" id="custom-option">Custom Range</option>
+                    </select>
                 </div>
 
-                <p class="mt-3">
-                    When the Information icon is clicked, additional details are displayed, including the Resubmitted Count, Last Updated Time, Validated On, and Sent to Data Lake Time.
+                <button type="button" id="reset-custom-range-btn"
+                    class="hidden inline-flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Reset custom date range" title="Reset custom range">
+                    <svg class="w-5 h-5 text-[cornflowerblue]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h5M20 20v-5h-5M5.05 9A7.5 7.5 0 0117.8 5.2L20 7M4 17l2.2 1.8A7.5 7.5 0 0018.95 15">
+                    </svg>
+                </button>
 
-                    When the file name is clicked to drill down, the status history of the file is displayed, along with the last updated time for each status.
-                    
-                    When the file icon is clicked, the detailed errors for that file are displayed, including information such as the error description, error code, and other relevant error details.
-                </p>
+                <div id="month-picker-modal"
+                    class="hidden absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-[8] p-4 w-[520px]">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                        <button type="button" id="prev-year-btn"
+                            class="p-1 hover:bg-gray-100 rounded text-gray-600 font-bold">&laquo;</button>
+                        <div class="flex gap-32 font-bold text-gray-700 text-sm">
+                            <span id="left-year-label">2025</span>
+                            <span id="right-year-label">2026</span>
+                        </div>
+                        <button type="button" id="next-year-btn"
+                            class="p-1 hover:bg-gray-100 rounded text-gray-600 font-bold">&raquo;</button>
+                    </div>
 
+                    <div class="grid grid-cols-2 gap-6 mb-4">
+                        <div class="grid grid-cols-3 gap-2" id="left-year-months"></div>
+                        <div class="grid grid-cols-3 gap-2" id="right-year-months"></div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-gray-100 pt-3">
+                        <button type="button" id="cancel-range-btn"
+                            class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                        <button type="button" id="apply-range-btn"
+                            class="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm">Apply
+                            Range</button>
+                    </div>
+                </div>
             </div>
-
         </div>
 
+        <!-- AG-Grid Component -->
         <div id="serverDataGrid" class="ag-theme-alpine">
         </div>
-
         <!-- Parent Info Modal -->
         <div id="sourceMonitoringInfoModal" class="info-modal" aria-hidden="true">
             <div class="info-modal-card" role="dialog" aria-modal="true" aria-labelledby="sourceMonitoringInfoTitle">
@@ -940,7 +1357,8 @@
                         <!-- File Name Section -->
                         <div class="flex items-center gap-1.5 text-sm">
                             <span class="font-semibold text-gray-800">File Name:</span>
-                            <span id="errorModalFileNameValue" class="font-mono text-gray-600 bg-white/60 px-1.5 py-0.5 rounded">
+                            <span id="errorModalFileNameValue"
+                                class="font-mono text-gray-600 bg-white/60 px-1.5 py-0.5 rounded">
                                 N/A
                             </span>
                         </div>
@@ -972,9 +1390,7 @@
                 </div>
             </div>
         </div>
-
     </div>
-
 </body>
 
 </html>

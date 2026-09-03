@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,25 +56,77 @@ public class MonitoringController {
     @RouteMapping(label = "Monitoring", siblingOrder = 80)
     @GetMapping("/monitoring")
     public String docs() {
-        return "redirect:/monitoring/source-monitoring";
+        return "redirect:/monitoring/monthly-summary";
     }
 
-    @RouteMapping(label = "Source Monitoring", title = "Source Monitoring", siblingOrder = 30)
-    @GetMapping("/monitoring/source-monitoring")
+    @RouteMapping(label = "Monthly Summary", title = "Monthly Summary", siblingOrder = 30)
+    @GetMapping("/monitoring/monthly-summary")
     public String sourceMonitoring(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/monitoring/source-monitoring", model, request);
+        return presentation.populateModel("page/monitoring/monthly-summary", model, request);
+    }
+ 
+    @RouteMapping(label = "Historical Details", title = "Historical Details", siblingOrder = 40)
+    @GetMapping("/monitoring/historical-details")
+    public String historicalDetails(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/monitoring/historical-details", model, request);
     }
 
-    @RouteMapping(label = "Error Monitoring", title = "Error Monitoring", siblingOrder = 40)
-    @GetMapping("/monitoring/error-monitoring")
-    public String errorMonitoring(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/monitoring/error-monitoring", model, request);
+    @GetMapping(value = "/api/monitoring/mco/historical-details", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Map<String, Object>>> getMcoHistoricalDetails(
+            @RequestParam(name = "p_start_reporting_month", required = false) final String startReportingMonth,
+            @RequestParam(name = "p_end_reporting_month", required = false) final String endReportingMonth) {
+
+        final String startParam = (startReportingMonth != null && !startReportingMonth.isBlank()) ? startReportingMonth.trim() : null;
+        final String endParam = (endReportingMonth != null && !endReportingMonth.isBlank()) ? endReportingMonth.trim() : null;
+
+        try {
+            List<Map<String, Object>> rows = getDsl()
+                    .fetch(
+                            "SELECT * FROM mco_data.get_mco_historical_details(?, ?)",
+                            startParam,
+                            endParam)
+                    .intoMaps();
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(rows);
+        } catch (Exception e) {
+            LOG.error("Error fetching MCO historical details with range start={} end={}", startParam, endParam, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of());
+        }
     }
 
-@GetMapping(value = "/api/monitoring/mco/error-logs/{batchDetailsId}",
-        produces = MediaType.APPLICATION_JSON_VALUE)
-public ResponseEntity<List<Map<String, Object>>> getMcoErrorLogs(
-        @PathVariable final String batchDetailsId) {
+                @GetMapping(value = "/api/monitoring/mco/historical-records", produces = MediaType.APPLICATION_JSON_VALUE)
+                public ResponseEntity<List<Map<String, Object>>> getMcoHistoricalRecords(
+                    @RequestParam(name = "mco_name") final String mcoName,
+                        @RequestParam(name = "start_reporting_month", required = false) final String startReportingMonth,
+                        @RequestParam(name = "end_reporting_month", required = false) final String endReportingMonth) {
+
+                try {
+                    List<Map<String, Object>> rows = getDsl()
+                        .fetch(
+                            "SELECT * FROM mco_data.get_mco_historical_records(?, ?, ?)",
+                            mcoName.trim(),
+                                startReportingMonth == null || startReportingMonth.isBlank() ? null : startReportingMonth.trim(),
+                                endReportingMonth == null || endReportingMonth.isBlank() ? null : endReportingMonth.trim())
+                        .intoMaps();
+
+                    return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(rows);
+                } catch (Exception e) {
+                    LOG.error("Error fetching MCO historical records for mco={} start={} end={}",
+                        mcoName, startReportingMonth, endReportingMonth, e);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(List.of());
+                }
+                }
+
+    @GetMapping(value = "/api/monitoring/mco/error-logs/{batchDetailsId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Map<String, Object>>> getMcoErrorLogs(
+            @PathVariable final String batchDetailsId) {
 
     if (batchDetailsId == null || batchDetailsId.isBlank()) {
         return ResponseEntity.badRequest().body(List.of());
