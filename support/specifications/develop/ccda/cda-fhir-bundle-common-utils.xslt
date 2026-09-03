@@ -579,7 +579,7 @@
   <xsl:template name="mapScreeningCodeSystem">
     <xsl:param name="screeningCode"/>
     <xsl:choose>
-      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYSHRSNQuestionnaire</xsl:when>
       <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0' or $screeningCode = '93025-5'">http://loinc.org</xsl:when>
       <xsl:otherwise>
         <xsl:text>http://loinc.org</xsl:text>

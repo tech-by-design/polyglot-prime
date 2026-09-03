@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.17 -->
+<!-- Version : 0.1.18 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -574,7 +574,7 @@
         <xsl:if test="$genderIdentityEntry">
           <xsl:if test="ccda:patient/ccda:raceCode or ccda:patient/ccda:ethnicGroupCode/@code or string($birthSexEntry)">,</xsl:if>
           {
-              "url" : "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/shinny-gender-identity",
+              "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-genderIdentity",
               "valueCodeableConcept" : {
                 "coding" : [ {
                   "code" : "<xsl:choose>
@@ -645,7 +645,7 @@
                 }],
                 "text": "Social Security Number"
               },
-              "system": "http://www.ssa.gov/",
+              "system": "http://hl7.org/fhir/sid/us-ssn",
               "value": "<xsl:value-of select="$ssnId"/>"
             }
             <xsl:if test="$mrnId">,</xsl:if>
@@ -665,7 +665,7 @@
               "value": "<xsl:value-of select="$mrnId"/>"
               <xsl:if test="string($organizationResourceId)">
                 , "assigner": {
-                  "reference": "Organization/<xsl:value-of select="$organizationResourceId"/>"
+                  "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select="$organizationResourceId"/>"
                 }
               </xsl:if>
             }
@@ -766,7 +766,7 @@
           "display": "<xsl:value-of select="ccda:code/@displayName"/>"
         },
         "subject" : {
-          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
+          "reference" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
           "display" : "<xsl:value-of select="$patientResourceName"/>"
         }
         <xsl:choose>
@@ -842,7 +842,7 @@
             {
                 "location": {
                     <xsl:if test="string($locationResourceId)"> 
-                      "reference": "Location/<xsl:value-of select="$locationResourceId"/>"
+                      "reference": "<xsl:value-of select='$baseFhirUrl'/>/Location/<xsl:value-of select="$locationResourceId"/>"
                       <xsl:if test="normalize-space($locationDisplayRaw)">,</xsl:if>
                     </xsl:if>
                     <xsl:if test="normalize-space($locationDisplayRaw)">
@@ -924,10 +924,10 @@
                             </xsl:choose>"
         </xsl:if>
         , "patient" : {
-            "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>"
+            "reference" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>"
         }
         , "organization" : [{
-          "reference" : "Organization/<xsl:value-of select='$organizationResourceId'/>"
+          "reference" : "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
         }]
         , "provision" : {
               "type" : "<xsl:choose>
@@ -936,7 +936,7 @@
                         </xsl:choose>"
         }
         , "policy" : [{
-            "authority" : "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
+            "authority" : "http://www.scn.ny.gov/"
           }]
         , "sourceAttachment" : {
           "contentType" : "application/pdf",
@@ -1180,7 +1180,7 @@
               </xsl:otherwise>
           </xsl:choose>
           "subject": {
-            "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+            "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
             "display" : "<xsl:value-of select="$patientResourceName"/>"
           }
           <xsl:if test="ccda:effectiveTime/@value or $encounterEffectiveTimeValue or $currentTimestamp">
@@ -1322,10 +1322,13 @@
                   </xsl:when>
                 </xsl:choose>
                 {
-                  "coding": [{
-                      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                      "code": "social-history"
-                  }]
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                            "code": "sdoh",
+                            "display": "SDOH"
+                        }
+                    ]
                 },
                 {
                   "coding": [{
@@ -1472,7 +1475,7 @@
                             <xsl:with-param name="sha256ResourceId" select="$observationIdSourceDF"/>
                           </xsl:call-template>
                         </xsl:variable>                
-                        { "reference": "Observation/<xsl:value-of select='$observationResourceIdDF'/>" }<xsl:if test="position() != last()">,</xsl:if>
+                        { "reference": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceIdDF'/>" }<xsl:if test="position() != last()">,</xsl:if>
                       </xsl:for-each>
                     ],
                   </xsl:if>
@@ -1501,19 +1504,19 @@
               </xsl:choose>
 
               "subject": {
-                "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
                 "display": "<xsl:value-of select='$patientResourceName'/>"
               }
               <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
               , "encounter": {
-                  "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                  "reference": "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select='$encounterResourceId'/>"
                 }
               </xsl:if>
               , "effectiveDateTime": "<xsl:value-of select='$encounterEffectiveTime'/>"
 
               <xsl:if test="string($organizationResourceId)">
               , "performer": [{
-                            "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                            "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
                         }]
               </xsl:if>
             },
@@ -1573,12 +1576,12 @@
               ]
             },
             "subject": {
-              "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+              "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
               "display": "<xsl:value-of select='$patientResourceName'/>"
             },
             <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
               "encounter": {
-                "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select='$encounterResourceId'/>"
               },
             </xsl:if>
             "effectiveDateTime": "<xsl:choose>
@@ -1597,7 +1600,7 @@
             "issued": "<xsl:value-of select='$currentTimestamp'/>",
             <xsl:if test="string($organizationResourceId)">
               "performer": [{
-                "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
               }],
             </xsl:if>
             "category": [
@@ -1605,10 +1608,13 @@
                 "coding": <xsl:value-of select='$categoryXml'/>
               },
               {
-                "coding": [{
-                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                  "code": "social-history"
-                }]
+                  "coding": [
+                      {
+                          "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                          "code": "sdoh",
+                          "display": "SDOH"
+                      }
+                  ]
               },
               {
                 "coding": [{
@@ -1692,7 +1698,7 @@
                     <xsl:with-param name="sha256ResourceId" select="$observationIdSource"/>
                   </xsl:call-template>
                 </xsl:variable>
-                { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
+                { "reference": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
               </xsl:for-each>
             ]
           },
