@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.2.12 -->
+<!-- Version : 0.2.13 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -608,7 +608,7 @@
               }],
               "text": "Social Security Number"
             },
-            "system": "http://www.ssa.gov/",
+            "system": "http://hl7.org/fhir/sid/us-ssn",
             "value": "<xsl:value-of select="$ssnId"/>"
           }<xsl:if test="$mrnId">,</xsl:if>
         </xsl:if>
@@ -628,7 +628,7 @@
             "value": "<xsl:value-of select="$mrnId"/>"
             <xsl:if test="string($organizationResourceId)">
               , "assigner": {
-                "reference": "Organization/<xsl:value-of select="$organizationResourceId"/>"
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select="$organizationResourceId"/>"
               }
             </xsl:if>
           }
@@ -952,7 +952,7 @@
 		  </xsl:choose>
 
           , "subject": {
-            "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+            "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
             "display" : "<xsl:value-of select='$patientResourceName'/>"
           }
           <xsl:if test="string(OBX.14/OBX.14.1) or $currentTimestamp">
@@ -1040,10 +1040,13 @@
                   </xsl:when>
                 </xsl:choose>
                 ,{
-                  "coding": [{
-                      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                      "code": "social-history"
-                  }]
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                            "code": "sdoh",
+                            "display": "SDOH"
+                        }
+                    ]
                 },
                 {
                   "coding": [{
@@ -1154,7 +1157,7 @@
                           <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
                           </xsl:call-template>
                         </xsl:variable>
-                        { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
+                        { "reference": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>" }
                         <xsl:if test="position() != last()">,</xsl:if>
                     </xsl:for-each>
                   ],
@@ -1179,12 +1182,12 @@
                 </xsl:otherwise>
 			        </xsl:choose>
               "subject": {
-                "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
                 "display": "<xsl:value-of select="$patientResourceName"/>"
               }
               <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
                 , "encounter": {
-                    "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                    "reference": "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select='$encounterResourceId'/>"
                   }
               </xsl:if>
               <xsl:if test="string(OBX.14/OBX.14.1) or $currentTimestamp">
@@ -1202,7 +1205,7 @@
               </xsl:if>
               <xsl:if test="string($organizationResourceId)">
                 , "performer": [{
-                            "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                            "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
                         }]
               </xsl:if>
 
@@ -1516,7 +1519,7 @@
 
       <xsl:text>,</xsl:text>
       "subject": {
-        "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+        "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
         "display": "<xsl:value-of select="$patientResourceName"/>"
       }
 
@@ -1695,10 +1698,10 @@
         </xsl:choose>"
       </xsl:if>,
       "patient": {
-        "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
+        "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>"
       },
       "organization": [{
-        "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+        "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
       }],
       "provision": {
         "type": "<xsl:choose>
@@ -1707,7 +1710,7 @@
         </xsl:choose>"
       },
       "policy": [{
-        "authority": "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
+        "authority": "http://www.scn.ny.gov/"
       }],
       "sourceAttachment": {
         "contentType": "application/pdf",
@@ -1804,7 +1807,7 @@
             "code": {
               "coding": [{
                 "system": "<xsl:choose>
-                              <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+                              <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYSHRSNQuestionnaire</xsl:when>
                               <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
                             </xsl:choose>",
                 "code": "<xsl:value-of select='$screeningCode'/>",
@@ -1822,17 +1825,17 @@
               ]
             },
             "subject": {
-              "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+              "reference": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
               "display": "<xsl:value-of select='$patientResourceName'/>"
             },
             <xsl:if test="string($organizationResourceId)">
               "performer": [{
-                "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                "reference": "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select='$organizationResourceId'/>"
               }],
             </xsl:if>
             <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
                   "encounter": {
-                      "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                      "reference": "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select='$encounterResourceId'/>"
                     },
             </xsl:if>
             <xsl:if test="normalize-space($firstValidObxEffectiveTime/OBX.14/OBX.14.1) or $currentTimestamp">
@@ -1883,10 +1886,13 @@
                 "coding": <xsl:value-of select='$categoryXml'/>
               },
               {
-                "coding": [{
-                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                  "code": "social-history"
-                }]
+                  "coding": [
+                      {
+                          "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                          "code": "sdoh",
+                          "display": "SDOH"
+                      }
+                  ]
               },
               {
                 "coding": [{
@@ -1938,7 +1944,7 @@
                       <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
                     </xsl:call-template>
                   </xsl:variable>
-                  { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
+                  { "reference": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>" }
                   <xsl:if test="position() != last()">,</xsl:if>
               </xsl:for-each>
             ]
