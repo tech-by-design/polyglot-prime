@@ -123,7 +123,7 @@ class PatientConverterTest {
                                 .findFirst()
                                 .orElse(null);
                 softly.assertThat(ssnIdentifier).isNotNull();
-                softly.assertThat(ssnIdentifier.getSystem()).isEqualTo("http://www.ssa.gov/");
+                softly.assertThat(ssnIdentifier.getSystem()).isEqualTo("http://hl7.org/fhir/sid/us-ssn");
                 softly.assertThat(ssnIdentifier.getValue()).isEqualTo("999-34-2964");
                 softly.assertThat(maIdentifier.getType().getCodingFirstRep().getSystem())
                                 .isEqualTo("http://terminology.hl7.org/CodeSystem/v2-0203");
@@ -139,7 +139,7 @@ class PatientConverterTest {
                 softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity")).isNotNull();
                 softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex")).isNotNull();
                 softly.assertThat(patient.getExtensionByUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns")).isNotNull();
-                softly.assertThat(patient.getExtensionByUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity")).isNotNull();
+                softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-genderIdentity")).isNotNull();
 
                 softly.assertThat(patient.hasAddress()).isTrue();
                 final Address address = patient.getAddressFirstRep();
