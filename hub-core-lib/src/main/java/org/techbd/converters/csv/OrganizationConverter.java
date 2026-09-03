@@ -109,7 +109,7 @@ public class OrganizationConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
 
             Map<String, String> systemToCodeMap = Map.of(
-                    "http://hl7.org/fhir/sid/us-npi", "NPI",
+                    "http://terminology.hl7.org/CodeSystem/v2-0203", "NPI",
                     "http://www.medicaid.gov/", "MA",
                     "http://www.irs.gov/", "TAX");
 

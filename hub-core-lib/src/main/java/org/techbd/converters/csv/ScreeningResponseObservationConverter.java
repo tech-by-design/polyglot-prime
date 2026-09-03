@@ -55,6 +55,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         // Constants for URLs and systems
         private static final String OBSERVATION_URL_BASE = "http://shinny.org/us/ny/hrsn/Observation/";
         private static final String CATEGORY_URL = "http://terminology.hl7.org/CodeSystem/observation-category";
+        private static final String US_CORE_CATEGORY_URL = "http://hl7.org/fhir/us/core/CodeSystem/us-core-category";
         private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
 
         private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
@@ -123,13 +124,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 // available in all
                                 // screening records
                                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                String screeningLanguageDescription = fetchCode(screeningProfileData.getScreeningLanguageDescription(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                                 observation.setLanguage("en");
 
                                 if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
                                     Extension languageExtension = new Extension(
                                         baseUrl + "/StructureDefinition/shinny-observation-language");
                                     CodeableConcept valueConcept = new CodeableConcept();
-                                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                                    valueConcept.addCoding(new Coding()
+                                            .setSystem(screeningLanguageCodeSystem)
+                                            .setCode(screeningLangCode)
+                                            .setDisplay(screeningLanguageDescription));
                                     languageExtension.setValue(valueConcept);
                                     observation.addExtension(languageExtension);
                                 }
@@ -254,8 +260,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 }
                                 }        
                                 observation.addCategory(
-                                                createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
-                                                                "social-history", null));
+                                                createCategory("http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                                                                "sdoh", "SDOH"));
                                 observation.addCategory(
                                                 createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                                 "survey", null));
@@ -511,6 +517,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setMeta(meta);
                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                String screeningLanguageDescription = fetchCode(screeningProfileData.getScreeningLanguageDescription(),
+                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(),
+                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                 groupObservation.setLanguage("en");
                 String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : CoreFHIRUtil.getBaseFHIRURL();
                 if (baseUrl.endsWith("/")) {
@@ -521,7 +531,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                     Extension languageExtension = new Extension(
                         baseUrl + "/StructureDefinition/shinny-observation-language");
                     CodeableConcept valueConcept = new CodeableConcept();
-                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                    valueConcept.addCoding(new Coding()
+                                            .setSystem(screeningLanguageCodeSystem)
+                                            .setCode(screeningLangCode)
+                                            .setDisplay(screeningLanguageDescription));
                     languageExtension.setValue(valueConcept);
                     groupObservation.addExtension(languageExtension);
                 }
@@ -537,7 +550,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 }
 
                 // Add standard categories
-                groupObservation.addCategory(createCategory(CATEGORY_URL, "social-history", null));
+                groupObservation.addCategory(createCategory(US_CORE_CATEGORY_URL, "sdoh", "SDOH"));
                 groupObservation.addCategory(createCategory(CATEGORY_URL, "survey", null));
 
                 // Add SDOH categories from group members
@@ -651,10 +664,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                             "NEG", "Negative"));
                 }
                 groupObservation.addInterpretation(interpretation);
-
+                
                 // Add member references using observationId directly from the model
+                final var referenceBaseUrl  = baseUrl;
                 List<Reference> hasMemberReferences = groupData.stream()
-                        .map(data -> new Reference("Observation/" + buildObservationId(data)))
+                        .map(data -> new Reference(referenceBaseUrl  + "Observation/" + buildObservationId(data)))
                         .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
