@@ -40,6 +40,14 @@ SELECT
 FROM mco_data.mco_records mr
 INNER JOIN techbd_udi_ingress.tenants m
     ON mr.tenant_id = m.tenant_id
+WHERE  mr.reporting_month = (
+    SELECT to_char(
+        MAX(to_date(reporting_month, 'MM-YYYY')),
+        'MM-YYYY'
+    )
+    FROM mco_data.mco_records
+    WHERE reporting_month IS NOT NULL
+)    
 order BY    
 mr.created_on_utc DESC;    
 
@@ -284,3 +292,278 @@ BEGIN
     ORDER BY mrel.created_on_utc DESC;
 END;
 $function$;
+
+
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics1(text, text);
+
+CREATE OR REPLACE FUNCTION mco_data.get_mco_dashboard_metrics1(
+    p_start_reporting_month text DEFAULT NULL,
+    p_end_reporting_month text DEFAULT NULL
+)
+RETURNS TABLE (
+    selected_reporting_month text, 
+    is_selected boolean,
+    total_mco bigint,
+    total_files_received bigint,
+    inprogress bigint,
+    fully_processed bigint,
+    errored bigint,
+    records_received bigint,
+    records_processed bigint,
+    records_with_errors bigint
+)
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_start_month date;
+    v_end_month date; 
+BEGIN
+ 
+    IF p_start_reporting_month IS NOT NULL
+       AND TRIM(p_start_reporting_month) <> '' THEN
+        v_start_month := TO_DATE(TRIM(p_start_reporting_month), 'MM-YYYY');
+    END IF;
+
+    IF p_end_reporting_month IS NOT NULL
+       AND TRIM(p_end_reporting_month) <> '' THEN
+        v_end_month := TO_DATE(TRIM(p_end_reporting_month), 'MM-YYYY');
+    END IF;
+
+    IF v_start_month IS NOT NULL
+       AND v_end_month IS NOT NULL
+       AND v_start_month > v_end_month THEN
+        RAISE EXCEPTION
+            'Start reporting month (%) cannot be after end reporting month (%)',
+            p_start_reporting_month, p_end_reporting_month;
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        CASE
+            WHEN v_start_month IS NULL AND v_end_month IS NULL THEN 'ALL'
+            WHEN v_start_month = v_end_month THEN TO_CHAR(v_start_month, 'MM-YYYY')
+            ELSE TO_CHAR(v_start_month, 'MM-YYYY') || ' to ' ||
+                 TO_CHAR(v_end_month, 'MM-YYYY')
+        END AS selected_reporting_month, 
+        TRUE AS is_selected,
+        COUNT(DISTINCT mr.tenant_id) AS total_mco,
+        COUNT(*) AS total_files_received,
+        COUNT(*) FILTER (WHERE mr.status = 'INPROGRESS') AS inprogress,
+        COUNT(*) FILTER (WHERE mr.status = 'FULLY_PROCESSED') AS fully_processed,
+        COUNT(*) FILTER (WHERE mr.status = 'ERRORED') AS errored,
+        COALESCE(SUM(mr.total_records), 0)::bigint AS records_received,
+        COALESCE(SUM(mr.processed_count), 0)::bigint AS records_processed,
+        COALESCE(SUM(mr.errored_count), 0)::bigint AS records_with_errors
+    FROM mco_data.mco_records mr
+    WHERE mr.reporting_month IS NOT NULL
+      AND (
+          (v_start_month IS NULL AND v_end_month IS NULL)
+          OR (
+              v_start_month IS NOT NULL
+              AND v_end_month IS NOT NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                  BETWEEN v_start_month AND v_end_month
+          )
+          OR (
+              v_start_month IS NOT NULL
+              AND v_end_month IS NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY') >= v_start_month
+          )
+          OR (
+              v_start_month IS NULL
+              AND v_end_month IS NOT NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month
+          )
+      );
+END;
+$function$;
+
+
+DROP VIEW IF EXISTS mco_data.get_mco_historical_details CASCADE;
+CREATE OR REPLACE VIEW mco_data.get_mco_historical_details
+WITH (security_invoker = true) as
+
+WITH recent_months AS (
+    SELECT reporting_month
+    FROM (
+        SELECT DISTINCT
+            reporting_month,
+            to_date(reporting_month, 'MM-YYYY') AS month_date
+        FROM mco_data.mco_records
+        WHERE reporting_month IS NOT NULL
+    ) months
+    ORDER BY month_date DESC
+    LIMIT 3
+)
+SELECT
+    m.tenant_displayname AS mco_name, 
+    COUNT(*) AS total_files_received,
+    COUNT(*) FILTER (
+        WHERE mr.status = 'FULLY_PROCESSED'
+    ) AS files_processed,
+    COUNT(*) FILTER (
+        WHERE mr.status = 'PARTIALLY_PROCESSED'
+    ) AS files_partially_processed,
+    COUNT(*) FILTER (
+        WHERE mr.status = 'ERRORED'
+    ) AS files_errored
+FROM mco_data.mco_records mr
+INNER JOIN techbd_udi_ingress.tenants m
+    ON mr.tenant_id = m.tenant_id
+INNER JOIN recent_months rm
+    ON mr.reporting_month = rm.reporting_month
+GROUP BY
+    m.tenant_displayname 
+ORDER BY
+    m.tenant_displayname;
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_historical_details(text, text);
+
+CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_details(
+    p_start_reporting_month text DEFAULT NULL,
+    p_end_reporting_month text DEFAULT NULL
+)
+RETURNS TABLE (
+    mco_name text,
+    total_files_received bigint,
+    files_processed bigint,
+    files_partially_processed bigint,
+    files_errored bigint
+)
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_start_month date;
+    v_end_month date;
+BEGIN
+    IF p_start_reporting_month IS NOT NULL AND TRIM(p_start_reporting_month) <> '' THEN
+        v_start_month := TO_DATE(TRIM(p_start_reporting_month), 'MM-YYYY');
+    END IF;
+
+    IF p_end_reporting_month IS NOT NULL AND TRIM(p_end_reporting_month) <> '' THEN
+        v_end_month := TO_DATE(TRIM(p_end_reporting_month), 'MM-YYYY');
+    END IF;
+
+    IF v_start_month IS NOT NULL AND v_end_month IS NOT NULL AND v_start_month > v_end_month THEN
+        RAISE EXCEPTION 'Start reporting month (%) cannot be after end reporting month (%)',
+            p_start_reporting_month, p_end_reporting_month;
+    END IF;
+
+    RETURN QUERY
+    SELECT m.tenant_displayname AS mco_name,
+           COUNT(*) AS total_files_received,
+           COUNT(*) FILTER (WHERE mr.status = 'FULLY_PROCESSED') AS files_processed,
+           COUNT(*) FILTER (WHERE mr.status = 'PARTIALLY_PROCESSED') AS files_partially_processed,
+           COUNT(*) FILTER (WHERE mr.status = 'ERRORED') AS files_errored
+    FROM mco_data.mco_records mr
+    INNER JOIN techbd_udi_ingress.tenants m ON mr.tenant_id = m.tenant_id
+    WHERE mr.reporting_month IS NOT NULL
+      AND (
+          (v_start_month IS NULL AND v_end_month IS NULL)
+          OR (v_start_month IS NOT NULL AND v_end_month IS NOT NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY') BETWEEN v_start_month AND v_end_month)
+          OR (v_start_month IS NOT NULL AND v_end_month IS NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY') >= v_start_month)
+          OR (v_start_month IS NULL AND v_end_month IS NOT NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month)
+      )
+    GROUP BY m.tenant_displayname
+    ORDER BY m.tenant_displayname;
+END;
+$function$; 
+
+
+
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_historical_records(text, text, text);
+
+CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_records(
+    p_mco_name text,
+    p_start_month text,
+    p_end_month text
+)
+RETURNS TABLE (
+    batch_id integer,
+    tenant_id text,
+    mco_code text,
+    mco_name text,
+    root_file_name text,
+    status text,
+    created_on_utc timestamptz,
+    qa_completed_time timestamptz,
+    sent_to_datalake_time timestamptz,
+    sent_to_mco_time timestamptz,
+    reporting_month text,
+    total_records integer,
+    processed_count integer,
+    errored_count integer,
+    resubmitted_count integer,
+    updated_on_utc timestamptz
+)
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_start_month date;
+    v_end_month date;
+BEGIN
+    v_start_month := CASE
+        WHEN p_start_month IS NOT NULL AND TRIM(p_start_month) <> ''
+        THEN TO_DATE(p_start_month, 'MM-YYYY')
+    END;
+
+    v_end_month := CASE
+        WHEN p_end_month IS NOT NULL AND TRIM(p_end_month) <> ''
+        THEN TO_DATE(p_end_month, 'MM-YYYY')
+    END;
+
+    RETURN QUERY
+    SELECT
+        mr.batch_id,
+        mr.tenant_id,
+        m.tenant_short_code,
+        m.tenant_displayname,
+        mr.root_file_name,
+        mr.status,
+        mr.created_on_utc,
+        mr.qa_completed_time,
+        mr.sent_to_datalake_time,
+        mr.sent_to_mco_time,
+        TO_CHAR(TO_DATE(mr.reporting_month, 'MM-YYYY'), 'FMMonth YYYY'),
+        mr.total_records,
+        mr.processed_count,
+        mr.errored_count,
+        mr.resubmitted_count,
+        mr.updated_on_utc
+    FROM mco_data.mco_records mr
+    INNER JOIN techbd_udi_ingress.tenants m
+        ON mr.tenant_id = m.tenant_id
+    WHERE (
+        p_mco_name IS NULL
+        OR TRIM(p_mco_name) = ''
+        OR m.tenant_displayname = p_mco_name
+    )
+    AND mr.reporting_month IS NOT NULL
+    AND (
+        (v_start_month IS NULL AND v_end_month IS NULL)
+        OR (
+            v_start_month IS NOT NULL
+            AND v_end_month IS NOT NULL
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                BETWEEN v_start_month AND v_end_month
+        )
+        OR (
+            v_start_month IS NOT NULL
+            AND v_end_month IS NULL
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY') >= v_start_month
+        )
+        OR (
+            v_start_month IS NULL
+            AND v_end_month IS NOT NULL
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month
+        )
+    )
+    ORDER BY mr.created_on_utc DESC;
+END;
+$function$;
+ 

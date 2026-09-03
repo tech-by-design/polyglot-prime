@@ -193,3 +193,20 @@ VALUES
 (44, 'scr_Most_Recent_MCO_Transactions', 'Most Recent MCO Transactions', 'Most Recent MCO Transactions screen', 'page', 1, 2, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL),
 (45, 'scr_Most_Recent_QE_Transactions', 'Most Recent QE Transactions', 'Most Recent QE Transactions screen', 'page', 1, 3, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL)
 ON CONFLICT (scr_code) DO NOTHING;	 
+
+
+UPDATE techbd_udi_ingress.idp_screens
+SET
+    scr_code = 'scr_Historical_Details',
+    scr_name = 'Historical Details',
+    description = 'Historical Details screen'
+WHERE scr_id = 40
+  AND scr_code = 'scr_Error_Monitoring';
+
+UPDATE techbd_udi_ingress.idp_screens
+SET
+    scr_code = 'scr_Monthly_Summary',
+    scr_name = 'Monthly Summary',
+    description = 'Monthly Summary Screen'
+WHERE scr_id = 1
+  AND scr_code = 'scr_Source_Monitoring';  
