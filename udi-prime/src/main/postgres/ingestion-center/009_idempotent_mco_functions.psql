@@ -57,28 +57,7 @@ mr.created_on_utc DESC;
 ******************************************************************************************/
 drop view if exists mco_data.v_error_monitoring cascade;
 drop view if exists mco_data.get_error_monitoring cascade;
-create or replace view mco_data.get_error_monitoring 
-WITH (security_invoker = true) AS
- select
-	mrel.batch_id,
-	mr.batch_guid,
-	mr.tenant_id,
-	m.tenant_short_code as mco_code,
-	mr.root_file_name,
-	m.tenant_displayname as mco_name,
-	mrel.created_on_utc,
-	mr.sent_to_datalake_time,
-	mrel.error_json ->> 'message'::text as error_message,
-	mrel.error_json ->> 'fileName'::text as file_name,
-	(mrel.error_json ->> 'lineNumber'::text)::integer as line_number
-from
-	mco_data.mco_record_error_logs mrel
-join mco_data.mco_records mr on
-	mrel.batch_id = mr.batch_id
-left join techbd_udi_ingress.tenants m on
-	mr.tenant_id = m.tenant_id
-where
-	coalesce(mrel.error_json->>'message', '') <> ''; 
+ 
 
 
 /*******************************************************************************************
@@ -106,105 +85,7 @@ SELECT
 FROM mco_data.mco_record_details 
 ORDER BY created_on_utc DESC;    
 
-/*** MCO Summary Metric ***/
 
-drop function if exists mco_data.get_mco_dashboard_metrics(text);
-
-create or replace function mco_data.get_mco_dashboard_metrics(p_reporting_month text default null)
-returns table (
-    selected_reporting_month text,
-    recent_reporting_month text,
-    is_selected boolean,
-    total_mco bigint,
-    total_files_received bigint,
-    inprogress bigint,
-    fully_processed bigint,
-    errored bigint,
-    records_received bigint,
-    records_processed bigint,
-    records_with_errors bigint
-)
-language plpgsql
-as $function$
-
-declare
-    v_selected_month text;
-
-v_recent_month text;
-
-begin
-
-    /*
-     * Get the latest reporting month from the database.
-     */
-        select
-        mr.reporting_month
-        into
-        v_recent_month
-    from
-        mco_data.mco_records as mr
-    where
-        mr.reporting_month is not null
-    order by
-        TO_DATE(mr.reporting_month, 'MM-YYYY') desc
-    limit 1;
-
-    /*
-    * If reporting month is passed, use it.
-    * Otherwise, use the latest reporting month.
-    */
-    if p_reporting_month is not null
-and trim(p_reporting_month) <> '' then
-
-        v_selected_month := trim(p_reporting_month);
-else
-
-        v_selected_month := v_recent_month;
-end if;
-
-    /*
-    * Return dashboard data for the selected reporting month.
-    */
-    return QUERY
-
-    select
-	v_selected_month as selected_reporting_month,
-	v_recent_month as recent_reporting_month,
-	true as is_selected,
-	COUNT(distinct mr.tenant_id) as total_mco,
-	COUNT(*) as total_files_received,
-	COUNT(*) filter (
-where
-	mr.status = 'INPROGRESS'
-        ) as inprogress,
-	COUNT(*) filter (
-where
-	mr.status = 'FULLY_PROCESSED'
-        ) as fully_processed,
-	COUNT(*) filter (
-where
-	mr.status = 'ERRORED'
-        ) as errored,
-	coalesce(
-            SUM(mr.total_records),
-            0
-        )::bigint as records_received,
-	coalesce(
-            SUM(mr.processed_count),
-            0
-        )::bigint as records_processed,
-	coalesce(
-            SUM(mr.errored_count),
-            0
-        )::bigint as records_with_errors
-from
-	mco_data.mco_records as mr
-where
-	mr.reporting_month = v_selected_month
-group by
-	mr.reporting_month;
-end;
-$function$;
 
 
 /**** Most Recent MCO Transactions ****/
@@ -252,17 +133,7 @@ ORDER BY created_on_utc DESC;
 -- View-based approach for fetching error logs by batch details ID
 DROP VIEW IF EXISTS mco_data.v_mco_error_logs CASCADE;
 DROP VIEW IF EXISTS mco_data.get_mco_error_logs CASCADE;
-
-CREATE OR REPLACE VIEW mco_data.get_mco_error_logs
-WITH (security_invoker = true) AS
-SELECT
-    mrel.batch_id,
-    mrel.batch_details_id,
-    mrel.created_on_utc,
-    mrel.error_json
-FROM mco_data.mco_record_error_logs mrel
-ORDER BY mrel.created_on_utc DESC;
-
+ 
 
 
 DROP FUNCTION IF EXISTS mco_data.get_mco_error_logs(text);
@@ -294,10 +165,11 @@ END;
 $function$;
 
 
-
+drop function if exists mco_data.get_mco_dashboard_metrics(text);
 DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics1(text, text);
 
-CREATE OR REPLACE FUNCTION mco_data.get_mco_dashboard_metrics1(
+DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics(text, text);
+CREATE OR REPLACE FUNCTION mco_data.get_mco_dashboard_metrics(
     p_start_reporting_month text DEFAULT NULL,
     p_end_reporting_month text DEFAULT NULL
 )
@@ -381,42 +253,7 @@ $function$;
 
 
 DROP VIEW IF EXISTS mco_data.get_mco_historical_details CASCADE;
-CREATE OR REPLACE VIEW mco_data.get_mco_historical_details
-WITH (security_invoker = true) as
-
-WITH recent_months AS (
-    SELECT reporting_month
-    FROM (
-        SELECT DISTINCT
-            reporting_month,
-            to_date(reporting_month, 'MM-YYYY') AS month_date
-        FROM mco_data.mco_records
-        WHERE reporting_month IS NOT NULL
-    ) months
-    ORDER BY month_date DESC
-    LIMIT 3
-)
-SELECT
-    m.tenant_displayname AS mco_name, 
-    COUNT(*) AS total_files_received,
-    COUNT(*) FILTER (
-        WHERE mr.status = 'FULLY_PROCESSED'
-    ) AS files_processed,
-    COUNT(*) FILTER (
-        WHERE mr.status = 'PARTIALLY_PROCESSED'
-    ) AS files_partially_processed,
-    COUNT(*) FILTER (
-        WHERE mr.status = 'ERRORED'
-    ) AS files_errored
-FROM mco_data.mco_records mr
-INNER JOIN techbd_udi_ingress.tenants m
-    ON mr.tenant_id = m.tenant_id
-INNER JOIN recent_months rm
-    ON mr.reporting_month = rm.reporting_month
-GROUP BY
-    m.tenant_displayname 
-ORDER BY
-    m.tenant_displayname;
+ 
 
 DROP FUNCTION IF EXISTS mco_data.get_mco_historical_details(text, text);
 

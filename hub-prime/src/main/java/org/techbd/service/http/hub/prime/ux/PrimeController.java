@@ -129,7 +129,7 @@ public class PrimeController {
                 : null;
 
         final var result = getDsl().fetch(
-                "select * from mco_data.get_mco_dashboard_metrics1(?, ?)",
+                "select * from mco_data.get_mco_dashboard_metrics(?, ?)",
                 startParam,
                 endParam)
                 .intoMaps();

@@ -866,47 +866,16 @@
 
         <div class="grid-description">
 
-            <div class=" leading-relaxed text-sm">
+        <p>This page provides a consolidated, file-level summary of all source files received from MCOs for the latest month.</p>
 
-                <p class="mb-2">
-                    This page provides a consolidated view of all source files received
-                    from MCOs. Each row represents a processed file and displays
-                    processing statistics such as total records, processed records,
-                    error count and current processing status.
-                </p>
+        <p><strong>Key Features &amp; Functionality</strong></p>
 
-                <button id="accordionToggle"
-                    class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
-
-                    ▶ Click here to view the column descriptions
-
-                </button>
-
-                <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200">
-
-                    <p>
-                        <strong>MCO Code:</strong> Unique identifier for the Managed Care Organization.<br><br>
-                        <strong>Source Name:</strong> Name of the MCO that submitted the file.<br><br>
-                        <strong>File Name:</strong> Original uploaded file name.<br><br>
-                        <strong>Received Month:</strong> Month and year when the file was received.<br><br>
-                        <strong>Total Records:</strong> Total number of records contained in the file.<br><br>
-                        <strong>Number of Processed:</strong> Number of successfully processed records.<br><br>
-                        <strong>Number of Errors:</strong> Number of failed records.<br><br>
-                        <strong>Status:</strong> Current processing status.<br><br>
-
-                    </p>
-
-                </div>
-
-                <p class="mt-3">
-                    When the Information icon is clicked, additional details are displayed, including the Resubmitted Count, Last Updated Time, Validated On, and Sent to Data Lake Time.
-
-                    When the file name is clicked to drill down, the status history of the file is displayed, along with the last updated time for each status.
-                    
-                    When the file icon is clicked, the detailed errors for that file are displayed, including information such as the error description, error code, and other relevant error details.
-                </p>
-
-            </div>
+        <ul>
+        <li><strong>File Summary View:</strong> Displays key file metrics including MCO Code, Source Name, File Name, Received Month, Total Records, Number of Processed, Number of Errors, and overall Status.</li>
+        <li><strong>Drill-Down Functionality:</strong> Expand any file row to view its detailed status history along with exact timestamps showing when each status was updated.</li>
+        <li><strong>More Information Popup:</strong> Click the <strong>ⓘ</strong> icon on any file row to view additional file metadata, such as Resubmitted Count, Last Updated Time, Validated On date, and Sent to Data Lake time.</li>
+        <li><strong>Error Details Modal:</strong> Click the <strong>document icon</strong> inside the expanded row to open the Error Details modal, showing detailed failure logs such as error code and error description.</li>
+        </ul>
 
         </div>
 
