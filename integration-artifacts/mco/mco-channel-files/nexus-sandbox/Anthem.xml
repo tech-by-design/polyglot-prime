@@ -4,7 +4,7 @@
   <name>Anthem</name>
   <description>Version: 0.1.10
 Lambda file rejection db insertion.</description>
-  <revision>4</revision>
+  <revision>6</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -749,7 +749,7 @@ Lambda file rejection db insertion.</description>
                       );
                     }
                     batch_details_new_entry = dbConn.executeCachedQuery(
-                      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;INPROGRESS&apos;, ?, ?::varchar, ? ,?) returning batch_details_id&quot;,
+                      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;INPROGRESS&apos;, ?::bigint , ?::varchar, ? ) returning batch_details_id&quot;,
                       [fileName, 0, 0, batch_id, reportingMonth, mco_id]
                     );
                     batch_details_id = batch_details_new_entry.next()
@@ -6099,14 +6099,14 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1788348263349</time>
+        <time>1788426779962</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
@@ -6114,28 +6114,8 @@ return;</undeployScript>
         <name>0_1_10</name>
         <channelIds>
           <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
-          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-          <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
           <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-          <string>48679919-904a-4913-a593-28f19da61615</string>
-          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
-          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
-          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+          <string>069cbc46-f225-4353-8acc-693c430bbc7f</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
