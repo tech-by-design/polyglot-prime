@@ -52,28 +52,28 @@
                 </h2>
 
                 <!-- Requirement 2 & 5: Top-Right Controls -->
-                <div class="flex flex-wrap items-center gap-3 relative" id="mco-time-period-container">
+                <div class="flex flex-wrap items-center gap-1 relative" id="mco-time-period-container">
                     <!-- Select Time Period Dropdown -->
                     <div class="flex items-center gap-2 pt-1 pr-1">
                         <label for="mco-time-period-select"
                             class="text-sm font-semibold text-gray-600 whitespace-nowrap">Select Time Period</label>
-                            <!-- Info Icon Tooltip (Overflow/Scroll Safe) -->
-                            <div class="relative inline-flex items-center group">
-                                <button type="button" class="text-gray-400 hover:text-blue-600 focus:outline-none p-1"
-                                    aria-label="Reporting Month Information">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <div
-                                    class="absolute right-0 top-full mt-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none whitespace-normal">
-                                    The reporting month is dynamically set based on the submission window (20th of previous month to 4th of current month).
-                                </div>
+                        <!-- Info Icon Tooltip (Overflow/Scroll Safe) -->
+                        <div class="relative inline-flex items-center group">
+                            <button type="button" class="text-gray-400 hover:text-blue-600 focus:outline-none p-1"
+                                aria-label="Reporting Month Information">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                            <div
+                                class="absolute right-0 top-full mt-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 pointer-events-none whitespace-normal">
+                                The reporting month is dynamically set based on the submission window (20th of previous
+                                month to 4th of current month).
                             </div>
+                        </div>
                         <select id="mco-time-period-select"
-                             
                             class="w-auto min-w-0 pr-10 bg-white border border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium cursor-pointer shadow-sm">
                             <option value="ALL">All</option>
                             <option value="LAST_3_MONTHS" selected>Last 3 Months</option>
@@ -81,15 +81,18 @@
                         </select>
                     </div>
 
-                    <button type="button" id="reset-custom-range-btn"
-                        class="hidden inline-flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label="Reset custom date range" title="Reset custom range">
-                        <svg class="w-5 h-5 text-[cornflowerblue]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 4v5h5M20 20v-5h-5M5.05 9A7.5 7.5 0 0117.8 5.2L20 7M4 17l2.2 1.8A7.5 7.5 0 0018.95 15">
-                            </path>
-                        </svg>
+
+                    <button type="button" id="reset-custom-range-btn" class="hidden inline-flex items-center justify-center w-9 h-9
+           rounded-full
+           text-[cornflowerblue]
+           hover:bg-blue-50
+           hover:text-blue-600
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="Reset custom date range"
+                        title="Reset custom range">
+
+                        <img src="/reset.png" alt="Reset" class="w-6 h-6">
+
                     </button>
 
                     <!-- Custom Range Text Display Box (Visible when Custom Range is active) -->
@@ -384,7 +387,7 @@
                         if (el) el.textContent = elements[id] ?? 0;
                     });
                 }
- 
+
                 // Global function assignment for modal visibility toggle
                 window.toggleMonthPickerModal = function (show) {
                     const modal = document.getElementById('month-picker-modal');
@@ -501,7 +504,7 @@
                     const customDisplay = document.getElementById('custom-range-display');
                     const resetButton = document.getElementById('reset-custom-range-btn');
                     if (!periodSelect) return;
-                    
+
 
                     function setResetButtonVisible(visible) {
                         if (resetButton) resetButton.classList.toggle('hidden', !visible);
@@ -533,8 +536,8 @@
                     }
 
                     //if not getting recentReportingMonth from query then getDefaultReportingMonth
-                   // const recentReportingMonth =  periodSelect.dataset.recentReportingMonth?.trim() || getDefaultReportingMonth();
-                    const recentReportingMonth =  getDefaultReportingMonth();
+                    // const recentReportingMonth =  periodSelect.dataset.recentReportingMonth?.trim() || getDefaultReportingMonth();
+                    const recentReportingMonth = getDefaultReportingMonth();
 
                     const prevBtn = document.getElementById('prev-year-btn');
                     const nextBtn = document.getElementById('next-year-btn');
@@ -552,27 +555,27 @@
                             if (customDisplay) customDisplay.classList.add('hidden');
                             window.toggleMonthPickerModal(false);
 
-                        // --- NEW: Reset the Custom Range Option Text ---
+                            // --- NEW: Reset the Custom Range Option Text ---
                             const customOption = periodSelect.querySelector('option[value="CUSTOM"]');
                             if (customOption) {
                                 customOption.textContent = 'Custom Range';
                             }
                             // ----------------------------------------------
 
-                             // 1. Reset stored custom selection states (Matches what reset button does)
+                            // 1. Reset stored custom selection states (Matches what reset button does)
                             appliedStart = null;
                             appliedEnd = null;
                             selectedStart = null;
                             selectedEnd = null;
                             e.target.blur();
-                            
+
                             // Force explicit recalculation of width for selected preset option
                             // if(val != 'CUSTOM')
                             //  {
                             //     periodSelect.classList.remove('w-auto');
                             //      periodSelect.classList.add('w-auto', 'min-w-0', 'pr-20'); 
                             //  }
-                             
+
                             let p_start = null;
                             let p_end = null;
 
