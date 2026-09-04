@@ -12,9 +12,9 @@
       <id>716de165-ff22-46a6-8f29-b8815fe472e2</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Anthem</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>8</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -759,7 +759,7 @@ Lambda file rejection db insertion.</description>
                       );
                     }
                     batch_details_new_entry = dbConn.executeCachedQuery(
-                      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;INPROGRESS&apos;, ?, ?::varchar, ? ,?) returning batch_details_id&quot;,
+                      &quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;INPROGRESS&apos;, ?::bigint , ?::varchar, ? ) returning batch_details_id&quot;,
                       [fileName, 0, 0, batch_id, reportingMonth, mco_id]
                     );
                     batch_details_id = batch_details_new_entry.next()
@@ -2196,7 +2196,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+ var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -2232,7 +2254,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -6109,36 +6131,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348263349</time>
+            <time>1788444563353</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -6161,9 +6183,9 @@ return;</undeployScript>
       <id>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Riverspring</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>7</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -8351,6 +8373,29 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             dbName,
             dbPassword
         );
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
  
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
@@ -8387,7 +8432,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -8407,7 +8452,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             } catch (e) {
                 logger.warn(&quot;Unable to close batch_insert: &quot; + e);
             }
-        }
+       }
  
         if (rejectDbConn) {
             try {
@@ -8418,6 +8463,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
         }
     }
 }
+    
   
   //DOB Validation
   function dateValidCheck(dateString) {
@@ -12233,36 +12279,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347891076</time>
+            <time>1788430196877</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -12285,9 +12331,9 @@ return;</undeployScript>
       <id>04a01a97-c021-4f3e-b10d-426838e88ae3</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Elder Plan</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -14465,6 +14511,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
+          var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
  
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
@@ -14501,7 +14570,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -18356,36 +18425,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348215302</time>
+            <time>1788432823508</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -18408,9 +18477,9 @@ return;</undeployScript>
       <id>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Amida Care</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>15</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>16</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -20562,7 +20631,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+    var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -20598,7 +20689,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -24526,36 +24617,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348291593</time>
+            <time>1788433041768</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -24578,9 +24669,9 @@ return;</undeployScript>
       <id>7940022b-7a39-470b-9936-bcf8b2f4982e</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Nascentia</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>7</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -26762,7 +26853,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -26798,7 +26911,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -30664,36 +30777,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788349245033</time>
+            <time>1788430138586</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -30716,9 +30829,9 @@ return;</undeployScript>
       <id>cd812443-81f7-4523-8d16-1d7af162ca3c</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Aetna</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>7</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>8</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -32915,7 +33028,29 @@ logger.info(&quot;batch_id=[&quot; + batch_id + &quot;]&quot;);
             dbName,
             dbPassword
         );
- 
+          var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -32951,7 +33086,7 @@ logger.info(&quot;batch_id=[&quot; + batch_id + &quot;]&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -36846,7 +36981,7 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348424578</time>
+            <time>1788431058042</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
@@ -36854,29 +36989,29 @@ return;</undeployScript>
             <archiveEnabled>false</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -36899,9 +37034,9 @@ return;</undeployScript>
       <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Excellus</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -39075,7 +39210,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -39111,7 +39268,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -42958,36 +43115,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348134609</time>
+            <time>1788432732087</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -43010,9 +43167,9 @@ return;</undeployScript>
       <id>004d8d3d-cedc-45f8-955f-27e1606959c8</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Independent Health</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -45190,7 +45347,29 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
             dbName,
             dbPassword
         );
- 
+          var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -45226,7 +45405,7 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -49075,36 +49254,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348039970</time>
+            <time>1788432649107</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -49127,9 +49306,9 @@ return;</undeployScript>
       <id>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Village Care</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -51307,7 +51486,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -51343,7 +51544,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -55208,36 +55409,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347825851</time>
+            <time>1788432545447</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -55260,9 +55461,9 @@ return;</undeployScript>
       <id>aa52ca3d-503a-432e-a446-db5ba9a9aec6</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Molina</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -57435,7 +57636,29 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -57471,7 +57694,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -61286,36 +61509,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347982912</time>
+            <time>1788432450065</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -61338,9 +61561,9 @@ return;</undeployScript>
       <id>b028255d-3d33-4562-b1a4-6b81c080013e</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Fidelis</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -63515,7 +63738,29 @@ try {
             dbName,
             dbPassword
         );
- 
+  var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -63551,7 +63796,7 @@ try {
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -65985,7 +66230,7 @@ try {
 		}
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
-			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?::bigint) returning batch_details_id&quot;,
+			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
 			[$(&apos;originalFilename&apos;), 0, 0, $(&apos;batch_id&apos;), $(&apos;mcoId&apos;)]
 		);
 		var new_batch_details_id = batch_details_insert.next()
@@ -67395,36 +67640,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348106579</time>
+            <time>1788439183177</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -67447,9 +67692,9 @@ return;</undeployScript>
       <id>b24d4603-8f5a-4872-89d2-9b474d7ea6db</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>MVP</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -69624,7 +69869,29 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -69660,7 +69927,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -73505,36 +73772,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347951360</time>
+            <time>1788432204688</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -73557,9 +73824,9 @@ return;</undeployScript>
       <id>a68d74fd-c26b-4cd2-885b-b2ad890b8494</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Emblem</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -75742,7 +76009,29 @@ var rootFileName = fileName;
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -75778,7 +76067,7 @@ var rootFileName = fileName;
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -79618,36 +79907,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348156609</time>
+            <time>1788431168040</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -79670,9 +79959,9 @@ return;</undeployScript>
       <id>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Hamaspik</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -81849,7 +82138,29 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -81885,7 +82196,7 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -85724,36 +86035,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348083323</time>
+            <time>1788432092517</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -85776,9 +86087,9 @@ return;</undeployScript>
       <id>c5b49016-b136-484c-bc77-04e53122cbdc</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>TxD</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -87930,7 +88241,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+           var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -87966,7 +88299,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -91892,36 +92225,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347868384</time>
+            <time>1788432914600</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -91944,9 +92277,9 @@ return;</undeployScript>
       <id>48679919-904a-4913-a593-28f19da61615</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>VNS</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -94125,7 +94458,29 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -94161,7 +94516,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -98012,36 +98367,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347756880</time>
+            <time>1788431341038</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -98064,9 +98419,9 @@ return;</undeployScript>
       <id>1771e2fd-3b46-4e64-bbea-0fa03e85671f</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>United</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -100239,7 +100594,29 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -100275,7 +100652,7 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -104129,36 +104506,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347846130</time>
+            <time>1788431907380</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -104181,9 +104558,9 @@ return;</undeployScript>
       <id>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>CDPHP</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -106370,7 +106747,29 @@ logger.info(&quot;batch_details_id before clear = &quot; + batch_details_id);
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -106406,7 +106805,7 @@ logger.info(&quot;batch_details_id before clear = &quot; + batch_details_id);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -110283,36 +110682,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788349648521</time>
+            <time>1788431453166</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -110335,9 +110734,9 @@ return;</undeployScript>
       <id>a542e427-909f-4963-a374-3a214dcb8bd1</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Wellpoint</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -112517,7 +112916,29 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -112553,7 +112974,7 @@ var dbPassword = globalMap.get(&quot;dbPassword&quot;);
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -116394,36 +116815,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788347711360</time>
+            <time>1788431544333</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -116446,9 +116867,9 @@ return;</undeployScript>
       <id>2440a65b-486b-4f03-8972-8bace78287d3</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Wellpoint NYS</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>7</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>8</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -118626,7 +119047,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -118662,7 +119105,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -122512,36 +122955,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788354059779</time>
+            <time>1788431659422</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -122564,9 +123007,9 @@ return;</undeployScript>
       <id>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Metroplus</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>6</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -124742,7 +125185,29 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
             dbName,
             dbPassword
         );
- 
+        var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -124778,7 +125243,7 @@ if (channelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_i
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -128621,36 +129086,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348006400</time>
+            <time>1788431817230</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
@@ -128673,9 +129138,9 @@ return;</undeployScript>
       <id>1d692067-1995-41a8-8712-969387b1c04c</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Healthfirst</name>
-      <description>Version: 0.1.10
-Lambda file rejection db insertion.</description>
-      <revision>4</revision>
+      <description>Version: 0.1.11
+Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
+      <revision>5</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -130860,7 +131325,29 @@ Lambda file rejection db insertion.</description>
             dbName,
             dbPassword
         );
- 
+         var existingBatch = rejectDbConn.executeCachedQuery(
+        &quot;SELECT batch_id &quot; +
+        &quot;FROM mco_data.mco_records &quot; +
+        &quot;WHERE root_file_name = ? &quot; +
+        &quot;AND tenant_id = ? &quot; +
+        &quot;AND is_active = &apos;1&apos; &quot; +
+        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+        [rootFileName, mco_id]
+    );&#xd;     if (existingBatch.next()) {
+
+        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+        channelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+        logger.info(
+            &quot;FILE_REJECTED: Root file already exists. &quot; +
+            &quot;Skipping new mco_records insertion. batch_id=&quot; +
+            existingBatchId +
+            &quot;, root_file_name=&quot; +
+            rootFileName
+        );
+
+    } else {
         batch_insert = rejectDbConn.executeCachedQuery(
             &quot;INSERT INTO mco_data.mco_records &quot; +
             &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
@@ -130896,7 +131383,7 @@ Lambda file rejection db insertion.</description>
                 &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
             );
         }
- 
+    }
     } catch (err) {
  
         logger.error(
@@ -134763,36 +135250,36 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788348062673</time>
+            <time>1788431986955</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>6</userId>
+          <userId>11</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d131af42-eae4-4726-a64a-96cf4bfaf0ef</id>
-            <name>0_1_10</name>
+            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
+            <name>0_1_11</name>
             <channelIds>
+              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
               <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
               <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
               <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
               <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
               <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
               <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
               <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
