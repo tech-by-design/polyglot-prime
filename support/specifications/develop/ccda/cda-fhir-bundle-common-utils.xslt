@@ -680,7 +680,6 @@
     <xsl:param name="resource_name"/>
     {
       <!-- Pre-calculate trimmed values -->
-      <!-- Single source of truth for which streetAddressLine nodes are usable -->
       <xsl:variable name="validLines"
         select="$addr/ccda:streetAddressLine[
                   not(@nullFlavor)
@@ -695,6 +694,14 @@
           <xsl:text>, </xsl:text>
         </xsl:for-each>
       </xsl:variable>
+
+      <!-- Remove the final ", " -->
+      <xsl:variable name="street"
+        select="substring(
+                  $street_lines,
+                  1,
+                  string-length($street_lines) - 2
+                )"/>
 
       <xsl:variable name="city">
         <xsl:call-template name="string-trim">
@@ -763,24 +770,18 @@
             </xsl:choose>
           </xsl:otherwise>
         </xsl:choose>"
-        <xsl:if test="string($formattedAddress) or $addr/ccda:streetAddressLine or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
+        <xsl:if test="string($formattedAddress) or $validLines or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
 
       <!-- text -->
       <xsl:if test="string($formattedAddress)">
         "text": "<xsl:value-of select="$formattedAddress"/>"
-        <xsl:if test="$addr/ccda:streetAddressLine or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
+        <xsl:if test="$validLines or string($city) or string($district) or string($state) or string($zip) or string($country)">,</xsl:if>
       </xsl:if>
 
       <!-- line -->
-      <xsl:if test="$addr/ccda:streetAddressLine[not(@nullFlavor)]">
+      <xsl:if test="$validLines">
         "line": [
-          <xsl:for-each select="$addr/ccda:streetAddressLine[not(@nullFlavor)]">
-            "<xsl:call-template name="string-trim">
-                <xsl:with-param name="text" select="."/>
-              </xsl:call-template>"
-            <xsl:if test="position()!=last()">,</xsl:if>
-          </xsl:for-each> -->
           "<xsl:variable name="streets">
             <xsl:for-each select="$validLines">
               <xsl:call-template name="string-trim">
