@@ -1252,23 +1252,30 @@
         <div class="grid-description mb-2">
             <div class=" leading-relaxed text-sm">
                 <p class="mb-2">
-                    <p>This page provides a clear breakdown of file transmission history across MCOs over selected timeframes.</p>
+                <p>This page provides a clear breakdown of file transmission history across MCOs over selected
+                    timeframes.</p>
 
-                    <p><strong>Key Features &amp; Functionality</strong></p>
+                <p><strong>Key Features &amp; Functionality</strong></p>
 
-                    <ul>
-                    <li><strong>Summary View:</strong> Displays top-level metrics per MCO, including total files received, processed, partially processed, and errored.</li>
-                    <li><strong>First-Level Drill-Down:</strong> Expand any MCO row to view its associated files along with received month, record counts, and overall status etc.</li>
-                    <li><strong>More Information Popup:</strong> Click the <strong>ⓘ</strong> icon on any file row to open a popup with additional metadata, such as resubmission count, last updated time, validation date, and data lake transfer time.</li>
-                    <li><strong>Second-Level Drill-Down:</strong> Expand an individual file row to reveal status logs and timestamp details for that specific file.</li>                    
-                    <li><strong>Error Details Modal:</strong> Click the <strong>document icon</strong> inside the second-level file view to open the Error Details modal for detailed error logs.</li>
-                    </ul>
+                <ul>
+                    <li><strong>Summary View:</strong> Displays top-level metrics per MCO, including total files
+                        received, processed, partially processed, and errored.</li>
+                    <li><strong>First-Level Drill-Down:</strong> Expand any MCO row to view its associated files along
+                        with received month, record counts, and overall status etc.</li>
+                    <li><strong>More Information Popup:</strong> Click the <strong>ⓘ</strong> icon on any file row to
+                        open a popup with additional metadata, such as resubmission count, last updated time, validation
+                        date, and data lake transfer time.</li>
+                    <li><strong>Second-Level Drill-Down:</strong> Expand an individual file row to reveal status logs
+                        and timestamp details for that specific file.</li>
+                    <li><strong>Error Details Modal:</strong> Click the <strong>document icon</strong> inside the
+                        second-level file view to open the Error Details modal for detailed error logs.</li>
+                </ul>
                 </p>
             </div>
         </div>
 
         <div class="flex justify-end items-center mb-3 pr-4">
-            <div class="relative flex items-center gap-3" id="mco-time-period-container">
+            <div class="relative flex items-center gap-1" id="mco-time-period-container">
                 <div class="flex items-center gap-2 pt-1 pr-1">
                     <label for="mco-time-period-select"
                         class="text-sm font-semibold text-gray-600 whitespace-nowrap">Select Time Period</label>
@@ -1295,15 +1302,19 @@
                     </select>
                 </div>
 
-                <button type="button" id="reset-custom-range-btn"
-                    class="hidden inline-flex items-center justify-center p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Reset custom date range" title="Reset custom range">
-                    <svg class="w-5 h-5 text-[cornflowerblue]" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4v5h5M20 20v-5h-5M5.05 9A7.5 7.5 0 0117.8 5.2L20 7M4 17l2.2 1.8A7.5 7.5 0 0018.95 15">
-                    </svg>
+                <button type="button" id="reset-custom-range-btn" class="hidden inline-flex items-center justify-center w-9 h-9
+           rounded-full
+           text-[cornflowerblue]
+           hover:bg-blue-50
+           hover:text-blue-600
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="Reset custom date range"
+                    title="Reset custom range">
+
+                    <img src="/reset.png" alt="Reset" class="w-6 h-6">
+
                 </button>
+
 
                 <div id="month-picker-modal"
                     class="hidden absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-[8] p-4 w-[520px]">
