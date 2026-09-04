@@ -28,7 +28,7 @@ import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
-import org.hl7.fhir.common.hapi.validation.support.RemoteTerminologyServiceValidationSupport;
+//import org.hl7.fhir.common.hapi.validation.support.RemoteTerminologyServiceValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
@@ -46,6 +46,7 @@ import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.fhir.validation.FhirBundleValidator;
 import org.techbd.service.fhir.validation.PostPopulateSupport;
 import org.techbd.service.fhir.validation.PrePopulateSupport;
+import org.techbd.service.fhir.validation.RaceEthnicityValidationSupport;
 import org.techbd.util.AppLogger;
 import org.techbd.util.JsonText.JsonTextSerializer;
 import org.techbd.util.TemplateLogger;
@@ -410,17 +411,21 @@ public class OrchestrationEngine {
                     LOG.warn("No Base packages defined for interactionId : {}", interactionId);
                 }
 
+                final var raceEthnicitySupport = new RaceEthnicityValidationSupport(
+                        fhirContext,
+                        "ig-packages/reference/race.psv");
+                supportChain.addValidationSupport(raceEthnicitySupport);
+                final var prePopulateSupport = new PrePopulateSupport(tracer, appLogger);
+                var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
+                prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
+                supportChain.addValidationSupport(prePopulatedValidationSupport);
                 supportChain.addValidationSupport(npmPackageValidationSupport);
                 supportChain.addValidationSupport(defaultSupport);
                 supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
                 supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-                final var prePopulateSupport = new PrePopulateSupport(tracer, appLogger);
-                var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
-                prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
-                supportChain.addValidationSupport(prePopulatedValidationSupport);
                 
-                boolean isTestProfile = profileBaseUrl != null
+               /*boolean isTestProfile = profileBaseUrl != null
                         && profileBaseUrl.toLowerCase().contains("test");
 
                 boolean isIg2OrLater = false;
@@ -443,7 +448,7 @@ public class OrchestrationEngine {
                             fhirContext);
                     remoteTermSvc.setBaseUrl("http://tx.fhir.org/r4");
                     supportChain.addValidationSupport(remoteTermSvc);
-                }
+                } */ 
 
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);

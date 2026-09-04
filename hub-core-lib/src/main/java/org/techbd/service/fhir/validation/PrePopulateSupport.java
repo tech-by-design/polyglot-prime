@@ -77,13 +77,13 @@ public class PrePopulateSupport {
     private void addHCPCSCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
         LOG.info("PrePopulateSupport:addHCPCSCodes  -BEGIN");
-        CodeSystem existHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem("urn:oid:2.16.840.1.113883.6.285");
+        CodeSystem existHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem("http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
         // CodeSystem existHCPCS = (CodeSystem)
         // validationSupportChain.fetchCodeSystem("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
         if (existHCPCS == null) {
             CodeSystem newHCPCS = new CodeSystem();
             // newHCPCS.setUrl("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
-            newHCPCS.setUrl("urn:oid:2.16.840.1.113883.6.285");
+            newHCPCS.setUrl("http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
             newHCPCS.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv")));
             newHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             prePopulatedValidationSupport.addCodeSystem(newHCPCS);
