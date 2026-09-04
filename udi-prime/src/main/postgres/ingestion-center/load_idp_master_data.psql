@@ -63,7 +63,8 @@ WHERE tenant_name IN (
     'healthelink-fusion',
     'healthix-fusion',
     'hixny-fusion',
-	'qa_qa_12.4_csv_3'
+	'qa_qa_12.4_csv_3',
+	'n/a'
 );
 
 UPDATE techbd_udi_ingress.tenants
