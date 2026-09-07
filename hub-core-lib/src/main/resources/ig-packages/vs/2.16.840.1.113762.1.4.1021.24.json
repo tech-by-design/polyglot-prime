@@ -1,0 +1,79 @@
+{
+  "resourceType": "ValueSet",
+  "id": "2.16.840.1.113762.1.4.1021.24-20240330",
+  "meta": {
+    "versionId": "29",
+    "lastUpdated": "2025-08-19T20:07:33.000-04:00",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/shareablevalueset",
+      "http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/computable-valueset-cqfm",
+      "http://hl7.org/fhir/us/cqfmeasures/StructureDefinition/publishable-valueset-cqfm"
+    ]
+  },
+  "language": "en",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/valueset-author",
+      "valueContactDetail": {
+        "name": "HL7 US Realm Program Management Author"
+      }
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/resource-lastReviewDate",
+      "valueDate": "2025-08-19"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/valueset-effectiveDate",
+      "valueDateTime": "2024-03-30"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/artifact-effectivePeriod",
+      "valuePeriod": {
+        "start": "2024-03-30"
+      }
+    }
+  ],
+  "url": "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24",
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "urn:oid:2.16.840.1.113762.1.4.1021.24"
+    }
+  ],
+  "version": "20240330",
+  "name": "BirthSex",
+  "title": "Birth Sex",
+  "status": "active",
+  "date": "2024-03-30T01:10:33-04:00",
+  "publisher": "HL7 US Realm Program Management Steward",
+  "jurisdiction": [
+    {
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+          "valueCode": "unknown"
+        }
+      ]
+    }
+  ],
+  "purpose": "(Clinical Focus: Codes for sex assigned at birth with the addition of null codes and a Data Absent Reason code to represent other values found in records),(Data Element Scope: Patient birth sex representation),(Inclusion Criteria: Male and Female concepts supplemented with required null codes and a Data absent Reason Code.),(Exclusion Criteria: Only concepts noted in inclusion)",
+  "compose": {
+    "include": [
+      {
+        "valueSet": [
+          "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1"
+        ]
+      },
+      {
+        "valueSet": [
+          "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1240.4"
+        ]
+      },
+      {
+        "valueSet": [
+          "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.103"
+        ]
+      }
+    ]
+  }
+}
