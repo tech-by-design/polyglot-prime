@@ -274,7 +274,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 code.addCoding(new Coding(fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
                                                 fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
                                 observation.setCode(code);
-                                observation.setSubject(new Reference("Patient/" +
+                                observation.setSubject(new Reference(baseUrl + "/Patient/" +
                                         idsGenerated.get(CsvConstants.PATIENT_ID)));
                                 if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
                                 Period period = new Period();
@@ -290,11 +290,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
                                 String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
                                 if (encounterId != null) {
-                                observation.setEncounter(new Reference("Encounter/" + encounterId));
+                                observation.setEncounter(new Reference(baseUrl + "/Encounter/" + encounterId));
                                 }
                                 String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
                                 if (organizationId != null) {
-                                observation.addPerformer(new Reference("Organization/" + organizationId));
+                                observation.addPerformer(new Reference(baseUrl + "/Organization/" + organizationId));
                                 }
                                 String rawValue = StringUtils.trimToEmpty(data.getPotentialNeedIndicated());
                                 if (!"NULL".equalsIgnoreCase(rawValue)) {
@@ -412,9 +412,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                 if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
                                     Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
+                                    final var bUrl = baseUrl;
                                     List<Reference> derivedRefs = screeningObservationDataList.stream()
                                             .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
-                                            .map(obs -> new Reference("Observation/" + buildObservationId(obs)))
+                                            .map(obs -> new Reference(bUrl + "/Observation/" + buildObservationId(obs)))
                                             .collect(Collectors.toList());
 
                                     if (!derivedRefs.isEmpty()) {
@@ -628,15 +629,15 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 // Set subject, effective time, and issued date
                 String patientId = idsGenerated.getOrDefault(CsvConstants.PATIENT_ID, null);
                 if (patientId != null){
-                        groupObservation.setSubject(new Reference("Patient/" + patientId));
+                        groupObservation.setSubject(new Reference(baseUrl + "/Patient/" + patientId));
                 }
                 String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
                 if (encounterId != null){
-                        groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
+                        groupObservation.setEncounter( new Reference(baseUrl + "/Encounter/" + encounterId));
                 }
                 String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
                 if (organizationId != null) {
-                    groupObservation.addPerformer(new Reference("Organization/" + organizationId));
+                    groupObservation.addPerformer(new Reference(baseUrl + "/Organization/" + organizationId));
                 }
                 String screeningStartDateTime = groupData.stream()
                         .map(ScreeningObservationData::getScreeningStartDateTime)
