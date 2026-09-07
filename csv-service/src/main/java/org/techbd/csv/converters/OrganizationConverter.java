@@ -105,21 +105,23 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    private void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data, String interactionId) {
+    private void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data,
+            String interactionId) {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
 
             Map<String, String> systemToCodeMap = Map.of(
-                    "http://terminology.hl7.org/CodeSystem/v2-0203", "NPI",
+                    "http://hl7.org/fhir/sid/us-npi", "NPI",
                     "http://www.medicaid.gov/", "MA",
                     "http://www.irs.gov/", "TAX");
 
-            String rawSystem = data.getScreeningEntityIdCodeSystem(); // system string from CSV
+            String rawSystem = data.getScreeningEntityIdCodeSystem();
             String code = systemToCodeMap.getOrDefault(rawSystem, "UNKNOWN");
             String system = fetchSystem(code, rawSystem, CsvConstants.SCREENING_ENITITY_ID, interactionId);
 
+            String typeCodingSystem = "http://terminology.hl7.org/CodeSystem/v2-0203";
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(system);
+            coding.setSystem(typeCodingSystem);
             coding.setCode(code);
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
@@ -128,7 +130,7 @@ public class OrganizationConverter extends BaseConverter {
             identifier.setValue(data.getScreeningEntityId());
             organization.addIdentifier(identifier);
         }
-    }    
+    }
 
     private void populateOrganizationType(Organization organization, QeAdminData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
