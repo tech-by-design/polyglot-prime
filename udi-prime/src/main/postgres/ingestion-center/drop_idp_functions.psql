@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS techbd_udi_ingress.idp_screens;
+DROP TABLE IF EXISTS techbd_udi_ingress.idp_role_tenant_permission;
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_get_role_menus_with_permissions(int);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_get_login_role_permissions(text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_insert_role_menus_with_permissions(int, jsonb, timestamp, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_upsert_tenants_from_json(jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.idp_save_roles_from(jsonb);
+DROP VIEW IF EXISTS techbd_udi_ingress.idp_vw_roles;

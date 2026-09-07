@@ -848,38 +848,7 @@ const idpMenu = SQLa.tableDefinition("idp_menu", {
   },
 });
 
-const idpScreens = SQLa.tableDefinition("idp_screens", {
-    scr_id: serial(),
-    scr_code:text(),
-    scr_name:text(),
-    description:text(),
-    scr_type:text(),
-    mnu_id: integer(), //idpMenu.references.mnu_id(),
-    order_no:integer(),
-    is_active:boolean().default(true),
-    ...dvts.housekeeping.columns
-  }, {
-  isIdempotent: true,
-  sqlNS: ingressSchema,
-    constraints: (props, tableName) => {
-    const c = SQLa.tableConstraints(tableName, props);
-    return [
-      c.unique("scr_code"),
-      c.unique("scr_id"),
-    ];
-  },
-});
-
-const idpRoleTenantPermission = SQLa.tableDefinition("idp_role_tenant_permission", {
-    permission_id: serial(),
-    role_id: integer(), //idpRoles.references.role_id(),
-    mnu_id: integer(), //idpMenu.references.mnu_id(),
-    scr_id: integer(), //idpScreens.references.scr_id(),
-    ...dvts.housekeeping.columns
-  }, {
-  isIdempotent: true,
-  sqlNS: ingressSchema,
-});
+ 
 
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
@@ -908,9 +877,10 @@ const dependencies = [
   "../002_idempotent_diagnostics.psql",
   "../003_idempotent_migration.psql",
   "../load_ref_code_lookup.psql", 
-  "../load_idp_master_data.psql",
+  //"../load_idp_master_data.psql",
   "../007_idempotent_interaction.psql",
-  "../008_idempotent_idp_functions.psql",
+  //"../008_idempotent_idp_functions.psql",
+  "../drop_idp_functions.psql",
 ] as const;
 
 const testMigrateDependencies = [
@@ -1809,43 +1779,14 @@ const migrateSP = pgSQLa.storedProcedure(
               ADD CONSTRAINT idp_menu_pkey PRIMARY KEY (mnu_id);
           END IF;
       END $$;      
-      
-      ${idpScreens}
-      DO $$
-      BEGIN
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_constraint
-              WHERE conname = 'idp_screens_pkey'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.idp_screens
-              ADD CONSTRAINT idp_screens_pkey PRIMARY KEY (scr_id);
-          END IF;
-      END $$;
-
-      ${idpRoleTenantPermission}
-      DO $$
-      BEGIN
-          IF NOT EXISTS (
-              SELECT 1
-              FROM pg_constraint
-              WHERE conname = 'idp_role_tenant_permission_pkey'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.idp_role_tenant_permission
-              ADD CONSTRAINT idp_role_tenant_permission_pkey PRIMARY KEY (permission_id);
-          END IF;
-      END $$;
-
+  
       ${dependenciesSQL}
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
       
       ${testDependenciesSQL}
 
-
-
       ${searchPathAssurance}
-
 
       DECLARE
         tap_op TEXT := '';
