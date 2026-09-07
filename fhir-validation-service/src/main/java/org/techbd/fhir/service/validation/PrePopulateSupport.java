@@ -51,6 +51,7 @@ public class PrePopulateSupport {
             addCPTCodes(validationSupportChain, prePopulatedValidationSupport);
             addHCPCSCodes(validationSupportChain, prePopulatedValidationSupport);
             addLoincCodes(validationSupportChain, prePopulatedValidationSupport);
+            addLanguageCodes(prePopulatedValidationSupport);
         } finally {
             span.end();
         }
@@ -154,6 +155,8 @@ public class PrePopulateSupport {
                     prePopulatedValidationSupport);
             loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1240.11.json", fhirContext,
                     prePopulatedValidationSupport);
+            loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1021.24.json", fhirContext,
+                    prePopulatedValidationSupport);
         } finally {
             span.end();
         }
@@ -222,5 +225,19 @@ public class PrePopulateSupport {
         }
         LOG.info("PrePopulateSupport:addLoincCodes  -END");
     }
+   
+    private void addLanguageCodes(
+            PrePopulatedValidationSupport prePopulatedValidationSupport) {
 
+        CodeSystem languageCodeSystem = new CodeSystem()
+                .setUrl("urn:ietf:bcp:47")
+                .setName("BCP47LanguageCodes")
+                .setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+
+        languageCodeSystem.setConcept(
+                ConceptReaderUtils.getCodeSystemConcepts_wCode(
+                        referenceCodesPath.concat("language-subtags.psv")));
+
+        prePopulatedValidationSupport.addCodeSystem(languageCodeSystem);
+    }
 }
