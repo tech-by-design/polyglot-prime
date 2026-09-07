@@ -137,10 +137,25 @@ WHERE mnu_code  = 'mnu_Settings';
 /* Screen insertion */
 /* 2 insert statement commented due to serial no 35 in the menu table. */
 
- 
+UPDATE techbd_udi_ingress.idp_screens
+SET
+    scr_code = 'scr_Historical_Details',
+    scr_name = 'Historical Details',
+    description = 'Historical Details screen'
+WHERE scr_id = 40
+  AND scr_code = 'scr_Error_Monitoring';
+
+UPDATE techbd_udi_ingress.idp_screens
+SET
+    scr_code = 'scr_Monthly_Summary',
+    scr_name = 'Monthly Summary',
+    description = 'Monthly Summary Screen'
+WHERE scr_id = 1
+  AND scr_code = 'scr_Source_Monitoring';  
+
 
  INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
-	 (1,'scr_Source_Monitoring','Source Monitoring','Source Monitoring screen','page',8,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (1,'scr_Monthly_Summary','Monthly Summary','Monthly Summary screen','page',8,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
 	 (2,'scr_Roles','Role Access Management','Roles configuration screen','page',7,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL),
 	 (3,'scr_CSV_via_HTTPS','CSV Submissions','CSV Submissions screen','page',4,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
 	 (4,'scr_Screening','Screenings','Screening screen','page',2,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
@@ -182,7 +197,7 @@ INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description
 	 (37,'scr_TechBD_Processing_Failures','Tech by Design – Processing Failures','Tech by Design – Processing Failures Screen','page',3,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
 	 (38,'scr_TechBD_Validation_Failures','Tech by Design – Validation Failures','Tech by Design – Validation Failures screen','page',3,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
 	 (39,'scr_SHINNY_Datalake_Failed_Submissions','SHIN-NY Data Lake – Failed Submissions','SHIN-NY Data Lake – Failed Submissions screen','page',3,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
-	 (40,'scr_Error_Monitoring','Error Monitoring','Error Monitoring screen','page',8,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+	 (40,'scr_Historical_Details','Historical Details','Historical Details screen','page',8,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
 INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
 	 (41,'scr_FHIR_Rules','FHIR Rules','FHIR Rules screen','page',7,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL) ON CONFLICT (scr_code) DO NOTHING;
 INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
@@ -194,20 +209,3 @@ VALUES
 (44, 'scr_Most_Recent_MCO_Transactions', 'Most Recent MCO Transactions', 'Most Recent MCO Transactions screen', 'page', 1, 2, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL),
 (45, 'scr_Most_Recent_QE_Transactions', 'Most Recent QE Transactions', 'Most Recent QE Transactions screen', 'page', 1, 3, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL)
 ON CONFLICT (scr_code) DO NOTHING;	 
-
-
-UPDATE techbd_udi_ingress.idp_screens
-SET
-    scr_code = 'scr_Historical_Details',
-    scr_name = 'Historical Details',
-    description = 'Historical Details screen'
-WHERE scr_id = 40
-  AND scr_code = 'scr_Error_Monitoring';
-
-UPDATE techbd_udi_ingress.idp_screens
-SET
-    scr_code = 'scr_Monthly_Summary',
-    scr_name = 'Monthly Summary',
-    description = 'Monthly Summary Screen'
-WHERE scr_id = 1
-  AND scr_code = 'scr_Source_Monitoring';  
