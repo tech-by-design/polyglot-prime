@@ -167,11 +167,14 @@ $function$;
 
 drop function if exists mco_data.get_mco_dashboard_metrics(text);
 DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics1(text, text);
-
 DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics(text, text);
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_dashboard_metrics(text, text, boolean);
+
 CREATE OR REPLACE FUNCTION mco_data.get_mco_dashboard_metrics(
     p_start_reporting_month text DEFAULT NULL,
-    p_end_reporting_month text DEFAULT NULL
+    p_end_reporting_month text DEFAULT NULL,
+    p_last_three_month boolean DEFAULT FALSE
 )
 RETURNS TABLE (
     selected_reporting_month text, 
@@ -189,7 +192,8 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     v_start_month date;
-    v_end_month date; 
+    v_end_month date;
+    v_latest_month date;
 BEGIN
  
     IF p_start_reporting_month IS NOT NULL
@@ -210,11 +214,28 @@ BEGIN
             p_start_reporting_month, p_end_reporting_month;
     END IF;
 
+    -- Get latest reporting month when last-three-month option is enabled
+    IF p_last_three_month THEN
+        SELECT MAX(
+            TO_DATE(TRIM(mr.reporting_month), 'MM-YYYY')
+        )
+        INTO v_latest_month
+        FROM mco_data.mco_records mr
+        WHERE mr.reporting_month IS NOT NULL
+          AND TRIM(mr.reporting_month) <> '';
+    END IF;
+
     RETURN QUERY
     SELECT
         CASE
-            WHEN v_start_month IS NULL AND v_end_month IS NULL THEN 'ALL'
-            WHEN v_start_month = v_end_month THEN TO_CHAR(v_start_month, 'MM-YYYY')
+            WHEN p_last_three_month AND v_latest_month IS NOT NULL
+                THEN TO_CHAR(v_latest_month - INTERVAL '2 months', 'MM-YYYY')
+                     || ' to ' ||
+                     TO_CHAR(v_latest_month, 'MM-YYYY')
+            WHEN v_start_month IS NULL AND v_end_month IS NULL
+                THEN 'ALL'
+            WHEN v_start_month = v_end_month
+                THEN TO_CHAR(v_start_month, 'MM-YYYY')
             ELSE TO_CHAR(v_start_month, 'MM-YYYY') || ' to ' ||
                  TO_CHAR(v_end_month, 'MM-YYYY')
         END AS selected_reporting_month, 
@@ -230,7 +251,13 @@ BEGIN
     FROM mco_data.mco_records mr
     WHERE mr.reporting_month IS NOT NULL
       AND (
-          (v_start_month IS NULL AND v_end_month IS NULL)
+          -- No filter: all data
+          (
+              v_start_month IS NULL
+              AND v_end_month IS NULL
+              AND NOT p_last_three_month
+          )
+          -- Explicit month range
           OR (
               v_start_month IS NOT NULL
               AND v_end_month IS NOT NULL
@@ -247,78 +274,168 @@ BEGIN
               AND v_end_month IS NOT NULL
               AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month
           )
+          -- Last 3 reporting months
+          OR (
+              p_last_three_month
+              AND v_latest_month IS NOT NULL
+              AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                  BETWEEN v_latest_month - INTERVAL '2 months'
+                  AND v_latest_month
+          )
       );
 END;
 $function$;
 
 
 DROP VIEW IF EXISTS mco_data.get_mco_historical_details CASCADE;
- 
 
 DROP FUNCTION IF EXISTS mco_data.get_mco_historical_details(text, text);
 
-CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_details(
-    p_start_reporting_month text DEFAULT NULL,
-    p_end_reporting_month text DEFAULT NULL
+DROP FUNCTION IF EXISTS mco_data.get_mco_historical_details(text, text, boolean);
+create or replace function mco_data.get_mco_historical_details(
+    p_start_reporting_month text default null,
+    p_end_reporting_month text default null,
+    p_last_three_month boolean default false
 )
-RETURNS TABLE (
+returns table (
     mco_name text,
     total_files_received bigint,
     files_processed bigint,
     files_partially_processed bigint,
     files_errored bigint
 )
-LANGUAGE plpgsql
-AS $function$
-DECLARE
+language plpgsql
+as $function$
+declare
     v_start_month date;
-    v_end_month date;
-BEGIN
-    IF p_start_reporting_month IS NOT NULL AND TRIM(p_start_reporting_month) <> '' THEN
-        v_start_month := TO_DATE(TRIM(p_start_reporting_month), 'MM-YYYY');
-    END IF;
 
-    IF p_end_reporting_month IS NOT NULL AND TRIM(p_end_reporting_month) <> '' THEN
-        v_end_month := TO_DATE(TRIM(p_end_reporting_month), 'MM-YYYY');
-    END IF;
+v_end_month date;
 
-    IF v_start_month IS NOT NULL AND v_end_month IS NOT NULL AND v_start_month > v_end_month THEN
-        RAISE EXCEPTION 'Start reporting month (%) cannot be after end reporting month (%)',
-            p_start_reporting_month, p_end_reporting_month;
-    END IF;
+v_latest_month date;
 
-    RETURN QUERY
-    SELECT m.tenant_displayname AS mco_name,
-           COUNT(*) AS total_files_received,
-           COUNT(*) FILTER (WHERE mr.status = 'FULLY_PROCESSED') AS files_processed,
-           COUNT(*) FILTER (WHERE mr.status = 'PARTIALLY_PROCESSED') AS files_partially_processed,
-           COUNT(*) FILTER (WHERE mr.status = 'ERRORED') AS files_errored
-    FROM mco_data.mco_records mr
-    INNER JOIN techbd_udi_ingress.tenants m ON mr.tenant_id = m.tenant_id
-    WHERE mr.reporting_month IS NOT NULL
-      AND (
-          (v_start_month IS NULL AND v_end_month IS NULL)
-          OR (v_start_month IS NOT NULL AND v_end_month IS NOT NULL
-              AND TO_DATE(mr.reporting_month, 'MM-YYYY') BETWEEN v_start_month AND v_end_month)
-          OR (v_start_month IS NOT NULL AND v_end_month IS NULL
-              AND TO_DATE(mr.reporting_month, 'MM-YYYY') >= v_start_month)
-          OR (v_start_month IS NULL AND v_end_month IS NOT NULL
-              AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month)
+begin
+-- Convert start month
+    if p_start_reporting_month is not null
+and TRIM(p_start_reporting_month) <> '' then
+        v_start_month := TO_DATE(
+            TRIM(p_start_reporting_month),
+            'MM-YYYY'
+        );
+end if;
+-- Convert end month
+    if p_end_reporting_month is not null
+and TRIM(p_end_reporting_month) <> '' then
+        v_end_month := TO_DATE(
+            TRIM(p_end_reporting_month),
+            'MM-YYYY'
+        );
+end if;
+-- Validate explicit month range
+    if v_start_month is not null
+and v_end_month is not null
+and v_start_month > v_end_month then
+
+        raise exception
+            'Start reporting month (%) cannot be after end reporting month (%)',
+            p_start_reporting_month,
+            p_end_reporting_month;
+end if;
+-- Determine latest reporting month when last-three-month option is used
+    if p_last_three_month then
+
+        select
+	MAX(
+            TO_DATE(TRIM(mr.reporting_month), 'MM-YYYY')
+        )
+        into
+	v_latest_month
+from
+	mco_data.mco_records mr
+where
+	mr.reporting_month is not null
+	and TRIM(mr.reporting_month) <> '';
+end if;
+
+return QUERY
+    select
+	m.tenant_displayname as mco_name,
+	COUNT(*) as total_files_received,
+	COUNT(*) filter (
+where
+	mr.status = 'FULLY_PROCESSED'
+        ) as files_processed,
+	COUNT(*) filter (
+where
+	mr.status = 'PARTIALLY_PROCESSED'
+        ) as files_partially_processed,
+	COUNT(*) filter (
+where
+	mr.status = 'ERRORED'
+        ) as files_errored
+from
+	mco_data.mco_records mr
+inner join techbd_udi_ingress.tenants m
+        on
+	mr.tenant_id = m.tenant_id
+where
+	mr.reporting_month is not null
+	and (
+	-- No filter: return all data
+            (
+                v_start_month is null
+		and v_end_month is null
+		and not p_last_three_month
+            )
+	-- Explicit start + end month
+	or (
+                v_start_month is not null
+		and v_end_month is not null
+		and TO_DATE(mr.reporting_month, 'MM-YYYY')
+                    between v_start_month and v_end_month
+            )
+	-- Explicit start month only
+		or (
+                v_start_month is not null
+			and v_end_month is null
+			and TO_DATE(mr.reporting_month, 'MM-YYYY')
+                    >= v_start_month
+            )
+		-- Explicit end month only
+			or (
+                v_start_month is null
+				and v_end_month is not null
+				and TO_DATE(mr.reporting_month, 'MM-YYYY')
+                    <= v_end_month
+            )
+			-- Last 3 reporting months
+				or (
+                p_last_three_month
+					and v_latest_month is not null
+					and TO_DATE(mr.reporting_month, 'MM-YYYY')
+                    between v_latest_month - interval '2 months'
+                    and v_latest_month
+            )
       )
-    GROUP BY m.tenant_displayname
-    ORDER BY m.tenant_displayname;
-END;
-$function$; 
+group by
+	m.tenant_displayname
+order by
+	m.tenant_displayname;
+end;
 
+$function$;
 
 
 
 DROP FUNCTION IF EXISTS mco_data.get_mco_historical_records(text, text, text);
 
+
+DROP FUNCTION IF EXISTS mco_data.get_mco_historical_records(text, text, text, boolean);
+
 CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_records(
     p_mco_name text,
     p_start_month text,
-    p_end_month text
+    p_end_month text,
+    p_last_three_month boolean DEFAULT FALSE
 )
 RETURNS TABLE (
     batch_id integer,
@@ -343,16 +460,30 @@ AS $function$
 DECLARE
     v_start_month date;
     v_end_month date;
+    v_latest_month date;
 BEGIN
     v_start_month := CASE
-        WHEN p_start_month IS NOT NULL AND TRIM(p_start_month) <> ''
-        THEN TO_DATE(p_start_month, 'MM-YYYY')
+        WHEN p_start_month IS NOT NULL
+             AND TRIM(p_start_month) <> ''
+        THEN TO_DATE(TRIM(p_start_month), 'MM-YYYY')
     END;
 
     v_end_month := CASE
-        WHEN p_end_month IS NOT NULL AND TRIM(p_end_month) <> ''
-        THEN TO_DATE(p_end_month, 'MM-YYYY')
+        WHEN p_end_month IS NOT NULL
+             AND TRIM(p_end_month) <> ''
+        THEN TO_DATE(TRIM(p_end_month), 'MM-YYYY')
     END;
+
+    -- Get the latest reporting month when last-three-month option is enabled
+    IF p_last_three_month THEN
+        SELECT MAX(
+            TO_DATE(TRIM(mr.reporting_month), 'MM-YYYY')
+        )
+        INTO v_latest_month
+        FROM mco_data.mco_records mr
+        WHERE mr.reporting_month IS NOT NULL
+          AND TRIM(mr.reporting_month) <> '';
+    END IF;
 
     RETURN QUERY
     SELECT
@@ -366,41 +497,72 @@ BEGIN
         mr.qa_completed_time,
         mr.sent_to_datalake_time,
         mr.sent_to_mco_time,
-        TO_CHAR(TO_DATE(mr.reporting_month, 'MM-YYYY'), 'FMMonth YYYY'),
+        TO_CHAR(
+            TO_DATE(mr.reporting_month, 'MM-YYYY'),
+            'FMMonth YYYY'
+        ),
         mr.total_records,
         mr.processed_count,
         mr.errored_count,
         mr.resubmitted_count,
         mr.updated_on_utc
+
     FROM mco_data.mco_records mr
+
     INNER JOIN techbd_udi_ingress.tenants m
         ON mr.tenant_id = m.tenant_id
+
     WHERE (
         p_mco_name IS NULL
         OR TRIM(p_mco_name) = ''
         OR m.tenant_displayname = p_mco_name
     )
+
     AND mr.reporting_month IS NOT NULL
+
     AND (
-        (v_start_month IS NULL AND v_end_month IS NULL)
+        -- No month filter: return all data
+        (
+            v_start_month IS NULL
+            AND v_end_month IS NULL
+            AND NOT p_last_three_month
+        )
+
+        -- Explicit start and end month
         OR (
             v_start_month IS NOT NULL
             AND v_end_month IS NOT NULL
             AND TO_DATE(mr.reporting_month, 'MM-YYYY')
                 BETWEEN v_start_month AND v_end_month
         )
+
+        -- Explicit start month only
         OR (
             v_start_month IS NOT NULL
             AND v_end_month IS NULL
-            AND TO_DATE(mr.reporting_month, 'MM-YYYY') >= v_start_month
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                >= v_start_month
         )
+
+        -- Explicit end month only
         OR (
             v_start_month IS NULL
             AND v_end_month IS NOT NULL
-            AND TO_DATE(mr.reporting_month, 'MM-YYYY') <= v_end_month
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                <= v_end_month
+        )
+
+        -- Last 3 reporting months
+        OR (
+            p_last_three_month
+            AND v_latest_month IS NOT NULL
+            AND TO_DATE(mr.reporting_month, 'MM-YYYY')
+                BETWEEN v_latest_month - INTERVAL '2 months'
+                AND v_latest_month
         )
     )
+
     ORDER BY mr.created_on_utc DESC;
+
 END;
 $function$;
- 
