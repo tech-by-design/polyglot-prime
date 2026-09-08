@@ -158,6 +158,16 @@ public class PostPopulateSupport {
                             .setSystem(
                                     "urn:oid:2.16.840.1.113883.6.285"));
 
+
+            procedureValueSet.getCompose().addInclude(
+                    new ValueSet.ConceptSetComponent()
+                            .setConcept(
+                                    ConceptReaderUtils.getValueSetConcepts_wCode(
+                                            referenceCodesPath.concat("icd10cm.psv")))
+                            .setSystem(
+                                    "http://www.cms.gov/Medicare/Coding/ICD10"));
+
+
             // SNOMED
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
@@ -165,6 +175,14 @@ public class PostPopulateSupport {
                                     ConceptReaderUtils.getValueSetConcepts_wCode(
                                             referenceCodesPath.concat("snomed.psv")))
                             .setSystem("http://snomed.info/sct"));
+
+            // LOINC
+            procedureValueSet.getCompose().addInclude(
+                    new ValueSet.ConceptSetComponent()
+                            .setConcept(
+                                    ConceptReaderUtils.getValueSetConcepts_wCode(
+                                            referenceCodesPath.concat("loinc.psv")))
+                            .setSystem("http://loinc.org"));
         }
     }
 

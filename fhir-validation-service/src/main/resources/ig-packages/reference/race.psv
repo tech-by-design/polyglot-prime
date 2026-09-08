@@ -10,833 +10,1192 @@ OMB_ETHNICITY|2135-2|Hispanic or Latino
 OMB_ETHNICITY|2186-5|Not Hispanic or Latino
 OMB_ETHNICITY|ASKU|asked but unknown
 OMB_ETHNICITY|UNK|unknown
-DETAILED_RACE|1004-1|American Indian
-DETAILED_RACE|1006-6|Abenaki
+DETAILED_RACE|1002-5|American Indian or Alaska Native
+DETAILED_RACE|1004-1|AMERICAN INDIAN
+DETAILED_RACE|1006-6|Abenaki Nation of Missisquoi
+DETAILED_RACE|1579-2|Absentee-Shawnee Tribe of Indians of Oklahoma
+DETAILED_RACE|1212-0|Agua Caliente
+DETAILED_RACE|1045-4|Agua Caliente Band of Cahuilla Indians of the Agua Caliente Indian Reservation, California
+DETAILED_RACE|1654-3|Ak-Chin Indian Community
+DETAILED_RACE|1194-0|Alabama Creek
+DETAILED_RACE|1195-7|Alabama-Quassarte Tribal Town
+DETAILED_RACE|1187-4|Alabama-Coushatta Tribe of Texas
 DETAILED_RACE|1008-2|Algonquian
+DETAILED_RACE|3012-2|Allegheny Lenape
+DETAILED_RACE|1688-1|Alpine
+DETAILED_RACE|1392-0|Alsea
+DETAILED_RACE|3015-5|Alturas Indian Rancheria, California
+DETAILED_RACE|3016-3|Ani-stohini/Unami
 DETAILED_RACE|1010-8|Apache
-DETAILED_RACE|1011-6|Chiricahua
-DETAILED_RACE|1012-4|Fort Sill Apache
-DETAILED_RACE|1013-2|Jicarilla Apache
-DETAILED_RACE|1014-0|Lipan Apache
-DETAILED_RACE|1015-7|Mescalero Apache
-DETAILED_RACE|1016-5|Oklahoma Apache
-DETAILED_RACE|1017-3|Payson Apache
-DETAILED_RACE|1018-1|San Carlos Apache
-DETAILED_RACE|1019-9|White Mountain Apache
+DETAILED_RACE|1016-5|Apache Tribe of Oklahoma
 DETAILED_RACE|1021-5|Arapaho
-DETAILED_RACE|1022-3|Northern Arapaho
-DETAILED_RACE|1023-1|Southern Arapaho
-DETAILED_RACE|1024-9|Wind River Arapaho
-DETAILED_RACE|1026-4|Arikara
+DETAILED_RACE|1024-9|Northern Arapaho Tribe of the Wind River Reservation, Wyoming
+DETAILED_RACE|1026-4|Arikara (Sahnish)
+DETAILED_RACE|1366-4|Mi'kmaq Nation
 DETAILED_RACE|1028-0|Assiniboine
-DETAILED_RACE|1030-6|Assiniboine Sioux
-DETAILED_RACE|1031-4|Fort Peck Assiniboine Sioux
+DETAILED_RACE|3024-7|Assiniboine & Sioux Tribes of the Fort Peck Indian Reservation, Montana
+DETAILED_RACE|3025-4|Assonet Band of the Wampanoag Nation
+DETAILED_RACE|1234-4|Atakapa
+DETAILED_RACE|1265-8|Atsina
+DETAILED_RACE|1046-2|Augustine Band of Cahuilla Indians, California
+DETAILED_RACE|1124-7|Bad River Band of the Lake Superior Tribe of Chippewa Indians of the Bad River Reservation, Wisconsin
 DETAILED_RACE|1033-0|Bannock
-DETAILED_RACE|1035-5|Blackfeet
+DETAILED_RACE|3031-2|Barona Group of Capitan Grande Band
+DETAILED_RACE|1125-4|Bay Mills Indian Community, Michigan
+DETAILED_RACE|1060-3|Bear River Band of the Rohnerville Rancheria, California
+DETAILED_RACE|3034-6|Beaver Creek Indians
+DETAILED_RACE|3035-3|Berry Creek Rancheria of Maidu Indians of California
+DETAILED_RACE|3036-1|Big Lagoon Rancheria, California
+DETAILED_RACE|1430-8|Big Pine Paiute Tribe of the Owens Valley
+DETAILED_RACE|3038-7|Big Sandy Rancheria of Western Mono Indians of California
+DETAILED_RACE|3039-5|Big Valley Band of Pomo Indians of the Big Valley Rancheria, California
+DETAILED_RACE|1235-1|Biloxi
+DETAILED_RACE|3041-1|Biloxi-Chitimacha Confederation
+DETAILED_RACE|1417-5|Bishop Paiute Tribe
+DETAILED_RACE|1035-5|Blackfeet Tribe of the Blackfeet Indian Reservation of Montana
+DETAILED_RACE|3044-5|Blue Lake Rancheria, California
+DETAILED_RACE|1126-2|Minnesota Chippewa Tribe, Minnesota
+DETAILED_RACE|1418-3|Bridgeport Indian Colony
 DETAILED_RACE|1037-1|Brotherton
-DETAILED_RACE|1039-7|Burt Lake Band
+DETAILED_RACE|1611-3|Brule Sioux
+DETAILED_RACE|3049-4|Buena Vista Rancheria of Me-Wuk Indians of California
+DETAILED_RACE|1419-1|Burns Paiute Tribe
+DETAILED_RACE|3051-0|Burt Lake Band of Ottawa and Chippewa Indians
+DETAILED_RACE|1047-0|Cabazon Band of Cahuilla Indians
+DETAILED_RACE|3053-6|Cachil DeHe Band of Wintun Indians of the Colusa Indian Community of the Colusa Rancheria, California
 DETAILED_RACE|1041-3|Caddo
-DETAILED_RACE|1042-1|Oklahoma Cado
+DETAILED_RACE|3055-1|Caddo Adais Indians
+DETAILED_RACE|1042-1|Caddo Nation of Oklahoma
+DETAILED_RACE|1054-6|Cahto Tribe of the Laytonville Rancheria
 DETAILED_RACE|1044-7|Cahuilla
-DETAILED_RACE|1045-4|Agua Caliente Cahuilla
-DETAILED_RACE|1046-2|Augustine
-DETAILED_RACE|1047-0|Cabazon
-DETAILED_RACE|1048-8|Los Coyotes
-DETAILED_RACE|1049-6|Morongo
-DETAILED_RACE|1050-4|Santa Rosa Cahuilla
-DETAILED_RACE|1051-2|Torres-Martinez
-DETAILED_RACE|1053-8|California Tribes
-DETAILED_RACE|1054-6|Cahto
-DETAILED_RACE|1055-3|Chimariko
-DETAILED_RACE|1056-1|Coast Miwok
-DETAILED_RACE|1057-9|Digger
-DETAILED_RACE|1058-7|Kawaiisu
-DETAILED_RACE|1059-5|Kern River
-DETAILED_RACE|1060-3|Mattole
-DETAILED_RACE|1061-1|Red Wood
-DETAILED_RACE|1062-9|Santa Rosa
-DETAILED_RACE|1063-7|Takelma
-DETAILED_RACE|1064-5|Wappo
-DETAILED_RACE|1065-2|Yana
-DETAILED_RACE|1066-0|Yuki
-DETAILED_RACE|1068-6|Canadian and Latin American Indian
-DETAILED_RACE|1069-4|Canadian Indian
-DETAILED_RACE|1070-2|Central American Indian
-DETAILED_RACE|1071-0|French American Indian
-DETAILED_RACE|1072-8|Mexican American Indian
-DETAILED_RACE|1073-6|South American Indian
-DETAILED_RACE|1074-4|Spanish American Indian
-DETAILED_RACE|1076-9|Catawba
+DETAILED_RACE|3059-3|Cahuilla Band of Indians
+DETAILED_RACE|3060-1|California Valley Miwok Tribe, California
+DETAILED_RACE|1223-7|Campo Band of Diegueno Mission Indians of the Campo Indian Reservation, California
+DETAILED_RACE|1224-5|Capitan Grande Band of Diegueno Mission Indians of California
+DETAILED_RACE|1076-9|Catawba Indian Nation (aka Catawba Indian Tribe of South Carolina)
+DETAILED_RACE|1286-4|Cayuga Nation
 DETAILED_RACE|1078-5|Cayuse
-DETAILED_RACE|1080-1|Chehalis
+DETAILED_RACE|1420-9|Cedarville Rancheria, California
+DETAILED_RACE|1393-8|Celilo
+DETAILED_RACE|1465-4|Central Pomo
+DETAILED_RACE|3069-2|Chaloklowa Chickasaw
+DETAILED_RACE|3070-0|Chappaquiddick Tribe of the Wampanoag Indian Nation
+DETAILED_RACE|3071-8|Chaubunagungamaug Nipmuck
 DETAILED_RACE|1082-7|Chemakuan
-DETAILED_RACE|1083-5|Hoh
-DETAILED_RACE|1084-3|Quileute
-DETAILED_RACE|1086-8|Chemehuevi
+DETAILED_RACE|1086-8|Chemehuevi Indian Tribe of the Chemehuevi Reservation, California
+DETAILED_RACE|3074-2|Cher-Ae Heights Indian Community of the Trinidad Rancheria, California
+DETAILED_RACE|3075-9|Cher-O-Creek Intratribal Indians
+DETAILED_RACE|3076-7|Cheroenhaka
 DETAILED_RACE|1088-4|Cherokee
 DETAILED_RACE|1089-2|Cherokee Alabama
-DETAILED_RACE|1090-0|Cherokees of Northeast Alabama
-DETAILED_RACE|1091-8|Cherokees of Southeast Alabama
-DETAILED_RACE|1092-6|Eastern Cherokee
-DETAILED_RACE|1093-4|Echota Cherokee
-DETAILED_RACE|1094-2|Etowah Cherokee
-DETAILED_RACE|1095-9|Northern Cherokee
-DETAILED_RACE|1096-7|Tuscola
-DETAILED_RACE|1097-5|United Keetowah Band of Cherokee
-DETAILED_RACE|1098-3|Western Cherokee
-DETAILED_RACE|1100-7|Cherokee Shawnee
+DETAILED_RACE|3079-1|Cherokee Bear Clan of South Carolina
+DETAILED_RACE|3080-9|Cherokee Nation
+DETAILED_RACE|3081-7|Cherokee of Georgia
+DETAILED_RACE|1090-0|Cherokee Tribe of Northeast Alabama
 DETAILED_RACE|1102-3|Cheyenne
-DETAILED_RACE|1103-1|Northern Cheyenne
-DETAILED_RACE|1104-9|Southern Cheyenne
-DETAILED_RACE|1106-4|Cheyenne-Arapaho
-DETAILED_RACE|1108-0|Chickahominy
-DETAILED_RACE|1109-8|Eastern Chickahominy
-DETAILED_RACE|1110-6|Western Chickahominy
-DETAILED_RACE|1112-2|Chickasaw
+DETAILED_RACE|1106-4|Cheyenne and Arapaho Tribes, Oklahoma
+DETAILED_RACE|3085-8|Cheyenne River Sioux Tribe of the Cheyenne River Reservation, South Dakota
+DETAILED_RACE|3086-6|Chickahominy Indian Tribe
+DETAILED_RACE|1109-8|Chickahominy Indian Tribe - Eastern Division
+DETAILED_RACE|3088-2|Chicken Ranch Rancheria of Me-Wuk Indians of California
+DETAILED_RACE|1055-3|Chimariko
 DETAILED_RACE|1114-8|Chinook
-DETAILED_RACE|1115-5|Clatsop
-DETAILED_RACE|1116-3|Columbia River Chinook
-DETAILED_RACE|1117-1|Kathlamet
-DETAILED_RACE|1118-9|Upper Chinook
-DETAILED_RACE|1119-7|Wakiakum Chinook
-DETAILED_RACE|1120-5|Willapa Chinook
-DETAILED_RACE|1121-3|Wishram
 DETAILED_RACE|1123-9|Chippewa
-DETAILED_RACE|1124-7|Bad River
-DETAILED_RACE|1125-4|Bay Mills Chippewa
-DETAILED_RACE|1126-2|Bois Forte
-DETAILED_RACE|1127-0|Burt Lake Chippewa
-DETAILED_RACE|1128-8|Fond du Lac
-DETAILED_RACE|1129-6|Grand Portage
-DETAILED_RACE|1130-4|Grand Traverse Band of Ottawa/Chippewa
-DETAILED_RACE|1131-2|Keweenaw
-DETAILED_RACE|1132-0|Lac Courte Oreilles
-DETAILED_RACE|1133-8|Lac du Flambeau
-DETAILED_RACE|1134-6|Lac Vieux Desert Chippewa
-DETAILED_RACE|1135-3|Lake Superior
-DETAILED_RACE|1136-1|Leech Lake
-DETAILED_RACE|1137-9|Little Shell Chippewa
-DETAILED_RACE|1138-7|Mille Lacs
-DETAILED_RACE|1139-5|Minnesota Chippewa
-DETAILED_RACE|1140-3|Ontonagon
-DETAILED_RACE|1141-1|Red Cliff Chippewa
-DETAILED_RACE|1142-9|Red Lake Chippewa
-DETAILED_RACE|1143-7|Saginaw Chippewa
-DETAILED_RACE|1144-5|St. Croix Chippewa
-DETAILED_RACE|1145-2|Sault Ste. Marie Chippewa
-DETAILED_RACE|1146-0|Sokoagon Chippewa
-DETAILED_RACE|1147-8|Turtle Mountain
-DETAILED_RACE|1148-6|White Earth
-DETAILED_RACE|1150-2|Chippewa Cree
-DETAILED_RACE|1151-0|Rocky Boy's Chippewa Cree
-DETAILED_RACE|1153-6|Chitimacha
+DETAILED_RACE|3092-4|Chippewa Cree Indians of the Rocky Boy's Reservation, Montana
+DETAILED_RACE|1153-6|Chitimacha Tribe of Louisiana
 DETAILED_RACE|1155-1|Choctaw
-DETAILED_RACE|1156-9|Clifton Choctaw
-DETAILED_RACE|1157-7|Jena Choctaw
-DETAILED_RACE|1158-5|Mississippi Choctaw
-DETAILED_RACE|1159-3|Mowa Band of Choctaw
-DETAILED_RACE|1160-1|Oklahoma Choctaw
+DETAILED_RACE|3095-7|Choctaw-Apache Community of Ebarb
 DETAILED_RACE|1162-7|Chumash
-DETAILED_RACE|1163-5|Santa Ynez
+DETAILED_RACE|1479-5|Citizen Potawatomi Nation, Oklahoma
+DETAILED_RACE|1115-5|Clatsop
 DETAILED_RACE|1165-0|Clear Lake
-DETAILED_RACE|1167-6|Coeur D'Alene
-DETAILED_RACE|1169-2|Coharie
-DETAILED_RACE|1171-8|Colorado River
-DETAILED_RACE|1173-4|Colville
-DETAILED_RACE|1175-9|Comanche
-DETAILED_RACE|1176-7|Oklahoma Comanche
-DETAILED_RACE|1178-3|Coos, Lower Umpqua, Siuslaw
+DETAILED_RACE|1156-9|Clifton Choctaw Tribe of Louisiana
+DETAILED_RACE|3101-3|Cloverdale Rancheria of Pomo Indians of California
+DETAILED_RACE|1725-1|Cocopah Tribe of Arizona
+DETAILED_RACE|1167-6|Coeur D'Alene Tribe
+DETAILED_RACE|1169-2|Coharie Indian Tribe
+DETAILED_RACE|3105-4|Cold Springs Rancheria of Mono Indians of California
+DETAILED_RACE|1171-8|Colorado River Indian Tribes of the Colorado River Indian Reservation, Arizona and California
+DETAILED_RACE|1394-6|Columbia
+DETAILED_RACE|1116-3|Columbia River Chinook
+DETAILED_RACE|3109-6|Comanche Nation, Oklahoma
+DETAILED_RACE|1560-2|Confederated Salish and Kootenai Tribes of the Flathead Reservation
+DETAILED_RACE|1707-9|Confederated Tribes and Bands of the Yakama Nation
+DETAILED_RACE|1607-1|Confederated Tribes of Siletz Indians of Oregon
+DETAILED_RACE|1080-1|Confederated Tribes of the Chehalis Reservation
+DETAILED_RACE|1173-4|Confederated Tribes of the Colville Reservation
+DETAILED_RACE|1178-3|Confederated Tribes of the Coos, Lower Umpqua and Siuslaw Indians
+DETAILED_RACE|1591-7|Confederated Tribes of the Goshute Reservation, Nevada and Utah
+DETAILED_RACE|1262-5|Confederated Tribes of the Grand Ronde Community of Oregon
+DETAILED_RACE|1665-9|Confederated Tribes of the Umatilla Indian Reservation
+DETAILED_RACE|1683-2|Confederated Tribes of the Warm Springs Reservation of Oregon
 DETAILED_RACE|1180-9|Coos
-DETAILED_RACE|1182-5|Coquilles
+DETAILED_RACE|1182-5|Coquille Indian Tribe
 DETAILED_RACE|1184-1|Costanoan
 DETAILED_RACE|1186-6|Coushatta
-DETAILED_RACE|1187-4|Alabama Coushatta
-DETAILED_RACE|1189-0|Cowlitz
+DETAILED_RACE|3124-5|Coushatta Tribe of Louisiana
+DETAILED_RACE|1668-3|Cow Creek Band of Umpqua Tribe of Indians
+DETAILED_RACE|1189-0|Cowlitz Indian Tribe
+DETAILED_RACE|3127-8|Coyote Valley Band of Pomo Indians of California
 DETAILED_RACE|1191-6|Cree
-DETAILED_RACE|1193-2|Creek
-DETAILED_RACE|1194-0|Alabama Creek
-DETAILED_RACE|1195-7|Alabama Quassarte
+DETAILED_RACE|1207-0|Croatan
+DETAILED_RACE|1613-9|Crow Creek Sioux Tribe of the Crow Creek Reservation, South Dakota
+DETAILED_RACE|1209-6|Crow Tribe of Montana
+DETAILED_RACE|3132-8|Cumberland County Association for Indian People
+DETAILED_RACE|1211-2|Cupeno
+DETAILED_RACE|3134-4|Delaware (Lenni-Lenape)
+DETAILED_RACE|3135-1|Delaware Nation, Oklahoma
+DETAILED_RACE|3136-9|Delaware Tribe of Indians
+DETAILED_RACE|1057-9|Digger
+DETAILED_RACE|1466-2|Dry Creek Rancheria Band of Pomo Indians, California
+DETAILED_RACE|1588-3|Duckwater Shoshone Tribe of the Duckwater Reservation, Nevada
+DETAILED_RACE|1519-8|Duwamish
+DETAILED_RACE|3141-9|East of the River Shawnee
+DETAILED_RACE|1092-6|Eastern Band of Cherokee Indians
 DETAILED_RACE|1196-5|Eastern Creek
 DETAILED_RACE|1197-3|Eastern Muscogee
-DETAILED_RACE|1198-1|Kialegee
-DETAILED_RACE|1199-9|Lower Muscogee
-DETAILED_RACE|1200-5|Machis Lower Creek Indian
-DETAILED_RACE|1201-3|Poarch Band
-DETAILED_RACE|1202-1|Principal Creek Indian Nation
-DETAILED_RACE|1203-9|Star Clan of Muscogee Creeks
-DETAILED_RACE|1204-7|Thlopthlocco
-DETAILED_RACE|1205-4|Tuckabachee
-DETAILED_RACE|1207-0|Croatan
-DETAILED_RACE|1209-6|Crow
-DETAILED_RACE|1211-2|Cupeno
-DETAILED_RACE|1212-0|Agua Caliente
-DETAILED_RACE|1214-6|Delaware
-DETAILED_RACE|1215-3|Eastern Delaware
-DETAILED_RACE|1216-1|Lenni-Lenape
-DETAILED_RACE|1217-9|Munsee
-DETAILED_RACE|1218-7|Oklahoma Delaware
-DETAILED_RACE|1219-5|Rampough Mountain
-DETAILED_RACE|1220-3|Sand Hill
-DETAILED_RACE|1222-9|Diegueno
-DETAILED_RACE|1223-7|Campo
-DETAILED_RACE|1224-5|Capitan Grande
-DETAILED_RACE|1225-2|Cuyapaipe
-DETAILED_RACE|1226-0|La Posta
-DETAILED_RACE|1227-8|Manzanita
-DETAILED_RACE|1228-6|Mesa Grande
-DETAILED_RACE|1229-4|San Pasqual
-DETAILED_RACE|1230-2|Santa Ysabel
-DETAILED_RACE|1231-0|Sycuan
-DETAILED_RACE|1233-6|Eastern Tribes
-DETAILED_RACE|1234-4|Attacapa
-DETAILED_RACE|1235-1|Biloxi
-DETAILED_RACE|1236-9|Georgetown (Eastern Tribes)
-DETAILED_RACE|1237-7|Moor
-DETAILED_RACE|1238-5|Nansemond
-DETAILED_RACE|1239-3|Natchez
-DETAILED_RACE|1240-1|Nausu Waiwash
-DETAILED_RACE|1241-9|Nipmuc
-DETAILED_RACE|1242-7|Paugussett
-DETAILED_RACE|1243-5|Pocomoke Acohonock
-DETAILED_RACE|1244-3|Southeastern Indians
-DETAILED_RACE|1245-0|Susquehanock
-DETAILED_RACE|1246-8|Tunica Biloxi
-DETAILED_RACE|1247-6|Waccamaw-Siousan
-DETAILED_RACE|1248-4|Wicomico
-DETAILED_RACE|1250-0|Esselen
-DETAILED_RACE|1252-6|Fort Belknap
-DETAILED_RACE|1254-2|Fort Berthold
-DETAILED_RACE|1256-7|Fort Mcdowell
-DETAILED_RACE|1258-3|Fort Hall
-DETAILED_RACE|1260-9|Gabrieleno
-DETAILED_RACE|1262-5|Grand Ronde
-DETAILED_RACE|1264-1|Gros Ventres
-DETAILED_RACE|1265-8|Atsina
-DETAILED_RACE|1267-4|Haliwa
-DETAILED_RACE|1269-0|Hidatsa
-DETAILED_RACE|1271-6|Hoopa
-DETAILED_RACE|1272-4|Trinity
-DETAILED_RACE|1273-2|Whilkut
-DETAILED_RACE|1275-7|Hoopa Extension
-DETAILED_RACE|1277-3|Houma
-DETAILED_RACE|1279-9|Inaja-Cosmit
-DETAILED_RACE|1281-5|Iowa
-DETAILED_RACE|1282-3|Iowa of Kansas-Nebraska
-DETAILED_RACE|1283-1|Iowa of Oklahoma
-DETAILED_RACE|1285-6|Iroquois
-DETAILED_RACE|1286-4|Cayuga
-DETAILED_RACE|1287-2|Mohawk
-DETAILED_RACE|1288-0|Oneida
-DETAILED_RACE|1289-8|Onondaga
-DETAILED_RACE|1290-6|Seneca
-DETAILED_RACE|1291-4|Seneca Nation
-DETAILED_RACE|1292-2|Seneca-Cayuga
-DETAILED_RACE|1293-0|Tonawanda Seneca
-DETAILED_RACE|1294-8|Tuscarora
-DETAILED_RACE|1295-5|Wyandotte
-DETAILED_RACE|1297-1|Juaneno
-DETAILED_RACE|1299-7|Kalispel
-DETAILED_RACE|1301-1|Karuk
-DETAILED_RACE|1303-7|Kaw
-DETAILED_RACE|1305-2|Kickapoo
-DETAILED_RACE|1306-0|Oklahoma Kickapoo
-DETAILED_RACE|1307-8|Texas Kickapoo
-DETAILED_RACE|1309-4|Kiowa
-DETAILED_RACE|1310-2|Oklahoma Kiowa
-DETAILED_RACE|1312-8|Klallam
-DETAILED_RACE|1313-6|Jamestown
-DETAILED_RACE|1314-4|Lower Elwha
-DETAILED_RACE|1315-1|Port Gamble Klallam
-DETAILED_RACE|1317-7|Klamath
-DETAILED_RACE|1319-3|Konkow
-DETAILED_RACE|1321-9|Kootenai
-DETAILED_RACE|1323-5|Lassik
-DETAILED_RACE|1325-0|Long Island
-DETAILED_RACE|1326-8|Matinecock
-DETAILED_RACE|1327-6|Montauk
-DETAILED_RACE|1328-4|Poospatuck
-DETAILED_RACE|1329-2|Setauket
-DETAILED_RACE|1331-8|Luiseno
-DETAILED_RACE|1332-6|La Jolla
-DETAILED_RACE|1333-4|Pala
-DETAILED_RACE|1334-2|Pauma
-DETAILED_RACE|1335-9|Pechanga
-DETAILED_RACE|1336-7|Soboba
-DETAILED_RACE|1337-5|Twenty-Nine Palms
-DETAILED_RACE|1338-3|Temecula
-DETAILED_RACE|1340-9|Lumbee
-DETAILED_RACE|1342-5|Lummi
-DETAILED_RACE|1344-1|Maidu
-DETAILED_RACE|1345-8|Mountain Maidu
-DETAILED_RACE|1346-6|Nishinam
-DETAILED_RACE|1348-2|Makah
-DETAILED_RACE|1350-8|Maliseet
-DETAILED_RACE|1352-4|Mandan
-DETAILED_RACE|1354-0|Mattaponi
-DETAILED_RACE|1356-5|Menominee
-DETAILED_RACE|1358-1|Miami
-DETAILED_RACE|1359-9|Illinois Miami
-DETAILED_RACE|1360-7|Indiana Miami
-DETAILED_RACE|1361-5|Oklahoma Miami
-DETAILED_RACE|1363-1|Miccosukee
-DETAILED_RACE|1365-6|Micmac
-DETAILED_RACE|1366-4|Aroostook
-DETAILED_RACE|1368-0|Mission Indians
-DETAILED_RACE|1370-6|Miwok
-DETAILED_RACE|1372-2|Modoc
-DETAILED_RACE|1374-8|Mohegan
-DETAILED_RACE|1376-3|Mono
-DETAILED_RACE|1378-9|Nanticoke
-DETAILED_RACE|1380-5|Narragansett
-DETAILED_RACE|1382-1|Navajo
-DETAILED_RACE|1383-9|Alamo Navajo
-DETAILED_RACE|1384-7|Canoncito Navajo
-DETAILED_RACE|1385-4|Ramah Navajo
-DETAILED_RACE|1387-0|Nez Perce
-DETAILED_RACE|1389-6|Nomalaki
-DETAILED_RACE|1391-2|Northwest Tribes
-DETAILED_RACE|1392-0|Alsea
-DETAILED_RACE|1393-8|Celilo
-DETAILED_RACE|1394-6|Columbia
-DETAILED_RACE|1395-3|Kalapuya
-DETAILED_RACE|1396-1|Molala
-DETAILED_RACE|1397-9|Talakamish
-DETAILED_RACE|1398-7|Tenino
-DETAILED_RACE|1399-5|Tillamook
-DETAILED_RACE|1400-1|Wenatchee
-DETAILED_RACE|1401-9|Yahooskin
-DETAILED_RACE|1403-5|Omaha
-DETAILED_RACE|1405-0|Oregon Athabaskan
-DETAILED_RACE|1407-6|Osage
-DETAILED_RACE|1409-2|Otoe-Missouria
-DETAILED_RACE|1411-8|Ottawa
-DETAILED_RACE|1412-6|Burt Lake Ottawa
-DETAILED_RACE|1413-4|Michigan Ottawa
-DETAILED_RACE|1414-2|Oklahoma Ottawa
-DETAILED_RACE|1416-7|Paiute
-DETAILED_RACE|1417-5|Bishop
-DETAILED_RACE|1418-3|Bridgeport
-DETAILED_RACE|1419-1|Burns Paiute
-DETAILED_RACE|1420-9|Cedarville
-DETAILED_RACE|1421-7|Fort Bidwell
-DETAILED_RACE|1422-5|Fort Independence
-DETAILED_RACE|1423-3|Kaibab
-DETAILED_RACE|1424-1|Las Vegas
-DETAILED_RACE|1425-8|Lone Pine
-DETAILED_RACE|1426-6|Lovelock
-DETAILED_RACE|1427-4|Malheur Paiute
-DETAILED_RACE|1428-2|Moapa
-DETAILED_RACE|1429-0|Northern Paiute
-DETAILED_RACE|1430-8|Owens Valley
-DETAILED_RACE|1431-6|Pyramid Lake
-DETAILED_RACE|1432-4|San Juan Southern Paiute
-DETAILED_RACE|1433-2|Southern Paiute
-DETAILED_RACE|1434-0|Summit Lake
-DETAILED_RACE|1435-7|Utu Utu Gwaitu Paiute
-DETAILED_RACE|1436-5|Walker River
-DETAILED_RACE|1437-3|Yerington Paiute
-DETAILED_RACE|1439-9|Pamunkey
-DETAILED_RACE|1441-5|Passamaquoddy
-DETAILED_RACE|1442-3|Indian Township
-DETAILED_RACE|1443-1|Pleasant Point Passamaquoddy
-DETAILED_RACE|1445-6|Pawnee
-DETAILED_RACE|1446-4|Oklahoma Pawnee
-DETAILED_RACE|1448-0|Penobscot
-DETAILED_RACE|1450-6|Peoria
-DETAILED_RACE|1451-4|Oklahoma Peoria
-DETAILED_RACE|1453-0|Pequot
-DETAILED_RACE|1454-8|Marshantucket Pequot
-DETAILED_RACE|1456-3|Pima
-DETAILED_RACE|1457-1|Gila River Pima-Maricopa
-DETAILED_RACE|1458-9|Salt River Pima-Maricopa
-DETAILED_RACE|1460-5|Piscataway
-DETAILED_RACE|1462-1|Pit River
-DETAILED_RACE|1464-7|Pomo
-DETAILED_RACE|1465-4|Central Pomo
-DETAILED_RACE|1466-2|Dry Creek
+DETAILED_RACE|3145-0|Eastern Pequot
 DETAILED_RACE|1467-0|Eastern Pomo
-DETAILED_RACE|1468-8|Kashia
-DETAILED_RACE|1469-6|Northern Pomo
-DETAILED_RACE|1470-4|Scotts Valley
-DETAILED_RACE|1471-2|Stonyford
-DETAILED_RACE|1472-0|Sulphur Bank
-DETAILED_RACE|1474-6|Ponca
-DETAILED_RACE|1475-3|Nebraska Ponca
-DETAILED_RACE|1476-1|Oklahoma Ponca
-DETAILED_RACE|1478-7|Potawatomi
-DETAILED_RACE|1479-5|Citizen Band Potawatomi
-DETAILED_RACE|1480-3|Forest County
-DETAILED_RACE|1481-1|Hannahville
-DETAILED_RACE|1482-9|Huron Potawatomi
-DETAILED_RACE|1483-7|Pokagon Potawatomi
-DETAILED_RACE|1484-5|Prairie Band
-DETAILED_RACE|1485-2|Wisconsin Potawatomi
-DETAILED_RACE|1487-8|Powhatan
-DETAILED_RACE|1489-4|Pueblo
-DETAILED_RACE|1490-2|Acoma
-DETAILED_RACE|1491-0|Arizona Tewa
-DETAILED_RACE|1492-8|Cochiti
-DETAILED_RACE|1493-6|Hopi
-DETAILED_RACE|1494-4|Isleta
-DETAILED_RACE|1495-1|Jemez
-DETAILED_RACE|1496-9|Keres
-DETAILED_RACE|1497-7|Laguna
-DETAILED_RACE|1498-5|Nambe
-DETAILED_RACE|1499-3|Picuris
-DETAILED_RACE|1500-8|Piro
-DETAILED_RACE|1501-6|Pojoaque
-DETAILED_RACE|1502-4|San Felipe
-DETAILED_RACE|1503-2|San Ildefonso
-DETAILED_RACE|1504-0|San Juan Pueblo
-DETAILED_RACE|1505-7|San Juan De
-DETAILED_RACE|1506-5|San Juan
-DETAILED_RACE|1507-3|Sandia
-DETAILED_RACE|1508-1|Santa Ana
-DETAILED_RACE|1509-9|Santa Clara
-DETAILED_RACE|1510-7|Santo Domingo
-DETAILED_RACE|1511-5|Taos
-DETAILED_RACE|1512-3|Tesuque
-DETAILED_RACE|1513-1|Tewa
-DETAILED_RACE|1514-9|Tigua
-DETAILED_RACE|1515-6|Zia
-DETAILED_RACE|1516-4|Zuni
-DETAILED_RACE|1518-0|Puget Sound Salish
-DETAILED_RACE|1519-8|Duwamish
+DETAILED_RACE|1580-0|Eastern Shawnee Tribe of Oklahoma
+DETAILED_RACE|1599-0|Eastern Shoshone Tribe of the Wind River Reservation, Wyoming
+DETAILED_RACE|1093-4|Echota Cherokee Tribe of Alabama
+DETAILED_RACE|1239-3|Edisto Natchez-Kusso Tribe of South Carolina (Natchez Indian Tribe)
+DETAILED_RACE|1472-0|Elem Indian Colony of Pomo Indians of the Sulphur Bank Rancheria, California
+DETAILED_RACE|3152-6|Elk Valley Rancheria, California
+DETAILED_RACE|3153-4|Elnu Abenaki Tribe
+DETAILED_RACE|1590-9|Ely Shoshone Tribe of Nevada
+DETAILED_RACE|3155-9|Enterprise Rancheria of Maidu Indians of California
+DETAILED_RACE|1250-0|Esselen
+DETAILED_RACE|1225-2|Ewiiaapaayp Band of Kumeyaay Indians, California
+DETAILED_RACE|1056-1|Federated Indians of Graton Rancheria, California
+DETAILED_RACE|3159-1|Fernandeno Tataviam Band of Mission Indians
+DETAILED_RACE|1615-4|Flandreau Santee Sioux Tribe of South Dakota
+DETAILED_RACE|1128-8|Minnesota Chippewa Tribe - Fond du Lac Band
+DETAILED_RACE|3162-5|Forest County Potawatomi Community, Wisconsin
+DETAILED_RACE|1252-6|Fort Belknap Indian Community of the Fort Belknap Reservation of Montana
+DETAILED_RACE|1421-7|Fort Bidwell Indian Community of the Fort Bidwell Reservation of California
+DETAILED_RACE|1422-5|Fort Independence Indian Community of Paiute Indians of the Fort Independence Reservation, California
+DETAILED_RACE|1605-5|Fort McDermitt Paiute and Shoshone Tribes of the Fort McDermitt Indian Reservation, Nevada and Oregon
+DETAILED_RACE|1256-7|Fort McDowell Yavapai Nation, Arizona
+DETAILED_RACE|1729-3|Fort Mojave Indian Tribe of Arizona, California & Nevada
+DETAILED_RACE|3169-0|Fort Sill Apache Tribe of Oklahoma
+DETAILED_RACE|3170-8|Four Winds Cherokee
+DETAILED_RACE|1260-9|Gabrieleno
+DETAILED_RACE|1236-9|Georgetown
+DETAILED_RACE|3173-2|Georgia Eastern Cherokee
+DETAILED_RACE|3174-0|Gila River Indian Community of the Gila River Indian Reservation, Arizona
+DETAILED_RACE|1242-7|Golden Hill Paugussett
+DETAILED_RACE|1129-6|Minnesota Chippewa Tribe - Grand Portage Band
+DETAILED_RACE|3177-3|Grand River Band of Ottawa Indians
+DETAILED_RACE|1130-4|Grand Traverse Band of Ottawa and Chippewa Indians, Michigan
+DETAILED_RACE|3179-9|Greenville Rancheria
+DETAILED_RACE|3180-7|Grindstone Indian Rancheria of Wintun-Wailaki Indians of California
+DETAILED_RACE|1264-1|Gros Ventres
+DETAILED_RACE|3182-3|Guidiville Rancheria of California
+DETAILED_RACE|3183-1|Guilford Native American Association
+DETAILED_RACE|3184-9|Habematolel Pomo of Upper Lake, California
+DETAILED_RACE|1267-4|Haliwa-Saponi Indian Tribe
+DETAILED_RACE|1481-1|Hannahville Indian Community, Michigan
+DETAILED_RACE|3187-2|Hassanamisco Band of the Nipmuc Nation
+DETAILED_RACE|1726-9|Havasupai Tribe of the Havasupai Reservation, Arizona
+DETAILED_RACE|3189-8|Herring Pond Wampanoag Tribe
+DETAILED_RACE|1269-0|Hidatsa
+DETAILED_RACE|1697-2|Ho-Chunk Nation of Wisconsin
+DETAILED_RACE|1083-5|Hoh Indian Tribe
+DETAILED_RACE|1275-7|Hoopa Extension
+DETAILED_RACE|1271-6|Hoopa Valley Tribe, California
+DETAILED_RACE|3195-5|Hopi Tribe of Arizona
+DETAILED_RACE|3196-3|Hopland Band of Pomo Indians, California
+DETAILED_RACE|3197-1|Houlton Band of Maliseet Indians
+DETAILED_RACE|1727-7|Hualapai Indian Tribe of the Hualapai Indian Reservation, Arizona
+DETAILED_RACE|1230-2|Iipay Nation of Santa Ysabel, California
+DETAILED_RACE|1359-9|Illinois Miami
+DETAILED_RACE|1279-9|Inaja Band of Diegueno Mission Indians of the Inaja and Cosmit Reservation, California
+DETAILED_RACE|1442-3|Indian Township
+DETAILED_RACE|1360-7|Indiana Miami
+DETAILED_RACE|3204-5|Ione Band of Miwok Indians of California
+DETAILED_RACE|1281-5|Iowa (Tribe)
+DETAILED_RACE|1282-3|Iowa Tribe of Kansas and Nebraska
+DETAILED_RACE|1283-1|Iowa Tribe of Oklahoma
+DETAILED_RACE|1285-6|Iroquois
+DETAILED_RACE|3209-4|Jackson Band of Miwuk Indians
+DETAILED_RACE|1313-6|Jamestown S'Klallam Tribe
+DETAILED_RACE|3211-0|Jamul Indian Village of California
+DETAILED_RACE|1157-7|Jena Band of Choctaw Indians
+DETAILED_RACE|1013-2|Jicarilla Apache Nation, New Mexico
+DETAILED_RACE|1297-1|Juaneno (Acjachemem)
+DETAILED_RACE|1423-3|Kaibab Band of Paiute Indians of the Kaibab Indian Reservation, Arizona
+DETAILED_RACE|1395-3|Kalapuya
+DETAILED_RACE|1299-7|Kalispel Indian Community of the Kalispel Reservation
+DETAILED_RACE|1301-1|Karuk Tribe
+DETAILED_RACE|1468-8|Kashia Band of Pomo Indians of the Stewarts Point Rancheria, California
+DETAILED_RACE|1117-1|Kathlamet
+DETAILED_RACE|1303-7|Kaw Nation, Oklahoma
+DETAILED_RACE|3222-7|Kern Valley Indian Community
+DETAILED_RACE|1510-7|Kewa Pueblo, New Mexico
+DETAILED_RACE|3224-3|Keweenaw Bay Indian Community, Michigan
+DETAILED_RACE|1198-1|Kialegee Tribal Town
+DETAILED_RACE|1305-2|Kickapoo
+DETAILED_RACE|1307-8|Kickapoo Traditional Tribe of Texas
+DETAILED_RACE|3228-4|Kickapoo Tribe of Indians of the Kickapoo Reservation in Kansas
+DETAILED_RACE|1306-0|Kickapoo Tribe of Oklahoma
 DETAILED_RACE|1520-6|Kikiallus
+DETAILED_RACE|1309-4|Kiowa
+DETAILED_RACE|1310-2|Kiowa Indian Tribe of Oklahoma
+DETAILED_RACE|1312-8|Klallam
+DETAILED_RACE|3234-2|Klamath Tribes
+DETAILED_RACE|3235-9|Kletsel Dehe Wintun Nation of the Cortina Rancheria
+DETAILED_RACE|3236-7|Koasek (Cowasuck) Traditional Band of the Sovereign Abenaki Nation
+DETAILED_RACE|3237-5|Koi Nation of Northern California
+DETAILED_RACE|1319-3|Konkow
+DETAILED_RACE|1321-9|Kootenai Tribe of Idaho
+DETAILED_RACE|1222-9|Kumeyaay (Diegueno)
+DETAILED_RACE|1332-6|La Jolla Band of Luiseno Indians, California
+DETAILED_RACE|1226-0|La Posta Band of Diegueno Mission Indians of the La Posta Indian Reservation, California
+DETAILED_RACE|1132-0|Lac Courte Oreilles Band of Lake Superior Chippewa Indians of Wisconsin
+DETAILED_RACE|1133-8|Lac du Flambeau Band of Lake Superior Chippewa Indians of the Lac du Flambeau Reservation of Wisconsin
+DETAILED_RACE|1134-6|Lac Vieux Desert Band of Lake Superior Chippewa Indians of Michigan
+DETAILED_RACE|1135-3|Lake Superior Chippewa
+DETAILED_RACE|1424-1|Las Vegas Tribe of Paiute Indians of the Las Vegas Indian Colony, Nevada
+DETAILED_RACE|1323-5|Lassik
+DETAILED_RACE|1136-1|Minnesota Chippewa Tribe - Leech Lake Band
+DETAILED_RACE|3250-8|Lemhi-Shoshone
+DETAILED_RACE|1014-0|Lipan Apache
+DETAILED_RACE|3252-4|Little River Band of Ottawa Indians, Michigan
+DETAILED_RACE|1137-9|Little Shell Tribe of Chippewa Indians of Montana
+DETAILED_RACE|3254-0|Little Traverse Bay Bands of Odawa Indians, Michigan
+DETAILED_RACE|1425-8|Lone Pine Paiute-Shoshone Tribe
+DETAILED_RACE|1048-8|Los Coyotes Band of Cahuilla and Cupeno Indians, California
+DETAILED_RACE|3257-3|Louisiana Choctaw Tribe
+DETAILED_RACE|1426-6|Lovelock Paiute Tribe of the Lovelock Indian Colony, Nevada
+DETAILED_RACE|1618-8|Lower Brule Sioux Tribe of the Lower Brule Reservation, South Dakota
+DETAILED_RACE|1314-4|Lower Elwha Tribal Community
+DETAILED_RACE|1199-9|Lower Muskogee Creek Tribe
+DETAILED_RACE|1619-6|Lower Sioux Indian Community in the State of Minnesota
 DETAILED_RACE|1521-4|Lower Skagit
-DETAILED_RACE|1522-2|Muckleshoot
-DETAILED_RACE|1523-0|Nisqually
-DETAILED_RACE|1524-8|Nooksack
-DETAILED_RACE|1525-5|Port Madison
-DETAILED_RACE|1526-3|Puyallup
-DETAILED_RACE|1527-1|Samish
-DETAILED_RACE|1528-9|Sauk-Suiattle
-DETAILED_RACE|1529-7|Skokomish
-DETAILED_RACE|1530-5|Skykomish
-DETAILED_RACE|1531-3|Snohomish
-DETAILED_RACE|1532-1|Snoqualmie
-DETAILED_RACE|1533-9|Squaxin Island
-DETAILED_RACE|1534-7|Steilacoom
-DETAILED_RACE|1535-4|Stillaguamish
-DETAILED_RACE|1536-2|Suquamish
-DETAILED_RACE|1537-0|Swinomish
-DETAILED_RACE|1538-8|Tulalip
-DETAILED_RACE|1539-6|Upper Skagit
-DETAILED_RACE|1541-2|Quapaw
-DETAILED_RACE|1543-8|Quinault
-DETAILED_RACE|1545-3|Rappahannock
-DETAILED_RACE|1547-9|Reno-Sparks
-DETAILED_RACE|1549-5|Round Valley
+DETAILED_RACE|1331-8|Luiseno
+DETAILED_RACE|1340-9|Lumbee Tribe of North Carolina
+DETAILED_RACE|1342-5|Lummi Tribe of the Lummi Reservation
+DETAILED_RACE|3267-2|Lytton Rancheria of California
+DETAILED_RACE|1200-5|Ma-Chis Lower Creek Indian Tribe of Alabama
+DETAILED_RACE|1344-1|Maidu
+DETAILED_RACE|1348-2|Makah Indian Tribe of the Makah Indian Reservation
+DETAILED_RACE|1427-4|Malheur Paiute
+DETAILED_RACE|1350-8|Maliseet
+DETAILED_RACE|3273-0|Manchester Band of Pomo Indians of the Manchester Rancheria, California
+DETAILED_RACE|1352-4|Mandan
+DETAILED_RACE|1227-8|Manzanita Band of Diegueno Mission Indians of the Manzanita Reservation, California
+DETAILED_RACE|1728-5|Maricopa
+DETAILED_RACE|3277-1|Marietta Band of Nooksack
+DETAILED_RACE|1454-8|Mashantucket Pequot Indian Tribe
+DETAILED_RACE|1681-6|Mashpee Wampanoag Tribe
+DETAILED_RACE|3280-5|Match-e-be-nash-she-wish Band of Pottawatomi Indians of Michigan
+DETAILED_RACE|1326-8|Matinecock
+DETAILED_RACE|1354-0|Mattaponi Indian Tribe
+DETAILED_RACE|1620-4|Mdewakanton Sioux
+DETAILED_RACE|3284-7|Mechoopda Indian Tribe of Chico Rancheria, California
+DETAILED_RACE|3285-4|Meherrin Indian Tribe
+DETAILED_RACE|1356-5|Menominee Indian Tribe of Wisconsin
+DETAILED_RACE|1228-6|Mesa Grande Band of Diegueno Mission Indians of the Mesa Grande Reservation, California
+DETAILED_RACE|1015-7|Mescalero Apache Tribe of the Mescalero Reservation, New Mexico
+DETAILED_RACE|3289-6|Metrolina Native American Association
+DETAILED_RACE|1358-1|Miami (Tribe)
+DETAILED_RACE|1361-5|Miami Tribe of Oklahoma
+DETAILED_RACE|1363-1|Miccosukee Tribe of Indians
+DETAILED_RACE|1365-6|Micmac
+DETAILED_RACE|3294-6|Middletown Rancheria of Pomo Indians of California
+DETAILED_RACE|1138-7|Minnesota Chippewa Tribe - Mille Lacs Band
+DETAILED_RACE|1139-5|Minnesota Chippewa
+DETAILED_RACE|1368-0|Mission Indians
+DETAILED_RACE|1158-5|Mississippi Band of Choctaw Indians
+DETAILED_RACE|1370-6|Miwok/Me-Wuk
+DETAILED_RACE|1428-2|Moapa Band of Paiute Indians of the Moapa River Indian Reservation, Nevada
+DETAILED_RACE|1372-2|Modoc Nation
+DETAILED_RACE|1287-2|Mohawk
+DETAILED_RACE|1374-8|Mohegan Tribe of Indians of Connecticut
+DETAILED_RACE|1396-1|Molalla
+DETAILED_RACE|3305-0|Monacan Indian Nation
+DETAILED_RACE|1376-3|Mono
+DETAILED_RACE|1327-6|Montauk
+DETAILED_RACE|1237-7|Moor Indian
+DETAILED_RACE|3309-2|Mooretown Rancheria of Maidu Indians of California
+DETAILED_RACE|1049-6|Morongo Band of Mission Indians, California
+DETAILED_RACE|1345-8|Mountain Maidu
+DETAILED_RACE|1159-3|Mowa Band of Choctaw Indians
+DETAILED_RACE|1522-2|Muckleshoot Indian Tribe
+DETAILED_RACE|1217-9|Munsee
+DETAILED_RACE|1238-5|Nansemond Indian Nation
+DETAILED_RACE|1378-9|Nanticoke
+DETAILED_RACE|3317-5|Nanticoke Lenni-Lenape
+DETAILED_RACE|1380-5|Narragansett Indian Tribe
+DETAILED_RACE|3319-1|Natchitoches Tribe of Louisiana
+DETAILED_RACE|1240-1|Nausu Waiwash
+DETAILED_RACE|3321-7|Navajo Nation, Arizona, New Mexico & Utah
+DETAILED_RACE|1220-3|New Jersey Sand Hill Band of Indians, Inc
+DETAILED_RACE|1387-0|Nez Perce Tribe
+DETAILED_RACE|1241-9|Nipmuc
+DETAILED_RACE|1346-6|Nisenen
+DETAILED_RACE|1523-0|Nisqually Indian Tribe
+DETAILED_RACE|1389-6|Nomlaki
+DETAILED_RACE|1524-8|Nooksack Indian Tribe
+DETAILED_RACE|3329-0|Northfork Rancheria of Mono Indians of California
+DETAILED_RACE|1022-3|Northern Arapaho Tribe
+DETAILED_RACE|1095-9|Northern Cherokee Nation of Missouri and Arkansas
+DETAILED_RACE|1103-1|Northern Cheyenne Tribe of the Northern Cheyenne Indian Reservation, Montana
+DETAILED_RACE|1429-0|Northern Paiute
+DETAILED_RACE|1469-6|Northern Pomo
+DETAILED_RACE|1598-2|Northwestern Band of the Shoshone Nation
+DETAILED_RACE|1482-9|Nottawaseppi Huron Band of the Potawatomi, Michigan
+DETAILED_RACE|3337-3|Nottoway Indian Tribe of Virginia
+DETAILED_RACE|3338-1|Nulhegan Band of the Coosuk Abenaki Nation
+DETAILED_RACE|3339-9|Occaneechi Band of the Saponi Nation
+DETAILED_RACE|3340-7|Oglala Sioux Tribe
+DETAILED_RACE|3341-5|Ohkay Owingeh, New Mexico
+DETAILED_RACE|1403-5|Omaha Tribe of Nebraska
+DETAILED_RACE|1288-0|Oneida
+DETAILED_RACE|3344-9|Oneida Indian Nation
+DETAILED_RACE|3345-6|Oneida Nation
+DETAILED_RACE|1289-8|Onondaga Nation
+DETAILED_RACE|1405-0|Oregon Athabascan
+DETAILED_RACE|1409-2|Otoe-Missouria Tribe of Indians, Oklahoma
+DETAILED_RACE|1411-8|Ottawa
+DETAILED_RACE|1414-2|Ottawa Tribe of Oklahoma
+DETAILED_RACE|1416-7|Paiute
+DETAILED_RACE|1433-2|Paiute Indian Tribe of Utah (Cedar Band of Paiutes, Kanosh Band of Paiutes, Koosharem Band of Paiutes, Indian Peaks Band of Paiutes, and Shivwits Band of Paiutes)
+DETAILED_RACE|1604-8|Paiute-Shoshone Tribe of the Fallon Reservation and Colony, Nevada
+DETAILED_RACE|1333-4|Pala Band of Mission Indians
+DETAILED_RACE|1439-9|Pamunkey Indian Tribe
+DETAILED_RACE|3356-3|Pascua Yaqui Tribe of Arizona
+DETAILED_RACE|3357-1|Paskenta Band of Nomlaki Indians of California
+DETAILED_RACE|1441-5|Passamaquoddy Tribe
+DETAILED_RACE|3359-7|Patawomeck Indian Tribe of Virginia
+DETAILED_RACE|3360-5|Paucatuck Eastern Pequot
+DETAILED_RACE|1334-2|Pauma Band of Luiseno Mission Indians of the Pauma & Yuima Reservation, California
+DETAILED_RACE|1445-6|Pawnee
+DETAILED_RACE|1446-4|Pawnee Nation of Oklahoma
+DETAILED_RACE|1335-9|Pechanga Band of Indians
+DETAILED_RACE|3365-4|Pee Dee Indian Nation of Upper South Carolina
+DETAILED_RACE|3366-2|Pee Dee Indian Tribe of South Carolina
+DETAILED_RACE|1448-0|Penobscot Nation
+DETAILED_RACE|3368-8|Peoria Tribe of Indians of Oklahoma
+DETAILED_RACE|1453-0|Pequot
+DETAILED_RACE|1718-6|Picayune Rancheria of Chukchansi Indians of California
+DETAILED_RACE|3371-2|Piedmont American Indian Association-Lower Eastern Cherokee Nation SC (PAIA)
+DETAILED_RACE|1456-3|Pima
+DETAILED_RACE|3373-8|Pinoleville Pomo Nation, California
+DETAILED_RACE|1624-6|Pipestone Sioux
+DETAILED_RACE|3375-3|Piqua Shawnee Tribe
+DETAILED_RACE|1500-8|Piro Manso Tiwa Tribe
+DETAILED_RACE|1460-5|Piscataway
+DETAILED_RACE|3378-7|Piscataway Conoy Tribe
+DETAILED_RACE|3379-5|Piscataway Indian Nation
+DETAILED_RACE|1462-1|Pit River Tribe, California (includes XL Ranch, Big Bend, Likely, Lookout, Montgomery Creek, and Roaring Creek Rancherias)
+DETAILED_RACE|1443-1|Pleasant Point Passamaquoddy
+DETAILED_RACE|1201-3|Poarch Band of Creek Indians
+DETAILED_RACE|3383-7|Pocasset Wampanoag
+DETAILED_RACE|1243-5|Pocomoke Acohonock
+DETAILED_RACE|3385-2|Pointe Au-Chien Indian Tribe
+DETAILED_RACE|1483-7|Pokagon Band of Potawatomi Indians, Michigan and Indiana
+DETAILED_RACE|3387-8|Pokanoket (Royal House of Pokanoket)
+DETAILED_RACE|1464-7|Pomo
+DETAILED_RACE|1474-6|Ponca
+DETAILED_RACE|1476-1|Ponca Tribe of Indians of Oklahoma
+DETAILED_RACE|1475-3|Ponca Tribe of Nebraska
+DETAILED_RACE|3392-8|Ponkapoag
+DETAILED_RACE|1328-4|Poospatuck
+DETAILED_RACE|1315-1|Port Gamble S'Klallam Tribe
+DETAILED_RACE|1478-7|Potawatomi
+DETAILED_RACE|3396-9|Potter Valley Tribe, California
+DETAILED_RACE|1487-8|Powhatan
+DETAILED_RACE|1484-5|Prairie Band Potawatomi Nation
+DETAILED_RACE|1625-3|Prairie Island Indian Community in the State of Minnesota
+DETAILED_RACE|1202-1|Principal Creek Indian Nation
+DETAILED_RACE|1489-4|Pueblo
+DETAILED_RACE|1490-2|Pueblo of Acoma, New Mexico
+DETAILED_RACE|1492-8|Pueblo of Cochiti, New Mexico
+DETAILED_RACE|1494-4|Pueblo of Isleta, New Mexico
+DETAILED_RACE|1495-1|Pueblo of Jemez, New Mexico
+DETAILED_RACE|1497-7|Pueblo of Laguna, New Mexico
+DETAILED_RACE|1498-5|Pueblo of Nambe, New Mexico
+DETAILED_RACE|1499-3|Pueblo of Picuris, New Mexico
+DETAILED_RACE|1501-6|Pueblo of Pojoaque, New Mexico
+DETAILED_RACE|1502-4|Pueblo of San Felipe, New Mexico
+DETAILED_RACE|1503-2|Pueblo of San Ildefonso, New Mexico
+DETAILED_RACE|1507-3|Pueblo of Sandia, New Mexico
+DETAILED_RACE|1508-1|Pueblo of Santa Ana, New Mexico
+DETAILED_RACE|1509-9|Pueblo of Santa Clara, New Mexico
+DETAILED_RACE|1511-5|Pueblo of Taos, New Mexico
+DETAILED_RACE|1512-3|Pueblo of Tesuque, New Mexico
+DETAILED_RACE|1515-6|Pueblo of Zia, New Mexico
+DETAILED_RACE|1518-0|Puget Sound Salish
+DETAILED_RACE|1526-3|Puyallup Tribe of the Puyallup Reservation
+DETAILED_RACE|1431-6|Pyramid Lake Paiute Tribe of the Pyramid Lake Reservation, Nevada
+DETAILED_RACE|1541-2|Quapaw Nation
+DETAILED_RACE|3422-3|Quartz Valley Indian Community of the Quartz Valley Reservation of California
+DETAILED_RACE|3423-1|Quechan Tribe Of The Fort Yuma Indian Reservation, California & Arizona
+DETAILED_RACE|1084-3|Quileute Tribe of the Quileute Reservation
+DETAILED_RACE|1543-8|Quinault Indian Nation
+DETAILED_RACE|1219-5|Ramapough Lenape Nation (Ramapough Mountain)
+DETAILED_RACE|3427-2|Ramona Band of Cahuilla, California
+DETAILED_RACE|1545-3|Rappahannock Tribe, Inc.
+DETAILED_RACE|1141-1|Red Cliff Band of Lake Superior Chippewa Indians of Wisconsin
+DETAILED_RACE|1142-9|Red Lake Band of Chippewa Indians, Minnesota
+DETAILED_RACE|1061-1|Red Wood
+DETAILED_RACE|3432-2|Redding Rancheria, California
+DETAILED_RACE|3433-0|Redwood Valley or Little River Band of Pomo Indians of the Redwood Valley Rancheria California
+DETAILED_RACE|1547-9|Reno-Sparks Indian Colony, Nevada
+DETAILED_RACE|1733-5|Resighini Rancheria, California
+DETAILED_RACE|3436-3|Rincon Band of Luiseno Mission Indians of Rincon Reservation, California
+DETAILED_RACE|3437-1|Robinson Rancheria
+DETAILED_RACE|1627-9|Rosebud Sioux Tribe of the Rosebud Indian Reservation, South Dakota
+DETAILED_RACE|1549-5|Round Valley Indian Tribes, Round Valley Reservation, California
 DETAILED_RACE|1551-1|Sac and Fox
-DETAILED_RACE|1552-9|Iowa Sac and Fox
-DETAILED_RACE|1553-7|Missouri Sac and Fox
-DETAILED_RACE|1554-5|Oklahoma Sac and Fox
+DETAILED_RACE|1553-7|Sac & Fox Nation of Missouri in Kansas and Nebraska
+DETAILED_RACE|1554-5|Sac & Fox Nation, Oklahoma
+DETAILED_RACE|1552-9|Sac & Fox Tribe of the Mississippi in Iowa
+DETAILED_RACE|3444-7|Sac River Band of the Chickamauga-Cherokee
+DETAILED_RACE|1143-7|Saginaw Chippewa Indian Tribe of Michigan
+DETAILED_RACE|3446-2|Saint Regis Mohawk Tribe
 DETAILED_RACE|1556-0|Salinan
 DETAILED_RACE|1558-6|Salish
-DETAILED_RACE|1560-2|Salish and Kootenai
+DETAILED_RACE|1458-9|Salt River Pima-Maricopa Indian Community of the Salt River Reservation, Arizona
+DETAILED_RACE|1527-1|Samish Indian Nation
+DETAILED_RACE|1018-1|San Carlos Apache Tribe of the San Carlos Reservation, Arizona
+DETAILED_RACE|1506-5|San Juan
+DETAILED_RACE|1432-4|San Juan Southern Paiute Tribe of Arizona
+DETAILED_RACE|3454-6|San Luis Rey Mission Indian
+DETAILED_RACE|1574-3|Yuhaaviatam of San Manuel Nation
+DETAILED_RACE|1229-4|San Pasqual Band of Diegueno Mission Indians of California
+DETAILED_RACE|1050-4|Santa Rosa Band of Cahuilla Indians, California
+DETAILED_RACE|1062-9|Santa Rosa Indian Community of the Santa Rosa Rancheria, California
+DETAILED_RACE|1163-5|Santa Ynez Band of Chumash Mission Indians of the Santa Ynez Reservation, California
+DETAILED_RACE|3460-3|Santee Indian Nation of South Carolina
+DETAILED_RACE|3461-1|Santee Indian Organization
+DETAILED_RACE|1629-5|Santee Sioux Nation, Nebraska
+DETAILED_RACE|3463-7|Saponi
+DETAILED_RACE|3464-5|Sappony
+DETAILED_RACE|1528-9|Sauk-Suiattle Indian Tribe
+DETAILED_RACE|1145-2|Sault Ste. Marie Tribe of Chippewa Indians, Michigan
 DETAILED_RACE|1562-8|Schaghticoke
-DETAILED_RACE|1564-4|Scott Valley
+DETAILED_RACE|1470-4|Scotts Valley Band of Pomo Indians of California
+DETAILED_RACE|3469-4|Seaconke Wampanoag
 DETAILED_RACE|1566-9|Seminole
-DETAILED_RACE|1567-7|Big Cypress
-DETAILED_RACE|1568-5|Brighton
-DETAILED_RACE|1569-3|Florida Seminole
-DETAILED_RACE|1570-1|Hollywood Seminole
-DETAILED_RACE|1571-9|Oklahoma Seminole
+DETAILED_RACE|3471-0|Seminole Tribe of Florida
+DETAILED_RACE|3472-8|Seneca Nation of Indians
+DETAILED_RACE|1292-2|Seneca-Cayuga Nation
 DETAILED_RACE|1573-5|Serrano
-DETAILED_RACE|1574-3|San Manual
+DETAILED_RACE|1329-2|Setalcott Indians
+DETAILED_RACE|1626-1|Shakopee Mdewakanton Sioux Community of Minnesota
 DETAILED_RACE|1576-8|Shasta
 DETAILED_RACE|1578-4|Shawnee
-DETAILED_RACE|1579-2|Absentee Shawnee
-DETAILED_RACE|1580-0|Eastern Shawnee
-DETAILED_RACE|1582-6|Shinnecock
-DETAILED_RACE|1584-2|Shoalwater Bay
+DETAILED_RACE|3479-3|Shawnee Nation United Remnant Band
+DETAILED_RACE|1100-7|Shawnee Tribe
+DETAILED_RACE|3481-9|Sherwood Valley Rancheria of Pomo Indians of California
+DETAILED_RACE|3482-7|Shingle Springs Band of Miwok Indians, Shingle Springs Rancheria (Verona Tract), California
+DETAILED_RACE|1582-6|Shinnecock Indian Nation
+DETAILED_RACE|1584-2|Shoalwater Bay Indian Tribe of the Shoalwater Bay Indian Reservation
 DETAILED_RACE|1586-7|Shoshone
-DETAILED_RACE|1587-5|Battle Mountain
-DETAILED_RACE|1588-3|Duckwater
-DETAILED_RACE|1589-1|Elko
-DETAILED_RACE|1590-9|Ely
-DETAILED_RACE|1591-7|Goshute
-DETAILED_RACE|1592-5|Panamint
-DETAILED_RACE|1593-3|Ruby Valley
-DETAILED_RACE|1594-1|Skull Valley
-DETAILED_RACE|1595-8|South Fork Shoshone
-DETAILED_RACE|1596-6|Te-Moak Western Shoshone
-DETAILED_RACE|1597-4|Timbi-Sha Shoshone
-DETAILED_RACE|1598-2|Washakie
-DETAILED_RACE|1599-0|Wind River Shoshone
-DETAILED_RACE|1600-6|Yomba
 DETAILED_RACE|1602-2|Shoshone Paiute
-DETAILED_RACE|1603-0|Duck Valley
-DETAILED_RACE|1604-8|Fallon
-DETAILED_RACE|1605-5|Fort McDermitt
-DETAILED_RACE|1607-1|Siletz
+DETAILED_RACE|1258-3|Shoshone-Bannock Tribes of the Fort Hall Reservation
+DETAILED_RACE|1603-0|Shoshone-Paiute Tribes of the Duck Valley Reservation, Nevada
 DETAILED_RACE|1609-7|Sioux
-DETAILED_RACE|1610-5|Blackfoot Sioux
-DETAILED_RACE|1611-3|Brule Sioux
-DETAILED_RACE|1612-1|Cheyenne River Sioux
-DETAILED_RACE|1613-9|Crow Creek Sioux
-DETAILED_RACE|1614-7|Dakota Sioux
-DETAILED_RACE|1615-4|Flandreau Santee
-DETAILED_RACE|1616-2|Fort Peck
-DETAILED_RACE|1617-0|Lake Traverse Sioux
-DETAILED_RACE|1618-8|Lower Brule Sioux
-DETAILED_RACE|1619-6|Lower Sioux
-DETAILED_RACE|1620-4|Mdewakanton Sioux
-DETAILED_RACE|1621-2|Miniconjou
-DETAILED_RACE|1622-0|Oglala Sioux
-DETAILED_RACE|1623-8|Pine Ridge Sioux
-DETAILED_RACE|1624-6|Pipestone Sioux
-DETAILED_RACE|1625-3|Prairie Island Sioux
-DETAILED_RACE|1626-1|Prior Lake Sioux
-DETAILED_RACE|1627-9|Rosebud Sioux
-DETAILED_RACE|1628-7|Sans Arc Sioux
-DETAILED_RACE|1629-5|Santee Sioux
-DETAILED_RACE|1630-3|Sisseton-Wahpeton
-DETAILED_RACE|1631-1|Sisseton Sioux
-DETAILED_RACE|1632-9|Spirit Lake Sioux
-DETAILED_RACE|1633-7|Standing Rock Sioux
-DETAILED_RACE|1634-5|Teton Sioux
-DETAILED_RACE|1635-2|Two Kettle Sioux
-DETAILED_RACE|1636-0|Upper Sioux
-DETAILED_RACE|1637-8|Wahpekute Sioux
-DETAILED_RACE|1638-6|Wahpeton Sioux
-DETAILED_RACE|1639-4|Wazhaza Sioux
-DETAILED_RACE|1640-2|Yankton Sioux
-DETAILED_RACE|1641-0|Yanktonai Sioux
+DETAILED_RACE|3490-0|Sisseton-Wahpeton Oyate of the Lake Traverse Reservation, South Dakota
 DETAILED_RACE|1643-6|Siuslaw
-DETAILED_RACE|1645-1|Spokane
-DETAILED_RACE|1647-7|Stewart
-DETAILED_RACE|1649-3|Stockbridge
-DETAILED_RACE|1651-9|Susanville
-DETAILED_RACE|1653-5|Tohono O'Odham
-DETAILED_RACE|1654-3|Ak-Chin
-DETAILED_RACE|1655-0|Gila Bend
-DETAILED_RACE|1656-8|San Xavier
-DETAILED_RACE|1657-6|Sells
+DETAILED_RACE|1529-7|Skokomish Indian Tribe
+DETAILED_RACE|1594-1|Skull Valley Band of Goshute Indians of Utah
+DETAILED_RACE|1530-5|Skykomish
+DETAILED_RACE|1531-3|Snohomish
+DETAILED_RACE|1532-1|Snoqualmie Indian Tribe
+DETAILED_RACE|1336-7|Soboba Band of Luiseno Indians, California
+DETAILED_RACE|1146-0|Sokaogon Chippewa Community, Wisconsin
+DETAILED_RACE|3499-1|Southeastern Cherokee Council
+DETAILED_RACE|1244-3|Southeastern Indians
+DETAILED_RACE|1023-1|Southern Arapaho
+DETAILED_RACE|1104-9|Southern Cheyenne
+DETAILED_RACE|3503-0|Southern Ute Indian Tribe of the Southern Ute Reservation, Colorado
+DETAILED_RACE|1632-9|Spirit Lake Tribe, North Dakota
+DETAILED_RACE|1645-1|Spokane Tribe of the Spokane Reservation
+DETAILED_RACE|1533-9|Squaxin Island Tribe of the Squaxin Island Reservation
+DETAILED_RACE|1144-5|St. Croix Chippewa Indians of Wisconsin
+DETAILED_RACE|1633-7|Standing Rock Sioux Tribe of North & South Dakota
+DETAILED_RACE|1534-7|Steilacoom
+DETAILED_RACE|1535-4|Stillaguamish Tribe of Indians of Washington
+DETAILED_RACE|1649-3|Stockbridge Munsee Community, Wisconsin
+DETAILED_RACE|1471-2|Stonyford
+DETAILED_RACE|1434-0|Summit Lake Paiute Tribe of Nevada
+DETAILED_RACE|1651-9|Susanville Indian Rancheria, California
+DETAILED_RACE|1245-0|Susquehanock
+DETAILED_RACE|3516-2|Swan Creek Black River Confederate Tribe
+DETAILED_RACE|1537-0|Swinomish Indian Tribal Community
+DETAILED_RACE|1231-0|Sycuan Band of the Kumeyaay Nation
+DETAILED_RACE|3519-6|Table Mountain Rancheria
+DETAILED_RACE|1719-4|Tachi
+DETAILED_RACE|1063-7|Takelma
+DETAILED_RACE|1397-9|Talakamish
+DETAILED_RACE|3523-8|Tejon Indian Tribe
+DETAILED_RACE|1338-3|Temecula
+DETAILED_RACE|3525-3|Te-Moak Tribe of Western Shoshone Indians of Nevada (Four constituent bands: Battle Mountain Band; Elko Band; South Fork Band and Wells Band)
+DETAILED_RACE|1398-7|Tenino
+DETAILED_RACE|1634-5|Teton Sioux
+DETAILED_RACE|1112-2|The Chickasaw Nation
+DETAILED_RACE|1160-1|The Choctaw Nation of Oklahoma
+DETAILED_RACE|3530-3|The Modoc Tribe of Oklahoma
+DETAILED_RACE|1193-2|The Muscogee (Creek) Nation
+DETAILED_RACE|1407-6|The Osage Nation
+DETAILED_RACE|1571-9|The Seminole Nation of Oklahoma
+DETAILED_RACE|1203-9|The Southeastern Mvskoke Nation, Inc.
+DETAILED_RACE|3535-2|Suquamish Indian Tribe of the Port Madison Reservation
+DETAILED_RACE|3536-0|The Waccamaw Indian People
+DETAILED_RACE|1204-7|Thlopthlocco Tribal Town
+DETAILED_RACE|1254-2|Three Affiliated Tribes of the Fort Berthold Reservation, North Dakota
+DETAILED_RACE|1399-5|Tillamook
+DETAILED_RACE|3540-2|Timbisha Shoshone Tribe
+DETAILED_RACE|3541-0|Tohono O'odham Nation of Arizona
 DETAILED_RACE|1659-2|Tolowa
-DETAILED_RACE|1661-8|Tonkawa
+DETAILED_RACE|3543-6|Tolowa Dee-ni' Nation
+DETAILED_RACE|1293-0|Tonawanda Band of Seneca
+DETAILED_RACE|1661-8|Tonkawa Tribe of Indians of Oklahoma
+DETAILED_RACE|1017-3|Tonto Apache Tribe of Arizona
+DETAILED_RACE|1051-2|Torres Martinez Desert Cahuilla Indians, California
+DETAILED_RACE|1272-4|Trinity
+DETAILED_RACE|1205-4|Tuckabachee
+DETAILED_RACE|1538-8|Tulalip Tribes of Washington
+DETAILED_RACE|1720-2|Tule River Indian Tribe of the Tule River Reservation, California
+DETAILED_RACE|1246-8|Tunica-Biloxi Indian Tribe
+DETAILED_RACE|3553-5|Tuolumne Band of Me-Wuk Indians of the Tuolumne Rancheria of California
+DETAILED_RACE|1147-8|Turtle Mountain Band of Chippewa Indians of North Dakota
+DETAILED_RACE|1294-8|Tuscarora Nation
+DETAILED_RACE|1096-7|Tuscola
+DETAILED_RACE|1337-5|Twenty-Nine Palms Band of Mission Indians of California
 DETAILED_RACE|1663-4|Tygh
-DETAILED_RACE|1665-9|Umatilla
 DETAILED_RACE|1667-5|Umpqua
-DETAILED_RACE|1668-3|Cow Creek Umpqua
+DETAILED_RACE|3560-0|United Auburn Indian Community of the Auburn Rancheria of California
+DETAILED_RACE|3561-8|United Cherokee Ani-Yun-Wiya Nation
+DETAILED_RACE|1277-3|United Houma Nation
+DETAILED_RACE|1097-5|United Keetowah Band of Cherokee Indians in Oklahoma
+DETAILED_RACE|1118-9|Upper Chinook
+DETAILED_RACE|3565-9|Upper Mattaponi Tribe
+DETAILED_RACE|1636-0|Upper Sioux Community, Minnesota
+DETAILED_RACE|1539-6|Upper Skagit Indian Tribe
 DETAILED_RACE|1670-9|Ute
-DETAILED_RACE|1671-7|Allen Canyon
-DETAILED_RACE|1672-5|Uintah Ute
-DETAILED_RACE|1673-3|Ute Mountain Ute
+DETAILED_RACE|1672-5|Ute Indian Tribe of the Uintah & Ouray Reservation, Utah
+DETAILED_RACE|3570-9|Ute Mountain Ute Tribe
+DETAILED_RACE|1435-7|Utu Utu Gwaitu Paiute Tribe of the Benton Paiute Reservation, California
+DETAILED_RACE|3572-5|Viejas (Baron Long) Group of Capitan Grande Band
+DETAILED_RACE|1247-6|Waccamaw Siouan Indian Tribe
+DETAILED_RACE|1637-8|Wahpekute Sioux
 DETAILED_RACE|1675-8|Wailaki
-DETAILED_RACE|1677-4|Walla-Walla
+DETAILED_RACE|1119-7|Wakiakum Chinook
+DETAILED_RACE|1436-5|Walker River Paiute Tribe of the Walker River Reservation, Nevada
+DETAILED_RACE|1677-4|Walla Walla
 DETAILED_RACE|1679-0|Wampanoag
-DETAILED_RACE|1680-8|Gay Head Wampanoag
-DETAILED_RACE|1681-6|Mashpee Wampanoag
-DETAILED_RACE|1683-2|Warm Springs
-DETAILED_RACE|1685-7|Wascopum
-DETAILED_RACE|1687-3|Washoe
-DETAILED_RACE|1688-1|Alpine
-DETAILED_RACE|1689-9|Carson
-DETAILED_RACE|1690-7|Dresslerville
-DETAILED_RACE|1692-3|Wichita
+DETAILED_RACE|1680-8|Wampanoag Tribe of Gay Head (Aquinnah)
+DETAILED_RACE|1064-5|Wappo
+DETAILED_RACE|1685-7|Wasco
+DETAILED_RACE|3583-2|Washoe Tribe of Nevada & California (Carson Colony, Dresslerville Colony, Woodfords Community, Stewart Community, & Washoe Ranches)
+DETAILED_RACE|3584-0|Wassamasaw Tribe of Varnertown Indians
+DETAILED_RACE|1639-4|Wazhaza Sioux
+DETAILED_RACE|1400-1|Wenatchee
+DETAILED_RACE|1273-2|Whilkut
+DETAILED_RACE|1148-6|Minnesota Chippewa Tribe - White Earth Band
+DETAILED_RACE|1019-9|White Mountain Apache Tribe of the Fort Apache Reservation, Arizona
+DETAILED_RACE|3590-7|White River Band of the Chickamauga-Cherokee
+DETAILED_RACE|1692-3|Wichita and Affiliated Tribes (Wichita, Keechi, Waco & Tawakonie), Oklahoma
+DETAILED_RACE|1248-4|Wicomico
+DETAILED_RACE|1120-5|Willapa Chinook
+DETAILED_RACE|3594-9|Wilton Rancheria, California
 DETAILED_RACE|1694-9|Wind River
 DETAILED_RACE|1696-4|Winnebago
-DETAILED_RACE|1697-2|Ho-chunk
-DETAILED_RACE|1698-0|Nebraska Winnebago
-DETAILED_RACE|1700-4|Winnemucca
+DETAILED_RACE|1698-0|Winnebago Tribe of Nebraska
+DETAILED_RACE|1700-4|Winnemucca Indian Colony of Nevada
 DETAILED_RACE|1702-0|Wintun
-DETAILED_RACE|1704-6|Wiyot
-DETAILED_RACE|1705-3|Table Bluff
-DETAILED_RACE|1707-9|Yakama
+DETAILED_RACE|1121-3|Wishram
+DETAILED_RACE|3601-2|Wiyot Tribe, California
+DETAILED_RACE|1295-5|Wyandotte Nation
 DETAILED_RACE|1709-5|Yakama Cowlitz
+DETAILED_RACE|1065-2|Yana
+DETAILED_RACE|1640-2|Yankton Sioux Tribe of South Dakota
+DETAILED_RACE|1641-0|Yanktonai Sioux
 DETAILED_RACE|1711-1|Yaqui
-DETAILED_RACE|1712-9|Barrio Libre
-DETAILED_RACE|1713-7|Pascua Yaqui
-DETAILED_RACE|1715-2|Yavapai Apache
+DETAILED_RACE|1715-2|Yavapai-Apache Nation of the Camp Verde Indian Reservation, Arizona
+DETAILED_RACE|1731-9|Yavapai-Prescott Indian Tribe
+DETAILED_RACE|1437-3|Yerington Paiute Tribe of the Yerington Colony and Campbell Ranch, Nevada
+DETAILED_RACE|3611-1|Yocha Dehe Wintun Nation, California
 DETAILED_RACE|1717-8|Yokuts
-DETAILED_RACE|1718-6|Chukchansi
-DETAILED_RACE|1719-4|Tachi
-DETAILED_RACE|1720-2|Tule River
+DETAILED_RACE|1600-6|Yomba Shoshone Tribe of the Yomba Reservation, Nevada
+DETAILED_RACE|1514-9|Ysleta del Sur Pueblo
 DETAILED_RACE|1722-8|Yuchi
-DETAILED_RACE|1724-4|Yuman
-DETAILED_RACE|1725-1|Cocopah
-DETAILED_RACE|1726-9|Havasupai
-DETAILED_RACE|1727-7|Hualapai
-DETAILED_RACE|1728-5|Maricopa
-DETAILED_RACE|1729-3|Mohave
-DETAILED_RACE|1730-1|Quechan
-DETAILED_RACE|1731-9|Yavapai
-DETAILED_RACE|1732-7|Yurok
-DETAILED_RACE|1733-5|Coast Yurok
-DETAILED_RACE|1735-0|Alaska Native
+DETAILED_RACE|1066-0|Yuki
+DETAILED_RACE|1732-7|Yurok Tribe of the Yurok Reservation, California
+DETAILED_RACE|1516-4|Zuni Tribe of the Zuni Reservation, New Mexico
+DETAILED_RACE|1735-0|ALASKA NATIVE
 DETAILED_RACE|1737-6|Alaska Indian
 DETAILED_RACE|1739-2|Alaskan Athabascan
-DETAILED_RACE|1740-0|Ahtna
-DETAILED_RACE|1741-8|Alatna
-DETAILED_RACE|1742-6|Alexander
-DETAILED_RACE|1743-4|Allakaket
+DETAILED_RACE|1740-0|Ahtna, Inc. Corporation
 DETAILED_RACE|1744-2|Alanvik
-DETAILED_RACE|1745-9|Anvik
-DETAILED_RACE|1746-7|Arctic
-DETAILED_RACE|1747-5|Beaver
-DETAILED_RACE|1748-3|Birch Creek
-DETAILED_RACE|1749-1|Cantwell
-DETAILED_RACE|1750-9|Chalkyitsik
-DETAILED_RACE|1751-7|Chickaloon
-DETAILED_RACE|1752-5|Chistochina
-DETAILED_RACE|1753-3|Chitina
-DETAILED_RACE|1754-1|Circle
+DETAILED_RACE|1741-8|Alatna Village
+DETAILED_RACE|1742-6|Alexander
+DETAILED_RACE|1743-4|Allakaket Village
+DETAILED_RACE|1745-9|Anvik Village
+DETAILED_RACE|3628-5|Arctic Village
+DETAILED_RACE|1747-5|Beaver Village
+DETAILED_RACE|1748-3|Birch Creek Tribe
+DETAILED_RACE|1750-9|Chalkyitsik Village
+DETAILED_RACE|1752-5|Cheesh-Na Tribe
+DETAILED_RACE|1751-7|Chickaloon Native Village
+DETAILED_RACE|1754-1|Circle Native Community
 DETAILED_RACE|1755-8|Cook Inlet
-DETAILED_RACE|1756-6|Copper Center
 DETAILED_RACE|1757-4|Copper River
-DETAILED_RACE|1758-2|Dot Lake
 DETAILED_RACE|1759-0|Doyon
-DETAILED_RACE|1760-8|Eagle
-DETAILED_RACE|1761-6|Eklutna
-DETAILED_RACE|1762-4|Evansville
-DETAILED_RACE|1763-2|Fort Yukon
-DETAILED_RACE|1764-0|Gakona
-DETAILED_RACE|1765-7|Galena
-DETAILED_RACE|1766-5|Grayling
-DETAILED_RACE|1767-3|Gulkana
-DETAILED_RACE|1768-1|Healy Lake
-DETAILED_RACE|1769-9|Holy Cross
-DETAILED_RACE|1770-7|Hughes
-DETAILED_RACE|1771-5|Huslia
-DETAILED_RACE|1772-3|Iliamna
-DETAILED_RACE|1773-1|Kaltag
-DETAILED_RACE|1774-9|Kluti Kaah
-DETAILED_RACE|1775-6|Knik
-DETAILED_RACE|1776-4|Koyukuk
+DETAILED_RACE|1761-6|Eklutna Native Village
+DETAILED_RACE|1762-4|Evansville Village (aka Bettles Field)
+DETAILED_RACE|1765-7|Louden Tribe (previously listed as Galena Village (aka Louden Village))
+DETAILED_RACE|1767-3|Gulkana Village Council
+DETAILED_RACE|1768-1|Healy Lake Village
+DETAILED_RACE|1769-9|Holy Cross Tribe
+DETAILED_RACE|1770-7|Hughes Village
+DETAILED_RACE|1771-5|Huslia Village
+DETAILED_RACE|1775-6|Knik Tribe
+DETAILED_RACE|1776-4|Koyukuk Native Village
 DETAILED_RACE|1777-2|Lake Minchumina
-DETAILED_RACE|1778-0|Lime
-DETAILED_RACE|1779-8|Mcgrath
-DETAILED_RACE|1780-6|Manley Hot Springs
-DETAILED_RACE|1781-4|Mentasta Lake
-DETAILED_RACE|1782-2|Minto
-DETAILED_RACE|1783-0|Nenana
-DETAILED_RACE|1784-8|Nikolai
-DETAILED_RACE|1785-5|Ninilchik
-DETAILED_RACE|1786-3|Nondalton
-DETAILED_RACE|1787-1|Northway
-DETAILED_RACE|1788-9|Nulato
-DETAILED_RACE|1789-7|Pedro Bay
-DETAILED_RACE|1790-5|Rampart
-DETAILED_RACE|1791-3|Ruby
-DETAILED_RACE|1792-1|Salamatof
-DETAILED_RACE|1793-9|Seldovia
+DETAILED_RACE|1778-0|Lime Village
+DETAILED_RACE|1780-6|Manley Hot Springs Village
+DETAILED_RACE|1779-8|McGrath Native Village
+DETAILED_RACE|1781-4|Mentasta Traditional Council
+DETAILED_RACE|1749-1|Native Village of Cantwell
+DETAILED_RACE|1753-3|Native Village of Chitina
+DETAILED_RACE|1760-8|Native Village of Eagle
+DETAILED_RACE|1763-2|Native Village of Fort Yukon
+DETAILED_RACE|1764-0|Native Village of Gakona
+DETAILED_RACE|1774-9|Native Village of Kluti Kaah (aka Copper Center)
+DETAILED_RACE|1782-2|Native Village of Minto
+DETAILED_RACE|1791-3|Native Village of Ruby
+DETAILED_RACE|1796-2|Native Village of Stevens
+DETAILED_RACE|1799-6|Native Village of Tanacross
+DETAILED_RACE|1801-0|Native Village of Tanana
+DETAILED_RACE|1803-6|Native Village of Tazlina
+DETAILED_RACE|1805-1|Native Village of Tetlin
+DETAILED_RACE|1807-7|Native Village of Tyonek
+DETAILED_RACE|1783-0|Nenana Native Association
+DETAILED_RACE|1784-8|Nikolai Village
+DETAILED_RACE|1785-5|Ninilchik Village
+DETAILED_RACE|1786-3|Nondalton Village
+DETAILED_RACE|1787-1|Northway Village
+DETAILED_RACE|1788-9|Nulato Village
+DETAILED_RACE|1766-5|Organized Village of Grayling (aka Holikachuk)
+DETAILED_RACE|1789-7|Pedro Bay Village
+DETAILED_RACE|1790-5|Rampart Village
+DETAILED_RACE|1793-9|Seldovia Village Tribe
+DETAILED_RACE|1795-4|Shageluk Native Village
 DETAILED_RACE|1794-7|Slana
-DETAILED_RACE|1795-4|Shageluk
-DETAILED_RACE|1796-2|Stevens
-DETAILED_RACE|1797-0|Stony River
-DETAILED_RACE|1798-8|Takotna
-DETAILED_RACE|1799-6|Tanacross
-DETAILED_RACE|1800-2|Tanaina
-DETAILED_RACE|1801-0|Tanana
+DETAILED_RACE|1798-8|Takotna Village
 DETAILED_RACE|1802-8|Tanana Chiefs
-DETAILED_RACE|1803-6|Tazlina
-DETAILED_RACE|1804-4|Telida
-DETAILED_RACE|1805-1|Tetlin
+DETAILED_RACE|1804-4|Telida Village
 DETAILED_RACE|1806-9|Tok
-DETAILED_RACE|1807-7|Tyonek
-DETAILED_RACE|1808-5|Venetie
+DETAILED_RACE|1758-2|Village of Dot Lake
+DETAILED_RACE|1772-3|Village of Iliamna
+DETAILED_RACE|1773-1|Village of Kaltag
+DETAILED_RACE|1792-1|Salamatof Tribe
+DETAILED_RACE|1797-0|Village of Stony River
+DETAILED_RACE|1808-5|Village of Venetie (See Native Village of Venetie Tribal Government)
 DETAILED_RACE|1809-3|Wiseman
-DETAILED_RACE|1811-9|Southeast Alaska
-DETAILED_RACE|1813-5|Tlingit-Haida
-DETAILED_RACE|1814-3|Angoon
-DETAILED_RACE|1815-0|Central Council of Tlingit and Haida Tribes
-DETAILED_RACE|1816-8|Chilkat
-DETAILED_RACE|1817-6|Chilkoot
-DETAILED_RACE|1818-4|Craig
-DETAILED_RACE|1819-2|Douglas
-DETAILED_RACE|1820-0|Haida
-DETAILED_RACE|1821-8|Hoonah
-DETAILED_RACE|1822-6|Hydaburg
-DETAILED_RACE|1823-4|Kake
-DETAILED_RACE|1824-2|Kasaan
-DETAILED_RACE|1825-9|Kenaitze
-DETAILED_RACE|1826-7|Ketchikan
-DETAILED_RACE|1827-5|Klawock
-DETAILED_RACE|1828-3|Pelican
-DETAILED_RACE|1829-1|Petersburg
-DETAILED_RACE|1830-9|Saxman
-DETAILED_RACE|1831-7|Sitka
-DETAILED_RACE|1832-5|Tenakee Springs
-DETAILED_RACE|1833-3|Tlingit
-DETAILED_RACE|1834-1|Wrangell
-DETAILED_RACE|1835-8|Yakutat
-DETAILED_RACE|1837-4|Tsimshian
-DETAILED_RACE|1838-2|Metlakatla
-DETAILED_RACE|1840-8|Eskimo
-DETAILED_RACE|1842-4|Greenland Eskimo
-DETAILED_RACE|1844-0|Inupiat Eskimo
-DETAILED_RACE|1845-7|Ambler
-DETAILED_RACE|1846-5|Anaktuvuk
-DETAILED_RACE|1847-3|Anaktuvuk Pass
-DETAILED_RACE|1848-1|Arctic Slope Inupiat
-DETAILED_RACE|1849-9|Arctic Slope Corporation
-DETAILED_RACE|1850-7|Atqasuk
-DETAILED_RACE|1851-5|Barrow
-DETAILED_RACE|1852-3|Bering Straits Inupiat
-DETAILED_RACE|1853-1|Brevig Mission
-DETAILED_RACE|1854-9|Buckland
-DETAILED_RACE|1855-6|Chinik
-DETAILED_RACE|1856-4|Council
-DETAILED_RACE|1857-2|Deering
-DETAILED_RACE|1858-0|Elim
-DETAILED_RACE|1859-8|Golovin
-DETAILED_RACE|1860-6|Inalik Diomede
-DETAILED_RACE|1861-4|Inupiaq
-DETAILED_RACE|1862-2|Kaktovik
-DETAILED_RACE|1863-0|Kawerak
-DETAILED_RACE|1864-8|Kiana
-DETAILED_RACE|1865-5|Kivalina
-DETAILED_RACE|1866-3|Kobuk
-DETAILED_RACE|1867-1|Kotzebue
-DETAILED_RACE|1868-9|Koyuk
-DETAILED_RACE|1869-7|Kwiguk
-DETAILED_RACE|1870-5|Mauneluk Inupiat
-DETAILED_RACE|1871-3|Nana Inupiat
-DETAILED_RACE|1872-1|Noatak
-DETAILED_RACE|1873-9|Nome
-DETAILED_RACE|1874-7|Noorvik
-DETAILED_RACE|1875-4|Nuiqsut
-DETAILED_RACE|1876-2|Point Hope
-DETAILED_RACE|1877-0|Point Lay
-DETAILED_RACE|1878-8|Selawik
-DETAILED_RACE|1879-6|Shaktoolik
-DETAILED_RACE|1880-4|Shishmaref
-DETAILED_RACE|1881-2|Shungnak
-DETAILED_RACE|1882-0|Solomon
-DETAILED_RACE|1883-8|Teller
-DETAILED_RACE|1884-6|Unalakleet
-DETAILED_RACE|1885-3|Wainwright
-DETAILED_RACE|1886-1|Wales
-DETAILED_RACE|1887-9|White Mountain
-DETAILED_RACE|1888-7|White Mountain Inupiat
-DETAILED_RACE|1889-5|Mary's Igloo
-DETAILED_RACE|1891-1|Siberian Eskimo
-DETAILED_RACE|1892-9|Gambell
-DETAILED_RACE|1893-7|Savoonga
-DETAILED_RACE|1894-5|Siberian Yupik
-DETAILED_RACE|1896-0|Yupik Eskimo
-DETAILED_RACE|1897-8|Akiachak
-DETAILED_RACE|1898-6|Akiak
-DETAILED_RACE|1899-4|Alakanuk
-DETAILED_RACE|1900-0|Aleknagik
-DETAILED_RACE|1901-8|Andreafsky
-DETAILED_RACE|1902-6|Aniak
-DETAILED_RACE|1903-4|Atmautluak
-DETAILED_RACE|1904-2|Bethel
-DETAILED_RACE|1905-9|Bill Moore's Slough
-DETAILED_RACE|1906-7|Bristol Bay Yupik
-DETAILED_RACE|1907-5|Calista Yupik
-DETAILED_RACE|1908-3|Chefornak
-DETAILED_RACE|1909-1|Chevak
-DETAILED_RACE|1910-9|Chuathbaluk
-DETAILED_RACE|1911-7|Clark's Point
-DETAILED_RACE|1912-5|Crooked Creek
-DETAILED_RACE|1913-3|Dillingham
-DETAILED_RACE|1914-1|Eek
-DETAILED_RACE|1915-8|Ekuk
-DETAILED_RACE|1916-6|Ekwok
-DETAILED_RACE|1917-4|Emmonak
-DETAILED_RACE|1918-2|Goodnews Bay
-DETAILED_RACE|1919-0|Hooper Bay
-DETAILED_RACE|1920-8|Iqurmuit (Russian Mission)
-DETAILED_RACE|1921-6|Kalskag
-DETAILED_RACE|1922-4|Kasigluk
-DETAILED_RACE|1923-2|Kipnuk
-DETAILED_RACE|1924-0|Koliganek
-DETAILED_RACE|1925-7|Kongiganak
-DETAILED_RACE|1926-5|Kotlik
-DETAILED_RACE|1927-3|Kwethluk
-DETAILED_RACE|1928-1|Kwigillingok
-DETAILED_RACE|1929-9|Levelock
-DETAILED_RACE|1930-7|Lower Kalskag
-DETAILED_RACE|1931-5|Manokotak
-DETAILED_RACE|1932-3|Marshall
-DETAILED_RACE|1933-1|Mekoryuk
-DETAILED_RACE|1934-9|Mountain Village
-DETAILED_RACE|1935-6|Naknek
-DETAILED_RACE|1936-4|Napaumute
-DETAILED_RACE|1937-2|Napakiak
-DETAILED_RACE|1938-0|Napaskiak
-DETAILED_RACE|1939-8|Newhalen
-DETAILED_RACE|1940-6|New Stuyahok
-DETAILED_RACE|1941-4|Newtok
-DETAILED_RACE|1942-2|Nightmute
-DETAILED_RACE|1943-0|Nunapitchukv
-DETAILED_RACE|1944-8|Oscarville
-DETAILED_RACE|1945-5|Pilot Station
-DETAILED_RACE|1946-3|Pitkas Point
-DETAILED_RACE|1947-1|Platinum
-DETAILED_RACE|1948-9|Portage Creek
-DETAILED_RACE|1949-7|Quinhagak
-DETAILED_RACE|1950-5|Red Devil
-DETAILED_RACE|1951-3|St. Michael
-DETAILED_RACE|1952-1|Scammon Bay
-DETAILED_RACE|1953-9|Sheldon's Point
-DETAILED_RACE|1954-7|Sleetmute
-DETAILED_RACE|1955-4|Stebbins
-DETAILED_RACE|1956-2|Togiak
-DETAILED_RACE|1957-0|Toksook
-DETAILED_RACE|1958-8|Tulukskak
-DETAILED_RACE|1959-6|Tuntutuliak
-DETAILED_RACE|1960-4|Tununak
-DETAILED_RACE|1961-2|Twin Hills
-DETAILED_RACE|1962-0|Georgetown (Yupik-Eskimo)
-DETAILED_RACE|1963-8|St. Mary's
-DETAILED_RACE|1964-6|Umkumiate
+DETAILED_RACE|1825-9|Kenaitze Indian Tribe
 DETAILED_RACE|1966-1|Aleut
-DETAILED_RACE|1968-7|Alutiiq Aleut
-DETAILED_RACE|1969-5|Tatitlek
-DETAILED_RACE|1970-3|Ugashik
-DETAILED_RACE|1972-9|Bristol Bay Aleut
-DETAILED_RACE|1973-7|Chignik
-DETAILED_RACE|1974-5|Chignik Lake
-DETAILED_RACE|1975-2|Egegik
-DETAILED_RACE|1976-0|Igiugig
-DETAILED_RACE|1977-8|Ivanof Bay
-DETAILED_RACE|1978-6|King Salmon
-DETAILED_RACE|1979-4|Kokhanok
-DETAILED_RACE|1980-2|Perryville
-DETAILED_RACE|1981-0|Pilot Point
-DETAILED_RACE|1982-8|Port Heiden
-DETAILED_RACE|1984-4|Chugach Aleut
-DETAILED_RACE|1985-1|Chenega
-DETAILED_RACE|1986-9|Chugach Corporation
-DETAILED_RACE|1987-7|English Bay
-DETAILED_RACE|1988-5|Port Graham
-DETAILED_RACE|1990-1|Eyak
-DETAILED_RACE|1992-7|Koniag Aleut
-DETAILED_RACE|1993-5|Akhiok
-DETAILED_RACE|1994-3|Agdaagux
-DETAILED_RACE|1995-0|Karluk
-DETAILED_RACE|1996-8|Kodiak
-DETAILED_RACE|1997-6|Larsen Bay
-DETAILED_RACE|1998-4|Old Harbor
-DETAILED_RACE|1999-2|Ouzinkie
-DETAILED_RACE|2000-8|Port Lions
-DETAILED_RACE|2002-4|Sugpiaq
-DETAILED_RACE|2004-0|Suqpigaq
-DETAILED_RACE|2006-5|Unangan Aleut
-DETAILED_RACE|2007-3|Akutan
+DETAILED_RACE|1994-3|Agdaagux Tribe of King Cove
 DETAILED_RACE|2008-1|Aleut Corporation
-DETAILED_RACE|2009-9|Aleutian
-DETAILED_RACE|2010-7|Aleutian Islander
-DETAILED_RACE|2011-5|Atka
-DETAILED_RACE|2012-3|Belkofski
-DETAILED_RACE|2013-1|Chignik Lagoon
+DETAILED_RACE|4187-1|Alutiiq
+DETAILED_RACE|1972-9|Bristol Bay Aleut
+DETAILED_RACE|1973-7|Chignik Bay Tribal Council
+DETAILED_RACE|1974-5|Chignik Lake Village
+DETAILED_RACE|1984-4|Chugach Aleut
+DETAILED_RACE|1986-9|Chugach Corporation
+DETAILED_RACE|1975-2|Egegik Village
+DETAILED_RACE|1840-8|Eskimo
+DETAILED_RACE|1976-0|Igiugig Village
+DETAILED_RACE|1977-8|Ivanof Bay Tribe
+DETAILED_RACE|3704-4|Kaguyak Village
 DETAILED_RACE|2014-9|King Cove
-DETAILED_RACE|2015-6|False Pass
-DETAILED_RACE|2016-4|Nelson Lagoon
-DETAILED_RACE|2017-2|Nikolski
-DETAILED_RACE|2018-0|Pauloff Harbor
-DETAILED_RACE|2019-8|Qagan Toyagungin
-DETAILED_RACE|2020-6|Qawalangin
-DETAILED_RACE|2021-4|St. George
-DETAILED_RACE|2022-2|St. Paul
-DETAILED_RACE|2023-0|Sand Point
-DETAILED_RACE|2024-8|South Naknek
-DETAILED_RACE|2025-5|Unalaska
-DETAILED_RACE|2026-3|Unga
+DETAILED_RACE|1978-6|King Salmon Tribe
+DETAILED_RACE|1996-8|Kodiak
+DETAILED_RACE|1979-4|Kokhanok Village
+DETAILED_RACE|1992-7|Koniag Aleut
+DETAILED_RACE|3710-1|Tangirnaq Native Village
+DETAILED_RACE|3711-9|Native Village of Afognak
+DETAILED_RACE|1993-5|Native Village of Akhiok
+DETAILED_RACE|2007-3|Native Village of Akutan
+DETAILED_RACE|2011-5|Native Village of Atka
+DETAILED_RACE|2012-3|Native Village of Belkofski
+DETAILED_RACE|1985-1|Native Village of Chenega (aka Chanega)
+DETAILED_RACE|2013-1|Native Village of Chignik Lagoon
+DETAILED_RACE|1990-1|Native Village of Eyak (Cordova)
+DETAILED_RACE|2015-6|Native Village of False Pass
+DETAILED_RACE|3720-0|Native Village of Kanatak
+DETAILED_RACE|1995-0|Native Village of Karluk
+DETAILED_RACE|1997-6|Native Village of Larsen Bay
+DETAILED_RACE|1987-7|Native Village of Nanwalek (aka English Bay)
+DETAILED_RACE|2016-4|Native Village of Nelson Lagoon
+DETAILED_RACE|2017-2|Native Village of Nikolski
+DETAILED_RACE|1999-2|Native Village of Ouzinkie
+DETAILED_RACE|1980-2|Native Village of Perryville
+DETAILED_RACE|1981-0|Native Village of Pilot Point
+DETAILED_RACE|1988-5|Native Village of Port Graham
+DETAILED_RACE|1982-8|Native Village of Port Heiden
+DETAILED_RACE|2000-8|Native Village of Port Lions
+DETAILED_RACE|1969-5|Native Village of Tatitlek
+DETAILED_RACE|2026-3|Native Village of Unga
+DETAILED_RACE|2018-0|Pauloff Harbor Village
+DETAILED_RACE|3735-8|Qagan Tayagungin Tribe of Sand Point
+DETAILED_RACE|2020-6|Qawalangin Tribe of Unalaska
+DETAILED_RACE|2021-4|Saint George Island (See Pribilof Islands Aleut Communities of St. Paul & St. George Islands)
+DETAILED_RACE|2022-2|Saint Paul Island (See Pribilof Islands Aleut Communities of St. Paul & St. George Islands)
+DETAILED_RACE|2024-8|South Naknek Village
+DETAILED_RACE|2002-4|Sugpiaq
+DETAILED_RACE|3741-6|Sun'aq Tribe of Kodiak
+DETAILED_RACE|1970-3|Ugashik Village
+DETAILED_RACE|3743-2|Unangan (Unalaska)
+DETAILED_RACE|1998-4|Alutiiq Tribe of Old Harbor
+DETAILED_RACE|3745-7|Inupiat (inupiaq)
+DETAILED_RACE|3746-5|American Eskimo
+DETAILED_RACE|1849-9|Arctic Slope Corporation
+DETAILED_RACE|1850-7|Atqasuk Village (Atkasook)
+DETAILED_RACE|1852-3|Bering Straits Inupiat
+DETAILED_RACE|1909-1|Chevak Native Village
+DETAILED_RACE|3751-5|Chinik Eskimo Community (Golovin)
+DETAILED_RACE|1842-4|Greenland Inuit
+DETAILED_RACE|3753-1|Inuit
+DETAILED_RACE|1848-1|Inupiat Community of the Arctic Slope
+DETAILED_RACE|1862-2|Kaktovik Village (aka Barter Island)
+DETAILED_RACE|1863-0|Kawerak
+DETAILED_RACE|3757-2|King Island Native Community
+DETAILED_RACE|1871-3|Nana Inupiat
+DETAILED_RACE|1845-7|Native Village of Ambler
+DETAILED_RACE|1851-5|Native Village of Barrow Inupiat Traditional Government
+DETAILED_RACE|1853-1|Native Village of Brevig Mission
+DETAILED_RACE|1854-9|Native Village of Buckland
+DETAILED_RACE|1856-4|Native Village of Council
+DETAILED_RACE|1857-2|Native Village of Deering
+DETAILED_RACE|1860-6|Native Village of Diomede (aka Inalik)
+DETAILED_RACE|1858-0|Native Village of Elim
+DETAILED_RACE|1864-8|Native Village of Kiana
+DETAILED_RACE|1865-5|Native Village of Kivalina
+DETAILED_RACE|1866-3|Native Village of Kobuk
+DETAILED_RACE|1867-1|Native Village of Kotzebue
+DETAILED_RACE|1868-9|Native Village of Koyuk
+DETAILED_RACE|1889-5|Native Village of Mary's Igloo
+DETAILED_RACE|1933-1|Native Village of Mekoryuk
+DETAILED_RACE|1872-1|Native Village of Noatak
+DETAILED_RACE|1875-4|Native Village of Nuiqsut (aka Nooiksut)
+DETAILED_RACE|1876-2|Native Village of Point Hope
+DETAILED_RACE|1877-0|Native Village of Point Lay
+DETAILED_RACE|1878-8|Native Village of Selawik
+DETAILED_RACE|1879-6|Native Village of Shaktoolik
+DETAILED_RACE|1880-4|Native Village of Shishmaref
+DETAILED_RACE|1881-2|Native Village of Shungnak
+DETAILED_RACE|1883-8|Native Village of Teller
+DETAILED_RACE|1884-6|Native Village of Unalakleet
+DETAILED_RACE|1886-1|Native Village of Wales
+DETAILED_RACE|3785-3|Native Village of White Mountain
+DETAILED_RACE|1873-9|Nome Eskimo Community
+DETAILED_RACE|1874-7|Noorvik Native Community
+DETAILED_RACE|3788-7|Village of Anaktuvuk Pass
+DETAILED_RACE|1882-0|Village of Solomon
+DETAILED_RACE|1885-3|Village of Wainwright
+DETAILED_RACE|1833-3|Tlingit
+DETAILED_RACE|3861-2|Central Council of the Tlingit & Haida Indian Tribes
+DETAILED_RACE|1816-8|Chilkat Indian Village (Klukwan)
+DETAILED_RACE|1817-6|Chilkoot Indian Association (Haines)
+DETAILED_RACE|1818-4|Craig Tribal Association
+DETAILED_RACE|1819-2|Douglas Indian Association
+DETAILED_RACE|1820-0|Haida
+DETAILED_RACE|1821-8|Hoonah Indian Association
+DETAILED_RACE|1822-6|Hydaburg Cooperative Association
+DETAILED_RACE|1826-7|Ketchikan Indian Community
+DETAILED_RACE|1827-5|Klawock Cooperative Association
+DETAILED_RACE|1823-4|Organized Village of Kake
+DETAILED_RACE|1824-2|Organized Village of Kasaan
+DETAILED_RACE|1830-9|Organized Village of Saxman
+DETAILED_RACE|1828-3|Pelican
+DETAILED_RACE|1829-1|Petersburg Indian Association
+DETAILED_RACE|1811-9|Sealaska Corporation
+DETAILED_RACE|1831-7|Sitka Tribe of Alaska
+DETAILED_RACE|3809-1|Skagway Village
+DETAILED_RACE|1832-5|Tenakee Springs
+DETAILED_RACE|1814-3|Angoon Community Association
+DETAILED_RACE|1834-1|Wrangell Cooperative Association
+DETAILED_RACE|1835-8|Yakutat Tlingit Tribe
+DETAILED_RACE|1837-4|Tsimshian
+DETAILED_RACE|1838-2|Metlakatla Indian Community, Annette Island Reserve
+DETAILED_RACE|1896-0|Yup’ik (Yup’ik Eskimo)
+DETAILED_RACE|1897-8|Akiachak Native Community
+DETAILED_RACE|1898-6|Akiak Native Community
+DETAILED_RACE|1963-8|Algaaciq Native Village (St. Mary's)
+DETAILED_RACE|1934-9|Asa'carsarmiut Tribe
+DETAILED_RACE|1906-7|Bristol Bay
+DETAILED_RACE|1907-5|Calista
+DETAILED_RACE|3823-2|Chuloonawick Native Village
+DETAILED_RACE|1913-3|Curyung Tribal Council
+DETAILED_RACE|1916-6|Native Village of Ekwok
+DETAILED_RACE|3826-5|Emmonak Village
+DETAILED_RACE|1920-8|Iqugmiut Traditional Council
+DETAILED_RACE|1929-9|Levelock Village
+DETAILED_RACE|1931-5|Manokotak Village
+DETAILED_RACE|1935-6|Naknek Native Village
+DETAILED_RACE|1900-0|Native Village of Aleknagik
+DETAILED_RACE|1910-9|Native Village of Atqasuk
+DETAILED_RACE|1914-1|Native Village of Eek
+DETAILED_RACE|1915-8|Native Village of Ekuk
+DETAILED_RACE|1892-9|Native Village of Gambell
+DETAILED_RACE|1962-0|Native Village of Georgetown
+DETAILED_RACE|1918-2|Native Village of Goodnews Bay
+DETAILED_RACE|3838-0|Native Village of Hamilton
+DETAILED_RACE|1919-0|Native Village of Hooper Bay
+DETAILED_RACE|1922-4|Kasigluk Traditional Elders Council
+DETAILED_RACE|1923-2|Native Village of Kipnuk
+DETAILED_RACE|1925-7|Native Village of Kongiganak
+DETAILED_RACE|1928-1|Native Village of Kwigillingok
+DETAILED_RACE|1949-7|Native Village of Kwinhagak (aka Quinhagak)
+DETAILED_RACE|1932-3|Native Village of Marshall (aka Fortuna Ledge)
+DETAILED_RACE|1936-4|Native Village of Napaimute
+DETAILED_RACE|1937-2|Native Village of Napakiak
+DETAILED_RACE|1938-0|Native Village of Napaskiak
+DETAILED_RACE|1942-2|Native Village of Nightmute
+DETAILED_RACE|1953-9|Native Village of Nunam Iqua
+DETAILED_RACE|1943-0|Native Village of Nunapitchuk
+DETAILED_RACE|1946-3|Pitka's Point Traditional Council
+DETAILED_RACE|1951-3|Native Village of Saint Michael
+DETAILED_RACE|1893-7|Native Village of Savoonga
+DETAILED_RACE|1952-1|Native Village of Scammon Bay
+DETAILED_RACE|1959-6|Native Village of Tuntutuliak
+DETAILED_RACE|1960-4|Native Village of Tununak
+DETAILED_RACE|1924-0|New Koliganek Village Council
+DETAILED_RACE|1940-6|New Stuyahok Village
+DETAILED_RACE|1939-8|Newhalen Village
+DETAILED_RACE|1941-4|Newtok Village
+DETAILED_RACE|1957-0|Nunakauyarmiut Tribe
+DETAILED_RACE|1927-3|Organized Village of Kwethluk
+DETAILED_RACE|1904-2|Orutsararmiut Traditional Native Council
+DETAILED_RACE|1944-8|Oscarville Traditional Village
+DETAILED_RACE|1945-5|Pilot Station Traditional Village
+DETAILED_RACE|1947-1|Platinum Traditional Village
+DETAILED_RACE|1948-9|Portage Creek Village (aka Ohgsenakale)
+DETAILED_RACE|1894-5|Siberian Yupik
+DETAILED_RACE|1955-4|Stebbins Community Association
+DETAILED_RACE|1956-2|Traditional Village of Togiak
+DETAILED_RACE|1958-8|Tuluksak Native Community
+DETAILED_RACE|1961-2|Twin Hills Village
+DETAILED_RACE|1964-6|Umkumiut Native Village
+DETAILED_RACE|1899-4|Village of Alakanuk
+DETAILED_RACE|1902-6|Village of Aniak
+DETAILED_RACE|1903-4|Village of Atmautluak
+DETAILED_RACE|1905-9|Village of Bill Moore's Slough
+DETAILED_RACE|1908-3|Village of Chefornak
+DETAILED_RACE|1911-7|Village of Clarks Point
+DETAILED_RACE|1912-5|Village of Crooked Creek
+DETAILED_RACE|1921-6|Village of Kalskag
+DETAILED_RACE|1926-5|Village of Kotlik
+DETAILED_RACE|1930-7|Village of Lower Kalskag
+DETAILED_RACE|3885-1|Village of Ohogamiut
+DETAILED_RACE|1950-5|Village of Red Devil
+DETAILED_RACE|1954-7|Village of Sleetmute
+DETAILED_RACE|1901-8|Yupiit of Andreafski
+DETAILED_RACE|3889-3|Native Village of Paimiut
+DETAILED_RACE|1069-4|CANADIAN INDIAN
+DETAILED_RACE|3891-9|Abenaki Canadian
+DETAILED_RACE|3892-7|Acadia Band
+DETAILED_RACE|3893-5|Ache Dene Koe
+DETAILED_RACE|3894-3|Ahousaht
+DETAILED_RACE|3895-0|Alderville First Nation
+DETAILED_RACE|3896-8|Alexandria Band
+DETAILED_RACE|3897-6|Algonquins of Barriere Lake
+DETAILED_RACE|3898-4|Batchewana First Nation
+DETAILED_RACE|3899-2|Beardys and Okemasis Band
+DETAILED_RACE|3900-8|Beausoleil
+DETAILED_RACE|3901-6|Beecher Bay
+DETAILED_RACE|3902-4|Bella Coola (Nuxalk Nation)
+DETAILED_RACE|3903-2|Beothuk
+DETAILED_RACE|3904-0|Big Cove
+DETAILED_RACE|3905-7|Big Grassy
+DETAILED_RACE|3906-5|Bigstone Cree Nation
+DETAILED_RACE|3907-3|Bonaparte Band
+DETAILED_RACE|3908-1|Boston Bar First Nation
+DETAILED_RACE|3909-9|Bridge River
+DETAILED_RACE|3910-7|Brokenhead Ojibway Nation
+DETAILED_RACE|3911-5|Buffalo Point Band
+DETAILED_RACE|3912-3|Caldwell
+DETAILED_RACE|3913-1|Campbell River Band
+DETAILED_RACE|3914-9|Cape Mudge Band
+DETAILED_RACE|3915-6|Carcross/Tagish First Nation
+DETAILED_RACE|3916-4|Caribou
+DETAILED_RACE|3917-2|Carrier Nation
+DETAILED_RACE|3918-0|Carry the Kettle Band
+DETAILED_RACE|3919-8|Cheam Band
+DETAILED_RACE|3920-6|Chemainus First Nation
+DETAILED_RACE|3921-4|Chilcotin Nation
+DETAILED_RACE|3922-2|Chippewa of Sarnia
+DETAILED_RACE|3923-0|Chippewa of the Thames
+DETAILED_RACE|3924-8|Chippewa/Ojibwe Canadian
+DETAILED_RACE|3925-5|Clayoquot
+DETAILED_RACE|3926-3|Cold Lake First Nations
+DETAILED_RACE|3927-1|Coldwater Band
+DETAILED_RACE|3928-9|Comox Band
+DETAILED_RACE|3929-7|Coquitlam Band (Kwikwetlem First Nation)
+DETAILED_RACE|3930-5|Cote First Nation
+DETAILED_RACE|3931-3|Couchiching First Nation
+DETAILED_RACE|3932-1|Cowessess Band
+DETAILED_RACE|3933-9|Cowichan
+DETAILED_RACE|3934-7|Cree Canadian
+DETAILED_RACE|3935-4|Cross Lake First Nation
+DETAILED_RACE|3936-2|Curve Lake Band
+DETAILED_RACE|3937-0|Dene Band Nwt (NW Territory)
+DETAILED_RACE|3938-8|Dene Canadian
+DETAILED_RACE|3939-6|Ditidaht Band
+DETAILED_RACE|3940-4|Dogrib
+DETAILED_RACE|3941-2|Eagle Lake Band
+DETAILED_RACE|3942-0|Eastern Cree
+DETAILED_RACE|3943-8|Ebb and Flow Band
+DETAILED_RACE|3944-6|English River First Nation
+DETAILED_RACE|3945-3|Eskasoni
+DETAILED_RACE|3946-1|Esquimalt
+DETAILED_RACE|3947-9|Fisher River
+DETAILED_RACE|3948-7|Five Nations
+DETAILED_RACE|3949-5|Fort Alexander Band
+DETAILED_RACE|1071-0|French Canadian/French American Indian
+DETAILED_RACE|3951-1|Garden River Nation
+DETAILED_RACE|3952-9|Gibson Band (Wahta Mohawk)
+DETAILED_RACE|3953-7|Gitksan
+DETAILED_RACE|3954-5|Grassy Narrows First Nation
+DETAILED_RACE|3955-2|Gull Bay Band
+DETAILED_RACE|3956-0|Gwichya Gwich'in
+DETAILED_RACE|3957-8|Heiltsuk Band
+DETAILED_RACE|3958-6|Hesquiaht Band
+DETAILED_RACE|3959-4|Hiawatha First Nation
+DETAILED_RACE|3960-2|Hope Band (Chawathil Nation)
+DETAILED_RACE|3961-0|Huron
+DETAILED_RACE|3962-8|Huron of Lorretteville
+DETAILED_RACE|3963-6|Innu (Montagnais)
+DETAILED_RACE|3964-4|Interior Salish
+DETAILED_RACE|3965-1|James Bay Cree
+DETAILED_RACE|3966-9|James Smith Cree Nation
+DETAILED_RACE|3967-7|Kahkewistahaw First Nation
+DETAILED_RACE|3968-5|Kamloops Band
+DETAILED_RACE|3969-3|Kanaka Bar
+DETAILED_RACE|3970-1|Kaska Dena
+DETAILED_RACE|3971-9|Keeseekoose Band
+DETAILED_RACE|3972-7|Kingsclear Band
+DETAILED_RACE|3973-5|Kitamaat
+DETAILED_RACE|3974-3|Kitigan Zibi Anishinabeg
+DETAILED_RACE|3975-0|Klahoose First Nation
+DETAILED_RACE|3976-8|Kwakiutl
+DETAILED_RACE|3977-6|Kyuquot Band
+DETAILED_RACE|3978-4|Lakahahmen Band
+DETAILED_RACE|3979-2|Lake Manitoba Band
+DETAILED_RACE|3980-0|Lake St. Martin Band
+DETAILED_RACE|3981-8|Lennox Island Band
+DETAILED_RACE|3982-6|Liard River First Nation
+DETAILED_RACE|3983-4|Lillooet
+DETAILED_RACE|3984-2|Listuguj Mi'Gmaq First Nation
+DETAILED_RACE|3985-9|Little Shuswap Band
+DETAILED_RACE|3986-7|Long Plain First Nation
+DETAILED_RACE|3987-5|Lower Nicola Indian Band
+DETAILED_RACE|3988-3|Malahat First Nation
+DETAILED_RACE|3989-1|Matachewan Band
+DETAILED_RACE|3990-9|Mcleod Lake
+DETAILED_RACE|3991-7|Metis
+DETAILED_RACE|3992-5|Millbrook First Nation
+DETAILED_RACE|3993-3|Mississaugas of the Credit
+DETAILED_RACE|3994-1|Mohawk Canadian
+DETAILED_RACE|3995-8|Mohawk Kahnawake
+DETAILED_RACE|3996-6|Mohawks of Kanesatake
+DETAILED_RACE|3997-4|Mohawks of the Bay of Quinte
+DETAILED_RACE|3998-2|Mohican Canadian
+DETAILED_RACE|3999-0|Musqueam Band
+DETAILED_RACE|4000-6|N’Quatqua (Anderson Lake)
+DETAILED_RACE|4001-4|Namgis First Nation (Nimpkish)
+DETAILED_RACE|4002-2|Nanaimo (Snuneymuxw)
+DETAILED_RACE|4003-0|Nanoose First Nation
+DETAILED_RACE|4004-8|Naskapi
+DETAILED_RACE|4005-5|Nation Huronne Wendat
+DETAILED_RACE|4006-3|Nipissing First Nation
+DETAILED_RACE|4007-1|Nisga'a Nation
+DETAILED_RACE|4008-9|North Thompson Band (Simpcw First Nation)
+DETAILED_RACE|4009-7|Nuu-chah-nulth (Nootka)
+DETAILED_RACE|4010-5|Odanak
+DETAILED_RACE|4011-3|Ohiaht Band (Huu-ay-aht First Nation)
+DETAILED_RACE|4012-1|Oneida Nation of the Thames
+DETAILED_RACE|4013-9|Opaskwayak Cree Nation
+DETAILED_RACE|4014-7|Osoyoos Band
+DETAILED_RACE|4015-4|Pacheedaht First Nation
+DETAILED_RACE|4016-2|Pauquachin
+DETAILED_RACE|4017-0|Peepeekisis
+DETAILED_RACE|4018-8|Peguis
+DETAILED_RACE|4019-6|Penelakut
+DETAILED_RACE|4020-4|Penticton
+DETAILED_RACE|4021-2|Pine Creek
+DETAILED_RACE|4022-0|Plains Cree
+DETAILED_RACE|4023-8|Rainy River First Nations
+DETAILED_RACE|4024-6|Red Earth Band
+DETAILED_RACE|4025-3|Roseau River
+DETAILED_RACE|4026-1|Saddle Lake
+DETAILED_RACE|4027-9|Sakimay First Nations
+DETAILED_RACE|4028-7|Sandy Bay Band
+DETAILED_RACE|4029-5|Sarcee (Tsuut'Ina Nation)
+DETAILED_RACE|4030-3|Saugeen
+DETAILED_RACE|4031-1|Saulteau First Nations
+DETAILED_RACE|4032-9|Saulteaux
+DETAILED_RACE|4033-7|Seabird Island
+DETAILED_RACE|4034-5|Sechelt
+DETAILED_RACE|4035-2|Seine River First Nation
+DETAILED_RACE|4036-0|Serpent River
+DETAILED_RACE|4037-8|Seton Lake
+DETAILED_RACE|4038-6|Shoal Lake Cree Nation
+DETAILED_RACE|4039-4|Shuswap
+DETAILED_RACE|4040-2|Siksika Canadian
+DETAILED_RACE|4041-0|Similkameen
+DETAILED_RACE|4042-8|Six Nations Canada
+DETAILED_RACE|4043-6|Six Nations of the Grand River
+DETAILED_RACE|4044-4|Skawahlook First Nation
+DETAILED_RACE|4045-1|Skeetchestn Indian Band
+DETAILED_RACE|4046-9|Skookum Chuck Band
+DETAILED_RACE|4047-7|Skowkale
+DETAILED_RACE|4048-5|Skuppah
+DETAILED_RACE|4049-3|Skwah First Nation
+DETAILED_RACE|4050-1|Skway First Nation
+DETAILED_RACE|4051-9|Songhees First Nation
+DETAILED_RACE|4052-7|Soowahlie First Nation
+DETAILED_RACE|4053-5|Spuzzum First Nation
+DETAILED_RACE|4054-3|Squamish Nation
+DETAILED_RACE|4055-0|Stanjikoming First Nation
+DETAILED_RACE|4056-8|Sto\:lo Nation
+DETAILED_RACE|4057-6|Stone
+DETAILED_RACE|4058-4|Sucker Creek First Nation
+DETAILED_RACE|4059-2|Swampy Cree
+DETAILED_RACE|4060-0|Tahltan
+DETAILED_RACE|4061-8|Taku River Tlingit
+DETAILED_RACE|4062-6|Tete De Boule (Attikamek)
+DETAILED_RACE|4063-4|Thompson
+DETAILED_RACE|4064-2|Tobacco Plains Band
+DETAILED_RACE|4065-9|Tobique First Nation
+DETAILED_RACE|4066-7|Toquaht
+DETAILED_RACE|4067-5|Tsartlip
+DETAILED_RACE|4068-3|Tsawout First Nation
+DETAILED_RACE|4069-1|Tseycum
+DETAILED_RACE|4070-9|Uchucklesaht
+DETAILED_RACE|4071-7|Ucluelet First Nation
+DETAILED_RACE|4072-5|Vuntut Gwitchin First Nation
+DETAILED_RACE|4073-3|Wabauskang First Nation
+DETAILED_RACE|4074-1|Walpole Island
+DETAILED_RACE|4075-8|Wasauksing First Nation
+DETAILED_RACE|4076-6|Waywayseecappo First Nation
+DETAILED_RACE|4077-4|West Bay Band
+DETAILED_RACE|4078-2|White Bear Band
+DETAILED_RACE|4079-0|Whitefish Lake Band
+DETAILED_RACE|4080-8|Wikwemikong
+DETAILED_RACE|4081-6|Wolf Lake Band
+DETAILED_RACE|4082-4|Woodland Cree First Nation
+DETAILED_RACE|4083-2|Woodstock First Nation
+DETAILED_RACE|4084-0|Xaxli'p First Nation (Fountain Band)
+DETAILED_RACE|4085-7|LATIN AMERICAN INDIAN
+DETAILED_RACE|1070-2|Central American Indian
+DETAILED_RACE|4087-3|Belizean Indian
+DETAILED_RACE|4088-1|Cakchiquel
+DETAILED_RACE|4089-9|Choco
+DETAILED_RACE|4090-7|Costa Rican Indian
+DETAILED_RACE|4091-5|Salvadoran Indian
+DETAILED_RACE|4092-3|Guatemalan Indian
+DETAILED_RACE|4093-1|Guatemalan Mayan
+DETAILED_RACE|4094-9|Guaymi
+DETAILED_RACE|4095-6|Honduran Indian
+DETAILED_RACE|4096-4|Kanjobal
+DETAILED_RACE|4097-2|Kekchi
+DETAILED_RACE|4098-0|Kuna Indian
+DETAILED_RACE|4099-8|Lenca
+DETAILED_RACE|4100-4|Maya Central American
+DETAILED_RACE|4101-2|Miskito
+DETAILED_RACE|4102-0|Nicaraguan Indian
+DETAILED_RACE|4103-8|Panamanian Indian
+DETAILED_RACE|4104-6|Pipil
+DETAILED_RACE|4105-3|Quiche
+DETAILED_RACE|4106-1|Rama
+DETAILED_RACE|4107-9|Sumo
+DETAILED_RACE|4108-7|Nahua
+DETAILED_RACE|4109-5|Mexican Indian
+DETAILED_RACE|4110-3|Amuzgo
+DETAILED_RACE|4111-1|Aztec
+DETAILED_RACE|4112-9|Chatino
+DETAILED_RACE|4113-7|Chinantec
+DETAILED_RACE|4114-5|Chocho
+DETAILED_RACE|4115-2|Concho
+DETAILED_RACE|4116-0|Cora
+DETAILED_RACE|4117-8|Cochimi
+DETAILED_RACE|4118-6|Cuicatec
+DETAILED_RACE|4119-4|Huastec
+DETAILED_RACE|4120-2|Huave
+DETAILED_RACE|4121-0|Huichol
+DETAILED_RACE|4122-8|Ixcatec
+DETAILED_RACE|4123-6|Lacandon
+DETAILED_RACE|4124-4|Lagunero
+DETAILED_RACE|4125-1|Mazahua
+DETAILED_RACE|4126-9|Mazatec
+DETAILED_RACE|4127-7|Mixe
+DETAILED_RACE|4128-5|Mixtec
+DETAILED_RACE|4129-3|Nahuatl
+DETAILED_RACE|4130-1|Olmec
+DETAILED_RACE|4131-9|Opata
+DETAILED_RACE|4132-7|Otomi
+DETAILED_RACE|4133-5|Popoluca
+DETAILED_RACE|4134-3|Seri
+DETAILED_RACE|4135-0|Tarahumara (Raramuri)
+DETAILED_RACE|4136-8|Tarasco (Purepecha)
+DETAILED_RACE|4137-6|Tepehua
+DETAILED_RACE|4138-4|Tequistlatec
+DETAILED_RACE|4139-2|Tlapanec
+DETAILED_RACE|4140-0|Tojolabal
+DETAILED_RACE|4141-8|Toltec
+DETAILED_RACE|4142-6|Triqui (Trique)
+DETAILED_RACE|4143-4|Tzeltal
+DETAILED_RACE|4144-2|Tzotzil
+DETAILED_RACE|4145-9|Zapotec
+DETAILED_RACE|4146-7|Zoque
+DETAILED_RACE|1072-8|Mexican American Indian
+DETAILED_RACE|4148-3|Chichimeca
+DETAILED_RACE|1073-6|South American Indian
+DETAILED_RACE|4150-9|Ache Indian
+DETAILED_RACE|4151-7|Amazon Indian
+DETAILED_RACE|4152-5|Andean Indian
+DETAILED_RACE|4153-3|Arawak
+DETAILED_RACE|4154-1|Argentinean Indian
+DETAILED_RACE|4155-8|Aymara
+DETAILED_RACE|4156-6|Bolivian Indian
+DETAILED_RACE|4157-4|Brazilian Indian
+DETAILED_RACE|4158-2|Canela
+DETAILED_RACE|4159-0|Chilean Indian
+DETAILED_RACE|4160-8|Colombian Indian
+DETAILED_RACE|4161-6|Ecuadorian Indian
+DETAILED_RACE|4162-4|Guarani
+DETAILED_RACE|4163-2|Guyanese South American Indian
+DETAILED_RACE|4164-0|Inca
+DETAILED_RACE|4165-7|Mapuche (Araucanian)
+DETAILED_RACE|4166-5|Maya South American
+DETAILED_RACE|4167-3|Paraguayan Indian
+DETAILED_RACE|4168-1|Peruvian Indian
+DETAILED_RACE|4169-9|Quechua
+DETAILED_RACE|4170-7|Quichua
+DETAILED_RACE|4171-5|Tehuelche
+DETAILED_RACE|4172-3|Tupi
+DETAILED_RACE|4173-1|Uruguayan Indian
+DETAILED_RACE|4174-9|Venezuelan Indian
+DETAILED_RACE|4175-6|Zaparo
+DETAILED_RACE|4176-4|Caribbean Indian
+DETAILED_RACE|4177-2|Carib
+DETAILED_RACE|4178-0|Taino
+DETAILED_RACE|4179-8|Dominican Indian
+DETAILED_RACE|4180-6|Puerto Rican Indian
+DETAILED_RACE|4181-4|Cuban Indian
+DETAILED_RACE|1074-4|Spanish American Indian
+DETAILED_RACE|4183-0|Mesoamerian Indian
+DETAILED_RACE|4184-8|Mayo
+DETAILED_RACE|4185-5|Maya
+DETAILED_RACE|2028-9|Asian
 DETAILED_RACE|2029-7|Asian Indian
 DETAILED_RACE|2030-5|Bangladeshi
 DETAILED_RACE|2031-3|Bhutanese
@@ -861,6 +1220,7 @@ DETAILED_RACE|2049-5|Maldivian
 DETAILED_RACE|2050-3|Nepalese
 DETAILED_RACE|2051-1|Singaporean
 DETAILED_RACE|2052-9|Madagascar
+DETAILED_RACE|2054-5|Black or African American
 DETAILED_RACE|2056-0|Black
 DETAILED_RACE|2058-6|African American
 DETAILED_RACE|2060-2|African
@@ -870,6 +1230,7 @@ DETAILED_RACE|2063-6|Liberian
 DETAILED_RACE|2064-4|Namibian
 DETAILED_RACE|2065-1|Nigerian
 DETAILED_RACE|2066-9|Zairean
+DETAILED_RACE|4186-3|Somali
 DETAILED_RACE|2067-7|Bahamian
 DETAILED_RACE|2068-5|Barbadian
 DETAILED_RACE|2069-3|Dominican
@@ -879,6 +1240,7 @@ DETAILED_RACE|2072-7|Jamaican
 DETAILED_RACE|2073-5|Tobagoan
 DETAILED_RACE|2074-3|Trinidadian
 DETAILED_RACE|2075-0|West Indian
+DETAILED_RACE|2076-8|Native Hawaiian or Other Pacific Islander
 DETAILED_RACE|2078-4|Polynesian
 DETAILED_RACE|2079-2|Native Hawaiian
 DETAILED_RACE|2080-0|Samoan
@@ -904,6 +1266,8 @@ DETAILED_RACE|2101-4|Fijian
 DETAILED_RACE|2102-2|Papua New Guinean
 DETAILED_RACE|2103-0|Solomon Islander
 DETAILED_RACE|2104-8|New Hebrides
+DETAILED_RACE|2500-7|Other Pacific Islander
+DETAILED_RACE|2106-3|White
 DETAILED_RACE|2108-9|European
 DETAILED_RACE|2109-7|Armenian
 DETAILED_RACE|2110-5|English
@@ -925,13 +1289,53 @@ DETAILED_RACE|2126-1|Afghanistani
 DETAILED_RACE|2127-9|Israeli
 DETAILED_RACE|2129-5|Arab
 DETAILED_RACE|2131-1|Other Race
-DETAILED_RACE|2500-7|Other Pacific Islander
-DETAILED_RACE|ASKU|asked but unknown
-DETAILED_RACE|OTH|other
-DETAILED_RACE|UNK|unknown
 DETAILED_ETHNICITY|2133-7|Ethnicity
 DETAILED_ETHNICITY|ASKU|asked but unknown
 DETAILED_ETHNICITY|OTH|other
 DETAILED_ETHNICITY|UNK|unknown
 NULL_FLAVOR|UNK|Unknown
 NULL_FLAVOR|ASKU|Asked but no answer
+DETAILED_ETHNICITY|2135-2|Hispanic or Latino
+DETAILED_ETHNICITY|2137-8|Spaniard
+DETAILED_ETHNICITY|2138-6|Andalusian
+DETAILED_ETHNICITY|2139-4|Asturian
+DETAILED_ETHNICITY|2140-2|Castillian
+DETAILED_ETHNICITY|2141-0|Catalonian
+DETAILED_ETHNICITY|2142-8|Belearic Islander
+DETAILED_ETHNICITY|2143-6|Gallego
+DETAILED_ETHNICITY|2144-4|Valencian
+DETAILED_ETHNICITY|2145-1|Canarian
+DETAILED_ETHNICITY|2146-9|Spanish Basque
+DETAILED_ETHNICITY|2148-5|Mexican
+DETAILED_ETHNICITY|2149-3|Mexican American
+DETAILED_ETHNICITY|2150-1|Mexicano
+DETAILED_ETHNICITY|2151-9|Chicano
+DETAILED_ETHNICITY|2152-7|La Raza
+DETAILED_ETHNICITY|2153-5|Mexican American Indian
+DETAILED_ETHNICITY|2155-0|Central American
+DETAILED_ETHNICITY|2156-8|Costa Rican
+DETAILED_ETHNICITY|2157-6|Guatemalan
+DETAILED_ETHNICITY|2158-4|Honduran
+DETAILED_ETHNICITY|2159-2|Nicaraguan
+DETAILED_ETHNICITY|2160-0|Panamanian
+DETAILED_ETHNICITY|2161-8|Salvadoran
+DETAILED_ETHNICITY|2162-6|Central American Indian
+DETAILED_ETHNICITY|2163-4|Canal Zone
+DETAILED_ETHNICITY|2165-9|South American
+DETAILED_ETHNICITY|2166-7|Argentinean
+DETAILED_ETHNICITY|2167-5|Bolivian
+DETAILED_ETHNICITY|2168-3|Chilean
+DETAILED_ETHNICITY|2169-1|Colombian
+DETAILED_ETHNICITY|2170-9|Ecuadorian
+DETAILED_ETHNICITY|2171-7|Paraguayan
+DETAILED_ETHNICITY|2172-5|Peruvian
+DETAILED_ETHNICITY|2173-3|Uruguayan
+DETAILED_ETHNICITY|2174-1|Venezuelan
+DETAILED_ETHNICITY|2175-8|South American Indian
+DETAILED_ETHNICITY|2176-6|Criollo
+DETAILED_ETHNICITY|2178-2|Latin American
+DETAILED_ETHNICITY|2180-8|Puerto Rican
+DETAILED_ETHNICITY|2182-4|Cuban
+DETAILED_ETHNICITY|2184-0|Dominican
+DETAILED_ETHNICITY|2186-5|Not Hispanic or Latino
+DETAILED_ETHNICITY|asked-declined|Asked But Declined
