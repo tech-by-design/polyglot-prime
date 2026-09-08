@@ -77,23 +77,47 @@ public class PrePopulateSupport {
 
     private void addHCPCSCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addHCPCSCodes  -BEGIN");
-        CodeSystem existHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem("urn:oid:2.16.840.1.113883.6.285");
-        // CodeSystem existHCPCS = (CodeSystem)
-        // validationSupportChain.fetchCodeSystem("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
-        if (existHCPCS == null) {
+        LOG.info("PrePopulateSupport:addHCPCSCodes - BEGIN");
+
+        String newHcpcsSystem = "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets";
+
+        String oldHcpcsSystem = "urn:oid:2.16.840.1.113883.6.285";
+        // New HCPCS system
+        CodeSystem existingNewHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(newHcpcsSystem);
+
+        if (existingNewHCPCS == null) {
             CodeSystem newHCPCS = new CodeSystem();
-            // newHCPCS.setUrl("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
-            newHCPCS.setUrl("urn:oid:2.16.840.1.113883.6.285");
-            newHCPCS.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv")));
+            newHCPCS.setUrl(newHcpcsSystem);
+            newHCPCS.setConcept(
+                    ConceptReaderUtils.getCodeSystemConcepts_wCode(
+                            referenceCodesPath.concat("hcpcs.psv")));
             newHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             prePopulatedValidationSupport.addCodeSystem(newHCPCS);
         } else {
-            existHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            existHCPCS.getConcept()
-                    .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv")));
+            existingNewHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            existingNewHCPCS.getConcept().addAll(
+                    ConceptReaderUtils.getCodeSystemConcepts_wCode(
+                            referenceCodesPath.concat("hcpcs.psv")));
         }
-        LOG.info("PrePopulateSupport:addHCPCSCodes  -END");
+        // Old HCPCS OID - backward compatibility
+        CodeSystem existingOldHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(oldHcpcsSystem);
+
+        if (existingOldHCPCS == null) {
+            CodeSystem oldHCPCS = new CodeSystem();
+            oldHCPCS.setUrl(oldHcpcsSystem);
+            oldHCPCS.setConcept(
+                    ConceptReaderUtils.getCodeSystemConcepts_wCode(
+                            referenceCodesPath.concat("hcpcs.psv")));
+            oldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+
+            prePopulatedValidationSupport.addCodeSystem(oldHCPCS);
+        } else {
+            existingOldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            existingOldHCPCS.getConcept().addAll(
+                    ConceptReaderUtils.getCodeSystemConcepts_wCode(
+                            referenceCodesPath.concat("hcpcs.psv")));
+        }
+        LOG.info("PrePopulateSupport:addHCPCSCodes - END");
     }
 
     private void addICD10Codes(ValidationSupportChain validationSupportChain,
