@@ -102,8 +102,8 @@
       "type": "Configuration Map",
       "channel": "configuration_map_export.properties",
       "version": "",
-      "editedby": "abhiramisanthosh90",
-      "date": "2026-07-23"
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-09-08"
     },
     {
       "type": "AwsSqsFifoQueueListener",
