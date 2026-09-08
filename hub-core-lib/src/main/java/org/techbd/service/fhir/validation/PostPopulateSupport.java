@@ -140,6 +140,7 @@ public class PostPopulateSupport {
 
         if (procedureValueSet != null) {
 
+            // New HCPCS CodeSystem URL
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(
@@ -148,6 +149,16 @@ public class PostPopulateSupport {
                             .setSystem(
                                     "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"));
 
+            // Old HCPCS OID - backward compatibility
+            procedureValueSet.getCompose().addInclude(
+                    new ValueSet.ConceptSetComponent()
+                            .setConcept(
+                                    ConceptReaderUtils.getValueSetConcepts_wCode(
+                                            referenceCodesPath.concat("hcpcs.psv")))
+                            .setSystem(
+                                    "urn:oid:2.16.840.1.113883.6.285"));
+
+            // SNOMED
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(

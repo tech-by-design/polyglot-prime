@@ -1,4 +1,4 @@
-package org.techbd.service.fhir.validation;
+package org.techbd.fhir.service.validation;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.ConceptValidationOptions;
@@ -11,7 +11,7 @@ import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.ValueSet;
 
-import org.techbd.util.fhir.FileUtils;
+import org.techbd.fhir.util.FileUtils;
 
 import java.util.Date;
 import java.util.HashMap;
