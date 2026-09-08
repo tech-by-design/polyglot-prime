@@ -325,8 +325,6 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = "mco_data";
-        const viewName = "get_mco_historical_details";
-        const DetailViewName = "get_source_monitoring";
         const DetailSubViewName = "v_source_monitoring_details";
         const monthsNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -862,11 +860,12 @@
 
             function getDetailHistoryData(params) {
                 const mco_name = params.data.mco_name;
-                const { start, end } = getSelectedHistoricalRange();
+                const { start, end, last } = getSelectedHistoricalRange();
                 const url = new URL('/api/monitoring/mco/historical-records', window.location.origin);
                 url.searchParams.set('mco_name', mco_name);
                 if (start) url.searchParams.set('start_reporting_month', start);
                 if (end) url.searchParams.set('end_reporting_month', end);
+                if (last) url.searchParams.set('last_three_month', last);
 
                 fetch(window.shell.serverSideUrl(url.pathname + url.search))
                     .then(response => {
@@ -995,32 +994,38 @@
             }
 
             function getLastThreeMonthsRange() {
-                const endMonth = getDefaultReportingMonth();
-                const previousMonths = getPreviousMonths(endMonth, 2);
-                const startMonth = previousMonths[previousMonths.length - 1];
-                return { start: startMonth, end: endMonth };
+                // const endMonth = getDefaultReportingMonth();
+                // const previousMonths = getPreviousMonths(endMonth, 2);
+                // const startMonth = previousMonths[previousMonths.length - 1];
+                return { start: null, end: null, last: true };
             }
 
             function buildHistoricalDetailsQueryString() {
-                const { start, end } = getSelectedHistoricalRange();
-                const url = new URL('/api/monitoring/mco/historical-details', window.location.origin);
-                if (start) url.searchParams.set('p_start_reporting_month', start);
-                if (end) url.searchParams.set('p_end_reporting_month', end);
-                return url.toString();
+                const { start, end, last } = getSelectedHistoricalRange();
+                const storedProcparams = {
+                    startMonth: start,
+                    endMonth: end,
+                    lastThreeMonth: last
+                };
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+                return window.shell.serverSideUrl(
+                    `/api/ux/tabular/jooq/sp/${schemaName}/get_mco_historical_details.json?storedProcparams=${paramsJson}`
+                );
             }
 
             function getSelectedHistoricalRange() {
                 if (activeHistoricalPeriod === 'ALL') {
-                    return { start: null, end: null };
+                    return { start: null, end: null, last: false };
                 }
                 if (activeHistoricalPeriod === 'CUSTOM') {
                     return {
                         start: activeHistoricalStart ? toReportingMonth(activeHistoricalStart.month - 1, activeHistoricalStart.year) : null,
-                        end: activeHistoricalEnd ? toReportingMonth(activeHistoricalEnd.month - 1, activeHistoricalEnd.year) : null
+                        end: activeHistoricalEnd ? toReportingMonth(activeHistoricalEnd.month - 1, activeHistoricalEnd.year) : null,
+                        last: false
                     };
                 }
                 const lastThree = getLastThreeMonthsRange();
-                return { start: lastThree.start, end: lastThree.end };
+                return { start: lastThree.start, end: lastThree.end, last: lastThree.last };
             }
 
             function updateCustomRangeDisplay() {
@@ -1049,16 +1054,21 @@
 
                         try {
                             const response = await fetch(url, {
-                                method: 'GET',
-                                headers: { 'Accept': 'application/json' }
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(params.request)
                             });
                             if (!response.ok) {
                                 throw new Error(`HTTP ${response.status}`);
                             }
-                            const data = await response.json();
+                            const serverResponse = await response.json();
+                            const data = Array.isArray(serverResponse.data) ? serverResponse.data : [];
                             params.success({
-                                rowData: Array.isArray(data) ? data : [],
-                                rowCount: Array.isArray(data) ? data.length : 0
+                                rowData: data,
+                                rowCount: serverResponse.lastRow
                             });
                         } catch (error) {
                             console.error('Error fetching historical details', error);

@@ -519,6 +519,38 @@ public class JooqRowsSupplierForSP {
                     startDate, endDate);
                 return DSL.table(functionCall);
             }
+        case "get_mco_historical_details" -> {
+            objectMapper = new ObjectMapper();
+
+            Map<String, Object> paramMap =
+                objectMapper.readValue(paramsJson, Map.class);
+
+            String startMonth = (String) paramMap.get("startMonth");
+            String endMonth = (String) paramMap.get("endMonth");
+
+            Boolean lastThreeMonth =
+                (Boolean) paramMap.getOrDefault("lastThreeMonth", false);
+
+            String startMonthLiteral = startMonth != null
+                ? "'" + startMonth.replace("'", "''") + "'"
+                : "NULL";
+
+            String endMonthLiteral = endMonth != null
+                ? "'" + endMonth.replace("'", "''") + "'"
+                : "NULL";
+
+            String lastThreeMonthLiteral =
+                Boolean.TRUE.equals(lastThreeMonth) ? "TRUE" : "FALSE";
+
+            String functionCall = String.format(
+                "mco_data.get_mco_historical_details(%s, %s, %s)",
+                startMonthLiteral,
+                endMonthLiteral,
+                lastThreeMonthLiteral
+            );
+
+            return DSL.table(functionCall);
+        }
             case "get_fhir_screening_info" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);

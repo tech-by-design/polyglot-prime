@@ -69,13 +69,13 @@ public class PrimeController {
     @RouteMapping(label = "Dashboard", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
         try {
-            final YearMonth defaultReportingMonth = getDefaultReportingMonth();
-            final String endReportingMonth = formatReportingMonth(defaultReportingMonth);
-            final String startReportingMonth = formatReportingMonth(defaultReportingMonth.minusMonths(2));
+            // final YearMonth defaultReportingMonth = getDefaultReportingMonth();
+            // final String endReportingMonth = formatReportingMonth(defaultReportingMonth);
+            // final String startReportingMonth = formatReportingMonth(defaultReportingMonth.minusMonths(2));
             // defulat last 3 month initially
-            final var metrics = getMcoDashboardMetrics(startReportingMonth, endReportingMonth);
+            final var metrics = getMcoDashboardMetrics(null, null, true);
 
-            model.addAttribute("metrics", metrics); 
+            model.addAttribute("metrics", metrics);
 
         } catch (Exception e) {
             LOG.error("Error loading MCO dashboard metrics for home page", e);
@@ -86,19 +86,19 @@ public class PrimeController {
     /**
      * Determines the default reporting month based on the reporting window.
      *
-     * 20th - 4th  : Current month
-     * 5th  - 19th : Previous month
+     * 20th - 4th : Current month
+     * 5th - 19th : Previous month
      */
-    private YearMonth getDefaultReportingMonth() {
-        final LocalDate today = LocalDate.now();
-        final int dayOfMonth = today.getDayOfMonth();
+    // private YearMonth getDefaultReportingMonth() {
+    //     final LocalDate today = LocalDate.now();
+    //     final int dayOfMonth = today.getDayOfMonth();
 
-        if (dayOfMonth >= 5 && dayOfMonth <= 19) {
-            return YearMonth.from(today).minusMonths(1);
-        }
+    //     if (dayOfMonth >= 5 && dayOfMonth <= 19) {
+    //         return YearMonth.from(today).minusMonths(1);
+    //     }
 
-        return YearMonth.from(today);
-    }
+    //     return YearMonth.from(today);
+    // }
 
     /**
      * Formats reporting month as MM-yyyy.
@@ -110,10 +110,18 @@ public class PrimeController {
     @GetMapping("/api/dashboard/mco/metrics")
     public ResponseEntity<Map<String, Object>> getMcoDashboardMetricsEndpoint(
             @RequestParam(required = false, name = "p_start_reporting_month") String pStartReportingMonth,
-            @RequestParam(required = false, name = "p_end_reporting_month") String pEndReportingMonth) {
+            @RequestParam(required = false, name = "p_end_reporting_month") String pEndReportingMonth,
+            @RequestParam(required = false, name = "last_three_month", defaultValue = "false") boolean lastThreeMonth) {
         try {
-            Map<String, Object> metrics = getMcoDashboardMetrics(pStartReportingMonth, pEndReportingMonth);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(metrics);
+            Map<String, Object> metrics = getMcoDashboardMetrics(
+                    pStartReportingMonth,
+                    pEndReportingMonth,
+                    lastThreeMonth);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(metrics);
+
         } catch (Exception e) {
             LOG.error("Error retrieving MCO dashboard metrics", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -121,22 +129,29 @@ public class PrimeController {
         }
     }
 
-    private Map<String, Object> getMcoDashboardMetrics(String startReportingMonth, String endReportingMonth) {
+    private Map<String, Object> getMcoDashboardMetrics(
+            String startReportingMonth,
+            String endReportingMonth,
+            boolean lastThreeMonth) {
+
         final String startParam = (startReportingMonth != null && !startReportingMonth.isBlank())
                 ? startReportingMonth.trim()
                 : null;
-        final String endParam = (endReportingMonth != null && !endReportingMonth.isBlank()) ? endReportingMonth.trim()
+
+        final String endParam = (endReportingMonth != null && !endReportingMonth.isBlank())
+                ? endReportingMonth.trim()
                 : null;
 
         final var result = getDsl().fetch(
-                "select * from mco_data.get_mco_dashboard_metrics(?, ?)",
+                "select * from mco_data.get_mco_dashboard_metrics(?, ?, ?)",
                 startParam,
-                endParam)
+                endParam,
+                lastThreeMonth)
                 .intoMaps();
 
         if (result.isEmpty()) {
             return Map.ofEntries(
-                    Map.entry("selected_reporting_month", ""), 
+                    Map.entry("selected_reporting_month", ""),
                     Map.entry("is_selected", false),
                     Map.entry("total_mco", 0L),
                     Map.entry("total_files_received", 0L),
@@ -147,6 +162,7 @@ public class PrimeController {
                     Map.entry("records_processed", 0L),
                     Map.entry("records_with_errors", 0L));
         }
+
         return result.get(0);
     }
 
@@ -195,4 +211,4 @@ public class PrimeController {
         }
     }
 
-}  
+}

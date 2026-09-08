@@ -477,13 +477,13 @@
                 }
 
                 // Database Function Metrics Call
-                async function loadDashboardMetrics(p_start_reporting_month = null, p_end_reporting_month = null) {
+                async function loadDashboardMetrics(p_start_reporting_month = null, p_end_reporting_month = null, last_three_month = false) {
                     showMetricsLoader();
                     const url = new URL('/api/dashboard/mco/metrics', window.location.origin);
 
                     if (p_start_reporting_month) url.searchParams.set('p_start_reporting_month', p_start_reporting_month);
                     if (p_end_reporting_month) url.searchParams.set('p_end_reporting_month', p_end_reporting_month);
-
+                    url.searchParams.set('last_three_month', last_three_month);
                     try {
                         const response = await fetch(url.toString(), {
                             method: 'GET',
@@ -534,10 +534,8 @@
 
                         return `${String(month + 1).padStart(2, '0')}-${year}`;
                     }
-
-                    //if not getting recentReportingMonth from query then getDefaultReportingMonth
-                    // const recentReportingMonth =  periodSelect.dataset.recentReportingMonth?.trim() || getDefaultReportingMonth();
-                    const recentReportingMonth = getDefaultReportingMonth();
+       
+                    //const recentReportingMonth = getDefaultReportingMonth();
 
                     const prevBtn = document.getElementById('prev-year-btn');
                     const nextBtn = document.getElementById('next-year-btn');
@@ -579,13 +577,15 @@
                             let p_start = null;
                             let p_end = null;
 
-                            if (val === 'LAST_3_MONTHS' && recentReportingMonth) {
-                                p_end = recentReportingMonth;
-                                const prev = getPreviousMonths(recentReportingMonth, 2);
-                                p_start = prev[prev.length - 1];
+                            if (val === 'LAST_3_MONTHS') {
+                                p_end = null; 
+                                p_start = null;
+                                p_last = true;
+                            }else{
+                                p_last = false;
                             }
 
-                            const metrics = await loadDashboardMetrics(p_start, p_end);
+                            const metrics = await loadDashboardMetrics(p_start, p_end, p_last);
                             if (metrics) updateMetrics(metrics);
                             lastCommittedSelectedValue = val;
                             setResetButtonVisible(false);
@@ -657,14 +657,14 @@
                             periodSelect.value = 'LAST_3_MONTHS';
                             setResetButtonVisible(false);
 
-                            let p_start = null;
-                            let p_end = null;
-                            if (recentReportingMonth) {
-                                p_end = recentReportingMonth;
-                                const prev = getPreviousMonths(recentReportingMonth, 2);
-                                p_start = prev[prev.length - 1];
-                            }
-                            const metrics = await loadDashboardMetrics(p_start, p_end);
+                            // let p_start = null;
+                            // let p_end = null;
+                            // if (recentReportingMonth) {
+                            //     p_end = recentReportingMonth;
+                            //     const prev = getPreviousMonths(recentReportingMonth, 2);
+                            //     p_start = prev[prev.length - 1];
+                            // }
+                            const metrics = await loadDashboardMetrics(null, null, true);
                             if (metrics) updateMetrics(metrics);
                         };
                     }
