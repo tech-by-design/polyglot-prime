@@ -1807,7 +1807,7 @@
             "code": {
               "coding": [{
                 "system": "<xsl:choose>
-                              <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+                              <xsl:when test="starts-with($screeningCode, 'NYS')"><xsl:value-of select='$baseFhirUrl'/>/CodeSystem/NYSHRSNQuestionnaire</xsl:when>
                               <xsl:otherwise><xsl:text>http://loinc.org</xsl:text></xsl:otherwise>
                             </xsl:choose>",
                 "code": "<xsl:value-of select='$screeningCode'/>",
