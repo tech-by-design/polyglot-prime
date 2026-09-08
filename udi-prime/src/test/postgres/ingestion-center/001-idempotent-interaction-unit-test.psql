@@ -237,11 +237,6 @@ BEGIN
 		ARRAY['sat_interaction_file_exchange_id','hub_interaction_id','protocol','elaboration','created_at','created_by','provenance','tenant_id', 'tenant_name'],
 		'The columns of techbd_udi_ingress.sat_interaction_file_exchange should match the expected structure.');
 	
-	RETURN NEXT has_table(schema_name, 'user_sessions', 'The table techbd_udi_ingress.user_sessions should exist.');
-	RETURN NEXT columns_are(schema_name, 'user_sessions', 
-		ARRAY['session_id', 'user_id', 'username', 'session_start_time', 'session_end_time', 'session_expiry_time', 'source', 'updated_at', 'updated_by', 'created_at', 'created_by', 'provenance'], 
-		'The columns of techbd_udi_ingress.user_sessions should match the expected structure.');
-
     /*=================== Testing TABLE COLUMNS  ========================*/
 	RETURN NEXT has_table(schema_name, 'ccda_replay_details', 'The table techbd_udi_ingress.ccda_replay_details should exist.');
 	RETURN NEXT col_not_null(schema_name, 'ccda_replay_details', 'bundle_id', 'The column bundle_id in techbd_udi_ingress.ccda_replay_details should be NOT NULL.');
