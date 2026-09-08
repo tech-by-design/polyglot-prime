@@ -35,11 +35,15 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
     public static final String DETAILED_RACE_VS_URL =
             "http://hl7.org/fhir/us/core/ValueSet/detailed-race";
 
+    public static final String DETAILED_ETHNICITY_VS_URL =
+            "http://hl7.org/fhir/us/core/ValueSet/detailed-ethnicity";
+
     private final FhirContext fhirContext;
 
     private final Map<String, String> ombRaceMap = new HashMap<>();
     private final Map<String, String> ombEthnicityMap = new HashMap<>();
     private final Map<String, String> detailedRaceMap = new HashMap<>();
+    private final Map<String, String> detailedEthnicityMap = new HashMap<>();
     private final Map<String, String> nullFlavorMap = new HashMap<>();
     private final Map<String, String> allCdcConcepts = new HashMap<>();
 
@@ -48,6 +52,7 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
     private final ValueSet ombRaceValueSet;
     private final ValueSet ombEthnicityValueSet;
     private final ValueSet detailedRaceValueSet;
+    private final ValueSet detailedEthnicityValueSet;
 
     public RaceEthnicityValidationSupport(
             FhirContext fhirContext,
@@ -77,6 +82,13 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
                 "Detailed Race",
                 detailedRaceMap,
                 false);
+
+        this.detailedEthnicityValueSet = createExpandedValueSet(
+                DETAILED_ETHNICITY_VS_URL,
+                "detailed-ethnicity",
+                "Detailed Ethnicity",
+                detailedEthnicityMap,
+                false);
     }
 
     /**
@@ -91,6 +103,7 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
      * OMB_RACE|2028-9|Asian
      * OMB_ETHNICITY|2135-2|Hispanic or Latino
      * DETAILED_RACE|1010-8|Apache
+     * DETAILED_ETHNICITY|2153-5|Mexican American Indian
      * NULL_FLAVOR|UNK|Unknown
      */
     private CodeSystem loadConceptsFromPsv(String psvFilePath) {
@@ -148,6 +161,8 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
 
                 codeSystem.addConcept(concept);
 
+                // Keep all CDC concepts available for direct
+                // CodeSystem validation.
                 allCdcConcepts.put(code, display);
 
                 switch (category.toUpperCase()) {
@@ -164,19 +179,25 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
                         detailedRaceMap.put(code, display);
                         break;
 
+                    case "DETAILED_ETHNICITY":
+                        detailedEthnicityMap.put(code, display);
+                        break;
+
                     case "NULL_FLAVOR":
                         nullFlavorMap.put(code, display);
                         break;
 
                     default:
-                        // The code is still registered in the CDC CodeSystem.
+                        // The code is still registered in the CDC
+                        // CodeSystem.
                         break;
                 }
             }
 
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "Unable to load Race/Ethnicity PSV file: " + psvFilePath,
+                    "Unable to load Race/Ethnicity PSV file: "
+                            + psvFilePath,
                     e);
         }
 
@@ -201,7 +222,7 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
 
         valueSet.setId(id);
         valueSet.setUrl(url);
-        //valueSet.setVersion("7.0.0");
+        valueSet.setVersion("7.0.0");
         valueSet.setName(name);
         valueSet.setStatus(Enumerations.PublicationStatus.ACTIVE);
 
@@ -258,7 +279,8 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
 
             nullFlavorInclude.setSystem(NULL_FLAVOR_SYSTEM);
 
-            for (Map.Entry<String, String> entry : nullFlavorMap.entrySet()) {
+            for (Map.Entry<String, String> entry
+                    : nullFlavorMap.entrySet()) {
 
                 String code = entry.getKey();
                 String display = entry.getValue();
@@ -315,7 +337,8 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
 
         return OMB_RACE_VS_URL.equalsIgnoreCase(baseUrl)
                 || OMB_ETHNICITY_VS_URL.equalsIgnoreCase(baseUrl)
-                || DETAILED_RACE_VS_URL.equalsIgnoreCase(baseUrl);
+                || DETAILED_RACE_VS_URL.equalsIgnoreCase(baseUrl)
+                || DETAILED_ETHNICITY_VS_URL.equalsIgnoreCase(baseUrl);
     }
 
     private ValueSet getMatchingValueSet(String url) {
@@ -336,6 +359,10 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
 
         if (DETAILED_RACE_VS_URL.equalsIgnoreCase(baseUrl)) {
             return detailedRaceValueSet;
+        }
+
+        if (DETAILED_ETHNICITY_VS_URL.equalsIgnoreCase(baseUrl)) {
+            return detailedEthnicityValueSet;
         }
 
         return null;
@@ -435,7 +462,8 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
         /*
          * ValueSet-specific validation.
          */
-        if (theValueSetUrl != null && isTargetValueSet(theValueSetUrl)) {
+        if (theValueSetUrl != null
+                && isTargetValueSet(theValueSetUrl)) {
 
             String baseUrl = getBaseUrl(theValueSetUrl);
 
@@ -488,6 +516,23 @@ public class RaceEthnicityValidationSupport implements IValidationSupport {
                                 "Code " + theCode
                                         + " was not found in "
                                         + DETAILED_RACE_VS_URL);
+            }
+
+            if (DETAILED_ETHNICITY_VS_URL.equalsIgnoreCase(baseUrl)) {
+
+                if (detailedEthnicityMap.containsKey(theCode)
+                        || nullFlavorMap.containsKey(theCode)) {
+
+                    return new CodeValidationResult()
+                            .setCode(theCode);
+                }
+
+                return new CodeValidationResult()
+                        .setSeverity(IssueSeverity.ERROR)
+                        .setMessage(
+                                "Code " + theCode
+                                        + " was not found in "
+                                        + DETAILED_ETHNICITY_VS_URL);
             }
         }
 
