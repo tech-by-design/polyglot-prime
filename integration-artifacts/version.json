@@ -285,9 +285,9 @@
     {
       "type": "Channel Group",
       "channel": "mco-esmf.xml",
-      "version": "0.1.11",
+      "version": "0.1.12",
       "editedby": "anoopvarma-2000-p",
-      "date": "2026-09-04"
+      "date": "2026-09-09"
     },
   {
       "type": "code-templates",
