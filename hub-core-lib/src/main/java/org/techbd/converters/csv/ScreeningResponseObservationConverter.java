@@ -670,7 +670,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 // Add member references using observationId directly from the model
                 final var referenceBaseUrl  = baseUrl;
                 List<Reference> hasMemberReferences = groupData.stream()
-                        .map(data -> new Reference(referenceBaseUrl  + "Observation/" + buildObservationId(data)))
+                        .map(data -> new Reference(referenceBaseUrl  + "/Observation/" + buildObservationId(data)))
                         .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
