@@ -284,9 +284,7 @@
             )"/>
         , "gender": "<xsl:choose>
                     <xsl:when test="ccda:patient/ccda:administrativeGenderCode/@nullFlavor">
-                        <xsl:call-template name="getNullFlavorDisplay">
-                            <xsl:with-param name="nullFlavor" select="ccda:patient/ccda:administrativeGenderCode/@nullFlavor"/>
-                        </xsl:call-template>
+                        unknown
                     </xsl:when>
 
                     <!-- Code-based mapping -->
