@@ -1,5 +1,5 @@
-# `csv-validation-using-ig`
-- `description` Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. CSV files must be encoded in **UTF-8** to ensure proper validation and processing. For example: 
+# `csv-validation-using-ig`- 
+`description` Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. CSV files must be encoded in **UTF-8** to ensure proper validation and processing. For example: 
 
   - PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. 
   - FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.
@@ -338,7 +338,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|93025-5)$`
+    - `pattern` `^(?i:96777-8|97023-6|nysahchrsn|nys-ahc-hrsn|93025-5)$`
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
@@ -349,7 +349,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystemnyshrsnquestionnaire\.html|http://shinny\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$`
+    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\.html|http://shinny\.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire)$`
 ### `QUESTION_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
