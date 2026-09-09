@@ -125,12 +125,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 // screening records
                                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
-                                String screeningLanguageDescription = fetchCode(
+                                String screeningLanguageDescription = fetchDisplay(screeningLangCode,
                                         screeningProfileData.getScreeningLanguageDescription(),
                                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
-                                String screeningLanguageCodeSystem = fetchCode(
-                                        screeningProfileData.getScreeningLanguageCodeSystem(),
-                                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                // String screeningLanguageCodeSystem = fetchCode(
+                                //         screeningProfileData.getScreeningLanguageCodeSystem(),
+                                //         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                                 observation.setLanguage("en");
 
                                 if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
@@ -138,7 +138,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         baseUrl + "/StructureDefinition/shinny-observation-language");
                                     CodeableConcept valueConcept = new CodeableConcept();
                                     valueConcept.addCoding(new Coding()
-                                            .setSystem(screeningLanguageCodeSystem)
+                                            .setSystem("urn:ietf:bcp:47")
                                             .setCode(screeningLangCode)
                                             .setDisplay(screeningLanguageDescription));
                                     languageExtension.setValue(valueConcept);
@@ -523,10 +523,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setMeta(meta);
                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
-                String screeningLanguageDescription = fetchCode(screeningProfileData.getScreeningLanguageDescription(),
-                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
-                String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(),
-                        CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                String screeningLanguageDescription = fetchDisplay(screeningLangCode,
+                        screeningProfileData.getScreeningLanguageDescription(), CsvConstants.SCREENING_LANGUAGE_CODE,
+                        interactionId);
+                // String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(),
+                //         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                 groupObservation.setLanguage("en");
                 String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : CoreFHIRUtil.getBaseFHIRURL();
                 if (baseUrl.endsWith("/")) {
@@ -538,7 +539,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         baseUrl + "/StructureDefinition/shinny-observation-language");
                     CodeableConcept valueConcept = new CodeableConcept();
                     valueConcept.addCoding(new Coding()
-                                            .setSystem(screeningLanguageCodeSystem)
+                                            .setSystem("urn:ietf:bcp:47")
                                             .setCode(screeningLangCode)
                                             .setDisplay(screeningLanguageDescription));
                     languageExtension.setValue(valueConcept);
