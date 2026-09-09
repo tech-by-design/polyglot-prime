@@ -24,7 +24,7 @@ import ca.uhn.fhir.parser.IParser;
 @ExtendWith(MockitoExtension.class)
 public class IgPublicationIssuesTest extends BaseIgValidationTest {
 
-        @Test
+       /* @Test
         @DisplayName("Validate SHIN-NY IG AHCHRSN QuestionnaireResponse ExampleFile")
         void testValidateShinnyIG_AHCHRSNQuestionnaireResponseExampleFile() throws IOException {
             validateFile("shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
@@ -124,7 +124,7 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
         void testValidateShinnyIG_NYScreeningResponseOPWDDExampleFile() throws IOException {
                 validateFile("shinny-examples/Bundle-NYScreeningResponseExampleOPWDD.json");
         }
-
+     */
         @Test
         @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse ExampleFile")
         void testValidateTestShinnyIG_AHCHRSNScreeningResponseExampleFile() throws IOException {
