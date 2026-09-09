@@ -52,7 +52,11 @@ VALUES
 (gen_random_uuid()::text, 'netspective', 'QA/DEV Netspective', true, CURRENT_USER, 'Fusion Auth', '8c678000-0940-4e68-af70-4f3e9ec38290'),
 (gen_random_uuid()::text, 'partner-test', 'QA/DEV partner-test', true, CURRENT_USER, 'Fusion Auth', '67906aaf-1c84-4fcf-a6fb-7bdb979f4361'),
 (gen_random_uuid()::text, 'partner-test-qa', 'QA/DEV partner-test-qa', true, CURRENT_USER, 'Fusion Auth', 'a70df92f-3bb0-41d7-a3b2-cca7e26f288d'),
-(gen_random_uuid()::text, 'qa_nexus_csv', 'QA/DEV qa_nexus_CSV', true, CURRENT_USER, 'Fusion Auth', 'fdd112e4-871d-4c0b-b27e-a67ee3dfb38e')
+(gen_random_uuid()::text, 'healthix', 'Healthix', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hecdcs', 'HECDCS', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'healthelink', 'HEALTHeLINK', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hixny', 'HixNY', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'grrhio', 'GRRHIO', true, CURRENT_USER, 'Fusion Auth', NULL)
 ON CONFLICT (tenant_name) DO NOTHING;
 
 DELETE FROM techbd_udi_ingress.tenants

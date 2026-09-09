@@ -1,0 +1,43 @@
+/* Tenant insertion - QE*/
+INSERT INTO techbd_udi_ingress.tenants
+(tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, fusion_auth_group_id)
+VALUES
+(gen_random_uuid()::text, 'netspective-qa', 'QA Netspective', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'netspective-dev', 'DEV Netspective', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'healthix', 'Healthix', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hecdcs', 'HECDCS', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'healthelink', 'HEALTHeLINK', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hixny', 'HixNY', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'grrhio', 'GRRHIO', true, CURRENT_USER, 'Fusion Auth', NULL)
+ON CONFLICT (tenant_name) DO NOTHING;
+
+/* Tenant insertion - MCO*/
+INSERT INTO techbd_udi_ingress.tenants
+(tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, tenant_type, tenant_short_code)
+VALUES
+(gen_random_uuid()::text, 'aet', 'Aetna', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'AET'),
+(gen_random_uuid()::text, 'ant', 'Anthem', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ANT'),
+(gen_random_uuid()::text, 'ami', 'Amida Care', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'AMI'),
+(gen_random_uuid()::text, 'cdp', 'CDPHP', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'CDP'),
+(gen_random_uuid()::text, 'cen', 'Centers Plan', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'CEN'),
+(gen_random_uuid()::text, 'eld', 'ElderPlan', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ELD'),
+(gen_random_uuid()::text, 'emb', 'Emblem', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'EMB'),
+(gen_random_uuid()::text, 'ehp', 'Excellus', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'EHP'),
+(gen_random_uuid()::text, 'fde', 'NYFIDE', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'FDE'),
+(gen_random_uuid()::text, 'fid', 'Fidelis', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'FID'),
+(gen_random_uuid()::text, 'ham', 'Hamaspik', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'HAM'),
+(gen_random_uuid()::text, 'hef', 'Healthfirst', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'HEF'),
+(gen_random_uuid()::text, 'idp', 'Independent Health', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'IDP'),
+(gen_random_uuid()::text, 'icl', 'iCircle', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ICL'),
+(gen_random_uuid()::text, 'mol', 'Molina', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MOL'),
+(gen_random_uuid()::text, 'mps', 'MetroPlus', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MPS'),
+(gen_random_uuid()::text, 'mvp', 'MVP', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MVP'),
+(gen_random_uuid()::text, 'nas', 'Nascentia', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'NAS'),
+(gen_random_uuid()::text, 'rsg', 'RiverSpring', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'RSG'),
+(gen_random_uuid()::text, 'utd', 'United', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'UTD'),
+(gen_random_uuid()::text, 'vic', 'VillageCare', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VIC'),
+(gen_random_uuid()::text, 'vns', 'VNS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VNS'),
+(gen_random_uuid()::text, 'whb', 'Wellpoint/Highmark BCBS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WHB'),
+(gen_random_uuid()::text, 'wpn', 'WellPoint of NYS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WPN'),
+(gen_random_uuid()::text, 'txd', 'TxD', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'TXD')
+ON CONFLICT (tenant_name) DO NOTHING;
