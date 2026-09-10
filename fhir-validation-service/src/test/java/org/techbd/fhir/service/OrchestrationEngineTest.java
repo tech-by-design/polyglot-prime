@@ -22,329 +22,329 @@ import ca.uhn.fhir.parser.IParser;
 
 @ExtendWith(MockitoExtension.class)
 class OrchestrationEngineTest extends BaseIgValidationTest {
-        // private static final String INTERACTION_ID = UuidUtil.generateUuid();  
+        private static final String INTERACTION_ID = UuidUtil.generateUuid();  
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testOrchestrateSingleSession() {
-        //         String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withTracer(tracer)
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
-        //                 assertThat(engine.getSessions().get(realSession.getSessionId()).getPayloads()).isNotNull();
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isFalse();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) FhirContext.forR4().newJsonParser()
-        //                                 .parseResource(results.get(0).getOperationOutcome());
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues)
-        //                                 .isNotNull()
-        //                                 .hasSizeGreaterThan(1);
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testOrchestrateSingleSession() {
+                String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        assertThat(engine.getSessions().get(realSession.getSessionId()).getPayloads()).isNotNull();
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
+                        OperationOutcome operationOutcome = (OperationOutcome) FhirContext.forR4().newJsonParser()
+                                        .parseResource(results.get(0).getOperationOutcome());
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues)
+                                        .isNotNull()
+                                        .hasSizeGreaterThan(1);
 
-        //         } finally {
-        //                 engine.clear(realSession);
+                } finally {
+                        engine.clear(realSession);
 
-        //         }
-        // }
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testOrchestrateMultipleSessions() {
-        //         String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
-        //         String payload2 = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         OrchestrationEngine.OrchestrationSession realSession2 = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 realSession2 = engine.session()
-        //                                 .withPayloads(List.of(payload2))
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withTracer(tracer)
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession, realSession2);
-        //                 assertThat(engine.getSessions()).hasSize(2);
-        //                 OrchestrationEngine.OrchestrationSession retrievedSession1 = engine.getSessions().get(realSession.getSessionId());
-        //                 assertThat(retrievedSession1.getPayloads()).isNotNull(); 
-        //                 assertThat(retrievedSession1.getValidationResults()).hasSize(1);
-        //                 OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(realSession2.getSessionId());
-        //                 assertThat(retrievedSession2.getPayloads()).isNotNull();
-        //                 assertThat(retrievedSession2.getValidationResults()).hasSize(1);
-        //         } finally {
-        //                 engine.clear(realSession);
-        //                 engine.clear(realSession2);
-        //         }
-        // }
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testOrchestrateMultipleSessions() {
+                String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
+                String payload2 = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                OrchestrationEngine.OrchestrationSession realSession2 = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        realSession2 = engine.session()
+                                        .withPayloads(List.of(payload2))
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession, realSession2);
+                        assertThat(engine.getSessions()).hasSize(2);
+                        OrchestrationEngine.OrchestrationSession retrievedSession1 = engine.getSessions().get(realSession.getSessionId());
+                        assertThat(retrievedSession1.getPayloads()).isNotNull(); 
+                        assertThat(retrievedSession1.getValidationResults()).hasSize(1);
+                        OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(realSession2.getSessionId());
+                        assertThat(retrievedSession2.getPayloads()).isNotNull();
+                        assertThat(retrievedSession2.getValidationResults()).hasSize(1);
+                } finally {
+                        engine.clear(realSession);
+                        engine.clear(realSession2);
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testValidationEngineCaching() {
-        //         OrchestrationEngine.OrchestrationSession session1 = null;
-        //         OrchestrationEngine.OrchestrationSession session2 = null;
-        //         try {
-        //                 session1 = engine.session()
-        //                                 .withPayloads(List.of("payload1"))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testValidationEngineCaching() {
+                OrchestrationEngine.OrchestrationSession session1 = null;
+                OrchestrationEngine.OrchestrationSession session2 = null;
+                try {
+                        session1 = engine.session()
+                                        .withPayloads(List.of("payload1"))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
 
-        //                 session2 = engine.session()
-        //                                 .withPayloads(List.of("payload2"))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
+                        session2 = engine.session()
+                                        .withPayloads(List.of("payload2"))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
 
-        //                 engine.orchestrate(session1, session2);
+                        engine.orchestrate(session1, session2);
 
-        //                 Map<String, String> codeSystemMap = new HashMap<>();
-        //                 codeSystemMap.put("shinnyConsentProvisionTypesVS",
-        //                                 "http://shinny.org/us/ny/hrsn/shinnyConsentProvision");
-        //                 assertThat(engine.getSessions()).hasSize(2);
-        //                 assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI));
-        //         } finally {
-        //                 engine.clear(session1);
-        //                 engine.clear(session2);
-        //         }
-        // }
+                        Map<String, String> codeSystemMap = new HashMap<>();
+                        codeSystemMap.put("shinnyConsentProvisionTypesVS",
+                                        "http://shinny.org/us/ny/hrsn/shinnyConsentProvision");
+                        assertThat(engine.getSessions()).hasSize(2);
+                        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI));
+                } finally {
+                        engine.clear(session1);
+                        engine.clear(session2);
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testValidationAgainstLatestShinnyIgHasNoErrors() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isTrue();
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testValidationAgainstLatestShinnyIgHasNoErrors() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isTrue();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
 
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues).filteredOn(issue -> issue.getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).filteredOn(issue -> issue.getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testValidationAgainstShinnyIgLatestVersion_ReferentialIntegrityError() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testValidationAgainstShinnyIgLatestVersion_ReferentialIntegrityError() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
 
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isFalse();
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
 
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
 
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues)
-        //                                 .filteredOn(issue -> issue
-        //                                                 .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
-        //                                 .anySatisfy(issue -> {
-        //                                         assertThat(issue.getCode().toCode()).isEqualTo("processing");
-        //                                         assertThat(issue.getDiagnostics()).contains(
-        //                                                         "Constraint failed: SHINNY-Bundle-Patient-Org-RI: 'Checks for RI between Patient & Assigning Org'");
-        //                                 });
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues)
+                                        .filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
+                                        .anySatisfy(issue -> {
+                                                assertThat(issue.getCode().toCode()).isEqualTo("processing");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Constraint failed: SHINNY-Bundle-Patient-Org-RI: 'Checks for RI between Patient & Assigning Org'");
+                                        });
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 
-        // @Test
-        // void testValidationAgainstLatestTestShinnyIgHasNoErrors() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
+        @Test
+        void testValidationAgainstLatestTestShinnyIgHasNoErrors() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .withInteractionId(INTERACTION_ID)
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
                         
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isTrue();
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isTrue();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
 
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues).filteredOn(issue -> issue
-        //                                                 .getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testValidationAgainstLatestShinnyIg_PatientMRNMissingError() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isFalse();
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues).isNotNull().hasSizeGreaterThan(1);
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testValidationAgainstLatestShinnyIg_PatientMRNMissingError() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).isNotNull().hasSizeGreaterThan(1);
 
-        //                 assertThat(issues)
-        //                                 .filteredOn(issue -> issue
-        //                                                 .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
-        //                                 .anySatisfy(issue -> {
-        //                                         assertThat(issue.getCode().toCode()).isEqualTo("processing");
-        //                                         assertThat(issue.getDiagnostics()).contains(
-        //                                                         "Constraint failed: SHINNY-Patient-MRN:");
-        //                                 });
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+                        assertThat(issues)
+                                        .filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
+                                        .anySatisfy(issue -> {
+                                                assertThat(issue.getCode().toCode()).isEqualTo("processing");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Constraint failed: SHINNY-Patient-MRN:");
+                                        });
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 
-        // @Test
-        // void testValidationAgainstLatestTestShinnyIg_PatientMRNMissingError() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample-Errors.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isFalse();
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
+        @Test
+        void testValidationAgainstLatestTestShinnyIg_PatientMRNMissingError() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample-Errors.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
 
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues).isNotNull().hasSizeGreaterThan(1);
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).isNotNull().hasSizeGreaterThan(1);
 
-        //                 assertThat(issues)
-        //                                 .filteredOn(issue -> issue
-        //                                                 .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
-        //                                 .anySatisfy(issue -> {
-        //                                         assertThat(issue.getCode().toCode()).isEqualTo("processing");
-        //                                         assertThat(issue.getDiagnostics()).contains(
-        //                                                         "Constraint failed: SHINNY-Patient-MRN:");
-        //                                 });
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+                        assertThat(issues)
+                                        .filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
+                                        .anySatisfy(issue -> {
+                                                assertThat(issue.getCode().toCode()).isEqualTo("processing");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Constraint failed: SHINNY-Patient-MRN:");
+                                        });
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
-        // @Test
-        // void testValidationWhenTheIncomingPayloadHasInValidProfileUrl() throws Exception {
-        //         String payload = Files.readString(Path.of(
-        //                         "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-InvalidProfileUrl.json"));
-        //         OrchestrationEngine.OrchestrationSession realSession = null;
-        //         try {
-        //                 realSession = engine.session()
-        //                                 .withPayloads(List.of(payload))
-        //                                 .withTracer(tracer)
-        //                                 .withInteractionId(INTERACTION_ID)
-        //                                 .withSessionId(UuidUtil.generateUuid())
-        //                                 .addHapiValidationEngine()
-        //                                 .build();
-        //                 engine.orchestrate(realSession);
-        //                 assertThat(engine.getSessions()).hasSize(1);
-        //                 List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
-        //                                 .getValidationResults();
-        //                 assertThat(results).hasSize(1);
-        //                 assertThat(results.get(0).isValid()).isFalse();
-        //                 IParser parser = FhirContext.forR4().newJsonParser();
-        //                 OperationOutcome operationOutcome = (OperationOutcome) parser
-        //                                 .parseResource(results.get(0).getOperationOutcome());
-        //                 List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-        //                 assertThat(issues).isNotNull().hasSize(1);
-        //                 assertThat(issues)
-        //                                 .anySatisfy(issue -> {
-        //                                         assertThat(issue.getSeverity())
-        //                                                         .isEqualTo(OperationOutcome.IssueSeverity.FATAL);
-        //                                         assertThat(issue.getCode())
-        //                                                         .isEqualTo(OperationOutcome.IssueType.EXCEPTION);
-        //                                         assertThat(issue.getDiagnostics()).isEqualTo(
-        //                                                         "The provided bundle profile URL is invalid. Please check and enter the correct bundle profile url");
-        //                                 });
-        //         } finally {
-        //                 engine.clear(realSession);
-        //         }
-        // }
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Test
+        void testValidationWhenTheIncomingPayloadHasInValidProfileUrl() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-InvalidProfileUrl.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .withSessionId(UuidUtil.generateUuid())
+                                        .addHapiValidationEngine()
+                                        .build();
+                        engine.orchestrate(realSession);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(realSession.getSessionId())
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).isNotNull().hasSize(1);
+                        assertThat(issues)
+                                        .anySatisfy(issue -> {
+                                                assertThat(issue.getSeverity())
+                                                                .isEqualTo(OperationOutcome.IssueSeverity.FATAL);
+                                                assertThat(issue.getCode())
+                                                                .isEqualTo(OperationOutcome.IssueType.EXCEPTION);
+                                                assertThat(issue.getDiagnostics()).isEqualTo(
+                                                                "The provided bundle profile URL is invalid. Please check and enter the correct bundle profile url");
+                                        });
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
 }
