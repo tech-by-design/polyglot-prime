@@ -2,9 +2,9 @@
   <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Excellus</name>
-  <description>Version: 0.1.11
-Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-  <revision>23</revision>
+  <description>Version: 0.1.13
+File Rejection DB processing for EHP</description>
+  <revision>25</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -5612,7 +5612,8 @@ var batch_id;
 var batch_details_id;
 var fileName = $(&quot;originalFilename&quot;);
 var errorJson = {};
-var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+//var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
@@ -6083,45 +6084,21 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1788432732087</time>
+        <time>1789027990123</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>11</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
-        <name>0_1_11</name>
+        <id>6ec8edae-a2ae-4b09-ac1b-725ab4578c07</id>
+        <name>0_1_13</name>
         <channelIds>
-          <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
-          <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
-          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
-          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-          <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-          <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
-          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-          <string>48679919-904a-4913-a593-28f19da61615</string>
-          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
-          <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
