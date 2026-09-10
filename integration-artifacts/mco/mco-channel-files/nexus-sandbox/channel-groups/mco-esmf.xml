@@ -1,9 +1,9 @@
 <channelGroup version="26.6.0">
   <id>2f75ca15-0008-4979-92f9-f117142013da</id>
   <name>MCO - ESMF</name>
-  <revision>47</revision>
+  <revision>52</revision>
   <lastModified>
-    <time>1787906819887</time>
+    <time>1789025477951</time>
     <timezone>America/New_York</timezone>
   </lastModified>
   <description></description>
@@ -14,7 +14,7 @@
       <name>Anthem</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>8</revision>
+      <revision>24</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -6147,27 +6147,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -6185,7 +6187,7 @@ return;</undeployScript>
       <name>Riverspring</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>7</revision>
+      <revision>20</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -12295,27 +12297,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -12333,7 +12337,7 @@ return;</undeployScript>
       <name>Elder Plan</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <revision>17</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -18441,27 +18445,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -18479,7 +18485,7 @@ return;</undeployScript>
       <name>Amida Care</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>16</revision>
+      <revision>34</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -24633,27 +24639,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -24671,7 +24679,7 @@ return;</undeployScript>
       <name>Nascentia</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>7</revision>
+      <revision>18</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -30793,27 +30801,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -30831,7 +30841,7 @@ return;</undeployScript>
       <name>Aetna</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>8</revision>
+      <revision>21</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -36998,27 +37008,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -37034,9 +37046,9 @@ return;</undeployScript>
       <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
       <nextMetaDataId>17</nextMetaDataId>
       <name>Excellus</name>
-      <description>Version: 0.1.11
-Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <description>Version: 0.1.13
+File Rejection DB processing for EHP</description>
+      <revision>25</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -42644,7 +42656,8 @@ var batch_id;
 var batch_details_id;
 var fileName = $(&quot;originalFilename&quot;);
 var errorJson = {};
-var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+//var rejectionReason = globalChannelMap.get(&quot;invalidFileReason&quot;);
+var rejectionReason = channelMap.get(&quot;invalidFileReason&quot;);
 
 //Get error codes from configuration map
 var errorCodesString = configurationMap.get(&quot;errorCodes&quot;);
@@ -43115,43 +43128,21 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1788432732087</time>
+            <time>1789027990123</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>
             <archiveEnabled>true</archiveEnabled>
             <pruneErroredMessages>false</pruneErroredMessages>
           </pruningSettings>
-          <userId>11</userId>
+          <userId>10</userId>
         </metadata>
         <channelTags>
           <channelTag>
-            <id>d115b028-2007-474d-9257-7a3ed60dcbde</id>
-            <name>0_1_11</name>
+            <id>6ec8edae-a2ae-4b09-ac1b-725ab4578c07</id>
+            <name>0_1_13</name>
             <channelIds>
-              <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
-              <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
-              <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
               <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
-              <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
-              <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
-              <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-              <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
-              <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
-              <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
-              <string>1d692067-1995-41a8-8712-969387b1c04c</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -43169,7 +43160,7 @@ return;</undeployScript>
       <name>Independent Health</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>18</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -49270,27 +49261,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -49308,7 +49301,7 @@ return;</undeployScript>
       <name>Village Care</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>20</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -55425,27 +55418,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -55463,7 +55458,7 @@ return;</undeployScript>
       <name>Molina</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <revision>16</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -61525,27 +61520,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -61563,7 +61560,7 @@ return;</undeployScript>
       <name>Fidelis</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>24</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -67656,27 +67653,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -67694,7 +67693,7 @@ return;</undeployScript>
       <name>MVP</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <revision>19</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -73788,27 +73787,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -73826,7 +73827,7 @@ return;</undeployScript>
       <name>Emblem</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>17</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -79923,27 +79924,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -79961,7 +79964,7 @@ return;</undeployScript>
       <name>Hamaspik</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>16</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -86051,27 +86054,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -86089,7 +86094,7 @@ return;</undeployScript>
       <name>TxD</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <revision>14</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -92241,27 +92246,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -92279,7 +92286,7 @@ return;</undeployScript>
       <name>VNS</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>12</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -98383,27 +98390,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -98421,7 +98430,7 @@ return;</undeployScript>
       <name>United</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>13</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -104522,27 +104531,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -104560,7 +104571,7 @@ return;</undeployScript>
       <name>CDPHP</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>11</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -110698,27 +110709,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -110736,7 +110749,7 @@ return;</undeployScript>
       <name>Wellpoint</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>12</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -116831,27 +116844,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -116869,7 +116884,7 @@ return;</undeployScript>
       <name>Wellpoint NYS</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>8</revision>
+      <revision>16</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -122971,27 +122986,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -123009,7 +123026,7 @@ return;</undeployScript>
       <name>Metroplus</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>6</revision>
+      <revision>15</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -129102,27 +129119,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -129140,7 +129159,7 @@ return;</undeployScript>
       <name>Healthfirst</name>
       <description>Version: 0.1.11
 Reuse the existing root file batch_id to avoid creating duplicate mco_records entries.</description>
-      <revision>5</revision>
+      <revision>12</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
@@ -135266,27 +135285,29 @@ return;</undeployScript>
             <channelIds>
               <string>a468ed3f-4719-4ea3-8741-60167f8e697c</string>
               <string>716de165-ff22-46a6-8f29-b8815fe472e2</string>
-              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
-              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
-              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
-              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
-              <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
-              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
-              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
-              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
               <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
               <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
-              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
-              <string>48679919-904a-4913-a593-28f19da61615</string>
               <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
               <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
               <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
-              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+              <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+              <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+              <string>5e63bd8c-8e58-43a1-927d-c712f75874f3</string>
+              <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+              <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
+              <string>2d03f704-aa39-4c81-a7a1-130811276765</string>
+              <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+              <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+              <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+              <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+              <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+              <string>48679919-904a-4913-a593-28f19da61615</string>
+              <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
               <string>1d692067-1995-41a8-8712-969387b1c04c</string>
+              <string>ba7afeda-0d3c-48b5-81ec-cbfdb1dd926f</string>
             </channelIds>
             <backgroundColor>
               <red>255</red>
@@ -135296,6 +135317,811 @@ return;</undeployScript>
             </backgroundColor>
           </channelTag>
         </channelTags>
+      </exportData>
+    </channel>
+    <channel version="26.6.0">
+      <id>bb7b54f0-d213-4c09-b315-ad522cc1f2d5</id>
+      <nextMetaDataId>3</nextMetaDataId>
+      <name>Aetna SFTP Bridge</name>
+      <description>Version: 0.1.4
+SFTP copy issue fix.</description>
+      <revision>2</revision>
+      <sourceConnector version="26.6.0">
+        <metaDataId>0</metaDataId>
+        <name>sourceConnector</name>
+        <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="26.6.0">
+          <pluginProperties/>
+          <pollConnectorProperties version="26.6.0">
+            <pollingType>INTERVAL</pollingType>
+            <pollOnStart>true</pollOnStart>
+            <pollingFrequency>60000</pollingFrequency>
+            <pollingHour>0</pollingHour>
+            <pollingMinute>0</pollingMinute>
+            <cronJobs/>
+            <pollConnectorPropertiesAdvanced>
+              <weekly>true</weekly>
+              <inactiveDays>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+                <boolean>false</boolean>
+              </inactiveDays>
+              <dayOfMonth>1</dayOfMonth>
+              <allDay>true</allDay>
+              <startingHour>8</startingHour>
+              <startingMinute>0</startingMinute>
+              <endingHour>17</endingHour>
+              <endingMinute>0</endingMinute>
+            </pollConnectorPropertiesAdvanced>
+          </pollConnectorProperties>
+          <sourceConnectorProperties version="26.6.0">
+            <responseVariable>None</responseVariable>
+            <respondAfterProcessing>true</respondAfterProcessing>
+            <processBatch>false</processBatch>
+            <firstResponse>false</firstResponse>
+            <processingThreads>1</processingThreads>
+            <resourceIds class="linked-hash-map">
+              <entry>
+                <string>Default Resource</string>
+                <string>[Default Resource]</string>
+              </entry>
+            </resourceIds>
+            <queueBufferSize>1000</queueBufferSize>
+          </sourceConnectorProperties>
+          <script>importPackage(com.jcraft.jsch);
+
+// ===== Aetna SFTP Bridge =====
+// Steps 1-3: login to Aetna&apos;s inbound SFTP, scan for new files, and copy anything found
+// into the Aetna landing directory that the existing &quot;Aetna&quot; channel already watches.
+// Step 4: when nothing is found, decide whether an &quot;Aetna file missing&quot; alert is warranted.
+// Any failure in steps 1-3 (login, scan, or copy) sends an email alert.
+
+// Aetna&apos;s per-MCO folder segment in the S3-backed landing bucket. Put in globalMap (not
+// channelMap - channelMap is scoped to an in-flight message, and this poll script runs
+// before any message exists yet, so channelMap is not defined here) so the &quot;Copy to Aetna
+// Landing&quot; destination&apos;s &lt;host&gt; (${s3BucketName}/${mcoSftpS3Folder}/esmf/inbound) can
+// reference it too, keeping a single place to change if this ever needs updating.
+var mcoSftpS3Folder = &apos;mco-sftp-aetna&apos;;
+globalMap.put(&apos;mcoSftpS3Folder&apos;, mcoSftpS3Folder);
+
+function sendAlertEmail(subject, body) {
+    try {
+        var smtpHostname = configurationMap.get(&apos;smtpHostName&apos;);
+        var smtpPort = parseInt(configurationMap.get(&apos;smtpPort&apos;));
+        var smtpUsername = configurationMap.get(&apos;smtpUsername&apos;);
+        var smtpPassword = configurationMap.get(&apos;smtpPassword&apos;);
+        var fromEmail = configurationMap.get(&apos;smtpFromEmail&apos;);
+        var toEmail = &apos;engineering@techbd.org&apos;;
+
+        var smtpConn = SMTPConnection(smtpHostname, smtpPort, 0, true, &apos;TLS&apos;, smtpUsername, smtpPassword, fromEmail);
+        smtpConn.send(toEmail, &apos;&apos;, fromEmail, subject, body, &apos;UTF-8&apos;);
+        logger.info(&apos;Aetna SFTP Bridge: alert email sent - &apos; + subject);
+    } catch (mailErr) {
+        logger.error(&apos;Aetna SFTP Bridge: failed to send alert email - &apos; + mailErr);
+    }
+}
+
+// Same startDate/endDate windowed reporting-month calculation used across the MCO channels
+// (see Aetna.xml&apos;s getFolderName), duplicated here since this channel has no other dependency
+// on that shared code template library.
+function getFolderName(year, month, date) {
+    var months = [&apos;January&apos;, &apos;February&apos;, &apos;March&apos;, &apos;April&apos;, &apos;May&apos;, &apos;June&apos;, &apos;July&apos;, &apos;August&apos;, &apos;September&apos;, &apos;October&apos;, &apos;November&apos;, &apos;December&apos;];
+    var startDate = parseInt(configurationMap.get(&apos;startDate&apos;));
+    var endDate = parseInt(configurationMap.get(&apos;endDate&apos;));
+
+    if (startDate &gt;= endDate) {
+        if (date &gt;= startDate) {
+            if (month != 11) {
+                month = month + 1;
+            } else {
+                month = 0;
+                year = year + 1;
+            }
+        }
+    }
+    return months[month] + &apos;-&apos; + year;
+}
+
+// True if Aetna already has a fully/partially processed batch for the current reporting month
+function alreadyProcessedThisMonth() {
+    var jdbdcDriver = configurationMap.get(&apos;jdbdcDriver&apos;);
+    var jbdcUrl = globalMap.get(&apos;jbdcUrl&apos;);
+    var dbName = globalMap.get(&apos;dbName&apos;);
+    var dbPassword = globalMap.get(&apos;dbPassword&apos;);
+    var dbConn;
+
+    try {
+        dbConn = DatabaseConnectionFactory.createDatabaseConnection(jdbdcDriver, jbdcUrl, dbName, dbPassword);
+
+        var tenantResult = dbConn.executeCachedQuery(
+            &quot;select tenant_id from techbd_udi_ingress.tenants where tenant_short_code = ? and is_active = &apos;1&apos;&quot;,
+            [&apos;AET&apos;]
+        );
+        var mcoId = null;
+        while (tenantResult.next()) {
+            mcoId = tenantResult.getString(1);
+        }
+        if (!mcoId) {
+            logger.info(&apos;Aetna SFTP Bridge: could not resolve tenant_id for AET, treating as not processed this month&apos;);
+            return false;
+        }
+
+        var recordResult = dbConn.executeCachedQuery(
+            &quot;select status, created_on_utc from mco_data.mco_records where tenant_id = ? and is_active = &apos;1&apos; ORDER BY batch_id DESC LIMIT 1&quot;,
+            [mcoId]
+        );
+        var status = null;
+        var createdOnUtc = null;
+        while (recordResult.next()) {
+            status = recordResult.getString(1);
+            createdOnUtc = recordResult.getString(2);
+        }
+
+        if (!createdOnUtc || (status != &apos;FULLY_PROCESSED&apos; &amp;&amp; status != &apos;PARTIALLY_PROCESSED&apos;)) {
+            return false;
+        }
+
+        var createdParts = (createdOnUtc + &apos;&apos;).split(&apos; &apos;)[0].split(&apos;-&apos;);
+        var folderNameFromDB = getFolderName(parseInt(createdParts[0]), parseInt(createdParts[1]) - 1, parseInt(createdParts[2]));
+
+        var today = new Date();
+        var presentFolderName = getFolderName(today.getFullYear(), today.getMonth(), today.getDate());
+
+        return folderNameFromDB == presentFolderName;
+    } finally {
+        if (dbConn) {
+            dbConn.close();
+        }
+    }
+}
+
+// True when today falls within the monthly submission window (e.g. the 26th through the 5th)
+function isWithinSubmissionWindow() {
+    var today = new Date();
+    var dayOfMonth = today.getDate();
+    var startDate = parseInt(configurationMap.get(&apos;startDate&apos;));
+    var endDate = parseInt(configurationMap.get(&apos;endDate&apos;));
+
+    if (startDate &gt;= endDate) {
+        // Window wraps across the end of the month, e.g. 26th through the 5th of next month
+        return dayOfMonth &gt;= startDate || dayOfMonth &lt;= endDate;
+    }
+    return dayOfMonth &gt;= startDate &amp;&amp; dayOfMonth &lt;= endDate;
+}
+
+// Step 4: no files were found on this poll. Never sends the &quot;channel error&quot; alert - only logs.
+function handleNoFilesFound() {
+    try {
+        if (alreadyProcessedThisMonth()) {
+            logger.info(&apos;Aetna SFTP Bridge: folder checked, no file found - Aetna file already processed for the current reporting month.&apos;);
+            return;
+        }
+
+        if (isWithinSubmissionWindow()) {
+            logger.info(&apos;Aetna SFTP Bridge: folder checked, no file found, within the submission window - sending alert.&apos;);
+            sendAlertEmail(
+                &apos;Aetna Alert: No ESMF File Found&apos;,
+                &apos;This is an automated notification that no Aetna ESMF file has been found on Aetna\&apos;s SFTP for the current reporting month as of &apos; + new Date().toString() + &apos;.\n\nPlease follow up with Aetna if a file was expected.&apos;
+            );
+        } else {
+            logger.info(&apos;Aetna SFTP Bridge: folder checked, no file found.&apos;);
+        }
+    } catch (checkErr) {
+        // A failure here is a step-4 problem, not a login/scan/copy (steps 1-3) problem, so we
+        // only log it rather than sending the step 1-3 error alert.
+        logger.error(&apos;Aetna SFTP Bridge: error while checking already-processed status for the current month - &apos; + checkErr);
+    }
+}
+
+// ===== Main poll: steps 1-3 =====
+var sftpHost = configurationMap.get(&apos;aetnaInboundSftpHost&apos;);
+var sftpPort = parseInt(configurationMap.get(&apos;aetnaInboundSftpPort&apos;));
+var sftpUsername = configurationMap.get(&apos;aetnaInboundSftpUsername&apos;);
+var sftpPassword = configurationMap.get(&apos;aetnaInboundSftpPassword&apos;);
+var sftpFolder = configurationMap.get(&apos;aetnaInboundSftpFolder&apos;);
+
+var s3BucketName = globalMap.get(&apos;s3BucketName&apos;);
+// Log-only - must match the &quot;Copy to Aetna Landing&quot; destination&apos;s &lt;host&gt;, which is what
+// actually controls where the file is written (it references ${mcoSftpS3Folder} separately).
+var s3LandingPrefix = mcoSftpS3Folder + &apos;/esmf/inbound/&apos;;
+
+var session = null;
+var sftpChannel = null;
+
+try {
+    // Step 1: login to Aetna&apos;s SFTP - username/password only, no key-based auth
+    var jsch = new JSch();
+
+    session = jsch.getSession(sftpUsername, sftpHost, sftpPort);
+    if (sftpPassword) {
+        session.setPassword(sftpPassword);
+    }
+    session.setConfig(&apos;StrictHostKeyChecking&apos;, &apos;no&apos;);
+    // With no identity ever registered (key-based auth removed), JSch still tries
+    // &apos;publickey&apos; first because the server advertises it first, and having zero
+    // identities to offer for it makes JSch abort the whole login immediately instead of
+    // falling through to &apos;password&apos; - confirmed via the full JSch protocol log: &quot;Next
+    // authentication method: publickey&quot; is followed straight by &quot;Disconnecting&quot;, with no
+    // &quot;Next authentication method: password&quot; ever appearing. Restricting the preferred
+    // methods to password only stops JSch from attempting publickey at all.
+    session.setConfig(&apos;PreferredAuthentications&apos;, &apos;password&apos;);
+
+    // Diagnostic - safe fields only, never logs the password value itself
+    logger.info(&apos;Aetna SFTP Bridge: connecting to &apos; + sftpHost + &apos;:&apos; + sftpPort + &apos; as &quot;&apos; + sftpUsername + &apos;&quot; (password=&apos; + (sftpPassword ? &apos;present&apos; : &apos;absent&apos;) + &apos;)&apos;);
+
+    session.connect(10000);
+    logger.info(&apos;Aetna SFTP Bridge: SSH handshake and authentication succeeded, server version: &apos; + session.getServerVersion());
+
+    sftpChannel = session.openChannel(&apos;sftp&apos;);
+    sftpChannel.connect(10000);
+
+    // Step 2: scan folder for new files
+    logger.info(&apos;Aetna SFTP Bridge: scanning folder &quot;&apos; + sftpFolder + &apos;&quot;&apos;);
+    var entries = sftpChannel.ls(sftpFolder);
+    logger.info(&apos;Aetna SFTP Bridge: folder listing returned &apos; + entries.size() + &apos; entr&apos; + (entries.size() === 1 ? &apos;y&apos; : &apos;ies&apos;));
+    var newFiles = [];
+    for (var i = 0; i &lt; entries.size(); i++) {
+        var entry = entries.get(i);
+        if (entry.getAttrs().isDir()) {
+            continue;
+        }
+        var fname = entry.getFilename();
+        if (fname == &apos;.&apos; || fname == &apos;..&apos;) {
+            continue;
+        }
+        newFiles.push(fname);
+    }
+
+    if (newFiles.length === 0) {
+        // Step 4: no files exist
+        handleNoFilesFound();
+        return null;
+    }
+
+    // Step 3: copy the file to the Aetna landing directory in the S3-backed SFTP.
+    // AmazonS3ClientBuilder is not reachable from this connector&apos;s own script (confirmed:
+    // neither Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder nor an explicit
+    // importPackage resolves it here, even though com.jcraft.jsch resolves fine), so the
+    // native &quot;Copy to Aetna Landing&quot; File Writer destination (scheme=S3) performs the
+    // actual write, the same way every S3 write elsewhere in the MCO channels is done.
+    //
+    // A poll can only return one message, so only the first file found is processed here.
+    // router.routeMessage(channelId, ...) was tried first to self-route every file found in
+    // one poll, but Mirth&apos;s VMRouter cannot resolve a channel routing to itself while that
+    // same channel&apos;s own source poll is still executing - confirmed via the server log:
+    // &quot;Could not find channel to route to for channel name: &lt;this channel&apos;s own id&gt;&quot;,
+    // logged server-side without throwing a catchable exception back into this script, so
+    // the file was silently never delivered even though this script logged success. Any
+    // additional files simply wait for the next poll, 60 seconds later.
+    if (newFiles.length &gt; 1) {
+        logger.info(&apos;Aetna SFTP Bridge: found &apos; + newFiles.length + &apos; files this poll - processing the first now, the rest will be picked up on later polls&apos;);
+    }
+
+    var remoteFileName = newFiles[0];
+    try {
+        var baos = new java.io.ByteArrayOutputStream();
+        sftpChannel.get(sftpFolder + &apos;/&apos; + remoteFileName, baos);
+        var fileContent = new java.lang.String(baos.toByteArray(), &apos;UTF-8&apos;);
+
+        // Archive the source file on Aetna&apos;s SFTP so it is not re-copied on the next poll.
+        // This happens regardless of whether the landing-directory write below succeeds -
+        // the &quot;Log Delivery&quot; destination checks that outcome and sends the error alert if
+        // the write itself failed, so the failure is not silently lost even though the
+        // source file is moved either way.
+        try {
+            sftpChannel.mkdir(sftpFolder + &apos;/processed&apos;);
+        } catch (mkdirErr) {
+            // Directory most likely already exists
+        }
+        var processedPath = sftpFolder + &apos;/processed/&apos; + remoteFileName;
+        try {
+            sftpChannel.rename(sftpFolder + &apos;/&apos; + remoteFileName, processedPath);
+        } catch (renameErr) {
+            // Most SFTP servers refuse to rename onto an existing target rather than
+            // overwriting it - confirmed via repeated identical SftpException failures
+            // (message = the destination path) on every poll for the same filename, which
+            // otherwise leaves the source file stuck in place and retried forever. Remove
+            // whatever is already sitting at the processed path (e.g. left over from a
+            // prior run, or a same-named file from an earlier month) and retry once.
+            logger.info(&apos;Aetna SFTP Bridge: rename to &apos; + processedPath + &apos; failed (&apos; + renameErr + &apos;), removing any existing file at that path and retrying&apos;);
+            try {
+                sftpChannel.rm(processedPath);
+            } catch (rmErr) {
+                // Nothing to remove, or removal itself failed - the retry below will
+                // surface whatever the real problem is if this wasn&apos;t the cause
+            }
+            sftpChannel.rename(sftpFolder + &apos;/&apos; + remoteFileName, processedPath);
+        }
+
+        logger.info(&apos;Aetna SFTP Bridge: delivering &apos; + remoteFileName + &apos; to &apos; + s3BucketName + &apos;/&apos; + s3LandingPrefix);
+
+        var sourceMap = new java.util.HashMap();
+        sourceMap.put(&apos;originalFilename&apos;, remoteFileName);
+        return new RawMessage(fileContent, null, sourceMap);
+    } catch (fileErr) {
+        logger.error(&apos;Aetna SFTP Bridge: failed to read/deliver &apos; + remoteFileName + &apos; - &apos; + fileErr);
+        sendAlertEmail(
+            &apos;Aetna SFTP Bridge Alert: Error Copying File&apos;,
+            &apos;An error occurred while reading &apos; + remoteFileName + &apos; from Aetna\&apos;s SFTP or delivering it to the Aetna landing directory.\n\n&apos; + fileErr
+        );
+        return null;
+    }
+} catch (err) {
+    // Steps 1-3 error (login, scan, or the overall copy pass)
+    logger.error(&apos;Aetna SFTP Bridge: error during SFTP login/scan/copy - &apos; + err);
+
+    // Extra diagnostic detail - each wrapped separately so a failure logging one doesn&apos;t
+    // hide the others or mask the original error above.
+    try {
+        if (err.javaException) {
+            logger.error(&apos;Aetna SFTP Bridge: underlying Java exception - &apos; + err.javaException + &apos; (class: &apos; + err.javaException.getClass().getName() + &apos;)&apos;);
+            var cause = err.javaException.getCause();
+            if (cause) {
+                logger.error(&apos;Aetna SFTP Bridge: caused by - &apos; + cause);
+            }
+        }
+    } catch (logErr1) {
+        logger.error(&apos;Aetna SFTP Bridge: could not introspect underlying exception - &apos; + logErr1);
+    }
+    try {
+        if (session) {
+            logger.error(&apos;Aetna SFTP Bridge: session state - serverVersion=&apos; + session.getServerVersion() + &apos;, isConnected=&apos; + session.isConnected());
+        }
+    } catch (logErr2) {
+        logger.error(&apos;Aetna SFTP Bridge: could not read session state - &apos; + logErr2);
+    }
+
+    sendAlertEmail(
+        &apos;Aetna SFTP Bridge Alert: Channel Error&apos;,
+        &apos;An error occurred while logging into Aetna\&apos;s SFTP, scanning for new files, or copying files to the Aetna landing directory.\n\n&apos; + err
+    );
+    return null;
+} finally {
+    if (sftpChannel) {
+        sftpChannel.disconnect();
+    }
+    if (session) {
+        session.disconnect();
+    }
+}
+</script>
+        </properties>
+        <transformer version="26.6.0">
+          <elements/>
+          <inboundTemplate encoding="base64"></inboundTemplate>
+          <outboundTemplate encoding="base64"></outboundTemplate>
+          <inboundDataType>RAW</inboundDataType>
+          <outboundDataType>RAW</outboundDataType>
+          <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+              <splitType>JavaScript</splitType>
+              <batchScript></batchScript>
+            </batchProperties>
+          </inboundProperties>
+          <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+            <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+              <splitType>JavaScript</splitType>
+              <batchScript></batchScript>
+            </batchProperties>
+          </outboundProperties>
+        </transformer>
+        <filter version="26.6.0">
+          <elements/>
+        </filter>
+        <transportName>JavaScript Reader</transportName>
+        <mode>SOURCE</mode>
+        <enabled>true</enabled>
+        <waitForPrevious>true</waitForPrevious>
+      </sourceConnector>
+      <destinationConnectors>
+        <connector version="26.6.0">
+          <metaDataId>2</metaDataId>
+          <name>Copy to Aetna Landing</name>
+          <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
+            <pluginProperties/>
+            <destinationConnectorProperties version="26.6.0">
+              <queueEnabled>false</queueEnabled>
+              <sendFirst>false</sendFirst>
+              <retryIntervalMillis>10000</retryIntervalMillis>
+              <regenerateTemplate>false</regenerateTemplate>
+              <retryCount>0</retryCount>
+              <rotate>false</rotate>
+              <includeFilterTransformer>false</includeFilterTransformer>
+              <threadCount>1</threadCount>
+              <threadAssignmentVariable></threadAssignmentVariable>
+              <validateResponse>false</validateResponse>
+              <resourceIds class="linked-hash-map">
+                <entry>
+                  <string>Default Resource</string>
+                  <string>[Default Resource]</string>
+                </entry>
+              </resourceIds>
+              <queueBufferSize>1000</queueBufferSize>
+              <reattachAttachments>true</reattachAttachments>
+            </destinationConnectorProperties>
+            <scheme>S3</scheme>
+            <schemeProperties class="com.mirth.connect.connectors.file.S3SchemeProperties">
+              <useDefaultCredentialProviderChain>true</useDefaultCredentialProviderChain>
+              <useTemporaryCredentials>false</useTemporaryCredentials>
+              <duration>7200</duration>
+              <region>us-east-1</region>
+              <customHeaders class="linked-hash-map"/>
+            </schemeProperties>
+            <host>${s3BucketName}/${mcoSftpS3Folder}/esmf/inbound</host>
+            <outputPattern>${originalFilename}</outputPattern>
+            <anonymous>false</anonymous>
+            <username></username>
+            <password></password>
+            <timeout>10000</timeout>
+            <keepConnectionOpen>true</keepConnectionOpen>
+            <maxIdleTime>0</maxIdleTime>
+            <secure>true</secure>
+            <passive>true</passive>
+            <validateConnection>true</validateConnection>
+            <outputAppend>false</outputAppend>
+            <errorOnExists>false</errorOnExists>
+            <temporary>false</temporary>
+            <binary>false</binary>
+            <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+            <template>${message.rawData}</template>
+          </properties>
+          <transformer version="26.6.0">
+            <elements>
+              <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+                <sequenceNumber>0</sequenceNumber>
+                <enabled>true</enabled>
+                <script>// Runs right before the native S3 write is attempted, so &quot;starting&quot; is logged
+// even if the write itself then hangs, times out, or fails before any response exists.
+//
+// Checks whether the destination S3 object already exists so a replace can be called out
+// explicitly in the log, per requirement. The native File Writer destination below
+// (errorOnExists=false, outputAppend=false, temporary=false) always overwrites an existing
+// object at this key without erroring - the same settings used by every other S3 write in
+// the MCO channels (see Aetna.xml&apos;s Success/Error Data destinations) - so this check does
+// not change the write behavior, it only makes a replace visible in the logs.
+// AmazonS3ClientBuilder is not reachable from the source JavaScript Reader connector&apos;s own
+// script on this Bridgelink instance (see this channel&apos;s description), but it is reachable
+// here since this is a destination transformer step, same as Aetna.xml&apos;s transformer-step
+// scripts that already use it successfully.
+var uploadFileName = $(&apos;originalFilename&apos;);
+var uploadBucket = globalMap.get(&apos;s3BucketName&apos;);
+var uploadKey = globalMap.get(&apos;mcoSftpS3Folder&apos;) + &apos;/esmf/inbound/&apos; + uploadFileName;
+
+try {
+    var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&apos;us-east-1&apos;).build();
+    if (s3.doesObjectExist(uploadBucket, uploadKey)) {
+        logger.info(&apos;Aetna SFTP Bridge: object already exists at &apos; + uploadBucket + &apos;/&apos; + uploadKey + &apos; - it will be replaced by this upload of &apos; + uploadFileName);
+    }
+} catch (existsErr) {
+    // Best-effort visibility only - if the existence check itself fails, still proceed with
+    // the upload below rather than blocking delivery on a check that isn&apos;t load-bearing.
+    logger.info(&apos;Aetna SFTP Bridge: could not check whether &apos; + uploadBucket + &apos;/&apos; + uploadKey + &apos; already exists - &apos; + existsErr);
+}
+
+logger.info(&apos;Aetna SFTP Bridge: starting S3 upload - file=&apos; + uploadFileName + &apos;, target=&apos; + uploadBucket + &apos;/&apos; + uploadKey);
+return msg;</script>
+              </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+            </elements>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <outboundTemplate encoding="base64"></outboundTemplate>
+            <inboundDataType>RAW</inboundDataType>
+            <outboundDataType>RAW</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </inboundProperties>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </outboundProperties>
+          </transformer>
+          <responseTransformer version="26.6.0">
+            <elements>
+              <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+                <sequenceNumber>0</sequenceNumber>
+                <enabled>true</enabled>
+                <script>// Runs right after the native S3 write attempt completes, success or failure.
+// response.getStatus() throws &quot;TypeError: Cannot find function getStatus&quot; on this
+// Bridgelink instance&apos;s com.mirth.connect.server.userutil.ImmutableResponse (confirmed
+// via testing - getStatus() is simply not exposed here even though it&apos;s a documented
+// Response method). getError() and getMessage() work fine on the same object though, which
+// matches the pattern already used for S3 writes elsewhere in the MCO channels (see
+// Aetna.xml&apos;s responseTransformer scripts, which likewise only ever call response.getError()
+// / response.getMessage() and never response.getStatus() - status checks there go through
+// $(&apos;d7&apos;).getStatus(), i.e. getStatus() on an ImmutableConnectorMessage, not on the raw
+// Response). So success/failure here is inferred from whether getError() returns anything.
+// Each accessor is still wrapped separately since not every Response implementation
+// necessarily exposes all of getError/getStatusMessage - one missing method should not
+// hide the others or block this step from completing.
+try {
+    var uploadError = response.getError();
+    if (uploadError) {
+        logger.error(&apos;Aetna SFTP Bridge: S3 upload for &apos; + $(&apos;originalFilename&apos;) + &apos; failed - &apos; + uploadError);
+    } else {
+        logger.info(&apos;Aetna SFTP Bridge: S3 upload finished for &apos; + $(&apos;originalFilename&apos;) + &apos; with no error reported&apos;);
+    }
+} catch (e1) {
+    logger.error(&apos;Aetna SFTP Bridge: could not read S3 upload error detail - &apos; + e1);
+}
+try {
+    var uploadStatusMessage = response.getStatusMessage();
+    if (uploadStatusMessage) {
+        logger.info(&apos;Aetna SFTP Bridge: S3 upload status message - &apos; + uploadStatusMessage);
+    }
+} catch (e2) {
+    // getStatusMessage may not be available on this Response implementation
+}
+return response;</script>
+              </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+            </elements>
+            <inboundDataType>RAW</inboundDataType>
+            <outboundDataType>RAW</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </inboundProperties>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </outboundProperties>
+          </responseTransformer>
+          <filter version="26.6.0">
+            <elements/>
+          </filter>
+          <transportName>File Writer</transportName>
+          <mode>DESTINATION</mode>
+          <enabled>true</enabled>
+          <waitForPrevious>true</waitForPrevious>
+        </connector>
+        <connector version="26.6.0">
+          <metaDataId>1</metaDataId>
+          <name>Log Delivery</name>
+          <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
+            <pluginProperties/>
+            <destinationConnectorProperties version="26.6.0">
+              <queueEnabled>false</queueEnabled>
+              <sendFirst>false</sendFirst>
+              <retryIntervalMillis>10000</retryIntervalMillis>
+              <regenerateTemplate>false</regenerateTemplate>
+              <retryCount>0</retryCount>
+              <rotate>false</rotate>
+              <includeFilterTransformer>false</includeFilterTransformer>
+              <threadCount>1</threadCount>
+              <threadAssignmentVariable></threadAssignmentVariable>
+              <validateResponse>false</validateResponse>
+              <resourceIds class="linked-hash-map">
+                <entry>
+                  <string>Default Resource</string>
+                  <string>[Default Resource]</string>
+                </entry>
+              </resourceIds>
+              <queueBufferSize>1000</queueBufferSize>
+              <reattachAttachments>true</reattachAttachments>
+            </destinationConnectorProperties>
+            <script>// Runs once per file routed by the source script (one message per file - see Step 3).
+// Checks whether the &quot;Copy to Aetna Landing&quot; destination (metaDataId 2) actually
+// succeeded, and sends the step 1-3 error alert if the landing-directory write failed -
+// the source script only catches failures reading/routing the file, not failures in this
+// separate native destination, so that check has to happen here instead.
+function sendAlertEmail(subject, body) {
+    try {
+        var smtpHostname = configurationMap.get(&apos;smtpHostName&apos;);
+        var smtpPort = parseInt(configurationMap.get(&apos;smtpPort&apos;));
+        var smtpUsername = configurationMap.get(&apos;smtpUsername&apos;);
+        var smtpPassword = configurationMap.get(&apos;smtpPassword&apos;);
+        var fromEmail = configurationMap.get(&apos;smtpFromEmail&apos;);
+        var toEmail = &apos;engineering@techbd.org&apos;;
+
+        var smtpConn = SMTPConnection(smtpHostname, smtpPort, 0, true, &apos;TLS&apos;, smtpUsername, smtpPassword, fromEmail);
+        smtpConn.send(toEmail, &apos;&apos;, fromEmail, subject, body, &apos;UTF-8&apos;);
+        logger.info(&apos;Aetna SFTP Bridge: alert email sent - &apos; + subject);
+    } catch (mailErr) {
+        logger.error(&apos;Aetna SFTP Bridge: failed to send alert email - &apos; + mailErr);
+    }
+}
+
+var fileName = $(&apos;originalFilename&apos;);
+var copyDest = $(&apos;d2&apos;);
+var copyStatus = copyDest ? copyDest.getStatus() : null;
+var copyFailed = copyStatus &amp;&amp; copyStatus.toString() === &apos;ERROR&apos;;
+
+// Pull whatever extra detail is available about the write outcome - wrapped separately
+// since not every Response implementation exposes both accessors.
+var copyStatusMessage = null;
+try {
+    copyStatusMessage = copyDest ? copyDest.getResponseStatusMessage() : null;
+} catch (e1) {
+    // getResponseStatusMessage may not be available on this ConnectorMessage implementation
+}
+var copyErrorDetail = null;
+try {
+    copyErrorDetail = copyDest ? copyDest.getResponseError() : null;
+} catch (e2) {
+    // getResponseError may not be available on this ConnectorMessage implementation
+}
+
+if (copyFailed) {
+    logger.error(&apos;Aetna SFTP Bridge: delivery to the Aetna landing directory failed for &apos; + fileName + (copyStatusMessage ? &apos; - &apos; + copyStatusMessage : &apos;&apos;));
+    if (copyErrorDetail) {
+        logger.error(&apos;Aetna SFTP Bridge: landing-directory write error detail - &apos; + copyErrorDetail);
+    }
+    sendAlertEmail(
+        &apos;Aetna SFTP Bridge Alert: Error Copying File&apos;,
+        &apos;The Aetna landing directory write failed for &apos; + fileName + &apos; after it was read from Aetna\&apos;s SFTP.\n\n&apos; +
+        (copyStatusMessage ? &apos;Status: &apos; + copyStatusMessage + &apos;\n\n&apos; : &apos;&apos;) +
+        (copyErrorDetail ? &apos;Error detail: &apos; + copyErrorDetail + &apos;\n\n&apos; : &apos;&apos;) +
+        &apos;Check the &quot;Copy to Aetna Landing&quot; destination in the Aetna SFTP Bridge channel for the full message. Note the source file has already been moved to the /processed folder on Aetna\&apos;s SFTP regardless of this failure.&apos;
+    );
+} else {
+    logger.info(&apos;Aetna SFTP Bridge: delivered &apos; + fileName + &apos; to the Aetna landing directory&apos;);
+}
+return;
+</script>
+          </properties>
+          <transformer version="26.6.0">
+            <elements/>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <outboundTemplate encoding="base64"></outboundTemplate>
+            <inboundDataType>RAW</inboundDataType>
+            <outboundDataType>RAW</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </inboundProperties>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </outboundProperties>
+          </transformer>
+          <responseTransformer version="26.6.0">
+            <elements/>
+            <inboundDataType>RAW</inboundDataType>
+            <outboundDataType>RAW</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </inboundProperties>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+              <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+                <splitType>JavaScript</splitType>
+                <batchScript></batchScript>
+              </batchProperties>
+            </outboundProperties>
+          </responseTransformer>
+          <filter version="26.6.0">
+            <elements/>
+          </filter>
+          <transportName>JavaScript Writer</transportName>
+          <mode>DESTINATION</mode>
+          <enabled>true</enabled>
+          <waitForPrevious>true</waitForPrevious>
+        </connector>
+      </destinationConnectors>
+      <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+      <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+return;</postprocessingScript>
+      <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+
+globalMap.put(&quot;jbdcUrl&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;));
+globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;));
+globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
+globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
+
+// Aetna&apos;s inbound SFTP login is username/password only - no key-based auth, so there is
+// nothing to pull from Config-sensitive for the SFTP connection itself.
+
+// Diagnostic-only: when aetnaSftpDebugLogging=true in the configuration map, install a
+// JSch protocol-level logger so channel logs show the SSH/SFTP handshake and auth
+// negotiation in detail (which auth methods the server offers, why each attempt is
+// rejected, etc.). JSch.setLogger is a JVM-wide static setting, so this affects every
+// channel on this Bridgelink instance that uses JSch while enabled - turn it back off
+// (set the flag to anything other than &quot;true&quot;, or remove it, and redeploy) once the
+// connection issue is diagnosed.
+if (&quot;true&quot;.equalsIgnoreCase(&apos;&apos; + configurationMap.get(&quot;aetnaSftpDebugLogging&quot;))) {
+    var jschLevelNames = [&apos;DEBUG&apos;, &apos;INFO&apos;, &apos;WARN&apos;, &apos;ERROR&apos;, &apos;FATAL&apos;];
+    Packages.com.jcraft.jsch.JSch.setLogger(new Packages.com.jcraft.jsch.Logger({
+        isEnabled: function(level) {
+            return true;
+        },
+        log: function(level, message) {
+            var levelName = jschLevelNames[level] || (&apos;LEVEL_&apos; + level);
+            if (level &gt;= 3) {
+                logger.error(&apos;Aetna SFTP Bridge JSCH[&apos; + levelName + &apos;]: &apos; + message);
+            } else {
+                logger.info(&apos;Aetna SFTP Bridge JSCH[&apos; + levelName + &apos;]: &apos; + message);
+            }
+        }
+    }));
+    logger.info(&apos;Aetna SFTP Bridge: JSch protocol-level debug logging enabled&apos;);
+} else {
+    // JSch.setLogger has no &quot;unset&quot; - only &quot;replace&quot;. If a previous deploy turned the flag
+    // on, the verbose logger installed above stays active JVM-wide even after the flag is
+    // turned back off, until something explicitly replaces it. This installs a no-op logger
+    // so a redeploy with the flag off actually silences it, rather than leaving the earlier
+    // deploy&apos;s verbose logger running indefinitely.
+    Packages.com.jcraft.jsch.JSch.setLogger(new Packages.com.jcraft.jsch.Logger({
+        isEnabled: function(level) {
+            return false;
+        },
+        log: function(level, message) {
+            // intentionally does nothing
+        }
+    }));
+}
+
+return;</deployScript>
+      <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+      <properties version="26.6.0">
+        <clearGlobalChannelMap>true</clearGlobalChannelMap>
+        <messageStorageMode>DEVELOPMENT</messageStorageMode>
+        <encryptData>false</encryptData>
+        <encryptAttachments>true</encryptAttachments>
+        <encryptCustomMetaData>true</encryptCustomMetaData>
+        <removeContentOnCompletion>false</removeContentOnCompletion>
+        <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+        <removeAttachmentsOnCompletion>true</removeAttachmentsOnCompletion>
+        <initialState>STARTED</initialState>
+        <storeAttachments>true</storeAttachments>
+        <metaDataColumns>
+          <metaDataColumn>
+            <name>SOURCE</name>
+            <type>STRING</type>
+            <mappingName>message_source</mappingName>
+          </metaDataColumn>
+          <metaDataColumn>
+            <name>TYPE</name>
+            <type>STRING</type>
+            <mappingName>message_type</mappingName>
+          </metaDataColumn>
+        </metaDataColumns>
+        <attachmentProperties version="26.6.0">
+          <type>None</type>
+          <properties/>
+        </attachmentProperties>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+      </properties>
+      <exportData>
+        <metadata>
+          <enabled>true</enabled>
+          <lastModified>
+            <time>1789030712776</time>
+            <timezone>Asia/Calcutta</timezone>
+          </lastModified>
+          <pruningSettings>
+            <pruneMetaDataDays>1</pruneMetaDataDays>
+            <archiveEnabled>false</archiveEnabled>
+            <pruneErroredMessages>false</pruneErroredMessages>
+          </pruningSettings>
+          <userId>6</userId>
+        </metadata>
       </exportData>
     </channel>
   </channels>
