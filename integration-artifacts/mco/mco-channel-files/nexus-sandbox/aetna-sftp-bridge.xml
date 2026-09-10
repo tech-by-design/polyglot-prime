@@ -2,37 +2,9 @@
   <id>bb7b54f0-d213-4c09-b315-ad522cc1f2d5</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>Aetna SFTP Bridge</name>
-  <description>Version: 0.1.3
-Step 3 (copy to the Aetna landing directory) is done by a native File Writer destination
-(scheme=S3, metaDataId 2, &quot;Copy to Aetna Landing&quot;) rather than a raw AWS SDK call from the
-source script - AmazonS3ClientBuilder is not reachable from a JavaScript Reader source
-connector&apos;s own script on this Bridgelink instance (confirmed via testing), even though it
-works fine inside Aetna.xml&apos;s transformer-step scripts.
-
-The source script delivers the found file by returning it as a RawMessage directly (only
-the first file if more than one is found - the rest wait for later polls), NOT via
-router.routeMessage. Self-routing was tried first, but Mirth&apos;s VMRouter cannot resolve a
-channel routing to itself while that same channel&apos;s own source poll is still executing -
-confirmed via the server log (&quot;Could not find channel to route to for channel name: [this
-channel&apos;s own id]&quot;), logged server-side without throwing a catchable exception back into
-the script, so the file was silently never delivered even though the script logged success.
-
-&quot;Log Delivery&quot; (metaDataId 1) checks the landing-directory write&apos;s outcome and sends the
-step 1-3 error alert if the write itself failed.
-Aetna&apos;s inbound SFTP login is username/password only - the client does not use key-based
-auth for this connection, so there is no private key or passphrase anywhere in this channel.
-
-Logs into Aetna&apos;s inbound SFTP, scans for new ESMF files, and copies anything found into the
-${s3BucketName}/mco-sftp-aetna/esmf/inbound landing directory (mco-sftp-aetna is a
-hardcoded constant, mcoSftpS3Folder, near the top of the source script), so the normal ESMF
-processing pipeline picks it up unchanged.
-
-If no file is found, checks whether Aetna has already been processed for the current reporting
-month (mco_data.mco_records). If not, and today falls within the monthly submission window
-(configurationMap startDate/endDate), emails engineering@techbd.org that no Aetna file was found.
-
-If the SFTP login, folder scan, or copy step fails, emails engineering@techbd.org with the error.</description>
-  <revision>45</revision>
+  <description>Version: 0.1.4
+SFTP copy issue fix.</description>
+  <revision>2</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -324,7 +296,25 @@ try {
         } catch (mkdirErr) {
             // Directory most likely already exists
         }
-        sftpChannel.rename(sftpFolder + &apos;/&apos; + remoteFileName, sftpFolder + &apos;/processed/&apos; + remoteFileName);
+        var processedPath = sftpFolder + &apos;/processed/&apos; + remoteFileName;
+        try {
+            sftpChannel.rename(sftpFolder + &apos;/&apos; + remoteFileName, processedPath);
+        } catch (renameErr) {
+            // Most SFTP servers refuse to rename onto an existing target rather than
+            // overwriting it - confirmed via repeated identical SftpException failures
+            // (message = the destination path) on every poll for the same filename, which
+            // otherwise leaves the source file stuck in place and retried forever. Remove
+            // whatever is already sitting at the processed path (e.g. left over from a
+            // prior run, or a same-named file from an earlier month) and retry once.
+            logger.info(&apos;Aetna SFTP Bridge: rename to &apos; + processedPath + &apos; failed (&apos; + renameErr + &apos;), removing any existing file at that path and retrying&apos;);
+            try {
+                sftpChannel.rm(processedPath);
+            } catch (rmErr) {
+                // Nothing to remove, or removal itself failed - the retry below will
+                // surface whatever the real problem is if this wasn&apos;t the cause
+            }
+            sftpChannel.rename(sftpFolder + &apos;/&apos; + remoteFileName, processedPath);
+        }
 
         logger.info(&apos;Aetna SFTP Bridge: delivering &apos; + remoteFileName + &apos; to &apos; + s3BucketName + &apos;/&apos; + s3LandingPrefix);
 
@@ -465,7 +455,33 @@ try {
             <enabled>true</enabled>
             <script>// Runs right before the native S3 write is attempted, so &quot;starting&quot; is logged
 // even if the write itself then hangs, times out, or fails before any response exists.
-logger.info(&apos;Aetna SFTP Bridge: starting S3 upload - file=&apos; + $(&apos;originalFilename&apos;) + &apos;, target=&apos; + globalMap.get(&apos;s3BucketName&apos;) + &apos;/&apos; + globalMap.get(&apos;mcoSftpS3Folder&apos;) + &apos;/esmf/inbound/&apos; + $(&apos;originalFilename&apos;));
+//
+// Checks whether the destination S3 object already exists so a replace can be called out
+// explicitly in the log, per requirement. The native File Writer destination below
+// (errorOnExists=false, outputAppend=false, temporary=false) always overwrites an existing
+// object at this key without erroring - the same settings used by every other S3 write in
+// the MCO channels (see Aetna.xml&apos;s Success/Error Data destinations) - so this check does
+// not change the write behavior, it only makes a replace visible in the logs.
+// AmazonS3ClientBuilder is not reachable from the source JavaScript Reader connector&apos;s own
+// script on this Bridgelink instance (see this channel&apos;s description), but it is reachable
+// here since this is a destination transformer step, same as Aetna.xml&apos;s transformer-step
+// scripts that already use it successfully.
+var uploadFileName = $(&apos;originalFilename&apos;);
+var uploadBucket = globalMap.get(&apos;s3BucketName&apos;);
+var uploadKey = globalMap.get(&apos;mcoSftpS3Folder&apos;) + &apos;/esmf/inbound/&apos; + uploadFileName;
+
+try {
+    var s3 = Packages.com.amazonaws.services.s3.AmazonS3ClientBuilder.standard().withRegion(&apos;us-east-1&apos;).build();
+    if (s3.doesObjectExist(uploadBucket, uploadKey)) {
+        logger.info(&apos;Aetna SFTP Bridge: object already exists at &apos; + uploadBucket + &apos;/&apos; + uploadKey + &apos; - it will be replaced by this upload of &apos; + uploadFileName);
+    }
+} catch (existsErr) {
+    // Best-effort visibility only - if the existence check itself fails, still proceed with
+    // the upload below rather than blocking delivery on a check that isn&apos;t load-bearing.
+    logger.info(&apos;Aetna SFTP Bridge: could not check whether &apos; + uploadBucket + &apos;/&apos; + uploadKey + &apos; already exists - &apos; + existsErr);
+}
+
+logger.info(&apos;Aetna SFTP Bridge: starting S3 upload - file=&apos; + uploadFileName + &apos;, target=&apos; + uploadBucket + &apos;/&apos; + uploadKey);
 return msg;</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
@@ -492,13 +508,27 @@ return msg;</script>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>// Runs right after the native S3 write attempt completes, success or failure.
-// Each accessor is wrapped separately since not every Response implementation
-// necessarily exposes all of getStatus/getStatusMessage/getError - one missing method
-// should not hide the others or block this step from completing.
+// response.getStatus() throws &quot;TypeError: Cannot find function getStatus&quot; on this
+// Bridgelink instance&apos;s com.mirth.connect.server.userutil.ImmutableResponse (confirmed
+// via testing - getStatus() is simply not exposed here even though it&apos;s a documented
+// Response method). getError() and getMessage() work fine on the same object though, which
+// matches the pattern already used for S3 writes elsewhere in the MCO channels (see
+// Aetna.xml&apos;s responseTransformer scripts, which likewise only ever call response.getError()
+// / response.getMessage() and never response.getStatus() - status checks there go through
+// $(&apos;d7&apos;).getStatus(), i.e. getStatus() on an ImmutableConnectorMessage, not on the raw
+// Response). So success/failure here is inferred from whether getError() returns anything.
+// Each accessor is still wrapped separately since not every Response implementation
+// necessarily exposes all of getError/getStatusMessage - one missing method should not
+// hide the others or block this step from completing.
 try {
-    logger.info(&apos;Aetna SFTP Bridge: S3 upload finished for &apos; + $(&apos;originalFilename&apos;) + &apos; - status=&apos; + response.getStatus());
+    var uploadError = response.getError();
+    if (uploadError) {
+        logger.error(&apos;Aetna SFTP Bridge: S3 upload for &apos; + $(&apos;originalFilename&apos;) + &apos; failed - &apos; + uploadError);
+    } else {
+        logger.info(&apos;Aetna SFTP Bridge: S3 upload finished for &apos; + $(&apos;originalFilename&apos;) + &apos; with no error reported&apos;);
+    }
 } catch (e1) {
-    logger.error(&apos;Aetna SFTP Bridge: could not read S3 upload status - &apos; + e1);
+    logger.error(&apos;Aetna SFTP Bridge: could not read S3 upload error detail - &apos; + e1);
 }
 try {
     var uploadStatusMessage = response.getStatusMessage();
@@ -507,14 +537,6 @@ try {
     }
 } catch (e2) {
     // getStatusMessage may not be available on this Response implementation
-}
-try {
-    var uploadError = response.getError();
-    if (uploadError) {
-        logger.error(&apos;Aetna SFTP Bridge: S3 upload error detail - &apos; + uploadError);
-    }
-} catch (e3) {
-    // getError may not be available on this Response implementation
 }
 return response;</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
@@ -769,7 +791,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1788770928455</time>
+        <time>1789030712776</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
