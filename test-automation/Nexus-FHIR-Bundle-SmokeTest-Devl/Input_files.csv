@@ -1,0 +1,5 @@
+./test-automation/Nexus-FHIR-Bundle-SmokeTest-Devl/Input_payloads/AHCHRSNQuestionnaireResponseExample.json
+./test-automation/Nexus-FHIR-Bundle-SmokeTest-Devl/Input_payloads/AHCHRSNScreeningResponseExample.json
+./test-automation/Nexus-FHIR-Bundle-SmokeTest-Devl/Input_payloads/ObservationAssessmentFoodInsecurityExample.json
+./test-automation/Nexus-FHIR-Bundle-SmokeTest-Devl/Input_payloads/ServiceRequestExample.json
+./test-automation/Nexus-FHIR-Bundle-SmokeTest-Devl/Input_payloads/TaskExample.json
