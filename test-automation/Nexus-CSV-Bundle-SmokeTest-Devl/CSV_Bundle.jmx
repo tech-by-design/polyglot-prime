@@ -21,8 +21,7 @@
       </ThreadGroup>
       <hashTree>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CSV_BUNDLE_PHI_QA_Request">
-          <stringProp name="HTTPSampler.domain">1.nexus-txd-dev.techbd.org</stringProp>
-          <stringProp name="HTTPSampler.port">9000</stringProp>
+          <stringProp name="HTTPSampler.domain">fhir.api.dev.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/flatfile/csv/Bundle</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
