@@ -1,4 +1,4 @@
-name: CSV Bundle SmokeTest
+name: Nexus Dev CSV Bundle SmokeTest
 on:
   schedule:
     - cron: '30 3,15 * * *' # Runs at 3:30 AM and 3:30 PM UTC
@@ -51,7 +51,7 @@ jobs:
         echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
         echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
         
-    - name: Run CSV Bundle SmokeTest for Environments
+    - name: Run Nexus Dev CSV Bundle SmokeTest for Environments
       id: run-tests
       run: |
         # Array of environments and their paths
