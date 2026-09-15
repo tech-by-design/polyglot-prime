@@ -22,8 +22,7 @@
       <hashTree>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CCDA_BUNDLE_Stage_Request">
           <stringProp name="TestPlan.comments">CCDA Bundle API test</stringProp>
-          <stringProp name="HTTPSampler.domain">1.nexus-txd-dev.techbd.org</stringProp>
-          <stringProp name="HTTPSampler.port">9000</stringProp>
+          <stringProp name="HTTPSampler.domain">fhir.api.dev.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/ccda/Bundle</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
