@@ -2206,6 +2206,10 @@ const migrateSP = pgSQLa.storedProcedure(
                   AND column_name = 'batch_id'
                   AND data_type <> 'bigint'
             ) THEN
+                -- 1. Drop dependent view
+                DROP VIEW IF EXISTS mco_data.get_source_monitoring CASCADE;
+
+                -- 2. Change batch_id to BIGINT
                 ALTER TABLE mco_data.mco_records
                     ALTER COLUMN batch_id TYPE bigint;
             END IF;
@@ -2329,6 +2333,10 @@ const migrateSP = pgSQLa.storedProcedure(
                   AND column_name = 'batch_details_id'
                   AND data_type <> 'bigint'
             ) THEN
+                -- 1. Drop dependent view
+                DROP VIEW IF EXISTS mco_data.v_source_monitoring_details CASCADE;
+
+                -- 2. Change batch_details_id to BIGINT
                 ALTER TABLE mco_data.mco_record_details
                     ALTER COLUMN batch_details_id TYPE bigint;
             END IF;
