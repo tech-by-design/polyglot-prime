@@ -51,6 +51,10 @@ const mcoSchema = SQLa.sqlSchemaDefn("mco_data", {
   isIdempotent: true,
 });
 
+const screeningExtractsSchema = SQLa.sqlSchemaDefn("screening_extracts", {
+  isIdempotent: true,
+});
+
 const {
   text,
   jsonbNullable,
@@ -856,9 +860,10 @@ const idpRoleTenantPermission = SQLa.tableDefinition("idp_role_tenant_permission
 
 //MCO Integration Tables
 const mcoRecords = SQLa.tableDefinition("mco_records", {
-  //batch_guid: text().default("techbd_udi_ingress.uuid_generate_v4()"),
-  //batch_guid: text().default("gen_random_uuid()::TEXT"),
-  batch_id: serial(),
+  // batch_guid: text().default("techbd_udi_ingress.uuid_generate_v4()"),
+  // batch_guid: text().default("gen_random_uuid()::TEXT"),
+  // batch_id: serial(),
+  batch_id: integer(),
   root_file_name: textNullable(),
   created_on_utc: dateTime(),
   updated_on_utc: dateTimeNullable(),
@@ -887,7 +892,8 @@ const mcoRecords = SQLa.tableDefinition("mco_records", {
 
 const mcoRecordDetails = SQLa.tableDefinition("mco_record_details", {
   //batch_details_guid: text().default("gen_random_uuid()::TEXT"),
-  batch_details_id: serial(),
+  // batch_details_id: serial(),
+  batch_details_id: integer(),
   current_file_name: textNullable(),
   file_size_in_kb: textNullable(),
   total_records: integer(),
@@ -930,7 +936,8 @@ const mcoErrorTypes = SQLa.tableDefinition("mco_error_types", {
 
 const mcoRecordErrorLogs = SQLa.tableDefinition("mco_record_error_logs", {
   //error_log_guid: text().default("gen_random_uuid()::TEXT"),
-  error_log_id: serial(),
+  // error_log_id: serial(),
+  error_log_id: integer(),
   batch_id: integer(),
   error_json: jsonB,
   created_on_utc: dateTimeNullable(),
@@ -943,6 +950,160 @@ const mcoRecordErrorLogs = SQLa.tableDefinition("mco_record_error_logs", {
   isIdempotent: true,
   sqlNS: mcoSchema
 });
+
+// screening_extracts Tables
+const resourceTypes = SQLa.tableDefinition("resource_types", {
+  resource_type_guid: primaryKey().default("techbd_udi_ingress.uuid_generate_v4()"),
+  //resource_type_id: serial(),
+  resource_type_id: integer(),
+  resource_type_name: textNullable(),
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  update_on_utc: dateTimeNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("resource_type_id"),
+    ];
+  },
+});
+
+const screeningErrorTypes = SQLa.tableDefinition("screening_error_types", {
+  screening_error_type_guid: primaryKey().default(
+    "techbd_udi_ingress.uuid_generate_v4()"
+  ),
+  screening_error_type_id: integer(),
+  screening_error_type_name: textNullable(),
+  screening_error_type_description: textNullable(),
+
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("screening_error_type_id"),
+    ];
+  },
+});
+
+const mcoScreeningExtracts = SQLa.tableDefinition("mco_screening_extracts", {
+  mco_screening_guid: primaryKey().default(
+    "techbd_udi_ingress.uuid_generate_v4()"
+  ),
+  mco_screening_id: integer(),
+
+  tenant_id: textNullable(),
+  resource_type_id: integer(),
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+
+  status: textNullable(),
+  control_file_name: textNullable(),
+  request_bundle_id: textNullable(),
+  sent_to_mco: dateTimeNullable(),
+  acknowledge_time: dateTimeNullable(),
+  received_file_size_in_kb: textNullable(),
+  response_bundle_id: textNullable(),
+  sent_file_name: textNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+
+    return [
+      c.unique("mco_screening_id"),
+    ];
+  },
+});
+
+const mcoScreeningExtractsDetails = SQLa.tableDefinition(
+  "mco_screening_extracts_details",
+  {
+    mco_screening_extracts_details_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_extracts_details_id: integer(),
+
+    mco_screening_id: integer(),
+    reprocess_count: integer(),
+    resource_type_id: integer(),
+
+    is_active: boolean(),
+    file_name: textNullable(),
+    notification_doc: jsonbNullable(),
+    record_count: integer(),
+
+    created_on_utc: dateTimeNullable(),
+    updated_on_utc: dateTimeNullable(),
+
+    status: textNullable(),
+    received_data_file_size_in_kb: textNullable(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+    constraints: (props, tableName) => {
+      const c = SQLa.tableConstraints(tableName, props);
+
+      return [
+        c.unique("mco_screening_extracts_details_id"),
+      ];
+    },
+  },
+);
+
+const mcoScreeningExtractsErrorLogs = SQLa.tableDefinition(
+  "mco_screening_extracts_error_logs",
+  {
+    mco_screening_extracts_error_log_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_extracts_error_log_id: integer(),
+
+    mco_screening_id: integer(),
+    error_json: textNullable(),
+
+    created_on_utc: dateTimeNullable(),
+    updated_on_utc: dateTimeNullable(),
+
+    mco_screening_extracts_details_id: integer(),
+    is_active: boolean(),
+    screening_error_type_id: integer(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+  },
+);
+
+const mcoScreeningPreferences = SQLa.tableDefinition(
+  "mco_screening_preferences",
+  {
+    mco_screening_preferences_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_preferences_id: integer(),
+
+    tenant_id: text(),
+    resource_type_id: integer(),
+    is_active: boolean(),
+    created_on_utc: dateTime(),
+    deactivated_on_utc: dateTimeNullable(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+  },
+);
 
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
@@ -1065,6 +1226,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE EXTENSION IF NOT EXISTS "pg_trgm" SCHEMA ${ingressSchema.sqlNamespace};
 
       CREATE SCHEMA IF NOT EXISTS mco_data;
+
+      CREATE SCHEMA IF NOT EXISTS screening_extracts;
 
 
       ${assuranceSchema}
@@ -2016,6 +2179,64 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;
 
       ${mcoRecords}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create new BIGINT sequence
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_records_batch_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE mco_data.mco_records_batch_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert batch_id from INTEGER to BIGINT
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_records'
+                  AND column_name = 'batch_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                ALTER TABLE mco_data.mco_records
+                    ALTER COLUMN batch_id TYPE bigint;
+            END IF;
+
+            -- Point batch_id to the new BIGINT sequence
+            ALTER TABLE mco_data.mco_records
+                ALTER COLUMN batch_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_records_batch_id_bigint_seq'::regclass
+                );
+
+            -- Associate sequence with batch_id
+            ALTER SEQUENCE mco_data.mco_records_batch_id_bigint_seq
+                OWNED BY mco_data.mco_records.batch_id;
+
+            -- Initialize sequence only when newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_records_batch_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(batch_id)
+                            FROM mco_data.mco_records
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
         ALTER TABLE mco_data.mco_records ADD COLUMN IF NOT EXISTS batch_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
         IF NOT EXISTS (
             SELECT 1
@@ -2061,7 +2282,86 @@ const migrateSP = pgSQLa.storedProcedure(
           EXECUTE 'ALTER TABLE mco_data.mco_records ALTER COLUMN resubmitted_count DROP NOT NULL';
       END IF;
 
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_records'
+            AND column_name = 'reporting_month_date'
+      ) THEN
+          ALTER TABLE mco_data.mco_records
+          ADD COLUMN reporting_month_date date
+          GENERATED ALWAYS AS (
+              make_date(
+                  substring(trim(reporting_month) from 4 for 4)::int,
+                  substring(trim(reporting_month) from 1 for 2)::int,
+                  1
+              )
+          ) STORED;
+      END IF;
+
       ${mcoRecordDetails}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create new BIGINT sequence if it does not exist
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_record_details_batch_details_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE
+                    mco_data.mco_record_details_batch_details_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert batch_details_id to BIGINT only if required
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_record_details'
+                  AND column_name = 'batch_details_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                ALTER TABLE mco_data.mco_record_details
+                    ALTER COLUMN batch_details_id TYPE bigint;
+            END IF;
+
+            -- Set the new BIGINT sequence as the default
+            ALTER TABLE mco_data.mco_record_details
+                ALTER COLUMN batch_details_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_record_details_batch_details_id_bigint_seq'::regclass
+                );
+
+            -- Associate the sequence with batch_details_id
+            ALTER SEQUENCE
+                mco_data.mco_record_details_batch_details_id_bigint_seq
+                OWNED BY
+                mco_data.mco_record_details.batch_details_id;
+
+            -- Synchronize sequence only when it was newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_record_details_batch_details_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(batch_details_id)
+                            FROM mco_data.mco_record_details
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
         ALTER TABLE mco_data.mco_record_details ADD COLUMN IF NOT EXISTS batch_details_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
         IF NOT EXISTS (
             SELECT 1
@@ -2110,6 +2410,67 @@ const migrateSP = pgSQLa.storedProcedure(
         END IF;
 
       ${mcoRecordErrorLogs}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create a new BIGINT sequence for the production column
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_record_error_logs_error_log_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE
+                    mco_data.mco_record_error_logs_error_log_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert error_log_id to BIGINT only if required
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_record_error_logs'
+                  AND column_name = 'error_log_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                ALTER TABLE mco_data.mco_record_error_logs
+                    ALTER COLUMN error_log_id TYPE bigint;
+            END IF;
+
+            -- Use the new BIGINT sequence
+            ALTER TABLE mco_data.mco_record_error_logs
+                ALTER COLUMN error_log_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_record_error_logs_error_log_id_bigint_seq'::regclass
+                );
+
+            -- Make the sequence owned by the column
+            ALTER SEQUENCE
+                mco_data.mco_record_error_logs_error_log_id_bigint_seq
+                OWNED BY
+                mco_data.mco_record_error_logs.error_log_id;
+
+            -- Initialize the sequence only when it was newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_record_error_logs_error_log_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(error_log_id)
+                            FROM mco_data.mco_record_error_logs
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
         ALTER TABLE mco_data.mco_record_error_logs ADD COLUMN IF NOT EXISTS error_log_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
         IF NOT EXISTS (
             SELECT 1
@@ -2121,6 +2482,696 @@ const migrateSP = pgSQLa.storedProcedure(
             FOREIGN KEY (tenant_id)
             REFERENCES techbd_udi_ingress.tenants (tenant_id);
         END IF;
+
+      ${resourceTypes}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'resource_type_resource_type_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.resource_type_resource_type_id_seq
+                  AS bigint;
+            
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'resource_types'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.resource_types
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.resource_types
+              ALTER COLUMN resource_type_id
+              SET DEFAULT nextval(
+                  'screening_extracts.resource_type_resource_type_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE screening_extracts.resource_type_resource_type_id_seq
+              OWNED BY screening_extracts.resource_types.resource_type_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.resource_type_resource_type_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(resource_type_id)
+                          FROM screening_extracts.resource_types
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'resource_type_guid_pkey'
+            AND conrelid = 'screening_extracts.resource_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ADD CONSTRAINT resource_type_guid_pkey
+              PRIMARY KEY (resource_type_guid);
+      END IF;
+
+      -- Resource type name unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'resource_types_resource_type_name_unqky'
+            AND conrelid = 'screening_extracts.resource_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ADD CONSTRAINT resource_types_resource_type_name_unqky
+              UNIQUE (resource_type_name);
+      END IF;
+
+      ${screeningErrorTypes}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'screening_error_type_screening_error_type_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.screening_error_type_screening_error_type_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'screening_error_types'
+                AND column_name = 'screening_error_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.screening_error_types
+                  ALTER COLUMN screening_error_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.screening_error_types
+              ALTER COLUMN screening_error_type_id
+              SET DEFAULT nextval(
+                  'screening_extracts.screening_error_type_screening_error_type_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.screening_error_type_screening_error_type_id_seq
+              OWNED BY
+              screening_extracts.screening_error_types.screening_error_type_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.screening_error_type_screening_error_type_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(screening_error_type_id)
+                          FROM screening_extracts.screening_error_types
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'screening_error_type_guid_pkey'
+            AND conrelid = 'screening_extracts.screening_error_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ADD CONSTRAINT screening_error_type_guid_pkey
+              PRIMARY KEY (screening_error_type_guid);
+      END IF;
+
+      -- Screening error type name unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'screening_error_types_error_type_name_unqky'
+            AND conrelid = 'screening_extracts.screening_error_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ADD CONSTRAINT screening_error_types_error_type_name_unqky
+              UNIQUE (screening_error_type_name);
+      END IF;
+
+      ${mcoScreeningExtracts}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'mco_screening_extracts_mco_screening_id_seq'
+          ) THEN
+              CREATE SEQUENCE screening_extracts.mco_screening_extracts_mco_screening_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN mco_screening_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extracts_mco_screening_id_seq'::regclass
+              );
+
+          -- Associate sequence with the column
+          ALTER SEQUENCE screening_extracts.mco_screening_extracts_mco_screening_id_seq
+              OWNED BY screening_extracts.mco_screening_extracts.mco_screening_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extracts_mco_screening_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_id)
+                          FROM screening_extracts.mco_screening_extracts
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_guid_pkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_guid_pkey
+              PRIMARY KEY (mco_screening_guid);
+      END IF;
+
+      -- Unique constraint
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_mco_screening_id_unqky'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_mco_screening_id_unqky
+              UNIQUE (mco_screening_id);
+      END IF;
+
+      -- resource_type_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_resource_type_id_fkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- tenant_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_tenant_id_fkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_tenant_id_fkey
+              FOREIGN KEY (tenant_id)
+              REFERENCES techbd_udi_ingress.tenants(tenant_id);
+      END IF;
+
+      ${mcoScreeningExtractsDetails}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname =
+                    'mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'mco_screening_extracts_details_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN mco_screening_extracts_details_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'reprocess_count'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN reprocess_count TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'record_count'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN record_count TYPE bigint;
+          END IF;
+
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN mco_screening_extracts_details_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq'::regclass
+              );
+
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq
+              OWNED BY
+              screening_extracts.mco_screening_extracts_details.mco_screening_extracts_details_id;
+
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_extracts_details_id)
+                          FROM screening_extracts.mco_screening_extracts_details
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_details_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT mco_screening_extracts_details_guid_pkey
+              PRIMARY KEY (mco_screening_extracts_details_guid);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_mco_screening_extracts_details_i'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_mco_screening_extracts_details_i
+              UNIQUE (mco_screening_extracts_details_id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_mco_screening_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_mco_screening_id_fkey
+              FOREIGN KEY (mco_screening_id)
+              REFERENCES screening_extracts.mco_screening_extracts(mco_screening_id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_resource_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      ${mcoScreeningExtractsErrorLogs}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname =
+                    'mco_screening_extract_error_logs_mco_scrning_extract_err_log_id'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert error log ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_extracts_error_log_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_extracts_error_log_id TYPE bigint;
+          END IF;
+
+          -- Convert mco_screening_id to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          -- Convert details ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_extracts_details_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_extracts_details_id TYPE bigint;
+          END IF;
+
+          -- Convert screening error type ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'screening_error_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN screening_error_type_id TYPE bigint;
+          END IF;
+
+          -- Convert error_json from TEXT to JSON
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'error_json'
+                AND data_type <> 'json'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN error_json TYPE json
+                  USING error_json::json;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_extracts_error_log_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id
+              OWNED BY
+              screening_extracts.mco_screening_extracts_error_logs.mco_screening_extracts_error_log_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_extracts_error_log_id)
+                          FROM screening_extracts.mco_screening_extracts_error_logs
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      ${mcoScreeningPreferences}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'mco_screening_preferences_mco_screening_preferences_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_preferences'
+                AND column_name = 'mco_screening_preferences_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_preferences
+                  ALTER COLUMN mco_screening_preferences_id TYPE bigint;
+          END IF;
+
+          -- Convert resource_type_id to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_preferences'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_preferences
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ALTER COLUMN mco_screening_preferences_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq
+              OWNED BY
+              screening_extracts.mco_screening_preferences.mco_screening_preferences_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+
+              PERFORM setval(
+                  'screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_preferences_id)
+                          FROM screening_extracts.mco_screening_preferences
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_guid_pkey
+              PRIMARY KEY (mco_screening_preferences_guid);
+      END IF;
+
+      -- tenant_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_tenant_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_tenant_id_fkey
+              FOREIGN KEY (tenant_id)
+              REFERENCES techbd_udi_ingress.tenants(tenant_id);
+      END IF;
+
+      -- resource_type_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_resource_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- tenant_id unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_tenant_id_unqky'
+            AND conrelid = 'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_tenant_id_unqky
+              UNIQUE (tenant_id);
+      END IF;
 
       ${dependenciesSQL}
 
@@ -2302,6 +3353,7 @@ export function generated() {
       DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
       DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
       DROP SCHEMA IF EXISTS ${mcoSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${screeningExtractsSchema.sqlNamespace} cascade;
 
       DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
       DROP PROCEDURE IF EXISTS "${rollbackSP.sqlNS?.sqlNamespace}"."${rollbackSP.routineName}" CASCADE;
