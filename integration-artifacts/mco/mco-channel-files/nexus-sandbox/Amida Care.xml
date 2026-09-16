@@ -2,9 +2,9 @@
   <id>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.14
+  <description>Version: 0.1.15
 Enhanced the file processing channel to efficiently handle large files using chunk-based processing.</description>
-  <revision>41</revision>
+  <revision>43</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -3023,14 +3023,14 @@ try {
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
-            <name>Accept message if &quot;$(&apos;totalProcess&apos;)&quot; is not blank</name>
+            <name>Accept message if &quot;$(&apos;totalProcess&apos;)&quot; does not equal 0</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
             <operator>AND</operator>
             <field>$(&apos;totalProcess&apos;)</field>
             <condition>NOT_EQUAL</condition>
             <values>
-              <string>$(&apos;totalProcess&apos;)</string>
+              <string>0</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
@@ -6219,7 +6219,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789491193129</time>
+        <time>1789536565134</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6230,20 +6230,16 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fdba656f-84c1-4994-ab33-f620ad54aac7</id>
-        <name>0_1_14</name>
+        <id>172e0125-5847-4b33-af6a-0237306c706f</id>
+        <name>0_1_15</name>
         <channelIds>
-          <string>6cd5fbb1-b5f6-4a12-953f-e4af9a074a45</string>
           <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
-          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
-          <string>43c53c2d-beb1-476b-b497-096fd565fe06</string>
-          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
         </channelIds>
         <backgroundColor>
           <red>0</red>
-          <green>255</green>
-          <blue>0</blue>
+          <green>128</green>
+          <blue>128</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
