@@ -198,3 +198,54 @@ VALUES
 (44, 'scr_Most_Recent_MCO_Transactions', 'Most Recent MCO Transactions', 'Most Recent MCO Transactions screen', 'page', 1, 2, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL),
 (45, 'scr_Most_Recent_QE_Transactions', 'Most Recent QE Transactions', 'Most Recent QE Transactions screen', 'page', 1, 3, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL)
 ON CONFLICT (scr_code) DO NOTHING;	 
+
+/*Insert master data into screening_extracts tables*/
+-- 1. screening_error_types 
+INSERT INTO screening_extracts.screening_error_types 
+    (screening_error_type_name, is_active, created_on_utc) VALUES
+    ('INVALID_FILE', '1', NOW()),
+    ('INVALID_EXTENSION', '1', NOW()),
+    ('INVALID_HEADER', '1', NOW()), 
+    ('INVALID_RECORD', '1', NOW()),
+    ('DUPLICATE_RECORD', '1', NOW())
+    ON CONFLICT (screening_error_type_name) DO NOTHING;
+
+-- 2. Resource types 
+INSERT INTO screening_extracts.resource_types 
+    (resource_type_name, is_active, created_on_utc) VALUES
+    ('BUNDLE', '1', NOW()),
+    ('FLATFILE', '1', NOW())
+    ON CONFLICT (resource_type_name) DO NOTHING;
+
+-- 3. mco_screening_preferences
+INSERT INTO screening_extracts.mco_screening_preferences
+    (tenant_id, resource_type_id, is_active, created_on_utc)
+SELECT
+    t.tenant_id,
+    (SELECT resource_type_id
+     FROM screening_extracts.resource_types
+     WHERE UPPER(resource_type_name) = 'FLATFILE'),
+    '1',
+    NOW()
+FROM techbd_udi_ingress.tenants t
+WHERE UPPER(t.tenant_name) IN (
+    'AET', 'AMI', 'CDP', 'CEN', 'EMB', 'EHP',
+    'FID', 'HAM', 'IDP', 'ICL', 'MOL', 'MPS',
+    'NAS', 'RSG', 'UTD', 'VIC', 'VNS'
+)
+ON CONFLICT (tenant_id) DO NOTHING;
+
+INSERT INTO screening_extracts.mco_screening_preferences
+    (tenant_id, resource_type_id, is_active, created_on_utc)
+SELECT
+    t.tenant_id,
+    (SELECT resource_type_id
+     FROM screening_extracts.resource_types
+     WHERE UPPER(resource_type_name) = 'BUNDLE'),
+    '1',
+    NOW()
+FROM techbd_udi_ingress.tenants t
+WHERE UPPER(t.tenant_name) IN (
+    'ANT', 'ELD', 'HEF', 'MVP', 'WHB'
+)
+ON CONFLICT (tenant_id) DO NOTHING;
