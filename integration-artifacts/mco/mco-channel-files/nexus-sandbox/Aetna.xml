@@ -2,8 +2,8 @@
   <id>d77fcb36-3c97-45fe-b8ba-5fdc9bcf1df2</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Aetna</name>
-  <description>Version: 0.1.12
-Enhanced the file processing channel to efficiently handle large files using chunk-based processing.</description>
+  <description>Version: 0.1.13
+Migrated from channelMap to globalChannelMap to preserve shared data across chunks.</description>
   <revision>3</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
@@ -5313,9 +5313,9 @@ try {
 		logger.info(err);
 		throw err;
 	} finally {
-		ChannelMap.clear();
+		globalChannelMap.clear();
 		if ($(&apos;batchComplete&apos;) != true) {
-			ChannelMap.put(&quot;skipAllDestinations&quot;, true);
+			globalChannelMap.put(&quot;skipAllDestinations&quot;, true);
 		}
 		if (dbConn) {
 			dbConn.close();
@@ -6213,7 +6213,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789534954462</time>
+        <time>1789636395287</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -7518,17 +7518,29 @@ function getCOVIDConn()
     </codeTemplateLibraries>
     <channelTags>
       <channelTag>
-        <id>e6b32d36-cf23-4e6d-bcfb-22eb70f27781</id>
-        <name>0_1_12</name>
+        <id>6ec8edae-a2ae-4b09-ac1b-725ab4578c07</id>
+        <name>0_1_13</name>
         <channelIds>
-          <string>7521a6eb-1592-4cec-b307-35d33f456a6f</string>
-          <string>42eca6d3-e5e0-4327-b56a-6a721d29b5d3</string>
-          <string>3f7f9e50-3c85-420f-a194-5ab62450bf63</string>
-          <string>34c181c7-0d84-4960-a2e7-df73d4c4a3cc</string>
+          <string>2c47f2b9-ebc9-4aa7-bd5f-0bf5f0d6ed39</string>
+          <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+          <string>04a01a97-c021-4f3e-b10d-426838e88ae3</string>
+          <string>3c5d0850-0841-4603-a1f8-0ee6e9ef8559</string>
+          <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+          <string>895915ca-9740-4bb9-8d4b-b926bea83835</string>
+          <string>25f9b7c0-ef0d-4669-9d78-df066fdd220e</string>
+          <string>004d8d3d-cedc-45f8-955f-27e1606959c8</string>
           <string>d77fcb36-3c97-45fe-b8ba-5fdc9bcf1df2</string>
-          <string>2a77a930-6262-4d6c-b61a-4851605d247d</string>
-          <string>5a852cc9-0b84-44fa-aa30-b81b0376be57</string>
-          <string>38308a10-e975-4854-85d9-4d48dc6b257d</string>
+          <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+          <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+          <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+          <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+          <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+          <string>fc4d46c5-7bec-48be-8fb7-abf8e5e8ab19</string>
+          <string>6d3b439e-123e-4191-bb94-02134c779b0b</string>
+          <string>48679919-904a-4913-a593-28f19da61615</string>
+          <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+          <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+          <string>1d692067-1995-41a8-8712-969387b1c04c</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
