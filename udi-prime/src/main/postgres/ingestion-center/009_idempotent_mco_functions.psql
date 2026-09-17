@@ -159,7 +159,7 @@ BEGIN
     FROM mco_data.mco_record_error_logs mrel
     JOIN mco_data.mco_error_types mrt ON
     mrel.error_type_id = mrt.error_type_id 
-    WHERE mrel.batch_details_id = p_batch_details_id::integer
+    WHERE mrel.batch_details_id = p_batch_details_id::bigint
     ORDER BY mrel.created_on_utc DESC;
 END;
 $function$;
@@ -438,7 +438,7 @@ CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_records(
     p_last_three_month boolean DEFAULT FALSE
 )
 RETURNS TABLE (
-    batch_id integer,
+    batch_id bigint,
     tenant_id text,
     mco_code text,
     mco_name text,
