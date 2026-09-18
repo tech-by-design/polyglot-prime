@@ -2,9 +2,14 @@
   <id>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Amida Care</name>
-  <description>Version: 0.1.15
-Enhanced the file processing channel to efficiently handle large files using chunk-based processing.</description>
-  <revision>43</revision>
+  <description>Version: 0.1.16
+Enhanced the file processing channel to efficiently handle large files using chunk-based processing.
+&quot;Stream file to SFTP&quot; (both the Amida Care source leg and the downstream datalake destination
+leg) now authenticates with an SSH private key instead of a username/password, pulled from
+Secrets Manager via LookupHelper.get(&quot;Config-sensitive&quot;, ...) in the deploy script - see
+MCO_SFTP_PRIVATE_KEY / MCO_SFTP_KEY_PASSPHRASE and
+MCO_DESTINATION_SFTP_PRIVATE_KEY / MCO_DESTINATION_SFTP_KEY_PASSPHRASE.</description>
+  <revision>11</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -96,8 +101,12 @@ Enhanced the file processing channel to efficiently handle large files using chu
     globalChannelMap.put(&quot;mco_code&quot;, &quot;AMI&quot;);
     globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
     globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-amidacare&quot;);
-    globalChannelMap.put(&quot;source_sftp_username&quot;, &quot;mco-sftp-amida_care&quot;);
-    globalChannelMap.put(&quot;destination_sftp_username&quot;, &quot;mco-sftp-amida_care&quot;);
+    // Usernames used to be hardcoded here (source_sftp_username/destination_sftp_username),
+    // out of step with every other SFTP connection detail (sftpIp/sftpPort/destinationSftpIp/
+    // destinationSftpPort), which all come from the configuration map and can be changed
+    // without editing/redeploying the channel. Now read from the configuration map too - see
+    // configurationMap.get(&quot;sftpUserName&quot;)/&quot;destinationSftpUserName&quot;) in the &quot;Stream file to
+    // SFTP&quot; script - so this function no longer needs to set them.
   }
 
   //Deletes the staged Success_/Error_ S3 objects from a prior run of this file before it is reprocessed.
@@ -3330,13 +3339,20 @@ function thresholdExceecedFunction(limit, totalRecords, errorRecords) {
 	return (totalRecords * limit) / 100 &lt;= errorRecords;
 }
 
-var username = globalChannelMap.get(&quot;source_sftp_username&quot;);
-var password = configurationMap.get(&quot;sftpPassword&quot;);
+var username = configurationMap.get(&quot;sftpUserName&quot;);
+// SSH key auth (see sftpFileTransfer below) replaces the password previously read here via
+// configurationMap.get(&quot;sftpPassword&quot;) - the private key/passphrase now come from globalMap,
+// populated in the deploy script from the Config-sensitive Lookup Manager group.
+var privateKeyPem = globalMap.get(&quot;mcoSftpPrivateKeyPem&quot;);
+var keyPassphrase = globalMap.get(&quot;mcoSftpKeyPassphrase&quot;);
 var ip = configurationMap.get(&quot;sftpIp&quot;);
 var port = configurationMap.get(&quot;sftpPort&quot;);
 
-var destinationUsername = globalChannelMap.get(&quot;destination_sftp_username&quot;);
-var destinationPassword = configurationMap.get(&quot;destinationSftpPassword&quot;);
+var destinationUsername = configurationMap.get(&quot;destinationSftpUserName&quot;);
+// Same SSH key auth switch as above, for the downstream datalake SFTP leg - replaces
+// configurationMap.get(&quot;destinationSftpPassword&quot;).
+var destinationPrivateKeyPem = globalMap.get(&quot;mcoDestinationSftpPrivateKeyPem&quot;);
+var destinationKeyPassphrase = globalMap.get(&quot;mcoDestinationSftpKeyPassphrase&quot;);
 var destinationIp = configurationMap.get(&quot;destinationSftpIp&quot;);
 var destinationPort = configurationMap.get(&quot;destinationSftpPort&quot;);
 
@@ -3362,7 +3378,8 @@ function sftpFileTransfer(
 	destinationServerName,
 	destinationPort,
 	destinationUsername,
-	destinationPassword,
+	destinationPrivateKeyPem,
+	destinationKeyPassphrase,
 	sourceFileName,
 	destinationFileName,
 	fileDestination,
@@ -3380,21 +3397,50 @@ function sftpFileTransfer(
 		if (isSftp) {
 			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
 			var jsch = new JSch();
-			//jsch.addIdentity(globalMap.get(&quot;rochesterRhioSftpKeyPath&quot;));
 			var fileTransferred = false;
 			var session2 = null;
+			var hasPassphrase = false;
+
+			if (!destinationPrivateKeyPem) {
+				// Fail loudly and specifically here rather than letting this fall through to
+				// jsch.getSession()/connect() with zero identities registered - with
+				// PreferredAuthentications forced to publickey below, that produces a generic
+				// &quot;Auth fail for methods &apos;publickey&apos;&quot; from the server, which looks like a bad
+				// key/passphrase and sends whoever is debugging it looking in the wrong place,
+				// when the real problem is that the Config-sensitive Lookup Manager entry
+				// (MCO_SFTP_PRIVATE_KEY / MCO_DESTINATION_SFTP_PRIVATE_KEY) is missing or empty.
+				throw {
+					message: &quot;No SFTP private key configured for &quot; + destinationServerName + &quot; - check the MCO_SFTP_PRIVATE_KEY/MCO_DESTINATION_SFTP_PRIVATE_KEY entry in the Config-sensitive Lookup Manager group&quot;
+				};
+			}
+
+			// Loaded in-memory from Secrets Manager (via Config-sensitive) - never written to
+			// disk. Config-sensitive does not allow a blank value, so an unprotected key is
+			// registered there as the literal string &quot;NONE&quot; - treat that sentinel as &quot;no
+			// passphrase&quot;, same convention used by the Aetna SFTP Bridge channel.
+			hasPassphrase = destinationKeyPassphrase &amp;&amp; destinationKeyPassphrase.toString().trim() !== &apos;&apos; &amp;&amp; destinationKeyPassphrase.toString().trim().toUpperCase() !== &apos;NONE&apos;;
+			var privateKeyBytes = java.lang.String(destinationPrivateKeyPem).getBytes(&quot;UTF-8&quot;);
+			var passphraseBytes = hasPassphrase ? java.lang.String(destinationKeyPassphrase).getBytes(&quot;UTF-8&quot;) : null;
+			jsch.addIdentity(&quot;mco-sftp-key&quot;, privateKeyBytes, null, passphraseBytes);
 
 			session2 = jsch.getSession(
 				destinationUsername,
 				destinationServerName,
 				destinationPort
 			);
-			
-			if (destinationPassword) {
-			    session2.setPassword(destinationPassword);
-		       }
 
 			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
+			// Key-only login - safe to force now that an identity is guaranteed to be
+			// registered above (the empty-key case throws before reaching here). Forcing this
+			// unconditionally regardless of whether a key was actually loaded was the original
+			// bug: with zero identities to offer, JSch still attempts &apos;publickey&apos; because
+			// PreferredAuthentications allows nothing else, and the server rejects it with the
+			// same generic &quot;Auth fail for methods &apos;publickey&apos;&quot; as a genuinely bad key would
+			// produce - masking a missing Config-sensitive entry as an auth/credentials problem.
+			session2.setConfig(&quot;PreferredAuthentications&quot;, &quot;publickey&quot;);
+
+			// Diagnostic - safe fields only, never logs the key/passphrase values themselves
+			logger.info(&quot;Streaming to &quot; + destinationServerName + &quot;:&quot; + destinationPort + &quot; as \&quot;&quot; + destinationUsername + &quot;\&quot; (privateKey=present, passphrase=&quot; + (hasPassphrase ? &quot;present&quot; : &quot;none&quot;) + &quot;)&quot;);
 
 			session2.connect();
 			// Create an SFTP channel
@@ -3508,7 +3554,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
@@ -3521,7 +3568,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3551,7 +3599,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
@@ -3564,7 +3613,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3577,7 +3627,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3590,7 +3641,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -3617,7 +3669,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3629,7 +3682,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -4089,7 +4143,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/esmf/outbound/error</host>
+        <host>${s3BucketName}/mco-sftp-amida_care/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4335,7 +4389,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-amida_care/esmf/outbound/success</host>
+        <host>${s3BucketName}/mco-sftp-amida_care/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -6177,6 +6231,69 @@ globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&qu
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
 globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
 
+// &quot;Stream file to SFTP&quot; now authenticates to Amida Care&apos;s own SFTP (source leg - writing
+// rejection/error files back) and to the downstream datalake SFTP (destination leg) with
+// SSH keys instead of a password, mirroring the private-key pattern already used by the
+// Aetna SFTP Bridge channel. Both private keys (PEM content, not a file path) and their
+// optional passphrases are pulled from Secrets Manager via the Config-sensitive Lookup
+// Manager group, never written to disk. Config-sensitive does not accept a blank value,
+// so if a key has no passphrase, set its *_KEY_PASSPHRASE entry to the literal string
+// &quot;NONE&quot; rather than leaving it blank - the destination script treats that sentinel as no
+// passphrase. LookupHelper.get returns Java null when an entry is absent, and globalMap
+// is backed by a ConcurrentHashMap which throws NullPointerException on put(key, null),
+// so null is coerced to &apos;&apos; below before storing.
+var mcoSftpPrivateKeyLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_SFTP_PRIVATE_KEY&quot;);
+globalMap.put(&quot;mcoSftpPrivateKeyPem&quot;, mcoSftpPrivateKeyLookup == null ? &apos;&apos; : mcoSftpPrivateKeyLookup);
+
+var mcoSftpPassphraseLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_SFTP_KEY_PASSPHRASE&quot;);
+globalMap.put(&quot;mcoSftpKeyPassphrase&quot;, mcoSftpPassphraseLookup == null ? &apos;&apos; : mcoSftpPassphraseLookup);
+
+var mcoDestinationSftpPrivateKeyLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_DESTINATION_SFTP_PRIVATE_KEY&quot;);
+globalMap.put(&quot;mcoDestinationSftpPrivateKeyPem&quot;, mcoDestinationSftpPrivateKeyLookup == null ? &apos;&apos; : mcoDestinationSftpPrivateKeyLookup);
+
+var mcoDestinationSftpPassphraseLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_DESTINATION_SFTP_KEY_PASSPHRASE&quot;);
+globalMap.put(&quot;mcoDestinationSftpKeyPassphrase&quot;, mcoDestinationSftpPassphraseLookup == null ? &apos;&apos; : mcoDestinationSftpPassphraseLookup);
+
+// Diagnostic-only: when amidaCareSftpDebugLogging=true in the configuration map, install a
+// JSch protocol-level logger so channel logs show the full SSH/SFTP handshake - key
+// exchange, which host key/signature algorithms the server offers vs what jsch can send,
+// and exactly why a publickey attempt is accepted or rejected. JSch.setLogger is a JVM-wide
+// static setting (same caveat as the identical block in aetna-sftp-bridge.xml), so this
+// affects every channel on this Bridgelink instance that uses JSch while enabled - turn it
+// back off (set the flag to anything other than &quot;true&quot;, or remove it, and redeploy) once
+// the connection issue is diagnosed.
+if (&quot;true&quot;.equalsIgnoreCase(&apos;&apos; + configurationMap.get(&quot;amidaCareSftpDebugLogging&quot;))) {
+    var jschLevelNames = [&apos;DEBUG&apos;, &apos;INFO&apos;, &apos;WARN&apos;, &apos;ERROR&apos;, &apos;FATAL&apos;];
+    Packages.com.jcraft.jsch.JSch.setLogger(new Packages.com.jcraft.jsch.Logger({
+        isEnabled: function(level) {
+            return true;
+        },
+        log: function(level, message) {
+            var levelName = jschLevelNames[level] || (&apos;LEVEL_&apos; + level);
+            if (level &gt;= 3) {
+                logger.error(&apos;Amida Care JSCH[&apos; + levelName + &apos;]: &apos; + message);
+            } else {
+                logger.info(&apos;Amida Care JSCH[&apos; + levelName + &apos;]: &apos; + message);
+            }
+        }
+    }));
+    logger.info(&apos;Amida Care: JSch protocol-level debug logging enabled&apos;);
+} else {
+    // JSch.setLogger has no &quot;unset&quot; - only &quot;replace&quot;. If a previous deploy turned the flag
+    // on, the verbose logger installed above stays active JVM-wide even after the flag is
+    // turned back off, until something explicitly replaces it. This installs a no-op logger
+    // so a redeploy with the flag off actually silences it, rather than leaving the earlier
+    // deploy&apos;s verbose logger running indefinitely.
+    Packages.com.jcraft.jsch.JSch.setLogger(new Packages.com.jcraft.jsch.Logger({
+        isEnabled: function(level) {
+            return false;
+        },
+        log: function(level, message) {
+            // intentionally does nothing
+        }
+    }));
+}
+
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
@@ -6219,27 +6336,33 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789536565134</time>
+        <time>1789718146337</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>172e0125-5847-4b33-af6a-0237306c706f</id>
-        <name>0_1_15</name>
+        <id>7fe23fd3-5679-4ccf-bd02-b24f62a2bbf8</id>
+        <name>0_1_16</name>
         <channelIds>
+          <string>281247c5-fb87-4b56-9691-190174cc834f</string>
           <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+          <string>66faf132-8acc-4843-88e7-8324198c7117</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+          <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
+          <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
+          <string>32e85d63-896d-4455-bf9e-0b2294eb2d08</string>
+          <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>128</green>
-          <blue>128</blue>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>

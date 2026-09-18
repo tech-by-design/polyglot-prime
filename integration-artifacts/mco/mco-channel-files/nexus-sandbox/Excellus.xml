@@ -2,8 +2,12 @@
   <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Excellus</name>
-  <description>Version: 0.1.16
-Fixed success and file rejection receipt destination.</description>
+  <description>Version: 0.1.17
+Fixed success and file rejection receipt destination.
+&quot;Stream file to SFTP&quot; now authenticates with SSH keys (MCO_SFTP_PRIVATE_KEY /
+MCO_DESTINATION_SFTP_PRIVATE_KEY from the Config-sensitive Lookup Manager group) instead
+of a username/password, and reads sftpUserName/destinationSftpUserName from the
+configuration map instead of a hardcoded per-MCO username.</description>
   <revision>4</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
@@ -96,8 +100,12 @@ Fixed success and file rejection receipt destination.</description>
     globalChannelMap.put(&quot;mco_code&quot;, &quot;EHP&quot;);
     globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
     globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-excellus&quot;);
-    globalChannelMap.put(&quot;source_sftp_username&quot;, &quot;mco-sftp-excellus&quot;);
-    globalChannelMap.put(&quot;destination_sftp_username&quot;, &quot;mco-sftp-excellus&quot;);
+    // Usernames used to be hardcoded here (source_sftp_username/destination_sftp_username),
+    // out of step with every other SFTP connection detail (sftpIp/sftpPort/destinationSftpIp/
+    // destinationSftpPort), which all come from the configuration map and can be changed
+    // without editing/redeploying the channel. Now read from the configuration map too - see
+    // configurationMap.get(&quot;sftpUserName&quot;)/&quot;destinationSftpUserName&quot;) in the &quot;Stream file to
+    // SFTP&quot; script - so this function no longer needs to set them.
   }
 
   //Deletes the staged Success_/Error_ S3 objects from a prior run of this file before it is reprocessed.
@@ -3311,13 +3319,20 @@ function thresholdExceecedFunction(limit, totalRecords, errorRecords) {
 	return (totalRecords * limit) / 100 &lt;= errorRecords;
 }
 
-var username = globalChannelMap.get(&quot;source_sftp_username&quot;);
-var password = configurationMap.get(&quot;sftpPassword&quot;);
+var username = configurationMap.get(&quot;sftpUserName&quot;);
+// SSH key auth (see sftpFileTransfer below) replaces the password previously read here via
+// configurationMap.get(&quot;sftpPassword&quot;) - the private key/passphrase now come from globalMap,
+// populated in the deploy script from the Config-sensitive Lookup Manager group.
+var privateKeyPem = globalMap.get(&quot;mcoSftpPrivateKeyPem&quot;);
+var keyPassphrase = globalMap.get(&quot;mcoSftpKeyPassphrase&quot;);
 var ip = configurationMap.get(&quot;sftpIp&quot;);
 var port = configurationMap.get(&quot;sftpPort&quot;);
 
-var destinationUsername = globalChannelMap.get(&quot;destination_sftp_username&quot;);
-var destinationPassword = configurationMap.get(&quot;destinationSftpPassword&quot;);
+var destinationUsername = configurationMap.get(&quot;destinationSftpUserName&quot;);
+// Same SSH key auth switch as above, for the downstream datalake SFTP leg - replaces
+// configurationMap.get(&quot;destinationSftpPassword&quot;).
+var destinationPrivateKeyPem = globalMap.get(&quot;mcoDestinationSftpPrivateKeyPem&quot;);
+var destinationKeyPassphrase = globalMap.get(&quot;mcoDestinationSftpKeyPassphrase&quot;);
 var destinationIp = configurationMap.get(&quot;destinationSftpIp&quot;);
 var destinationPort = configurationMap.get(&quot;destinationSftpPort&quot;);
 
@@ -3343,7 +3358,8 @@ function sftpFileTransfer(
 	destinationServerName,
 	destinationPort,
 	destinationUsername,
-	destinationPassword,
+	destinationPrivateKeyPem,
+	destinationKeyPassphrase,
 	sourceFileName,
 	destinationFileName,
 	fileDestination,
@@ -3361,9 +3377,31 @@ function sftpFileTransfer(
 		if (isSftp) {
 			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
 			var jsch = new JSch();
-			//jsch.addIdentity(&quot;/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod&quot;);
 			var fileTransferred = false;
 			var session2 = null;
+			var hasPassphrase = false;
+
+			if (!destinationPrivateKeyPem) {
+				// Fail loudly and specifically here rather than letting this fall through to
+				// jsch.getSession()/connect() with zero identities registered - with
+				// PreferredAuthentications forced to publickey below, that produces a generic
+				// &quot;Auth fail for methods 'publickey'&quot; from the server, which looks like a bad
+				// key/passphrase and sends whoever is debugging it looking in the wrong place,
+				// when the real problem is that the Config-sensitive Lookup Manager entry
+				// (MCO_SFTP_PRIVATE_KEY / MCO_DESTINATION_SFTP_PRIVATE_KEY) is missing or empty.
+				throw {
+					message: &quot;No SFTP private key configured for &quot; + destinationServerName + &quot; - check the MCO_SFTP_PRIVATE_KEY/MCO_DESTINATION_SFTP_PRIVATE_KEY entry in the Config-sensitive Lookup Manager group&quot;
+				};
+			}
+
+			// Loaded in-memory from Secrets Manager (via Config-sensitive) - never written to
+			// disk. Config-sensitive does not allow a blank value, so an unprotected key is
+			// registered there as the literal string &quot;NONE&quot; - treat that sentinel as &quot;no
+			// passphrase&quot;, same convention used by the Aetna SFTP Bridge channel.
+			hasPassphrase = destinationKeyPassphrase &amp;&amp; destinationKeyPassphrase.toString().trim() !== &apos;&apos; &amp;&amp; destinationKeyPassphrase.toString().trim().toUpperCase() !== &apos;NONE&apos;;
+			var privateKeyBytes = java.lang.String(destinationPrivateKeyPem).getBytes(&quot;UTF-8&quot;);
+			var passphraseBytes = hasPassphrase ? java.lang.String(destinationKeyPassphrase).getBytes(&quot;UTF-8&quot;) : null;
+			jsch.addIdentity(&quot;mco-sftp-key&quot;, privateKeyBytes, null, passphraseBytes);
 
 			session2 = jsch.getSession(
 				destinationUsername,
@@ -3371,11 +3409,18 @@ function sftpFileTransfer(
 				destinationPort
 			);
 
-		     if (destinationPassword) {
-			      session2.setPassword(destinationPassword);
-			    }
-
 			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
+			// Key-only login - safe to force now that an identity is guaranteed to be
+			// registered above (the empty-key case throws before reaching here). Forcing this
+			// unconditionally regardless of whether a key was actually loaded was the original
+			// bug: with zero identities to offer, JSch still attempts 'publickey' because
+			// PreferredAuthentications allows nothing else, and the server rejects it with the
+			// same generic &quot;Auth fail for methods 'publickey'&quot; as a genuinely bad key would
+			// produce - masking a missing Config-sensitive entry as an auth/credentials problem.
+			session2.setConfig(&quot;PreferredAuthentications&quot;, &quot;publickey&quot;);
+
+			// Diagnostic - safe fields only, never logs the key/passphrase values themselves
+			logger.info(&quot;Streaming to &quot; + destinationServerName + &quot;:&quot; + destinationPort + &quot; as \&quot;&quot; + destinationUsername + &quot;\&quot; (privateKey=present, passphrase=&quot; + (hasPassphrase ? &quot;present&quot; : &quot;none&quot;) + &quot;)&quot;);
 
 			session2.connect();
 			// Create an SFTP channel
@@ -3489,7 +3534,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
@@ -3502,7 +3548,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3532,7 +3579,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
@@ -3545,7 +3593,8 @@ try {
 			ip,
 			port,
 			username,
-			password,
+			privateKeyPem,
+			keyPassphrase,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3558,7 +3607,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3571,7 +3621,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -3598,7 +3649,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3610,7 +3662,8 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPassword,
+			destinationPrivateKeyPem,
+			destinationKeyPassphrase,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -6099,6 +6152,30 @@ globalMap.put(&quot;dbName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;,
 globalMap.put(&quot;dbPassword&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;));
 globalMap.put(&quot;s3BucketName&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_S3_BUCKET_NAME&quot;));
 globalMap.put(&quot;rochesterRhioSftpKeyPath&quot;, LookupHelper.get(&quot;Config&quot;, &quot;ROCHESTER_RHIO_SFTP_KEY_PATH&quot;));
+
+// &quot;Stream file to SFTP&quot; authenticates to the shared datalake SFTP (destination leg) and
+// (currently, in this environment) the same shared endpoint for the source leg with SSH
+// keys instead of a password, mirroring the private-key pattern already used by the Aetna
+// SFTP Bridge channel. Both private keys (PEM content, not a file path) and their optional
+// passphrases are pulled from Secrets Manager via the Config-sensitive Lookup Manager
+// group, never written to disk - and are the same MCO_* entries across every MCO channel,
+// since all MCOs share this key. Config-sensitive does not accept a blank value, so if a
+// key has no passphrase, set its *_KEY_PASSPHRASE entry to the literal string &quot;NONE&quot;
+// rather than leaving it blank - the destination script treats that sentinel as no
+// passphrase. LookupHelper.get returns Java null when an entry is absent, and globalMap
+// is backed by a ConcurrentHashMap which throws NullPointerException on put(key, null),
+// so null is coerced to &apos;&apos; below before storing.
+var mcoSftpPrivateKeyLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_SFTP_PRIVATE_KEY&quot;);
+globalMap.put(&quot;mcoSftpPrivateKeyPem&quot;, mcoSftpPrivateKeyLookup == null ? &apos;&apos; : mcoSftpPrivateKeyLookup);
+
+var mcoSftpPassphraseLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_SFTP_KEY_PASSPHRASE&quot;);
+globalMap.put(&quot;mcoSftpKeyPassphrase&quot;, mcoSftpPassphraseLookup == null ? &apos;&apos; : mcoSftpPassphraseLookup);
+
+var mcoDestinationSftpPrivateKeyLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_DESTINATION_SFTP_PRIVATE_KEY&quot;);
+globalMap.put(&quot;mcoDestinationSftpPrivateKeyPem&quot;, mcoDestinationSftpPrivateKeyLookup == null ? &apos;&apos; : mcoDestinationSftpPrivateKeyLookup);
+
+var mcoDestinationSftpPassphraseLookup = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MCO_DESTINATION_SFTP_KEY_PASSPHRASE&quot;);
+globalMap.put(&quot;mcoDestinationSftpKeyPassphrase&quot;, mcoDestinationSftpPassphraseLookup == null ? &apos;&apos; : mcoDestinationSftpPassphraseLookup);
 return;</deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
