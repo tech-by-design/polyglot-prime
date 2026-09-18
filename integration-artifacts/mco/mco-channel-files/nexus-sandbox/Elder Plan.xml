@@ -2,9 +2,9 @@
   <id>6cd5fbb1-b5f6-4a12-953f-e4af9a074a45</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Elder Plan</name>
-  <description>Version: 0.1.14
-Enhanced the file processing channel to efficiently handle large files using chunk-based processing.</description>
-  <revision>4</revision>
+  <description>Version: 0.1.15
+Fixed success and file rejection receipt destination.</description>
+  <revision>3</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -4076,7 +4076,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-elder_plan/esmf/outbound/error</host>
+        <host>${s3BucketName}/mco-sftp-elder_plan/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4316,7 +4316,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-elder_plan/esmf/outbound/success</host>
+        <host>${s3BucketName}/mco-sftp-elder_plan/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -6156,27 +6156,42 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789474357412</time>
+        <time>1789711393345</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fdba656f-84c1-4994-ab33-f620ad54aac7</id>
-        <name>0_1_14</name>
+        <id>172e0125-5847-4b33-af6a-0237306c706f</id>
+        <name>0_1_15</name>
         <channelIds>
+          <string>6b4ad8af-fce0-41d3-adce-e61f7f912bd0</string>
+          <string>2c47f2b9-ebc9-4aa7-bd5f-0bf5f0d6ed39</string>
           <string>6cd5fbb1-b5f6-4a12-953f-e4af9a074a45</string>
-          <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+          <string>172dd367-2b02-4d8a-b998-504605d7d164</string>
+          <string>67e10f84-a7cd-4ffe-9462-041926c0dee6</string>
+          <string>d65c4196-a138-448b-880d-52c63a575ceb</string>
+          <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+          <string>43c53c2d-beb1-476b-b497-096fd565fe06</string>
+          <string>6ff46655-b4cc-479a-93b3-98a356f9d6b0</string>
+          <string>0460bb4e-c120-48cb-bbfd-cca2e19fc90e</string>
+          <string>bd2f2840-ea03-40fe-b780-64fde42849a9</string>
+          <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+          <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+          <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
+          <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+          <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+          <string>369df10a-9d27-4b18-a398-f06a2607ae1a</string>
         </channelIds>
         <backgroundColor>
           <red>0</red>
-          <green>255</green>
-          <blue>0</blue>
+          <green>128</green>
+          <blue>128</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
