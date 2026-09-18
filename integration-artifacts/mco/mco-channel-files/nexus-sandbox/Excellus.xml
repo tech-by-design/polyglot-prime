@@ -2,9 +2,9 @@
   <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Excellus</name>
-  <description>Version: 0.1.15
-Enhanced the file processing channel to efficiently handle large files using chunk-based processing.</description>
-  <revision>32</revision>
+  <description>Version: 0.1.16
+Fixed success and file rejection receipt destination.</description>
+  <revision>4</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -4066,7 +4066,7 @@ function thresholdExceeced(limit, totalRecords, errorRecords) {
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-excellus/esmf/outbound/error</host>
+        <host>${s3BucketName}/mco-sftp-excellus/esmf/outbound/error</host>
         <outputPattern>FileRejected_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -4304,7 +4304,7 @@ var errorLog = insertErrorLog($(&apos;batch_id&apos;),$(&apos;batch_details_id&a
           <region>us-east-1</region>
           <customHeaders class="linked-hash-map"/>
         </schemeProperties>
-        <host>${s3BucketName}/bridgelink-inbound/mco-sftp-excellus/esmf/outbound/success</host>
+        <host>${s3BucketName}/mco-sftp-excellus/esmf/outbound/success</host>
         <outputPattern>Success_${destinationFileName}</outputPattern>
         <anonymous>false</anonymous>
         <username></username>
@@ -6141,26 +6141,32 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789491962528</time>
+        <time>1789711904784</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>172e0125-5847-4b33-af6a-0237306c706f</id>
-        <name>0_1_15</name>
+        <id>7fe23fd3-5679-4ccf-bd02-b24f62a2bbf8</id>
+        <name>0_1_16</name>
         <channelIds>
+          <string>281247c5-fb87-4b56-9691-190174cc834f</string>
+          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+          <string>66faf132-8acc-4843-88e7-8324198c7117</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+          <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
+          <string>32e85d63-896d-4455-bf9e-0b2294eb2d08</string>
+          <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>128</green>
-          <blue>128</blue>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>
       </channelTag>
