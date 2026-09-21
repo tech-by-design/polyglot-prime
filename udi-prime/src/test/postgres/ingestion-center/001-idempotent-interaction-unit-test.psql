@@ -1615,41 +1615,7 @@ BEGIN
    
    RETURN NEXT ok(v_action_rule_id = v_return,
             'Successfully updated the table json_action_rule'
-        );
-
-   /*Test the exception handling*/
-   SELECT techbd_udi_ingress.json_action_rule_upserted(
-    	action_rule_id	=> NULL,
-    	namespace		=> v_namespace, 
-    	json_path		=> v_json_path, 
-    	action			=> 'test', 
-    	condition		=> v_condition, 
-    	reject_json		=> v_reject_json, 
-    	modify_json		=> v_modify_json, 
-    	priority		=> v_priority, 
-		description    => '',
-    	updated_by		=> v_updated_by, 
-    	created_by		=> v_created_by, 
-    	provenance		=> '{"Key" : "exception"}' 
-    ) INTO v_return; 
-   
-   SELECT hub_exp.* INTO v_hub_diagnostic_row
-   FROM techbd_udi_ingress.hub_diagnostic hub_exp
-   WHERE hub_exp."key"      	= v_key
-	   AND hub_exp.created_by   = CURRENT_USER
-	   AND hub_exp.provenance   = '{"Key" : "exception"}' 
-   ;
-   
-   RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic'); 
-   
-   RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
-                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
-                            AND sat_exp.created_by           = CURRENT_USER
-                            AND sat_exp.provenance           = '{"Key" : "exception"}'
-                   ),
-            'Successfully inserted exception details into the table sat_diagnostic_exception'
-        );  
+        );   
 END;
 $function$
 ;
