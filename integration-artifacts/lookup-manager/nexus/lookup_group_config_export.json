@@ -43,7 +43,7 @@
     "ROCHESTER_RHIO_SFTP_KEY_PATH" : "rochester_rhio_sftp_key_path",
     "SM_KEY_RDS_SECRETS" : "techbd-rds-secrets",
     "TECHBD_CSV_SERVICE_API_URL" : "techbd_csv_service_api_url",
-    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle,615l4odbn9xc7j3uw3vqosslyc43stgi.oastify.com"
+    "TECHBD_DEFAULT_DATALAKE_API_URL" : "https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle"
   },
   "exportDate" : "2026-07-03T11:53:04.184+00:00"
 }
