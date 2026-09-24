@@ -150,9 +150,7 @@ public class PrimeController {
                 .intoMaps();
 
         if (result.isEmpty()) {
-            return Map.ofEntries(
-                    Map.entry("selected_reporting_month", ""),
-                    Map.entry("is_selected", false),
+            return Map.ofEntries(  
                     Map.entry("total_mco", 0L),
                     Map.entry("total_files_received", 0L),
                     Map.entry("inprogress", 0L),
