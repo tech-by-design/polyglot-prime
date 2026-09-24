@@ -526,7 +526,7 @@ public class TabularRowsController {
         }
     }
 
-    @Operation(summary = "Update tenant display name", description = "Updates the tenant_displayname for a tenant record.")
+    @Operation(summary = "Update tenant settings", description = "Updates the tenant_displayname and resource_type_id for a tenant record.")
     @PostMapping(value = "/api/ux/tabular/jooq/update/{schemaName}/{tableName}/tenant_displayname/{tenantId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> updateTenantDisplayName(
@@ -554,6 +554,28 @@ public class TabularRowsController {
             return ResponseEntity.badRequest().body(responseBody);
         }
 
+        Integer resourceTypeId;
+        try {
+            resourceTypeId = payload == null || payload.get("resource_type_id") == null
+                    ? null
+                    : Integer.valueOf(payload.get("resource_type_id").toString());
+        } catch (NumberFormatException e) {
+            resourceTypeId = null;
+        }
+
+        var resourceTypesTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
+            Tables.class, "screening_extracts", "mco_resource_types");
+        boolean resourceTypeExists = resourceTypeId != null
+            && primaryDslContext.selectCount()
+                .from(resourceTypesTable.table())
+                .where(DSL.field(resourceTypesTable.column("resource_type_id")).eq(resourceTypeId))
+                .fetchOne(0, int.class) > 0;
+        if (!resourceTypeExists) {
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("message", "resource_type_id is required and must be an active MCO resource type.");
+            return ResponseEntity.badRequest().body(responseBody);
+        }
+
         try {
             var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
             var updateStep = primaryDslContext.update(typableTable.table())
@@ -571,8 +593,24 @@ public class TabularRowsController {
                     .execute();
 
             if (updatedRows > 0) {
+                var preferencesTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
+                        Tables.class, "screening_extracts", "mco_screening_preferences");
+                int updatedPreferenceRows = primaryDslContext.update(preferencesTable.table())
+                        .set(DSL.field(preferencesTable.column("resource_type_id")), DSL.val(resourceTypeId))
+                        .where(DSL.field(preferencesTable.column("tenant_id")).eq(tenantId))
+                        .execute();
+
+                if (updatedPreferenceRows == 0) {
+                    primaryDslContext.insertInto(preferencesTable.table())
+                        .set(DSL.field(preferencesTable.column("tenant_id")), DSL.val(tenantId))
+                        .set(DSL.field(preferencesTable.column("resource_type_id")), DSL.val(resourceTypeId))
+                        .set(DSL.field(preferencesTable.column("is_active")), DSL.val(Boolean.TRUE))
+                        .set(DSL.field(preferencesTable.column("created_on_utc")), DSL.currentTimestamp())
+                        .execute();
+                }
+
                 Map<String, Object> responseBody = new HashMap<>();
-                responseBody.put("message", "Tenant display name updated successfully.");
+                responseBody.put("message", "Tenant settings updated successfully.");
                 return ResponseEntity.ok(responseBody);
             } else {
                 Map<String, Object> responseBody = new HashMap<>();
