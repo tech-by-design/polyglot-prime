@@ -11,6 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.CoreAppConfig.FhirV4Config;
+import org.techbd.config.CoreAppConfig.ShinnyPackageConfig;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.fhir.validation.PostPopulateSupport;
 import org.techbd.service.fhir.validation.PrePopulateSupport;
@@ -41,6 +42,7 @@ public abstract class BaseIgValidationTest {
 
     @BeforeAll
     static void initSharedEngine() throws Exception {
+        printHeapUsage("Before package loading");
         tracer = mock(Tracer.class);
         appConfig = mock(CoreAppConfig.class);
         spanBuilder = mock(SpanBuilder.class);
@@ -59,38 +61,47 @@ public abstract class BaseIgValidationTest {
         Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
         profileMapField.setAccessible(true);
         profileMapField.set(null, getProfileMap());
+        printHeapUsage("After package loading");
     }
     private static Map<String, FhirV4Config> getIgPackages() {
         final Map<String, FhirV4Config> igPackages = new HashMap<>();
         FhirV4Config fhirV4Config = new FhirV4Config();
-
-        // Base packages for external dependencies
+    
+        // Default base packages - used by SHIN-NY IG 1.9.4
         Map<String, String> basePackages = new HashMap<>();
         basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
         basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
         basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
-
-        // Shinny Packages
-        Map<String, Map<String, String>> shinnyPackages = new HashMap<>();
-
-        // Shinny version 1.9.4
-        Map<String, String> shinny = new HashMap<>();
-        shinny.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-        shinny.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.9.4");
-        shinny.put("ig-version", "1.9.4");
+    
+        // SHIN-NY Packages
+        Map<String, ShinnyPackageConfig> shinnyPackages = new HashMap<>();
+    
+        // SHIN-NY version 1.9.4
+        ShinnyPackageConfig shinny = new ShinnyPackageConfig();
+        shinny.setProfileBaseUrl("http://shinny.org/us/ny/hrsn");
+        shinny.setPackagePath("ig-packages/shin-ny-ig/shinny/v1.9.4");
+        shinny.setIgVersion("1.9.4");
         shinnyPackages.put("shinny", shinny);
-
-        // Test Shinny version 1.9.4
-        Map<String, String> testshinny = new HashMap<>();
-        testshinny.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
-        testshinny.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.9.4");
-        testshinny.put("ig-version", "1.9.4");
+    
+        // Test SHIN-NY version 2.0.0
+        ShinnyPackageConfig testshinny = new ShinnyPackageConfig();
+        testshinny.setProfileBaseUrl("http://test.shinny.org/us/ny/hrsn");
+        testshinny.setPackagePath("ig-packages/shin-ny-ig/test-shinny/v2.0.0");
+        testshinny.setIgVersion("2.0.0");
+    
+        // Base packages specific to SHIN-NY IG 2.0.0
+        Map<String, String> testBasePackages = new HashMap<>();
+        testBasePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated");
+        testBasePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0");
+        testBasePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
+    
+        testshinny.setBasePackages(testBasePackages);
         shinnyPackages.put("test-shinny", testshinny);
-
+    
         fhirV4Config.setBasePackages(basePackages);
         fhirV4Config.setShinnyPackages(shinnyPackages);
         igPackages.put("fhir-v4", fhirV4Config);
-
+    
         return igPackages;
     }
 
@@ -109,4 +120,20 @@ public abstract class BaseIgValidationTest {
                 "/StructureDefinition/shinny-observation-sexual-orientation");
         return profileMap;
     }
+    private static void printHeapUsage(String label) {
+    Runtime runtime = Runtime.getRuntime();
+
+    long maxMemory = runtime.maxMemory();
+    long totalMemory = runtime.totalMemory();
+    long freeMemory = runtime.freeMemory();
+    long usedMemory = totalMemory - freeMemory;
+
+    System.out.println(
+            String.format(
+                    "[HEAP] %s | Used: %.2f MB | Allocated: %.2f MB | Max: %.2f MB",
+                    label,
+                    usedMemory / 1024.0 / 1024.0,
+                    totalMemory / 1024.0 / 1024.0,
+                    maxMemory / 1024.0 / 1024.0));
+}
 }
