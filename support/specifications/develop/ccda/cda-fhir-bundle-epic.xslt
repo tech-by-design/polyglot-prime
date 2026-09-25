@@ -258,13 +258,7 @@
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             )"/>
         , "gender": "<xsl:choose>
-                    <xsl:when test="ccda:patient/ccda:administrativeGenderCode/@nullFlavor">
-                        <xsl:call-template name="getNullFlavorDisplay">
-                            <xsl:with-param name="nullFlavor" select="ccda:patient/ccda:administrativeGenderCode/@nullFlavor"/>
-                        </xsl:call-template>
-                    </xsl:when>
-
-                    <!-- Code-based mapping -->
+                    <xsl:when test="ccda:patient/ccda:administrativeGenderCode/@nullFlavor">unknown</xsl:when>
                     <xsl:when test="$genderCodeNorm = 'M'">male</xsl:when>
                     <xsl:when test="$genderCodeNorm = 'F'">female</xsl:when>
                     <xsl:when test="$genderCodeNorm = 'UN'">unknown</xsl:when>
