@@ -94,15 +94,20 @@ public class ConsentConverter extends BaseConverter {
             meta.setLastUpdated(new java.util.Date());
         }
 
+        String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+
         populateConsentStatusAndScope(consent, screeningProfileData);
 
         populateConsentCategory(consent, screeningProfileData);
 
-        populatePatientReference(consent, idsGenerated);
+        populatePatientReference(consent, idsGenerated, baseUrl);
 
         populateConsentDateTime(consent, screeningProfileData);
 
-        populateOrganizationReference(consent, idsGenerated);
+        populateOrganizationReference(consent, idsGenerated, baseUrl);
 
         populateConsentProvision(consent, screeningProfileData, interactionId);
 
@@ -113,10 +118,7 @@ public class ConsentConverter extends BaseConverter {
 
         populateConsentPolicy(consent, screeningProfileData);
         
-         String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl :  CoreFHIRUtil.getBaseFHIRURL();
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        }
+        
         String fullUrl =  baseUrl + "/Consent/" + consent.getId();
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
@@ -168,13 +170,13 @@ public class ConsentConverter extends BaseConverter {
         consent.setCategory(categories);
     }
 
-    private void populatePatientReference(Consent consent, Map<String, String> idsGenerated) {
-        consent.getPatient().setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID));
+    private void populatePatientReference(Consent consent, Map<String, String> idsGenerated, String baseUrl) {
+        consent.getPatient().setReference(baseUrl + "/Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID));
     }
 
-    private void populateOrganizationReference(Consent consent, Map<String, String> idsGenerated) {
+    private void populateOrganizationReference(Consent consent, Map<String, String> idsGenerated, String baseUrl) {
         consent.getOrganizationFirstRep()
-                .setReference("Organization/" + idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+                .setReference(baseUrl + "/Organization/" + idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
     private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData, String interactionId) {
@@ -207,7 +209,7 @@ public class ConsentConverter extends BaseConverter {
     
     private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
         Consent.ConsentPolicyComponent policyComponent = new Consent.ConsentPolicyComponent();
-        policyComponent.setAuthority("urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5");
+        policyComponent.setAuthority("http://www.scn.ny.gov/");
         consent.getPolicy().add(policyComponent);
     }
     

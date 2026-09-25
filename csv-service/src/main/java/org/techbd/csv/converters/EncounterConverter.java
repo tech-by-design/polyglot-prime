@@ -108,9 +108,9 @@ public class EncounterConverter extends BaseConverter {
 
         populateEncounterPeriod(encounter, screeningProfileData);
 
-        populatePatientReference(encounter, idsGenerated);
+        populatePatientReference(encounter, idsGenerated, baseUrl);
 
-        //populateLocationReference(encounter, screeningProfileData, idsGenerated);
+        //populateLocationReference(encounter, screeningProfileData, idsGenerated, baseUrl);
         
         // Narrative text = new Narrative();
         // text.setStatus(NarrativeStatus.GENERATED);
@@ -124,8 +124,8 @@ public class EncounterConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    private void populatePatientReference(Encounter encounter, Map<String, String> idsGenerated) {
-        encounter.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
+    private void populatePatientReference(Encounter encounter, Map<String, String> idsGenerated, String baseUrl) {
+        encounter.setSubject(new Reference(baseUrl + "/Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
     private void populateEncounterClass(Encounter encounter, ScreeningProfileData data, String interactionId) {
@@ -181,10 +181,10 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData,
-            Map<String, String> idsGenerated) {
+            Map<String, String> idsGenerated, String baseUrl) {
         if (screeningResourceData != null) {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
-                    .setLocation(new Reference("Location/" + screeningResourceData.getEncounterLocation())));
+                    .setLocation(new Reference(baseUrl + "/Location/" + screeningResourceData.getEncounterLocation())));
         }
     }
     
