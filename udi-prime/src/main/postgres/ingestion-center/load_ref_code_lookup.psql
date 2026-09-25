@@ -1610,7 +1610,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
  
 -- Update system_value for the relevant screening codes
 UPDATE techbd_udi_ingress.ref_code_lookup
-SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
+SET system_value = 'http://test.shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
 WHERE code_type = 'screening_code'
   AND code IN ('NA', 'NYSAHCHRSN');
 
