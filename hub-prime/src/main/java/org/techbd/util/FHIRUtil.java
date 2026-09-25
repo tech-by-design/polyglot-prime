@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
-import org.techbd.config.Constants;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 

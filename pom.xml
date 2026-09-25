@@ -14,7 +14,6 @@
         <module>hub-prime</module>
         <module>nexus-core-lib</module>
         <module>nexus-ingestion-api</module>
-        <module>hub-core-lib</module>
         <module>fhir-validation-service</module>
         <module>csv-service</module>
     </modules>

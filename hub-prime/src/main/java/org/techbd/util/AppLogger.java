@@ -1,7 +1,7 @@
 package org.techbd.util;
 
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreAppConfig;
+import org.techbd.service.http.hub.prime.AppConfig;
 
 /**
  * Spring-managed factory component for creating {@link TemplateLogger} instances.
@@ -36,14 +36,14 @@ import org.techbd.config.CoreAppConfig;
 
 @Component
 public class AppLogger {
-    private final CoreAppConfig appConfig;
+    private final AppConfig appConfig;
 
     /**
      * Constructs an {@code AppLogger} with the given application configuration.
      *
      * @param appConfig the application configuration containing build details
      */
-    public AppLogger(CoreAppConfig appConfig) {
+    public AppLogger(AppConfig appConfig) {
         this.appConfig = appConfig;
     }
 
