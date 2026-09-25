@@ -24,10 +24,22 @@ public class PrePopulateSupport {
     private final String referenceCodesPath = "ig-packages/reference/";
     private final Tracer tracer;
     private final TemplateLogger LOG;
+    private final List<CodeSystem.ConceptDefinitionComponent> hcpcsConcepts;
+    private final List<CodeSystem.ConceptDefinitionComponent> snomedConcepts;
+    private final List<CodeSystem.ConceptDefinitionComponent> icd10Concepts;
+    private final List<CodeSystem.ConceptDefinitionComponent> cptConcepts;
+    private final List<CodeSystem.ConceptDefinitionComponent> loincConcepts;
+    private final List<CodeSystem.ConceptDefinitionComponent> languageConcepts;
 
     public PrePopulateSupport(final Tracer tracer, final AppLogger appLogger) {
         this.tracer = tracer;
         this.LOG = appLogger.getLogger(PrePopulateSupport.class);
+        this.hcpcsConcepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv"));
+        this.snomedConcepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("snomed.psv"));
+        this.icd10Concepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("icd10cm.psv"));
+        this.cptConcepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("cpt.psv"));
+        this.loincConcepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("loinc.psv"));
+        this.languageConcepts = ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("language-subtags.psv"));
     }
 
     public PrePopulatedValidationSupport build(FhirContext fhirContext) {
@@ -51,6 +63,7 @@ public class PrePopulateSupport {
             addCPTCodes(validationSupportChain, prePopulatedValidationSupport);
             addHCPCSCodes(validationSupportChain, prePopulatedValidationSupport);
             addLoincCodes(validationSupportChain, prePopulatedValidationSupport);
+            addLanguageCodes(prePopulatedValidationSupport);
         } finally {
             span.end();
         }
@@ -58,92 +71,120 @@ public class PrePopulateSupport {
 
     private void addCPTCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addCPTCodes  -BEGIN");
-        CodeSystem existCpt = (CodeSystem) validationSupportChain.fetchCodeSystem("http://www.ama-assn.org/go/cpt");
-        if (existCpt == null) {
+        LOG.info("PrePopulateSupport:addCPTCodes - BEGIN");
+        String cptSystem = "http://www.ama-assn.org/go/cpt";
+        CodeSystem existingCpt = (CodeSystem) validationSupportChain.fetchCodeSystem(cptSystem);
+        if (existingCpt == null) {
             CodeSystem newCpt = new CodeSystem();
-            newCpt.setUrl("http://www.ama-assn.org/go/cpt");
-            newCpt.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("cpt.psv")));
+            newCpt.setUrl(cptSystem);
+            newCpt.setConcept(new ArrayList<>(cptConcepts));
             newCpt.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             prePopulatedValidationSupport.addCodeSystem(newCpt);
         } else {
-            existCpt.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            existCpt.getConcept()
-                    .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("cpt.psv")));
+            existingCpt.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            if (existingCpt.getConcept().isEmpty()) {
+                existingCpt.getConcept().addAll(new ArrayList<>(cptConcepts));
+            }
         }
-        LOG.info("PrePopulateSupport:addCPTCodes  -END");
+        LOG.info("PrePopulateSupport:addCPTCodes - END");
     }
 
     private void addHCPCSCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addHCPCSCodes  -BEGIN");
-        CodeSystem existHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem("urn:oid:2.16.840.1.113883.6.285");
-        // CodeSystem existHCPCS = (CodeSystem)
-        // validationSupportChain.fetchCodeSystem("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
-        if (existHCPCS == null) {
+        LOG.info("PrePopulateSupport:addHCPCSCodes - BEGIN");
+
+        String newHcpcsSystem = "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets";
+
+        String oldHcpcsSystem = "urn:oid:2.16.840.1.113883.6.285";
+        // New HCPCS system
+        CodeSystem existingNewHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(newHcpcsSystem);
+
+        if (existingNewHCPCS == null) {
             CodeSystem newHCPCS = new CodeSystem();
-            // newHCPCS.setUrl("https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets");
-            newHCPCS.setUrl("urn:oid:2.16.840.1.113883.6.285");
-            newHCPCS.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv")));
+            newHCPCS.setUrl(newHcpcsSystem);
+            newHCPCS.setConcept(new ArrayList<>(hcpcsConcepts));
             newHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             prePopulatedValidationSupport.addCodeSystem(newHCPCS);
         } else {
-            existHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            existHCPCS.getConcept()
-                    .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath.concat("hcpcs.psv")));
+            existingNewHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            if (existingNewHCPCS.getConcept().isEmpty()) {
+                existingNewHCPCS.getConcept().addAll(
+                        new ArrayList<>(hcpcsConcepts));
+            }
         }
-        LOG.info("PrePopulateSupport:addHCPCSCodes  -END");
+        // Old HCPCS OID - backward compatibility
+        CodeSystem existingOldHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(oldHcpcsSystem);
+
+        if (existingOldHCPCS == null) {
+            CodeSystem oldHCPCS = new CodeSystem();
+            oldHCPCS.setUrl(oldHcpcsSystem);
+            oldHCPCS.setConcept(new ArrayList<>(hcpcsConcepts));
+            oldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+
+            prePopulatedValidationSupport.addCodeSystem(oldHCPCS);
+        } else {
+            existingOldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            if (existingOldHCPCS.getConcept().isEmpty()) {
+                existingOldHCPCS.getConcept().addAll(
+                        new ArrayList<>(hcpcsConcepts));
+            }
+        }
+        LOG.info("PrePopulateSupport:addHCPCSCodes - END");
     }
 
     private void addICD10Codes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addICD10Codes  -BEGIN");
-        Span span = tracer.spanBuilder("PrePopulateSupport.addICD10Codes").startSpan();
+        LOG.info("PrePopulateSupport:addICD10Codes - BEGIN");
+        Span span = tracer.spanBuilder("PrePopulateSupport.addICD10Codes")
+                .startSpan();
         try {
+            String icd10System = "http://hl7.org/fhir/sid/icd-10-cm";
             CodeSystem existingIcd10 = (CodeSystem) validationSupportChain
-                    .fetchCodeSystem("http://hl7.org/fhir/sid/icd-10-cm");
+                    .fetchCodeSystem(icd10System);
             if (existingIcd10 == null) {
                 CodeSystem newIcd10 = new CodeSystem();
-                newIcd10.setUrl("http://hl7.org/fhir/sid/icd-10-cm");
-                newIcd10.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "icd10cm.psv"));
+                newIcd10.setUrl(icd10System);
+                newIcd10.setConcept(new ArrayList<>(icd10Concepts));
                 newIcd10.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
                 prePopulatedValidationSupport.addCodeSystem(newIcd10);
             } else {
                 if (existingIcd10.getConcept().isEmpty()) {
-                    existingIcd10.getConcept()
-                            .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "icd10cm.psv"));
+                    existingIcd10.getConcept().addAll(
+                            new ArrayList<>(icd10Concepts));
                 }
                 existingIcd10.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             }
         } finally {
             span.end();
         }
-        LOG.info("PrePopulateSupport:addICD10Codes  -END");
+        LOG.info("PrePopulateSupport:addICD10Codes - END");
     }
 
     private void addSnomedCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addSnomedCodes  -BEGIN");
+        LOG.info("PrePopulateSupport:addSnomedCodes - BEGIN");
         Span span = tracer.spanBuilder("PrePopulateSupport.addSnomedCodes").startSpan();
         try {
-            CodeSystem existingSnomed = (CodeSystem) validationSupportChain.fetchCodeSystem("http://snomed.info/sct");
+            String snomedSystem = "http://snomed.info/sct";
+            CodeSystem existingSnomed = (CodeSystem) validationSupportChain
+                    .fetchCodeSystem(snomedSystem);
             if (existingSnomed == null) {
                 CodeSystem newSnomed = new CodeSystem();
-                newSnomed.setUrl("http://snomed.info/sct");
-                newSnomed.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "snomed.psv"));
+                newSnomed.setUrl(snomedSystem);
+                newSnomed.setConcept(new ArrayList<>(snomedConcepts));
                 newSnomed.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
                 prePopulatedValidationSupport.addCodeSystem(newSnomed);
             } else {
                 if (existingSnomed.getConcept().isEmpty()) {
-                    existingSnomed.getConcept()
-                            .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "snomed.psv"));
+                    existingSnomed.getConcept().addAll(
+                            new ArrayList<>(snomedConcepts));
                 }
                 existingSnomed.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             }
         } finally {
             span.end();
         }
-        LOG.info("PrePopulateSupport:addSnomedCodes  -END");
+        LOG.info("PrePopulateSupport:addSnomedCodes - END");
     }
 
     public void loadValueSets(FhirContext fhirContext, PrePopulatedValidationSupport prePopulatedValidationSupport) {
@@ -153,6 +194,8 @@ public class PrePopulateSupport {
             loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1021.32.json", fhirContext,
                     prePopulatedValidationSupport);
             loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1240.11.json", fhirContext,
+                    prePopulatedValidationSupport);
+            loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1021.24.json", fhirContext,
                     prePopulatedValidationSupport);
         } finally {
             span.end();
@@ -197,30 +240,43 @@ public class PrePopulateSupport {
 
     private void addLoincCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        LOG.info("PrePopulateSupport:addLoincCodes  -BEGIN");
+        LOG.info("PrePopulateSupport:addLoincCodes - BEGIN");
         Span span = tracer.spanBuilder("PrePopulateSupport.addLoincCodes").startSpan();
         try {
-            CodeSystem existingLoinc = (CodeSystem) validationSupportChain.fetchCodeSystem("http://loinc.org");
+            String loincSystem = "http://loinc.org";
+            CodeSystem existingLoinc = (CodeSystem) validationSupportChain.fetchCodeSystem(loincSystem);
             if (existingLoinc == null) {
                 CodeSystem newLoinc = new CodeSystem();
-                newLoinc.setUrl("http://loinc.org");
-                newLoinc.setVersion("2.81"); // or whatever version your .psv represents
+                newLoinc.setUrl(loincSystem);
+                newLoinc.setVersion("2.81");
                 newLoinc.setName("LOINC");
                 newLoinc.setStatus(Enumerations.PublicationStatus.ACTIVE);
-                newLoinc.setConcept(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "loinc.psv"));
+                newLoinc.setConcept(new ArrayList<>(loincConcepts));
                 newLoinc.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
                 prePopulatedValidationSupport.addCodeSystem(newLoinc);
             } else {
                 if (existingLoinc.getConcept().isEmpty()) {
-                    existingLoinc.getConcept()
-                            .addAll(ConceptReaderUtils.getCodeSystemConcepts_wCode(referenceCodesPath + "loinc.psv"));
+                    existingLoinc.getConcept().addAll(
+                            new ArrayList<>(loincConcepts));
                 }
                 existingLoinc.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             }
         } finally {
             span.end();
         }
-        LOG.info("PrePopulateSupport:addLoincCodes  -END");
+        LOG.info("PrePopulateSupport:addLoincCodes - END");
     }
 
+    private void addLanguageCodes(
+            PrePopulatedValidationSupport prePopulatedValidationSupport) {
+
+        CodeSystem languageCodeSystem = new CodeSystem()
+                .setUrl("urn:ietf:bcp:47")
+                .setName("BCP47LanguageCodes")
+                .setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+
+        languageCodeSystem.setConcept(new ArrayList<>(languageConcepts));
+
+        prePopulatedValidationSupport.addCodeSystem(languageCodeSystem);
+    }
 }
