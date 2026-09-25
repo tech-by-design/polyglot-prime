@@ -479,7 +479,7 @@
             "description": "Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system",
             "constraints": {
               "required": true,
-               "pattern": "^(?i:http://loinc\\.org|https://shinny\\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\\.html|http://shinny\\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$"
+              "pattern": "^(?i:http://loinc\\.org|https://shinny\\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\\.html|http://shinny\\.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire|http://shinny\\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$"
             }
           },
           {
