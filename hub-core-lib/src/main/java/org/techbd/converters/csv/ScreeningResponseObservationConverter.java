@@ -55,6 +55,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         // Constants for URLs and systems
         private static final String OBSERVATION_URL_BASE = "http://shinny.org/us/ny/hrsn/Observation/";
         private static final String CATEGORY_URL = "http://terminology.hl7.org/CodeSystem/observation-category";
+        private static final String US_CORE_CATEGORY_URL = "http://hl7.org/fhir/us/core/CodeSystem/us-core-category";
         private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
 
         private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
@@ -122,14 +123,19 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 // max date
                                 // available in all
                                 // screening records
-                                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);                              
+                                String screeningLanguageDescription = fetchDisplay(screeningLangCode, screeningProfileData.getScreeningLanguageDescription(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                                //String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                                 observation.setLanguage("en");
 
                                 if (StringUtils.isNotEmpty(screeningLangCode) && !"en".equals(screeningLangCode)) {
                                     Extension languageExtension = new Extension(
                                         baseUrl + "/StructureDefinition/shinny-observation-language");
                                     CodeableConcept valueConcept = new CodeableConcept();
-                                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                                    valueConcept.addCoding(new Coding()
+                                            .setSystem("urn:ietf:bcp:47")
+                                            .setCode(screeningLangCode)
+                                            .setDisplay(screeningLanguageDescription));
                                     languageExtension.setValue(valueConcept);
                                     observation.addExtension(languageExtension);
                                 }
@@ -254,8 +260,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 }
                                 }        
                                 observation.addCategory(
-                                                createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
-                                                                "social-history", null));
+                                                createCategory("http://hl7.org/fhir/us/core/CodeSystem/us-core-category",
+                                                                "sdoh", "SDOH"));
                                 observation.addCategory(
                                                 createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                                 "survey", null));
@@ -263,7 +269,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 code.addCoding(new Coding(fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
                                                 fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
                                 observation.setCode(code);
-                                observation.setSubject(new Reference("Patient/" +
+                                observation.setSubject(new Reference(baseUrl + "/Patient/" +
                                         idsGenerated.get(CsvConstants.PATIENT_ID)));
                                 if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
                                 Period period = new Period();
@@ -279,11 +285,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
                                 String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
                                 if (encounterId != null) {
-                                observation.setEncounter(new Reference("Encounter/" + encounterId));
+                                observation.setEncounter(new Reference(baseUrl + "/Encounter/" + encounterId));
                                 }
                                 String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
                                 if (organizationId != null) {
-                                observation.addPerformer(new Reference("Organization/" + organizationId));
+                                observation.addPerformer(new Reference(baseUrl + "/Organization/" + organizationId));
                                 }
                                 String rawValue = StringUtils.trimToEmpty(data.getPotentialNeedIndicated());
                                 if (!"NULL".equalsIgnoreCase(rawValue)) {
@@ -401,9 +407,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                 if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
                                     Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
+                                    final var bUrl = baseUrl;
                                     List<Reference> derivedRefs = screeningObservationDataList.stream()
                                             .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
-                                            .map(obs -> new Reference("Observation/" + buildObservationId(obs)))
+                                            .map(obs -> new Reference(bUrl +"/Observation/" + buildObservationId(obs)))
                                             .collect(Collectors.toList());
 
                                     if (!derivedRefs.isEmpty()) {
@@ -511,6 +518,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setMeta(meta);
                 String screeningLangCode = fetchCode(screeningProfileData.getScreeningLanguageCode(),
                         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
+                String screeningLanguageDescription = fetchDisplay(screeningLangCode,
+                        screeningProfileData.getScreeningLanguageDescription(), CsvConstants.SCREENING_LANGUAGE_CODE,
+                        interactionId);
+                // String screeningLanguageCodeSystem = fetchCode(screeningProfileData.getScreeningLanguageCodeSystem(),
+                //         CsvConstants.SCREENING_LANGUAGE_CODE, interactionId);
                 groupObservation.setLanguage("en");
                 String baseUrl = StringUtils.isNotBlank(baseFhirUrl) ? baseFhirUrl : CoreFHIRUtil.getBaseFHIRURL();
                 if (baseUrl.endsWith("/")) {
@@ -521,7 +533,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                     Extension languageExtension = new Extension(
                         baseUrl + "/StructureDefinition/shinny-observation-language");
                     CodeableConcept valueConcept = new CodeableConcept();
-                    valueConcept.addCoding(new Coding().setCode(screeningLangCode));
+                    valueConcept.addCoding(new Coding()
+                                            .setSystem("urn:ietf:bcp:47")
+                                            .setCode(screeningLangCode)
+                                            .setDisplay(screeningLanguageDescription));
                     languageExtension.setValue(valueConcept);
                     groupObservation.addExtension(languageExtension);
                 }
@@ -537,7 +552,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 }
 
                 // Add standard categories
-                groupObservation.addCategory(createCategory(CATEGORY_URL, "social-history", null));
+                groupObservation.addCategory(createCategory(US_CORE_CATEGORY_URL, "sdoh", "SDOH"));
                 groupObservation.addCategory(createCategory(CATEGORY_URL, "survey", null));
 
                 // Add SDOH categories from group members
@@ -610,15 +625,15 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 // Set subject, effective time, and issued date
                 String patientId = idsGenerated.getOrDefault(CsvConstants.PATIENT_ID, null);
                 if (patientId != null){
-                        groupObservation.setSubject(new Reference("Patient/" + patientId));
+                        groupObservation.setSubject(new Reference(baseUrl + "/Patient/" + patientId));
                 }
                 String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
                 if (encounterId != null){
-                        groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
+                        groupObservation.setEncounter( new Reference(baseUrl + "/baseUrlEncounter/" + encounterId));
                 }
                 String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
                 if (organizationId != null) {
-                    groupObservation.addPerformer(new Reference("Organization/" + organizationId));
+                    groupObservation.addPerformer(new Reference(baseUrl +"/Organization/" + organizationId));
                 }
                 String screeningStartDateTime = groupData.stream()
                         .map(ScreeningObservationData::getScreeningStartDateTime)
@@ -651,10 +666,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                             "NEG", "Negative"));
                 }
                 groupObservation.addInterpretation(interpretation);
-
+                
                 // Add member references using observationId directly from the model
+                final var referenceBaseUrl  = baseUrl;
                 List<Reference> hasMemberReferences = groupData.stream()
-                        .map(data -> new Reference("Observation/" + buildObservationId(data)))
+                        .map(data -> new Reference(referenceBaseUrl  + "/Observation/" + buildObservationId(data)))
                         .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 

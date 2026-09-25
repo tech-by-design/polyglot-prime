@@ -93,8 +93,12 @@ public class ProcedureConverter extends BaseConverter {
             Map<String, String> idsGenerated,
             String baseFHIRUrl) {
         if (StringUtils.isNotEmpty(screeningProfileData.getProcedureCode())) {
+            String baseUrl = StringUtils.isNotBlank(baseFHIRUrl) ? baseFHIRUrl : CoreFHIRUtil.getBaseFHIRURL();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
             Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
-            populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated, interactionId);
+            populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated, interactionId, baseUrl);
             BundleEntryComponent entry = createBundleEntry(procedure, baseFHIRUrl);
             return List.of(entry);
         } else {
@@ -148,12 +152,12 @@ public class ProcedureConverter extends BaseConverter {
             ScreeningProfileData profileData,
             List<ScreeningObservationData> observations,
             Map<String, String> idsGenerated,
-            String interactionId) {
+            String interactionId, String baseUrl) {
 
         populateProcedureStatus(procedure, profileData, interactionId);
         populateProcedureCategory(procedure);
         populateProcedureCode(procedure, profileData, interactionId);
-        populateReferences(procedure, idsGenerated);
+        populateReferences(procedure, idsGenerated, baseUrl);
         populatePerformedPeriod(procedure, observations);
         populateLastUpdated(procedure);
     }
@@ -203,16 +207,16 @@ public class ProcedureConverter extends BaseConverter {
         procedure.setCode(code);
     }
 
-    private void populateReferences(Procedure procedure, Map<String, String> idsGenerated) {
+    private void populateReferences(Procedure procedure, Map<String, String> idsGenerated, String baseUrl) {
         // Set patient reference
         if (idsGenerated.containsKey(CsvConstants.PATIENT_ID)) {
-            procedure.setSubject(new Reference("Patient/" +
+            procedure.setSubject(new Reference(baseUrl + "/Patient/" +
                     idsGenerated.get(CsvConstants.PATIENT_ID)));
         }
 
         // Set encounter reference
         if (idsGenerated.containsKey(CsvConstants.ENCOUNTER_ID)) {
-            procedure.setEncounter(new Reference("Encounter/" +
+            procedure.setEncounter(new Reference(baseUrl + "/Encounter/" +
                     idsGenerated.get(CsvConstants.ENCOUNTER_ID)));
         }
     }
